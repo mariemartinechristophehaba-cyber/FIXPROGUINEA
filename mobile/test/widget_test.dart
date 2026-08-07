@@ -1,8 +1,13 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:fixpro/main.dart';
+import 'package:fixpro/screens/auth_screen.dart';
 import 'package:fixpro/screens/dashboard_screen.dart';
+import 'package:fixpro/theme/app_theme.dart';
+
+Widget _wrap(Widget child) =>
+    MaterialApp(theme: AppTheme.dark, home: child);
 
 void main() {
   testWidgets('Welcome screen shows title and CTA', (tester) async {
@@ -13,21 +18,38 @@ void main() {
     expect(find.text('Se connecter'), findsOneWidget);
   });
 
-  testWidgets('Tapping "Commencer maintenant" opens the dashboard',
+  testWidgets('Tapping "Commencer maintenant" opens the sign-up screen',
       (tester) async {
     await tester.pumpWidget(const FixProApp());
 
     await tester.tap(find.text('Commencer maintenant'));
     await tester.pumpAndSettle();
 
-    expect(find.byType(DashboardScreen), findsOneWidget);
-    expect(find.text('Bonjour Mamadou 👋'), findsOneWidget);
+    expect(find.byType(AuthScreen), findsOneWidget);
+    expect(find.text('Créer un compte'), findsOneWidget);
+    expect(find.text('Nom complet'), findsOneWidget);
+  });
+
+  testWidgets('Tapping "Se connecter" opens the login screen', (tester) async {
+    await tester.pumpWidget(const FixProApp());
+
+    await tester.tap(find.text('Se connecter'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(AuthScreen), findsOneWidget);
+    expect(find.textContaining('Bon retour'), findsOneWidget);
+  });
+
+  testWidgets('Dashboard renders greeting and technicians', (tester) async {
+    await tester.pumpWidget(_wrap(const DashboardScreen()));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Bonjour'), findsOneWidget);
     expect(find.textContaining('Trouver un technicien'), findsOneWidget);
   });
 
   testWidgets('Opening a technician shows the detail screen', (tester) async {
-    await tester.pumpWidget(const FixProApp());
-    await tester.tap(find.text('Commencer maintenant'));
+    await tester.pumpWidget(_wrap(const DashboardScreen()));
     await tester.pumpAndSettle();
 
     final tech = find.text('Ibrahima Bah');

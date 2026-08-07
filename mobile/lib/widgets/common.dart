@@ -13,15 +13,17 @@ class GradientButton extends StatelessWidget {
     this.trailingIcon,
     this.height = 56,
     this.expand = true,
+    this.loading = false,
   });
 
   final String label;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final Gradient gradient;
   final IconData? icon;
   final IconData? trailingIcon;
   final double height;
   final bool expand;
+  final bool loading;
 
   @override
   Widget build(BuildContext context) {
@@ -43,11 +45,23 @@ class GradientButton extends StatelessWidget {
         borderRadius: borderRadius,
         child: InkWell(
           borderRadius: borderRadius,
-          onTap: onPressed,
+          onTap: loading ? null : onPressed,
           child: SizedBox(
             height: height,
             width: expand ? double.infinity : null,
-            child: Row(
+            child: loading
+                ? const Center(
+                    child: SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.4,
+                        valueColor:
+                            AlwaysStoppedAnimation<Color>(AppColors.white),
+                      ),
+                    ),
+                  )
+                : Row(
               mainAxisAlignment: MainAxisAlignment.center,
               mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
               children: [

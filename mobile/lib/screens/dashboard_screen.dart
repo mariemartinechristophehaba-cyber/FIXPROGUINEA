@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import '../data/mock_data.dart';
 import '../data/technician_repository.dart';
 import '../models/models.dart';
+import '../services/auth_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/common.dart';
 import '../widgets/dashboard_widgets.dart';
 import '../widgets/glass_card.dart';
 import 'technician_detail_screen.dart';
+import 'welcome_screen.dart';
 
 /// Tableau de bord client : point d'entrée après la bienvenue.
 class DashboardScreen extends StatefulWidget {
@@ -112,9 +114,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
 class _DashboardHeader extends StatelessWidget {
   const _DashboardHeader();
 
+  String _displayName() {
+    const auth = AuthService();
+    final user = auth.currentUser;
+    if (user == null) return 'Mamadou';
+    final meta = user.userMetadata;
+    final fullName = (meta?['full_name'] as String?)?.trim();
+    if (fullName != null && fullName.isNotEmpty) {
+      return fullName.split(' ').first;
+    }
+    final email = user.email;
+    if (email != null && email.isNotEmpty) return email.split('@').first;
+    return 'Mamadou';
+  }
+
+  Future<void> _logout(BuildContext context) async {
+    const auth = AuthService();
+    await auth.signOut();
+    if (!context.mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const WelcomeScreen()),
+      (route) => false,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final name = _displayName();
+    final initial = name.isNotEmpty ? name[0].toUpperCase() : 'M';
     return Row(
       children: [
         Expanded(
@@ -122,7 +150,7 @@ class _DashboardHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Bonjour Mamadou 👋',
+                'Bonjour $name 👋',
                 style: textTheme.headlineSmall?.copyWith(fontSize: 22),
               ),
               const SizedBox(height: 4),
@@ -139,21 +167,42 @@ class _DashboardHeader extends StatelessWidget {
         const SizedBox(width: 12),
         _CircleIconButton(icon: Icons.notifications_none_rounded, badge: true),
         const SizedBox(width: 12),
-        Container(
-          width: 46,
-          height: 46,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: AppColors.blueGradient,
-            border: Border.all(color: AppColors.glassBorder),
-          ),
-          alignment: Alignment.center,
-          child: const Text(
-            'M',
-            style: TextStyle(
-              color: AppColors.white,
-              fontWeight: FontWeight.w800,
-              fontSize: 18,
+        PopupMenuButton<String>(
+          tooltip: 'Compte',
+          color: AppColors.card,
+          onSelected: (value) {
+            if (value == 'logout') _logout(context);
+          },
+          itemBuilder: (context) => const [
+            PopupMenuItem<String>(
+              value: 'logout',
+              child: Row(
+                children: [
+                  Icon(Icons.logout_rounded,
+                      color: AppColors.white, size: 18),
+                  SizedBox(width: 10),
+                  Text('Se déconnecter',
+                      style: TextStyle(color: AppColors.white)),
+                ],
+              ),
+            ),
+          ],
+          child: Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: AppColors.blueGradient,
+              border: Border.all(color: AppColors.glassBorder),
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              initial,
+              style: const TextStyle(
+                color: AppColors.white,
+                fontWeight: FontWeight.w800,
+                fontSize: 18,
+              ),
             ),
           ),
         ),

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import 'screens/dashboard_screen.dart';
 import 'screens/welcome_screen.dart';
+import 'services/auth_service.dart';
 import 'services/supabase_service.dart';
 import 'theme/app_colors.dart';
 import 'theme/app_theme.dart';
@@ -21,9 +23,22 @@ class FixProApp extends StatelessWidget {
       title: 'FixPro',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.dark,
-      home: const WelcomeScreen(),
+      home: const AuthGate(),
       builder: (context, child) => _MobileFrame(child: child),
     );
+  }
+}
+
+/// Décide de l'écran de départ : tableau de bord si une session Supabase
+/// est déjà active, sinon écran de bienvenue.
+class AuthGate extends StatelessWidget {
+  const AuthGate({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    const auth = AuthService();
+    if (auth.isLoggedIn) return const DashboardScreen();
+    return const WelcomeScreen();
   }
 }
 

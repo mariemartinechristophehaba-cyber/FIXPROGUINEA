@@ -2,15 +2,15 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
 import '../widgets/common.dart';
-import 'dashboard_screen.dart';
+import 'auth_screen.dart';
 
 /// Écran de bienvenue : logo, titre, description et actions d'entrée.
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
 
-  void _goToDashboard(BuildContext context) {
+  void _openAuth(BuildContext context, {required bool signUp}) {
     Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const DashboardScreen()),
+      MaterialPageRoute(builder: (_) => AuthScreen(startInSignUp: signUp)),
     );
   }
 
@@ -50,7 +50,7 @@ class WelcomeScreen extends StatelessWidget {
                   label: 'Commencer maintenant',
                   gradient: AppColors.orangeGradient,
                   trailingIcon: Icons.arrow_forward_rounded,
-                  onPressed: () => _goToDashboard(context),
+                  onPressed: () => _openAuth(context, signUp: true),
                 ),
                 const SizedBox(height: 20),
                 Text(
@@ -63,7 +63,7 @@ class WelcomeScreen extends StatelessWidget {
                 const SizedBox(height: 12),
                 _SecondaryButton(
                   label: 'Se connecter',
-                  onPressed: () => _goToDashboard(context),
+                  onPressed: () => _openAuth(context, signUp: false),
                 ),
                 const Spacer(flex: 1),
               ],
