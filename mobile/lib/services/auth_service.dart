@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'supabase_service.dart';
@@ -87,6 +88,20 @@ class AuthService {
           password: code,
         );
       }
+    } on AuthException catch (e) {
+      throw AuthFailure(_friendly(e.message));
+    }
+  }
+
+  /// Connexion via Google (OAuth). Sur le web, redirige vers Google puis
+  /// revient sur l'application.
+  Future<void> signInWithGoogle() async {
+    _ensureReady();
+    try {
+      await _auth.signInWithOAuth(
+        OAuthProvider.google,
+        redirectTo: kIsWeb ? null : 'io.fixpro://login-callback',
+      );
     } on AuthException catch (e) {
       throw AuthFailure(_friendly(e.message));
     }

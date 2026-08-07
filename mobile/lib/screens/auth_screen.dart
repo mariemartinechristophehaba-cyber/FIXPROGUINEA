@@ -29,6 +29,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
   late bool _isSignUp = widget.startInSignUp;
   bool _loading = false;
+  bool _googleLoading = false;
   bool _obscure = true;
   String? _error;
 
@@ -46,6 +47,32 @@ class _AuthScreenState extends State<AuthScreen> {
       _isSignUp = !_isSignUp;
       _error = null;
     });
+  }
+
+  Future<void> _googleSignIn() async {
+    setState(() {
+      _googleLoading = true;
+      _error = null;
+    });
+    try {
+      // Sur le web, redirige vers Google puis recharge l'app (AuthGate gère
+      // la suite). Sur mobile, la session revient via le callback.
+      await _authService.signInWithGoogle();
+    } on AuthFailure catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.message;
+          _googleLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _error = 'Connexion Google impossible. Réessaie.';
+          _googleLoading = false;
+        });
+      }
+    }
   }
 
   Future<void> _submit() async {
@@ -114,13 +141,32 @@ class _AuthScreenState extends State<AuthScreen> {
                 const SizedBox(height: 8),
                 Text(
                   _isSignUp
-                      ? 'Inscris-toi avec ton numéro de téléphone.'
-                      : 'Connecte-toi avec ton numéro et ton code.',
+                      ? 'Inscris-toi avec Google ou ton numéro.'
+                      : 'Connecte-toi avec Google ou ton numéro.',
                   textAlign: TextAlign.center,
                   style: textTheme.bodyMedium
                       ?.copyWith(color: AppColors.lightGrey, fontSize: 14),
                 ),
                 const SizedBox(height: 28),
+                _GoogleButton(
+                  loading: _googleLoading,
+                  onPressed:
+                      (_loading || _googleLoading) ? null : _googleSignIn,
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    const Expanded(child: Divider(color: AppColors.glassBorder)),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: Text('ou',
+                          style: textTheme.bodyMedium
+                              ?.copyWith(color: AppColors.lightGrey)),
+                    ),
+                    const Expanded(child: Divider(color: AppColors.glassBorder)),
+                  ],
+                ),
+                const SizedBox(height: 20),
                 Form(
                   key: _formKey,
                   child: Column(
@@ -262,6 +308,99 @@ class _AuthLogo extends StatelessWidget {
               color: AppColors.white, size: 36),
         ),
       ],
+    );
+  }
+}
+
+class _GoogleButton extends StatelessWidget {
+  const _GoogleButton({required this.onPressed, this.loading = false});
+
+  final VoidCallback? onPressed;
+  final bool loading;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 54,
+      child: OutlinedButton(
+        onPressed: onPressed,
+        style: OutlinedButton.styleFrom(
+          backgroundColor: AppColors.white,
+          foregroundColor: const Color(0xFF1F1F1F),
+          disabledBackgroundColor: AppColors.white.withValues(alpha: 0.7),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          side: BorderSide.none,
+        ),
+        child: loading
+            ? const SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(
+                    strokeWidth: 2.4, color: Color(0xFF1F1F1F)),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: const [
+                  _GoogleLogo(),
+                  SizedBox(width: 12),
+                  Text(
+                    'Continuer avec Google',
+                    style: TextStyle(
+                      fontSize: 15.5,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF1F1F1F),
+                    ),
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+}
+
+/// Logo Google « G » multicolore dessiné sans asset externe.
+class _GoogleLogo extends StatelessWidget {
+  const _GoogleLogo();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 20,
+      height: 20,
+      alignment: Alignment.center,
+      decoration: const BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: SweepGradient(
+          colors: [
+            Color(0xFF4285F4),
+            Color(0xFF34A853),
+            Color(0xFFFBBC05),
+            Color(0xFFEA4335),
+            Color(0xFF4285F4),
+          ],
+        ),
+      ),
+      child: Container(
+        width: 8,
+        height: 8,
+        decoration: const BoxDecoration(
+          color: AppColors.white,
+          shape: BoxShape.circle,
+        ),
+        child: const Center(
+          child: Text(
+            'G',
+            style: TextStyle(
+              fontSize: 11,
+              height: 1.0,
+              fontWeight: FontWeight.w800,
+              color: Color(0xFF4285F4),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
