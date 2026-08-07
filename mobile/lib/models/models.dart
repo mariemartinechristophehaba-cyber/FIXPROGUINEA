@@ -65,6 +65,45 @@ class Technician {
     return (parts.first.substring(0, 1) + parts.last.substring(0, 1))
         .toUpperCase();
   }
+
+  /// Construit un technicien depuis une ligne de la table `profiles` Supabase.
+  factory Technician.fromProfile(Map<String, dynamic> row) {
+    final profession = (row['profession'] as String?)?.trim();
+    return Technician(
+      name: (row['full_name'] as String?)?.trim().isNotEmpty == true
+          ? row['full_name'] as String
+          : 'Technicien',
+      job: profession?.isNotEmpty == true ? profession! : 'Technicien',
+      icon: iconForProfession(profession),
+      rating: _toDouble(row['rating']),
+      distanceKm: _toDouble(row['distance_km']),
+      hourlyRate: _toDouble(row['hourly_rate']).round(),
+      reviewCount: _toInt(row['review_count']),
+      interventions: _toInt(row['interventions']),
+      experienceYears: _toInt(row['experience_years']),
+      about: (row['bio'] as String?)?.trim() ?? '',
+    );
+  }
+
+  static double _toDouble(Object? v) =>
+      v == null ? 0 : (v is num ? v.toDouble() : double.tryParse('$v') ?? 0);
+
+  static int _toInt(Object? v) =>
+      v == null ? 0 : (v is num ? v.toInt() : int.tryParse('$v') ?? 0);
+}
+
+/// Associe un métier (profession) à une icône Material.
+IconData iconForProfession(String? profession) {
+  final p = (profession ?? '').toLowerCase();
+  if (p.contains('plomb')) return Icons.plumbing;
+  if (p.contains('élec') || p.contains('elec')) return Icons.electrical_services;
+  if (p.contains('froid') || p.contains('clim') || p.contains('frigo')) {
+    return Icons.ac_unit;
+  }
+  if (p.contains('maçon') || p.contains('macon') || p.contains('bâtiment')) {
+    return Icons.construction;
+  }
+  return Icons.handyman;
 }
 
 /// Statut d'un contrat récent.

@@ -90,32 +90,37 @@ class _CategoryCardState extends State<CategoryCard> {
         duration: const Duration(milliseconds: 120),
         child: GlassCard(
           color: AppColors.cardDeep,
-          padding: const EdgeInsets.all(18),
+          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   color: AppColors.primaryBlue.withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(14),
                 ),
                 child: Icon(widget.category.icon,
-                    color: AppColors.primaryBlue, size: 26),
+                    color: AppColors.primaryBlue, size: 24),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               Text(
                 '${widget.category.emoji} ${widget.category.label}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: Theme.of(context)
                     .textTheme
                     .titleMedium
-                    ?.copyWith(fontSize: 16),
+                    ?.copyWith(fontSize: 15),
               ),
               const SizedBox(height: 4),
               Text(
                 '${widget.category.technicianCount} techniciens',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                    color: AppColors.lightGrey, fontSize: 13),
+                    color: AppColors.lightGrey, fontSize: 12.5),
               ),
             ],
           ),
@@ -208,19 +213,23 @@ class TechnicianTile extends StatelessWidget {
                       color: AppColors.lightGrey, fontSize: 13),
                 ),
                 const SizedBox(height: 6),
-                Row(
-                  children: [
-                    RatingStars(rating: technician.rating, size: 13),
-                    const SizedBox(width: 10),
-                    const Icon(Icons.location_on,
-                        color: AppColors.lightGrey, size: 13),
-                    const SizedBox(width: 2),
-                    Text(
-                      '${technician.distanceKm.toStringAsFixed(1)} km',
-                      style: const TextStyle(
-                          color: AppColors.lightGrey, fontSize: 12.5),
-                    ),
-                  ],
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Row(
+                    children: [
+                      RatingStars(rating: technician.rating, size: 13),
+                      const SizedBox(width: 10),
+                      const Icon(Icons.location_on,
+                          color: AppColors.lightGrey, size: 13),
+                      const SizedBox(width: 2),
+                      Text(
+                        '${technician.distanceKm.toStringAsFixed(1)} km',
+                        style: const TextStyle(
+                            color: AppColors.lightGrey, fontSize: 12.5),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),

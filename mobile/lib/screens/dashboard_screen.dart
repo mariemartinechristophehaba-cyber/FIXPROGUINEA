@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../data/mock_data.dart';
+import '../data/technician_repository.dart';
 import '../models/models.dart';
 import '../theme/app_colors.dart';
 import '../widgets/common.dart';
@@ -9,8 +10,22 @@ import '../widgets/glass_card.dart';
 import 'technician_detail_screen.dart';
 
 /// Tableau de bord client : point d'entrée après la bienvenue.
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
+
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  final TechnicianRepository _repository = const TechnicianRepository();
+  late Future<List<Technician>> _technicians;
+
+  @override
+  void initState() {
+    super.initState();
+    _technicians = _repository.fetchNearby();
+  }
 
   void _openTechnician(BuildContext context, Technician technician) {
     Navigator.of(context).push(
@@ -55,13 +70,23 @@ class DashboardScreen extends StatelessWidget {
                 onAction: () {},
               ),
               const SizedBox(height: 14),
-              for (final tech in MockData.technicians) ...[
-                TechnicianTile(
-                  technician: tech,
-                  onTap: () => _openTechnician(context, tech),
-                ),
-                const SizedBox(height: 12),
-              ],
+              FutureBuilder<List<Technician>>(
+                future: _technicians,
+                builder: (context, snapshot) {
+                  final techs = snapshot.data ?? MockData.technicians;
+                  return Column(
+                    children: [
+                      for (final tech in techs) ...[
+                        TechnicianTile(
+                          technician: tech,
+                          onTap: () => _openTechnician(context, tech),
+                        ),
+                        const SizedBox(height: 12),
+                      ],
+                    ],
+                  );
+                },
+              ),
               const SizedBox(height: 16),
               Text(
                 'Mes contrats récents',
@@ -314,7 +339,7 @@ class _CategoryGrid extends StatelessWidget {
       crossAxisCount: 2,
       mainAxisSpacing: 14,
       crossAxisSpacing: 14,
-      childAspectRatio: 1.35,
+      childAspectRatio: 1.1,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       children: [
@@ -335,7 +360,7 @@ class _StatsGrid extends StatelessWidget {
       crossAxisCount: 2,
       mainAxisSpacing: 14,
       crossAxisSpacing: 14,
-      childAspectRatio: 1.45,
+      childAspectRatio: 1.3,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       children: [
