@@ -119,12 +119,12 @@ class _DashboardHeader extends StatelessWidget {
     final user = auth.currentUser;
     if (user == null) return 'Mamadou';
     final meta = user.userMetadata;
+    final firstName = (meta?['first_name'] as String?)?.trim();
+    if (firstName != null && firstName.isNotEmpty) return firstName;
     final fullName = (meta?['full_name'] as String?)?.trim();
     if (fullName != null && fullName.isNotEmpty) {
       return fullName.split(' ').first;
     }
-    final email = user.email;
-    if (email != null && email.isNotEmpty) return email.split('@').first;
     return 'Mamadou';
   }
 

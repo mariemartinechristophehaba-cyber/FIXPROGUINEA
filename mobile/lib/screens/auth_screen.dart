@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../services/auth_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/common.dart';
 import 'dashboard_screen.dart';
 
-/// Écran d'authentification : bascule entre Connexion et Inscription.
+/// Écran d'authentification par téléphone + code : bascule Connexion /
+/// Inscription. Pas d'e-mail visible pour l'utilisateur.
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key, this.startInSignUp = false});
 
@@ -18,21 +20,22 @@ class AuthScreen extends StatefulWidget {
 class _AuthScreenState extends State<AuthScreen> {
   final _authService = const AuthService();
   final _formKey = GlobalKey<FormState>();
-  final _nameCtrl = TextEditingController();
-  final _emailCtrl = TextEditingController();
-  final _passwordCtrl = TextEditingController();
+  final _firstNameCtrl = TextEditingController();
+  final _lastNameCtrl = TextEditingController();
+  final _phoneCtrl = TextEditingController();
+  final _codeCtrl = TextEditingController();
 
   late bool _isSignUp = widget.startInSignUp;
   bool _loading = false;
   bool _obscure = true;
   String? _error;
-  String? _info;
 
   @override
   void dispose() {
-    _nameCtrl.dispose();
-    _emailCtrl.dispose();
-    _passwordCtrl.dispose();
+    _firstNameCtrl.dispose();
+    _lastNameCtrl.dispose();
+    _phoneCtrl.dispose();
+    _codeCtrl.dispose();
     super.dispose();
   }
 
@@ -40,7 +43,6 @@ class _AuthScreenState extends State<AuthScreen> {
     setState(() {
       _isSignUp = !_isSignUp;
       _error = null;
-      _info = null;
     });
   }
 
@@ -49,32 +51,25 @@ class _AuthScreenState extends State<AuthScreen> {
     setState(() {
       _loading = true;
       _error = null;
-      _info = null;
     });
     try {
       if (_isSignUp) {
-        final outcome = await _authService.signUp(
-          email: _emailCtrl.text,
-          password: _passwordCtrl.text,
-          fullName: _nameCtrl.text,
+        await _authService.signUp(
+          phone: _phoneCtrl.text,
+          code: _codeCtrl.text,
+          firstName: _firstNameCtrl.text,
+          lastName: _lastNameCtrl.text,
         );
-        if (!mounted) return;
-        if (outcome.needsEmailConfirmation) {
-          setState(() {
-            _isSignUp = false;
-            _info = 'Compte créé ! Confirme ton e-mail puis connecte-toi.';
-          });
-        } else {
-          _goToDashboard();
-        }
       } else {
         await _authService.signIn(
-          email: _emailCtrl.text,
-          password: _passwordCtrl.text,
+          phone: _phoneCtrl.text,
+          code: _codeCtrl.text,
         );
-        if (!mounted) return;
-        _goToDashboard();
       }
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const DashboardScreen()),
+      );
     } on AuthFailure catch (e) {
       if (mounted) setState(() => _error = e.message);
     } catch (_) {
@@ -84,12 +79,6 @@ class _AuthScreenState extends State<AuthScreen> {
     } finally {
       if (mounted) setState(() => _loading = false);
     }
-  }
-
-  void _goToDashboard() {
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const DashboardScreen()),
-    );
   }
 
   @override
@@ -123,8 +112,8 @@ class _AuthScreenState extends State<AuthScreen> {
                 const SizedBox(height: 8),
                 Text(
                   _isSignUp
-                      ? 'Inscris-toi pour trouver un technicien.'
-                      : 'Connecte-toi pour accéder à ton espace.',
+                      ? 'Inscris-toi avec ton numéro de téléphone.'
+                      : 'Connecte-toi avec ton numéro et ton code.',
                   textAlign: TextAlign.center,
                   style: textTheme.bodyMedium
                       ?.copyWith(color: AppColors.lightGrey, fontSize: 14),
@@ -136,9 +125,19 @@ class _AuthScreenState extends State<AuthScreen> {
                     children: [
                       if (_isSignUp) ...[
                         _Field(
-                          controller: _nameCtrl,
-                          label: 'Nom complet',
+                          controller: _firstNameCtrl,
+                          label: 'Prénom',
                           icon: Icons.person_outline_rounded,
+                          textInputAction: TextInputAction.next,
+                          validator: (v) => (v == null || v.trim().isEmpty)
+                              ? 'Entre ton prénom'
+                              : null,
+                        ),
+                        const SizedBox(height: 14),
+                        _Field(
+                          controller: _lastNameCtrl,
+                          label: 'Nom',
+                          icon: Icons.badge_outlined,
                           textInputAction: TextInputAction.next,
                           validator: (v) => (v == null || v.trim().isEmpty)
                               ? 'Entre ton nom'
@@ -147,28 +146,34 @@ class _AuthScreenState extends State<AuthScreen> {
                         const SizedBox(height: 14),
                       ],
                       _Field(
-                        controller: _emailCtrl,
-                        label: 'E-mail',
-                        icon: Icons.mail_outline_rounded,
-                        keyboardType: TextInputType.emailAddress,
+                        controller: _phoneCtrl,
+                        label: 'Numéro de téléphone',
+                        icon: Icons.phone_outlined,
+                        keyboardType: TextInputType.phone,
                         textInputAction: TextInputAction.next,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(
+                              RegExp(r'[0-9+ ]')),
+                        ],
                         validator: (v) {
-                          final value = (v ?? '').trim();
-                          if (value.isEmpty) return 'Entre ton e-mail';
-                          if (!value.contains('@') || !value.contains('.')) {
-                            return 'E-mail invalide';
-                          }
+                          final digits = AuthService.normalizePhone(v ?? '');
+                          if (digits.isEmpty) return 'Entre ton numéro';
+                          if (digits.length < 8) return 'Numéro trop court';
                           return null;
                         },
                       ),
                       const SizedBox(height: 14),
                       _Field(
-                        controller: _passwordCtrl,
-                        label: 'Mot de passe',
+                        controller: _codeCtrl,
+                        label: 'Code (6 chiffres min.)',
                         icon: Icons.lock_outline_rounded,
                         obscure: _obscure,
+                        keyboardType: TextInputType.number,
                         textInputAction: TextInputAction.done,
                         onSubmitted: (_) => _submit(),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
                         suffix: IconButton(
                           onPressed: () =>
                               setState(() => _obscure = !_obscure),
@@ -181,7 +186,7 @@ class _AuthScreenState extends State<AuthScreen> {
                           ),
                         ),
                         validator: (v) => (v == null || v.length < 6)
-                            ? '6 caractères minimum'
+                            ? '6 chiffres minimum'
                             : null,
                       ),
                     ],
@@ -190,10 +195,6 @@ class _AuthScreenState extends State<AuthScreen> {
                 if (_error != null) ...[
                   const SizedBox(height: 16),
                   _Banner(message: _error!, color: AppColors.red),
-                ],
-                if (_info != null) ...[
-                  const SizedBox(height: 16),
-                  _Banner(message: _info!, color: AppColors.green),
                 ],
                 const SizedBox(height: 24),
                 GradientButton(
@@ -274,6 +275,7 @@ class _Field extends StatelessWidget {
     this.obscure = false,
     this.suffix,
     this.onSubmitted,
+    this.inputFormatters,
   });
 
   final TextEditingController controller;
@@ -285,6 +287,7 @@ class _Field extends StatelessWidget {
   final bool obscure;
   final Widget? suffix;
   final ValueChanged<String>? onSubmitted;
+  final List<TextInputFormatter>? inputFormatters;
 
   @override
   Widget build(BuildContext context) {
@@ -295,6 +298,7 @@ class _Field extends StatelessWidget {
       textInputAction: textInputAction,
       obscureText: obscure,
       onFieldSubmitted: onSubmitted,
+      inputFormatters: inputFormatters,
       style: const TextStyle(color: AppColors.white),
       decoration: InputDecoration(
         labelText: label,

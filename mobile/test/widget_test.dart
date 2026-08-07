@@ -27,7 +27,8 @@ void main() {
 
     expect(find.byType(AuthScreen), findsOneWidget);
     expect(find.text('Créer un compte'), findsOneWidget);
-    expect(find.text('Nom complet'), findsOneWidget);
+    expect(find.text('Prénom'), findsOneWidget);
+    expect(find.text('Numéro de téléphone'), findsOneWidget);
   });
 
   testWidgets('Tapping "Se connecter" opens the login screen', (tester) async {
