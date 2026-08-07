@@ -18,6 +18,8 @@ class AuthScreen extends StatefulWidget {
 }
 
 class _AuthScreenState extends State<AuthScreen> {
+  static const String _countryCode = '224';
+
   final _authService = const AuthService();
   final _formKey = GlobalKey<FormState>();
   final _firstNameCtrl = TextEditingController();
@@ -55,14 +57,14 @@ class _AuthScreenState extends State<AuthScreen> {
     try {
       if (_isSignUp) {
         await _authService.signUp(
-          phone: _phoneCtrl.text,
+          phone: '$_countryCode${_phoneCtrl.text}',
           code: _codeCtrl.text,
           firstName: _firstNameCtrl.text,
           lastName: _lastNameCtrl.text,
         );
       } else {
         await _authService.signIn(
-          phone: _phoneCtrl.text,
+          phone: '$_countryCode${_phoneCtrl.text}',
           code: _codeCtrl.text,
         );
       }
@@ -149,11 +151,11 @@ class _AuthScreenState extends State<AuthScreen> {
                         controller: _phoneCtrl,
                         label: 'Numéro de téléphone',
                         icon: Icons.phone_outlined,
+                        prefixText: '+$_countryCode ',
                         keyboardType: TextInputType.phone,
                         textInputAction: TextInputAction.next,
                         inputFormatters: [
-                          FilteringTextInputFormatter.allow(
-                              RegExp(r'[0-9+ ]')),
+                          FilteringTextInputFormatter.digitsOnly,
                         ],
                         validator: (v) {
                           final digits = AuthService.normalizePhone(v ?? '');
@@ -276,6 +278,7 @@ class _Field extends StatelessWidget {
     this.suffix,
     this.onSubmitted,
     this.inputFormatters,
+    this.prefixText,
   });
 
   final TextEditingController controller;
@@ -288,6 +291,7 @@ class _Field extends StatelessWidget {
   final Widget? suffix;
   final ValueChanged<String>? onSubmitted;
   final List<TextInputFormatter>? inputFormatters;
+  final String? prefixText;
 
   @override
   Widget build(BuildContext context) {
@@ -304,6 +308,9 @@ class _Field extends StatelessWidget {
         labelText: label,
         labelStyle: const TextStyle(color: AppColors.lightGrey),
         prefixIcon: Icon(icon, color: AppColors.lightGrey, size: 20),
+        prefixText: prefixText,
+        prefixStyle: const TextStyle(
+            color: AppColors.white, fontWeight: FontWeight.w600),
         suffixIcon: suffix,
         filled: true,
         fillColor: AppColors.card,
