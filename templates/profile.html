@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="card form-card">
+  <h2>Profil</h2>
+  <form method="post">
+    <label>Nom complet</label>
+    <input type="text" name="full_name" value="{{ user.full_name }}" required />
+    <label>Téléphone</label>
+    <input type="text" name="phone" value="{{ user.phone or '' }}" />
+    <label>Métier</label>
+    <input type="text" name="profession" value="{{ user.profession or '' }}" />
+    <label>Ville</label>
+    <input type="text" name="city" value="{{ user.city or '' }}" />
+    <label>Tarif horaire</label>
+    <input type="number" name="hourly_rate" value="{{ user.hourly_rate or 0 }}" />
+    <label>Latitude</label>
+    <input type="text" name="latitude" value="{{ user.latitude or 0 }}" />
+    <label>Longitude</label>
+    <input type="text" name="longitude" value="{{ user.longitude or 0 }}" />
+    <label>Présentation</label>
+    <textarea name="bio">{{ user.bio or '' }}</textarea>
+    <button class="btn btn-primary" type="submit">Enregistrer</button>
+  </form>
+</section>
+{% endblock %}

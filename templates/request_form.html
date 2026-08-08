@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="card form-card">
+  <h2>Créer une demande d’intervention</h2>
+  <form method="post">
+    <label>Titre</label>
+    <input type="text" name="title" required />
+    <label>Description</label>
+    <textarea name="description" required></textarea>
+    <label>Catégorie</label>
+    <select name="category" id="categorySelect" required>
+      <option value="">Sélectionnez une catégorie</option>
+      {% for category in categories %}
+        <option value="{{ category['name'] }}">{{ category['name'] }} — Prix diagnostic {{ category['diagnostic_price'] }} GNF</option>
+      {% endfor %}
+    </select>
+    <div class="small muted" id="diagnosticHint">Prix diagnostic sélectionné : 0 GNF</div>
+    <label>Photo du problème (URL)</label>
+    <input type="text" name="photo_url" placeholder="Copiez le lien de votre photo ici" />
+    <label>Adresse / zone</label>
+    <input type="text" name="address" />
+    <label>Budget estimé</label>
+    <input type="number" name="budget" value="0" />
+    <button class="btn btn-primary" type="submit">Publier</button>
+  </form>
+</section>
+
+{% block scripts %}
+<script>
+  const categorySelect = document.getElementById('categorySelect');
+  const diagnosticHint = document.getElementById('diagnosticHint');
+  const categoryPrices = {
+    {% for category in categories %}
+      "{{ category['name'] }}": {{ category['diagnostic_price'] }},
+    {% endfor %}
+  };
+  categorySelect.addEventListener('change', () => {
+    const amount = categoryPrices[categorySelect.value] || 0;
+    diagnosticHint.textContent = `Prix diagnostic sélectionné : ${amount} GNF`;
+  });
+</script>
+{% endblock %}
+{% endblock %}

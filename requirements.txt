@@ -1,0 +1,8 @@
+flask
+flask-socketio
+eventlet
+mysql-connector-python
+gunicorn
+python-dotenv
+flask-limiter
+email-validator

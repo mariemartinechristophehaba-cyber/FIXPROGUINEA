@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="card">
+  <div class="dashboard-header">
+    <div class="greeting">
+      <div class="avatar">💳</div>
+      <div>
+        <h2>Paiement sécurisé</h2>
+        <div class="small muted">Confirmez votre paiement à l’intérieur de FixPro.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="payment-card">
+    <div class="detail-card">
+      <p><strong>Intervention</strong> : {{ request_item.title }}</p>
+      <p><strong>Artisan</strong> : {{ artisan.nom if artisan else '—' }}</p>
+      <p><strong>Montant proposé</strong> : {{ request_item.quote_amount or 0 }} GNF</p>
+      <p><strong>Statut du devis</strong> : {{ request_item.quote_status }}</p>
+    </div>
+
+    <form method="post" action="{{ url_for('create_payment', request_id=request_item['id']) }}">
+      <div class="payment-row">
+        <label>Montant à payer</label>
+        <input type="number" name="amount" min="0" step="1000" value="{{ request_item.quote_amount or 0 }}" required />
+
+        <label>Moyen de paiement</label>
+        <select name="method" required onchange="updatePaymentFields(this.value)">
+          <option value="">— Sélectionnez une option —</option>
+          <option value="orange_money">Orange Money</option>
+          <option value="mtn_mobile_money">MTN Mobile Money</option>
+          <option value="card">Carte bancaire</option>
+        </select>
+
+        <div id="paymentInfoContainer" style="display: none;">
+          <label id="paymentInfoLabel">Informations de paiement</label>
+          <input type="text" name="payment_info" id="paymentInfoInput" placeholder="Numéro ou informations requises" autocomplete="off" />
+        </div>
+
+        <button class="btn btn-primary" type="submit">Confirmer le paiement</button>
+      </div>
+    </form>
+
+    <div class="section-card">
+      <h3>Historique des paiements</h3>
+      {% if payments %}
+        <div class="chat-list">
+          {% for payment in payments %}
+            <div class="payment-option">
+              <div><strong>{{ payment.amount }} GNF</strong> · {{ payment_method_label(payment.method) }}</div>
+              <div class="small">Statut : <span class="badge {{ 'success' if payment.status == 'confirmé' else 'pending' if payment.status == 'en_attente' else 'failed' }}">{{ payment.status }}</span></div>
+              <div class="small">Référence : {{ payment.reference or '—' }}</div>
+              <div class="small">Détails masqués : {{ payment.details or '—' }}</div>
+              <div class="small">Créé le {{ payment.created_at }}</div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="muted">Aucun paiement enregistré pour cette intervention.</p>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function updatePaymentFields(method) {
+  const container = document.getElementById('paymentInfoContainer');
+  const label = document.getElementById('paymentInfoLabel');
+  const input = document.getElementById('paymentInfoInput');
+  if (!method) {
+    container.style.display = 'none';
+    input.placeholder = 'Numéro ou informations requises';
+    return;
+  }
+  container.style.display = 'block';
+  if (method === 'card') {
+    label.textContent = 'Numéro de carte bancaire';
+    input.placeholder = 'Ex : 4242 4242 4242 4242';
+  } else {
+    label.textContent = 'Numéro Mobile Money';
+    input.placeholder = 'Ex : 6222 000 000';
+  }
+}
+</script>
+{% endblock %}

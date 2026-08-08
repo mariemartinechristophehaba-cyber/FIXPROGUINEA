@@ -1,0 +1,14 @@
+[Unit]
+Description=FixPro service
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/home/youruser/fixpro
+Environment="PATH=/home/youruser/fixpro/.venv/bin"
+ExecStart=/home/youruser/fixpro/.venv/bin/python /home/youruser/fixpro/"FixPro test.py"
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

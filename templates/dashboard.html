@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="hero-card">
+  <div>
+    <p class="eyebrow">Bienvenue</p>
+    <h1>Bonjour {{ user.full_name }}</h1>
+    <p>Voici l’état de votre espace FixPro.</p>
+  </div>
+  <div class="hero-panel">
+    <h3>Statistiques</h3>
+    <div class="stats">
+      <div class="stat"><strong>{{ stats.requests }}</strong><div class="muted">demandes</div></div>
+      <div class="stat"><strong>{{ stats.payments }}</strong><div class="muted">paiements</div></div>
+      <div class="stat"><strong>{{ stats.artisans }}</strong><div class="muted">artisans</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="card">
+  <h2>Demandes récentes</h2>
+  {% if requests %}
+  <table class="table">
+    <thead>
+      <tr><th>Titre</th><th>Statut</th><th>Budget</th><th>Action</th></tr>
+    </thead>
+    <tbody>
+      {% for item in requests %}
+      <tr>
+        <td>{{ item['title'] }}</td>
+        <td>{{ item['status'] }}</td>
+        <td>{{ item['budget'] }} GNF</td>
+        <td><a href="{{ url_for('request_detail', request_id=item['id']) }}">Voir</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">Aucune demande pour le moment.</p>
+  {% endif %}
+</section>
+{% endblock %}

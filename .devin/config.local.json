@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Exec(python)",
+      "Exec(pip install)",
+      "Exec(Copy-Item)",
+      "Exec(create_env.bat)",
+      "Exec(Get-ChildItem)",
+      "Exec(Remove-Item)"
+    ]
+  }
+}

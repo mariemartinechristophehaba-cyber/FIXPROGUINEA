@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="card">
+  <div class="actions" style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
+    <h2>Mes demandes</h2>
+    <a class="btn btn-primary" href="{{ url_for('request_new') }}">Nouvelle demande</a>
+  </div>
+  {% if requests %}
+  <table class="table">
+    <thead>
+      <tr><th>Titre</th><th>Catégorie</th><th>Statut</th><th>Budget</th><th>Action</th></tr>
+    </thead>
+    <tbody>
+      {% for item in requests %}
+      <tr>
+        <td>{{ item['title'] }}</td>
+        <td>{{ item['category'] or '—' }}</td>
+        <td>{{ item['status'] }}</td>
+        <td>{{ item['budget'] }} GNF</td>
+        <td><a href="{{ url_for('request_detail', request_id=item['id']) }}">Ouvrir</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">Aucune demande enregistrée.</p>
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="hero-card hero-section">
+  <div class="hero-copy">
+    <p class="eyebrow">Plateforme premium de mise en relation</p>
+    <h1>FixPro connecte clients et artisans en quelques clics.</h1>
+    <p class="lead">Publiez une demande, recevez des devis, discutez en direct et gérez vos interventions depuis un tableau de bord intuitif.</p>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="{{ url_for('register') }}">Créer un compte</a>
+      <a class="btn btn-outline" href="{{ url_for('login') }}">Connexion</a>
+    </div>
+  </div>
+  <div class="hero-panel">
+    <img class="hero-logo" src="{{ url_for('static', filename='img/logo.svg') }}" alt="FixPro" />
+    <p class="hero-panel-text">FixPro simplifie la mise en relation, le suivi des demandes et le paiement sécurisé pour artisans et clients.</p>
+  </div>
+</section>
+
+<section class="page-section">
+  <div class="section-head">
+    <p class="eyebrow">Fonctionnalités</p>
+    <h2>Des outils adaptés à chaque mission</h2>
+  </div>
+  <div class="feature-grid">
+    <div class="feature-card">
+      <h3>Gestion des demandes</h3>
+      <p>Publiez et suivez toutes les demandes d’intervention depuis un espace clair et sécurisé.</p>
+    </div>
+    <div class="feature-card">
+      <h3>Devis & acceptation</h3>
+      <p>Proposez rapidement un devis, acceptez-le et suivez l’état d’avancement en temps réel.</p>
+    </div>
+    <div class="feature-card">
+      <h3>Communication intégrée</h3>
+      <p>Discutez directement avec votre artisan ou votre client sans quitter la plateforme.</p>
+    </div>
+    <div class="feature-card">
+      <h3>Paiement contrôlé</h3>
+      <p>Conservez la confiance grâce à un flux de paiement simple et sécurisé.</p>
+    </div>
+  </div>
+</section>
+
+<section class="page-section">
+  <div class="section-head">
+    <p class="eyebrow">Comment ça marche</p>
+    <h2>3 étapes simples</h2>
+  </div>
+  <div class="steps-grid">
+    <div class="feature-card">
+      <strong>1. Inscription</strong>
+      <p>Créez votre compte client ou artisan en quelques secondes.</p>
+    </div>
+    <div class="feature-card">
+      <strong>2. Publication</strong>
+      <p>Décrivez votre demande, recevez des offres et choisissez le meilleur artisan.</p>
+    </div>
+    <div class="feature-card">
+      <strong>3. Suivi</strong>
+      <p>Suivez l’intervention, échangez en direct et validez le paiement une fois terminé.</p>
+    </div>
+  </div>
+</section>
+
+<section class="page-section testimonial-section">
+  <div class="section-head">
+    <p class="eyebrow">Témoignages</p>
+    <h2>Les artisans et clients apprécient FixPro</h2>
+  </div>
+  <div class="testimonial-grid">
+    <div class="testimonial-card">
+      <p>« FixPro m’a permis de trouver des missions rapidement et de gérer mes devis sans perdre de temps. »</p>
+      <span class="small">— Fatou, Artisane</span>
+    </div>
+    <div class="testimonial-card">
+      <p>« La plateforme est simple à utiliser et j’ai pu suivre chaque étape de mon intervention. »</p>
+      <span class="small">— Ibrahima, Client</span>
+    </div>
+  </div>
+</section>
+{% endblock %}

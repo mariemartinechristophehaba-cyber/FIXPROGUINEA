@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="card">
+  <h2>Artisans disponibles</h2>
+  <table class="table">
+    <thead>
+      <tr><th>Nom</th><th>Métier</th><th>Ville</th><th>Tarif/h</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for artisan in artisans %}
+      <tr>
+        <td>{{ artisan['nom'] }}</td>
+        <td>{{ artisan['metier'] }}</td>
+        <td>{{ artisan['city'] }}</td>
+        <td>{{ artisan['hourly_rate'] }} GNF</td>
+        <td>
+          <a class="btn btn-outline" href="{{ url_for('artisan_contact', artisan_id=artisan['id']) }}">Contacter</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

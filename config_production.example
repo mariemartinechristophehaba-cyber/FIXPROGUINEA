@@ -1,0 +1,33 @@
+# Configuration Production FixPro
+# IMPORTANT: Copiez ce fichier en .env.production et modifiez les valeurs!
+
+# Flask Configuration
+FLASK_ENV=production
+FLASK_DEBUG=0
+SECRET_KEY=CHANGEZ_CECI_PAR_UNE_CLE_ALÉATOIRE_LONGUE_ET_COMPLEXE_EXEMPLE_a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6
+
+# Base de données
+FIXPRO_DB_ENGINE=sqlite
+FIXPRO_DB_PATH=fixpro.db
+
+# Configuration MySQL (si utilisé)
+# FIXPRO_DB_ENGINE=mysql
+# FIXPRO_DB_HOST=localhost
+# FIXPRO_DB_USER=fixpro_user
+# FIXPRO_DB_PASS=mot_de_passe_tres_securise
+# FIXPRO_DB_NAME=FixPro
+
+# Serveur
+PORT=5000
+HOST=0.0.0.0
+
+# Configuration CORS (séparer par des virgules)
+CORS_ORIGINS=https://votre-domaine.com,https://www.votre-domaine.com
+
+# Commission FixPro
+FIXPRO_DEFAULT_COMMISSION=10
+FIXPRO_COMMISSION_RATE=0.10
+
+# Logging
+LOG_LEVEL=INFO
+LOG_FILE=logs/fixpro.log

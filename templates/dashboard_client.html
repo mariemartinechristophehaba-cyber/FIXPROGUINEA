@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="card">
+  <div class="dashboard-header">
+    <div class="greeting">
+      <div class="avatar">{{ user.full_name[0]|upper }}</div>
+      <div>
+        <h2>Bonjour {{ user.full_name.split(' ')[0] }} 👋</h2>
+        <div class="small muted">Trouvez le technicien qu'il vous faut aujourd'hui</div>
+      </div>
+    </div>
+    <div class="actions">
+      <div class="notif">🔔</div>
+    </div>
+  </div>
+
+  <div class="search-block">
+    <input class="search-input" placeholder="Ex: plombier, électricien, frigoriste..." />
+    <select class="select-zone">
+      <option>Toute Conakry</option>
+      <option>Kaloum</option>
+      <option>Matam</option>
+    </select>
+    <button class="btn btn-cta-orange search-btn">Rechercher →</button>
+  </div>
+
+  <div class="category-grid">
+    <div class="category-card"> <div class="icon">🔧</div><div><strong>Plomberie</strong><div class="small muted">32 techniciens</div></div></div>
+    <div class="category-card"> <div class="icon">⚡</div><div><strong>Électricité</strong><div class="small muted">24 techniciens</div></div></div>
+    <div class="category-card"> <div class="icon">❄️</div><div><strong>Froid & Clim</strong><div class="small muted">8 techniciens</div></div></div>
+    <div class="category-card"> <div class="icon">🏗️</div><div><strong>Maçonnerie</strong><div class="small muted">15 techniciens</div></div></div>
+  </div>
+
+  <div class="stat-grid">
+    <div class="stat-card"><div><div class="small">📋</div><strong>3</strong><div class="small muted">Contrats en cours</div></div><div class="trend">↗️ 12%</div></div>
+    <div class="stat-card"><div><div class="small">✅</div><strong>24</strong><div class="small muted">Travaux terminés</div></div><div class="trend">↘️ 2%</div></div>
+    <div class="stat-card"><div><div class="small">⭐</div><strong>4.7</strong><div class="small muted">Note moyenne</div></div><div class="trend">★</div></div>
+    <div class="stat-card"><div><div class="small">💰</div><strong>3,540,000</strong><div class="small muted">Total dépensé (GNF)</div><div class="small muted">Ce mois : 420,000 GNF</div></div><div class="trend">↗️</div></div>
+  </div>
+
+  <h3 style="margin-top:18px">Techniciens près de vous</h3>
+  <div class="tech-list">
+    <div class="tech-item"><div style="display:flex;align-items:center;gap:12px;"><div class="avatar">🔧</div><div><strong>Ali Camara</strong><div class="small muted">Plombier • 1.2 km</div></div></div><div style="text-align:right"><div class="small muted">50,000 GNF/h</div><a href="#">Voir tout →</a></div></div>
+    <div class="tech-item"><div style="display:flex;align-items:center;gap:12px;"><div class="avatar">⚡</div><div><strong>Sékou Diallo</strong><div class="small muted">Électricien • 2.1 km</div></div></div><div style="text-align:right"><div class="small muted">45,000 GNF/h</div><a href="#">Voir tout →</a></div></div>
+    <div class="tech-item"><div style="display:flex;align-items:center;gap:12px;"><div class="avatar">❄️</div><div><strong>Fatoumata Keita</strong><div class="small muted">Frigoriste • 3.8 km</div></div></div><div style="text-align:right"><div class="small muted">65,000 GNF/h</div><a href="#">Voir tout →</a></div></div>
+  </div>
+
+  <h3 style="margin-top:18px">Mes contrats récents</h3>
+  <div class="contracts-list">
+    <div class="card tech-item"><div style="display:flex;gap:12px;align-items:center;"><div class="icon">🔧</div><div><strong>Fuite - Réparation</strong><div class="small muted">Ali Camara • 2026-07-24</div></div></div><div><div class="small muted">120,000 GNF</div><div class="badge done">✓ Terminé</div></div></div>
+    <div class="card tech-item"><div style="display:flex;gap:12px;align-items:center;"><div class="icon">⚡</div><div><strong>Installation prise</strong><div class="small muted">Sékou Diallo • 2026-07-10</div></div></div><div><div class="small muted">75,000 GNF</div><div class="badge inprogress">⏳ En cours</div></div></div>
+  </div>
+
+</section>
+{% endblock %}

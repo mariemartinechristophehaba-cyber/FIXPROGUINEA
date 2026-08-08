@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>FixPro - Tableau de bord</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <div class="brand">
+        <img src="{{ url_for('static', filename='img/logo.svg') }}" alt="FixPro" class="logo">
+        <h1>FixPro</h1>
+      </div>
+      <nav class="nav">
+        <a href="#health">Health</a>
+        <a href="#register">Enregistrer</a>
+        <a href="#search">Rechercher</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section id="hero" class="card hero">
+      <h2>Gestion simple des artisans</h2>
+      <p class="muted">Vérifiez la santé de l'API, enregistrez des artisans et recherchez-les près d'une position.</p>
+      <div class="actions">
+        <button id="btnHealth" class="btn btn-primary">Vérifier /health</button>
+      </div>
+      <pre id="healthRes" class="output">-</pre>
+    </section>
+
+    <section id="register" class="card">
+      <h3>Enregistrer un artisan</h3>
+      <div class="form-grid">
+        <label>Nom <input id="a_nom"></label>
+        <label>Prénom <input id="a_prenom"></label>
+        <label>Téléphone <input id="a_tel"></label>
+        <label>Métier <input id="a_metier"></label>
+        <label>Latitude <input id="a_lat" type="number" step="any"></label>
+        <label>Longitude <input id="a_lon" type="number" step="any"></label>
+        <label>Tarif horaire <input id="a_tarif" type="number" step="any"></label>
+      </div>
+      <div class="actions">
+        <button id="btnRegArt" class="btn">Enregistrer</button>
+      </div>
+      <pre id="regArtRes" class="output">-</pre>
+    </section>
+
+    <section id="search" class="card">
+      <h3>Rechercher des artisans</h3>
+      <div class="form-grid">
+        <label>Lat <input id="s_lat" type="number" step="any" value="48.8566"></label>
+        <label>Lon <input id="s_lon" type="number" step="any" value="2.3522"></label>
+        <label>Métier <input id="s_metier" value="plombier"></label>
+        <label>Distance km <input id="s_dist" type="number" value="10"></label>
+      </div>
+      <div class="actions">
+        <button id="btnSearch" class="btn">Rechercher</button>
+      </div>
+      <pre id="searchRes" class="output">-</pre>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <small>© FixPro — Prototype professionnel</small>
+    </div>
+  </footer>
+
+  <script>
+    const base = '';
+    document.getElementById('btnHealth').onclick = async ()=>{
+      const r = await fetch(base+'/health');
+      document.getElementById('healthRes').textContent = JSON.stringify(await r.json(),null,2);
+    }
+    document.getElementById('btnRegArt').onclick = async ()=>{
+      const body = {
+        nom: document.getElementById('a_nom').value,
+        prenom: document.getElementById('a_prenom').value,
+        telephone: document.getElementById('a_tel').value,
+        metier: document.getElementById('a_metier').value,
+        zone: 'local',
+        latitude: document.getElementById('a_lat').value,
+        longitude: document.getElementById('a_lon').value,
+        tarif_horaire: document.getElementById('a_tarif').value
+      };
+      const r = await fetch(base+'/api/artisans/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+      document.getElementById('regArtRes').textContent = JSON.stringify(await r.json(),null,2);
+    }
+    document.getElementById('btnSearch').onclick = async ()=>{
+      const lat = document.getElementById('s_lat').value;
+      const lon = document.getElementById('s_lon').value;
+      const metier = document.getElementById('s_metier').value;
+      const dist = document.getElementById('s_dist').value;
+      const r = await fetch(base+`/api/artisans/search?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}&metier=${encodeURIComponent(metier)}&distance=${encodeURIComponent(dist)}`);
+      document.getElementById('searchRes').textContent = JSON.stringify(await r.json(),null,2);
+    }
+  </script>
+</body>
+</html>

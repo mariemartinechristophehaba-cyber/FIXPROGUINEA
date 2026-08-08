@@ -1,0 +1,103 @@
+╔═══════════════════════════════════════════════════════════╗
+║                                                               ║
+║     📚 COMMENCEZ ICI - LISEZ MOI D'ABORD! 📚                ║
+║                                                               ║
+╚═══════════════════════════════════════════════════════════╝
+
+✅ ÉTAPES À SUIVRE (Copier-coller les commandes dans PowerShell)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ÉTAPE 1: Ouvrir PowerShell dans votre dossier
+
+1. Ouvrez PowerShell (Win+R → powershell)
+2. Allez dans votre dossier:
+   
+   cd "C:\Users\L2616\Desktop\Application Fixpro"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ÉTAPE 2: Activer l'environnement virtuel
+
+   .\.venv\Scripts\Activate.ps1
+
+✅ Vous devriez voir: (.venv) PS C:\...>
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ÉTAPE 3: Installer les packages (Une seule fois)
+
+   pip install -r requirements.txt
+
+✅ À la fin, vous verrez: Successfully installed...
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ÉTAPE 4: Créer la base de données
+
+   mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS FixPro;"
+   
+   mysql -u root -p FixPro < setup_database.sql
+
+Mot de passe: root
+
+✅ Si ça demande un mot de passe différent, mettez le vôtre
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ÉTAPE 5: Lancer l'application (Choisissez UNE option)
+
+🎯 OPTION A: Lancer le menu interactif (Simple)
+   
+   python "FixPro test.py"
+
+   → Vous verrez un menu. Tapez 1 pour ajouter un artisan.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎯 OPTION B: Lancer l'API web (Avancé)
+
+   Terminal 1: python app.py
+   
+   Terminal 2: curl http://localhost:5000/health
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ÉTAPE 6: SI QUELQUE CHOSE NE FONCTIONNE PAS
+
+❌ "Can't connect to MySQL"
+   → Vérifiez que MySQL est lancé
+   → Consultez: DEPANNAGE.md
+
+❌ "ModuleNotFoundError"
+   → Relancez l'étape 3 (pip install)
+
+❌ "Port already in use"
+   → Arrêtez l'app avec Ctrl+C
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📁 FICHIERS IMPORTANTS
+
+✅ GUIDE_COMPLET.md      ← Explications détaillées
+✅ DEPANNAGE.md          ← Solutions aux problèmes
+✅ test_api.py           ← Tests automatisés
+✅ .env.example          ← Exemple de configuration
+✅ setup_database.sql    ← Création de la base de données
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+💡 PROCHAINES ÉTAPES
+
+1. Testez l'application avec le menu (FixPro test.py)
+2. Inscrivez quelques artisans et clients
+3. Testez les recherches de proximité
+4. Consultez GUIDE_COMPLET.md pour plus de détails
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🆘 BESOIN D'AIDE?
+
+Ouvrez GUIDE_COMPLET.md ou DEPANNAGE.md et cherchez votre erreur!
+
+═══════════════════════════════════════════════════════════════

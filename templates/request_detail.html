@@ -1,0 +1,204 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="card">
+  <h2>{{ request_item['title'] }}</h2>
+  <p class="muted">{{ request_item['description'] }}</p>
+  <p><strong>Catégorie :</strong> {{ request_item['category'] or '—' }}</p>
+  <p><strong>Prix diagnostic :</strong> {{ request_item['diagnostic_price'] or 0 }} GNF</p>
+  <p><strong>Adresse :</strong> {{ request_item['address'] or '—' }}</p>
+  {% if request_item['photo_url'] %}
+    <p><strong>Photo du problème :</strong> <a href="{{ request_item['photo_url'] }}" target="_blank">Voir la photo</a></p>
+  {% endif %}
+  <p><strong>Budget estimé :</strong> {{ request_item['budget'] }} GNF</p>
+  <p><strong>Statut :</strong> {{ request_item['status'] }}</p>
+  {% if request_item['quote_status'] == 'pending' %}
+    <p class="muted">Devis en attente d’acceptation du client.</p>
+  {% elif request_item['quote_status'] == 'accepted' %}
+    <p class="muted">Devis accepté. L’intervention est validée.</p>
+  {% elif request_item['quote_status'] == 'rejected' %}
+    <p class="muted">Devis rejeté. L’artisan peut proposer un nouveau devis.</p>
+  {% endif %}
+
+  {% if request_item['quote_status'] != 'none' %}
+    <div class="card quote-card">
+      <h3>Devis</h3>
+      <p><strong>Montant proposé :</strong> {{ request_item['quote_amount'] or 0 }} GNF</p>
+      <p><strong>Description :</strong> {{ request_item['quote_description'] or '—' }}</p>
+      {% if request_item['quote_proposed_at'] %}
+        <p class="small muted">Proposé le {{ request_item['quote_proposed_at'] }}</p>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  {% if user.role == 'artisan' and request_item['artisan_id'] == user.id and request_item['status'] in ['assigned', 'quote_rejected', 'quote_proposed'] %}
+    <section class="card">
+      <h3>Proposer ou modifier le devis</h3>
+      <form method="post" action="{{ url_for('propose_quote', request_id=request_item['id']) }}">
+        <label>Montant du devis (GNF)</label>
+        <input type="number" name="quote_amount" step="1000" min="0" value="{{ request_item['quote_amount'] or '' }}" required />
+        <label>Description du devis</label>
+        <textarea name="quote_description" required>{{ request_item['quote_description'] or '' }}</textarea>
+        <button class="btn btn-primary" type="submit">Proposer le devis</button>
+      </form>
+    </section>
+  {% endif %}
+
+  {% if user.role == 'client' and request_item['quote_status'] == 'pending' %}
+    <section class="card">
+      <h3>Décider du devis</h3>
+      <form method="post" action="{{ url_for('accept_quote', request_id=request_item['id']) }}">
+        <button class="btn btn-primary" type="submit">Accepter le devis</button>
+      </form>
+      <form method="post" action="{{ url_for('reject_quote', request_id=request_item['id']) }}" style="margin-top: 0.75rem;">
+        <button class="btn btn-outline" type="submit">Rejeter le devis</button>
+      </form>
+    </section>
+  {% endif %}
+
+  {% if user.role == 'artisan' and request_item['status'] == 'pending' %}
+    <form method="post" action="{{ url_for('accept_request', request_id=request_item['id']) }}">
+      <button class="btn btn-primary" type="submit">Accepter cette demande</button>
+    </form>
+  {% endif %}
+  {% if user.role == 'client' and request_item['status'] == 'quote_accepted' %}
+    {% set has_confirmed_payment = false %}
+    {% for payment in payments %}
+      {% if payment['status'] == 'confirmé' %}
+        {% set has_confirmed_payment = true %}
+      {% endif %}
+    {% endfor %}
+    
+    {% if has_confirmed_payment %}
+      <form method="post" action="{{ url_for('complete_request', request_id=request_item['id']) }}">
+        <button class="btn btn-primary" type="submit">Marquer comme terminée</button>
+      </form>
+    {% else %}
+      <div class="card" style="background-color: #fff3cd; border-color: #ffc107; margin-top: 1rem;">
+        <p style="color: #856404; margin: 0;">
+          <strong>⚠️ Paiement requis :</strong> Veuillez d'abord créer et confirmer le paiement avant de marquer l'intervention comme terminée.
+        </p>
+      </div>
+    {% endif %}
+  {% endif %}
+</section>
+
+<section class="card">
+  <h3>Conversation</h3>
+  <div id="chatStatus" class="small muted">Connexion au chat en cours…</div>
+  <div id="chatList" class="chat-list">
+    {% for msg in messages %}
+      <div class="chat-item">
+        <div class="chat-bubble {{ 'outgoing' if msg['sender_id'] == user['id'] else 'incoming' }}">
+          <div>{{ msg['content'] }}</div>
+        </div>
+        <div class="chat-meta">{{ 'Vous' if msg['sender_id'] == user['id'] else msg['sender_name'] }} · {{ msg['created_at'] }}</div>
+      </div>
+    {% else %}
+      <p class="muted">Aucun message pour le moment.</p>
+    {% endfor %}
+  </div>
+  <form id="chatForm" class="chat-form" method="post">
+    <label>Message</label>
+    <textarea name="message" placeholder="Écrivez votre message ici..."></textarea>
+    <button class="btn btn-primary" type="submit">Envoyer</button>
+  </form>
+</section>
+
+<section class="card">
+  <h3>Paiement</h3>
+  {% if user.role == 'client' %}
+    {% if request_item.quote_status == 'accepted' %}
+      <p class="muted">Utilisez la page de paiement pour sélectionner Orange Money, MTN Mobile Money ou Carte bancaire et confirmer votre transaction.</p>
+      <a class="btn btn-primary" href="{{ url_for('payment_page', request_id=request_item['id']) }}">Aller au paiement</a>
+    {% else %}
+      <p class="muted">Le paiement est disponible dès que le devis est accepté.</p>
+    {% endif %}
+  {% endif %}
+
+  {% if payments %}
+    <div class="chat-list">
+      {% for payment in payments %}
+        <div class="payment-option">
+          <div><strong>{{ payment['amount'] }} GNF</strong> · {{ payment_method_label(payment['method']) }}</div>
+          <div class="small">Statut : <span class="badge {{ 'success' if payment['status'] == 'confirmé' else 'pending' if payment['status'] == 'en_attente' else 'failed' }}">{{ payment['status'] }}</span></div>
+          <div class="small">Détails : {{ payment.details or '—' }}</div>
+          <div class="small">Créé le {{ payment.created_at }}</div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="muted">Aucun paiement enregistré pour cette intervention.</p>
+  {% endif %}
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script>
+  const requestId = {{ request_item['id'] }};
+  const currentUserId = {{ user['id'] }};
+  const currentUserName = {{ user['full_name']|tojson }};
+  const chatStatus = document.getElementById('chatStatus');
+  const chatList = document.getElementById('chatList');
+  const chatForm = document.getElementById('chatForm');
+  const messageInput = chatForm.querySelector('textarea[name="message"]');
+
+  function appendChatMessage(message) {
+    const emptyParagraph = chatList.querySelector('p.muted');
+    if (emptyParagraph) {
+      emptyParagraph.remove();
+    }
+    const item = document.createElement('div');
+    item.className = 'chat-item';
+    const meta = document.createElement('div');
+    meta.className = 'small';
+    meta.textContent = (message.sender_id === currentUserId ? 'Vous' : message.sender_name) + ' · ' + message.created_at;
+    const content = document.createElement('div');
+    content.textContent = message.content;
+    item.appendChild(meta);
+    item.appendChild(content);
+    chatList.appendChild(item);
+    chatList.scrollTop = chatList.scrollHeight;
+  }
+
+  const socket = io();
+  socket.on('connect', () => {
+    chatStatus.textContent = 'Connecté au chat de l’intervention.';
+    socket.emit('join_request', { request_id: requestId });
+  });
+
+  socket.on('disconnect', () => {
+    chatStatus.textContent = 'Connexion perdue. Reconnexion en cours...';
+  });
+
+  socket.on('joined', () => {
+    chatStatus.textContent = 'Vous êtes dans la conversation. Envoyez un message.';
+  });
+
+  socket.on('new_message', message => {
+    if (message.request_id !== requestId) {
+      return;
+    }
+    appendChatMessage(message);
+  });
+
+  socket.on('message_error', data => {
+    chatStatus.textContent = data.error || 'Message bloqué.';
+  });
+
+  chatForm.addEventListener('submit', event => {
+    event.preventDefault();
+    const content = messageInput.value.trim();
+    if (!content) {
+      return;
+    }
+    socket.emit('send_message', { request_id: requestId, content }, response => {
+      if (response && response.error) {
+        chatStatus.textContent = response.error;
+        return;
+      }
+      messageInput.value = '';
+    });
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% block content %}
+{% block header_title %}Bonjour {{ (user.full_name.split(' ')[0]) if user and user.full_name else 'Utilisateur' }} 👋{% endblock %}
+<div class="mobile-container">
+  <div class="search-card">
+    <div class="dashboard-header">
+      <div class="greeting">
+        <div class="avatar">{{ (user.full_name[0]|upper) if user and user.full_name else 'A' }}</div>
+        <div>
+          <div class="small muted">Bonjour {{ (user.full_name.split(' ')[0]) if user and user.full_name else 'Aminata' }} 👋</div>
+          <div class="small muted">Trouvez le technicien qu'il vous faut aujourd'hui</div>
+        </div>
+      </div>
+      <div class="notif">🔔</div>
+    </div>
+
+    <h3>🔍 Trouver un technicien</h3>
+    <p>Recherchez par métier et par zone pour trouver l'artisan proche de vous.</p>
+    <div class="search-fields">
+      <input placeholder="Ex: plombier, électricien, frigoriste..." />
+      <select><option>Toute Conakry ⌄</option></select>
+      <button class="search-btn">Rechercher →</button>
+    </div>
+  </div>
+
+  <div class="category-grid">
+    <div class="category-card"><div class="emoji">🔧</div><strong>Plomberie</strong><div class="count">48 techniciens</div></div>
+    <div class="category-card"><div class="emoji">⚡</div><strong>Électricité</strong><div class="count">62 techniciens</div></div>
+    <div class="category-card"><div class="emoji">❄️</div><strong>Froid & Clim</strong><div class="count">35 techniciens</div></div>
+    <div class="category-card"><div class="emoji">🏗️</div><strong>Maçonnerie</strong><div class="count">41 techniciens</div></div>
+  </div>
+
+  <div class="stat-grid">
+    <div class="stat-card"><div class="stat-left"><div class="emoji">📋</div><div><div class="stat-number">3</div><div class="label">Contrats en cours</div></div></div><div class="trend">↑ 1</div></div>
+    <div class="stat-card"><div class="stat-left"><div class="emoji">✅</div><div><div class="stat-number">12</div><div class="label">Travaux terminés</div></div></div><div class="trend">↑ Depuis janvier</div></div>
+    <div class="stat-card"><div class="stat-left"><div class="emoji">⭐</div><div><div class="stat-number">4.8</div><div class="label">Note moyenne</div></div></div><div class="trend">↑ Excellent</div></div>
+    <div class="stat-card"><div class="stat-left"><div class="emoji">💰</div><div><div class="stat-number">1.2M</div><div class="label">GNF dépensés total</div><div class="small muted">Ce mois : 350 000 GNF</div></div></div><div class="trend" style="color:var(--success)">↑</div></div>
+  </div>
+
+  <div class="section-title"><h4>📍 Techniciens près de vous</h4><a href="#">Voir tout →</a></div>
+  <div class="tech-list">
+    <div class="tech-row">
+      <div class="tech-left"><div class="tech-avatar" style="background:linear-gradient(90deg,#2b7bff,#1f63f0)">⚡</div><div class="tech-info"><strong>Ibrahima Bah</strong><div class="tech-meta">Électricien • ★★★★★ 4.9</div></div></div>
+      <div class="tech-right"><div class="distance">📍 1.2km</div><div class="price">50 000 GNF/h</div></div>
+    </div>
+    <div class="tech-row">
+      <div class="tech-left"><div class="tech-avatar" style="background:linear-gradient(90deg,#ff8a2b,#f5a623)">🔧</div><div class="tech-info"><strong>Mamadou Camara</strong><div class="tech-meta">Plombier • ★★★★☆ 4.7</div></div></div>
+      <div class="tech-right"><div class="distance">📍 2.5km</div><div class="price">40 000 GNF/h</div></div>
+    </div>
+    <div class="tech-row">
+      <div class="tech-left"><div class="tech-avatar" style="background:linear-gradient(90deg,#6ee7b7,#22c55e)">❄️</div><div class="tech-info"><strong>Sékou Diallo</strong><div class="tech-meta">Frigoriste • ★★★★★ 4.8</div></div></div>
+      <div class="tech-right"><div class="distance">📍 3.1km</div><div class="price">60 000 GNF/h</div></div>
+    </div>
+    <div class="tech-row">
+      <div class="tech-left"><div class="tech-avatar" style="background:linear-gradient(90deg,#9f7aea,#6d28d9)">🏗️</div><div class="tech-info"><strong>Aliou Kouyaté</strong><div class="tech-meta">Maçon • ★★★★☆ 4.5</div></div></div>
+      <div class="tech-right"><div class="distance">📍 4.0km</div><div class="price">35 000 GNF/h</div></div>
+    </div>
+  </div>
+
+  <div class="section-title" style="margin-top:18px"><h4>📋 Mes contrats récents</h4><a href="#">Voir tout →</a></div>
+  <div class="contracts-list">
+    <div class="contract-row">
+      <div class="contract-left"><div class="contract-icon" style="background:linear-gradient(90deg,#ff8a2b,#f5a623)">🔧</div><div class="contract-info"><div class="service">Fuite - Réparation</div><div class="meta">Ali Camara • 2026-07-24</div></div></div>
+      <div class="contract-right"><div class="amount">120 000 GNF</div><div class="badge done">✓ Terminé</div></div>
+    </div>
+    <div class="contract-row">
+      <div class="contract-left"><div class="contract-icon" style="background:linear-gradient(90deg,#2b7bff,#1f63f0)">⚡</div><div class="contract-info"><div class="service">Installation prise</div><div class="meta">Sékou Diallo • 2026-07-10</div></div></div>
+      <div class="contract-right"><div class="amount">75 000 GNF</div><div class="badge inprogress">⏳ En cours</div></div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

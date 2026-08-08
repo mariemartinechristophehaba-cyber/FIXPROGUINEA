@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="card form-card">
+  <h2>Créer un compte</h2>
+  <form method="post">
+    <label>Nom complet</label>
+    <input type="text" name="full_name" required />
+    <label>Email</label>
+    <input type="email" name="email" required />
+    <label>Téléphone</label>
+    <input type="text" name="phone" />
+    <label>Mot de passe</label>
+    <input type="password" name="password" required />
+    <label>Rôle</label>
+    <select name="role">
+      <option value="client">Client</option>
+      <option value="artisan">Artisan</option>
+    </select>
+    <label>Métier (artisan)</label>
+    <input type="text" name="profession" />
+    <label>Ville</label>
+    <input type="text" name="city" />
+    <label>Présentation</label>
+    <textarea name="bio"></textarea>
+    <button class="btn btn-primary" type="submit">S’inscrire</button>
+  </form>
+</section>
+{% endblock %}

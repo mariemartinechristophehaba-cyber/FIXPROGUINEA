@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="card">
+  <div class="dashboard-header">
+    <div class="greeting">
+      <div class="avatar">💬</div>
+      <div>
+        <h2>Messages</h2>
+        <div class="small muted">Discussions privées par intervention.</div>
+      </div>
+    </div>
+    <div class="actions"><a class="btn btn-outline" href="{{ url_for('requests_list') }}">Mes demandes</a></div>
+  </div>
+
+  {% if conversations %}
+    <div class="chat-list">
+      {% for item in conversations %}
+        <a class="chat-item" href="{{ url_for('request_detail', request_id=item.request.id) }}" style="display: block; text-decoration: none; color: inherit;">
+          <div class="chat-bubble incoming">
+            <div><strong>{{ item.request.title }}</strong></div>
+            <div class="small">
+              {{ 'Client' if user.role == 'artisan' else 'Technicien' }} :
+              {{ item.request.client_name if user.role == 'artisan' else item.request.artisan_name or 'En attente' }}
+            </div>
+          </div>
+          <div class="chat-meta">
+            {% if item.last_message %}
+              {{ item.last_message.sender_id == user.id and 'Vous' or item.last_message.sender_id != user.id and item.last_message.sender_id and 'Interlocuteur' }} · {{ item.last_message.created_at }}
+            {% else %}
+              Aucune conversation démarrée
+            {% endif %}
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="section-card">
+      <p class="muted">Aucune conversation disponible pour le moment. Commencez par accepter un devis ou ouvrir une intervention.</p>
+    </div>
+  {% endif %}
+</section>
+{% endblock %}

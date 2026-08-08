@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="card form-card">
+  <h2>Contact</h2>
+  <p>Pour toute question sur FixPro, envoyez un message et nous reviendrons vers vous rapidement.</p>
+  <form method="post" action="https://formspree.io/f/mwkzdpwv">
+    <label>Nom complet</label>
+    <input type="text" name="name" required />
+    <label>Email</label>
+    <input type="email" name="email" required />
+    <label>Message</label>
+    <textarea name="message" rows="5" required></textarea>
+    <button class="btn btn-primary" type="submit">Envoyer</button>
+  </form>
+</section>
+{% endblock %}
