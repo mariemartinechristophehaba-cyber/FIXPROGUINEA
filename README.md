@@ -2,28 +2,29 @@
 
 ## 🚀 À propos
 
-FixPro est une plateforme web sécurisée qui met en relation des clients ayant besoin de services à domicile avec des artisans qualifiés. L'application inclut l'authentification, la gestion des profils, un système de demandes, chat en temps réel, et paiement contrôlé.
+FixPro est une plateforme web sécurisée qui met en relation des clients ayant besoin de services à domicile avec des artisans qualifiés. L'application inclut l'authentification, la gestion des profils, un système de demandes, messagerie, et paiement contrôlé.
 
 ## ✨ Fonctionnalités
 
 - 🔐 **Sécurité renforcée** : Rate limiting, validation des formulaires, headers HTTP sécurisés
 - 👥 **Gestion des utilisateurs** : Inscription client/artisan avec profils détaillés
 - 📋 **Système de demandes** : Création et suivi des demandes d'intervention
-- 💬 **Chat en temps réel** : Communication entre clients et artisans via WebSocket
+- 💬 **Messagerie** : Communication entre clients et artisans (polling HTTP sur Vercel, WebSocket en local)
 - 💰 **Paiement sécurisé** : Système de devis et paiement contrôlé
 - 🛡️ **Production-ready** : Configuration séparée dev/prod, logging complet
+- ☁️ **Multi-plateforme** : Support Vercel (serverless) et déploiement traditionnel
 
 ## 📋 Prérequis
 
 - Python 3.8+
-- MySQL (optionnel - SQLite utilisé par défaut)
+- Supabase account (pour déploiement Vercel)
 
 ## 🛠️ Installation
 
 ### 1. Cloner le dépôt
 
 ```bash
-git clone https://github.com/votre-username/fixpro.git
+git clone https://github.com/mariemartinechristophehaba-cyber/FIXPROGUINEA.git
 cd fixpro
 ```
 
@@ -71,6 +72,59 @@ python app.py
 
 L'application sera accessible sur `http://localhost:5000`
 
+## 🚀 Déploiement Vercel
+
+### Prérequis
+
+1. **Compte Supabase** : Créez un projet sur https://supabase.com
+2. **Compte Vercel** : Créez un compte sur https://vercel.com avec GitHub
+
+### Étape 1 : Configurer Supabase
+
+1. Créez un nouveau projet Supabase
+2. Exécutez le schéma SQL depuis `schema_supabase.sql` dans le SQL Editor de Supabase
+3. Copiez les clés depuis le dashboard Supabase :
+   - Project URL
+   - Anon Key
+   - Service Role Key
+   - Connection String (DATABASE_URL)
+
+### Étape 2 : Connecter GitHub à Vercel
+
+1. Connectez-vous à Vercel avec GitHub
+2. Cliquez sur "Add New..." > "Project"
+3. Sélectionnez le repository FIXPROGUINEA
+4. Configurez le projet :
+   - **Framework Preset**: Python
+   - **Root Directory**: `./`
+   - **Build Command**: `pip install -r requirements.txt`
+   - **Start Command**: `gunicorn app:app`
+
+### Étape 3 : Variables d'environnement Vercel
+
+Ajoutez ces variables dans les Environment Variables Vercel :
+
+```bash
+FLASK_ENV=production
+FLASK_DEBUG=0
+SECRET_KEY=votre_secret_key_ici
+FIXPRO_DB_ENGINE=supabase
+SUPABASE_URL=https://votre-projet.supabase.co
+SUPABASE_ANON_KEY=votre_cle_anon
+SUPABASE_SERVICE_ROLE_KEY=votre_cle_service_role
+DATABASE_URL=postgresql://postgres:password@db.votre-projet.supabase.co:5432/postgres
+CORS_ORIGINS=https://votre-app.vercel.app
+FIXPRO_DEFAULT_COMMISSION=10
+FIXPRO_COMMISSION_RATE=0.10
+LOG_LEVEL=INFO
+```
+
+### Étape 4 : Déployer
+
+Cliquez sur "Deploy" et attendez le build (~2-3 minutes). Vercel déploiera automatiquement à chaque push sur la branche main.
+
+**Note importante** : Sur Vercel, le chat utilise le polling HTTP au lieu des WebSockets (limitation serverless). En local, les WebSockets sont utilisés pour le temps réel.
+
 ## 🔒 Sécurité
 
 L'application inclut plusieurs mesures de sécurité :
@@ -97,7 +151,7 @@ Lancer les tests unitaires :
 python -m unittest tests.test_app
 ```
 
-## 📦 Déploiement
+## 📦 Autres déploiements
 
 ### Production avec Gunicorn
 
@@ -118,22 +172,26 @@ Utilisez les fichiers fournis dans le dossier `deploy/` :
 - `deploy/fixpro.service` - Configuration systemd
 - `deploy/nginx_fixpro.conf` - Configuration Nginx
 
-### PaaS (Render, Railway)
+### Render (Alternative à Vercel avec WebSocket)
 
-Le fichier `Procfile` est fourni pour les déploiements PaaS.
+Le fichier `render.yaml` est fourni pour un déploiement sur Render avec support WebSocket natif.
 
 ## 📁 Structure du projet
 
 ```
 fixpro/
-├── app.py                    # Point d'entrée
+├── app.py                    # Point d'entrée (auto-détecte Vercel)
+├── fixpro_app.py            # Application principale (avec WebSocket)
+├── fixpro_app_vercel.py     # Version Vercel (sans WebSocket)
 ├── config.py                 # Configuration de l'application
-├── fixpro_app.py            # Application principale
 ├── requirements.txt         # Dépendances Python
-├── .env.example            # Exemple de configuration
+├── vercel.json              # Configuration Vercel
+├── .env.example            # Exemple de configuration locale
+├── .env.vercel.example     # Exemple configuration Vercel/Supabase
 ├── .gitignore              # Fichiers ignorés par Git
 ├── templates/              # Templates HTML
 ├── static/                 # Fichiers statiques (CSS, JS)
+├── api/                    # Point d'entrée Vercel
 ├── tests/                  # Tests unitaires
 ├── deploy/                 # Fichiers de déploiement
 └── scripts/                # Scripts utilitaires
@@ -142,7 +200,9 @@ fixpro/
 ## 📝 Documentation
 
 - [DEPLOYMENT_SECURITY.md](DEPLOYMENT_SECURITY.md) - Guide de déploiement sécurisé
-- [CORRECTIONS_EFFECTUEES.md](CORRECTIONS_EFFECTUEES.md) - Rapport des corrections de sécurité
+- [VERCEL_GITHUB_SETUP.md](VERCEL_GITHUB_SETUP.md) - Guide détaillé Vercel
+- [AUDIT_GITHUB_VERCEL.md](AUDIT_GITHUB_VERCEL.md) - Audit complet GitHub/Vercel
+- [CORRECTIONS_EFFECTUEES.md](CORRECTIONS_EFFECTUEES.md) - Rapport des corrections
 - [CAHIER_DE_CHARGE_FIXPRO.md](CAHIER_DE_CHARGE_FIXPRO.md) - Cahier des charges
 
 ## 🤝 Contribution
