@@ -1,8 +1,9 @@
 flask
 flask-socketio
 eventlet
-mysql-connector-python
+psycopg2-binary
 gunicorn
 python-dotenv
 flask-limiter
 email-validator
+supabase

@@ -23,6 +23,12 @@ class Config:
     FIXPRO_DB_PASS = os.getenv("FIXPRO_DB_PASS", "")
     FIXPRO_DB_NAME = os.getenv("FIXPRO_DB_NAME", "FixPro")
     
+    # Supabase Configuration
+    SUPABASE_URL = os.getenv("SUPABASE_URL", "")
+    SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY", "")
+    SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
+    DATABASE_URL = os.getenv("DATABASE_URL", "")
+    
     # Serveur
     PORT = int(os.getenv("PORT", 5000))
     HOST = os.getenv("HOST", "0.0.0.0")

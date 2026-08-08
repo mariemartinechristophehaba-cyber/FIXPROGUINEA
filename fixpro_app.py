@@ -8,7 +8,8 @@ from functools import wraps
 from pathlib import Path
 from email_validator import validate_email, EmailNotValidError
 
-import mysql.connector
+import psycopg2
+from psycopg2 import pool
 from flask import Flask, flash, jsonify, redirect, render_template, request, session, url_for
 from flask_socketio import SocketIO, join_room, emit
 from flask_limiter import Limiter
@@ -50,9 +51,27 @@ limiter = Limiter(
 def get_db_connection():
     """Établit une connexion à la base de données avec gestion d'erreurs améliorée"""
     db_engine = app.config.get("FIXPRO_DB_ENGINE", "sqlite").lower()
+    
+    # Priorité : Supabase/PostgreSQL > MySQL > SQLite
+    # Utiliser DATABASE_URL si disponible (Supabase)
+    database_url = app.config.get("DATABASE_URL", "")
+    
+    if database_url and db_engine in ("postgresql", "supabase"):
+        try:
+            conn = psycopg2.connect(database_url)
+            conn.autocommit = False
+            logger.info("Connexion PostgreSQL/Supabase établie avec succès")
+            return conn
+        except psycopg2.Error as err:
+            logger.error(f"Erreur de connexion PostgreSQL: {err}")
+            logger.info("Fallback vers SQLite")
+        except Exception as err:
+            logger.error(f"Erreur inattendue lors de la connexion PostgreSQL: {err}")
+            logger.info("Fallback vers SQLite")
 
     if db_engine == "mysql":
         try:
+            import mysql.connector
             conn = mysql.connector.connect(
                 host=app.config.get("FIXPRO_DB_HOST", "localhost"),
                 user=app.config.get("FIXPRO_DB_USER", "root"),
@@ -63,11 +82,8 @@ def get_db_connection():
             conn.row_factory = None
             logger.info("Connexion MySQL établie avec succès")
             return conn
-        except mysql.connector.Error as err:
-            logger.error(f"Erreur de connexion MySQL: {err}")
-            logger.info("Fallback vers SQLite")
         except Exception as err:
-            logger.error(f"Erreur inattendue lors de la connexion MySQL: {err}")
+            logger.error(f"Erreur de connexion MySQL: {err}")
             logger.info("Fallback vers SQLite")
 
     try:
@@ -81,10 +97,118 @@ def get_db_connection():
 
 
 def init_db():
+    """Initialise la base de données avec le schéma approprié selon le type"""
     conn = get_db_connection()
     try:
-        conn.executescript(
+        db_engine = app.config.get("FIXPRO_DB_ENGINE", "sqlite").lower()
+        database_url = app.config.get("DATABASE_URL", "")
+        
+        # Déterminer si on utilise PostgreSQL/Supabase
+        is_postgresql = database_url or db_engine in ("postgresql", "supabase")
+        
+        if is_postgresql:
+            # Schéma PostgreSQL/Supabase
+            schema_sql = """
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                email TEXT UNIQUE NOT NULL,
+                password_hash TEXT NOT NULL,
+                role TEXT NOT NULL,
+                full_name TEXT NOT NULL,
+                phone TEXT,
+                profession TEXT,
+                city TEXT,
+                bio TEXT,
+                latitude REAL DEFAULT 0,
+                longitude REAL DEFAULT 0,
+                hourly_rate REAL DEFAULT 0,
+                is_verified INTEGER DEFAULT 0,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE TABLE IF NOT EXISTS requests (
+                id SERIAL PRIMARY KEY,
+                client_id INTEGER NOT NULL,
+                artisan_id INTEGER,
+                title TEXT NOT NULL,
+                description TEXT NOT NULL,
+                category TEXT,
+                address TEXT,
+                photo_url TEXT,
+                diagnostic_price REAL DEFAULT 0,
+                budget REAL DEFAULT 0,
+                quote_amount REAL DEFAULT 0,
+                quote_description TEXT,
+                quote_status TEXT DEFAULT 'none',
+                quote_proposed_at TEXT,
+                quote_approved_at TEXT,
+                status TEXT DEFAULT 'pending',
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE TABLE IF NOT EXISTS service_categories (
+                id SERIAL PRIMARY KEY,
+                name TEXT UNIQUE NOT NULL,
+                diagnostic_price REAL DEFAULT 0,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE TABLE IF NOT EXISTS messages (
+                id SERIAL PRIMARY KEY,
+                request_id INTEGER NOT NULL,
+                sender_id INTEGER NOT NULL,
+                content TEXT NOT NULL,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE TABLE IF NOT EXISTS payments (
+                id SERIAL PRIMARY KEY,
+                request_id INTEGER NOT NULL,
+                amount REAL NOT NULL,
+                method TEXT DEFAULT 'cash',
+                status TEXT DEFAULT 'pending',
+                reference TEXT,
+                details TEXT,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE TABLE IF NOT EXISTS artisans (
+                id SERIAL PRIMARY KEY,
+                nom TEXT NOT NULL,
+                prenom TEXT NOT NULL,
+                telephone TEXT NOT NULL UNIQUE,
+                metier TEXT NOT NULL,
+                zone TEXT NOT NULL,
+                latitude REAL NOT NULL,
+                longitude REAL NOT NULL,
+                tarif_horaire REAL NOT NULL,
+                taux_commission INTEGER DEFAULT 10,
+                date_inscription TEXT DEFAULT CURRENT_TIMESTAMP,
+                statut TEXT DEFAULT 'actif'
+            );
+
+            CREATE TABLE IF NOT EXISTS clients (
+                id SERIAL PRIMARY KEY,
+                nom TEXT NOT NULL,
+                telephone TEXT NOT NULL UNIQUE,
+                latitude REAL NOT NULL,
+                longitude REAL NOT NULL,
+                date_inscription TEXT DEFAULT CURRENT_TIMESTAMP,
+                statut TEXT DEFAULT 'actif'
+            );
+            
+            -- Index pour optimiser les performances
+            CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+            CREATE INDEX IF NOT EXISTS idx_requests_client_id ON requests(client_id);
+            CREATE INDEX IF NOT EXISTS idx_requests_artisan_id ON requests(artisan_id);
+            CREATE INDEX IF NOT EXISTS idx_messages_request_id ON messages(request_id);
+            CREATE INDEX IF NOT EXISTS idx_payments_request_id ON payments(request_id);
             """
+        else:
+            # Schéma SQLite (original)
+            schema_sql = """
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 email TEXT UNIQUE NOT NULL,
@@ -175,55 +299,122 @@ def init_db():
                 statut TEXT DEFAULT 'actif'
             );
             """
-        )
+        
+        # Exécuter le schéma
+        if is_postgresql:
+            cursor = conn.cursor()
+            cursor.execute(schema_sql)
+        else:
+            conn.executescript(schema_sql)
+        
         conn.commit()
+        logger.info(f"Schéma base de données initialisé ({'PostgreSQL' if is_postgresql else 'SQLite'})")
 
         # NE PLUS CRÉER DE COMPTES DE DÉMONSTRATION EN PRODUCTION
         # Les comptes de démonstration ne sont créés qu'en mode développement
-        if app.config.get("DEBUG") and not conn.execute("SELECT 1 FROM users LIMIT 1").fetchone():
-            logger.warning("Création des comptes de démonstration (mode développement uniquement)")
-            conn.execute(
-                """
-                INSERT INTO users (email, password_hash, role, full_name, phone, profession, city, bio, latitude, longitude, hourly_rate, is_verified)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                (
-                    "demo.artisan@fixpro.app",
-                    generate_password_hash("FixPro2026!"),
-                    "artisan",
-                    "Mamadou Bah",
-                    "+224621111111",
-                    "Plombier",
-                    "Conakry",
-                    "Artisan certifié, disponible rapidement.",
-                    9.5412,
-                    -13.7531,
-                    50000,
-                    1,
-                ),
-            )
-            conn.execute(
-                """
-                INSERT INTO users (email, password_hash, role, full_name, phone, profession, city, bio, latitude, longitude, hourly_rate, is_verified)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                (
-                    "demo.client@fixpro.app",
-                    generate_password_hash("FixPro2026!"),
-                    "client",
-                    "Aminata Sow",
-                    "+224622222222",
-                    "",
-                    "Conakry",
-                    "Client de démonstration.",
-                    9.5418,
-                    -13.7540,
-                    0,
-                    1,
-                ),
-            )
-            conn.commit()
-            logger.info("Comptes de démonstration créés avec succès")
+        if app.config.get("DEBUG"):
+            try:
+                # Vérifier si des utilisateurs existent déjà
+                if is_postgresql:
+                    cursor = conn.cursor()
+                    cursor.execute("SELECT 1 FROM users LIMIT 1")
+                    has_users = cursor.fetchone()
+                else:
+                    has_users = conn.execute("SELECT 1 FROM users LIMIT 1").fetchone()
+                
+                if not has_users:
+                    logger.warning("Création des comptes de démonstration (mode développement uniquement)")
+                    
+                    if is_postgresql:
+                        # PostgreSQL style
+                        cursor.execute(
+                            """
+                            INSERT INTO users (email, password_hash, role, full_name, phone, profession, city, bio, latitude, longitude, hourly_rate, is_verified)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                            """,
+                            (
+                                "demo.artisan@fixpro.app",
+                                generate_password_hash("FixPro2026!"),
+                                "artisan",
+                                "Mamadou Bah",
+                                "+224621111111",
+                                "Plombier",
+                                "Conakry",
+                                "Artisan certifié, disponible rapidement.",
+                                9.5412,
+                                -13.7531,
+                                50000,
+                                1,
+                            ),
+                        )
+                        cursor.execute(
+                            """
+                            INSERT INTO users (email, password_hash, role, full_name, phone, profession, city, bio, latitude, longitude, hourly_rate, is_verified)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                            """,
+                            (
+                                "demo.client@fixpro.app",
+                                generate_password_hash("FixPro2026!"),
+                                "client",
+                                "Aminata Sow",
+                                "+224622222222",
+                                "",
+                                "Conakry",
+                                "Client de démonstration.",
+                                9.5418,
+                                -13.7540,
+                                0,
+                                1,
+                            ),
+                        )
+                    else:
+                        # SQLite style
+                        conn.execute(
+                            """
+                            INSERT INTO users (email, password_hash, role, full_name, phone, profession, city, bio, latitude, longitude, hourly_rate, is_verified)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            """,
+                            (
+                                "demo.artisan@fixpro.app",
+                                generate_password_hash("FixPro2026!"),
+                                "artisan",
+                                "Mamadou Bah",
+                                "+224621111111",
+                                "Plombier",
+                                "Conakry",
+                                "Artisan certifié, disponible rapidement.",
+                                9.5412,
+                                -13.7531,
+                                50000,
+                                1,
+                            ),
+                        )
+                        conn.execute(
+                            """
+                            INSERT INTO users (email, password_hash, role, full_name, phone, profession, city, bio, latitude, longitude, hourly_rate, is_verified)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            """,
+                            (
+                                "demo.client@fixpro.app",
+                                generate_password_hash("FixPro2026!"),
+                                "client",
+                                "Aminata Sow",
+                                "+224622222222",
+                                "",
+                                "Conakry",
+                                "Client de démonstration.",
+                                9.5418,
+                                -13.7540,
+                                0,
+                                1,
+                            ),
+                        )
+                    
+                    conn.commit()
+                    logger.info("Comptes de démonstration créés avec succès")
+            except Exception as e:
+                logger.error(f"Erreur lors de la création des comptes de démonstration: {e}")
+                # Ne pas échouer l'initialisation si les comptes demo échouent
 
         existing_columns = [row[1] for row in conn.execute("PRAGMA table_info(requests)").fetchall()]
         if "photo_url" not in existing_columns:
