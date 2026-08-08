@@ -162,6 +162,7 @@ Ce projet est sous licence MIT.
 ## 👥 Auteurs
 
 - Équipe FixPro
+- Marie Martine Christophe Haba
 
 ## 🙏 Remerciements
 
