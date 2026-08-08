@@ -1,0 +1,24 @@
+# Fichiers à ignorer lors du déploiement Vercel
+.venv
+__pycache__
+*.pyc
+.env
+.env.*
+logs/
+*.log
+data/
+tests/
+scripts/
+deploy/
+.git/
+.gitignore
+*.md
+VERCEL_GITHUB_SETUP.md
+SUPABASE_*.md
+check_db_structure.py
+migrate_to_supabase.py
+test_supabase_connection.py
+setup_*.py
+interactive_*.py
+env_*.txt
+LANCER.bat
