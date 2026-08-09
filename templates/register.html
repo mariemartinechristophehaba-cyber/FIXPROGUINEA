@@ -7,17 +7,27 @@
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
     <input type="hidden" name="role" value="{{ role }}" />
 
-    <label>Nom complet</label>
-    <input type="text" name="full_name" required placeholder="Votre nom et prénom" />
+    {% if role == 'client' %}
+      <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div>
+          <label>Nom</label>
+          <input type="text" name="last_name" required placeholder="Votre nom" />
+        </div>
+        <div>
+          <label>Prénom</label>
+          <input type="text" name="first_name" required placeholder="Votre prénom" />
+        </div>
+      </div>
+    {% else %}
+      <label>Nom complet</label>
+      <input type="text" name="full_name" required placeholder="Votre nom et prénom" />
 
-    <label>Email</label>
-    <input type="email" name="email" required placeholder="votre@email.com" />
+      <label>Email</label>
+      <input type="email" name="email" required placeholder="votre@email.com" />
+    {% endif %}
 
     <label>Téléphone</label>
-    <input type="text" name="phone" placeholder="+224 620 00 00 00" />
-
-    <label>Mot de passe</label>
-    <input type="password" name="password" required minlength="8" placeholder="8 caractères minimum" />
+    <input type="tel" name="phone" required placeholder="+224 620 00 00 00" />
 
     {% if role == 'artisan' %}
       <label>Métier</label>
@@ -28,10 +38,15 @@
     {% endif %}
 
     <label>Ville</label>
-    <input type="text" name="city" placeholder="Conakry" />
+    <input type="text" name="city" required placeholder="Conakry" />
 
-    <label>Présentation</label>
-    <textarea name="bio" placeholder="{% if role == 'client' %}Décrivez brièvement ce que vous recherchez{% else %}Présentez votre expérience et vos services{% endif %}"></textarea>
+    {% if role == 'artisan' %}
+      <label>Présentation</label>
+      <textarea name="bio" placeholder="Présentez votre expérience et vos services"></textarea>
+    {% endif %}
+
+    <label>Mot de passe</label>
+    <input type="password" name="password" required minlength="6" placeholder="6 caractères minimum" />
 
     <button class="btn btn-primary" type="submit">{{ button_label }}</button>
   </form>

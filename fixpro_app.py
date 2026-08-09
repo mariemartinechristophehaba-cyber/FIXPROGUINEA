@@ -186,58 +186,82 @@ def health_check():
 @app.route("/register", methods=["GET", "POST"])
 @limiter.limit("10 per hour", methods=["POST"])
 def register():
+    role = request.form.get("role") if request.method == "POST" else request.args.get("role", "client")
+    role = (role or "client").lower()
+    if role not in ("client", "artisan"):
+        role = "client"
+
     if request.method == "POST":
-        email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
-        role = request.form.get("role", "client")
-        full_name = request.form.get("full_name", "").strip()
 
-        if not email or not password or not full_name:
-            flash("Veuillez remplir tous les champs obligatoires.", "error")
+        if role == "client":
+            # Inscription simplifiee pour le client : nom, prenom, telephone, ville.
+            first_name = request.form.get("first_name", "").strip()
+            last_name = request.form.get("last_name", "").strip()
+            full_name = f"{first_name} {last_name}".strip()
+            phone = request.form.get("phone", "").strip()
+            city = request.form.get("city", "").strip()
+
+            if not first_name or not last_name or not phone or not city or not password:
+                flash("Veuillez remplir tous les champs obligatoires.", "error")
+                return redirect(url_for("register", role=role))
+        else:
+            # Inscription artisan classique.
+            email = request.form.get("email", "").strip().lower()
+            full_name = request.form.get("full_name", "").strip()
+            phone = request.form.get("phone", "").strip()
+            city = request.form.get("city", "").strip()
+
+            if not email or not password or not full_name or not phone:
+                flash("Veuillez remplir tous les champs obligatoires.", "error")
+                return redirect(url_for("register", role=role))
+
+            try:
+                validate_email(email, check_deliverability=False)
+            except EmailNotValidError:
+                flash("Format d'email invalide.", "error")
+                return redirect(url_for("register", role=role))
+
+        if len(password) < 6:
+            flash("Le mot de passe doit contenir au moins 6 caractères.", "error")
             return redirect(url_for("register", role=role))
-
-        try:
-            validate_email(email, check_deliverability=False)
-        except EmailNotValidError:
-            flash("Format d'email invalide.", "error")
-            return redirect(url_for("register", role=role))
-
-        if len(password) < 8:
-            flash("Le mot de passe doit contenir au moins 8 caractères.", "error")
-            return redirect(url_for("register", role=role))
-
-        if role not in ("client", "artisan"):
-            role = "client"
 
         conn = get_db_connection()
         try:
             existing = conn.execute(
-                "SELECT id FROM users WHERE email = ?", (email,)).fetchone()
+                "SELECT id FROM users WHERE phone = ?", (phone,)).fetchone()
             if existing:
-                flash("Cet email est déjà utilisé.", "error")
+                flash("Ce numéro de téléphone est déjà utilisé.", "error")
                 return redirect(url_for("register", role=role))
 
             hourly_rate = _to_float(request.form.get("hourly_rate")) if role == "artisan" else 0
+            email = request.form.get("email", "").strip().lower() if role == "artisan" else None
+
             conn.execute(
-                "INSERT INTO users (email, password_hash, role, full_name,"
-                " phone, profession, city, bio, hourly_rate)"
+                "INSERT INTO users (email, phone, password_hash, role, full_name,"
+                " profession, city, bio, hourly_rate)"
                 " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (email, generate_password_hash(password), role, full_name,
-                 request.form.get("phone", "").strip(),
+                (email, phone, generate_password_hash(password), role, full_name,
                  request.form.get("profession", "").strip(),
-                 request.form.get("city", "").strip(),
+                 city,
                  request.form.get("bio", "").strip(),
                  hourly_rate),
             )
             conn.commit()
-            flash("Compte créé avec succès. Vous pouvez vous connecter.", "success")
-            return redirect(url_for("login"))
+
+            # Recupere le compte nouvellement cree pour le connecter directement.
+            new_user = conn.execute(
+                "SELECT * FROM users WHERE phone = ?", (phone,)).fetchone()
+            session.clear()
+            session["user_id"] = new_user["id"]
+            session.permanent = True
+            flash("Bienvenue dans FixPro.", "success")
+
+            if role == "client":
+                return redirect(url_for("artisans_page"))
+            return redirect(url_for("requests_list"))
         finally:
             conn.close()
-
-    role = request.args.get("role", "client").lower()
-    if role not in ("client", "artisan"):
-        role = "client"
 
     if role == "artisan":
         title = "Créer un compte artisan"
@@ -245,8 +269,8 @@ def register():
         button_label = "S'inscrire en tant qu'artisan"
     else:
         title = "Créer un compte client"
-        subtitle = "Publiez une demande et trouvez l'artisan qu'il vous faut."
-        button_label = "S'inscrire en tant que client"
+        subtitle = "Trouvez un artisan en 30 secondes."
+        button_label = "S'inscrire en 30 secondes"
 
     return render_template("register.html", role=role, title=title,
                            subtitle=subtitle, button_label=button_label)
@@ -256,13 +280,18 @@ def register():
 @limiter.limit("20 per hour", methods=["POST"])
 def login():
     if request.method == "POST":
-        email = request.form.get("email", "").strip().lower()
+        identifier = request.form.get("identifier", "").strip()
         password = request.form.get("password", "")
 
         conn = get_db_connection()
         try:
-            user = conn.execute(
-                "SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+            # L'identifiant peut etre un telephone (client) ou un email (artisan).
+            if "@" in identifier:
+                user = conn.execute(
+                    "SELECT * FROM users WHERE email = ?", (identifier.lower(),)).fetchone()
+            else:
+                user = conn.execute(
+                    "SELECT * FROM users WHERE phone = ?", (identifier,)).fetchone()
         finally:
             conn.close()
 
@@ -271,10 +300,12 @@ def login():
             session["user_id"] = user["id"]
             session.permanent = True
             flash("Bienvenue dans FixPro.", "success")
-            return redirect(url_for("dashboard"))
 
-        # Message volontairement identique dans les deux cas d'echec, afin de
-        # ne pas reveler si une adresse est enregistree sur la plateforme.
+            if user["role"] == "client":
+                return redirect(url_for("artisans_page"))
+            return redirect(url_for("requests_list"))
+
+        # Message identique pour ne pas reveler quel identifiant existe.
         flash("Identifiants incorrects.", "error")
 
     return render_template("login.html")

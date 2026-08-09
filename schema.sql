@@ -7,11 +7,11 @@
 
 CREATE TABLE IF NOT EXISTS users (
     id              SERIAL PRIMARY KEY,
-    email           TEXT UNIQUE NOT NULL,
+    email           TEXT UNIQUE,
+    phone           TEXT UNIQUE NOT NULL,
     password_hash   TEXT NOT NULL,
     role            TEXT NOT NULL DEFAULT 'client',
     full_name       TEXT NOT NULL,
-    phone           TEXT,
     profession      TEXT,
     city            TEXT,
     bio             TEXT,

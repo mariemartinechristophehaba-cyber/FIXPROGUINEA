@@ -52,16 +52,33 @@ class FixProTestCase(unittest.TestCase):
 
     # -- utilitaires ----------------------------------------------------
 
-    def register(self, email, password="motdepasse123", role="client",
-                 name="Utilisateur Test"):
-        return self.client.post("/register", data={
-            "email": email, "password": password, "role": role,
-            "full_name": name, "phone": "+224620000000", "city": "Conakry",
+    def register_client(self, phone="+224620000000", password="mdp123",
+                        first_name="Aminata", last_name="Sow", city="Conakry"):
+        return self.client.post("/register?role=client", data={
+            "role": "client",
+            "first_name": first_name,
+            "last_name": last_name,
+            "phone": phone,
+            "city": city,
+            "password": password,
         }, follow_redirects=True)
 
-    def login(self, email, password="motdepasse123"):
+    def register_artisan(self, email, phone="+224621111111", password="mdp123",
+                         name="Mamadou Bah"):
+        return self.client.post("/register?role=artisan", data={
+            "role": "artisan",
+            "full_name": name,
+            "email": email,
+            "phone": phone,
+            "profession": "Plombier",
+            "city": "Conakry",
+            "password": password,
+        }, follow_redirects=True)
+
+    def login(self, identifier, password="mdp123"):
         return self.client.post("/login", data={
-            "email": email, "password": password}, follow_redirects=True)
+            "identifier": identifier, "password": password},
+            follow_redirects=True)
 
 
 class HealthAndSecurityTests(FixProTestCase):
@@ -89,42 +106,68 @@ class HealthAndSecurityTests(FixProTestCase):
         self.assertIn("/login", response.headers["Location"])
 
 
-class RegistrationTests(FixProTestCase):
+class ClientRegistrationTests(FixProTestCase):
 
-    def test_registration_then_login_succeeds(self):
-        self.register("client@example.com")
-        response = self.login("client@example.com")
+    def test_client_register_then_login_with_phone_succeeds(self):
+        self.register_client()
+        response = self.login("+224620000000")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(self.client.get("/dashboard").status_code, 200)
+        self.assertEqual(self.client.get("/artisans").status_code, 200)
 
-    def test_invalid_email_is_rejected(self):
-        self.register("pas-un-email")
+    def test_client_inscription_requires_all_fields(self):
+        self.client.post("/register?role=client", data={
+            "role": "client", "first_name": "Aminata", "last_name": "",
+            "phone": "+224620000000", "city": "Conakry", "password": "mdp123"})
         self.assertEqual(self._count_users(), 0)
 
     def test_short_password_is_rejected(self):
-        self.register("court@example.com", password="1234")
+        self.register_client(password="12345")
         self.assertEqual(self._count_users(), 0)
 
-    def test_duplicate_email_is_rejected(self):
-        self.register("double@example.com")
-        self.register("double@example.com", name="Autre Personne")
+    def test_duplicate_phone_is_rejected(self):
+        self.register_client(phone="+224620000000")
+        self.register_client(phone="+224620000000", first_name="Fatou")
         self.assertEqual(self._count_users(), 1)
 
     def test_password_is_never_stored_in_clear_text(self):
-        self.register("secret@example.com", password="motdepasse123")
+        self.register_client(phone="+224620000001")
         conn = db.connect(sqlite_path=self.db_path)
         try:
             row = conn.execute(
-                "SELECT password_hash FROM users WHERE email = ?",
-                ("secret@example.com",)).fetchone()
+                "SELECT password_hash FROM users WHERE phone = ?",
+                ("+224620000001",)).fetchone()
         finally:
             conn.close()
-        self.assertNotIn("motdepasse123", row["password_hash"])
+        self.assertNotIn("mdp123", row["password_hash"])
 
-    def test_wrong_password_does_not_authenticate(self):
-        self.register("client@example.com")
-        self.login("client@example.com", password="mauvaisMotDePasse")
-        self.assertEqual(self.client.get("/dashboard").status_code, 302)
+    def test_client_is_redirected_to_artisans_after_login(self):
+        self.register_client()
+        response = self.login("+224620000000")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Artisans disponibles", response.data)
+
+    def _count_users(self):
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            return conn.execute("SELECT COUNT(*) AS n FROM users").fetchone()["n"]
+        finally:
+            conn.close()
+
+
+class ArtisanRegistrationTests(FixProTestCase):
+
+    def test_artisan_register_then_login_with_email_succeeds(self):
+        self.register_artisan("artisan@example.com")
+        response = self.login("artisan@example.com")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self.client.get("/requests").status_code, 200)
+
+    def test_artisan_invalid_email_is_rejected(self):
+        self.client.post("/register?role=artisan", data={
+            "role": "artisan", "full_name": "Mamadou Bah",
+            "email": "pas-un-email", "phone": "+224621111111",
+            "profession": "Plombier", "city": "Conakry", "password": "mdp123"})
+        self.assertEqual(self._count_users(), 0)
 
     def _count_users(self):
         conn = db.connect(sqlite_path=self.db_path)
@@ -139,13 +182,13 @@ class RequestWorkflowTests(FixProTestCase):
 
     def setUp(self):
         super().setUp()
-        self.register("client@example.com", role="client", name="Aminata Sow")
+        self.register_client(phone="+224620000000")
         self.client.get("/logout")
-        self.register("artisan@example.com", role="artisan", name="Mamadou Bah")
+        self.register_artisan("artisan@example.com", phone="+224621111111")
         self.client.get("/logout")
 
     def test_client_can_create_request(self):
-        self.login("client@example.com")
+        self.login("+224620000000")
         response = self.client.post("/requests/new", data={
             "title": "Fuite d'eau", "description": "Fuite sous l'evier",
             "category": "Plombier", "address": "Kaloum", "budget": "75000",
@@ -154,12 +197,12 @@ class RequestWorkflowTests(FixProTestCase):
         self.assertEqual(self._request_field(1, "status"), "pending")
 
     def test_diagnostic_price_comes_from_category(self):
-        self.login("client@example.com")
+        self.login("+224620000000")
         self._create_request()
         self.assertEqual(self._request_field(1, "diagnostic_price"), 50000)
 
     def test_full_workflow_from_request_to_payment(self):
-        self.login("client@example.com")
+        self.login("+224620000000")
         self._create_request()
         self.client.get("/logout")
 
@@ -175,7 +218,7 @@ class RequestWorkflowTests(FixProTestCase):
         self.client.get("/logout")
 
         # Le client accepte le devis, ce qui ouvre le paiement.
-        self.login("client@example.com")
+        self.login("+224620000000")
         self.client.post("/requests/1/quote/accept")
         self.assertEqual(self._request_field(1, "quote_status"), "accepted")
         self.assertEqual(self.client.get("/requests/1/payment").status_code, 200)
@@ -191,8 +234,7 @@ class RequestWorkflowTests(FixProTestCase):
         self.assertEqual(payment["method"], "orange_money")
 
     def test_artisan_can_open_a_pending_request(self):
-        """Sans cet acces, aucun artisan ne pourrait accepter une demande."""
-        self.login("client@example.com")
+        self.login("+224620000000")
         self._create_request()
         self.client.get("/logout")
 
@@ -200,7 +242,7 @@ class RequestWorkflowTests(FixProTestCase):
         self.assertEqual(self.client.get("/requests/1").status_code, 200)
 
     def test_artisan_loses_access_once_request_is_taken_by_another(self):
-        self.login("client@example.com")
+        self.login("+224620000000")
         self._create_request()
         self.client.get("/logout")
 
@@ -208,31 +250,31 @@ class RequestWorkflowTests(FixProTestCase):
         self.client.post("/requests/1/accept")
         self.client.get("/logout")
 
-        self.register("autre.artisan@example.com", role="artisan",
-                      name="Autre Artisan")
-        self.login("autre.artisan@example.com")
+        self.register_artisan("autre@example.com", phone="+224622222222",
+                              name="Autre Artisan")
+        self.login("autre@example.com")
         self.assertEqual(self.client.get("/requests/1").status_code, 302)
 
     def test_client_cannot_propose_quote(self):
-        self.login("client@example.com")
+        self.login("+224620000000")
         self._create_request()
         self.client.post("/requests/1/quote", data={
             "quote_amount": "1000", "quote_description": "Tentative"})
         self.assertEqual(self._request_field(1, "quote_status"), "none")
 
     def test_payment_blocked_until_quote_accepted(self):
-        self.login("client@example.com")
+        self.login("+224620000000")
         self._create_request()
         response = self.client.get("/requests/1/payment")
         self.assertEqual(response.status_code, 302)
 
     def test_third_party_cannot_read_someone_elses_request(self):
-        self.login("client@example.com")
+        self.login("+224620000000")
         self._create_request()
         self.client.get("/logout")
 
-        self.register("intrus@example.com", role="client", name="Intrus")
-        self.login("intrus@example.com")
+        self.register_client(phone="+224623333333", first_name="Intrus")
+        self.login("+224623333333")
         response = self.client.get("/requests/1")
         self.assertEqual(response.status_code, 302)
         self.assertIn("/requests", response.headers["Location"])
