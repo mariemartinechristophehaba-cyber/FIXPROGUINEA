@@ -25,7 +25,7 @@ import db
 from config import get_config, setup_logging
 
 config = get_config()
-app = Flask(__name__, static_folder="public/static")
+app = Flask(__name__, static_folder="public", static_url_path="/")
 app.config.from_object(config)
 
 logger = setup_logging(app)
