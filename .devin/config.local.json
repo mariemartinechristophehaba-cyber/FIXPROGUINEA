@@ -16,7 +16,9 @@
       "Exec(@('view_request.html','new_request.html','404.html','500.html','index.html','dashboard.html','requests.html'))",
       "Exec(\"--- fichiers mobiles ---\")",
       "Exec(Get-Content)",
-      "Exec(\"--- .env dans index ? ---\")"
+      "Exec(\"--- .env dans index ? ---\")",
+      "Exec(Select-String)",
+      "Exec(Out-Null)"
     ]
   }
 }
