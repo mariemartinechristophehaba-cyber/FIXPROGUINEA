@@ -192,3 +192,13 @@ body { background: linear-gradient(180deg, var(--mobile-bg-from), var(--mobile-b
 }
 @media (max-width: 920px) { .hero-card { grid-template-columns: 1fr; } }
 @media (max-width: 720px) { .hero-copy h1 { font-size: 2.3rem; } .hero-card { padding: 20px; } .footer-inner { flex-direction: column; align-items: flex-start; } }
+
+.form-card { max-width: 520px; margin: 0 auto; padding: 22px; }
+.form-card h2 { margin-top: 0; font-size: 1.45rem; }
+.form-card form { gap: 10px; }
+.form-card label { font-size: 0.9rem; margin-bottom: -4px; }
+.form-card input,
+.form-card select,
+.form-card textarea { padding: 10px 12px; font-size: 0.95rem; }
+.form-card button { margin-top: 6px; padding: 12px; }
+

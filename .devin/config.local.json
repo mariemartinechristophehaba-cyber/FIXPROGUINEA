@@ -19,7 +19,8 @@
       "Exec(\"--- .env dans index ? ---\")",
       "Exec(Select-String)",
       "Exec(Out-Null)",
-      "Exec(\"--- verif ---\")"
+      "Exec(\"--- verif ---\")",
+      "Exec((Get-Content)"
     ]
   }
 }
