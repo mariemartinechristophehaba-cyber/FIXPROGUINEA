@@ -68,12 +68,48 @@ def add_security_headers(response):
     return response
 
 
+def _ensure_dev_user(role="client"):
+    """Cree ou recupere un compte de test pour le developpement."""
+    email = f"dev.{role}@fixpro.local"
+    phone = f"+224999{role[:1].upper()}0000"
+    full_name = f"Utilisateur Test {role.title()}"
+
+    conn = get_db_connection()
+    try:
+        user = conn.execute(
+            "SELECT * FROM users WHERE email = ? OR phone = ?",
+            (email, phone)).fetchone()
+        if user:
+            return user
+
+        profession = "Plombier" if role == "artisan" else None
+        hourly_rate = 50000 if role == "artisan" else 0
+        conn.execute(
+            "INSERT INTO users (email, phone, password_hash, role, full_name,"
+            " profession, city, hourly_rate)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (email, phone, generate_password_hash("dev"), role, full_name,
+             profession, "Conakry", hourly_rate),
+        )
+        conn.commit()
+        return conn.execute(
+            "SELECT * FROM users WHERE phone = ?", (phone,)).fetchone()
+    finally:
+        conn.close()
+
+
 def login_required(view_func):
     @wraps(view_func)
     def wrapper(*args, **kwargs):
         if not session.get("user_id"):
-            flash("Veuillez vous connecter pour accéder à cette page.", "error")
-            return redirect(url_for("login"))
+            if app.config.get("BYPASS_AUTH"):
+                role = app.config.get("DEV_ROLE", "client")
+                dev_user = _ensure_dev_user(role)
+                session["user_id"] = dev_user["id"]
+                session.permanent = True
+            else:
+                flash("Veuillez vous connecter pour accéder à cette page.", "error")
+                return redirect(url_for("login"))
         return view_func(*args, **kwargs)
 
     return wrapper
@@ -82,6 +118,12 @@ def login_required(view_func):
 def get_current_user():
     user_id = session.get("user_id")
     if not user_id:
+        if app.config.get("BYPASS_AUTH"):
+            role = app.config.get("DEV_ROLE", "client")
+            dev_user = _ensure_dev_user(role)
+            session["user_id"] = dev_user["id"]
+            session.permanent = True
+            return dev_user
         return None
     conn = get_db_connection()
     try:

@@ -50,6 +50,11 @@ class Config:
     # Commission preleve par la plateforme sur chaque intervention
     FIXPRO_COMMISSION_RATE = float(os.getenv("FIXPRO_COMMISSION_RATE", "0.10"))
 
+    # Developpement uniquement : contourne l'authentification et injecte un
+    # compte de test. Ne JAMAIS activer en production.
+    BYPASS_AUTH = _bool("BYPASS_AUTH")
+    DEV_ROLE = os.getenv("DEV_ROLE", "client").lower()
+
     # Journalisation
     LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
 
