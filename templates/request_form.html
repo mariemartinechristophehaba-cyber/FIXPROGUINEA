@@ -3,6 +3,7 @@
 <section class="card form-card">
   <h2>Créer une demande d’intervention</h2>
   <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
     <label>Titre</label>
     <input type="text" name="title" required />
     <label>Description</label>

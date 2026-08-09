@@ -1,9 +1,13 @@
-"""
-Point d'entrée pour Vercel
-Export l'application Flask pour le déploiement serverless
+"""Point d'entree serverless pour Vercel.
+
+Vercel recherche une variable nommee `app` exposant une application WSGI.
 """
 
-from fixpro_app import app
+import os
+import sys
 
-# Export l'application pour Vercel
-app_handler = app
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from fixpro_app import app  # noqa: E402
+
+__all__ = ["app"]

@@ -1,14 +1,12 @@
-# Variables d'environnement
+# Variables d'environnement locales
 .env
-.env.local
-.env.production
-.env.development
+.env.*
+!.env.example
 
-# Base de données
+# Bases de donnees locales
 *.db
 *.sqlite
 *.sqlite3
-fixpro.db
 data/
 
 # Python
@@ -44,31 +42,26 @@ wheels/
 *.swo
 *~
 .DS_Store
+Thumbs.db
+
+# Tests / couverture
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
 
 # Logs
 *.log
 logs/
 
-# Tests
-.pytest_cache/
-.coverage
-htmlcov/
-
-# Session Flask
+# Sessions et uploads
 flask_session/
-
-# Uploads
 uploads/
 static/uploads/
 
-# Temporary files
-*.tmp
-*.temp
-.cache/
+# Sauvegardes locales
+*.backup-*
 
 # OS
-Thumbs.db
 .DS_Store
-
-# Docker
-docker-compose.override.yml
+Thumbs.db

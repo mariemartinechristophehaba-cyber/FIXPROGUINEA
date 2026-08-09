@@ -34,6 +34,7 @@
     <section class="card">
       <h3>Proposer ou modifier le devis</h3>
       <form method="post" action="{{ url_for('propose_quote', request_id=request_item['id']) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
         <label>Montant du devis (GNF)</label>
         <input type="number" name="quote_amount" step="1000" min="0" value="{{ request_item['quote_amount'] or '' }}" required />
         <label>Description du devis</label>
@@ -47,9 +48,11 @@
     <section class="card">
       <h3>Décider du devis</h3>
       <form method="post" action="{{ url_for('accept_quote', request_id=request_item['id']) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
         <button class="btn btn-primary" type="submit">Accepter le devis</button>
       </form>
       <form method="post" action="{{ url_for('reject_quote', request_id=request_item['id']) }}" style="margin-top: 0.75rem;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
         <button class="btn btn-outline" type="submit">Rejeter le devis</button>
       </form>
     </section>
@@ -57,6 +60,7 @@
 
   {% if user.role == 'artisan' and request_item['status'] == 'pending' %}
     <form method="post" action="{{ url_for('accept_request', request_id=request_item['id']) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
       <button class="btn btn-primary" type="submit">Accepter cette demande</button>
     </form>
   {% endif %}
@@ -70,6 +74,7 @@
     
     {% if has_confirmed_payment %}
       <form method="post" action="{{ url_for('complete_request', request_id=request_item['id']) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
         <button class="btn btn-primary" type="submit">Marquer comme terminée</button>
       </form>
     {% else %}
@@ -98,6 +103,7 @@
     {% endfor %}
   </div>
   <form id="chatForm" class="chat-form" method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
     <label>Message</label>
     <textarea name="message" placeholder="Écrivez votre message ici..."></textarea>
     <button class="btn btn-primary" type="submit">Envoyer</button>
@@ -133,72 +139,58 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script>
+  // Les WebSockets ne sont pas disponibles en execution serverless : les
+  // nouveaux messages sont recuperes periodiquement via l'API HTTP.
   const requestId = {{ request_item['id'] }};
   const currentUserId = {{ user['id'] }};
-  const currentUserName = {{ user['full_name']|tojson }};
-  const chatStatus = document.getElementById('chatStatus');
   const chatList = document.getElementById('chatList');
-  const chatForm = document.getElementById('chatForm');
-  const messageInput = chatForm.querySelector('textarea[name="message"]');
+  const chatStatus = document.getElementById('chatStatus');
+  let lastMessageId = 0;
 
-  function appendChatMessage(message) {
-    const emptyParagraph = chatList.querySelector('p.muted');
-    if (emptyParagraph) {
-      emptyParagraph.remove();
-    }
+  function renderMessage(message) {
+    const empty = chatList.querySelector('p.muted');
+    if (empty) { empty.remove(); }
+
     const item = document.createElement('div');
     item.className = 'chat-item';
+
+    const bubble = document.createElement('div');
+    bubble.className = 'chat-bubble ' + (message.is_own ? 'outgoing' : 'incoming');
+    const text = document.createElement('div');
+    text.textContent = message.content;
+    bubble.appendChild(text);
+
     const meta = document.createElement('div');
-    meta.className = 'small';
-    meta.textContent = (message.sender_id === currentUserId ? 'Vous' : message.sender_name) + ' · ' + message.created_at;
-    const content = document.createElement('div');
-    content.textContent = message.content;
+    meta.className = 'chat-meta';
+    meta.textContent = (message.is_own ? 'Vous' : message.sender_name) + ' \u00b7 ' + message.created_at;
+
+    item.appendChild(bubble);
     item.appendChild(meta);
-    item.appendChild(content);
     chatList.appendChild(item);
     chatList.scrollTop = chatList.scrollHeight;
   }
 
-  const socket = io();
-  socket.on('connect', () => {
-    chatStatus.textContent = 'Connecté au chat de l’intervention.';
-    socket.emit('join_request', { request_id: requestId });
-  });
-
-  socket.on('disconnect', () => {
-    chatStatus.textContent = 'Connexion perdue. Reconnexion en cours...';
-  });
-
-  socket.on('joined', () => {
-    chatStatus.textContent = 'Vous êtes dans la conversation. Envoyez un message.';
-  });
-
-  socket.on('new_message', message => {
-    if (message.request_id !== requestId) {
-      return;
-    }
-    appendChatMessage(message);
-  });
-
-  socket.on('message_error', data => {
-    chatStatus.textContent = data.error || 'Message bloqué.';
-  });
-
-  chatForm.addEventListener('submit', event => {
-    event.preventDefault();
-    const content = messageInput.value.trim();
-    if (!content) {
-      return;
-    }
-    socket.emit('send_message', { request_id: requestId, content }, response => {
-      if (response && response.error) {
-        chatStatus.textContent = response.error;
+  async function refreshMessages() {
+    try {
+      const response = await fetch('/api/messages/' + requestId);
+      if (!response.ok) { return; }
+      const data = await response.json();
+      const fresh = data.messages.filter(m => m.id > lastMessageId);
+      if (lastMessageId === 0) {
+        lastMessageId = Math.max(0, ...data.messages.map(m => m.id));
         return;
       }
-      messageInput.value = '';
-    });
-  });
+      fresh.forEach(message => {
+        renderMessage(message);
+        lastMessageId = Math.max(lastMessageId, message.id);
+      });
+    } catch (error) {
+      if (chatStatus) { chatStatus.textContent = 'Reconnexion en cours...'; }
+    }
+  }
+
+  refreshMessages();
+  setInterval(refreshMessages, 5000);
 </script>
 {% endblock %}

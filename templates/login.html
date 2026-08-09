@@ -3,6 +3,7 @@
 <section class="card form-card">
   <h2>Connexion</h2>
   <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
     <label>Email</label>
     <input type="email" name="email" required />
     <label>Mot de passe</label>

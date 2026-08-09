@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% block header_title %}Page introuvable{% endblock %}
+{% block content %}
+<section class="card">
+  <h1>Page introuvable</h1>
+  <p>La page que vous cherchez n'existe pas ou a été déplacée.</p>
+  <a class="btn btn-primary" href="{{ url_for('index') }}">Retour à l'accueil</a>
+</section>
+{% endblock %}

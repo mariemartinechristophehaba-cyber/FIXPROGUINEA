@@ -3,6 +3,7 @@
 <section class="card form-card">
   <h2>Profil</h2>
   <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
     <label>Nom complet</label>
     <input type="text" name="full_name" value="{{ user.full_name }}" required />
     <label>Téléphone</label>

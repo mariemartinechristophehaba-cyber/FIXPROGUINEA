@@ -1,24 +1,30 @@
-# Fichiers à ignorer lors du déploiement Vercel
+# Python cache et environnements
 .venv
 __pycache__
 *.pyc
+
+# Variables locales
 .env
 .env.*
-logs/
-*.log
+!.env.example
+
+# Bases locales (inutilisees en production)
+*.db
+*.sqlite
+*.sqlite3
 data/
+
+# Logs / tests / docs
+*.log
+logs/
 tests/
-scripts/
-deploy/
+.pytest_cache/
+*.md
+!.github/
+
+# Sauvegardes
+*.backup-*
+
+# Git
 .git/
 .gitignore
-*.md
-VERCEL_GITHUB_SETUP.md
-SUPABASE_*.md
-check_db_structure.py
-migrate_to_supabase.py
-test_supabase_connection.py
-setup_*.py
-interactive_*.py
-env_*.txt
-LANCER.bat

@@ -13,7 +13,10 @@
       "Exec(node)",
       "Exec(Measure-Object)",
       "Exec(Select-Object)",
-      "Exec(@('view_request.html','new_request.html','404.html','500.html','index.html','dashboard.html','requests.html'))"
+      "Exec(@('view_request.html','new_request.html','404.html','500.html','index.html','dashboard.html','requests.html'))",
+      "Exec(\"--- fichiers mobiles ---\")",
+      "Exec(Get-Content)",
+      "Exec(\"--- .env dans index ? ---\")"
     ]
   }
 }

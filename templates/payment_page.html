@@ -19,7 +19,8 @@
       <p><strong>Statut du devis</strong> : {{ request_item.quote_status }}</p>
     </div>
 
-    <form method="post" action="{{ url_for('create_payment', request_id=request_item['id']) }}">
+    <form method="post" action="{{ url_for('process_payment', request_id=request_item['id']) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
       <div class="payment-row">
         <label>Montant à payer</label>
         <input type="number" name="amount" min="0" step="1000" value="{{ request_item.quote_amount or 0 }}" required />

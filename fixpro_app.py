@@ -1,808 +1,841 @@
-import os
+"""FixPro - plateforme de mise en relation entre clients et artisans.
+
+Application Flask unique, compatible :
+  - execution locale sur SQLite
+  - deploiement serverless sur Vercel avec une base Supabase (PostgreSQL)
+
+Les acces a la base passent tous par le module `db`, ce qui permet
+d'ecrire les requetes une seule fois pour les deux moteurs.
+"""
+
 import math
 import re
-import sqlite3
-import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from functools import wraps
-from pathlib import Path
-from email_validator import validate_email, EmailNotValidError
 
-import psycopg2
-from psycopg2 import pool
-from flask import Flask, flash, jsonify, redirect, render_template, request, session, url_for
+from email_validator import EmailNotValidError, validate_email
+from flask import (Flask, flash, jsonify, redirect, render_template, request,
+                   session, url_for)
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from flask_wtf.csrf import CSRFProtect
 from werkzeug.security import check_password_hash, generate_password_hash
-from flask_socketio import SocketIO, emit
 
-# Import de la configuration
+import db
 from config import get_config, setup_logging
 
-# Charger la configuration
 config = get_config()
 app = Flask(__name__)
 app.config.from_object(config)
 
-# Configuration de la base de données
-app.config["DATABASE"] = config.FIXPRO_DB_PATH
-
-# Configuration du logging
 logger = setup_logging(app)
+csrf = CSRFProtect(app)
 
-# Configuration du rate limiting
 limiter = Limiter(
     app=app,
     key_func=get_remote_address,
-    default_limits=["200 per day", "50 per hour"],
-    storage_uri="memory://"
+    default_limits=["400 per day", "100 per hour"],
+    storage_uri="memory://",
 )
 
-# Configuration SocketIO pour le chat en temps réel
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
+
+def now_iso():
+    return datetime.now(timezone.utc).isoformat()
 
 
 def get_db_connection():
-    """Établit une connexion à la base de données avec gestion d'erreurs améliorée"""
-    db_engine = app.config.get("FIXPRO_DB_ENGINE", "sqlite").lower()
-    
-    # Priorité : Supabase/PostgreSQL > MySQL > SQLite
-    # Utiliser DATABASE_URL si disponible (Supabase)
-    database_url = app.config.get("DATABASE_URL", "")
-    
-    if database_url and db_engine in ("postgresql", "supabase"):
-        try:
-            conn = psycopg2.connect(database_url)
-            conn.autocommit = False
-            logger.info("Connexion PostgreSQL/Supabase établie avec succès")
-            return conn
-        except psycopg2.Error as err:
-            logger.error(f"Erreur de connexion PostgreSQL: {err}")
-            logger.info("Fallback vers SQLite")
-        except Exception as err:
-            logger.error(f"Erreur inattendue lors de la connexion PostgreSQL: {err}")
-            logger.info("Fallback vers SQLite")
-
-    if db_engine == "mysql":
-        try:
-            import mysql.connector
-            conn = mysql.connector.connect(
-                host=app.config.get("FIXPRO_DB_HOST", "localhost"),
-                user=app.config.get("FIXPRO_DB_USER", "root"),
-                password=app.config.get("FIXPRO_DB_PASS", ""),
-                database=app.config.get("FIXPRO_DB_NAME", "FixPro"),
-                autocommit=False,
-            )
-            conn.row_factory = None
-            logger.info("Connexion MySQL établie avec succès")
-            return conn
-        except Exception as err:
-            logger.error(f"Erreur de connexion MySQL: {err}")
-            logger.info("Fallback vers SQLite")
-
-    try:
-        conn = sqlite3.connect(app.config["DATABASE"])
-        conn.row_factory = sqlite3.Row
-        logger.info("Connexion SQLite établie avec succès")
-        return conn
-    except sqlite3.Error as err:
-        logger.error(f"Erreur de connexion SQLite: {err}")
-        raise
+    """Ouvre une connexion vers la base configuree pour cet environnement."""
+    return db.connect(
+        database_url=app.config.get("DATABASE_URL", ""),
+        sqlite_path=app.config.get("SQLITE_PATH", "fixpro.db"),
+    )
 
 
-def init_db():
-    """Initialise la base de données avec le schéma approprié selon le type"""
+# ---------------------------------------------------------------------------
+# Securite et helpers
+# ---------------------------------------------------------------------------
+
+@app.after_request
+def add_security_headers(response):
+    """Ajoute les en-tetes de securite recommandes a chaque reponse."""
+    response.headers["X-Frame-Options"] = "SAMEORIGIN"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    if not app.config.get("DEBUG"):
+        response.headers["Strict-Transport-Security"] = (
+            "max-age=31536000; includeSubDomains")
+    return response
+
+
+def login_required(view_func):
+    @wraps(view_func)
+    def wrapper(*args, **kwargs):
+        if not session.get("user_id"):
+            flash("Veuillez vous connecter pour accéder à cette page.", "error")
+            return redirect(url_for("login"))
+        return view_func(*args, **kwargs)
+
+    return wrapper
+
+
+def get_current_user():
+    user_id = session.get("user_id")
+    if not user_id:
+        return None
     conn = get_db_connection()
     try:
-        db_engine = app.config.get("FIXPRO_DB_ENGINE", "sqlite").lower()
-        database_url = app.config.get("DATABASE_URL", "")
-        
-        # Déterminer si on utilise PostgreSQL/Supabase
-        is_postgresql = database_url or db_engine in ("postgresql", "supabase")
-        
-        if is_postgresql:
-            # Schéma PostgreSQL/Supabase
-            schema_sql = """
-            CREATE TABLE IF NOT EXISTS users (
-                id SERIAL PRIMARY KEY,
-                email TEXT UNIQUE NOT NULL,
-                password_hash TEXT NOT NULL,
-                role TEXT NOT NULL,
-                full_name TEXT NOT NULL,
-                phone TEXT,
-                profession TEXT,
-                city TEXT,
-                bio TEXT,
-                latitude REAL DEFAULT 0,
-                longitude REAL DEFAULT 0,
-                hourly_rate REAL DEFAULT 0,
-                is_verified INTEGER DEFAULT 0,
-                created_at TEXT DEFAULT CURRENT_TIMESTAMP
-            );
-
-            CREATE TABLE IF NOT EXISTS requests (
-                id SERIAL PRIMARY KEY,
-                client_id INTEGER NOT NULL,
-                artisan_id INTEGER,
-                title TEXT NOT NULL,
-                description TEXT NOT NULL,
-                category TEXT,
-                address TEXT,
-                photo_url TEXT,
-                diagnostic_price REAL DEFAULT 0,
-                budget REAL DEFAULT 0,
-                quote_amount REAL DEFAULT 0,
-                quote_description TEXT,
-                quote_status TEXT DEFAULT 'none',
-                quote_proposed_at TEXT,
-                quote_approved_at TEXT,
-                status TEXT DEFAULT 'pending',
-                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-            );
-
-            CREATE TABLE IF NOT EXISTS service_categories (
-                id SERIAL PRIMARY KEY,
-                name TEXT UNIQUE NOT NULL,
-                diagnostic_price REAL DEFAULT 0,
-                created_at TEXT DEFAULT CURRENT_TIMESTAMP
-            );
-
-            CREATE TABLE IF NOT EXISTS messages (
-                id SERIAL PRIMARY KEY,
-                request_id INTEGER NOT NULL,
-                sender_id INTEGER NOT NULL,
-                content TEXT NOT NULL,
-                created_at TEXT DEFAULT CURRENT_TIMESTAMP
-            );
-
-            CREATE TABLE IF NOT EXISTS payments (
-                id SERIAL PRIMARY KEY,
-                request_id INTEGER NOT NULL,
-                amount REAL NOT NULL,
-                method TEXT DEFAULT 'cash',
-                status TEXT DEFAULT 'pending',
-                reference TEXT,
-                details TEXT,
-                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-            );
-
-            CREATE TABLE IF NOT EXISTS artisans (
-                id SERIAL PRIMARY KEY,
-                nom TEXT NOT NULL,
-                prenom TEXT NOT NULL,
-                telephone TEXT NOT NULL UNIQUE,
-                metier TEXT NOT NULL,
-                zone TEXT NOT NULL,
-                latitude REAL NOT NULL,
-                longitude REAL NOT NULL,
-                tarif_horaire REAL NOT NULL,
-                taux_commission INTEGER DEFAULT 10,
-                date_inscription TEXT DEFAULT CURRENT_TIMESTAMP,
-                statut TEXT DEFAULT 'actif'
-            );
-
-            CREATE TABLE IF NOT EXISTS clients (
-                id SERIAL PRIMARY KEY,
-                nom TEXT NOT NULL,
-                telephone TEXT NOT NULL UNIQUE,
-                latitude REAL NOT NULL,
-                longitude REAL NOT NULL,
-                date_inscription TEXT DEFAULT CURRENT_TIMESTAMP,
-                statut TEXT DEFAULT 'actif'
-            );
-            
-            -- Index pour optimiser les performances
-            CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
-            CREATE INDEX IF NOT EXISTS idx_requests_client_id ON requests(client_id);
-            CREATE INDEX IF NOT EXISTS idx_requests_artisan_id ON requests(artisan_id);
-            CREATE INDEX IF NOT EXISTS idx_messages_request_id ON messages(request_id);
-            CREATE INDEX IF NOT EXISTS idx_payments_request_id ON payments(request_id);
-            """
-        else:
-            # Schéma SQLite (original)
-            schema_sql = """
-            CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                email TEXT UNIQUE NOT NULL,
-                password_hash TEXT NOT NULL,
-                role TEXT NOT NULL,
-                full_name TEXT NOT NULL,
-                phone TEXT,
-                profession TEXT,
-                city TEXT,
-                bio TEXT,
-                latitude REAL DEFAULT 0,
-                longitude REAL DEFAULT 0,
-                hourly_rate REAL DEFAULT 0,
-                is_verified INTEGER DEFAULT 0,
-                created_at TEXT DEFAULT CURRENT_TIMESTAMP
-            );
-
-            CREATE TABLE IF NOT EXISTS requests (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                client_id INTEGER NOT NULL,
-                artisan_id INTEGER,
-                title TEXT NOT NULL,
-                description TEXT NOT NULL,
-                category TEXT,
-                address TEXT,
-                photo_url TEXT,
-                diagnostic_price REAL DEFAULT 0,
-                budget REAL DEFAULT 0,
-                quote_amount REAL DEFAULT 0,
-                quote_description TEXT,
-                quote_status TEXT DEFAULT 'none',
-                quote_proposed_at TEXT,
-                quote_approved_at TEXT,
-                status TEXT DEFAULT 'pending',
-                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-            );
-
-            CREATE TABLE IF NOT EXISTS service_categories (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT UNIQUE NOT NULL,
-                diagnostic_price REAL DEFAULT 0,
-                created_at TEXT DEFAULT CURRENT_TIMESTAMP
-            );
-
-            CREATE TABLE IF NOT EXISTS messages (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                request_id INTEGER NOT NULL,
-                sender_id INTEGER NOT NULL,
-                content TEXT NOT NULL,
-                created_at TEXT DEFAULT CURRENT_TIMESTAMP
-            );
-
-            CREATE TABLE IF NOT EXISTS payments (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                request_id INTEGER NOT NULL,
-                amount REAL NOT NULL,
-                method TEXT DEFAULT 'cash',
-                status TEXT DEFAULT 'pending',
-                reference TEXT,
-                details TEXT,
-                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-            );
-
-            CREATE TABLE IF NOT EXISTS artisans (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                nom TEXT NOT NULL,
-                prenom TEXT NOT NULL,
-                telephone TEXT NOT NULL UNIQUE,
-                metier TEXT NOT NULL,
-                zone TEXT NOT NULL,
-                latitude REAL NOT NULL,
-                longitude REAL NOT NULL,
-                tarif_horaire REAL NOT NULL,
-                taux_commission INTEGER DEFAULT 10,
-                date_inscription TEXT DEFAULT CURRENT_TIMESTAMP,
-                statut TEXT DEFAULT 'actif'
-            );
-
-            CREATE TABLE IF NOT EXISTS clients (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                nom TEXT NOT NULL,
-                telephone TEXT NOT NULL UNIQUE,
-                latitude REAL NOT NULL,
-                longitude REAL NOT NULL,
-                date_inscription TEXT DEFAULT CURRENT_TIMESTAMP,
-                statut TEXT DEFAULT 'actif'
-            );
-
-            CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
-            CREATE INDEX IF NOT EXISTS idx_requests_client_id ON requests(client_id);
-            CREATE INDEX IF NOT EXISTS idx_requests_artisan_id ON requests(artisan_id);
-            CREATE INDEX IF NOT EXISTS idx_messages_request_id ON messages(request_id);
-            CREATE INDEX IF NOT EXISTS idx_payments_request_id ON payments(request_id);
-            """
-        
-        cursor = conn.cursor()
-        cursor.executescript(schema_sql)
-        conn.commit()
-        logger.info("Base de données initialisée avec succès")
-        
-        # Créer des données de démonstration si pas d'utilisateurs
-        cursor.execute("SELECT COUNT(*) as count FROM users")
-        user_count = cursor.fetchone()['count'] if not is_postgresql else cursor.fetchone()[0]
-        
-        if user_count == 0:
-            logger.info("Création des données de démonstration...")
-            create_demo_data(cursor, is_postgresql)
-            conn.commit()
-            
-    except Exception as e:
-        logger.error(f"Erreur lors de l'initialisation de la base de données: {e}")
-        conn.rollback()
-        raise
+        return conn.execute(
+            "SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
     finally:
         conn.close()
 
 
-def create_demo_data(cursor, is_postgresql):
-    """Crée des données de démonstration pour l'application"""
-    try:
-        # Créer un admin
-        admin_password = generate_password_hash("admin123")
-        if is_postgresql:
-            cursor.execute("""
-                INSERT INTO users (email, password_hash, role, full_name, profession, city, is_verified)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
-            """, ("admin@fixpro.com", admin_password, "admin", "Admin FixPro", "Administrateur", "Conakry", 1))
-        else:
-            cursor.execute("""
-                INSERT INTO users (email, password_hash, role, full_name, profession, city, is_verified)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, ("admin@fixpro.com", admin_password, "admin", "Admin FixPro", "Administrateur", "Conakry", 1))
-        
-        # Créer des catégories de services
-        categories = [
-            ("Plomberie", 5000),
-            ("Électricité", 5000),
-            ("Maçonnerie", 5000),
-            ("Menuiserie", 5000),
-            ("Peinture", 3000),
-            ("Climatisation", 10000),
-            ("Serrurerie", 5000),
-            ("Mécanique", 5000)
-        ]
-        
-        for name, price in categories:
-            if is_postgresql:
-                cursor.execute("""
-                    INSERT INTO service_categories (name, diagnostic_price)
-                    VALUES (%s, %s)
-                """, (name, price))
-            else:
-                cursor.execute("""
-                    INSERT INTO service_categories (name, diagnostic_price)
-                    VALUES (?, ?)
-                """, (name, price))
-        
-        logger.info("Données de démonstration créées avec succès")
-        
-    except Exception as e:
-        logger.error(f"Erreur lors de la création des données de démonstration: {e}")
+PAYMENT_METHODS = {
+    "orange_money": "Orange Money",
+    "mtn_mobile_money": "MTN Mobile Money",
+    "card": "Carte bancaire",
+    "cash": "Espèces en main propre",
+    "mobile_money": "Mobile Money",
+}
 
 
-# Décorateurs de sécurité
-def login_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'user_id' not in session:
-            flash('Veuillez vous connecter pour accéder à cette page.', 'warning')
-            return redirect(url_for('login'))
-        return f(*args, **kwargs)
-    return decorated_function
+def payment_method_label(method):
+    return PAYMENT_METHODS.get(method, (method or "").replace("_", " ").title())
 
 
-def admin_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'user_id' not in session:
-            flash('Veuillez vous connecter pour accéder à cette page.', 'warning')
-            return redirect(url_for('login'))
-        if session.get('role') != 'admin':
-            flash('Accès réservé aux administrateurs.', 'danger')
-            return redirect(url_for('dashboard'))
-        return f(*args, **kwargs)
-    return decorated_function
+def can_access_request(user, req):
+    """Determine si un utilisateur a le droit de consulter une intervention.
+
+    Le client et l'artisan attribue y ont acces. Une demande encore ouverte
+    reste visible par tous les artisans, sans quoi aucun d'eux ne pourrait
+    la consulter pour decider de la prendre en charge.
+    """
+    if not user or not req:
+        return False
+    if user["role"] == "admin":
+        return True
+    if user["id"] in (req["client_id"], req["artisan_id"]):
+        return True
+    return user["role"] == "artisan" and req["status"] == "pending"
 
 
-# Routes principales
-@app.route('/')
+_PHONE_PATTERN = re.compile(r"(?:\d[\s\-\.\(\)]?){8,}")
+_FORBIDDEN_PHRASES = (
+    "whatsapp", "appelle-moi", "appelle moi", "appelez-moi",
+    "contacte-moi", "contacte moi", "contactez-moi",
+    "coordonnées", "téléphone", "tel:", "wa.me", "telegram", "sms", "signal",
+)
+
+
+def is_prohibited_message(content):
+    """Detecte les tentatives de contact en dehors de la plateforme.
+
+    Le modele economique repose sur la commission prelevee par FixPro :
+    l'echange de numeros de telephone est donc bloque dans la messagerie.
+    """
+    content = content or ""
+    if _PHONE_PATTERN.search(content):
+        return True
+    normalized = re.sub(r"\s+", " ", content.lower())
+    return any(phrase in normalized for phrase in _FORBIDDEN_PHRASES)
+
+
+def calculate_distance(lat1, lon1, lat2, lon2):
+    """Distance orthodromique en kilometres entre deux points GPS."""
+    radius = 6371
+    lat1_rad, lat2_rad = math.radians(lat1), math.radians(lat2)
+    delta_lat = lat2_rad - lat1_rad
+    delta_lon = math.radians(lon2) - math.radians(lon1)
+    a = (math.sin(delta_lat / 2) ** 2
+         + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(delta_lon / 2) ** 2)
+    return radius * 2 * math.asin(math.sqrt(a))
+
+
+# ---------------------------------------------------------------------------
+# Pages publiques
+# ---------------------------------------------------------------------------
+
+@app.route("/")
 def index():
-    """Page d'accueil"""
-    return render_template('index.html')
+    if session.get("user_id"):
+        return redirect(url_for("dashboard"))
+    return render_template("landing.html")
 
 
-@app.route('/login', methods=['GET', 'POST'])
-@limiter.limit("10 per minute")
-def login():
-    """Page de connexion"""
-    if request.method == 'POST':
-        email = request.form.get('email', '').strip()
-        password = request.form.get('password', '')
-        
-        # Validation de l'email
-        try:
-            validate_email(email)
-        except EmailNotValidError:
-            flash('Format d\'email invalide.', 'danger')
-            return render_template('login.html')
-        
-        if not email or not password:
-            flash('Veuillez remplir tous les champs.', 'warning')
-            return render_template('login.html')
-        
-        conn = get_db_connection()
-        try:
-            cursor = conn.cursor()
-            cursor.execute("SELECT * FROM users WHERE email = ?", (email,))
-            user = cursor.fetchone()
-            
-            if user and check_password_hash(user['password_hash'], password):
-                session['user_id'] = user['id']
-                session['email'] = user['email']
-                session['role'] = user['role']
-                session['full_name'] = user['full_name']
-                
-                logger.info(f"Utilisateur connecté: {email}")
-                flash('Connexion réussie!', 'success')
-                return redirect(url_for('dashboard'))
-            else:
-                flash('Email ou mot de passe incorrect.', 'danger')
-        finally:
-            conn.close()
-    
-    return render_template('login.html')
+@app.route("/contact")
+def contact():
+    return render_template("contact.html")
 
 
-@app.route('/register', methods=['GET', 'POST'])
-@limiter.limit("5 per hour")
+@app.route("/mobile_welcome")
+def mobile_welcome():
+    return render_template("mobile_welcome.html")
+
+
+@app.route("/health")
+def health_check():
+    """Point de controle utilise par Vercel et la supervision."""
+    return jsonify({"status": "ok", "timestamp": now_iso()})
+
+
+# ---------------------------------------------------------------------------
+# Authentification
+# ---------------------------------------------------------------------------
+
+@app.route("/register", methods=["GET", "POST"])
+@limiter.limit("10 per hour", methods=["POST"])
 def register():
-    """Page d'inscription"""
-    if request.method == 'POST':
-        email = request.form.get('email', '').strip()
-        password = request.form.get('password', '')
-        confirm_password = request.form.get('confirm_password', '')
-        full_name = request.form.get('full_name', '').strip()
-        role = request.form.get('role', 'client')
-        phone = request.form.get('phone', '').strip()
-        profession = request.form.get('profession', '').strip()
-        city = request.form.get('city', '').strip()
-        
-        # Validation
+    if request.method == "POST":
+        email = request.form.get("email", "").strip().lower()
+        password = request.form.get("password", "")
+        role = request.form.get("role", "client")
+        full_name = request.form.get("full_name", "").strip()
+
+        if not email or not password or not full_name:
+            flash("Veuillez remplir tous les champs obligatoires.", "error")
+            return redirect(url_for("register"))
+
         try:
-            validate_email(email)
+            validate_email(email, check_deliverability=False)
         except EmailNotValidError:
-            flash('Format d\'email invalide.', 'danger')
-            return render_template('register.html')
-        
-        if password != confirm_password:
-            flash('Les mots de passe ne correspondent pas.', 'danger')
-            return render_template('register.html')
-        
+            flash("Format d'email invalide.", "error")
+            return redirect(url_for("register"))
+
         if len(password) < 8:
-            flash('Le mot de passe doit contenir au moins 8 caractères.', 'danger')
-            return render_template('register.html')
-        
+            flash("Le mot de passe doit contenir au moins 8 caractères.", "error")
+            return redirect(url_for("register"))
+
+        if role not in ("client", "artisan"):
+            role = "client"
+
         conn = get_db_connection()
         try:
-            cursor = conn.cursor()
-            cursor.execute("SELECT id FROM users WHERE email = ?", (email,))
-            if cursor.fetchone():
-                flash('Cet email est déjà utilisé.', 'danger')
-                return render_template('register.html')
-            
-            password_hash = generate_password_hash(password)
-            cursor.execute("""
-                INSERT INTO users (email, password_hash, role, full_name, phone, profession, city)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, (email, password_hash, role, full_name, phone, profession, city))
+            existing = conn.execute(
+                "SELECT id FROM users WHERE email = ?", (email,)).fetchone()
+            if existing:
+                flash("Cet email est déjà utilisé.", "error")
+                return redirect(url_for("register"))
+
+            conn.execute(
+                "INSERT INTO users (email, password_hash, role, full_name,"
+                " phone, profession, city, bio)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                (email, generate_password_hash(password), role, full_name,
+                 request.form.get("phone", "").strip(),
+                 request.form.get("profession", "").strip(),
+                 request.form.get("city", "").strip(),
+                 request.form.get("bio", "").strip()),
+            )
             conn.commit()
-            
-            logger.info(f"Nouvel utilisateur inscrit: {email}")
-            flash('Inscription réussie! Vous pouvez maintenant vous connecter.', 'success')
-            return redirect(url_for('login'))
+            flash("Compte créé avec succès. Vous pouvez vous connecter.", "success")
+            return redirect(url_for("login"))
         finally:
             conn.close()
-    
-    return render_template('register.html')
+
+    return render_template("register.html")
 
 
-@app.route('/logout')
+@app.route("/login", methods=["GET", "POST"])
+@limiter.limit("20 per hour", methods=["POST"])
+def login():
+    if request.method == "POST":
+        email = request.form.get("email", "").strip().lower()
+        password = request.form.get("password", "")
+
+        conn = get_db_connection()
+        try:
+            user = conn.execute(
+                "SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+        finally:
+            conn.close()
+
+        if user and check_password_hash(user["password_hash"], password):
+            session.clear()
+            session["user_id"] = user["id"]
+            session.permanent = True
+            flash("Bienvenue dans FixPro.", "success")
+            return redirect(url_for("dashboard"))
+
+        # Message volontairement identique dans les deux cas d'echec, afin de
+        # ne pas reveler si une adresse est enregistree sur la plateforme.
+        flash("Identifiants incorrects.", "error")
+
+    return render_template("login.html")
+
+
+@app.route("/logout")
 def logout():
-    """Déconnexion"""
     session.clear()
-    flash('Vous avez été déconnecté.', 'info')
-    return redirect(url_for('index'))
+    flash("Vous avez été déconnecté.", "success")
+    return redirect(url_for("login"))
 
 
-@app.route('/dashboard')
+# ---------------------------------------------------------------------------
+# Espace connecte
+# ---------------------------------------------------------------------------
+
+@app.route("/dashboard")
 @login_required
 def dashboard():
-    """Tableau de bord utilisateur"""
+    user = get_current_user()
     conn = get_db_connection()
     try:
-        cursor = conn.cursor()
-        
-        # Statistiques de base
-        cursor.execute("SELECT COUNT(*) as count FROM requests WHERE client_id = ?", (session['user_id'],))
-        my_requests = cursor.fetchone()['count']
-        
-        cursor.execute("SELECT COUNT(*) as count FROM requests WHERE artisan_id = ?", (session['user_id'],))
-        assigned_requests = cursor.fetchone()['count']
-        
-        return render_template('dashboard.html', 
-                             my_requests=my_requests,
-                             assigned_requests=assigned_requests)
-    finally:
-        conn.close()
-
-
-@app.route('/requests')
-@login_required
-def list_requests():
-    """Liste des demandes"""
-    conn = get_db_connection()
-    try:
-        cursor = conn.cursor()
-        
-        if session['role'] == 'client':
-            cursor.execute("""
-                SELECT r.*, u.full_name as artisan_name 
-                FROM requests r
-                LEFT JOIN users u ON r.artisan_id = u.id
-                WHERE r.client_id = ?
-                ORDER BY r.created_at DESC
-            """, (session['user_id'],))
+        if user["role"] == "artisan":
+            rows = conn.execute(
+                "SELECT status, quote_amount FROM requests WHERE artisan_id = ?",
+                (user["id"],)).fetchall()
         else:
-            cursor.execute("""
-                SELECT r.*, u.full_name as client_name 
-                FROM requests r
-                LEFT JOIN users u ON r.client_id = u.id
-                WHERE r.artisan_id = ? OR r.status = 'pending'
-                ORDER BY r.created_at DESC
-            """, (session['user_id'],))
-        
-        requests = cursor.fetchall()
-        return render_template('requests.html', requests=requests)
+            rows = conn.execute(
+                "SELECT status, quote_amount FROM requests WHERE client_id = ?",
+                (user["id"],)).fetchall()
+        paid = conn.execute(
+            "SELECT COALESCE(SUM(amount), 0) AS total FROM payments p"
+            " JOIN requests r ON r.id = p.request_id"
+            " WHERE p.status = 'completed' AND (r.client_id = ? OR r.artisan_id = ?)",
+            (user["id"], user["id"])).fetchone()
     finally:
         conn.close()
 
+    stats = {
+        "contracts": sum(1 for r in rows if r["status"] not in
+                         ("completed", "cancelled")),
+        "completed": sum(1 for r in rows if r["status"] == "completed"),
+        "total_spent": float(paid["total"] or 0),
+    }
+    return render_template("dashboard_client.html", user=user, stats=stats)
 
-@app.route('/request/<int:request_id>')
+
+@app.route("/mobile_dashboard")
 @login_required
-def view_request(request_id):
-    """Voir une demande spécifique"""
-    conn = get_db_connection()
-    try:
-        cursor = conn.cursor()
-        cursor.execute("""
-            SELECT r.*, 
-                   c.full_name as client_name,
-                   a.full_name as artisan_name
-            FROM requests r
-            LEFT JOIN users c ON r.client_id = c.id
-            LEFT JOIN users a ON r.artisan_id = a.id
-            WHERE r.id = ?
-        """, (request_id,))
-        request_data = cursor.fetchone()
-        
-        if not request_data:
-            flash('Demande non trouvée.', 'danger')
-            return redirect(url_for('list_requests'))
-        
-        # Vérifier les permissions
-        if (request_data['client_id'] != session['user_id'] and 
-            request_data['artisan_id'] != session['user_id'] and
-            session['role'] != 'admin'):
-            flash('Accès non autorisé.', 'danger')
-            return redirect(url_for('list_requests'))
-        
-        # Récupérer les messages
-        cursor.execute("""
-            SELECT m.*, u.full_name as sender_name
-            FROM messages m
-            JOIN users u ON m.sender_id = u.id
-            WHERE m.request_id = ?
-            ORDER BY m.created_at ASC
-        """, (request_id,))
-        messages = cursor.fetchall()
-        
-        return render_template('view_request.html', 
-                             request=request_data, 
-                             messages=messages)
-    finally:
-        conn.close()
+def mobile_dashboard():
+    return render_template("mobile_dashboard.html", user=get_current_user())
 
 
-@app.route('/request/new', methods=['GET', 'POST'])
+@app.route("/profile", methods=["GET", "POST"])
 @login_required
-def new_request():
-    """Créer une nouvelle demande"""
-    if session['role'] != 'client':
-        flash('Seuls les clients peuvent créer des demandes.', 'warning')
-        return redirect(url_for('dashboard'))
-    
-    if request.method == 'POST':
-        title = request.form.get('title', '').strip()
-        description = request.form.get('description', '').strip()
-        category = request.form.get('category', '').strip()
-        address = request.form.get('address', '').strip()
-        budget = request.form.get('budget', 0)
-        
-        if not title or not description:
-            flash('Veuillez remplir les champs obligatoires.', 'warning')
-            return render_template('new_request.html')
-        
+def profile():
+    user = get_current_user()
+    if request.method == "POST":
         conn = get_db_connection()
         try:
-            cursor = conn.cursor()
-            cursor.execute("""
-                INSERT INTO requests (client_id, title, description, category, address, budget)
-                VALUES (?, ?, ?, ?, ?, ?)
-            """, (session['user_id'], title, description, category, address, budget))
+            conn.execute(
+                "UPDATE users SET full_name = ?, phone = ?, profession = ?,"
+                " city = ?, bio = ?, hourly_rate = ?, latitude = ?, longitude = ?"
+                " WHERE id = ?",
+                (request.form.get("full_name", "").strip(),
+                 request.form.get("phone", "").strip(),
+                 request.form.get("profession", "").strip(),
+                 request.form.get("city", "").strip(),
+                 request.form.get("bio", "").strip(),
+                 _to_float(request.form.get("hourly_rate")),
+                 _to_float(request.form.get("latitude")),
+                 _to_float(request.form.get("longitude")),
+                 user["id"]),
+            )
             conn.commit()
-            
-            logger.info(f"Nouvelle demande créée par {session['email']}")
-            flash('Demande créée avec succès!', 'success')
-            return redirect(url_for('list_requests'))
+            flash("Profil mis à jour.", "success")
         finally:
             conn.close()
-    
-    return render_template('new_request.html')
+        return redirect(url_for("profile"))
+
+    return render_template("profile.html", user=user)
 
 
-@app.route('/request/<int:request_id>/assign', methods=['POST'])
+def _to_float(value, default=0.0):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+@app.route("/artisans")
 @login_required
-def assign_request(request_id):
-    """Assigner une demande à un artisan"""
-    if session['role'] != 'artisan':
-        flash('Seuls les artisans peuvent assigner des demandes.', 'warning')
-        return redirect(url_for('list_requests'))
-    
+def artisans_page():
+    user = get_current_user()
     conn = get_db_connection()
     try:
-        cursor = conn.cursor()
-        cursor.execute("""
-            UPDATE requests 
-            SET artisan_id = ?, status = 'assigned'
-            WHERE id = ? AND status = 'pending'
-        """, (session['user_id'], request_id))
-        conn.commit()
-        
-        logger.info(f"Demande {request_id} assignée à {session['email']}")
-        flash('Demande assignée avec succès!', 'success')
+        artisans = conn.execute(
+            "SELECT id, full_name AS nom, profession AS metier, city,"
+            " hourly_rate, latitude, longitude FROM users"
+            " WHERE role = 'artisan' ORDER BY full_name").fetchall()
+        active_requests = {}
+        if user["role"] == "client":
+            rows = conn.execute(
+                "SELECT id, artisan_id FROM requests WHERE client_id = ?"
+                " AND artisan_id IS NOT NULL AND status != 'pending'"
+                " ORDER BY updated_at DESC", (user["id"],)).fetchall()
+            active_requests = {r["artisan_id"]: r["id"] for r in rows}
     finally:
         conn.close()
-    
-    return redirect(url_for('list_requests'))
+    return render_template("artisans.html", artisans=artisans, user=user,
+                           active_requests=active_requests)
 
 
-@app.route('/request/<int:request_id>/quote', methods=['POST'])
+@app.route("/artisans/<int:artisan_id>/contact")
 @login_required
-def submit_quote(request_id):
-    """Soumettre un devis"""
-    if session['role'] != 'artisan':
-        flash('Seuls les artisans peuvent soumettre des devis.', 'warning')
-        return redirect(url_for('list_requests'))
-    
-    quote_amount = request.form.get('quote_amount', 0)
-    quote_description = request.form.get('quote_description', '').strip()
-    
+def artisan_contact(artisan_id):
+    user = get_current_user()
+    if user["role"] != "client":
+        flash("Cette action est réservée aux clients.", "error")
+        return redirect(url_for("artisans_page"))
+
     conn = get_db_connection()
     try:
-        cursor = conn.cursor()
-        cursor.execute("""
-            UPDATE requests 
-            SET quote_amount = ?, quote_description = ?, 
-                quote_status = 'proposed', quote_proposed_at = ?
-            WHERE id = ? AND artisan_id = ?
-        """, (quote_amount, quote_description, datetime.now().isoformat(), 
-              request_id, session['user_id']))
-        conn.commit()
-        
-        logger.info(f"Devis soumis pour demande {request_id} par {session['email']}")
-        flash('Devis soumis avec succès!', 'success')
+        req = conn.execute(
+            "SELECT id FROM requests WHERE client_id = ? AND artisan_id = ?"
+            " AND status IN ('assigned', 'quote_proposed', 'quote_accepted')"
+            " ORDER BY updated_at DESC LIMIT 1",
+            (user["id"], artisan_id)).fetchone()
     finally:
         conn.close()
-    
-    return redirect(url_for('view_request', request_id=request_id))
+
+    if req:
+        return redirect(url_for("request_detail", request_id=req["id"]))
+
+    flash("Aucun contrat actif avec ce technicien. Créez d'abord une demande "
+          "pour démarrer une conversation.", "info")
+    return redirect(url_for("request_new"))
 
 
-@app.route('/request/<int:request_id>/approve', methods=['POST'])
+@app.route("/conversations")
 @login_required
-def approve_quote(request_id):
-    """Approuver un devis"""
-    if session['role'] != 'client':
-        flash('Seuls les clients peuvent approuver des devis.', 'warning')
-        return redirect(url_for('list_requests'))
-    
+def conversations():
+    user = get_current_user()
     conn = get_db_connection()
     try:
-        cursor = conn.cursor()
-        cursor.execute("""
-            UPDATE requests 
-            SET quote_status = 'approved', quote_approved_at = ?
-            WHERE id = ? AND client_id = ?
-        """, (datetime.now().isoformat(), request_id, session['user_id']))
+        if user["role"] == "artisan":
+            rows = conn.execute(
+                "SELECT r.*, u.full_name AS client_name FROM requests r"
+                " JOIN users u ON u.id = r.client_id"
+                " WHERE r.artisan_id = ? ORDER BY r.updated_at DESC",
+                (user["id"],)).fetchall()
+        else:
+            rows = conn.execute(
+                "SELECT r.*, u.full_name AS artisan_name FROM requests r"
+                " LEFT JOIN users u ON u.id = r.artisan_id"
+                " WHERE r.client_id = ? ORDER BY r.updated_at DESC",
+                (user["id"],)).fetchall()
+
+        threads = [
+            {
+                "request": row,
+                "last_message": conn.execute(
+                    "SELECT content, sender_id, created_at FROM messages"
+                    " WHERE request_id = ? ORDER BY created_at DESC LIMIT 1",
+                    (row["id"],)).fetchone(),
+            }
+            for row in rows
+        ]
+    finally:
+        conn.close()
+    return render_template("conversations.html", conversations=threads, user=user)
+
+
+# ---------------------------------------------------------------------------
+# Demandes d'intervention
+# ---------------------------------------------------------------------------
+
+@app.route("/requests")
+@login_required
+def requests_list():
+    user = get_current_user()
+    conn = get_db_connection()
+    try:
+        if user["role"] == "artisan":
+            rows = conn.execute(
+                "SELECT * FROM requests WHERE artisan_id = ? OR status = 'pending'"
+                " ORDER BY created_at DESC", (user["id"],)).fetchall()
+        else:
+            rows = conn.execute(
+                "SELECT * FROM requests WHERE client_id = ?"
+                " ORDER BY created_at DESC", (user["id"],)).fetchall()
+    finally:
+        conn.close()
+    return render_template("requests.html", requests=rows, user=user)
+
+
+@app.route("/requests/new", methods=["GET", "POST"])
+@login_required
+def request_new():
+    user = get_current_user()
+    conn = get_db_connection()
+    try:
+        categories = conn.execute(
+            "SELECT * FROM service_categories ORDER BY name").fetchall()
+
+        if request.method == "POST":
+            title = request.form.get("title", "").strip()
+            description = request.form.get("description", "").strip()
+            category = request.form.get("category", "").strip()
+
+            if not title or not description:
+                flash("Le titre et la description sont obligatoires.", "error")
+                return redirect(url_for("request_new"))
+
+            category_row = conn.execute(
+                "SELECT diagnostic_price FROM service_categories WHERE name = ?",
+                (category,)).fetchone()
+
+            conn.execute(
+                "INSERT INTO requests (client_id, title, description, category,"
+                " address, photo_url, diagnostic_price, budget, status)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')",
+                (user["id"], title, description, category,
+                 request.form.get("address", "").strip(),
+                 request.form.get("photo_url", "").strip(),
+                 float(category_row["diagnostic_price"]) if category_row else 0,
+                 _to_float(request.form.get("budget"))),
+            )
+            conn.commit()
+            flash("Demande d'intervention créée. Un artisan pourra maintenant "
+                  "la prendre en charge.", "success")
+            return redirect(url_for("requests_list"))
+    finally:
+        conn.close()
+
+    return render_template("request_form.html", categories=categories, user=user)
+
+
+@app.route("/requests/<int:request_id>", methods=["GET", "POST"])
+@login_required
+def request_detail(request_id):
+    user = get_current_user()
+    conn = get_db_connection()
+    try:
+        req = conn.execute(
+            "SELECT * FROM requests WHERE id = ?", (request_id,)).fetchone()
+        if not req:
+            flash("Demande introuvable.", "error")
+            return redirect(url_for("requests_list"))
+
+        if not can_access_request(user, req):
+            flash("Vous n'êtes pas autorisé à voir cette intervention.", "error")
+            return redirect(url_for("requests_list"))
+
+        if request.method == "POST":
+            content = request.form.get("message", "").strip()
+            if content:
+                if is_prohibited_message(content):
+                    flash("Message bloqué : vous ne pouvez pas partager de "
+                          "coordonnées personnelles ou demander un contact en "
+                          "dehors de la plateforme.", "error")
+                else:
+                    conn.execute(
+                        "INSERT INTO messages (request_id, sender_id, content)"
+                        " VALUES (?, ?, ?)", (request_id, user["id"], content))
+                    conn.commit()
+                    flash("Message envoyé.", "success")
+            return redirect(url_for("request_detail", request_id=request_id))
+
+        client = conn.execute(
+            "SELECT * FROM users WHERE id = ?", (req["client_id"],)).fetchone()
+        artisan = conn.execute(
+            "SELECT * FROM users WHERE id = ?", (req["artisan_id"],)
+        ).fetchone() if req["artisan_id"] else None
+        messages = conn.execute(
+            "SELECT m.*, u.full_name AS sender_name FROM messages m"
+            " JOIN users u ON u.id = m.sender_id"
+            " WHERE m.request_id = ? ORDER BY m.created_at ASC",
+            (request_id,)).fetchall()
+        payments = conn.execute(
+            "SELECT * FROM payments WHERE request_id = ?"
+            " ORDER BY created_at DESC", (request_id,)).fetchall()
+    finally:
+        conn.close()
+
+    return render_template("request_detail.html", request_item=req,
+                           client=client, artisan=artisan, messages=messages,
+                           payments=payments, user=user,
+                           payment_method_label=payment_method_label)
+
+
+@app.route("/requests/<int:request_id>/accept", methods=["POST"])
+@login_required
+def accept_request(request_id):
+    user = get_current_user()
+    if user["role"] != "artisan":
+        flash("Seuls les artisans peuvent accepter une demande.", "error")
+        return redirect(url_for("requests_list"))
+
+    conn = get_db_connection()
+    try:
+        req = conn.execute(
+            "SELECT * FROM requests WHERE id = ?", (request_id,)).fetchone()
+        if not req or req["status"] != "pending":
+            flash("Cette demande n'est plus disponible.", "error")
+            return redirect(url_for("requests_list"))
+
+        conn.execute(
+            "UPDATE requests SET artisan_id = ?, status = 'assigned',"
+            " updated_at = ? WHERE id = ? AND status = 'pending'",
+            (user["id"], now_iso(), request_id))
         conn.commit()
-        
-        logger.info(f"Devis approuvé pour demande {request_id} par {session['email']}")
-        flash('Devis approuvé avec succès!', 'success')
+        flash("Demande attribuée. Proposez un devis afin que le client puisse "
+              "l'accepter.", "success")
     finally:
         conn.close()
-    
-    return redirect(url_for('view_request', request_id=request_id))
+    return redirect(url_for("request_detail", request_id=request_id))
 
 
-# SocketIO events pour le chat en temps réel
-@socketio.on('join')
-def on_join(data):
-    """Rejoindre une room de chat"""
-    request_id = data['request_id']
-    room = f"request_{request_id}"
-    join_room(room)
-    emit('status', {'msg': f"{session['full_name']} a rejoint le chat"}, room=room)
+@app.route("/requests/<int:request_id>/quote", methods=["POST"])
+@login_required
+def propose_quote(request_id):
+    user = get_current_user()
+    if user["role"] != "artisan":
+        flash("Seuls les artisans peuvent proposer un devis.", "error")
+        return redirect(url_for("requests_list"))
 
-
-@socketio.on('send_message')
-def on_send_message(data):
-    """Envoyer un message dans le chat"""
-    request_id = data['request_id']
-    content = data['content']
-    
-    if not content.strip():
-        return
-    
     conn = get_db_connection()
     try:
-        cursor = conn.cursor()
-        cursor.execute("""
-            INSERT INTO messages (request_id, sender_id, content)
-            VALUES (?, ?, ?)
-        """, (request_id, session['user_id'], content))
+        req = conn.execute(
+            "SELECT * FROM requests WHERE id = ?", (request_id,)).fetchone()
+        if not req or req["artisan_id"] != user["id"]:
+            flash("Accès refusé.", "error")
+            return redirect(url_for("requests_list"))
+        if req["status"] not in ("assigned", "quote_rejected", "quote_proposed"):
+            flash("Impossible de proposer un devis pour cette demande.", "error")
+            return redirect(url_for("request_detail", request_id=request_id))
+
+        amount = _to_float(request.form.get("quote_amount"))
+        description = request.form.get("quote_description", "").strip()
+        if amount <= 0 or not description:
+            flash("Le devis doit inclure un montant valide et une description.",
+                  "error")
+            return redirect(url_for("request_detail", request_id=request_id))
+
+        conn.execute(
+            "UPDATE requests SET quote_amount = ?, quote_description = ?,"
+            " quote_status = 'pending', quote_proposed_at = ?,"
+            " status = 'quote_proposed', updated_at = ? WHERE id = ?",
+            (amount, description, now_iso(), now_iso(), request_id))
         conn.commit()
-        
-        # Envoyer le message à tous les participants
-        room = f"request_{request_id}"
-        emit('message', {
-            'sender_name': session['full_name'],
-            'content': content,
-            'created_at': datetime.now().isoformat()
-        }, room=room)
-        
-        logger.info(f"Message envoyé dans demande {request_id} par {session['email']}")
+        flash("Devis proposé. Le client doit maintenant l'accepter.", "success")
     finally:
         conn.close()
+    return redirect(url_for("request_detail", request_id=request_id))
 
 
-# Routes API pour l'intégration
-@app.route('/api/categories')
-def get_categories():
-    """API pour récupérer les catégories de services"""
+def _decide_quote(request_id, accept):
+    user = get_current_user()
+    if user["role"] != "client":
+        flash("Seul le client peut répondre au devis.", "error")
+        return redirect(url_for("requests_list"))
+
     conn = get_db_connection()
     try:
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM service_categories ORDER BY name")
-        categories = cursor.fetchall()
-        return jsonify([dict(cat) for cat in categories])
+        req = conn.execute(
+            "SELECT * FROM requests WHERE id = ?", (request_id,)).fetchone()
+        if not req or req["client_id"] != user["id"]:
+            flash("Accès refusé.", "error")
+            return redirect(url_for("requests_list"))
+        if req["quote_status"] != "pending":
+            flash("Aucun devis en attente.", "error")
+            return redirect(url_for("request_detail", request_id=request_id))
+
+        if accept:
+            conn.execute(
+                "UPDATE requests SET quote_status = 'accepted',"
+                " status = 'quote_accepted', quote_approved_at = ?,"
+                " updated_at = ? WHERE id = ?",
+                (now_iso(), now_iso(), request_id))
+            flash("Devis accepté. L'intervention est maintenant validée.",
+                  "success")
+        else:
+            conn.execute(
+                "UPDATE requests SET quote_status = 'rejected',"
+                " status = 'quote_rejected', updated_at = ? WHERE id = ?",
+                (now_iso(), request_id))
+            flash("Devis rejeté. L'artisan peut en proposer un nouveau.",
+                  "success")
+        conn.commit()
+    finally:
+        conn.close()
+    return redirect(url_for("request_detail", request_id=request_id))
+
+
+@app.route("/requests/<int:request_id>/quote/accept", methods=["POST"])
+@login_required
+def accept_quote(request_id):
+    return _decide_quote(request_id, accept=True)
+
+
+@app.route("/requests/<int:request_id>/quote/reject", methods=["POST"])
+@login_required
+def reject_quote(request_id):
+    return _decide_quote(request_id, accept=False)
+
+
+@app.route("/requests/<int:request_id>/complete", methods=["POST"])
+@login_required
+def complete_request(request_id):
+    user = get_current_user()
+    conn = get_db_connection()
+    try:
+        req = conn.execute(
+            "SELECT * FROM requests WHERE id = ?", (request_id,)).fetchone()
+        if not req:
+            flash("Demande introuvable.", "error")
+            return redirect(url_for("requests_list"))
+
+        if user["id"] not in (req["client_id"], req["artisan_id"]):
+            flash("Action non autorisée.", "error")
+        else:
+            conn.execute(
+                "UPDATE requests SET status = 'completed', updated_at = ?"
+                " WHERE id = ?", (now_iso(), request_id))
+            conn.commit()
+            flash("Intervention marquée comme terminée.", "success")
+    finally:
+        conn.close()
+    return redirect(url_for("request_detail", request_id=request_id))
+
+
+# ---------------------------------------------------------------------------
+# Paiements
+# ---------------------------------------------------------------------------
+
+@app.route("/requests/<int:request_id>/payment")
+@login_required
+def payment_page(request_id):
+    user = get_current_user()
+    if user["role"] != "client":
+        flash("Seuls les clients peuvent accéder à la page de paiement.", "error")
+        return redirect(url_for("request_detail", request_id=request_id))
+
+    conn = get_db_connection()
+    try:
+        req = conn.execute(
+            "SELECT * FROM requests WHERE id = ?", (request_id,)).fetchone()
+        if not req or req["client_id"] != user["id"]:
+            flash("Vous n'avez pas accès à cette page de paiement.", "error")
+            return redirect(url_for("requests_list"))
+        if req["quote_status"] != "accepted":
+            flash("Le paiement n'est disponible qu'une fois le devis accepté.",
+                  "error")
+            return redirect(url_for("request_detail", request_id=request_id))
+
+        artisan = conn.execute(
+            "SELECT id, full_name AS nom FROM users WHERE id = ?",
+            (req["artisan_id"],)).fetchone() if req["artisan_id"] else None
+        payments = conn.execute(
+            "SELECT * FROM payments WHERE request_id = ?"
+            " ORDER BY created_at DESC", (request_id,)).fetchall()
     finally:
         conn.close()
 
-
-@app.route('/api/health')
-def health_check():
-    """Health check endpoint"""
-    return jsonify({
-        'status': 'healthy',
-        'timestamp': datetime.now().isoformat(),
-        'version': '1.0.0'
-    })
+    return render_template("payment_page.html", request_item=req,
+                           artisan=artisan, payments=payments, user=user,
+                           payment_method_label=payment_method_label)
 
 
-# Gestion des erreurs
+@app.route("/requests/<int:request_id>/payment/process", methods=["POST"])
+@login_required
+def process_payment(request_id):
+    user = get_current_user()
+    if user["role"] != "client":
+        flash("Seuls les clients peuvent effectuer des paiements.", "error")
+        return redirect(url_for("request_detail", request_id=request_id))
+
+    conn = get_db_connection()
+    try:
+        req = conn.execute(
+            "SELECT * FROM requests WHERE id = ?", (request_id,)).fetchone()
+        if not req or req["client_id"] != user["id"]:
+            flash("Accès refusé.", "error")
+            return redirect(url_for("request_detail", request_id=request_id))
+
+        amount = _to_float(request.form.get("amount"))
+        method = request.form.get("method", "cash")
+        if amount <= 0:
+            flash("Le montant doit être positif.", "error")
+            return redirect(url_for("payment_page", request_id=request_id))
+        if method not in PAYMENT_METHODS:
+            flash("Moyen de paiement inconnu.", "error")
+            return redirect(url_for("payment_page", request_id=request_id))
+
+        conn.execute(
+            "INSERT INTO payments (request_id, amount, method, status,"
+            " reference, details) VALUES (?, ?, ?, 'pending', ?, ?)",
+            (request_id, amount, method,
+             request.form.get("reference", "").strip(),
+             "Paiement %s" % payment_method_label(method)))
+        conn.commit()
+        flash("Paiement enregistré. En attente de confirmation.", "success")
+    finally:
+        conn.close()
+    return redirect(url_for("payment_page", request_id=request_id))
+
+
+# ---------------------------------------------------------------------------
+# API
+# ---------------------------------------------------------------------------
+
+@app.route("/api/categories")
+def api_categories():
+    conn = get_db_connection()
+    try:
+        rows = conn.execute(
+            "SELECT id, name, diagnostic_price FROM service_categories"
+            " ORDER BY name").fetchall()
+    finally:
+        conn.close()
+    return jsonify({"categories": rows})
+
+
+@app.route("/api/messages/<int:request_id>")
+@login_required
+def api_messages(request_id):
+    """Messages d'une intervention, interroges periodiquement par le client.
+
+    Remplace les WebSockets, incompatibles avec l'execution serverless.
+    """
+    user = get_current_user()
+    conn = get_db_connection()
+    try:
+        req = conn.execute(
+            "SELECT * FROM requests WHERE id = ?", (request_id,)).fetchone()
+        if not req or not can_access_request(user, req):
+            return jsonify({"error": "Accès refusé"}), 403
+
+        messages = conn.execute(
+            "SELECT m.*, u.full_name AS sender_name FROM messages m"
+            " JOIN users u ON u.id = m.sender_id"
+            " WHERE m.request_id = ? ORDER BY m.created_at ASC",
+            (request_id,)).fetchall()
+    finally:
+        conn.close()
+
+    return jsonify({"messages": [
+        {
+            "id": m["id"],
+            "content": m["content"],
+            "sender_id": m["sender_id"],
+            "sender_name": m["sender_name"],
+            "created_at": m["created_at"],
+            "is_own": m["sender_id"] == user["id"],
+        }
+        for m in messages
+    ]})
+
+
+# ---------------------------------------------------------------------------
+# Pages d'erreur
+# ---------------------------------------------------------------------------
+
 @app.errorhandler(404)
-def not_found(error):
-    return render_template('404.html'), 404
+def page_not_found(error):
+    return render_template("404.html"), 404
 
 
 @app.errorhandler(500)
-def server_error(error):
-    logger.error(f"Erreur serveur: {error}")
-    return render_template('500.html'), 500
-
-
-# Initialisation de l'application
-with app.app_context():
-    init_db()
+def internal_error(error):
+    logger.exception("Erreur interne: %s", error)
+    return render_template("500.html"), 500
 
 
 if __name__ == "__main__":
-    logger.info("Démarrage de FixPro")
-    socketio.run(app, host="0.0.0.0", port=5000, debug=True)
+    logger.info("Démarrage de FixPro (environnement: %s)",
+                app.config.get("FLASK_ENV"))
+    app.run(host=app.config["HOST"], port=app.config["PORT"],
+            debug=app.config["DEBUG"])
