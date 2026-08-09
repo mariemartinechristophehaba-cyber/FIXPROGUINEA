@@ -6,7 +6,14 @@
       "Exec(Copy-Item)",
       "Exec(create_env.bat)",
       "Exec(Get-ChildItem)",
-      "Exec(Remove-Item)"
+      "Exec(Remove-Item)",
+      "Exec(git remote)",
+      "Exec(netstat)",
+      "Exec(git)",
+      "Exec(node)",
+      "Exec(Measure-Object)",
+      "Exec(Select-Object)",
+      "Exec(@('view_request.html','new_request.html','404.html','500.html','index.html','dashboard.html','requests.html'))"
     ]
   }
 }
