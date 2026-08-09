@@ -1,29 +1,48 @@
 {% extends 'base.html' %}
 {% block content %}
 <section class="card form-card">
-  <h2>Créer un compte</h2>
+  <h2>{{ title }}</h2>
+  <p class="muted">{{ subtitle }}</p>
   <form method="post">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+    <input type="hidden" name="role" value="{{ role }}" />
+
     <label>Nom complet</label>
-    <input type="text" name="full_name" required />
+    <input type="text" name="full_name" required placeholder="Votre nom et prénom" />
+
     <label>Email</label>
-    <input type="email" name="email" required />
+    <input type="email" name="email" required placeholder="votre@email.com" />
+
     <label>Téléphone</label>
-    <input type="text" name="phone" />
+    <input type="text" name="phone" placeholder="+224 620 00 00 00" />
+
     <label>Mot de passe</label>
-    <input type="password" name="password" required />
-    <label>Rôle</label>
-    <select name="role">
-      <option value="client">Client</option>
-      <option value="artisan">Artisan</option>
-    </select>
-    <label>Métier (artisan)</label>
-    <input type="text" name="profession" />
+    <input type="password" name="password" required minlength="8" placeholder="8 caractères minimum" />
+
+    {% if role == 'artisan' %}
+      <label>Métier</label>
+      <input type="text" name="profession" required placeholder="Plombier, électricien, menuisier..." />
+
+      <label>Tarif horaire (GNF)</label>
+      <input type="number" name="hourly_rate" min="0" step="1000" placeholder="Ex : 50000" />
+    {% endif %}
+
     <label>Ville</label>
-    <input type="text" name="city" />
+    <input type="text" name="city" placeholder="Conakry" />
+
     <label>Présentation</label>
-    <textarea name="bio"></textarea>
-    <button class="btn btn-primary" type="submit">S’inscrire</button>
+    <textarea name="bio" placeholder="{% if role == 'client' %}Décrivez brièvement ce que vous recherchez{% else %}Présentez votre expérience et vos services{% endif %}"></textarea>
+
+    <button class="btn btn-primary" type="submit">{{ button_label }}</button>
   </form>
+
+  <p class="small" style="margin-top:16px; text-align:center;">
+    {% if role == 'client' %}
+      Vous êtes artisan ? <a href="{{ url_for('register', role='artisan') }}">Créer un compte artisan</a>
+    {% else %}
+      Vous cherchez un artisan ? <a href="{{ url_for('register', role='client') }}">Créer un compte client</a>
+    {% endif %}
+    · <a href="{{ url_for('login') }}">Connexion</a>
+  </p>
 </section>
 {% endblock %}

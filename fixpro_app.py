@@ -194,17 +194,17 @@ def register():
 
         if not email or not password or not full_name:
             flash("Veuillez remplir tous les champs obligatoires.", "error")
-            return redirect(url_for("register"))
+            return redirect(url_for("register", role=role))
 
         try:
             validate_email(email, check_deliverability=False)
         except EmailNotValidError:
             flash("Format d'email invalide.", "error")
-            return redirect(url_for("register"))
+            return redirect(url_for("register", role=role))
 
         if len(password) < 8:
             flash("Le mot de passe doit contenir au moins 8 caractères.", "error")
-            return redirect(url_for("register"))
+            return redirect(url_for("register", role=role))
 
         if role not in ("client", "artisan"):
             role = "client"
@@ -215,17 +215,19 @@ def register():
                 "SELECT id FROM users WHERE email = ?", (email,)).fetchone()
             if existing:
                 flash("Cet email est déjà utilisé.", "error")
-                return redirect(url_for("register"))
+                return redirect(url_for("register", role=role))
 
+            hourly_rate = _to_float(request.form.get("hourly_rate")) if role == "artisan" else 0
             conn.execute(
                 "INSERT INTO users (email, password_hash, role, full_name,"
-                " phone, profession, city, bio)"
-                " VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                " phone, profession, city, bio, hourly_rate)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (email, generate_password_hash(password), role, full_name,
                  request.form.get("phone", "").strip(),
                  request.form.get("profession", "").strip(),
                  request.form.get("city", "").strip(),
-                 request.form.get("bio", "").strip()),
+                 request.form.get("bio", "").strip(),
+                 hourly_rate),
             )
             conn.commit()
             flash("Compte créé avec succès. Vous pouvez vous connecter.", "success")
@@ -233,7 +235,21 @@ def register():
         finally:
             conn.close()
 
-    return render_template("register.html")
+    role = request.args.get("role", "client").lower()
+    if role not in ("client", "artisan"):
+        role = "client"
+
+    if role == "artisan":
+        title = "Créer un compte artisan"
+        subtitle = "Recevez des demandes d'intervention et proposez vos devis."
+        button_label = "S'inscrire en tant qu'artisan"
+    else:
+        title = "Créer un compte client"
+        subtitle = "Publiez une demande et trouvez l'artisan qu'il vous faut."
+        button_label = "S'inscrire en tant que client"
+
+    return render_template("register.html", role=role, title=title,
+                           subtitle=subtitle, button_label=button_label)
 
 
 @app.route("/login", methods=["GET", "POST"])

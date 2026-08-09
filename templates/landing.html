@@ -5,9 +5,13 @@
     <p class="eyebrow">Plateforme premium de mise en relation</p>
     <h1>FixPro connecte clients et artisans en quelques clics.</h1>
     <p class="lead">Publiez une demande, recevez des devis, discutez en direct et gérez vos interventions depuis un tableau de bord intuitif.</p>
+    <p class="lead">Choisissez votre profil pour commencer.</p>
     <div class="hero-actions">
-      <a class="btn btn-primary" href="{{ url_for('register') }}">Créer un compte</a>
-      <a class="btn btn-outline" href="{{ url_for('login') }}">Connexion</a>
+      <a class="btn btn-primary" href="{{ url_for('register', role='client') }}">J'ai besoin d'un artisan</a>
+      <a class="btn btn-cta-orange" href="{{ url_for('register', role='artisan') }}">Je suis artisan</a>
+    </div>
+    <div class="hero-actions">
+      <a class="btn btn-outline" href="{{ url_for('login') }}">J'ai déjà un compte — Connexion</a>
     </div>
   </div>
   <div class="hero-panel">
