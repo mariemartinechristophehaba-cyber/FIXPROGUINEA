@@ -378,3 +378,25 @@ body { background: linear-gradient(180deg, var(--mobile-bg-from), var(--mobile-b
   .ar-grid-2, .ar-checkboxes { grid-template-columns: 1fr; }
   .ar-actions { justify-content: space-between; }
 }
+
+/* Cacher le header de base sur la page d'inscription artisan */
+body:has(.artisan-register) .fixed-header { display: none; }
+body:has(.artisan-register) main.container { padding: 0; max-width: none; }
+
+/* Ajustements formulaire artisan */
+.artisan-register { background: #f9fafb; min-height: 100vh; }
+.ar-sidebar { padding: 40px 28px; }
+.ar-logo { font-size: 1.8rem; margin-bottom: 60px; }
+.ar-step { padding: 14px; border-radius: 14px; }
+.ar-step span:not(.ar-step-num) { font-size: 0.95rem; }
+.ar-main { padding: 60px 80px; }
+.ar-form h2 { font-size: 2rem; }
+.ar-sub { font-size: 1.05rem; margin-bottom: 40px; }
+.ar-label { margin-top: 24px; }
+.ar-form input, .ar-form textarea { padding: 16px; border-radius: 14px; }
+.ar-civility .ar-radio { padding: 14px 28px; }
+.ar-radio:has(input:checked) { background: #fff; border-color: #0a0a0a; }
+.ar-upload { padding: 32px; }
+.ar-actions { justify-content: flex-end; margin-top: 60px; }
+.ar-btn-next, .ar-btn-submit { padding: 16px 32px; background: #ffd600; color: #0a0a0a; border-radius: 999px; }
+.ar-btn-next::after { content: ' →'; }
