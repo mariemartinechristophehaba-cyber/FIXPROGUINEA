@@ -1,288 +1,273 @@
 {% extends 'base.html' %}
 {% block content %}
 
-<section class="landing-hero">
-  <div class="landing-hero-copy">
-    <span class="eyebrow">Artisans de confiance en Guinée</span>
-    <h1>Un technicien, quand vous en avez besoin.</h1>
-    <p class="lead">Plombiers, électriciens, frigoristes, maçons, menuisiers, serruriers. Réservez un professionnel vérifié à Conakry en quelques minutes.</p>
-    <div class="hero-actions">
-      <a class="btn btn-cta-orange" href="{{ url_for('register', role='client') }}">J'ai besoin d'un artisan</a>
-      <a class="btn btn-outline" href="{{ url_for('register', role='artisan') }}">Devenir technicien</a>
-    </div>
-    <p class="hero-note">Déjà membre ? <a href="{{ url_for('login') }}">Se connecter</a></p>
+<section class="ty-hero">
+  <div class="ty-hero-bg">
+    <div class="ty-shape shape-1"></div>
+    <div class="ty-shape shape-2"></div>
+    <div class="ty-shape shape-3"></div>
   </div>
-  <div class="landing-hero-visual">
-    <div class="phone-frame">
-      <div class="phone-notch"></div>
-      <div class="phone-screen">
-        <div class="phone-header">
-          <div class="phone-avatar">M</div>
-          <div>
-            <div class="phone-name">Mamadou Bah</div>
-            <div class="phone-status">Plombier • 4.7 ★</div>
-          </div>
-          <div class="phone-price">50 000 GNF/h</div>
-        </div>
-        <div class="phone-body">
-          <div class="phone-card">
-            <div class="pc-title">Fuite sous l'évier</div>
-            <div class="pc-meta">Kaloum • 12 min d'attente</div>
-          </div>
-          <div class="phone-map">
-            <div class="map-dot client"></div>
-            <div class="map-line"></div>
-            <div class="map-dot artisan"></div>
-          </div>
-          <div class="phone-msg">
-            <div class="bubble">Je arrive dans 10 min</div>
-          </div>
-          <a class="phone-cta" href="{{ url_for('register', role='client') }}">Réserver maintenant</a>
-        </div>
+  <div class="ty-hero-inner">
+    <div class="ty-hero-copy">
+      <h1>Un technicien, quand vous en avez besoin.</h1>
+      <p class="ty-hero-sub">Plombiers, électriciens, frigoristes, maçons, menuisiers, serruriers à Conakry. Réservez un professionnel vérifié en quelques minutes.</p>
+      <div class="ty-hero-actions">
+        <a class="ty-btn ty-btn-black" href="{{ url_for('register', role='client') }}">J'ai besoin d'un artisan</a>
+        <a class="ty-btn ty-btn-yellow" href="{{ url_for('register', role='artisan') }}">Devenir technicien</a>
+      </div>
+    </div>
+    <div class="ty-hero-visual">
+      <div class="ty-worker">
+        <div class="ty-worker-head"></div>
+        <div class="ty-worker-body"></div>
+        <div class="ty-worker-wrench">🔧</div>
       </div>
     </div>
   </div>
 </section>
 
-<section class="landing-section landing-categories">
-  <div class="section-head center">
-    <span class="eyebrow">Nos services</span>
+<section class="ty-section ty-light ty-categories">
+  <div class="ty-container">
+    <p class="ty-eyebrow">Nos services</p>
     <h2>Nos différents métiers</h2>
-    <p class="lead">Des professionnels compétents pour tous vos besoins à Conakry.</p>
-  </div>
-  <div class="service-carousel">
-    <a class="service-card" href="{{ url_for('register', role='client') }}">
-      <div class="service-icon">
-        <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 12V8a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v4M8 20h32M12 20v20a4 4 0 0 0 4 4h16a4 4 0 0 0 4-4V20M20 28h8"/></svg>
+    <div class="ty-cards">
+      <div class="ty-card">
+        <div class="ty-card-icon ty-icon-yellow">◐</div>
+        <h3>Plomberie</h3>
+        <p>Fuite, robinet, wc, tuyauterie.</p>
+        <a href="{{ url_for('register', role='client') }}">Réserver</a>
       </div>
-      <h3>Plomberie</h3>
-      <p>Fuite, robinet, wc, tuyauterie.</p>
-      <span class="service-link">Réserver</span>
-    </a>
-    <a class="service-card" href="{{ url_for('register', role='client') }}">
-      <div class="service-icon electric">
-        <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M26 6l-8 16h10l-2 20 12-20h-10l4-20z"/></svg>
+      <div class="ty-card">
+        <div class="ty-card-icon ty-icon-yellow">△</div>
+        <h3>Électricité</h3>
+        <p>Prise, disjoncteur, installation.</p>
+        <a href="{{ url_for('register', role='client') }}">Réserver</a>
       </div>
-      <h3>Électricité</h3>
-      <p>Prise, disjoncteur, installation.</p>
-      <span class="service-link">Réserver</span>
-    </a>
-    <a class="service-card" href="{{ url_for('register', role='client') }}">
-      <div class="service-icon cold">
-        <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M24 6v6M24 18v6M24 30v6M14 10l6 6M14 26l6 6M14 38l6-6M34 10l-6 6M34 26l-6 6M34 38l-6-6"/></svg>
+      <div class="ty-card">
+        <div class="ty-card-icon ty-icon-yellow">▢</div>
+        <h3>Froid & Clim</h3>
+        <p>Climatisation, frigo, fuite de gaz.</p>
+        <a href="{{ url_for('register', role='client') }}">Réserver</a>
       </div>
-      <h3>Froid & Clim</h3>
-      <p>Climatisation, frigo, fuite de gaz.</p>
-      <span class="service-link">Réserver</span>
-    </a>
-    <a class="service-card" href="{{ url_for('register', role='client') }}">
-      <div class="service-icon wood">
-        <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 40h36M10 40V30h8v10M30 40V24h8v16M6 24h36L24 10 6 24z"/></svg>
+      <div class="ty-card">
+        <div class="ty-card-icon ty-icon-yellow">▭</div>
+        <h3>Menuiserie</h3>
+        <p>Porte, fenêtre, meuble, parquet.</p>
+        <a href="{{ url_for('register', role='client') }}">Réserver</a>
       </div>
-      <h3>Menuiserie</h3>
-      <p>Porte, fenêtre, meuble, parquet.</p>
-      <span class="service-link">Réserver</span>
-    </a>
-    <a class="service-card" href="{{ url_for('register', role='client') }}">
-      <div class="service-icon masonry">
-        <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="14" height="14" rx="1"/><rect x="28" y="6" width="14" height="14" rx="1"/><rect x="6" y="28" width="14" height="14" rx="1"/><rect x="28" y="28" width="14" height="14" rx="1"/></svg>
-      </div>
-      <h3>Maçonnerie</h3>
-      <p>Mur, dalle, rénovation, finition.</p>
-      <span class="service-link">Réserver</span>
-    </a>
-    <a class="service-card" href="{{ url_for('register', role='client') }}">
-      <div class="service-icon lock">
-        <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="10" y="20" width="28" height="22" rx="2"/><path d="M16 20v-6a8 8 0 0 1 16 0v6M24 32v4"/></svg>
-      </div>
-      <h3>Serrurerie</h3>
-      <p>Serrure, clé, porte blindée.</p>
-      <span class="service-link">Réserver</span>
-    </a>
-  </div>
-</section>
-
-<section class="landing-section landing-how">
-  <div class="section-head center">
-    <span class="eyebrow">Comment ça marche</span>
-    <h2>Votre problème résolu en 3 étapes</h2>
-  </div>
-  <div class="steps-grid">
-    <div class="step-card">
-      <div class="step-number">1</div>
-      <h3>Créez votre demande</h3>
-      <p>Décrivez votre problème, choisissez le métier et la zone de Conakry.</p>
-    </div>
-    <div class="step-card">
-      <div class="step-number">2</div>
-      <h3>Recevez un devis</h3>
-      <p>Un technicien vérifié vous propose un tarif clair et sans surprise.</p>
-    </div>
-    <div class="step-card">
-      <div class="step-number">3</div>
-      <h3>Payez en toute sécurité</h3>
-      <p>L'intervention est suivie, puis vous réglez une fois satisfait.</p>
     </div>
   </div>
 </section>
 
-<section class="landing-section landing-features">
-  <div class="section-head center">
-    <span class="eyebrow">Pourquoi FixPro</span>
+<section class="ty-section ty-dark ty-discover">
+  <div class="ty-discover-inner">
+    <div class="ty-discover-copy">
+      <h2>Découvrez FixPro</h2>
+      <p>La première plateforme guinéenne qui met en relation des clients avec des techniciens indépendants, vérifiés et notés.</p>
+      <p class="ty-small">Gagnez du temps, comparez les profils, discutez en direct et payez en toute sécurité une fois l'intervention terminée.</p>
+      <a class="ty-btn ty-btn-yellow" href="{{ url_for('register', role='client') }}">Trouver un artisan</a>
+    </div>
+    <div class="ty-discover-mockup">
+      <div class="ty-arrow left">←</div>
+      <div class="ty-mockup-box">
+        <div class="ty-mockup-screen">
+          <div class="ty-mockup-row"><span>Plomberie</span><span class="dot"></span></div>
+          <div class="ty-mockup-row"><span>Électricité</span><span class="dot"></span></div>
+          <div class="ty-mockup-row"><span>Climatisation</span><span class="dot"></span></div>
+        </div>
+      </div>
+      <div class="ty-arrow right">→</div>
+    </div>
+  </div>
+</section>
+
+<section class="ty-section ty-light ty-how">
+  <div class="ty-container">
+    <div class="ty-how-grid">
+      <div class="ty-how-mockup">
+        <div class="ty-phone">
+          <div class="ty-phone-bar">FixPro</div>
+          <div class="ty-phone-chat">
+            <div class="bubble-left">Je arrive dans 10 min</div>
+            <div class="bubble-right">Parfait, merci !</div>
+          </div>
+        </div>
+      </div>
+      <div class="ty-how-copy">
+        <h2>Comment ça marche</h2>
+        <div class="ty-step">
+          <span class="ty-step-num">1</span>
+          <div>
+            <h3>Créez votre demande</h3>
+            <p>Décrivez votre problème et choisissez le métier.</p>
+          </div>
+        </div>
+        <div class="ty-step">
+          <span class="ty-step-num">2</span>
+          <div>
+            <h3>Recevez un devis</h3>
+            <p>Un technicien vérifié vous propose un tarif clair.</p>
+          </div>
+        </div>
+        <div class="ty-step">
+          <span class="ty-step-num">3</span>
+          <div>
+            <h3>Payez en toute sécurité</h3>
+            <p>Réglez une fois l'intervention terminée.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="ty-section ty-light ty-features">
+  <div class="ty-container">
+    <p class="ty-eyebrow">Pourquoi FixPro</p>
     <h2>Tout ce dont vous avez besoin</h2>
-  </div>
-  <div class="feature-grid-large">
-    <div class="feature-large-card">
-      <div class="feature-icon">
-        <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 38h4M18 42h12M24 6v4M18 12l3 3M30 12l-3 3M12 18h24a6 6 0 0 1-6 6H18a6 6 0 0 1-6-6z"/></svg>
+    <div class="ty-feature-grid">
+      <div class="ty-feature-item">
+        <div class="ty-feature-dot"></div>
+        <h3>Profils vérifiés</h3>
+        <p>Chaque technicien est contrôlé avant d'être visible.</p>
       </div>
-      <h3>Profils vérifiés</h3>
-      <p>Chaque technicien passe par une vérification d'identité avant d'être visible.</p>
-    </div>
-    <div class="feature-large-card">
-      <div class="feature-icon">
-        <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 18h20M14 24h14M14 30h8M34 6v6M10 6h28a4 4 0 0 1 4 4v28a4 4 0 0 1-4 4H10a4 4 0 0 1-4-4V10a4 4 0 0 1 4-4z"/></svg>
+      <div class="ty-feature-item">
+        <div class="ty-feature-dot"></div>
+        <h3>Chat intégré</h3>
+        <p>Discutez directement sans quitter l'application.</p>
       </div>
-      <h3>Chat intégré</h3>
-      <p>Échangez directement avec le professionnel, sans quitter l'application.</p>
-    </div>
-    <div class="feature-large-card">
-      <div class="feature-icon">
-        <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="20" r="8"/><path d="M24 28v16M14 48h20"/></svg>
+      <div class="ty-feature-item">
+        <div class="ty-feature-dot"></div>
+        <h3>Suivi en temps réel</h3>
+        <p>Suivez l'arrivée du technicien pendant l'intervention.</p>
       </div>
-      <h3>Suivi en temps réel</h3>
-      <p>Suivez l'arrivée du technicien pendant l'intervention.</p>
-    </div>
-    <div class="feature-large-card">
-      <div class="feature-icon">
-        <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="10" y="18" width="28" height="24" rx="2"/><path d="M18 18v-6a6 6 0 0 1 12 0v6M24 32v4"/></svg>
+      <div class="ty-feature-item">
+        <div class="ty-feature-dot"></div>
+        <h3>Paiement sécurisé</h3>
+        <p>Orange Money et autres moyens, payé à la fin.</p>
       </div>
-      <h3>Paiement sécurisé</h3>
-      <p>Orange Money et autres moyens, libéré une fois le travail validé.</p>
     </div>
   </div>
 </section>
 
-<section class="landing-section landing-trust">
-  <div class="section-head center">
-    <span class="eyebrow">Un service de confiance</span>
+<section class="ty-section ty-dark ty-cta">
+  <div class="ty-cta-inner">
+    <h2>FixPro est la première plateforme de mise en relation artisan-client en Guinée.</h2>
+    <a class="ty-btn ty-btn-yellow" href="{{ url_for('register', role='client') }}">Réserver maintenant</a>
+  </div>
+</section>
+
+<section class="ty-section ty-light ty-trust">
+  <div class="ty-container">
+    <p class="ty-eyebrow">Un service de confiance</p>
     <h2>Plusieurs pôles dédiés</h2>
-    <p class="lead">Une équipe et des processus pensés pour vous garantir qualité et sérénité.</p>
-  </div>
-  <div class="trust-grid">
-    <div class="trust-card">
-      <div class="trust-icon">01</div>
-      <h3>Vérification</h3>
-      <p>Contrôle des pièces d'identité et des compétences.</p>
-    </div>
-    <div class="trust-card">
-      <div class="trust-icon">02</div>
-      <h3>Disponibilité</h3>
-      <p>Des techniciens actifs et géolocalisés à Conakry.</p>
-    </div>
-    <div class="trust-card">
-      <div class="trust-icon">03</div>
-      <h3>Assistance</h3>
-      <p>Un support client disponible pour vous aider à chaque étape.</p>
-    </div>
-  </div>
-</section>
-
-<section class="landing-section landing-testimonials">
-  <div class="section-head center">
-    <span class="eyebrow">Témoignages</span>
-    <h2>Ils utilisent FixPro</h2>
-  </div>
-  <div class="testimonial-grid">
-    <div class="testimonial-card">
-      <p>« FixPro m'a permis de trouver des missions rapidement et de gérer mes devis sans perdre de temps. »</p>
-      <span class="small">— Fatou, Plombière</span>
-    </div>
-    <div class="testimonial-card">
-      <p>« La plateforme est simple à utiliser et j'ai pu suivre chaque étape de mon intervention. »</p>
-      <span class="small">— Ibrahima, Client</span>
+    <div class="ty-trust-grid">
+      <div class="ty-trust-card">
+        <span class="ty-num">01</span>
+        <h3>Vérification</h3>
+        <p>Contrôle des pièces d'identité et des compétences.</p>
+      </div>
+      <div class="ty-trust-card">
+        <span class="ty-num">02</span>
+        <h3>Disponibilité</h3>
+        <p>Des techniciens actifs et géolocalisés à Conakry.</p>
+      </div>
+      <div class="ty-trust-card">
+        <span class="ty-num">03</span>
+        <h3>Assistance</h3>
+        <p>Un support client disponible pour vous aider.</p>
+      </div>
     </div>
   </div>
 </section>
 
-<section class="landing-section landing-technician">
-  <div class="technician-cta">
-    <div class="technician-copy">
-      <span class="eyebrow">Vous êtes artisan à Conakry ?</span>
+<section class="ty-section ty-dark ty-technician">
+  <div class="ty-technician-inner">
+    <div class="ty-technician-copy">
+      <p class="ty-eyebrow-yellow">Vous êtes artisan à Conakry ?</p>
       <h2>Recevez des demandes près de chez vous</h2>
       <p>Gérez vos interventions depuis votre téléphone. Inscription gratuite, validation sous 48h.</p>
-      <div class="technician-points">
-        <div class="tp"><div class="tp-dot">1</div><div><strong>Zéro commission le premier mois</strong><span>Testez FixPro sans frais.</span></div></div>
-        <div class="tp"><div class="tp-dot">2</div><div><strong>Paiement Orange Money direct</strong><span>Votre argent arrive sur votre compte.</span></div></div>
-        <div class="tp"><div class="tp-dot">3</div><div><strong>Visibilité auprès des clients</strong><span>Soyez visible dans votre quartier.</span></div></div>
-      </div>
-      <a class="btn btn-cta-orange" href="{{ url_for('register', role='artisan') }}">Devenir technicien</a>
+      <ul class="ty-list">
+        <li><span class="ty-check">✓</span> Zéro commission le premier mois</li>
+        <li><span class="ty-check">✓</span> Paiement Orange Money direct</li>
+        <li><span class="ty-check">✓</span> Visibilité auprès des clients</li>
+      </ul>
+      <a class="ty-btn ty-btn-yellow" href="{{ url_for('register', role='artisan') }}">Devenir technicien</a>
     </div>
-    <div class="technician-visual">
-      <div class="tech-card-float">
-        <div class="tcf-head">
-          <div class="tcf-avatar">A</div>
-          <div>
-            <div class="tcf-name">Ali Camara</div>
-            <div class="tcf-meta">Électricien • 5.0 ★</div>
-          </div>
-        </div>
-        <div class="tcf-body">
-          <div class="tcf-row"><span>Nouvelle demande</span><span class="tcf-badge">1</span></div>
-          <div class="tcf-row"><span>Installation prise</span><span class="tcf-price">45 000 GNF/h</span></div>
-        </div>
+    <div class="ty-technician-mockup">
+      <div class="ty-card-float">
+        <div class="ty-row"><span>Nouvelle demande</span><span class="ty-badge">1</span></div>
+        <div class="ty-row"><span>Installation prise</span><span>45 000 GNF/h</span></div>
       </div>
     </div>
   </div>
 </section>
 
-<section class="landing-section landing-contact">
-  <div class="section-head center">
-    <span class="eyebrow">Besoin d'aide ?</span>
+<section class="ty-section ty-light ty-contact">
+  <div class="ty-container">
+    <p class="ty-eyebrow">Besoin d'aide ?</p>
     <h2>Nous sommes là pour vous</h2>
-  </div>
-  <div class="contact-grid">
-    <a class="contact-card" href="https://wa.me/224620000000" target="_blank" rel="noopener">
-      <div class="contact-icon">
-        <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M24 6a16 16 0 0 1 13.9 23.9L42 44l-14.4-3.8A16 16 0 1 1 24 6z"/><path d="M18 22l4 4 10-10"/></svg>
-      </div>
-      <h3>WhatsApp Business</h3>
-      <p>Réponse sous 24h ouvrées.</p>
-    </a>
-    <a class="contact-card" href="{{ url_for('conversations') }}">
-      <div class="contact-icon">
-        <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12h24M12 20h18M12 28h12M34 6h4a4 4 0 0 1 4 4v28a4 4 0 0 1-4 4H10a4 4 0 0 1-4-4V10a4 4 0 0 1 4-4z"/></svg>
-      </div>
-      <h3>Chat intégré</h3>
-      <p>Une fois connecté, discutez avec le support.</p>
-    </a>
+    <div class="ty-contact-grid">
+      <a class="ty-contact-card" href="https://wa.me/224620000000" target="_blank" rel="noopener">
+        <h3>WhatsApp Business</h3>
+        <p>Réponse sous 24h ouvrées.</p>
+      </a>
+      <a class="ty-contact-card" href="{{ url_for('conversations') }}">
+        <h3>Chat intégré</h3>
+        <p>Discutez avec le support connecté.</p>
+      </a>
+    </div>
   </div>
 </section>
 
-<section class="landing-section landing-app">
-  <div class="app-cta">
-    <div class="app-cta-copy">
+<section class="ty-section ty-dark ty-app">
+  <div class="ty-app-inner">
+    <div class="ty-app-copy">
       <h2>Téléchargez notre application</h2>
-      <p>Disponible prochainement sur iOS et Android. Gérez vos demandes et messages où que vous soyez.</p>
-      <div class="store-badges">
-        <span class="store-badge">App Store</span>
-        <span class="store-badge">Google Play</span>
+      <p>Disponible prochainement sur iOS et Android. Gérez vos demandes où que vous soyez.</p>
+      <div class="ty-store-badges">
+        <span class="ty-store-badge">App Store</span>
+        <span class="ty-store-badge">Google Play</span>
       </div>
     </div>
-    <div class="app-cta-visual">
-      <div class="phone-frame small">
-        <div class="phone-notch"></div>
-        <div class="phone-screen dark">
-          <div class="phone-top-bar">FixPro</div>
-          <div class="phone-list">
-            <div class="phone-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 12h10M12 7v10"/></svg><span>Plomberie</span></div>
-            <div class="phone-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L8 12h6l-1 10 6-10h-6l3-10z"/></svg><span>Électricité</span></div>
-            <div class="phone-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="10" width="12" height="10" rx="2"/><path d="M12 10V6a3 3 0 0 1 6 0v4"/></svg><span>Serrurerie</span></div>
-          </div>
+    <div class="ty-app-mockup">
+      <div class="ty-phone small">
+        <div class="ty-phone-bar">FixPro</div>
+        <div class="ty-phone-cats">
+          <div class="ty-cat">Plomberie</div>
+          <div class="ty-cat">Électricité</div>
+          <div class="ty-cat">Serrurerie</div>
         </div>
       </div>
+    </div>
+  </div>
+</section>
+
+<section class="ty-footer">
+  <div class="ty-footer-inner">
+    <div>
+      <strong>FixPro</strong>
+      <p>Plateforme de mise en relation artisan-client à Conakry.</p>
+    </div>
+    <div>
+      <strong>Services</strong>
+      <a href="{{ url_for('register', role='client') }}">Plomberie</a>
+      <a href="{{ url_for('register', role='client') }}">Électricité</a>
+      <a href="{{ url_for('register', role='client') }}">Climatisation</a>
+    </div>
+    <div>
+      <strong>Entreprise</strong>
+      <a href="{{ url_for('register', role='artisan') }}">Devenir technicien</a>
+      <a href="{{ url_for('login') }}">Connexion</a>
+    </div>
+    <div>
+      <strong>Aide</strong>
+      <a href="https://wa.me/224620000000">WhatsApp</a>
+      <a href="{{ url_for('conversations') }}">Support</a>
     </div>
   </div>
 </section>
 
 {% endblock %}
+
+{% block footer %}{% endblock %}

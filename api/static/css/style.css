@@ -331,3 +331,120 @@ body { background: linear-gradient(180deg, var(--mobile-bg-from), var(--mobile-b
   .technician-copy h2, .app-cta-copy h2 { font-size: 1.8rem; }
 }
 }
+
+/* Tycoon-style landing theme */
+.ty-hero { background: #f6f7f9; color: #0a0a0a; padding: 120px 24px 80px; position: relative; overflow: hidden; }
+.ty-hero-bg { position: absolute; inset: 0; pointer-events: none; }
+.ty-shape { position: absolute; border-radius: 50%; background: #ffd600; opacity: .18; }
+.shape-1 { width: 320px; height: 320px; top: -80px; right: -60px; }
+.shape-2 { width: 120px; height: 120px; bottom: 80px; right: 120px; }
+.shape-3 { width: 80px; height: 80px; top: 140px; right: 360px; opacity: .12; }
+.ty-hero-inner { max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: 1.4fr 1fr; gap: 60px; align-items: center; position: relative; z-index: 1; }
+.ty-hero h1 { font-size: 3.8rem; line-height: 1.05; margin: 0; letter-spacing: -0.03em; }
+.ty-hero-sub { font-size: 1.15rem; color: #4a4a4a; max-width: 520px; margin: 24px 0; line-height: 1.6; }
+.ty-hero-actions { display: flex; gap: 16px; flex-wrap: wrap; }
+.ty-btn { display: inline-flex; align-items: center; justify-content: center; padding: 14px 24px; border-radius: 999px; font-weight: 700; text-decoration: none; transition: all .12s; }
+.ty-btn-black { background: #0a0a0a; color: #fff; }
+.ty-btn-black:hover { background: #1a1a1a; }
+.ty-btn-yellow { background: #ffd600; color: #0a0a0a; }
+.ty-btn-yellow:hover { background: #ffe033; }
+
+.ty-worker { width: 280px; height: 360px; margin: 0 auto; background: #fff; border-radius: 140px 140px 40px 40px; border: 4px solid #0a0a0a; position: relative; box-shadow: 20px 20px 0 #0a0a0a; }
+.ty-worker-head { width: 80px; height: 80px; background: #0a0a0a; border-radius: 50%; position: absolute; top: 50px; left: 50%; transform: translateX(-50%); }
+.ty-worker-body { width: 160px; height: 160px; background: #ffd600; border-radius: 80px 80px 20px 20px; position: absolute; top: 150px; left: 50%; transform: translateX(-50%); }
+.ty-worker-wrench { position: absolute; bottom: 40px; right: 30px; font-size: 3rem; transform: rotate(-30deg); }
+
+.ty-section { padding: 100px 24px; }
+.ty-container { max-width: 1180px; margin: 0 auto; }
+.ty-light { background: #fff; color: #0a0a0a; }
+.ty-dark { background: #0a0a0a; color: #fff; }
+.ty-eyebrow { color: #6b7280; font-weight: 700; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; display: block; }
+.ty-eyebrow-yellow { color: #ffd600; font-weight: 700; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; display: block; }
+.ty-section h2 { font-size: 2.4rem; margin: 0 0 48px; letter-spacing: -0.01em; }
+
+.ty-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px; }
+.ty-card { background: #fff; border: 2px solid #0a0a0a; border-radius: 24px; padding: 28px; display: flex; flex-direction: column; gap: 12px; box-shadow: 6px 6px 0 #0a0a0a; transition: transform .12s; }
+.ty-card:hover { transform: translate(-4px, -4px); box-shadow: 10px 10px 0 #0a0a0a; }
+.ty-card h3 { margin: 0; font-size: 1.25rem; }
+.ty-card p { color: #4a4a4a; margin: 0; font-size: 0.95rem; }
+.ty-card a { color: #0a0a0a; font-weight: 700; margin-top: auto; }
+.ty-card-icon { width: 56px; height: 56px; border-radius: 50%; background: #ffd600; display: grid; place-items: center; font-size: 1.4rem; font-weight: 900; color: #0a0a0a; }
+
+.ty-discover-inner { max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; }
+.ty-discover h2 { margin-bottom: 16px; }
+.ty-discover p { color: #d1d5db; line-height: 1.7; }
+.ty-discover .ty-small { color: #9ca3af; margin: 24px 0; }
+.ty-discover-mockup { display: flex; align-items: center; justify-content: center; gap: 16px; }
+.ty-mockup-box { width: 220px; height: 280px; background: #fff; border-radius: 30px; padding: 20px; display: flex; flex-direction: column; justify-content: center; gap: 12px; }
+.ty-mockup-row { background: #f3f4f6; border-radius: 12px; padding: 12px; display: flex; justify-content: space-between; align-items: center; }
+.ty-mockup-row .dot { width: 12px; height: 12px; border-radius: 50%; background: #ffd600; }
+.ty-arrow { font-size: 2rem; color: #ffd600; }
+
+.ty-how-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
+.ty-how-mockup { display: flex; justify-content: center; }
+.ty-phone { width: 260px; background: #0a0a0a; border-radius: 36px; padding: 20px; border: 4px solid #0a0a0a; box-shadow: 12px 12px 0 #ffd600; }
+.ty-phone.small { width: 200px; }
+.ty-phone-bar { text-align: center; color: #ffd600; font-weight: 800; padding: 8px 0 16px; }
+.ty-phone-chat { background: #111; border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+.bubble-left { background: #1f2937; color: #fff; padding: 10px 14px; border-radius: 16px 16px 16px 4px; align-self: flex-start; }
+.bubble-right { background: #ffd600; color: #0a0a0a; padding: 10px 14px; border-radius: 16px 16px 4px 16px; align-self: flex-end; }
+.ty-step { display: flex; gap: 20px; margin-bottom: 28px; }
+.ty-step-num { width: 44px; height: 44px; border-radius: 50%; background: #ffd600; color: #0a0a0a; display: grid; place-items: center; font-weight: 900; flex-shrink: 0; }
+.ty-step h3 { margin: 0 0 6px; }
+.ty-step p { color: #4a4a4a; margin: 0; }
+
+.ty-feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px; }
+.ty-feature-item { background: #fff; border: 1px solid #e5e7eb; border-radius: 20px; padding: 28px; }
+.ty-feature-dot { width: 16px; height: 16px; border-radius: 50%; background: #ffd600; margin-bottom: 16px; }
+.ty-feature-item h3 { margin: 0 0 8px; }
+.ty-feature-item p { color: #4a4a4a; margin: 0; }
+
+.ty-cta-inner { max-width: 800px; margin: 0 auto; text-align: center; }
+.ty-cta h2 { font-size: 2.4rem; margin: 0 0 32px; }
+
+.ty-trust-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 24px; }
+.ty-trust-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 20px; padding: 28px; }
+.ty-num { color: #9ca3af; font-weight: 900; font-size: 1.2rem; display: block; margin-bottom: 12px; }
+.ty-trust-card h3 { margin: 0 0 8px; }
+.ty-trust-card p { color: #4a4a4a; margin: 0; }
+
+.ty-technician-inner { max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
+.ty-technician h2 { margin-bottom: 16px; }
+.ty-technician p { color: #d1d5db; line-height: 1.7; }
+.ty-list { list-style: none; padding: 0; margin: 24px 0; display: grid; gap: 12px; }
+.ty-list li { display: flex; align-items: center; gap: 12px; color: #e5e7eb; }
+.ty-check { width: 24px; height: 24px; border-radius: 50%; background: #ffd600; color: #0a0a0a; display: grid; place-items: center; font-weight: 900; }
+.ty-card-float { background: #111; border: 1px solid #333; border-radius: 24px; padding: 24px; max-width: 300px; margin: 0 auto; }
+.ty-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #333; }
+.ty-row:last-child { border-bottom: 0; }
+.ty-badge { background: #ffd600; color: #0a0a0a; border-radius: 50%; width: 24px; height: 24px; display: grid; place-items: center; font-size: 0.8rem; font-weight: 800; }
+
+.ty-contact-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px; }
+.ty-contact-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 20px; padding: 28px; color: #0a0a0a; text-decoration: none; transition: all .12s; }
+.ty-contact-card:hover { border-color: #0a0a0a; box-shadow: 6px 6px 0 #0a0a0a; }
+.ty-contact-card h3 { margin: 0 0 8px; }
+.ty-contact-card p { color: #4a4a4a; margin: 0; }
+
+.ty-app-inner { max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
+.ty-app h2 { margin-bottom: 16px; }
+.ty-app p { color: #d1d5db; line-height: 1.7; margin-bottom: 24px; }
+.ty-store-badges { display: flex; gap: 12px; }
+.ty-store-badge { padding: 12px 24px; background: #111; border: 1px solid #333; border-radius: 12px; color: #fff; font-weight: 700; }
+.ty-phone-cats { display: grid; gap: 10px; }
+.ty-cat { background: #1f2937; color: #fff; padding: 12px; border-radius: 12px; text-align: center; }
+
+.ty-footer { background: #0a0a0a; color: #fff; padding: 60px 24px 40px; }
+.ty-footer-inner { max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: 1.5fr repeat(3, 1fr); gap: 40px; }
+.ty-footer strong { display: block; margin-bottom: 16px; }
+.ty-footer a { display: block; color: #9ca3af; text-decoration: none; margin-bottom: 8px; }
+.ty-footer a:hover { color: #ffd600; }
+.ty-footer p { color: #9ca3af; margin: 0; }
+
+@media (max-width: 980px) {
+  .ty-hero-inner, .ty-discover-inner, .ty-how-grid, .ty-technician-inner, .ty-app-inner { grid-template-columns: 1fr; text-align: center; }
+  .ty-hero h1 { font-size: 2.6rem; }
+  .ty-hero-actions { justify-content: center; }
+  .ty-worker { margin: 0 auto; }
+  .ty-step { text-align: left; }
+  .ty-footer-inner { grid-template-columns: 1fr 1fr; }
+}
