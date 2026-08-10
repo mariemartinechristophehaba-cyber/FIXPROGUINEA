@@ -214,7 +214,9 @@ body { background: linear-gradient(180deg, var(--mobile-bg-from), var(--mobile-b
 .hero-note a { color: var(--accent-orange); font-weight: 600; }
 
 .phone-frame { width: 300px; height: 580px; border-radius: 44px; background: linear-gradient(145deg, #1a2336, #0f141d); border: 6px solid #2a3446; padding: 14px; box-shadow: 0 40px 80px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.06); position: relative; }
-.phone-frame.small { width: 240px; height: 460px; }
+.phone-frame.small { width: 240px; height: 420px; }
+.phone-emoji { font-size: 1.4rem; }
+.phone-item { display: flex; align-items: center; gap: 12px; padding: 12px; background: var(--surface-2); border-radius: 14px; }
 .phone-notch { position: absolute; top: 18px; left: 50%; transform: translateX(-50%); width: 100px; height: 22px; background: #0f141d; border-radius: 0 0 16px 16px; z-index: 2; }
 .phone-screen { background: linear-gradient(180deg, #131b2e, #0c1220); border-radius: 34px; height: 100%; overflow: hidden; padding: 28px 18px 18px; display: flex; flex-direction: column; }
 .phone-screen.dark { background: #0b1018; }

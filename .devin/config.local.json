@@ -20,7 +20,9 @@
       "Exec(Select-String)",
       "Exec(Out-Null)",
       "Exec(\"--- verif ---\")",
-      "Exec((Get-Content)"
+      "Exec((Get-Content)",
+      "Exec(try)",
+      "Exec(\"Status: \")"
     ]
   }
 }
