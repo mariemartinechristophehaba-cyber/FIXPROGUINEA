@@ -61,109 +61,54 @@
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
       <input type="hidden" name="role" value="artisan" />
 
-      <div class="ar-step-panel active" data-panel="1">
-        <h2>Identité</h2>
-        <p class="ar-sub">Vos informations personnelles</p>
+      <h2>Identité</h2>
+      <p class="ar-sub">Vos informations personnelles</p>
 
-        <label class="ar-label required">Civilité</label>
-        <div class="ar-civility">
-          <label class="ar-radio"><input type="radio" name="civility" value="M." checked /><span>M.</span></label>
-          <label class="ar-radio"><input type="radio" name="civility" value="Mme" /><span>Mme</span></label>
+      <label class="ar-label required">Civilité</label>
+      <div class="ar-civility">
+        <label class="ar-radio"><input type="radio" name="civility" value="Mr" checked /><span>Mr</span></label>
+        <label class="ar-radio"><input type="radio" name="civility" value="Mme" /><span>Mme</span></label>
+      </div>
+
+      <div class="ar-grid-2">
+        <div>
+          <label class="ar-label required">Prénom</label>
+          <input type="text" name="first_name" required placeholder="Jean" />
         </div>
-
-        <div class="ar-grid-2">
-          <div>
-            <label class="ar-label required">Prénom</label>
-            <input type="text" name="first_name" required placeholder="Jean" />
-          </div>
-          <div>
-            <label class="ar-label required">Nom</label>
-            <input type="text" name="last_name" required placeholder="Dupont" />
-          </div>
-        </div>
-
-        <label class="ar-label required">Téléphone</label>
-        <input type="tel" name="phone" required placeholder="Votre numéro de téléphone" />
-        <p class="ar-hint">Ce numéro sera utilisé pour vous connecter à l'application.</p>
-
-        <label class="ar-label required">Email</label>
-        <input type="email" name="email" required placeholder="jean.dupont@example.com" />
-
-        <label class="ar-label required">Pièce d'identité</label>
-        <p class="ar-hint">CNI (recto + verso), passeport ou titre de séjour.</p>
-        <div class="ar-upload">
-          <input type="file" name="id_document" accept="image/*,.pdf" />
-          <span>Ajouter un document</span>
+        <div>
+          <label class="ar-label required">Nom</label>
+          <input type="text" name="last_name" required placeholder="Dupont" />
         </div>
       </div>
 
-      <div class="ar-step-panel" data-panel="2">
-        <h2>Entreprise</h2>
-        <p class="ar-sub">Votre structure</p>
-
-        <label class="ar-label">Nom de l'entreprise</label>
-        <input type="text" name="company_name" placeholder="Nom de votre entreprise" />
-
-        <label class="ar-label required">Ville</label>
-        <input type="text" name="city" required placeholder="Conakry" />
-
-        <label class="ar-label required">Présentation</label>
-        <textarea name="bio" rows="4" placeholder="Présentez votre expérience et vos services"></textarea>
-      </div>
-
-      <div class="ar-step-panel" data-panel="3">
-        <h2>Métiers & Mobilité</h2>
-        <p class="ar-sub">Vos compétences et zone d'intervention</p>
-
-        <label class="ar-label required">Métiers</label>
-        <div class="ar-checkboxes">
-          <label><input type="checkbox" name="skills" value="Plomberie" /> Plomberie</label>
-          <label><input type="checkbox" name="skills" value="Électricité" /> Électricité</label>
-          <label><input type="checkbox" name="skills" value="Froid & Clim" /> Froid & Clim</label>
-          <label><input type="checkbox" name="skills" value="Menuiserie" /> Menuiserie</label>
-          <label><input type="checkbox" name="skills" value="Maçonnerie" /> Maçonnerie</label>
-          <label><input type="checkbox" name="skills" value="Serrurerie" /> Serrurerie</label>
+      <div class="ar-grid-2">
+        <div>
+          <label class="ar-label required">Téléphone</label>
+          <input type="tel" name="phone" required placeholder="Votre numéro" />
+          <p class="ar-hint">Ce numéro sera utilisé pour vous connecter.</p>
         </div>
-
-        <label class="ar-label required">Métier principal</label>
-        <input type="text" name="profession" required placeholder="Votre métier principal" />
-
-        <label class="ar-label required">Tarif horaire (GNF)</label>
-        <input type="number" name="hourly_rate" min="0" step="1000" required placeholder="Ex : 50000" />
-
-        <label class="ar-label">Mobilité</label>
-        <input type="text" name="mobility" placeholder="Conakry et environs" />
+        <div>
+          <label class="ar-label required">Email</label>
+          <input type="email" name="email" required placeholder="jean.dupont@example.com" />
+        </div>
       </div>
 
-      <div class="ar-step-panel" data-panel="4">
-        <h2>Assurance</h2>
-        <p class="ar-sub">Votre responsabilité civile</p>
-
-        <label class="ar-label">Nom de l'assurance</label>
-        <input type="text" name="insurance" placeholder="Nom de votre assureur" />
-
-        <label class="ar-label">Numéro de police</label>
-        <input type="text" name="insurance_policy" placeholder="Numéro de police" />
+      <div class="ar-grid-2">
+        <div>
+          <label class="ar-label required">Ville</label>
+          <input type="text" name="city" required placeholder="Conakry" />
+        </div>
+        <div>
+          <label class="ar-label required">Métier</label>
+          <input type="text" name="profession" required placeholder="Plombier, Électricien..." />
+        </div>
       </div>
 
-      <div class="ar-step-panel" data-panel="5">
-        <h2>Banque</h2>
-        <p class="ar-sub">Vos coordonnées bancaires</p>
+      <label class="ar-label required">Mot de passe</label>
+      <input type="password" name="password" required minlength="6" placeholder="6 caractères minimum" />
 
-        <label class="ar-label required">Nom de la banque</label>
-        <input type="text" name="bank_name" required placeholder="Nom de la banque" />
-
-        <label class="ar-label required">Numéro de compte</label>
-        <input type="text" name="bank_account" required placeholder="Numéro de compte bancaire" />
-
-        <label class="ar-label required">Mot de passe</label>
-        <input type="password" name="password" required minlength="6" placeholder="6 caractères minimum" />
-      </div>
-
-      <div class="ar-actions">
-        <button type="button" class="ar-btn ar-btn-prev" id="ar-prev" style="display:none;">Retour</button>
-        <button type="button" class="ar-btn ar-btn-next" id="ar-next">Continuer</button>
-        <button type="submit" class="ar-btn ar-btn-submit" id="ar-submit" style="display:none;">S'inscrire</button>
+      <div class="ar-actions" style="justify-content: flex-end;">
+        <button type="submit" class="ar-btn ar-btn-next">Continuer →</button>
       </div>
     </form>
   </div>
@@ -171,27 +116,6 @@
 
 <script>
 document.body.classList.add('artisan-page');
-(function() {
-  const steps = document.querySelectorAll('.ar-step');
-  const panels = document.querySelectorAll('.ar-step-panel');
-  const prev = document.getElementById('ar-prev');
-  const next = document.getElementById('ar-next');
-  const submit = document.getElementById('ar-submit');
-  let current = 1;
-
-  function showStep(n) {
-    panels.forEach(p => p.classList.toggle('active', +p.dataset.panel === n));
-    steps.forEach(s => s.classList.toggle('active', +s.dataset.step === n));
-    current = n;
-    prev.style.display = n === 1 ? 'none' : 'inline-flex';
-    next.style.display = n === 5 ? 'none' : 'inline-flex';
-    submit.style.display = n === 5 ? 'inline-flex' : 'none';
-  }
-
-  next.addEventListener('click', () => { if (current < 5) showStep(current + 1); });
-  prev.addEventListener('click', () => { if (current > 1) showStep(current - 1); });
-  steps.forEach(s => s.addEventListener('click', e => { e.preventDefault(); showStep(+s.dataset.step); }));
-})();
 </script>
 
 {% endif %}
