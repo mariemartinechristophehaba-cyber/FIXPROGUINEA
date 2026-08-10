@@ -458,3 +458,28 @@ body.artisan-page main.container { padding: 0; max-width: none; }
 .lp-service-icon { background: var(--accent-blue); color: white; }
 .lp-num { color: var(--muted); }
 .lp-stores .lp-store { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+
+/* Retheme inscription artisan bleu marine */
+.artisan-register { background: var(--bg); }
+.ar-sidebar { background: var(--surface); border-right: 1px solid var(--border); }
+.ar-logo { color: var(--text); }
+.ar-step { color: var(--muted); }
+.ar-step:hover, .ar-step.active { background: rgba(37,99,235,0.1); color: var(--text); }
+.ar-step-num { background: var(--surface-2); color: var(--muted); }
+.ar-step.active .ar-step-num { background: var(--accent-blue); color: white; }
+.ar-note { color: var(--muted); }
+.ar-main { background: var(--bg); }
+.ar-form h2, .ar-sub, .ar-label, .ar-form input, .ar-form select, .ar-form textarea { color: var(--text); }
+.ar-form input, .ar-form select, .ar-form textarea { background: var(--surface); border-color: var(--border); }
+.ar-form input:focus, .ar-form select:focus, .ar-form textarea:focus { border-color: var(--accent-blue); }
+.ar-radio { background: var(--surface); border-color: var(--border); color: var(--text); }
+.ar-radio:has(input:checked) { border-color: var(--accent-blue); background: rgba(37,99,235,0.1); }
+.ar-civility .ar-radio { padding: 14px 28px; }
+.ar-upload { background: var(--surface); border-color: var(--border); color: var(--text); }
+.ar-checkboxes label { background: var(--surface); border-color: var(--border); color: var(--text); }
+.ar-hint { color: var(--muted); }
+.ar-btn-next, .ar-btn-submit { background: linear-gradient(90deg, var(--accent-blue), #1f63f0); color: white; }
+.ar-btn-prev { background: var(--surface); color: var(--text); }
+.ar-phone-wrap { border-color: var(--border); background: var(--surface); }
+.ar-phone-prefix { background: var(--surface-2); color: var(--text); border-right: 1px solid var(--border); }
+.ar-phone-wrap input { background: transparent; color: var(--text); }
