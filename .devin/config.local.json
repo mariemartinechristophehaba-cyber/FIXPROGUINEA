@@ -22,7 +22,9 @@
       "Exec(\"--- verif ---\")",
       "Exec((Get-Content)",
       "Exec(try)",
-      "Exec(\"Status: \")"
+      "Exec(\"Status: \")",
+      "Exec(Start-Sleep)",
+      "Exec(@\")"
     ]
   }
 }
