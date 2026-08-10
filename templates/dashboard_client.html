@@ -5,50 +5,119 @@
     <div class="greeting">
       <div class="avatar">{{ user.full_name[0]|upper }}</div>
       <div>
-        <h2>Bonjour {{ user.full_name.split(' ')[0] }} 👋</h2>
+        <h2>Bonjour {{ user.full_name.split(' ')[0] }}</h2>
         <div class="small muted">Trouvez le technicien qu'il vous faut aujourd'hui</div>
       </div>
     </div>
     <div class="actions">
-      <div class="notif">🔔</div>
+      <a href="{{ url_for('conversations') }}" class="notif" title="Conversations">🔔</a>
     </div>
   </div>
 
-  <div class="search-block">
-    <input class="search-input" placeholder="Ex: plombier, électricien, frigoriste..." />
-    <select class="select-zone">
-      <option>Toute Conakry</option>
-      <option>Kaloum</option>
-      <option>Matam</option>
+  <form class="search-block" action="{{ url_for('artisans_page') }}" method="get">
+    <input class="search-input" name="q" placeholder="Ex: plombier, électricien, frigoriste..." />
+    <select class="select-zone" name="zone">
+      <option value="">Toute Conakry</option>
+      <option value="Kaloum">Kaloum</option>
+      <option value="Matam">Matam</option>
+      <option value="Dixinn">Dixinn</option>
+      <option value="Ratoma">Ratoma</option>
     </select>
-    <button class="btn btn-cta-orange search-btn">Rechercher →</button>
-  </div>
+    <button class="btn btn-cta-orange search-btn" type="submit">Rechercher</button>
+  </form>
 
   <div class="category-grid">
-    <div class="category-card"> <div class="icon">🔧</div><div><strong>Plomberie</strong><div class="small muted">32 techniciens</div></div></div>
-    <div class="category-card"> <div class="icon">⚡</div><div><strong>Électricité</strong><div class="small muted">24 techniciens</div></div></div>
-    <div class="category-card"> <div class="icon">❄️</div><div><strong>Froid & Clim</strong><div class="small muted">8 techniciens</div></div></div>
-    <div class="category-card"> <div class="icon">🏗️</div><div><strong>Maçonnerie</strong><div class="small muted">15 techniciens</div></div></div>
+    {% for category in categories %}
+    <a class="category-card" href="{{ url_for('artisans_page', category=category.name) }}">
+      <div class="icon">🔧</div>
+      <div>
+        <strong>{{ category.name }}</strong>
+        <div class="small muted">{{ artisan_counts.get(category.name, 0) }} techniciens</div>
+      </div>
+    </a>
+    {% endfor %}
   </div>
 
   <div class="stat-grid">
-    <div class="stat-card"><div><div class="small">📋</div><strong>3</strong><div class="small muted">Contrats en cours</div></div><div class="trend">↗️ 12%</div></div>
-    <div class="stat-card"><div><div class="small">✅</div><strong>24</strong><div class="small muted">Travaux terminés</div></div><div class="trend">↘️ 2%</div></div>
-    <div class="stat-card"><div><div class="small">⭐</div><strong>4.7</strong><div class="small muted">Note moyenne</div></div><div class="trend">★</div></div>
-    <div class="stat-card"><div><div class="small">💰</div><strong>3,540,000</strong><div class="small muted">Total dépensé (GNF)</div><div class="small muted">Ce mois : 420,000 GNF</div></div><div class="trend">↗️</div></div>
+    <div class="stat-card">
+      <div>
+        <div class="small">📋</div>
+        <strong>{{ stats.contracts }}</strong>
+        <div class="small muted">Contrats en cours</div>
+      </div>
+      <div class="trend">↗️</div>
+    </div>
+    <div class="stat-card">
+      <div>
+        <div class="small">✅</div>
+        <strong>{{ stats.completed }}</strong>
+        <div class="small muted">Travaux terminés</div>
+      </div>
+      <div class="trend">↘️</div>
+    </div>
+    <div class="stat-card">
+      <div>
+        <div class="small">⭐</div>
+        <strong>4.7</strong>
+        <div class="small muted">Note moyenne</div>
+      </div>
+      <div class="trend">★</div>
+    </div>
+    <div class="stat-card">
+      <div>
+        <div class="small">💰</div>
+        <strong>{{ "{:,}".format(stats.total_spent|int).replace(",", " ") }} GNF</strong>
+        <div class="small muted">Total dépensé</div>
+        <div class="small muted">Ce mois : {{ "{:,}".format(stats.month_spent|int).replace(",", " ") }} GNF</div>
+      </div>
+      <div class="trend">↗️</div>
+    </div>
   </div>
 
   <h3 style="margin-top:18px">Techniciens près de vous</h3>
   <div class="tech-list">
-    <div class="tech-item"><div style="display:flex;align-items:center;gap:12px;"><div class="avatar">🔧</div><div><strong>Ali Camara</strong><div class="small muted">Plombier • 1.2 km</div></div></div><div style="text-align:right"><div class="small muted">50,000 GNF/h</div><a href="#">Voir tout →</a></div></div>
-    <div class="tech-item"><div style="display:flex;align-items:center;gap:12px;"><div class="avatar">⚡</div><div><strong>Sékou Diallo</strong><div class="small muted">Électricien • 2.1 km</div></div></div><div style="text-align:right"><div class="small muted">45,000 GNF/h</div><a href="#">Voir tout →</a></div></div>
-    <div class="tech-item"><div style="display:flex;align-items:center;gap:12px;"><div class="avatar">❄️</div><div><strong>Fatoumata Keita</strong><div class="small muted">Frigoriste • 3.8 km</div></div></div><div style="text-align:right"><div class="small muted">65,000 GNF/h</div><a href="#">Voir tout →</a></div></div>
+    {% for artisan in artisans %}
+    <div class="tech-item">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div class="avatar">🔧</div>
+        <div>
+          <strong>{{ artisan.full_name }}</strong>
+          <div class="small muted">{{ artisan.profession or '' }} • {{ artisan.city or 'Conakry' }}</div>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <div class="small muted">{{ "{:,}".format((artisan.hourly_rate or 0)|int).replace(",", " ") }} GNF/h</div>
+        <a href="{{ url_for('artisans_page') }}">Voir tout</a>
+      </div>
+    </div>
+    {% endfor %}
   </div>
 
-  <h3 style="margin-top:18px">Mes contrats récents</h3>
+  <h3 style="margin-top:18px">Mes demandes récentes</h3>
   <div class="contracts-list">
-    <div class="card tech-item"><div style="display:flex;gap:12px;align-items:center;"><div class="icon">🔧</div><div><strong>Fuite - Réparation</strong><div class="small muted">Ali Camara • 2026-07-24</div></div></div><div><div class="small muted">120,000 GNF</div><div class="badge done">✓ Terminé</div></div></div>
-    <div class="card tech-item"><div style="display:flex;gap:12px;align-items:center;"><div class="icon">⚡</div><div><strong>Installation prise</strong><div class="small muted">Sékou Diallo • 2026-07-10</div></div></div><div><div class="small muted">75,000 GNF</div><div class="badge inprogress">⏳ En cours</div></div></div>
+    {% for req in recent_requests %}
+    <a class="card tech-item" href="{{ url_for('request_detail', request_id=req.id) }}">
+      <div style="display:flex;gap:12px;align-items:center;">
+        <div class="icon">🔧</div>
+        <div>
+          <strong>{{ req.title or 'Demande #' ~ req.id }}</strong>
+          <div class="small muted">{{ req.artisan_name or 'En attente' }} • {{ req.updated_at or '' }}</div>
+        </div>
+      </div>
+      <div>
+        <div class="badge {{ 'done' if req.status == 'completed' else 'inprogress' if req.status in ('assigned', 'in_progress') else '' }}">
+          {% if req.status == 'completed' %}✓ Terminé
+          {% elif req.status in ('assigned', 'in_progress') %}⏳ En cours
+          {% elif req.status == 'pending' %}🔎 En attente
+          {% else %}{{ req.status }}
+          {% endif %}
+        </div>
+      </div>
+    </a>
+    {% endfor %}
+    {% if not recent_requests %}
+    <p class="small muted">Aucune demande pour l'instant. <a href="{{ url_for('request_new') }}">Créer une demande</a></p>
+    {% endif %}
   </div>
 
 </section>

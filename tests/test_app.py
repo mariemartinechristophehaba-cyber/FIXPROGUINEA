@@ -32,6 +32,7 @@ class FixProTestCase(unittest.TestCase):
         fixpro_app.app.config.update(
             TESTING=True,
             WTF_CSRF_ENABLED=False,
+            BYPASS_AUTH=False,
             SQLITE_PATH=self.db_path,
             DATABASE_URL="",
         )

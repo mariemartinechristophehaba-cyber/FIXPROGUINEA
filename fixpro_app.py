@@ -370,19 +370,48 @@ def dashboard():
     user = get_current_user()
     conn = get_db_connection()
     try:
-        if user["role"] == "artisan":
-            rows = conn.execute(
-                "SELECT status, quote_amount FROM requests WHERE artisan_id = ?",
-                (user["id"],)).fetchall()
-        else:
-            rows = conn.execute(
-                "SELECT status, quote_amount FROM requests WHERE client_id = ?",
-                (user["id"],)).fetchall()
+        # Categories de services
+        categories = conn.execute(
+            "SELECT name, diagnostic_price FROM service_categories"
+            " ORDER BY name").fetchall()
+
+        # Nombre d'artisans par categorie (estimation)
+        artisan_counts = {}
+        for c in categories:
+            count = conn.execute(
+                "SELECT COUNT(*) AS n FROM users"
+                " WHERE role = 'artisan' AND profession LIKE ?",
+                (f"%{c['name']}%",)).fetchone()["n"]
+            artisan_counts[c["name"]] = count
+
+        # Artisans a proximite (tous les artisans verifies pour l'instant)
+        artisans = conn.execute(
+            "SELECT id, full_name, profession, city, hourly_rate"
+            " FROM users WHERE role = 'artisan' ORDER BY full_name LIMIT 5").fetchall()
+
+        # Requetes recentes du client avec nom artisan
+        recent_requests = conn.execute(
+            "SELECT r.id, r.title, r.status, r.updated_at, u.full_name AS artisan_name"
+            " FROM requests r LEFT JOIN users u ON u.id = r.artisan_id"
+            " WHERE r.client_id = ? ORDER BY r.updated_at DESC LIMIT 5",
+            (user["id"],)).fetchall()
+
+        # Statistiques
+        rows = conn.execute(
+            "SELECT status FROM requests WHERE client_id = ?",
+            (user["id"],)).fetchall()
         paid = conn.execute(
             "SELECT COALESCE(SUM(amount), 0) AS total FROM payments p"
             " JOIN requests r ON r.id = p.request_id"
-            " WHERE p.status = 'completed' AND (r.client_id = ? OR r.artisan_id = ?)",
-            (user["id"], user["id"])).fetchone()
+            " WHERE p.status = 'completed' AND r.client_id = ?",
+            (user["id"],)).fetchone()
+
+        month_paid = conn.execute(
+            "SELECT COALESCE(SUM(amount), 0) AS total FROM payments p"
+            " JOIN requests r ON r.id = p.request_id"
+            " WHERE p.status = 'completed' AND r.client_id = ?"
+            " AND p.created_at >= date('now', '-30 days')",
+            (user["id"],)).fetchone()
     finally:
         conn.close()
 
@@ -391,8 +420,14 @@ def dashboard():
                          ("completed", "cancelled")),
         "completed": sum(1 for r in rows if r["status"] == "completed"),
         "total_spent": float(paid["total"] or 0),
+        "month_spent": float(month_paid["total"] or 0),
     }
-    return render_template("dashboard_client.html", user=user, stats=stats)
+
+    return render_template("dashboard_client.html", user=user, stats=stats,
+                           categories=categories,
+                           artisan_counts=artisan_counts,
+                           artisans=artisans,
+                           recent_requests=recent_requests)
 
 
 @app.route("/mobile_dashboard")
@@ -442,12 +477,35 @@ def _to_float(value, default=0.0):
 @login_required
 def artisans_page():
     user = get_current_user()
+    query = request.args.get("q", "").strip()
+    category = request.args.get("category", "").strip()
+    zone = request.args.get("zone", "").strip()
+
+    sql = (
+        "SELECT id, full_name AS nom, profession AS metier, city,"
+        " hourly_rate, latitude, longitude FROM users"
+        " WHERE role = 'artisan'")
+    params = []
+
+    if query:
+        sql += (
+            " AND (full_name LIKE ? OR profession LIKE ? OR city LIKE ?)")
+        like = f"%{query}%"
+        params.extend([like, like, like])
+
+    if category:
+        sql += " AND profession LIKE ?"
+        params.append(f"%{category}%")
+
+    if zone:
+        sql += " AND city LIKE ?"
+        params.append(f"%{zone}%")
+
+    sql += " ORDER BY full_name"
+
     conn = get_db_connection()
     try:
-        artisans = conn.execute(
-            "SELECT id, full_name AS nom, profession AS metier, city,"
-            " hourly_rate, latitude, longitude FROM users"
-            " WHERE role = 'artisan' ORDER BY full_name").fetchall()
+        artisans = conn.execute(sql, params).fetchall()
         active_requests = {}
         if user["role"] == "client":
             rows = conn.execute(
@@ -458,7 +516,8 @@ def artisans_page():
     finally:
         conn.close()
     return render_template("artisans.html", artisans=artisans, user=user,
-                           active_requests=active_requests)
+                           active_requests=active_requests,
+                           query=query, category=category, zone=zone)
 
 
 @app.route("/artisans/<int:artisan_id>/contact")
