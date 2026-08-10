@@ -409,9 +409,11 @@ body.artisan-page main.container { padding: 0; max-width: none; }
 
 /* Header landing style Tycoon */
 .lp-header { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; justify-content: space-between; align-items: center; padding: 16px 40px; background: #fff; }
-.lp-header-logo { font-size: 1.6rem; font-weight: 900; color: #0a0a0a; text-decoration: none; }
+.lp-header-logo { display: flex; align-items: baseline; gap: 6px; text-decoration: none; color: #0a0a0a; font-size: 1.6rem; font-weight: 900; }
 .lp-header-logo .pro { color: #ffd600; }
-.lp-header-sub { display: block; font-size: 0.55rem; font-weight: 600; color: #6b7280; letter-spacing: 0.04em; text-transform: uppercase; }
+.lp-header-guinee { font-size: 0.85rem; font-weight: 700; color: #0a0a0a; border: 1px solid #e5e7eb; padding: 2px 6px; border-radius: 6px; }
+.lp-header-sep { color: #d1d5db; font-weight: 300; }
+.lp-header-name { font-size: 0.8rem; font-weight: 600; color: #6b7280; }
 .lp-header-right { display: flex; align-items: center; gap: 16px; }
 .lp-menu-btn { width: 32px; height: 32px; display: flex; flex-direction: column; justify-content: center; gap: 5px; background: transparent; border: 0; cursor: pointer; padding: 0; }
 .lp-menu-btn span { display: block; width: 24px; height: 2px; background: #0a0a0a; border-radius: 2px; }
