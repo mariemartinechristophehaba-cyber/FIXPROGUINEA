@@ -380,8 +380,8 @@ body { background: linear-gradient(180deg, var(--mobile-bg-from), var(--mobile-b
 }
 
 /* Cacher le header de base sur la page d'inscription artisan */
-body:has(.artisan-register) .fixed-header { display: none; }
-body:has(.artisan-register) main.container { padding: 0; max-width: none; }
+body.artisan-page .fixed-header { display: none; }
+body.artisan-page main.container { padding: 0; max-width: none; }
 
 /* Ajustements formulaire artisan */
 .artisan-register { background: #f9fafb; min-height: 100vh; }
