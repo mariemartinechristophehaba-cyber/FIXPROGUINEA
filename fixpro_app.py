@@ -42,6 +42,32 @@ limiter = Limiter(
 oauth = OAuth(app)
 
 
+@app.before_request
+def check_artisan_verification():
+    """Redirige les artisans non verifies vers la page d'attente."""
+    if app.config.get("BYPASS_AUTH"):
+        return None
+    user_id = session.get("user_id")
+    if not user_id:
+        return None
+    public_endpoints = {
+        "artisan_pending", "logout", "static", "login", "register",
+        "client_signup", "google_signup", "google_callback",
+        "complete_profile", "health", "index", "contact",
+    }
+    if request.endpoint in public_endpoints or request.endpoint is None:
+        return None
+    conn = get_db_connection()
+    try:
+        user = conn.execute(
+            "SELECT role, is_verified FROM users WHERE id = ?", (user_id,)).fetchone()
+        if user and user["role"] == "artisan" and not user["is_verified"]:
+            return redirect(url_for("artisan_pending"))
+    finally:
+        conn.close()
+    return None
+
+
 def _get_google_client():
     """Enregistre le client Google OAuth si les identifiants sont presents."""
     client_id = app.config.get("GOOGLE_CLIENT_ID")
@@ -358,7 +384,8 @@ def register():
 
             if role == "client":
                 return redirect(url_for("artisans_page"))
-            return redirect(url_for("requests_list"))
+            # Les artisans passent en attente de validation manuelle.
+            return redirect(url_for("artisan_pending"))
         finally:
             conn.close()
 
@@ -373,6 +400,60 @@ def register():
 
     return render_template("register.html", role=role, title=title,
                            subtitle=subtitle, button_label=button_label)
+
+
+@app.route("/artisan-pending")
+def artisan_pending():
+    """Page d'attente affichee aux artisans non valides."""
+    return render_template("pending.html")
+
+
+@app.route("/admin/artisans", methods=["GET", "POST"])
+@limiter.limit("60 per hour", methods=["POST"])
+def admin_artisans():
+    """Interface admin pour valider ou refuser les artisans."""
+    if not session.get("admin_logged_in"):
+        if request.method == "POST" and request.form.get("admin_password"):
+            if request.form.get("admin_password") == app.config.get("ADMIN_PASSWORD"):
+                session["admin_logged_in"] = True
+            else:
+                flash("Mot de passe incorrect.", "error")
+                return redirect(url_for("admin_artisans"))
+        else:
+            return render_template("admin_login.html")
+
+    conn = get_db_connection()
+    try:
+        if request.method == "POST" and request.form.get("action"):
+            artisan_id = request.form.get("artisan_id")
+            action = request.form.get("action")
+            if action == "verify":
+                conn.execute(
+                    "UPDATE users SET is_verified = 1 WHERE id = ?", (artisan_id,))
+                conn.commit()
+                flash("Artisan validé.", "success")
+            elif action == "reject":
+                conn.execute("DELETE FROM users WHERE id = ?", (artisan_id,))
+                conn.commit()
+                flash("Artisan refusé.", "success")
+            return redirect(url_for("admin_artisans"))
+
+        artisans = conn.execute(
+            "SELECT * FROM users WHERE role = 'artisan' AND is_verified = 0"
+            " ORDER BY created_at DESC").fetchall()
+        verified = conn.execute(
+            "SELECT * FROM users WHERE role = 'artisan' AND is_verified = 1"
+            " ORDER BY created_at DESC").fetchall()
+        return render_template("admin_artisans.html", artisans=artisans,
+                               verified=verified)
+    finally:
+        conn.close()
+
+
+@app.route("/admin/logout")
+def admin_logout():
+    session.pop("admin_logged_in", None)
+    return redirect(url_for("admin_artisans"))
 
 
 @app.route("/client-signup", methods=["GET", "POST"])

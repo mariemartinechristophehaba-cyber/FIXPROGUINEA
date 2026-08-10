@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="card" style="max-width: 900px; margin: 0 auto;">
+  <h2 style="margin-top: 0;">Artisans en attente de validation</h2>
+  {% if artisans %}
+    <div class="tech-list" style="margin-top: 24px;">
+      {% for artisan in artisans %}
+        <div class="tech-item" style="align-items: flex-start; flex-direction: column; gap: 12px;">
+          <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+            <div>
+              <strong>{{ artisan.full_name }}</strong>
+              <span class="muted">— {{ artisan.profession or 'Non précisé' }}</span>
+              <div class="small" style="margin-top: 4px;">{{ artisan.email }} · {{ artisan.phone }} · {{ artisan.city }}</div>
+            </div>
+            <form method="post" action="{{ url_for('admin_artisans') }}" style="display: flex; gap: 8px;">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+              <input type="hidden" name="artisan_id" value="{{ artisan.id }}" />
+              <button type="submit" name="action" value="verify" class="btn btn-primary" style="padding: 8px 16px; font-size: 0.9rem;">Accepter</button>
+              <button type="submit" name="action" value="reject" class="btn btn-outline" style="padding: 8px 16px; font-size: 0.9rem;">Refuser</button>
+            </form>
+          </div>
+          {% if artisan.company_name or artisan.skills or artisan.bio %}
+            <div class="small" style="width: 100%; color: var(--muted);">
+              {% if artisan.company_name %}Entreprise : {{ artisan.company_name }}{% endif %}
+              {% if artisan.skills %}<br>Métiers : {{ artisan.skills }}{% endif %}
+              {% if artisan.bio %}<br>Bio : {{ artisan.bio }}{% endif %}
+            </div>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="muted">Aucun artisan en attente de validation.</p>
+  {% endif %}
+
+  <h2 style="margin-top: 48px;">Artisans validés</h2>
+  {% if verified %}
+    <div class="tech-list" style="margin-top: 24px;">
+      {% for artisan in verified %}
+        <div class="tech-item" style="justify-content: space-between; align-items: center;">
+          <div>
+            <strong>{{ artisan.full_name }}</strong>
+            <span class="muted">— {{ artisan.profession or 'Non précisé' }}</span>
+            <div class="small" style="margin-top: 4px;">{{ artisan.email }} · {{ artisan.phone }}</div>
+          </div>
+          <span class="badge success">Validé</span>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="muted">Aucun artisan validé pour l'instant.</p>
+  {% endif %}
+</section>
+{% endblock %}

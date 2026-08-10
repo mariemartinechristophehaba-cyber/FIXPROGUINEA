@@ -66,7 +66,7 @@ class FixProTestCase(unittest.TestCase):
 
     def register_artisan(self, email, phone="+224621111111", password="mdp123",
                          name="Mamadou Bah"):
-        return self.client.post("/register?role=artisan", data={
+        response = self.client.post("/register?role=artisan", data={
             "role": "artisan",
             "full_name": name,
             "email": email,
@@ -75,6 +75,18 @@ class FixProTestCase(unittest.TestCase):
             "city": "Conakry",
             "password": password,
         }, follow_redirects=True)
+        # Valide automatiquement l'artisan pour les tests.
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            user = conn.execute(
+                "SELECT id FROM users WHERE email = ?", (email,)).fetchone()
+            if user:
+                conn.execute("UPDATE users SET is_verified = 1 WHERE id = ?",
+                             (user["id"],))
+                conn.commit()
+        finally:
+            conn.close()
+        return response
 
     def login(self, identifier, password="mdp123"):
         return self.client.post("/login", data={

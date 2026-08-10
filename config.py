@@ -56,6 +56,10 @@ class Config:
     GOOGLE_REDIRECT_URI = os.getenv(
         "GOOGLE_REDIRECT_URI", "").strip()
 
+    # Mot de passe administrateur pour l'interface de validation des artisans.
+    # A definir en production via les variables d'environnement.
+    ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin").strip()
+
     # Developpement uniquement : contourne l'authentification et injecte un
     # compte de test. Ne JAMAIS activer en production.
     BYPASS_AUTH = _bool("BYPASS_AUTH")

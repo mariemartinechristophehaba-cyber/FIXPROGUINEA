@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="card form-card" style="max-width: 520px; margin: 80px auto; text-align: center;">
+  <div style="font-size: 1.2rem; font-weight: 900; color: var(--accent-orange); margin-bottom: 16px;">En attente</div>
+  <h2>Votre compte est en cours de validation</h2>
+  <p class="muted">L'équipe FixPro vérifie vos informations. Vous recevrez une confirmation dès que votre compte sera activé.</p>
+  <p class="small">Cela peut prendre jusqu'à 48h.</p>
+  <a href="{{ url_for('index') }}" class="btn btn-primary" style="margin-top: 24px;">Retour à l'accueil</a>
+</section>
+{% endblock %}
