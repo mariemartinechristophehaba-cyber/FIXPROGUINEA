@@ -3,11 +3,19 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>FixPro</title>
+    <meta name="description" content="FixPro - Trouvez un technicien verifie a Conakry. Plombiers, electriciens, frigoristes, menuisiers et plus." />
+    <meta name="keywords" content="technicien, artisan, plombier, electricien, Conakry, Guinee, depannage, FixPro" />
+    <meta property="og:title" content="FixPro - Techniciens a Conakry" />
+    <meta property="og:description" content="Reservez un professionnel verifie en quelques minutes." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://fixproguinea.vercel.app" />
+    <meta name="theme-color" content="#090c14" />
+    <title>{% block title %}FixPro{% endblock %}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+    {% block extra_head %}{% endblock %}
   </head>
   <body>
     {% block header %}
