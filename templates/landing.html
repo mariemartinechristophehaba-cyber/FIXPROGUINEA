@@ -1,11 +1,11 @@
 {% extends 'base.html' %}
-{% block content %}
 
+{% block header %}
 <header class="lp-header">
-  <a class="lp-header-logo" href="{{ url_for('index') }}">FixPro</a>
+  <a class="lp-header-logo" href="{{ url_for('index') }}">Fix<span class="pro">Pro</span></a>
   <div class="lp-header-right">
     <a class="lp-btn lp-btn-yellow" href="{{ url_for('register', role='artisan') }}">Devenir technicien</a>
-    <button class="lp-menu-btn" aria-label="Menu" onclick="document.querySelector('.lp-nav').classList.toggle('open')">
+    <button class="lp-menu-btn" type="button" aria-label="Menu" onclick="document.querySelector('.lp-nav').classList.toggle('open')">
       <span></span><span></span><span></span>
     </button>
   </div>
@@ -15,6 +15,9 @@
   <a href="{{ url_for('register', role='artisan') }}">Devenir technicien</a>
   <a href="{{ url_for('login') }}">Connexion</a>
 </nav>
+{% endblock %}
+
+{% block content %}
 
 <section class="lp-hero">
   <div class="lp-hero-inner">
@@ -208,7 +211,3 @@
 {% endblock %}
 
 {% block footer %}{% endblock %}
-
-<script>
-document.body.classList.add('landing-page');
-</script>

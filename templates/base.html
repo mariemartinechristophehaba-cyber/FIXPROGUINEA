@@ -7,11 +7,13 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
   </head>
   <body>
+    {% block header %}
     <div class="fixed-header">
       <div class="left"> <a href="#" class="back-btn">←</a> </div>
       <div class="center"> <div class="page-title">{% block header_title %}FixPro{% endblock %}</div> </div>
       <div class="right"> <div class="menu-icon">⊞⊞</div> </div>
     </div>
+    {% endblock %}
 
     <main class="container">
       {% with messages = get_flashed_messages(with_categories=true) %}

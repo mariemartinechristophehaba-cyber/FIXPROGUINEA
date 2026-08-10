@@ -408,8 +408,6 @@ body.artisan-page main.container { padding: 0; max-width: none; }
 .ar-form select { width: 100%; border: 1px solid #e5e7eb; background: #fff; color: #0a0a0a; padding: 14px 16px; border-radius: 12px; font-size: 1rem; }
 
 /* Header landing style Tycoon */
-body.landing-page .fixed-header { display: none; }
-body.landing-page { padding-top: 0; }
 .lp-header { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; justify-content: space-between; align-items: center; padding: 16px 40px; background: #fff; }
 .lp-header-logo { font-size: 1.6rem; font-weight: 900; color: #0a0a0a; text-decoration: none; }
 .lp-header-logo .pro { color: #ffd600; }
