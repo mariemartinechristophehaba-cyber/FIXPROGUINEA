@@ -13,32 +13,33 @@
     <p class="hero-note">Déjà membre ? <a href="{{ url_for('login') }}">Se connecter</a></p>
   </div>
   <div class="landing-hero-visual">
-    <div class="hero-phone-mockup">
+    <div class="phone-frame">
+      <div class="phone-notch"></div>
       <div class="phone-screen">
-        <div class="phone-top-bar">FixPro</div>
-        <div class="phone-list">
-          <div class="phone-item"><span class="phone-icon">🔧</span><span>Plomberie</span></div>
-          <div class="phone-item"><span class="phone-icon">⚡</span><span>Électricité</span></div>
-          <div class="phone-item"><span class="phone-icon">❄️</span><span>Froid & Clim</span></div>
-          <div class="phone-item"><span class="phone-icon">🛠️</span><span>Menuiserie</span></div>
+        <div class="phone-header">
+          <div class="phone-avatar">M</div>
+          <div>
+            <div class="phone-name">Mamadou Bah</div>
+            <div class="phone-status">Plombier • 4.7 ★</div>
+          </div>
+          <div class="phone-price">50 000 GNF/h</div>
+        </div>
+        <div class="phone-body">
+          <div class="phone-card">
+            <div class="pc-title">Fuite sous l'évier</div>
+            <div class="pc-meta">Kaloum • 12 min d'attente</div>
+          </div>
+          <div class="phone-map">
+            <div class="map-dot client"></div>
+            <div class="map-line"></div>
+            <div class="map-dot artisan"></div>
+          </div>
+          <div class="phone-msg">
+            <div class="bubble">Je arrive dans 10 min</div>
+          </div>
+          <a class="phone-cta" href="{{ url_for('register', role='client') }}">Réserver maintenant</a>
         </div>
       </div>
-    </div>
-  </div>
-</section>
-
-<section class="landing-section landing-discover">
-  <div class="discover-grid">
-    <div class="discover-copy">
-      <h2>Découvrez FixPro</h2>
-      <p class="lead">La première plateforme guinéenne qui met en relation des clients avec des techniciens indépendants, vérifiés et notés.</p>
-      <p>Gagnez du temps, comparez les profils, discutez en direct et payez en toute sécurité une fois l'intervention terminée.</p>
-      <a class="btn btn-primary" href="{{ url_for('register', role='client') }}">Trouver un artisan</a>
-    </div>
-    <div class="discover-card">
-      <div class="discover-icon">🛡️</div>
-      <h3>Profils vérifiés</h3>
-      <p>Chaque technicien est vérifié par notre équipe avant d'apparaître sur la plateforme.</p>
     </div>
   </div>
 </section>
@@ -52,7 +53,7 @@
   <div class="service-carousel">
     <a class="service-card" href="{{ url_for('register', role='client') }}">
       <div class="service-icon">
-        <svg viewBox="0 0 64 64" aria-hidden="true"><path fill="currentColor" d="M16 20 h8 v-4 a4 4 0 0 1 4 -4 h8 a4 4 0 0 1 4 4 v4 h8 v4 h-32 z M24 40 h16 v12 h-16 z M28 20 h8 v-4 h-8 z"/></svg>
+        <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 12V8a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v4M8 20h32M12 20v20a4 4 0 0 0 4 4h16a4 4 0 0 0 4-4V20M20 28h8"/></svg>
       </div>
       <h3>Plomberie</h3>
       <p>Fuite, robinet, wc, tuyauterie.</p>
@@ -60,7 +61,7 @@
     </a>
     <a class="service-card" href="{{ url_for('register', role='client') }}">
       <div class="service-icon electric">
-        <svg viewBox="0 0 64 64" aria-hidden="true"><path fill="currentColor" d="M34 8 L20 36 h10 l-2 20 16 -30 h-10 l4 -18 z"/></svg>
+        <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M26 6l-8 16h10l-2 20 12-20h-10l4-20z"/></svg>
       </div>
       <h3>Électricité</h3>
       <p>Prise, disjoncteur, installation.</p>
@@ -68,7 +69,7 @@
     </a>
     <a class="service-card" href="{{ url_for('register', role='client') }}">
       <div class="service-icon cold">
-        <svg viewBox="0 0 64 64" aria-hidden="true"><path fill="currentColor" d="M32 4 v8 M32 20 v8 M32 36 v8 M32 52 v8 M20 16 l6 6 M44 16 l-6 6 M20 32 l6 6 M44 32 l-6 6 M20 48 l6 6 M44 48 l-6 6" stroke="currentColor" stroke-width="4" stroke-linecap="round"/></svg>
+        <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M24 6v6M24 18v6M24 30v6M14 10l6 6M14 26l6 6M14 38l6-6M34 10l-6 6M34 26l-6 6M34 38l-6-6"/></svg>
       </div>
       <h3>Froid & Clim</h3>
       <p>Climatisation, frigo, fuite de gaz.</p>
@@ -76,7 +77,7 @@
     </a>
     <a class="service-card" href="{{ url_for('register', role='client') }}">
       <div class="service-icon wood">
-        <svg viewBox="0 0 64 64" aria-hidden="true"><path fill="currentColor" d="M6 50 L58 50 L58 54 L6 54 Z M14 50 L14 38 L26 38 L26 50 M38 50 L38 30 L50 30 L50 50 M8 38 L56 38 L32 18 Z"/></svg>
+        <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 40h36M10 40V30h8v10M30 40V24h8v16M6 24h36L24 10 6 24z"/></svg>
       </div>
       <h3>Menuiserie</h3>
       <p>Porte, fenêtre, meuble, parquet.</p>
@@ -84,7 +85,7 @@
     </a>
     <a class="service-card" href="{{ url_for('register', role='client') }}">
       <div class="service-icon masonry">
-        <svg viewBox="0 0 64 64" aria-hidden="true"><path fill="currentColor" d="M4 12 h56 v8 h-56 z M4 28 h56 v8 h-56 z M4 44 h56 v8 h-56 z M12 44 v-8 M28 44 v-8 M44 44 v-8 M20 28 v-8 M52 28 v-8 M36 28 v-8" stroke="currentColor" stroke-width="4"/></svg>
+        <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="14" height="14" rx="1"/><rect x="28" y="6" width="14" height="14" rx="1"/><rect x="6" y="28" width="14" height="14" rx="1"/><rect x="28" y="28" width="14" height="14" rx="1"/></svg>
       </div>
       <h3>Maçonnerie</h3>
       <p>Mur, dalle, rénovation, finition.</p>
@@ -92,7 +93,7 @@
     </a>
     <a class="service-card" href="{{ url_for('register', role='client') }}">
       <div class="service-icon lock">
-        <svg viewBox="0 0 64 64" aria-hidden="true"><path fill="currentColor" d="M32 4 a10 10 0 0 1 10 10 v6 h-20 v-6 a10 10 0 0 1 10 -10 z M16 20 h32 v36 h-32 z M32 34 v12"/></svg>
+        <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="10" y="20" width="28" height="22" rx="2"/><path d="M16 20v-6a8 8 0 0 1 16 0v6M24 32v4"/></svg>
       </div>
       <h3>Serrurerie</h3>
       <p>Serrure, clé, porte blindée.</p>
@@ -132,22 +133,30 @@
   </div>
   <div class="feature-grid-large">
     <div class="feature-large-card">
-      <div class="feature-icon">✅</div>
+      <div class="feature-icon">
+        <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 38h4M18 42h12M24 6v4M18 12l3 3M30 12l-3 3M12 18h24a6 6 0 0 1-6 6H18a6 6 0 0 1-6-6z"/></svg>
+      </div>
       <h3>Profils vérifiés</h3>
       <p>Chaque technicien passe par une vérification d'identité avant d'être visible.</p>
     </div>
     <div class="feature-large-card">
-      <div class="feature-icon">💬</div>
+      <div class="feature-icon">
+        <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 18h20M14 24h14M14 30h8M34 6v6M10 6h28a4 4 0 0 1 4 4v28a4 4 0 0 1-4 4H10a4 4 0 0 1-4-4V10a4 4 0 0 1 4-4z"/></svg>
+      </div>
       <h3>Chat intégré</h3>
       <p>Échangez directement avec le professionnel, sans quitter l'application.</p>
     </div>
     <div class="feature-large-card">
-      <div class="feature-icon">📍</div>
+      <div class="feature-icon">
+        <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="24" cy="20" r="8"/><path d="M24 28v16M14 48h20"/></svg>
+      </div>
       <h3>Suivi en temps réel</h3>
       <p>Suivez l'arrivée du technicien pendant l'intervention.</p>
     </div>
     <div class="feature-large-card">
-      <div class="feature-icon">🔒</div>
+      <div class="feature-icon">
+        <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="10" y="18" width="28" height="24" rx="2"/><path d="M18 18v-6a6 6 0 0 1 12 0v6M24 32v4"/></svg>
+      </div>
       <h3>Paiement sécurisé</h3>
       <p>Orange Money et autres moyens, libéré une fois le travail validé.</p>
     </div>
@@ -162,17 +171,17 @@
   </div>
   <div class="trust-grid">
     <div class="trust-card">
-      <strong>01</strong>
+      <div class="trust-icon">01</div>
       <h3>Vérification</h3>
       <p>Contrôle des pièces d'identité et des compétences.</p>
     </div>
     <div class="trust-card">
-      <strong>02</strong>
+      <div class="trust-icon">02</div>
       <h3>Disponibilité</h3>
       <p>Des techniciens actifs et géolocalisés à Conakry.</p>
     </div>
     <div class="trust-card">
-      <strong>03</strong>
+      <div class="trust-icon">03</div>
       <h3>Assistance</h3>
       <p>Un support client disponible pour vous aider à chaque étape.</p>
     </div>
@@ -196,6 +205,60 @@
   </div>
 </section>
 
+<section class="landing-section landing-technician">
+  <div class="technician-cta">
+    <div class="technician-copy">
+      <span class="eyebrow">Vous êtes artisan à Conakry ?</span>
+      <h2>Recevez des demandes près de chez vous</h2>
+      <p>Gérez vos interventions depuis votre téléphone. Inscription gratuite, validation sous 48h.</p>
+      <div class="technician-points">
+        <div class="tp"><div class="tp-dot">1</div><div><strong>Zéro commission le premier mois</strong><span>Testez FixPro sans frais.</span></div></div>
+        <div class="tp"><div class="tp-dot">2</div><div><strong>Paiement Orange Money direct</strong><span>Votre argent arrive sur votre compte.</span></div></div>
+        <div class="tp"><div class="tp-dot">3</div><div><strong>Visibilité auprès des clients</strong><span>Soyez visible dans votre quartier.</span></div></div>
+      </div>
+      <a class="btn btn-cta-orange" href="{{ url_for('register', role='artisan') }}">Devenir technicien</a>
+    </div>
+    <div class="technician-visual">
+      <div class="tech-card-float">
+        <div class="tcf-head">
+          <div class="tcf-avatar">A</div>
+          <div>
+            <div class="tcf-name">Ali Camara</div>
+            <div class="tcf-meta">Électricien • 5.0 ★</div>
+          </div>
+        </div>
+        <div class="tcf-body">
+          <div class="tcf-row"><span>Nouvelle demande</span><span class="tcf-badge">1</span></div>
+          <div class="tcf-row"><span>Installation prise</span><span class="tcf-price">45 000 GNF/h</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="landing-section landing-contact">
+  <div class="section-head center">
+    <span class="eyebrow">Besoin d'aide ?</span>
+    <h2>Nous sommes là pour vous</h2>
+  </div>
+  <div class="contact-grid">
+    <a class="contact-card" href="https://wa.me/224620000000" target="_blank" rel="noopener">
+      <div class="contact-icon">
+        <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M24 6a16 16 0 0 1 13.9 23.9L42 44l-14.4-3.8A16 16 0 1 1 24 6z"/><path d="M18 22l4 4 10-10"/></svg>
+      </div>
+      <h3>WhatsApp Business</h3>
+      <p>Réponse sous 24h ouvrées.</p>
+    </a>
+    <a class="contact-card" href="{{ url_for('conversations') }}">
+      <div class="contact-icon">
+        <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12h24M12 20h18M12 28h12M34 6h4a4 4 0 0 1 4 4v28a4 4 0 0 1-4 4H10a4 4 0 0 1-4-4V10a4 4 0 0 1 4-4z"/></svg>
+      </div>
+      <h3>Chat intégré</h3>
+      <p>Une fois connecté, discutez avec le support.</p>
+    </a>
+  </div>
+</section>
+
 <section class="landing-section landing-app">
   <div class="app-cta">
     <div class="app-cta-copy">
@@ -206,7 +269,19 @@
         <span class="store-badge">Google Play</span>
       </div>
     </div>
-    <div class="app-cta-visual">📱</div>
+    <div class="app-cta-visual">
+      <div class="phone-frame small">
+        <div class="phone-notch"></div>
+        <div class="phone-screen dark">
+          <div class="phone-top-bar">FixPro</div>
+          <div class="phone-list">
+            <div class="phone-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 12h10M12 7v10"/></svg><span>Plomberie</span></div>
+            <div class="phone-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L8 12h6l-1 10 6-10h-6l3-10z"/></svg><span>Électricité</span></div>
+            <div class="phone-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="10" width="12" height="10" rx="2"/><path d="M12 10V6a3 3 0 0 1 6 0v4"/></svg><span>Serrurerie</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </section>
 
