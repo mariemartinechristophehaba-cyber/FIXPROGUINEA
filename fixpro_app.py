@@ -347,40 +347,44 @@ def register():
             hourly_rate = _to_float(request.form.get("hourly_rate")) if role == "artisan" else 0
             email = request.form.get("email", "").strip().lower() if role == "artisan" else None
 
-            if role == "artisan":
-                skills = ", ".join(request.form.getlist("skills"))
-                conn.execute(
-                    "INSERT INTO users (email, phone, password_hash, role, full_name, civility,"
-                    " company_name, profession, skills, mobility, insurance, insurance_policy,"
-                    " bank_name, bank_account, city, bio, hourly_rate)"
-                    " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                    (email, phone, generate_password_hash(password), role,
-                     full_name,
-                     request.form.get("civility", "").strip(),
-                     request.form.get("company_name", "").strip(),
-                     request.form.get("profession", "").strip(),
-                     skills,
-                     request.form.get("mobility", "").strip(),
-                     request.form.get("insurance", "").strip(),
-                     request.form.get("insurance_policy", "").strip(),
-                     request.form.get("bank_name", "").strip(),
-                     request.form.get("bank_account", "").strip(),
-                     city,
-                     request.form.get("bio", "").strip(),
-                     hourly_rate),
-                )
-            else:
-                conn.execute(
-                    "INSERT INTO users (email, phone, password_hash, role, full_name,"
-                    " profession, city, bio, hourly_rate)"
-                    " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                    (email, phone, generate_password_hash(password), role, full_name,
-                     request.form.get("profession", "").strip(),
-                     city,
-                     request.form.get("bio", "").strip(),
-                     hourly_rate),
-                )
-            conn.commit()
+            try:
+                if role == "artisan":
+                    skills = ", ".join(request.form.getlist("skills"))
+                    conn.execute(
+                        "INSERT INTO users (email, phone, password_hash, role, full_name, civility,"
+                        " company_name, profession, skills, mobility, insurance, insurance_policy,"
+                        " bank_name, bank_account, city, bio, hourly_rate)"
+                        " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                        (email, phone, generate_password_hash(password), role,
+                         full_name,
+                         request.form.get("civility", "").strip(),
+                         request.form.get("company_name", "").strip(),
+                         request.form.get("profession", "").strip(),
+                         skills,
+                         request.form.get("mobility", "").strip(),
+                         request.form.get("insurance", "").strip(),
+                         request.form.get("insurance_policy", "").strip(),
+                         request.form.get("bank_name", "").strip(),
+                         request.form.get("bank_account", "").strip(),
+                         city,
+                         request.form.get("bio", "").strip(),
+                         hourly_rate),
+                    )
+                else:
+                    conn.execute(
+                        "INSERT INTO users (email, phone, password_hash, role, full_name,"
+                        " profession, city, bio, hourly_rate)"
+                        " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                        (email, phone, generate_password_hash(password), role, full_name,
+                         request.form.get("profession", "").strip(),
+                         city,
+                         request.form.get("bio", "").strip(),
+                         hourly_rate),
+                    )
+                conn.commit()
+            except Exception as exc:  # pragma: no cover - aide au debug en production
+                flash(f"Erreur lors de l'inscription : {exc}", "error")
+                return redirect(url_for("register", role=role))
 
             # Recupere le compte nouvellement cree pour le connecter directement.
             new_user = conn.execute(
