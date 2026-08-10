@@ -318,6 +318,75 @@ def register():
                            subtitle=subtitle, button_label=button_label)
 
 
+@app.route("/client-signup", methods=["GET", "POST"])
+@limiter.limit("10 per hour", methods=["POST"])
+def client_signup():
+    """Inscription rapide client avec email et mot de passe."""
+    if request.method == "POST":
+        first_name = request.form.get("first_name", "").strip()
+        last_name = request.form.get("last_name", "").strip()
+        full_name = f"{first_name} {last_name}".strip()
+        email = request.form.get("email", "").strip().lower()
+        phone = request.form.get("phone", "").strip()
+        city = request.form.get("city", "").strip()
+        password = request.form.get("password", "")
+
+        if not first_name or not last_name or not email or not phone or not city or not password:
+            flash("Veuillez remplir tous les champs obligatoires.", "error")
+            return redirect(url_for("client_signup"))
+
+        try:
+            validate_email(email, check_deliverability=False)
+        except EmailNotValidError:
+            flash("Format d'email invalide.", "error")
+            return redirect(url_for("client_signup"))
+
+        if len(password) < 6:
+            flash("Le mot de passe doit contenir au moins 6 caractères.", "error")
+            return redirect(url_for("client_signup"))
+
+        conn = get_db_connection()
+        try:
+            existing_email = conn.execute(
+                "SELECT id FROM users WHERE email = ?", (email,)).fetchone()
+            if existing_email:
+                flash("Cet email est déjà utilisé.", "error")
+                return redirect(url_for("client_signup"))
+
+            existing_phone = conn.execute(
+                "SELECT id FROM users WHERE phone = ?", (phone,)).fetchone()
+            if existing_phone:
+                flash("Ce numéro de téléphone est déjà utilisé.", "error")
+                return redirect(url_for("client_signup"))
+
+            conn.execute(
+                "INSERT INTO users (email, phone, password_hash, role, full_name, city)"
+                " VALUES (?, ?, ?, ?, ?, ?)",
+                (email, phone, generate_password_hash(password), "client",
+                 full_name, city),
+            )
+            conn.commit()
+
+            new_user = conn.execute(
+                "SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+            session.clear()
+            session["user_id"] = new_user["id"]
+            session.permanent = True
+            flash("Bienvenue dans FixPro.", "success")
+            return redirect(url_for("dashboard"))
+        finally:
+            conn.close()
+
+    return render_template("client_signup.html")
+
+
+@app.route("/google-signup")
+def google_signup():
+    """Point d'entree de l'inscription Google (a activer avec GOOGLE_CLIENT_ID)."""
+    flash("La connexion Google sera bientôt disponible.", "info")
+    return redirect(url_for("client_signup"))
+
+
 @app.route("/login", methods=["GET", "POST"])
 @limiter.limit("20 per hour", methods=["POST"])
 def login():
