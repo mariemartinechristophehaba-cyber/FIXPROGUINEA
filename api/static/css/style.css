@@ -12,7 +12,7 @@
 
 * { box-sizing: border-box; }
 .container { max-width: 1180px; margin: 0 auto; padding: 24px; }
-body { margin: 0; font-family: Inter, Arial, sans-serif; background: linear-gradient(180deg, var(--bg), #071026 60%); color: var(--text); }
+body { margin: 0; font-family: 'Poppins', Inter, Arial, sans-serif; background: linear-gradient(180deg, var(--bg), #071026 60%); color: var(--text); }
 a { color: var(--accent-blue); text-decoration: none; }
 .topbar { display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; background: linear-gradient(180deg, rgba(6,17,28,0.92), rgba(6,14,22,0.7)); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 40; }
 .brand { display: flex; align-items: center; gap: 10px; font-size: 1.15rem; font-weight: 800; }
@@ -421,3 +421,40 @@ body.artisan-page main.container { padding: 0; max-width: none; }
 .lp-nav.open { display: flex; }
 .lp-nav a { color: #0a0a0a; text-decoration: none; font-weight: 600; padding: 10px; border-radius: 8px; }
 .lp-nav a:hover { background: #f5f6f8; }
+
+/* Retheme landing bleu marine professionnel */
+.lp-header { background: rgba(9,12,20,0.95); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border); }
+.lp-header-logo { color: var(--text); }
+.lp-header-guinee { border-color: var(--border); background: var(--surface); color: var(--text); }
+.lp-header-name { color: var(--muted); }
+.lp-hero { background: linear-gradient(135deg, #0b1220 0%, #071026 100%); color: var(--text); }
+.lp-hero h1, .lp-hero-sub { color: var(--text); }
+.lp-btn-dark { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); }
+.lp-btn-yellow { background: linear-gradient(90deg, var(--accent-blue), #1f63f0); color: white; }
+.lp-services { background: var(--bg); }
+.lp-section h2 { color: var(--text); }
+.lp-discover { background: linear-gradient(135deg, #0f1522, #0b1220); color: var(--text); }
+.lp-discover p { color: var(--muted); }
+.lp-mockup-card { background: var(--surface); border: 1px solid var(--border); }
+.lp-mockup-row { background: var(--surface-2); color: var(--text); }
+.lp-how, .lp-why, .lp-trust, .lp-contact, .lp-app { background: var(--bg); }
+.lp-why-card, .lp-trust-card, .lp-contact-card { background: var(--surface); border-color: var(--border); color: var(--text); }
+.lp-why-card p, .lp-trust-card p, .lp-contact-card p { color: var(--muted); }
+.lp-banner { background: linear-gradient(135deg, #0f1522, #071026); }
+.lp-artisan { background: linear-gradient(135deg, #0b1220, #071026); }
+.lp-artisan p, .lp-artisan li { color: var(--muted); }
+.lp-check { background: var(--accent-blue); color: white; }
+.lp-float-card { background: var(--surface); border-color: var(--border); }
+.lp-float-row { border-color: var(--border); }
+.lp-green { color: var(--accent-green); }
+.lp-footer { background: var(--surface); color: var(--text); border-top: 1px solid var(--border); }
+.lp-footer a { color: var(--muted); }
+.lp-footer a:hover { color: var(--accent-blue); }
+.lp-step-num { background: var(--accent-blue); color: white; }
+.lp-arrow { color: var(--accent-blue); }
+.lp-service-card { background: var(--surface); border-color: var(--border); box-shadow: none; }
+.lp-service-card h3, .lp-service-card a { color: var(--text); }
+.lp-service-card p { color: var(--muted); }
+.lp-service-icon { background: var(--accent-blue); color: white; }
+.lp-num { color: var(--muted); }
+.lp-stores .lp-store { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
