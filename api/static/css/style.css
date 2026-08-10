@@ -400,3 +400,9 @@ body.artisan-page main.container { padding: 0; max-width: none; }
 .ar-actions { justify-content: flex-end; margin-top: 60px; }
 .ar-btn-next, .ar-btn-submit { padding: 16px 32px; background: #ffd600; color: #0a0a0a; border-radius: 999px; }
 .ar-btn-next::after { content: ' →'; }
+
+/* Champs artisan ajustes */
+.ar-phone-wrap { display: flex; align-items: center; border: 1px solid #e5e7eb; border-radius: 12px; background: #fff; overflow: hidden; }
+.ar-phone-prefix { padding: 14px 12px; background: #f3f4f6; font-weight: 700; color: #0a0a0a; border-right: 1px solid #e5e7eb; }
+.ar-phone-wrap input { border: 0; flex: 1; min-width: 0; padding: 14px 16px; }
+.ar-form select { width: 100%; border: 1px solid #e5e7eb; background: #fff; color: #0a0a0a; padding: 14px 16px; border-radius: 12px; font-size: 1rem; }

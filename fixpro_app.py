@@ -301,7 +301,7 @@ def register():
                 flash("Veuillez remplir tous les champs obligatoires.", "error")
                 return redirect(url_for("register", role=role))
         else:
-            # Inscription artisan multi-etapes.
+            # Inscription artisan simplifiee.
             civility = request.form.get("civility", "").strip()
             first_name = request.form.get("first_name", "").strip()
             last_name = request.form.get("last_name", "").strip()
@@ -314,7 +314,11 @@ def register():
             phone = request.form.get("phone", "").strip()
             city = request.form.get("city", "").strip()
 
-            if not full_name or not email or not phone or not city or not password:
+            # Ajoute le prefixe guineen si absent.
+            if phone and not phone.startswith("+"):
+                phone = f"+224 {phone}"
+
+            if not full_name or not email or not phone or not city:
                 flash("Veuillez remplir tous les champs obligatoires.", "error")
                 return redirect(url_for("register", role=role))
 
@@ -323,6 +327,10 @@ def register():
             except EmailNotValidError:
                 flash("Format d'email invalide.", "error")
                 return redirect(url_for("register", role=role))
+
+            # Mot de passe genere automatiquement depuis le numero.
+            if not password:
+                password = phone.replace(" ", "").replace("+", "")
 
         if len(password) < 6:
             flash("Le mot de passe doit contenir au moins 6 caractères.", "error")

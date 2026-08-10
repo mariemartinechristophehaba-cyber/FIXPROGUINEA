@@ -84,7 +84,10 @@
       <div class="ar-grid-2">
         <div>
           <label class="ar-label required">Téléphone</label>
-          <input type="tel" name="phone" required placeholder="Votre numéro" />
+          <div class="ar-phone-wrap">
+            <span class="ar-phone-prefix">+224</span>
+            <input type="tel" name="phone" required placeholder="620 00 00 00" pattern="[0-9 ]{9,}" />
+          </div>
           <p class="ar-hint">Ce numéro sera utilisé pour vous connecter.</p>
         </div>
         <div>
@@ -96,16 +99,34 @@
       <div class="ar-grid-2">
         <div>
           <label class="ar-label required">Ville</label>
-          <input type="text" name="city" required placeholder="Conakry" />
+          <select name="city" required>
+            <option value="" disabled selected>Choisissez une ville</option>
+            <option value="Conakry">Conakry</option>
+            <option value="Nzerekore">Nzérékoré</option>
+            <option value="Kankan">Kankan</option>
+            <option value="Kindia">Kindia</option>
+            <option value="Boke">Boké</option>
+            <option value="Labe">Labé</option>
+            <option value="Mamou">Mamou</option>
+            <option value="Kamsar">Kamsar</option>
+            <option value="Kissidougou">Kissidougou</option>
+            <option value="Gueckedou">Guéckédou</option>
+            <option value="Macenta">Macenta</option>
+            <option value="Coyah">Coyah</option>
+            <option value="Telemele">Télimélé</option>
+            <option value="Kouroussa">Kouroussa</option>
+            <option value="Pita">Pita</option>
+            <option value="Dabola">Dabola</option>
+            <option value="Dinguiraye">Dinguiraye</option>
+            <option value="Faranah">Faranah</option>
+            <option value="Forecariah">Forécariah</option>
+          </select>
         </div>
         <div>
           <label class="ar-label required">Métier</label>
           <input type="text" name="profession" required placeholder="Plombier, Électricien..." />
         </div>
       </div>
-
-      <label class="ar-label required">Mot de passe</label>
-      <input type="password" name="password" required minlength="6" placeholder="6 caractères minimum" />
 
       <div class="ar-actions" style="justify-content: flex-end;">
         <button type="submit" class="ar-btn ar-btn-next">Continuer →</button>
