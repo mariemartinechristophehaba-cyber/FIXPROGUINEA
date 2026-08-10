@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="card form-card" style="max-width: 480px; margin: 40px auto;">
+  <h2>Complétez votre profil</h2>
+  <p class="muted">Vous êtes connecté avec {{ email }}. Il ne reste plus que quelques informations.</p>
+
+  <form method="post" action="{{ url_for('complete_profile') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+    <label>Nom complet</label>
+    <input type="text" value="{{ full_name }}" disabled />
+
+    <label>Téléphone</label>
+    <input type="tel" name="phone" required placeholder="+224 620 00 00 00" />
+
+    <label>Ville</label>
+    <input type="text" name="city" required placeholder="Conakry" />
+
+    <button class="btn btn-primary" type="submit" style="width: 100%;">Finaliser mon inscription</button>
+  </form>
+</section>
+{% endblock %}

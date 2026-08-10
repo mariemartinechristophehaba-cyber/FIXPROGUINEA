@@ -50,6 +50,12 @@ class Config:
     # Commission preleve par la plateforme sur chaque intervention
     FIXPRO_COMMISSION_RATE = float(os.getenv("FIXPRO_COMMISSION_RATE", "0.10"))
 
+    # Google OAuth (optionnel, pour le bouton "Continuer avec Google")
+    GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "").strip()
+    GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "").strip()
+    GOOGLE_REDIRECT_URI = os.getenv(
+        "GOOGLE_REDIRECT_URI", "").strip()
+
     # Developpement uniquement : contourne l'authentification et injecte un
     # compte de test. Ne JAMAIS activer en production.
     BYPASS_AUTH = _bool("BYPASS_AUTH")

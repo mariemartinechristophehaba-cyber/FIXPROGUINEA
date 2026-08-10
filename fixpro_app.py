@@ -13,6 +13,7 @@ import re
 from datetime import datetime, timezone
 from functools import wraps
 
+from authlib.integrations.flask_client import OAuth
 from email_validator import EmailNotValidError, validate_email
 from flask import (Flask, flash, jsonify, redirect, render_template, request,
                    session, url_for)
@@ -37,6 +38,32 @@ limiter = Limiter(
     default_limits=["400 per day", "100 per hour"],
     storage_uri="memory://",
 )
+
+oauth = OAuth(app)
+
+
+def _get_google_client():
+    """Enregistre le client Google OAuth si les identifiants sont presents."""
+    client_id = app.config.get("GOOGLE_CLIENT_ID")
+    client_secret = app.config.get("GOOGLE_CLIENT_SECRET")
+    redirect_uri = app.config.get("GOOGLE_REDIRECT_URI")
+
+    if not client_id or not client_secret or not redirect_uri:
+        return None
+
+    try:
+        return oauth.register(
+            name="google",
+            client_id=client_id,
+            client_secret=client_secret,
+            server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
+            client_kwargs={
+                "scope": "openid email profile",
+                "redirect_uri": redirect_uri,
+            },
+        )
+    except Exception:
+        return None
 
 
 def now_iso():
@@ -382,9 +409,106 @@ def client_signup():
 
 @app.route("/google-signup")
 def google_signup():
-    """Point d'entree de l'inscription Google (a activer avec GOOGLE_CLIENT_ID)."""
-    flash("La connexion Google sera bientôt disponible.", "info")
-    return redirect(url_for("client_signup"))
+    """Redirige vers Google pour l'authentification."""
+    google_client = _get_google_client()
+    if not google_client:
+        flash("La connexion Google n'est pas encore configurée.", "error")
+        return redirect(url_for("client_signup"))
+
+    redirect_uri = app.config.get("GOOGLE_REDIRECT_URI")
+    return google_client.authorize_redirect(redirect_uri)
+
+
+@app.route("/google-signup/callback")
+def google_callback():
+    """Recupere les informations Google et cree/connecte le client."""
+    google_client = _get_google_client()
+    if not google_client:
+        flash("La connexion Google n'est pas encore configurée.", "error")
+        return redirect(url_for("client_signup"))
+
+    try:
+        token = google_client.authorize_access_token()
+        userinfo = token.get("userinfo") or google_client.get(
+            "https://openidconnect.googleapis.com/v1/userinfo").json()
+    except Exception as exc:
+        logger.error("Erreur Google OAuth : %s", exc)
+        flash("La connexion avec Google a échoué.", "error")
+        return redirect(url_for("client_signup"))
+
+    email = (userinfo.get("email") or "").strip().lower()
+    full_name = userinfo.get("name", "").strip()
+
+    if not email:
+        flash("Google n'a pas transmis d'email.", "error")
+        return redirect(url_for("client_signup"))
+
+    conn = get_db_connection()
+    try:
+        user = conn.execute(
+            "SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+        if user:
+            session.clear()
+            session["user_id"] = user["id"]
+            session.permanent = True
+            flash("Bienvenue dans FixPro.", "success")
+            return redirect(url_for("dashboard"))
+
+        # Nouvel utilisateur : stocke les donnees en session en attendant
+        # le telephone et la ville.
+        session["google_email"] = email
+        session["google_name"] = full_name
+        return redirect(url_for("complete_profile"))
+    finally:
+        conn.close()
+
+
+@app.route("/complete-profile", methods=["GET", "POST"])
+def complete_profile():
+    """Demande le telephone et la ville apres une inscription Google."""
+    email = session.get("google_email")
+    full_name = session.get("google_name")
+
+    if not email or not full_name:
+        flash("Session invalide. Veuillez recommencer.", "error")
+        return redirect(url_for("client_signup"))
+
+    if request.method == "POST":
+        phone = request.form.get("phone", "").strip()
+        city = request.form.get("city", "").strip()
+
+        if not phone or not city:
+            flash("Veuillez remplir tous les champs.", "error")
+            return redirect(url_for("complete_profile"))
+
+        conn = get_db_connection()
+        try:
+            existing_phone = conn.execute(
+                "SELECT id FROM users WHERE phone = ?", (phone,)).fetchone()
+            if existing_phone:
+                flash("Ce numéro de téléphone est déjà utilisé.", "error")
+                return redirect(url_for("complete_profile"))
+
+            conn.execute(
+                "INSERT INTO users (email, phone, password_hash, role, full_name, city)"
+                " VALUES (?, ?, ?, ?, ?, ?)",
+                (email, phone, generate_password_hash("google_oauth"),
+                 "client", full_name, city),
+            )
+            conn.commit()
+
+            new_user = conn.execute(
+                "SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+            session.clear()
+            session["user_id"] = new_user["id"]
+            session.permanent = True
+            flash("Bienvenue dans FixPro.", "success")
+            return redirect(url_for("dashboard"))
+        finally:
+            conn.close()
+
+    return render_template("complete_profile.html", email=email,
+                           full_name=full_name)
 
 
 @app.route("/login", methods=["GET", "POST"])
