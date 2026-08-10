@@ -215,7 +215,7 @@ body { background: linear-gradient(180deg, var(--mobile-bg-from), var(--mobile-b
 
 .phone-frame { width: 300px; height: 580px; border-radius: 44px; background: linear-gradient(145deg, #1a2336, #0f141d); border: 6px solid #2a3446; padding: 14px; box-shadow: 0 40px 80px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.06); position: relative; }
 .phone-frame.small { width: 240px; height: 420px; }
-.phone-emoji { font-size: 1.4rem; }
+.phone-icon { width: 24px; height: 24px; color: var(--accent-orange); }
 .phone-item { display: flex; align-items: center; gap: 12px; padding: 12px; background: var(--surface-2); border-radius: 14px; }
 .phone-notch { position: absolute; top: 18px; left: 50%; transform: translateX(-50%); width: 100px; height: 22px; background: #0f141d; border-radius: 0 0 16px 16px; z-index: 2; }
 .phone-screen { background: linear-gradient(180deg, #131b2e, #0c1220); border-radius: 34px; height: 100%; overflow: hidden; padding: 28px 18px 18px; display: flex; flex-direction: column; }
@@ -324,12 +324,15 @@ body { background: linear-gradient(180deg, var(--mobile-bg-from), var(--mobile-b
 .app-cta-visual { display: flex; justify-content: center; }
 
 @media (max-width: 980px) {
-  .landing-hero, .app-cta, .technician-cta { grid-template-columns: 1fr; text-align: center; }
+  .landing-hero, .app-cta, .technician-cta { grid-template-columns: 1fr; text-align: left; }
+  .landing-hero { text-align: center; }
   .landing-hero-copy h1 { font-size: 2.4rem; }
+  .landing-hero-copy .lead, .discover-copy p, .app-cta-copy p, .technician-copy p, .feature-large-card p, .trust-card p, .step-card p { text-align: left; }
+  .landing-section { padding: 64px 20px; }
   .phone-frame { margin: 0 auto; }
   .app-cta-visual { order: -1; }
   .technician-visual { order: -1; }
   .tp { text-align: left; }
   .technician-copy h2, .app-cta-copy h2 { font-size: 1.8rem; }
-}
+  .section-head .lead { margin-left: 0; margin-right: 0; }
 }
