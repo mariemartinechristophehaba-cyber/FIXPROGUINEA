@@ -406,3 +406,17 @@ body.artisan-page main.container { padding: 0; max-width: none; }
 .ar-phone-prefix { padding: 14px 12px; background: #f3f4f6; font-weight: 700; color: #0a0a0a; border-right: 1px solid #e5e7eb; }
 .ar-phone-wrap input { border: 0; flex: 1; min-width: 0; padding: 14px 16px; }
 .ar-form select { width: 100%; border: 1px solid #e5e7eb; background: #fff; color: #0a0a0a; padding: 14px 16px; border-radius: 12px; font-size: 1rem; }
+
+/* Header landing style Tycoon */
+body.landing-page .fixed-header { display: none; }
+body.landing-page { padding-top: 0; }
+.lp-header { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; justify-content: space-between; align-items: center; padding: 16px 40px; background: #fff; }
+.lp-header-logo { font-size: 1.6rem; font-weight: 900; color: #0a0a0a; text-decoration: none; }
+.lp-header-logo .pro { color: #ffd600; }
+.lp-header-right { display: flex; align-items: center; gap: 16px; }
+.lp-menu-btn { width: 32px; height: 32px; display: flex; flex-direction: column; justify-content: center; gap: 5px; background: transparent; border: 0; cursor: pointer; padding: 0; }
+.lp-menu-btn span { display: block; width: 24px; height: 2px; background: #0a0a0a; border-radius: 2px; }
+.lp-nav { position: fixed; top: 70px; right: 20px; background: #fff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 16px; display: none; flex-direction: column; gap: 12px; z-index: 99; min-width: 200px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+.lp-nav.open { display: flex; }
+.lp-nav a { color: #0a0a0a; text-decoration: none; font-weight: 600; padding: 10px; border-radius: 8px; }
+.lp-nav a:hover { background: #f5f6f8; }
