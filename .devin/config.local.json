@@ -24,7 +24,8 @@
       "Exec(try)",
       "Exec(\"Status: \")",
       "Exec(Start-Sleep)",
-      "Exec(@\")"
+      "Exec(@\")",
+      "Exec(.\\.venv\\Scripts\\python.exe)"
     ]
   }
 }
