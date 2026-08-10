@@ -336,3 +336,32 @@ body { background: linear-gradient(180deg, var(--mobile-bg-from), var(--mobile-b
   .technician-copy h2, .app-cta-copy h2 { font-size: 1.8rem; }
   .section-head .lead { margin-left: 0; margin-right: 0; }
 }
+
+@media (max-width: 640px) {
+  .landing-hero { padding: 100px 16px 48px; min-height: auto; gap: 36px; }
+  .landing-hero-copy { text-align: left; gap: 16px; }
+  .landing-hero-copy h1 { font-size: 2.1rem; line-height: 1.1; }
+  .landing-hero-copy .lead { font-size: 1.05rem; max-width: none; }
+  .hero-actions { flex-direction: column; width: 100%; }
+  .hero-actions .btn { width: 100%; justify-content: center; }
+  .hero-note { text-align: left; }
+  .phone-frame { width: 220px; height: 340px; }
+  .phone-frame.small { width: 200px; height: 340px; }
+  .phone-screen { padding: 24px 14px 14px; }
+  .landing-section { padding: 56px 16px; }
+  .section-head { margin-bottom: 28px; }
+  .section-head h2 { font-size: 1.7rem; }
+  .section-head p.lead { font-size: 1rem; text-align: left; margin-left: 0; margin-right: 0; }
+  .service-carousel { gap: 14px; margin-top: 28px; }
+  .service-card { padding: 20px; }
+  .step-card { padding: 28px 20px; }
+  .feature-large-card { padding: 24px; }
+  .trust-card { padding: 24px; }
+  .technician-cta, .app-cta { padding: 36px 20px; border-radius: 24px; }
+  .technician-copy h2, .app-cta-copy h2 { font-size: 1.5rem; }
+  .technician-copy p, .app-cta-copy p { text-align: left; }
+  .tp span { text-align: left; }
+  .store-badges { flex-direction: column; width: 100%; }
+  .store-badge { text-align: center; }
+  .testimonial-card { padding: 24px; }
+}
