@@ -416,6 +416,31 @@ def artisan_pending():
     return render_template("pending.html")
 
 
+@app.route("/admin/dashboard")
+def admin_dashboard():
+    """Tableau de bord admin avec les principales statistiques."""
+    if not session.get("admin_logged_in"):
+        return redirect(url_for("admin_artisans"))
+    conn = get_db_connection()
+    try:
+        clients = conn.execute(
+            "SELECT COUNT(*) AS n FROM users WHERE role = 'client'").fetchone()["n"]
+        pending = conn.execute(
+            "SELECT COUNT(*) AS n FROM users WHERE role = 'artisan' AND is_verified = 0").fetchone()["n"]
+        verified = conn.execute(
+            "SELECT COUNT(*) AS n FROM users WHERE role = 'artisan' AND is_verified = 1").fetchone()["n"]
+        requests = conn.execute(
+            "SELECT COUNT(*) AS n FROM requests").fetchone()["n"]
+        return render_template("admin_dashboard.html", stats={
+            "clients": clients,
+            "pending_artisans": pending,
+            "verified_artisans": verified,
+            "requests": requests,
+        })
+    finally:
+        conn.close()
+
+
 @app.route("/admin/artisans", methods=["GET", "POST"])
 @limiter.limit("60 per hour", methods=["POST"])
 def admin_artisans():
@@ -424,6 +449,7 @@ def admin_artisans():
         if request.method == "POST" and request.form.get("admin_password"):
             if request.form.get("admin_password") == app.config.get("ADMIN_PASSWORD"):
                 session["admin_logged_in"] = True
+                return redirect(url_for("admin_dashboard"))
             else:
                 flash("Mot de passe incorrect.", "error")
                 return redirect(url_for("admin_artisans"))

@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="card" style="max-width: 900px; margin: 0 auto;">
+  <h2 style="margin-top: 0;">Tableau de bord FixPro</h2>
+  <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-top: 24px;">
+    <div class="stat-card" style="background: #f9fafb; border-radius: 16px; padding: 24px; text-align: center; border: 1px solid #e5e7eb;">
+      <div style="font-size: 2rem; font-weight: 800; color: #0a0a0a;">{{ stats.clients }}</div>
+      <div style="color: #6b7280; font-size: 0.95rem;">Clients inscrits</div>
+    </div>
+    <div class="stat-card" style="background: #fffbeb; border-radius: 16px; padding: 24px; text-align: center; border: 1px solid #ffd600;">
+      <div style="font-size: 2rem; font-weight: 800; color: #0a0a0a;">{{ stats.pending_artisans }}</div>
+      <div style="color: #6b7280; font-size: 0.95rem;">Artisans en attente</div>
+    </div>
+    <div class="stat-card" style="background: #f0fdf4; border-radius: 16px; padding: 24px; text-align: center; border: 1px solid #22c55e;">
+      <div style="font-size: 2rem; font-weight: 800; color: #0a0a0a;">{{ stats.verified_artisans }}</div>
+      <div style="color: #6b7280; font-size: 0.95rem;">Artisans validés</div>
+    </div>
+    <div class="stat-card" style="background: #eff6ff; border-radius: 16px; padding: 24px; text-align: center; border: 1px solid #3b82f6;">
+      <div style="font-size: 2rem; font-weight: 800; color: #0a0a0a;">{{ stats.requests }}</div>
+      <div style="color: #6b7280; font-size: 0.95rem;">Demandes</div>
+    </div>
+  </div>
+
+  <div style="margin-top: 40px; display: flex; gap: 12px; flex-wrap: wrap;">
+    <a href="{{ url_for('admin_artisans') }}" class="btn btn-primary">Valider les artisans</a>
+    <a href="{{ url_for('index') }}" class="btn btn-outline">Retour à l'accueil</a>
+  </div>
+</section>
+{% endblock %}
