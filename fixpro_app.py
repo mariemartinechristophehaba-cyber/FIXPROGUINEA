@@ -275,13 +275,20 @@ def register():
                 flash("Veuillez remplir tous les champs obligatoires.", "error")
                 return redirect(url_for("register", role=role))
         else:
-            # Inscription artisan classique.
+            # Inscription artisan multi-etapes.
+            civility = request.form.get("civility", "").strip()
+            first_name = request.form.get("first_name", "").strip()
+            last_name = request.form.get("last_name", "").strip()
+            full_name_legacy = request.form.get("full_name", "").strip()
+            if first_name and last_name:
+                full_name = f"{civility} {first_name} {last_name}".strip()
+            else:
+                full_name = full_name_legacy
             email = request.form.get("email", "").strip().lower()
-            full_name = request.form.get("full_name", "").strip()
             phone = request.form.get("phone", "").strip()
             city = request.form.get("city", "").strip()
 
-            if not email or not password or not full_name or not phone:
+            if not full_name or not email or not phone or not city or not password:
                 flash("Veuillez remplir tous les champs obligatoires.", "error")
                 return redirect(url_for("register", role=role))
 
@@ -306,16 +313,39 @@ def register():
             hourly_rate = _to_float(request.form.get("hourly_rate")) if role == "artisan" else 0
             email = request.form.get("email", "").strip().lower() if role == "artisan" else None
 
-            conn.execute(
-                "INSERT INTO users (email, phone, password_hash, role, full_name,"
-                " profession, city, bio, hourly_rate)"
-                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (email, phone, generate_password_hash(password), role, full_name,
-                 request.form.get("profession", "").strip(),
-                 city,
-                 request.form.get("bio", "").strip(),
-                 hourly_rate),
-            )
+            if role == "artisan":
+                skills = ", ".join(request.form.getlist("skills"))
+                conn.execute(
+                    "INSERT INTO users (email, phone, password_hash, role, full_name, civility,"
+                    " company_name, profession, skills, mobility, insurance, insurance_policy,"
+                    " bank_name, bank_account, city, bio, hourly_rate)"
+                    " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    (email, phone, generate_password_hash(password), role,
+                     full_name,
+                     request.form.get("civility", "").strip(),
+                     request.form.get("company_name", "").strip(),
+                     request.form.get("profession", "").strip(),
+                     skills,
+                     request.form.get("mobility", "").strip(),
+                     request.form.get("insurance", "").strip(),
+                     request.form.get("insurance_policy", "").strip(),
+                     request.form.get("bank_name", "").strip(),
+                     request.form.get("bank_account", "").strip(),
+                     city,
+                     request.form.get("bio", "").strip(),
+                     hourly_rate),
+                )
+            else:
+                conn.execute(
+                    "INSERT INTO users (email, phone, password_hash, role, full_name,"
+                    " profession, city, bio, hourly_rate)"
+                    " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    (email, phone, generate_password_hash(password), role, full_name,
+                     request.form.get("profession", "").strip(),
+                     city,
+                     request.form.get("bio", "").strip(),
+                     hourly_rate),
+                )
             conn.commit()
 
             # Recupere le compte nouvellement cree pour le connecter directement.

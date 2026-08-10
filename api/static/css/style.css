@@ -332,3 +332,49 @@ body { background: linear-gradient(180deg, var(--mobile-bg-from), var(--mobile-b
   .lp-phone { width: 200px; }
   .lp-phone.small { width: 170px; }
 }
+
+/* Inscription artisan style Tycoon */
+.artisan-register { display: grid; grid-template-columns: 280px 1fr; min-height: 100vh; }
+.ar-sidebar { background: #fff; border-right: 1px solid #e5e7eb; padding: 32px 24px; display: flex; flex-direction: column; }
+.ar-logo { font-size: 1.4rem; font-weight: 900; color: #0a0a0a; margin-bottom: 40px; }
+.ar-logo .pro { color: #ffd600; }
+.ar-steps { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+.ar-step { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 12px; color: #6b7280; text-decoration: none; font-weight: 600; transition: all .12s; }
+.ar-step:hover, .ar-step.active { background: #fffbeb; color: #0a0a0a; }
+.ar-step-num { width: 28px; height: 28px; border-radius: 50%; background: #f3f4f6; color: #6b7280; display: grid; place-items: center; font-size: 0.8rem; font-weight: 700; }
+.ar-step.active .ar-step-num { background: #ffd600; color: #0a0a0a; }
+.ar-note { font-size: 0.8rem; color: #9ca3af; margin-top: auto; }
+
+.ar-main { background: #f9fafb; padding: 48px 64px; overflow-y: auto; }
+.ar-form { max-width: 640px; }
+.ar-form h2 { margin: 0; font-size: 1.8rem; color: #0a0a0a; }
+.ar-sub { color: #6b7280; margin: 6px 0 32px; }
+.ar-label { display: block; margin: 18px 0 8px; font-weight: 600; color: #0a0a0a; }
+.ar-label.required::after { content: ' *'; color: #ef4444; }
+.ar-form input[type="text"], .ar-form input[type="email"], .ar-form input[type="tel"], .ar-form input[type="number"], .ar-form input[type="password"], .ar-form textarea { width: 100%; border: 1px solid #e5e7eb; background: #fff; color: #0a0a0a; padding: 14px 16px; border-radius: 12px; font-size: 1rem; }
+.ar-form input:focus, .ar-form textarea:focus { border-color: #ffd600; outline: none; }
+.ar-civility { display: flex; gap: 12px; }
+.ar-radio { display: flex; align-items: center; gap: 8px; padding: 12px 20px; border: 1px solid #e5e7eb; border-radius: 12px; background: #fff; cursor: pointer; font-weight: 600; }
+.ar-radio:has(input:checked) { border-color: #0a0a0a; background: #fffbeb; }
+.ar-radio input { display: none; }
+.ar-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.ar-hint { font-size: 0.85rem; color: #6b7280; margin: 6px 0 0; }
+.ar-upload { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 24px; border: 2px dashed #e5e7eb; border-radius: 16px; background: #fff; cursor: pointer; }
+.ar-upload input { display: none; }
+.ar-checkboxes { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.ar-checkboxes label { display: flex; align-items: center; gap: 8px; padding: 12px; background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; cursor: pointer; }
+.ar-checkboxes input { accent-color: #ffd600; }
+.ar-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 40px; }
+.ar-btn { padding: 14px 28px; border-radius: 999px; border: 0; font-weight: 700; cursor: pointer; }
+.ar-btn-next, .ar-btn-submit { background: #ffd600; color: #0a0a0a; }
+.ar-btn-prev { background: #f3f4f6; color: #4a4a4a; }
+.ar-step-panel { display: none; }
+.ar-step-panel.active { display: block; }
+
+@media (max-width: 860px) {
+  .artisan-register { grid-template-columns: 1fr; }
+  .ar-sidebar { display: none; }
+  .ar-main { padding: 100px 20px 40px; }
+  .ar-grid-2, .ar-checkboxes { grid-template-columns: 1fr; }
+  .ar-actions { justify-content: space-between; }
+}
