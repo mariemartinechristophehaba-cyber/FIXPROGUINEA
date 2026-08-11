@@ -1,232 +1,159 @@
 {% extends 'base.html' %}
-{% block header %}{% endblock %}
-{% block footer %}{% endblock %}
+{% block title %}Tableau de bord - FixPro{% endblock %}
+
+{% set first_name = (user.full_name or 'Visiteur').split(' ')[0] %}
+
 {% block content %}
-<div class="mobile-dashboard">
-  <header class="mobile-topbar">
-    <a href="{{ url_for('index') }}" class="mobile-logo">
-      Fix<span style="color: var(--accent-orange);">Pro</span>
-    </a>
-    <div class="mobile-topbar-right">
-      <a href="{{ url_for('notifications') }}" class="mobile-notif" title="Notifications">
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-        {% if unread_count %}<span class="mobile-notif-badge">{{ unread_count }}</span>{% endif %}
-      </a>
-      <a href="{{ url_for('profile') }}" class="mobile-avatar" title="Profil">{{ user.full_name[0]|upper }}</a>
-    </div>
-  </header>
 
-  <main class="mobile-content">
-    <section class="mobile-welcome">
-      <h1>Bonjour {{ user.full_name.split(' ')[0] }}</h1>
-      <p class="muted">Trouvez le technicien qu'il vous faut aujourd'hui.</p>
-    </section>
+<section class="page-head">
+  <h1>Bonjour {{ first_name }}</h1>
+  <p>Trouvez le technicien qu'il vous faut, aujourd'hui.</p>
+</section>
 
-    <section class="mobile-actions">
-      <a href="{{ url_for('export_requests') }}" class="mobile-action-btn mobile-action-secondary">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        Exporter
-      </a>
-      <a href="{{ url_for('request_new') }}" class="mobile-action-btn mobile-action-primary">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        Nouvelle demande
-      </a>
-    </section>
-
-    <section class="mobile-kpi-grid">
-      <a href="{{ url_for('requests_list') }}" class="mobile-kpi" style="text-decoration: none; color: inherit;">
-        <div class="small muted">Reservations actives</div>
-        <div class="mobile-kpi-value">{{ stats.active_requests }}</div>
-        {% if stats.active_requests %}<div class="small muted" style="margin-top: 4px;">En cours</div>{% endif %}
-      </a>
-      <a href="{{ url_for('requests_list') }}" class="mobile-kpi" style="text-decoration: none; color: inherit;">
-        <div class="small muted">Travaux termines</div>
-        <div class="mobile-kpi-value">{{ stats.completed }}</div>
-        {% if stats.completed %}<div class="small muted" style="margin-top: 4px;">Cette annee</div>{% endif %}
-      </a>
-      <a href="{{ url_for('reviews') }}" class="mobile-kpi" style="text-decoration: none; color: inherit;">
-        <div class="small muted">Note moyenne</div>
-        <div class="mobile-kpi-value">{{ stats.avg_rating }}</div>
-        {% if stats.avg_rating %}<div class="small muted" style="margin-top: 4px;">Donnee</div>{% endif %}
-      </a>
-      <a href="{{ url_for('payments') }}" class="mobile-kpi" style="text-decoration: none; color: inherit;">
-        <div class="small muted">Total depense</div>
-        <div class="mobile-kpi-value">{{ "{:,}".format(stats.total_spent|int).replace(",", " ") }} GNF</div>
-      </a>
-    </section>
-
-    <section class="mobile-section">
-      <div class="mobile-section-header">
-        <h3>Categories de services</h3>
-        <a href="{{ url_for('artisans_page') }}" class="small">Tout voir</a>
-      </div>
-      <div class="mobile-cat-scroll">
-        {% for category in categories %}
-        <a class="mobile-cat-chip" href="{{ url_for('artisans_page', category=category.name) }}" title="Artisans {{ category.name }}">
-          <div class="mobile-cat-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg></div>
-          <span>{{ category.name }}</span>
-        </a>
-        {% endfor %}
-      </div>
-    </section>
-
-    <section class="mobile-section">
-      <div class="mobile-section-header">
-        <h3>Techniciens a proximite</h3>
-        <a href="{{ url_for('artisans_page') }}" class="small">Tout voir</a>
-      </div>
-      {% if artisans %}
-      <div class="mobile-tech-list">
-        {% for artisan in artisans %}
-        <a class="mobile-tech-card" href="{{ url_for('artisans_page', category=artisan.profession) }}" style="text-decoration: none; color: inherit;">
-          <div class="mobile-tech-avatar">{{ artisan.full_name[0]|upper }}</div>
-          <div class="mobile-tech-info">
-            <div class="mobile-tech-name">
-              {{ artisan.full_name }}
-              {% if artisan.is_verified %}
-              <span class="mobile-verified"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span>
-              {% endif %}
-            </div>
-            <div class="small muted">{{ artisan.profession or '' }} - {{ artisan.city or 'Conakry' }}</div>
-            <div class="small muted">{{ "{:,}".format((artisan.hourly_rate or 0)|int).replace(",", " ") }} GNF/h</div>
-          </div>
-          <div class="mobile-tech-right">
-            <div class="small muted">En ligne</div>
-          </div>
-        </a>
-        {% endfor %}
-      </div>
-      {% else %}
-      <p class="muted" style="padding: 20px 0;">Aucun technicien disponible pour le moment.</p>
-      {% endif %}
-    </section>
-
-    <section class="mobile-section">
-      <div class="mobile-section-header">
-        <h3>Reservations recentes</h3>
-        <a href="{{ url_for('requests_list') }}" class="small">Tout voir</a>
-      </div>
-      {% if recent_requests %}
-      <div class="mobile-request-list">
-        {% for req in recent_requests %}
-        <a class="mobile-request-card" href="{{ url_for('request_detail', request_id=req.id) }}">
-          <div>
-            <div class="mobile-request-title">{{ req.title or 'Demande #' ~ req.id }}</div>
-            <div class="small muted">{{ req.artisan_name or 'En attente' }} - {{ req.updated_at or '' }}</div>
-          </div>
-          <span class="badge {{ 'done' if req.status == 'completed' else 'inprogress' if req.status in ('assigned', 'in_progress') else '' }}">
-            {% if req.status == 'completed' %}Termine
-            {% elif req.status in ('assigned', 'in_progress') %}En cours
-            {% elif req.status == 'pending' %}En attente
-            {% else %}{{ req.status }}
-            {% endif %}
-          </span>
-        </a>
-        {% endfor %}
-      </div>
-      {% else %}
-      <div class="mobile-empty">
-        <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-        <p class="muted">Aucune reservation pour le moment - trouvez votre premier technicien.</p>
-        <a href="{{ url_for('request_new') }}" class="btn btn-primary" style="margin-top: 12px;">Nouvelle demande</a>
-      </div>
-      {% endif %}
-    </section>
-  </main>
-
-  <nav class="mobile-bottom-nav">
-    <a href="{{ url_for('dashboard') }}" class="mobile-nav-item active">
-      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-      <span>Accueil</span>
-    </a>
-    <a href="{{ url_for('artisans_page') }}" class="mobile-nav-item">
-      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <span>Recherche</span>
-    </a>
-    <a href="{{ url_for('requests_list') }}" class="mobile-nav-item">
-      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-      <span>Reservations</span>
-    </a>
-    <a href="{{ url_for('conversations') }}" class="mobile-nav-item">
-      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-      <span>Messages</span>
-    </a>
-    <a href="{{ url_for('profile') }}" class="mobile-nav-item">
-      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-      <span>Profil</span>
-    </a>
-  </nav>
+<div class="btn-row">
+  <a class="btn btn-soft" href="{{ url_for('export_requests') }}">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>
+    Exporter
+  </a>
+  <a class="btn btn-primary" href="{{ url_for('request_new') }}">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+    Nouvelle demande
+  </a>
 </div>
 
-<style>
-html, body { margin: 0; padding: 0; width: 100%; min-height: 100%; }
-main.container { padding: 0 !important; max-width: none !important; margin: 0 !important; }
-.mobile-dashboard { width: 100%; min-height: 100vh; padding-bottom: 90px; background: #070c17; }
-.mobile-topbar { position: sticky; top: 0; z-index: 80; display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; background: rgba(11,18,32,0.92); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255,255,255,0.06); }
-.mobile-logo { font-size: 1.5rem; font-weight: 900; color: #fff; text-decoration: none; letter-spacing: -0.5px; }
-.mobile-topbar-right { display: flex; align-items: center; gap: 12px; }
-.mobile-notif { position: relative; color: var(--text); width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); }
-.mobile-notif:active { transform: scale(0.95); background: rgba(255,255,255,0.08); }
-.mobile-notif-badge { position: absolute; top: 6px; right: 6px; width: 16px; height: 16px; border-radius: 50%; background: #ff4444; color: #fff; font-size: 0.65rem; display: grid; place-items: center; border: 2px solid #0b1220; }
-.mobile-avatar { width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg, #3d5bff 0%, #f5a623 100%); display: grid; place-items: center; font-weight: 800; color: #fff; text-decoration: none; font-size: 1.1rem; border: 2px solid rgba(255,255,255,0.08); }
-.mobile-content { padding: 24px 16px; }
-.mobile-welcome { margin-bottom: 24px; }
-.mobile-welcome h1 { margin: 0 0 8px; font-size: 2rem; font-weight: 800; letter-spacing: -0.5px; }
-.mobile-welcome p { font-size: 0.95rem; color: #94a3b8; }
-.mobile-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
-.mobile-action-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 12px; border-radius: 16px; font-weight: 700; font-size: 0.9rem; text-decoration: none; border: 1px solid transparent; text-align: center; transition: transform .1s, box-shadow .2s; }
-.mobile-action-btn:active { transform: scale(0.97); }
-.mobile-action-secondary { background: #0d1526; border-color: rgba(255,255,255,0.08); color: #e2e8f0; }
-.mobile-action-primary { background: linear-gradient(135deg, #f5a623 0%, #ff8a2b 100%); color: #070c17; box-shadow: 0 4px 14px rgba(245,166,35,0.25); }
-.mobile-kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 28px; }
-.mobile-kpi { background: linear-gradient(145deg, #0d1526 0%, #0b1220 100%); border: 1px solid rgba(255,255,255,0.06); border-radius: 20px; padding: 18px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); transition: transform .15s; }
-.mobile-kpi:active { transform: scale(0.98); }
-.mobile-kpi-value { font-size: 1.5rem; font-weight: 800; margin-top: 10px; color: #fff; }
-.mobile-section { margin-bottom: 32px; }
-.mobile-section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-.mobile-section-header h3 { margin: 0; font-size: 1.15rem; font-weight: 700; }
-.mobile-section-header a { color: #3d5bff; font-weight: 600; }
-.mobile-cat-scroll { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 10px; }
-.mobile-cat-chip { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 8px; background: #0d1526; border: 1px solid rgba(255,255,255,0.06); border-radius: 18px; padding: 16px 14px; min-width: 100px; text-decoration: none; color: #f1f5f9; box-shadow: 0 4px 14px rgba(0,0,0,0.18); transition: transform .1s; }
-.mobile-cat-chip:active { transform: translateY(-2px); }
-.mobile-cat-icon { width: 48px; height: 48px; border-radius: 14px; background: linear-gradient(135deg, rgba(61,91,255,0.15) 0%, rgba(61,91,255,0.05) 100%); color: #5b7cff; display: grid; place-items: center; }
-.mobile-cat-chip span { font-size: 0.8rem; text-align: center; font-weight: 500; }
-.mobile-tech-list { display: grid; gap: 12px; }
-.mobile-tech-card { background: linear-gradient(145deg, #0d1526 0%, #0b1220 100%); border: 1px solid rgba(255,255,255,0.06); border-radius: 20px; padding: 16px; display: flex; align-items: center; gap: 14px; box-shadow: 0 4px 18px rgba(0,0,0,0.18); transition: transform .1s; }
-.mobile-tech-card:active { transform: scale(0.99); }
-.mobile-tech-avatar { width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, #3d5bff 0%, #1f63f0 100%); display: grid; place-items: center; font-weight: 800; color: #fff; font-size: 1.2rem; border: 2px solid rgba(255,255,255,0.08); }
-.mobile-tech-info { flex: 1; }
-.mobile-tech-name { font-weight: 700; display: flex; align-items: center; gap: 6px; font-size: 1.05rem; }
-.mobile-verified { color: #3ddc84; display: inline-flex; }
-.mobile-tech-right { text-align: right; font-size: 0.8rem; }
-.mobile-request-list { display: grid; gap: 12px; }
-.mobile-request-card { background: linear-gradient(145deg, #0d1526 0%, #0b1220 100%); border: 1px solid rgba(255,255,255,0.06); border-radius: 20px; padding: 16px; display: flex; justify-content: space-between; align-items: center; text-decoration: none; color: inherit; box-shadow: 0 4px 18px rgba(0,0,0,0.18); transition: transform .1s; }
-.mobile-request-card:active { transform: scale(0.99); }
-.mobile-request-title { font-weight: 700; margin-bottom: 4px; }
-.mobile-empty { text-align: center; padding: 40px 20px; background: #0d1526; border: 1px dashed rgba(255,255,255,0.08); border-radius: 20px; }
-.mobile-empty svg { color: #64748b; margin-bottom: 16px; }
-.mobile-empty p { color: #94a3b8; }
-.mobile-bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 90; background: rgba(11,18,32,0.96); backdrop-filter: blur(12px); border-top: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-around; padding: 10px 0 16px; padding-bottom: max(16px, env(safe-area-inset-bottom)); }
-.mobile-nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; color: #64748b; text-decoration: none; font-size: 0.65rem; font-weight: 600; transition: color .2s; }
-.mobile-nav-item.active { color: #f5a623; }
-.mobile-nav-item svg { opacity: 0.8; }
-.mobile-nav-item.active svg { opacity: 1; }
+<section class="section">
+  <div class="kpi-grid">
+    <a class="kpi" href="{{ url_for('requests_list') }}">
+      <span class="kpi-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/></svg>
+      </span>
+      <div class="kpi-label">Reservations actives</div>
+      <div class="kpi-value">{{ stats.active_requests }}</div>
+    </a>
 
-@media (min-width: 768px) {
-  .mobile-dashboard { padding-bottom: 0; }
-  .mobile-bottom-nav { display: none; }
-  .mobile-topbar { display: none; }
-  .mobile-content { padding-left: 280px; padding-right: 24px; }
-  .mobile-actions { max-width: 420px; }
-  .mobile-kpi-grid { grid-template-columns: repeat(4, 1fr); }
-}
-</style>
+    <a class="kpi" href="{{ url_for('requests_list') }}">
+      <span class="kpi-icon green">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+      </span>
+      <div class="kpi-label">Travaux termines</div>
+      <div class="kpi-value">{{ stats.completed }}</div>
+    </a>
 
-<script>
-document.querySelectorAll('.mobile-nav-item').forEach(el => {
-  if (el.getAttribute('href') === window.location.pathname) {
-    el.classList.add('active');
-  }
-});
-</script>
+    <a class="kpi" href="{{ url_for('reviews') }}">
+      <span class="kpi-icon amber">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.2-5.4-2.9-5.4 2.9 1-6.2L3.2 9.5l6.1-.9z"/></svg>
+      </span>
+      <div class="kpi-label">Note moyenne</div>
+      <div class="kpi-value">{{ stats.avg_rating }}</div>
+    </a>
+
+    <a class="kpi" href="{{ url_for('payments') }}">
+      <span class="kpi-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+      </span>
+      <div class="kpi-label">Total depense</div>
+      <div class="kpi-value sm">{{ "{:,}".format(stats.total_spent|int).replace(",", " ") }} GNF</div>
+    </a>
+  </div>
+</section>
+
+{% if categories %}
+<section class="section">
+  <div class="section-head">
+    <h3>Categories de services</h3>
+    <a href="{{ url_for('artisans_page') }}">Tout voir</a>
+  </div>
+  <div class="rail">
+    {% for category in categories %}
+    <a class="rail-card" href="{{ url_for('artisans_page', category=category.name) }}">
+      <span class="rail-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+        </svg>
+      </span>
+      <span>{{ category.name }}</span>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<section class="section">
+  <div class="section-head">
+    <h3>Techniciens a proximite</h3>
+    <a href="{{ url_for('artisans_page') }}">Tout voir</a>
+  </div>
+
+  {% if artisans %}
+  <div class="list">
+    {% for artisan in artisans %}
+    <a class="list-item" href="{{ url_for('artisans_page', category=artisan.profession or '') }}">
+      <span class="avatar">{{ (artisan.full_name or '?')[0]|upper }}</span>
+      <div class="grow">
+        <div class="list-item-title">
+          <span class="truncate">{{ artisan.full_name }}</span>
+          {% if artisan.is_verified %}
+          <span class="verified" title="Profil verifie">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+          </span>
+          {% endif %}
+        </div>
+        <div class="list-item-sub">{{ artisan.profession or 'Technicien' }} - {{ artisan.city or 'Conakry' }}</div>
+      </div>
+      <div class="list-item-end">
+        <div class="small strong">{{ "{:,}".format((artisan.hourly_rate or 0)|int).replace(",", " ") }} GNF</div>
+        <div class="tiny muted"><span class="status-dot"></span> Disponible</div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty">
+    <span class="empty-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
+    </span>
+    <h3>Aucun technicien disponible</h3>
+    <p>Les techniciens verifies apparaitront ici des qu'ils rejoindront la plateforme.</p>
+  </div>
+  {% endif %}
+</section>
+
+<section class="section">
+  <div class="section-head">
+    <h3>Reservations recentes</h3>
+    {% if recent_requests %}<a href="{{ url_for('requests_list') }}">Tout voir</a>{% endif %}
+  </div>
+
+  {% if recent_requests %}
+  <div class="list">
+    {% for req in recent_requests %}
+    <a class="list-item" href="{{ url_for('request_detail', request_id=req.id) }}">
+      <span class="list-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg>
+      </span>
+      <div class="grow">
+        <div class="list-item-title"><span class="truncate">{{ req.title or 'Demande numero ' ~ req.id }}</span></div>
+        <div class="list-item-sub">{{ req.artisan_name or 'En attente d\'un technicien' }}</div>
+      </div>
+      <span class="badge {% if req.status == 'completed' %}success{% elif req.status in ('assigned', 'in_progress') %}info{% else %}pending{% endif %}">
+        {%- if req.status == 'completed' %}Termine
+        {%- elif req.status in ('assigned', 'in_progress') %}En cours
+        {%- elif req.status == 'pending' %}En attente
+        {%- else %}{{ req.status }}{% endif -%}
+      </span>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty">
+    <span class="empty-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18"/></svg>
+    </span>
+    <h3>Aucune reservation</h3>
+    <p>Vous n'avez pas encore de reservation. Trouvez votre premier technicien.</p>
+    <a class="btn btn-primary" href="{{ url_for('request_new') }}">Creer une demande</a>
+  </div>
+  {% endif %}
+</section>
+
 {% endblock %}

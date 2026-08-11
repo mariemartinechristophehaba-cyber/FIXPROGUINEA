@@ -157,7 +157,7 @@ class ClientRegistrationTests(FixProTestCase):
         self.register_client()
         response = self.login("+224620000000")
         self.assertEqual(response.status_code, 200)
-        self.assertIn(b"Artisans disponibles", response.data)
+        self.assertIn(b"Techniciens", response.data)
 
     def _count_users(self):
         conn = db.connect(sqlite_path=self.db_path)

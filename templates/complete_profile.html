@@ -1,22 +1,36 @@
 {% extends 'base.html' %}
-{% block content %}
-<section class="card form-card" style="max-width: 480px; margin: 40px auto;">
-  <h2>Complétez votre profil</h2>
-  <p class="muted">Vous êtes connecté avec {{ email }}. Il ne reste plus que quelques informations.</p>
+{% block title %}Completer mon profil - FixPro{% endblock %}
+{% block main_class %}page page-narrow{% endblock %}
 
+{% block content %}
+<section class="page-head">
+  <h1>Presque termine</h1>
+  <p>Vous etes connecte avec {{ email }}. Il ne reste que deux informations.</p>
+</section>
+
+<div class="card card-pad-lg">
   <form method="post" action="{{ url_for('complete_profile') }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
 
-    <label>Nom complet</label>
-    <input type="text" value="{{ full_name }}" disabled />
+    <label class="field">
+      <span>Nom complet</span>
+      <input type="text" value="{{ full_name }}" disabled />
+    </label>
 
-    <label>Téléphone</label>
-    <input type="tel" name="phone" required placeholder="+224 620 00 00 00" />
+    <label class="field">
+      <span>Telephone</span>
+      <div class="input-group">
+        <span class="prefix">+224</span>
+        <input type="tel" name="phone" required placeholder="620 00 00 00" />
+      </div>
+    </label>
 
-    <label>Ville</label>
-    <input type="text" name="city" required placeholder="Conakry" />
+    <label class="field">
+      <span>Ville</span>
+      <input type="text" name="city" required value="Conakry" placeholder="Conakry" />
+    </label>
 
-    <button class="btn btn-primary" type="submit" style="width: 100%;">Finaliser mon inscription</button>
+    <button class="btn btn-primary btn-block btn-lg" type="submit">Finaliser mon inscription</button>
   </form>
-</section>
+</div>
 {% endblock %}

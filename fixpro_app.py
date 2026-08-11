@@ -201,6 +201,16 @@ def payment_method_label(method):
     return PAYMENT_METHODS.get(method, (method or "").replace("_", " ").title())
 
 
+@app.context_processor
+def inject_layout_context():
+    """Expose l'utilisateur connecte a tous les gabarits pour la navigation."""
+    try:
+        connected = get_current_user()
+    except Exception:
+        connected = None
+    return {"nav_user": connected}
+
+
 def can_access_request(user, req):
     """Determine si un utilisateur a le droit de consulter une intervention.
 

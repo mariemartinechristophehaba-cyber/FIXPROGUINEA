@@ -20,7 +20,7 @@
     <h1>Un technicien de confiance, en quelques minutes.</h1>
     <p>Plombiers, electriciens, frigoristes, menuisiers. Tous verifies, notes par les clients, payables par Orange Money.</p>
     <div class="ld-hero-actions">
-      <a class="ld-btn ld-btn-primary" href="{{ url_for('client_signup') }}">Trouver un technicien</a>
+      <a class="ld-btn ld-btn-primary" href="{{ url_for('dashboard') }}">Trouver un technicien</a>
       <a class="ld-btn ld-btn-ghost" href="{{ url_for('register', role='artisan') }}">Je suis technicien</a>
     </div>
     <div class="ld-hero-stats">
@@ -97,7 +97,7 @@
     <a class="ld-logo" href="{{ url_for('index') }}">Fix<span>Pro</span></a>
     <p>Plateforme de mise en relation artisan-client a Conakry.</p>
     <nav>
-      <a href="{{ url_for('client_signup') }}">Trouver un technicien</a>
+      <a href="{{ url_for('dashboard') }}">Trouver un technicien</a>
       <a href="{{ url_for('register', role='artisan') }}">Devenir partenaire</a>
       <a href="{{ url_for('login') }}">Connexion</a>
       <a href="https://wa.me/224627316069" target="_blank" rel="noopener">WhatsApp</a>

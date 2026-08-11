@@ -1,24 +1,53 @@
 {% extends 'base.html' %}
+{% block title %}Techniciens - FixPro{% endblock %}
+
 {% block content %}
-<section class="card">
-  <h2>Artisans disponibles</h2>
-  <table class="table">
-    <thead>
-      <tr><th>Nom</th><th>Métier</th><th>Ville</th><th>Tarif/h</th><th></th></tr>
-    </thead>
-    <tbody>
-      {% for artisan in artisans %}
-      <tr>
-        <td>{{ artisan['nom'] }}</td>
-        <td>{{ artisan['metier'] }}</td>
-        <td>{{ artisan['city'] }}</td>
-        <td>{{ artisan['hourly_rate'] }} GNF</td>
-        <td>
-          <a class="btn btn-outline" href="{{ url_for('artisan_contact', artisan_id=artisan['id']) }}">Contacter</a>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+<section class="page-head">
+  <h1>Techniciens</h1>
+  <p>{{ artisans|length }} professionnel{{ 's' if artisans|length > 1 }} trouve{{ 's' if artisans|length > 1 }}{% if category %} en {{ category }}{% endif %}.</p>
 </section>
+
+<form method="get" class="search-bar">
+  <div class="search-input">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input type="search" name="q" value="{{ query }}" placeholder="Nom, metier ou ville" />
+  </div>
+  <button class="btn btn-primary" type="submit">Chercher</button>
+</form>
+
+{% if category or zone or query %}
+<div class="filter-row">
+  {% if query %}<span class="chip">{{ query }}</span>{% endif %}
+  {% if category %}<span class="chip">{{ category }}</span>{% endif %}
+  {% if zone %}<span class="chip">{{ zone }}</span>{% endif %}
+  <a class="chip" href="{{ url_for('artisans_page') }}">Reinitialiser</a>
+</div>
+{% endif %}
+
+{% if artisans %}
+<div class="list" style="margin-top: 18px;">
+  {% for artisan in artisans %}
+  <div class="list-item">
+    <span class="avatar">{{ (artisan['nom'] or '?')[0]|upper }}</span>
+    <div class="grow">
+      <div class="list-item-title"><span class="truncate">{{ artisan['nom'] }}</span></div>
+      <div class="list-item-sub">{{ artisan['metier'] or 'Technicien' }} - {{ artisan['city'] or 'Conakry' }}</div>
+      <div class="list-item-sub strong" style="color: var(--text-2);">
+        {{ "{:,}".format((artisan['hourly_rate'] or 0)|int).replace(",", " ") }} GNF / heure
+      </div>
+    </div>
+    <a class="btn btn-primary btn-sm" href="{{ url_for('artisan_contact', artisan_id=artisan['id']) }}">Contacter</a>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty" style="margin-top: 18px;">
+  <span class="empty-icon">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+  </span>
+  <h3>Aucun technicien trouve</h3>
+  <p>Essayez un autre metier ou une autre ville.</p>
+  <a class="btn btn-soft" href="{{ url_for('artisans_page') }}">Voir tous les techniciens</a>
+</div>
+{% endif %}
 {% endblock %}

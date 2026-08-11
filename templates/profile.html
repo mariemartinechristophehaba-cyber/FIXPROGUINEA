@@ -1,26 +1,101 @@
 {% extends 'base.html' %}
+{% block title %}Mon profil - FixPro{% endblock %}
+{% block main_class %}page page-mid{% endblock %}
+
 {% block content %}
-<section class="card form-card">
-  <h2>Profil</h2>
+<section class="profile-hero">
+  <span class="avatar avatar-lg">{{ (user.full_name or 'U')[0]|upper }}</span>
+  <div class="grow">
+    <h1 style="font-size: 1.35rem;">{{ user.full_name }}</h1>
+    <p class="small muted">{{ user.email or user.phone or '' }}</p>
+    <div class="filter-row" style="margin-top: 8px;">
+      <span class="chip">{{ 'Technicien' if user.role == 'artisan' else 'Client' }}</span>
+      {% if user.city %}<span class="chip">{{ user.city }}</span>{% endif %}
+      {% if user.is_verified %}<span class="badge success">Verifie</span>{% endif %}
+    </div>
+  </div>
+</section>
+
+<div class="card card-pad-lg section">
+  <h3 style="margin-bottom: 18px;">Informations personnelles</h3>
   <form method="post">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-    <label>Nom complet</label>
-    <input type="text" name="full_name" value="{{ user.full_name }}" required />
-    <label>Téléphone</label>
-    <input type="text" name="phone" value="{{ user.phone or '' }}" />
-    <label>Métier</label>
-    <input type="text" name="profession" value="{{ user.profession or '' }}" />
-    <label>Ville</label>
-    <input type="text" name="city" value="{{ user.city or '' }}" />
-    <label>Tarif horaire</label>
-    <input type="number" name="hourly_rate" value="{{ user.hourly_rate or 0 }}" />
-    <label>Latitude</label>
-    <input type="text" name="latitude" value="{{ user.latitude or 0 }}" />
-    <label>Longitude</label>
-    <input type="text" name="longitude" value="{{ user.longitude or 0 }}" />
-    <label>Présentation</label>
-    <textarea name="bio">{{ user.bio or '' }}</textarea>
-    <button class="btn btn-primary" type="submit">Enregistrer</button>
+
+    <label class="field">
+      <span>Nom complet</span>
+      <input type="text" name="full_name" value="{{ user.full_name }}" required />
+    </label>
+
+    <div class="field-2">
+      <label class="field">
+        <span>Telephone</span>
+        <input type="text" name="phone" value="{{ user.phone or '' }}" />
+      </label>
+      <label class="field">
+        <span>Ville</span>
+        <input type="text" name="city" value="{{ user.city or '' }}" />
+      </label>
+    </div>
+
+    {% if user.role == 'artisan' %}
+    <div class="field-2">
+      <label class="field">
+        <span>Metier</span>
+        <input type="text" name="profession" value="{{ user.profession or '' }}" />
+      </label>
+      <label class="field">
+        <span>Tarif horaire (GNF)</span>
+        <input type="number" name="hourly_rate" value="{{ user.hourly_rate or 0 }}" min="0" step="5000" />
+      </label>
+    </div>
+    {% else %}
+    <input type="hidden" name="profession" value="{{ user.profession or '' }}" />
+    <input type="hidden" name="hourly_rate" value="{{ user.hourly_rate or 0 }}" />
+    {% endif %}
+
+    <div class="field-2">
+      <label class="field">
+        <span>Latitude</span>
+        <input type="text" name="latitude" value="{{ user.latitude or 0 }}" />
+      </label>
+      <label class="field">
+        <span>Longitude</span>
+        <input type="text" name="longitude" value="{{ user.longitude or 0 }}" />
+      </label>
+    </div>
+
+    <label class="field">
+      <span>Presentation</span>
+      <textarea name="bio" placeholder="Presentez votre experience en quelques lignes.">{{ user.bio or '' }}</textarea>
+    </label>
+
+    <button class="btn btn-primary btn-block btn-lg" type="submit">Enregistrer les modifications</button>
   </form>
-</section>
+</div>
+
+<div class="section">
+  <div class="list">
+    <a class="list-item" href="{{ url_for('payments') }}">
+      <span class="list-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+      </span>
+      <div class="grow"><div class="list-item-title">Mes paiements</div></div>
+      <span class="chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m9 18 6-6-6-6"/></svg></span>
+    </a>
+    <a class="list-item" href="{{ url_for('reviews') }}">
+      <span class="list-icon amber">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.2-5.4-2.9-5.4 2.9 1-6.2L3.2 9.5l6.1-.9z"/></svg>
+      </span>
+      <div class="grow"><div class="list-item-title">Mes avis</div></div>
+      <span class="chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m9 18 6-6-6-6"/></svg></span>
+    </a>
+    <a class="list-item" href="{{ url_for('logout') }}">
+      <span class="list-icon" style="background: var(--red-soft); color: #FCA5A5;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>
+      </span>
+      <div class="grow"><div class="list-item-title">Se deconnecter</div></div>
+      <span class="chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m9 18 6-6-6-6"/></svg></span>
+    </a>
+  </div>
+</div>
 {% endblock %}

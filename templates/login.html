@@ -1,51 +1,37 @@
 {% extends 'base.html' %}
-{% block header %}{% endblock %}
-{% block footer %}{% endblock %}
+{% block title %}Connexion - FixPro{% endblock %}
+{% block main_class %}page page-narrow{% endblock %}
+
 {% block content %}
-<div class="auth-page">
-  <a href="{{ url_for('index') }}" class="auth-back">Retour</a>
+<section class="page-head">
+  <h1>Content de vous revoir</h1>
+  <p>Connectez-vous pour gerer vos interventions.</p>
+</section>
 
-  <div class="auth-card">
-    <h1 class="auth-title">Connexion</h1>
-    <p class="auth-subtitle">Saisissez votre telephone ou votre email.</p>
+<div class="card card-pad-lg">
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
 
-    <form method="post" class="auth-form">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+    <label class="field">
+      <span>Telephone ou email</span>
+      <input type="text" name="identifier" required autocomplete="username"
+             placeholder="620 00 00 00 ou vous@email.com" />
+    </label>
 
-      <div class="auth-field">
-        <label>Telephone ou email</label>
-        <input type="text" name="identifier" required placeholder="+224 620 00 00 00 ou email@exemple.com" />
-      </div>
+    <label class="field">
+      <span>Mot de passe</span>
+      <input type="password" name="password" required minlength="6" autocomplete="current-password"
+             placeholder="6 caracteres minimum" />
+    </label>
 
-      <div class="auth-field">
-        <label>Mot de passe</label>
-        <input type="password" name="password" required minlength="6" placeholder="6 caracteres minimum" />
-      </div>
+    <button class="btn btn-primary btn-block btn-lg" type="submit">Se connecter</button>
+  </form>
 
-      <button class="auth-btn" type="submit">Se connecter</button>
-    </form>
+  <div class="divider">nouveau sur FixPro</div>
 
-    <p class="auth-footer">
-      Pas de compte ?
-      <a href="{{ url_for('register', role='client') }}">Client</a> ou
-      <a href="{{ url_for('register', role='artisan') }}">Artisan</a>
-    </p>
+  <div class="stack">
+    <a class="btn btn-soft btn-block" href="{{ url_for('client_signup') }}">Creer un compte client</a>
+    <a class="btn btn-outline btn-block" href="{{ url_for('register', role='artisan') }}">S'inscrire comme technicien</a>
   </div>
 </div>
-
-<style>
-.auth-page { min-height: 100vh; background: #070c17; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 24px 16px; }
-.auth-back { align-self: flex-start; color: #94a3b8; text-decoration: none; font-size: 0.9rem; margin-bottom: 40px; }
-.auth-card { width: 100%; max-width: 420px; }
-.auth-title { margin: 0 0 8px; font-size: 2rem; font-weight: 800; }
-.auth-subtitle { margin: 0 0 32px; color: #94a3b8; }
-.auth-form { display: grid; gap: 20px; }
-.auth-field label { display: block; margin-bottom: 8px; font-size: 0.9rem; color: #e2e8f0; font-weight: 600; }
-.auth-field input { width: 100%; background: #0d1526; border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 16px; color: #fff; font-size: 1rem; }
-.auth-field input:focus { outline: 2px solid #3d5bff; }
-.auth-btn { width: 100%; margin-top: 10px; padding: 16px; border-radius: 14px; border: 0; background: linear-gradient(135deg, #f5a623 0%, #ff8a2b 100%); color: #070c17; font-weight: 800; font-size: 1rem; cursor: pointer; }
-.auth-btn:active { transform: scale(0.98); }
-.auth-footer { margin-top: 24px; text-align: center; color: #94a3b8; font-size: 0.9rem; }
-.auth-footer a { color: #3d5bff; font-weight: 600; }
-</style>
 {% endblock %}
