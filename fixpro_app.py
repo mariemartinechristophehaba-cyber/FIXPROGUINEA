@@ -853,13 +853,23 @@ def payments():
     conn = get_db_connection()
     try:
         rows = conn.execute(
-            "SELECT p.id, p.amount, p.status, p.created_at, r.title"
+            "SELECT p.id, p.amount, p.status, p.method, p.reference, p.details,"
+            " p.created_at, r.title"
             " FROM payments p JOIN requests r ON r.id = p.request_id"
             " WHERE r.client_id = ? ORDER BY p.created_at DESC",
             (user["id"],)).fetchall()
+        stats = conn.execute(
+            "SELECT"
+            " COALESCE(SUM(CASE WHEN p.status = 'completed' THEN p.amount ELSE 0 END), 0) as total_paid,"
+            " COALESCE(SUM(CASE WHEN p.status = 'pending' THEN p.amount ELSE 0 END), 0) as total_pending,"
+            " COUNT(*) as count"
+            " FROM payments p JOIN requests r ON r.id = p.request_id"
+            " WHERE r.client_id = ?",
+            (user["id"],)).fetchone()
     finally:
         conn.close()
-    return render_template("payments.html", user=user, payments=rows)
+    return render_template("payments.html", user=user, payments=rows, stats=stats,
+                           payment_method_label=payment_method_label)
 
 
 @app.route("/reviews")
@@ -1380,6 +1390,8 @@ def process_payment(request_id):
 
         amount = _to_float(request.form.get("amount"))
         method = request.form.get("method", "cash")
+        payment_info = (request.form.get("payment_info") or "").strip()
+
         if amount <= 0:
             flash("Le montant doit être positif.", "error")
             return redirect(url_for("payment_page", request_id=request_id))
@@ -1387,14 +1399,22 @@ def process_payment(request_id):
             flash("Moyen de paiement inconnu.", "error")
             return redirect(url_for("payment_page", request_id=request_id))
 
+        reference = (request.form.get("reference") or "").strip()
+        if not reference:
+            reference = "FP-%s-%s" % (request_id, now_iso()[:19].replace("T", " ").replace(":", "").replace("-", ""))
+
+        details = payment_info
+        if method == "card" and payment_info:
+            details = "Carte terminant par %s" % payment_info[-4:] if payment_info.isdigit() and len(payment_info) >= 4 else payment_info
+
         conn.execute(
             "INSERT INTO payments (request_id, amount, method, status,"
             " reference, details) VALUES (?, ?, ?, 'pending', ?, ?)",
-            (request_id, amount, method,
-             request.form.get("reference", "").strip(),
-             "Paiement %s" % payment_method_label(method)))
+            (request_id, amount, method, reference, details))
         conn.commit()
-        flash("Paiement enregistré. En attente de confirmation.", "success")
+        flash("Paiement de %s GNF enregistré par %s. En attente de confirmation." %
+              ("{:,}".format(int(amount)).replace(",", " "), payment_method_label(method)),
+              "success")
     finally:
         conn.close()
     return redirect(url_for("payment_page", request_id=request_id))

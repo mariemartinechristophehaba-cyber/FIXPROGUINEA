@@ -1,88 +1,230 @@
 {% extends 'base.html' %}
+{% set page_title = 'Paiement' %}
+{% block page_title %}{{ page_title }}{% endblock %}
+
 {% block content %}
-<section class="card">
-  <div class="dashboard-header">
-    <div class="greeting">
-      <div class="avatar">💳</div>
+<section class="card card-pad-lg">
+  <div class="dashboard-header" style="padding: 0 0 20px;">
+    <div class="greeting" style="align-items: flex-start;">
+      <div class="avatar" style="background: var(--brand-soft); color: var(--brand);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+      </div>
       <div>
-        <h2>Paiement sécurisé</h2>
-        <div class="small muted">Confirmez votre paiement à l’intérieur de FixPro.</div>
+        <h2>Paiement securise</h2>
+        <div class="small muted">Confirmez votre reglement a l'interieur de FixPro.</div>
       </div>
     </div>
   </div>
 
-  <div class="payment-card">
-    <div class="detail-card">
-      <p><strong>Intervention</strong> : {{ request_item.title }}</p>
-      <p><strong>Artisan</strong> : {{ artisan.nom if artisan else '—' }}</p>
-      <p><strong>Montant proposé</strong> : {{ request_item.quote_amount or 0 }} GNF</p>
-      <p><strong>Statut du devis</strong> : {{ request_item.quote_status }}</p>
+  <div class="payment-grid">
+    <div class="payment-summary">
+      <div class="detail-card" style="margin-bottom: 0;">
+        <h3 style="margin-bottom: 16px;">Resume de l'intervention</h3>
+        <div class="summary-row">
+          <span class="muted">Intervention</span>
+          <span class="strong">{{ request_item.title }}</span>
+        </div>
+        <div class="summary-row">
+          <span class="muted">Artisan</span>
+          <span class="strong">{{ artisan.nom if artisan else '—' }}</span>
+        </div>
+        <div class="summary-row">
+          <span class="muted">Montant du devis</span>
+          <span class="strong" style="color: var(--brand);">{{ "{:,}".format((request_item.quote_amount or 0)|int).replace(",", " ") }} GNF</span>
+        </div>
+        <div class="summary-row">
+          <span class="muted">Statut du devis</span>
+          <span class="badge success">Accepte</span>
+        </div>
+      </div>
     </div>
 
-    <form method="post" action="{{ url_for('process_payment', request_id=request_item['id']) }}">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-      <div class="payment-row">
-        <label>Montant à payer</label>
-        <input type="number" name="amount" min="0" step="1000" value="{{ request_item.quote_amount or 0 }}" required />
+    <div class="payment-form">
+      <form method="post" action="{{ url_for('process_payment', request_id=request_item['id']) }}" id="paymentForm">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
 
-        <label>Moyen de paiement</label>
-        <select name="method" required onchange="updatePaymentFields(this.value)">
-          <option value="">— Sélectionnez une option —</option>
-          <option value="orange_money">Orange Money</option>
-          <option value="mtn_mobile_money">MTN Mobile Money</option>
-          <option value="card">Carte bancaire</option>
-        </select>
-
-        <div id="paymentInfoContainer" style="display: none;">
-          <label id="paymentInfoLabel">Informations de paiement</label>
-          <input type="text" name="payment_info" id="paymentInfoInput" placeholder="Numéro ou informations requises" autocomplete="off" />
+        <div class="form-section">
+          <label class="form-label">Montant a payer (GNF)</label>
+          <div class="amount-input">
+            <input type="number" name="amount" min="1000" step="1000"
+                   value="{{ (request_item.quote_amount or 0)|int }}" required
+                   id="amountInput" placeholder="0" />
+            <span class="amount-currency">GNF</span>
+          </div>
         </div>
 
-        <button class="btn btn-primary" type="submit">Confirmer le paiement</button>
-      </div>
-    </form>
+        <div class="form-section">
+          <label class="form-label">Choisissez un moyen de paiement</label>
+          <div class="payment-methods" role="radiogroup" aria-label="Moyen de paiement">
+            <label class="method-card" data-method="orange_money">
+              <input type="radio" name="method" value="orange_money" required />
+              <span class="method-icon orange">OM</span>
+              <span class="method-body">
+                <span class="method-title">Orange Money</span>
+                <span class="method-desc">Paiement mobile Orange</span>
+              </span>
+              <span class="method-check"></span>
+            </label>
 
-    <div class="section-card">
-      <h3>Historique des paiements</h3>
-      {% if payments %}
-        <div class="chat-list">
-          {% for payment in payments %}
-            <div class="payment-option">
-              <div><strong>{{ payment.amount }} GNF</strong> · {{ payment_method_label(payment.method) }}</div>
-              <div class="small">Statut : <span class="badge {{ 'success' if payment.status == 'confirmé' else 'pending' if payment.status == 'en_attente' else 'failed' }}">{{ payment.status }}</span></div>
-              <div class="small">Référence : {{ payment.reference or '—' }}</div>
-              <div class="small">Détails masqués : {{ payment.details or '—' }}</div>
-              <div class="small">Créé le {{ payment.created_at }}</div>
+            <label class="method-card" data-method="mtn_mobile_money">
+              <input type="radio" name="method" value="mtn_mobile_money" />
+              <span class="method-icon mtn">MTN</span>
+              <span class="method-body">
+                <span class="method-title">MTN Mobile Money</span>
+                <span class="method-desc">Paiement mobile MTN</span>
+              </span>
+              <span class="method-check"></span>
+            </label>
+
+            <label class="method-card" data-method="card">
+              <input type="radio" name="method" value="card" />
+              <span class="method-icon card">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+              </span>
+              <span class="method-body">
+                <span class="method-title">Carte bancaire</span>
+                <span class="method-desc">Visa, MasterCard, Verve</span>
+              </span>
+              <span class="method-check"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-section dynamic-fields" id="dynamicFields" style="display: none;">
+          <div class="field-group" id="mobileMoneyFields" style="display: none;">
+            <label class="form-label" for="mobileNumber">Numero Mobile Money</label>
+            <input type="tel" name="payment_info" id="mobileNumber"
+                   class="form-input" placeholder="Ex : 622 000 000" maxlength="20" />
+            <p class="input-hint">Entrez le numero du compte a debiter.</p>
+          </div>
+
+          <div class="field-group" id="cardFields" style="display: none;">
+            <label class="form-label" for="cardNumber">Numero de carte</label>
+            <input type="text" name="payment_info" id="cardNumber"
+                   class="form-input" placeholder="4242 4242 4242 4242" maxlength="23" />
+            <div class="card-row">
+              <div>
+                <label class="form-label" for="cardExpiry">Date d'expiration</label>
+                <input type="text" name="card_expiry" id="cardExpiry"
+                       class="form-input" placeholder="MM/AA" maxlength="5" />
+              </div>
+              <div>
+                <label class="form-label" for="cardCvv">CVV</label>
+                <input type="text" name="card_cvv" id="cardCvv"
+                       class="form-input" placeholder="123" maxlength="4" />
+              </div>
             </div>
-          {% endfor %}
+            <p class="input-hint">Test : aucune transaction reelle n'est effectuee.</p>
+          </div>
         </div>
-      {% else %}
-        <p class="muted">Aucun paiement enregistré pour cette intervention.</p>
-      {% endif %}
+
+        <button class="btn btn-primary btn-block btn-lg" type="submit" id="submitPayment">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+          Confirmer le paiement
+        </button>
+        <p class="input-hint" style="text-align: center; margin-top: 12px;">
+          Paiement securise par FixPro. Vos coordonnees ne sont pas stockees en clair.
+        </p>
+      </form>
     </div>
   </div>
+
+  {% if payments %}
+  <div class="section-card" style="margin-top: 28px;">
+    <h3>Historique des paiements</h3>
+    <div class="payment-history-list">
+      {% for payment in payments %}
+      <div class="payment-history-item">
+        <div class="payment-history-main">
+          <div class="payment-amount">{{ "{:,}".format(payment.amount|int).replace(",", " ") }} GNF</div>
+          <div class="payment-meta">
+            <span class="badge {% if payment.status == 'completed' %}success{% elif payment.status == 'pending' %}pending{% else %}failed{% endif %}">
+              {% if payment.status == 'completed' %}Paye
+              {% elif payment.status == 'pending' %}En attente
+              {% else %}{{ payment.status }}{% endif %}
+            </span>
+            <span class="method-name">{{ payment_method_label(payment.method) }}</span>
+          </div>
+        </div>
+        <div class="payment-history-detail">
+          <div>Reference : {{ payment.reference or '—' }}</div>
+          {% if payment.details %}<div>{{ payment.details }}</div>{% endif %}
+          <div class="small muted">{{ payment.created_at }}</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
 </section>
 {% endblock %}
 
 {% block scripts %}
 <script>
-function updatePaymentFields(method) {
-  const container = document.getElementById('paymentInfoContainer');
-  const label = document.getElementById('paymentInfoLabel');
-  const input = document.getElementById('paymentInfoInput');
-  if (!method) {
-    container.style.display = 'none';
-    input.placeholder = 'Numéro ou informations requises';
-    return;
+(function () {
+  const form = document.getElementById('paymentForm');
+  const cards = form.querySelectorAll('.method-card');
+  const dynamic = document.getElementById('dynamicFields');
+  const mobileFields = document.getElementById('mobileMoneyFields');
+  const cardFields = document.getElementById('cardFields');
+  const mobileInput = document.getElementById('mobileNumber');
+  const cardInput = document.getElementById('cardNumber');
+  const expiry = document.getElementById('cardExpiry');
+  const cvv = document.getElementById('cardCvv');
+
+  function setMethod(method) {
+    cards.forEach(c => c.classList.toggle('active', c.dataset.method === method));
+    const radio = form.querySelector('input[name="method"][value="' + method + '"]');
+    if (radio) radio.checked = true;
+
+    if (!method) {
+      dynamic.style.display = 'none';
+      return;
+    }
+    dynamic.style.display = 'block';
+    mobileFields.style.display = (method === 'orange_money' || method === 'mtn_mobile_money') ? 'block' : 'none';
+    cardFields.style.display = (method === 'card') ? 'block' : 'none';
+    mobileInput.required = (method === 'orange_money' || method === 'mtn_mobile_money');
+    cardInput.required = (method === 'card');
+    expiry.required = (method === 'card');
+    cvv.required = (method === 'card');
   }
-  container.style.display = 'block';
-  if (method === 'card') {
-    label.textContent = 'Numéro de carte bancaire';
-    input.placeholder = 'Ex : 4242 4242 4242 4242';
-  } else {
-    label.textContent = 'Numéro Mobile Money';
-    input.placeholder = 'Ex : 6222 000 000';
+
+  cards.forEach(card => {
+    card.addEventListener('click', () => setMethod(card.dataset.method));
+    const radio = card.querySelector('input[type="radio"]');
+    radio.addEventListener('change', () => setMethod(radio.value));
+  });
+
+  if (cardInput) {
+    cardInput.addEventListener('input', function (e) {
+      let v = e.target.value.replace(/\D/g, '').substring(0, 16);
+      v = v.match(/.{1,4}/g);
+      e.target.value = v ? v.join(' ') : '';
+    });
   }
-}
+
+  if (expiry) {
+    expiry.addEventListener('input', function (e) {
+      let v = e.target.value.replace(/\D/g, '').substring(0, 4);
+      if (v.length >= 2) v = v.slice(0, 2) + '/' + v.slice(2);
+      e.target.value = v;
+    });
+  }
+
+  if (cvv) {
+    cvv.addEventListener('input', function (e) {
+      e.target.value = e.target.value.replace(/\D/g, '').substring(0, 4);
+    });
+  }
+
+  const amount = document.getElementById('amountInput');
+  if (amount) {
+    amount.addEventListener('input', function (e) {
+      if (e.target.value && parseInt(e.target.value, 10) < 1000) e.target.setCustomValidity('Le montant minimum est 1 000 GNF.');
+      else e.target.setCustomValidity('');
+    });
+  }
+})();
 </script>
 {% endblock %}

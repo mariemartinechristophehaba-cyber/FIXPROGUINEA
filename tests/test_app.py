@@ -237,7 +237,8 @@ class RequestWorkflowTests(FixProTestCase):
         self.assertEqual(self.client.get("/requests/1/payment").status_code, 200)
 
         self.client.post("/requests/1/payment/process", data={
-            "amount": "250000", "method": "orange_money", "reference": "OM123"})
+            "amount": "250000", "method": "orange_money",
+            "reference": "OM123", "payment_info": "622 000 000"})
         conn = db.connect(sqlite_path=self.db_path)
         try:
             payment = conn.execute("SELECT * FROM payments").fetchone()
@@ -245,6 +246,56 @@ class RequestWorkflowTests(FixProTestCase):
             conn.close()
         self.assertEqual(payment["amount"], 250000)
         self.assertEqual(payment["method"], "orange_money")
+        self.assertEqual(payment["details"], "622 000 000")
+
+    def test_payment_by_card_masks_pan(self):
+        self.login("+224620000000")
+        self._create_request()
+        self.client.get("/logout")
+
+        self.login("artisan@example.com")
+        self.client.post("/requests/1/accept")
+        self.client.post("/requests/1/quote", data={
+            "quote_amount": "150000",
+            "quote_description": "Reparation robinet"})
+        self.client.get("/logout")
+
+        self.login("+224620000000")
+        self.client.post("/requests/1/quote/accept")
+        self.client.post("/requests/1/payment/process", data={
+            "amount": "150000", "method": "card", "payment_info": "4242424242424242"})
+
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            payment = conn.execute("SELECT * FROM payments").fetchone()
+        finally:
+            conn.close()
+        self.assertEqual(payment["method"], "card")
+        self.assertIn("4242", payment["details"])
+        self.assertNotIn("4242424242424242", payment["details"])
+
+    def test_payments_page_shows_history_and_totals(self):
+        self.login("+224620000000")
+        self._create_request()
+        self.client.get("/logout")
+
+        self.login("artisan@example.com")
+        self.client.post("/requests/1/accept")
+        self.client.post("/requests/1/quote", data={
+            "quote_amount": "100000",
+            "quote_description": "Changement joint"})
+        self.client.get("/logout")
+
+        self.login("+224620000000")
+        self.client.post("/requests/1/quote/accept")
+        self.client.post("/requests/1/payment/process", data={
+            "amount": "100000", "method": "mtn_mobile_money",
+            "payment_info": "630 111 111"})
+
+        response = self.client.get("/payments")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"100 000", response.data)
+        self.assertIn(b"MTN Mobile Money", response.data)
 
     def test_artisan_can_open_a_pending_request(self):
         self.login("+224620000000")

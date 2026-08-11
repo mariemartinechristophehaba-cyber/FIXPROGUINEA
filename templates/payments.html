@@ -1,31 +1,77 @@
 {% extends 'base.html' %}
+{% set page_title = 'Paiements' %}
+{% block page_title %}{{ page_title }}{% endblock %}
+
 {% block content %}
-<section class="card" style="padding: 28px;">
-  <h2 style="margin: 0 0 20px;">Mes paiements</h2>
+<section class="card card-pad-lg">
+  <div class="dashboard-header" style="padding: 0 0 20px;">
+    <div class="greeting" style="align-items: flex-start;">
+      <div class="avatar" style="background: var(--green-soft); color: var(--green);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+      </div>
+      <div>
+        <h2>Mes paiements</h2>
+        <div class="small muted">Suivi de vos reglements et transactions.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="kpi-grid" style="margin-bottom: 24px;">
+    <div class="kpi">
+      <span class="kpi-icon green">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+      </span>
+      <div class="kpi-label">Total paye</div>
+      <div class="kpi-value sm">{{ "{:,}".format(stats.total_paid|int).replace(",", " ") }} GNF</div>
+    </div>
+    <div class="kpi">
+      <span class="kpi-icon amber">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+      </span>
+      <div class="kpi-label">En attente</div>
+      <div class="kpi-value sm">{{ "{:,}".format(stats.total_pending|int).replace(",", " ") }} GNF</div>
+    </div>
+    <div class="kpi">
+      <span class="kpi-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 16V4M17 8v12M3 20h18"/></svg>
+      </span>
+      <div class="kpi-label">Transactions</div>
+      <div class="kpi-value">{{ stats.count }}</div>
+    </div>
+  </div>
+
   {% if payments %}
-  <div style="display: grid; gap: 12px;">
+  <div class="payment-history-list">
     {% for p in payments %}
-    <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 18px;">
-      <div style="display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
-        <div>
-          <div style="font-weight: 700;">{{ p.title or 'Demande #' ~ p.id }}</div>
-          <div class="small muted">{{ p.created_at }}</div>
-        </div>
-        <div style="text-align: right;">
-          <div style="font-weight: 700;">{{ "{:,}".format(p.amount|int).replace(",", " ") }} GNF</div>
-          <span class="badge {% if p.status == 'completed' %}success{% elif p.status == 'pending' %}pending{% else %}info{% endif %}">
+    <div class="payment-history-item">
+      <div class="payment-history-main">
+        <div class="payment-amount">{{ "{:,}".format(p.amount|int).replace(",", " ") }} GNF</div>
+        <div class="payment-meta">
+          <span class="badge {% if p.status == 'completed' %}success{% elif p.status == 'pending' %}pending{% else %}failed{% endif %}">
             {% if p.status == 'completed' %}Paye
             {% elif p.status == 'pending' %}En attente
-            {% else %}{{ p.status }}
-            {% endif %}
+            {% else %}{{ p.status }}{% endif %}
           </span>
+          <span class="method-name">{{ payment_method_label(p.method) }}</span>
         </div>
+      </div>
+      <div class="payment-history-detail">
+        <div class="payment-title">{{ p.title or 'Demande numero ' ~ p.id }}</div>
+        <div>Reference : {{ p.reference or '—' }}</div>
+        {% if p.details %}<div>{{ p.details }}</div>{% endif %}
+        <div class="small muted">{{ p.created_at }}</div>
       </div>
     </div>
     {% endfor %}
   </div>
   {% else %}
-  <p class="muted">Aucun paiement enregistre pour le moment.</p>
+  <div class="empty" style="padding: 44px 20px;">
+    <span class="empty-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+    </span>
+    <h3>Aucun paiement enregistre</h3>
+    <p>Vos paiements apparaitront ici une fois qu'un devis aura ete accepte.</p>
+  </div>
   {% endif %}
 </section>
 {% endblock %}
