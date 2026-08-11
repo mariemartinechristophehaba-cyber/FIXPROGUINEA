@@ -510,7 +510,9 @@ body.artisan-page main.container { padding: 0; max-width: none; }
   .lp-artisan-inner { grid-template-columns: 1fr; }
   .lp-artisan-mockup { display: none; }
   .lp-app-mockup { display: none; }
-  .lp-app-inner, .lp-discover-inner, .lp-banner-inner, .lp-artisan-inner { padding: 40px 16px; }
+  .lp-app-inner, .lp-discover-inner, .lp-banner-inner, .lp-artisan-inner,
+  .lp-how-grid, .lp-why-grid, .lp-trust-grid, .lp-contact-grid,
+  .lp-footer-inner, .lp-float-card { width: 100%; max-width: none; margin: 0; padding: 0 16px; }
   .lp-section { padding: 60px 0; }
   .lp-section .lp-container { padding: 0 16px; max-width: none; }
   .lp-service-grid { padding: 0 16px; }
@@ -518,4 +520,6 @@ body.artisan-page main.container { padding: 0; max-width: none; }
   .lp-contact-grid { grid-template-columns: 1fr; }
   .lp-stores { flex-direction: column; gap: 12px; }
   .lp-store { width: 100%; text-align: center; }
+  .lp-section h2 { text-align: left; }
+  .lp-eyebrow { text-align: left; }
 }
