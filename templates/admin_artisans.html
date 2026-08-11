@@ -1,16 +1,24 @@
 {% extends 'base.html' %}
 {% block content %}
-<section class="card" style="max-width: 900px; margin: 0 auto;">
-  <h2 style="margin-top: 0;">Artisans en attente de validation</h2>
+<section class="card" style="max-width: 980px; margin: 0 auto; padding: 32px;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+    <h2 style="margin: 0;">Validation des artisans</h2>
+    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline" style="padding: 10px 18px;">Tableau de bord</a>
+  </div>
+
+  <h3 style="font-size: 1.1rem; margin: 0 0 16px;">En attente</h3>
   {% if artisans %}
-    <div class="tech-list" style="margin-top: 24px;">
+    <div style="display: grid; gap: 12px; margin-bottom: 40px;">
       {% for artisan in artisans %}
-        <div class="tech-item" style="align-items: flex-start; flex-direction: column; gap: 12px;">
-          <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+        <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px;">
+          <div style="display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; align-items: flex-start;">
             <div>
-              <strong>{{ artisan.full_name }}</strong>
-              <span class="muted">— {{ artisan.profession or 'Non précisé' }}</span>
-              <div class="small" style="margin-top: 4px;">{{ artisan.email }} · {{ artisan.phone }} · {{ artisan.city }}</div>
+              <div style="font-size: 1.1rem; font-weight: 700; margin-bottom: 4px;">{{ artisan.full_name }}</div>
+              <div class="small muted">{{ artisan.profession or 'Non precise' }} - {{ artisan.city }} - {{ artisan.phone }}</div>
+              <div class="small muted" style="margin-top: 4px;">{{ artisan.email }}</div>
+              {% if artisan.bio %}
+                <div class="small" style="margin-top: 8px; color: var(--muted);">{{ artisan.bio }}</div>
+              {% endif %}
             </div>
             <form method="post" action="{{ url_for('admin_artisans') }}" style="display: flex; gap: 8px;">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
@@ -19,36 +27,28 @@
               <button type="submit" name="action" value="reject" class="btn btn-outline" style="padding: 8px 16px; font-size: 0.9rem;">Refuser</button>
             </form>
           </div>
-          {% if artisan.company_name or artisan.skills or artisan.bio %}
-            <div class="small" style="width: 100%; color: var(--muted);">
-              {% if artisan.company_name %}Entreprise : {{ artisan.company_name }}{% endif %}
-              {% if artisan.skills %}<br>Métiers : {{ artisan.skills }}{% endif %}
-              {% if artisan.bio %}<br>Bio : {{ artisan.bio }}{% endif %}
-            </div>
-          {% endif %}
         </div>
       {% endfor %}
     </div>
   {% else %}
-    <p class="muted">Aucun artisan en attente de validation.</p>
+    <p class="muted" style="margin-bottom: 40px;">Aucun artisan en attente de validation.</p>
   {% endif %}
 
-  <h2 style="margin-top: 48px;">Artisans validés</h2>
+  <h3 style="font-size: 1.1rem; margin: 0 0 16px;">Artisans valides</h3>
   {% if verified %}
-    <div class="tech-list" style="margin-top: 24px;">
+    <div style="display: grid; gap: 12px;">
       {% for artisan in verified %}
-        <div class="tech-item" style="justify-content: space-between; align-items: center;">
+        <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
           <div>
-            <strong>{{ artisan.full_name }}</strong>
-            <span class="muted">— {{ artisan.profession or 'Non précisé' }}</span>
-            <div class="small" style="margin-top: 4px;">{{ artisan.email }} · {{ artisan.phone }}</div>
+            <div style="font-weight: 700;">{{ artisan.full_name }}</div>
+            <div class="small muted">{{ artisan.profession or 'Non precise' }} - {{ artisan.city }}</div>
           </div>
-          <span class="badge success">Validé</span>
+          <span class="badge success">Valide</span>
         </div>
       {% endfor %}
     </div>
   {% else %}
-    <p class="muted">Aucun artisan validé pour l'instant.</p>
+    <p class="muted">Aucun artisan valide pour l'instant.</p>
   {% endif %}
 </section>
 {% endblock %}

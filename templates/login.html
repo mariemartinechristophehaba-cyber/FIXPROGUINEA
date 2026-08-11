@@ -1,25 +1,24 @@
 {% extends 'base.html' %}
 {% block content %}
-<section class="card form-card">
-  <h2>Connexion</h2>
-  <p class="muted">Saisissez votre téléphone ou votre email.</p>
-  <form method="post">
+<section class="card" style="max-width: 460px; margin: 80px auto; padding: 40px 32px; text-align: center;">
+  <h2 style="margin: 0 0 8px;">Connexion</h2>
+  <p class="muted" style="margin-bottom: 28px;">Saisissez votre telephone ou votre email.</p>
+  <form method="post" style="text-align: left;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
 
-    <label>Téléphone ou email</label>
+    <label>Telephone ou email</label>
     <input type="text" name="identifier" required placeholder="+224 620 00 00 00 ou email@exemple.com" />
 
-    <label>Mot de passe</label>
-    <input type="password" name="password" required minlength="6" placeholder="6 caractères minimum" />
+    <label style="margin-top: 16px;">Mot de passe</label>
+    <input type="password" name="password" required minlength="6" placeholder="6 caracteres minimum" />
 
-    <button class="btn btn-primary" type="submit">Se connecter</button>
+    <button class="btn btn-primary" type="submit" style="width: 100%; margin-top: 24px;">Se connecter</button>
   </form>
 
-  <p class="small" style="margin-top:16px; text-align:center;">
+  <p class="small" style="margin-top: 20px; text-align: center;">
     Pas de compte ?
-    <a href="{{ url_for('register', role='client') }}">Créer un compte client</a>
-    ·
-    <a href="{{ url_for('register', role='artisan') }}">Créer un compte artisan</a>
+    <a href="{{ url_for('register', role='client') }}">Client</a> ou
+    <a href="{{ url_for('register', role='artisan') }}">Artisan</a>
   </p>
 </section>
 {% endblock %}
