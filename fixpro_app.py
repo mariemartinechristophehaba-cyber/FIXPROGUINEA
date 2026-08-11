@@ -762,6 +762,15 @@ def dashboard():
             "month_spent": 0.0,
             "avg_rating": avg_rating,
         }
+    except Exception as exc:
+        import traceback
+        traceback.print_exc()
+        flash(f"Erreur dashboard : {exc}", "error")
+        return render_template("dashboard_client.html", user=user,
+                               stats={"active_requests": 0, "completed": 0, "total_spent": 0.0, "month_spent": 0.0, "avg_rating": 0.0},
+                               categories=categories if 'categories' in locals() else [],
+                               artisan_counts=artisan_counts if 'artisan_counts' in locals() else {},
+                               artisans=artisans if 'artisans' in locals() else [])
     finally:
         conn.close()
 
