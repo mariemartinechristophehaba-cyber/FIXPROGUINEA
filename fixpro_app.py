@@ -274,6 +274,23 @@ def health_check():
     return jsonify({"status": "ok", "timestamp": now_iso()})
 
 
+@app.route("/health-db")
+def health_db():
+    """Verifie que la connexion a la base de donnees fonctionne."""
+    try:
+        conn = get_db_connection()
+        try:
+            conn.execute("SELECT 1").fetchone()
+            return jsonify({"status": "ok", "db": "connected",
+                            "timestamp": now_iso()})
+        finally:
+            conn.close()
+    except Exception as exc:
+        logger.exception("Echec de la connexion a la base de donnees")
+        return jsonify({"status": "error", "db": "disconnected",
+                        "error": str(exc)}), 500
+
+
 # ---------------------------------------------------------------------------
 # Authentification
 # ---------------------------------------------------------------------------

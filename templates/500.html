@@ -3,7 +3,13 @@
 {% block content %}
 <section class="card">
   <h1>Une erreur est survenue</h1>
-  <p>{{ message }}</p>
+  <p>Nos equipes ont ete informees. Merci de reessayer dans quelques instants.</p>
+  {% if message %}
+  <details style="margin: 16px 0;">
+    <summary>Details techniques</summary>
+    <pre style="white-space: pre-wrap; word-break: break-word; background: #0f172a; padding: 12px; border-radius: 8px; overflow-x: auto;">{{ message }}</pre>
+  </details>
+  {% endif %}
   <a class="btn btn-primary" href="{{ url_for('index') }}">Retour a l'accueil</a>
 </section>
 {% endblock %}
