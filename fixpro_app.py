@@ -930,6 +930,18 @@ def conversations():
     return render_template("conversations.html", conversations=threads, user=user)
 
 
+@app.route("/payments")
+@login_required
+def payments():
+    return render_template("payments.html", user=get_current_user())
+
+
+@app.route("/reviews")
+@login_required
+def reviews():
+    return render_template("reviews.html", user=get_current_user())
+
+
 # ---------------------------------------------------------------------------
 # Demandes d'intervention
 # ---------------------------------------------------------------------------
