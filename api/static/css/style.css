@@ -10,6 +10,7 @@
   --border: #1e2533;
 }
 
+html, body { margin: 0; padding: 0; }
 * { box-sizing: border-box; }
 .container { max-width: 1180px; margin: 0 auto; padding: 24px; }
 body { margin: 0; font-family: 'Poppins', Inter, Arial, sans-serif; background: linear-gradient(180deg, var(--bg), #071026 60%); color: var(--text); }
