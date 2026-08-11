@@ -728,8 +728,8 @@ def dashboard():
     user = get_current_user()
     if user is None:
         user = {"id": 0, "full_name": "Visiteur", "role": "client", "city": "Conakry"}
-    conn = get_db_connection()
     try:
+        conn = get_db_connection()
         # Categories de services
         categories = conn.execute(
             "SELECT name, diagnostic_price FROM service_categories"
@@ -789,24 +789,35 @@ def dashboard():
                                artisan_counts=artisan_counts if 'artisan_counts' in locals() else {},
                                artisans=artisans if 'artisans' in locals() else [])
     finally:
-        conn.close()
+        if 'conn' in locals() and conn:
+            conn.close()
 
-    # Recent client requests
-    recent_requests = conn.execute(
-        "SELECT r.id, r.title, r.status, r.updated_at, u.full_name AS artisan_name"
-        " FROM requests r LEFT JOIN users u ON u.id = r.artisan_id"
-        " WHERE r.client_id = ? ORDER BY r.updated_at DESC LIMIT 5",
-        (user["id"],)).fetchall()
-
-    # Unread messages count
     try:
-        unread = conn.execute(
-            "SELECT COUNT(*) AS n FROM messages"
-            " WHERE sender_id != ? AND request_id IN"
-            " (SELECT id FROM requests WHERE client_id = ?)",
-            (user["id"], user["id"])).fetchone()
-        unread_count = unread["n"] if unread else 0
-    except Exception:
+        conn = get_db_connection()
+        try:
+            # Recent client requests
+            recent_requests = conn.execute(
+                "SELECT r.id, r.title, r.status, r.updated_at, u.full_name AS artisan_name"
+                " FROM requests r LEFT JOIN users u ON u.id = r.artisan_id"
+                " WHERE r.client_id = ? ORDER BY r.updated_at DESC LIMIT 5",
+                (user["id"],)).fetchall()
+
+            # Unread messages count
+            try:
+                unread = conn.execute(
+                    "SELECT COUNT(*) AS n FROM messages"
+                    " WHERE sender_id != ? AND request_id IN"
+                    " (SELECT id FROM requests WHERE client_id = ?)",
+                    (user["id"], user["id"])).fetchone()
+                unread_count = unread["n"] if unread else 0
+            except Exception:
+                unread_count = 0
+        finally:
+            conn.close()
+    except Exception as exc:
+        import traceback
+        traceback.print_exc()
+        recent_requests = []
         unread_count = 0
 
     return render_template("dashboard_client.html", user=user, stats=stats,
