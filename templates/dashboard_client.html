@@ -1,128 +1,216 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="dash-layout">
-  <aside class="dash-sidebar" id="dashSidebar">
-    <div class="dash-brand">
-      <a href="{{ url_for('index') }}" style="text-decoration: none; color: inherit;">Fix<span style="color: var(--accent-orange);">Pro</span></a>
+<div class="mobile-dashboard">
+  <header class="mobile-topbar">
+    <a href="{{ url_for('index') }}" class="mobile-logo">
+      Fix<span style="color: var(--accent-orange);">Pro</span>
+    </a>
+    <div class="mobile-topbar-right">
+      <a href="{{ url_for('conversations') }}" class="mobile-notif" title="Messages">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        {% if unread_count %}<span class="mobile-notif-badge">{{ unread_count }}</span>{% endif %}
+      </a>
+      <a href="{{ url_for('profile') }}" class="mobile-avatar" title="Profil">{{ user.full_name[0]|upper }}</a>
     </div>
+  </header>
 
-    <nav class="dash-nav">
-      <div class="dash-group">
-        <div class="dash-label">General</div>
-        <a class="dash-link active" href="{{ url_for('dashboard') }}">Tableau de bord</a>
-        <a class="dash-link" href="{{ url_for('artisans_page') }}">Rechercher un artisan</a>
-        <a class="dash-link" href="{{ url_for('artisans_page') }}">Techniciens</a>
-      </div>
-      <div class="dash-group">
-        <div class="dash-label">Activite</div>
-        <a class="dash-link" href="{{ url_for('requests_list') }}">Reservations</a>
-        <a class="dash-link" href="{{ url_for('conversations') }}">Messages</a>
-        <a class="dash-link" href="{{ url_for('index') }}">Mes avis</a>
-      </div>
-      <div class="dash-group">
-        <div class="dash-label">Compte</div>
-        <a class="dash-link" href="{{ url_for('payments') }}">Paiements</a>
-        <a class="dash-link" href="{{ url_for('profile') }}">Profil</a>
-      </div>
-    </nav>
-  </aside>
+  <main class="mobile-content">
+    <section class="mobile-welcome">
+      <h1>Bonjour {{ user.full_name.split(' ')[0] }}</h1>
+      <p class="muted">Trouvez le technicien qu'il vous faut aujourd'hui.</p>
+    </section>
 
-  <div class="dash-main">
-    <header class="dash-topbar">
-      <div class="dash-topbar-left">
-        <button type="button" class="dash-menu-toggle" id="dashMenuToggle" aria-label="Menu">
-          <span></span><span></span><span></span>
-        </button>
-        <form class="dash-search" action="{{ url_for('artisans_page') }}" method="get">
-          <input type="text" name="q" placeholder="Rechercher un artisan, un metier..." />
-          <button type="submit" class="btn btn-primary" style="padding: 8px 16px;">Rechercher</button>
-        </form>
+    <section class="mobile-actions">
+      <button class="mobile-action-btn mobile-action-secondary" type="button" onclick="alert('Export a venir')">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Exporter
+      </button>
+      <a href="{{ url_for('request_new') }}" class="mobile-action-btn mobile-action-primary">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Nouvelle demande
+      </a>
+    </section>
+
+    <section class="mobile-kpi-grid">
+      <div class="mobile-kpi">
+        <div class="small muted">Reservations actives</div>
+        <div class="mobile-kpi-value">{{ stats.active_requests }}</div>
+        {% if stats.active_requests %}<div class="small muted" style="margin-top: 4px;">En cours</div>{% endif %}
       </div>
-      <div class="dash-topbar-right">
-        <a href="{{ url_for('conversations') }}" class="dash-icon-link" title="Messages">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <div class="mobile-kpi">
+        <div class="small muted">Travaux termines</div>
+        <div class="mobile-kpi-value">{{ stats.completed }}</div>
+        {% if stats.completed %}<div class="small muted" style="margin-top: 4px;">Cette annee</div>{% endif %}
+      </div>
+      <div class="mobile-kpi">
+        <div class="small muted">Note moyenne</div>
+        <div class="mobile-kpi-value">{{ stats.avg_rating }}</div>
+        {% if stats.avg_rating %}<div class="small muted" style="margin-top: 4px;">Donnee</div>{% endif %}
+      </div>
+      <div class="mobile-kpi">
+        <div class="small muted">Total depense</div>
+        <div class="mobile-kpi-value">{{ "{:,}".format(stats.total_spent|int).replace(",", " ") }} GNF</div>
+      </div>
+    </section>
+
+    <section class="mobile-section">
+      <div class="mobile-section-header">
+        <h3>Categories de services</h3>
+        <a href="{{ url_for('artisans_page') }}" class="small">Tout voir</a>
+      </div>
+      <div class="mobile-cat-scroll">
+        {% for category in categories %}
+        <a class="mobile-cat-chip" href="{{ url_for('request_new', category=category.name) }}" title="Nouvelle demande {{ category.name }}">
+          <div class="mobile-cat-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg></div>
+          <span>{{ category.name }}</span>
         </a>
-        <a href="{{ url_for('profile') }}" class="dash-avatar" title="Profil">{{ user.full_name[0]|upper }}</a>
+        {% endfor %}
       </div>
-    </header>
+    </section>
 
-    <main class="dash-content">
-      <section class="dash-header">
-        <div>
-          <h1 style="margin: 0 0 6px;">Bonjour {{ user.full_name.split(' ')[0] }}</h1>
-          <p class="muted" style="margin: 0;">Trouvez le technicien qu'il vous faut aujourd'hui.</p>
-        </div>
-        <div class="dash-actions">
-          <button type="button" class="btn btn-outline" onclick="alert('Export a venir')">Exporter</button>
-          <a href="{{ url_for('request_new') }}" class="btn btn-cta-orange">+ Nouvelle demande</a>
-        </div>
-      </section>
-
-      <section class="dash-kpi-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-top: 24px;">
-        <div class="dash-kpi">
-          <div class="small muted">Reservations actives</div>
-          <div class="dash-kpi-value">{{ stats.active_requests }}</div>
-        </div>
-        <div class="dash-kpi">
-          <div class="small muted">Travaux termines</div>
-          <div class="dash-kpi-value">{{ stats.completed }}</div>
-        </div>
-        <div class="dash-kpi">
-          <div class="small muted">Note moyenne donnee</div>
-          <div class="dash-kpi-value">{{ stats.avg_rating }}</div>
-        </div>
-        <div class="dash-kpi">
-          <div class="small muted">Total depense</div>
-          <div class="dash-kpi-value">{{ "{:,}".format(stats.total_spent|int).replace(",", " ") }} GNF</div>
-        </div>
-      </section>
-
-      <section class="dash-categories" style="margin-top: 32px;">
-        <h3 style="margin: 0 0 16px;">Categories de services</h3>
-        <div class="dash-cat-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px;">
-          {% for category in categories %}
-          <a class="dash-cat-card" href="{{ url_for('artisans_page', category=category.name) }}" style="text-decoration: none; color: inherit;">
-            <div class="dash-cat-icon"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg></div>
-            <div>
-              <strong>{{ category.name }}</strong>
-              <div class="small muted">{{ artisan_counts.get(category.name, 0) }} techniciens</div>
+    <section class="mobile-section">
+      <div class="mobile-section-header">
+        <h3>Techniciens a proximite</h3>
+        <a href="{{ url_for('artisans_page') }}" class="small">Tout voir</a>
+      </div>
+      {% if artisans %}
+      <div class="mobile-tech-list">
+        {% for artisan in artisans %}
+        <div class="mobile-tech-card">
+          <div class="mobile-tech-avatar">{{ artisan.full_name[0]|upper }}</div>
+          <div class="mobile-tech-info">
+            <div class="mobile-tech-name">
+              {{ artisan.full_name }}
+              {% if artisan.is_verified %}
+              <span class="mobile-verified"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span>
+              {% endif %}
             </div>
-          </a>
-          {% endfor %}
-        </div>
-      </section>
-
-      <section class="dash-artisans" style="margin-top: 32px;">
-        <h3 style="margin: 0 0 16px;">Techniciens disponibles</h3>
-        {% if artisans %}
-        <div style="display: grid; gap: 12px;">
-          {% for artisan in artisans %}
-          <div class="dash-artisan-card" style="background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
-            <div style="display: flex; align-items: center; gap: 12px;">
-              <div class="dash-avatar" style="background: var(--surface-2); color: var(--text); width: 44px; height: 44px; font-size: 1.1rem;">{{ artisan.full_name[0]|upper }}</div>
-              <div>
-                <div style="font-weight: 700;">{{ artisan.full_name }}{% if artisan.is_verified %} <span class="badge success" style="font-size: 0.7rem;">Verifie</span>{% endif %}</div>
-                <div class="small muted">{{ artisan.profession or '' }} - {{ artisan.city or 'Conakry' }}</div>
-              </div>
-            </div>
-            <div style="text-align: right;">
-              <div class="small muted">{{ "{:,}".format((artisan.hourly_rate or 0)|int).replace(",", " ") }} GNF/h</div>
-              <a href="{{ url_for('artisans_page') }}" class="btn btn-primary" style="padding: 6px 14px; font-size: 0.85rem; margin-top: 6px;">Reserver</a>
-            </div>
+            <div class="small muted">{{ artisan.profession or '' }} - {{ artisan.city or 'Conakry' }}</div>
+            <div class="small muted">{{ "{:,}".format((artisan.hourly_rate or 0)|int).replace(",", " ") }} GNF/h</div>
           </div>
-          {% endfor %}
+          <div class="mobile-tech-right">
+            <div class="small muted">En ligne</div>
+          </div>
         </div>
-        {% else %}
-        <p class="muted">Aucun technicien disponible pour le moment.</p>
-        {% endif %}
-      </section>
-    </main>
-  </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="muted" style="padding: 20px 0;">Aucun technicien disponible pour le moment.</p>
+      {% endif %}
+    </section>
+
+    <section class="mobile-section">
+      <div class="mobile-section-header">
+        <h3>Reservations recentes</h3>
+        <a href="{{ url_for('requests_list') }}" class="small">Tout voir</a>
+      </div>
+      {% if recent_requests %}
+      <div class="mobile-request-list">
+        {% for req in recent_requests %}
+        <a class="mobile-request-card" href="{{ url_for('request_detail', request_id=req.id) }}">
+          <div>
+            <div class="mobile-request-title">{{ req.title or 'Demande #' ~ req.id }}</div>
+            <div class="small muted">{{ req.artisan_name or 'En attente' }} - {{ req.updated_at or '' }}</div>
+          </div>
+          <span class="badge {{ 'done' if req.status == 'completed' else 'inprogress' if req.status in ('assigned', 'in_progress') else '' }}">
+            {% if req.status == 'completed' %}Termine
+            {% elif req.status in ('assigned', 'in_progress') %}En cours
+            {% elif req.status == 'pending' %}En attente
+            {% else %}{{ req.status }}
+            {% endif %}
+          </span>
+        </a>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="mobile-empty">
+        <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        <p class="muted">Aucune reservation pour le moment - trouvez votre premier technicien.</p>
+        <a href="{{ url_for('request_new') }}" class="btn btn-primary" style="margin-top: 12px;">Nouvelle demande</a>
+      </div>
+      {% endif %}
+    </section>
+  </main>
+
+  <nav class="mobile-bottom-nav">
+    <a href="{{ url_for('dashboard') }}" class="mobile-nav-item active">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span>Accueil</span>
+    </a>
+    <a href="{{ url_for('artisans_page') }}" class="mobile-nav-item">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <span>Recherche</span>
+    </a>
+    <a href="{{ url_for('requests_list') }}" class="mobile-nav-item">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      <span>Reservations</span>
+    </a>
+    <a href="{{ url_for('conversations') }}" class="mobile-nav-item">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <span>Messages</span>
+    </a>
+    <a href="{{ url_for('profile') }}" class="mobile-nav-item">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span>Profil</span>
+    </a>
+  </nav>
 </div>
 
+<style>
+.mobile-dashboard { min-height: 100vh; padding-bottom: 80px; background: var(--bg); }
+.mobile-topbar { position: sticky; top: 0; z-index: 80; display: flex; justify-content: space-between; align-items: center; padding: 16px; background: rgba(11,18,32,0.95); backdrop-filter: blur(8px); border-bottom: 1px solid rgba(255,255,255,0.07); }
+.mobile-logo { font-size: 1.4rem; font-weight: 900; color: var(--text); text-decoration: none; }
+.mobile-topbar-right { display: flex; align-items: center; gap: 14px; }
+.mobile-notif { position: relative; color: var(--text); padding: 8px; border-radius: 10px; }
+.mobile-notif:hover { background: rgba(255,255,255,0.05); }
+.mobile-notif-badge { position: absolute; top: 4px; right: 4px; width: 16px; height: 16px; border-radius: 50%; background: #ff4444; color: #fff; font-size: 0.65rem; display: grid; place-items: center; }
+.mobile-avatar { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #3d5bff, #f5a623); display: grid; place-items: center; font-weight: 700; color: #fff; text-decoration: none; }
+.mobile-content { padding: 20px 16px; }
+.mobile-welcome { margin-bottom: 20px; }
+.mobile-welcome h1 { margin: 0 0 6px; font-size: 1.8rem; }
+.mobile-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+.mobile-action-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 10px; border-radius: 14px; font-weight: 600; font-size: 0.9rem; text-decoration: none; border: 1px solid transparent; text-align: center; }
+.mobile-action-secondary { background: #0d1526; border-color: rgba(255,255,255,0.07); color: var(--text); }
+.mobile-action-primary { background: #f5a623; color: #070c17; }
+.mobile-kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+.mobile-kpi { background: #0d1526; border: 1px solid rgba(255,255,255,0.07); border-radius: 16px; padding: 16px; }
+.mobile-kpi-value { font-size: 1.4rem; font-weight: 800; margin-top: 8px; color: var(--text); }
+.mobile-section { margin-bottom: 28px; }
+.mobile-section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+.mobile-section-header h3 { margin: 0; font-size: 1.05rem; }
+.mobile-cat-scroll { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 8px; }
+.mobile-cat-chip { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 6px; background: #0d1526; border: 1px solid rgba(255,255,255,0.07); border-radius: 16px; padding: 14px 16px; min-width: 90px; text-decoration: none; color: var(--text); }
+.mobile-cat-icon { width: 42px; height: 42px; border-radius: 50%; background: rgba(61,91,255,0.1); color: #3d5bff; display: grid; place-items: center; }
+.mobile-cat-chip span { font-size: 0.8rem; text-align: center; }
+.mobile-tech-list { display: grid; gap: 10px; }
+.mobile-tech-card { background: #0d1526; border: 1px solid rgba(255,255,255,0.07); border-radius: 16px; padding: 14px; display: flex; align-items: center; gap: 12px; }
+.mobile-tech-avatar { width: 46px; height: 46px; border-radius: 50%; background: linear-gradient(135deg, #3d5bff, #1f63f0); display: grid; place-items: center; font-weight: 700; color: #fff; font-size: 1.1rem; }
+.mobile-tech-info { flex: 1; }
+.mobile-tech-name { font-weight: 700; display: flex; align-items: center; gap: 6px; }
+.mobile-verified { color: #3ddc84; }
+.mobile-tech-right { text-align: right; font-size: 0.75rem; }
+.mobile-request-list { display: grid; gap: 10px; }
+.mobile-request-card { background: #0d1526; border: 1px solid rgba(255,255,255,0.07); border-radius: 16px; padding: 14px; display: flex; justify-content: space-between; align-items: center; text-decoration: none; color: inherit; }
+.mobile-request-title { font-weight: 700; margin-bottom: 2px; }
+.mobile-empty { text-align: center; padding: 30px 10px; }
+.mobile-empty svg { color: var(--muted); margin-bottom: 12px; }
+.mobile-bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 90; background: #0b1220; border-top: 1px solid rgba(255,255,255,0.07); display: flex; justify-content: space-around; padding: 8px 0 12px; }
+.mobile-nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--muted); text-decoration: none; font-size: 0.7rem; }
+.mobile-nav-item.active { color: #f5a623; }
+
+@media (min-width: 768px) {
+  .mobile-dashboard { padding-bottom: 0; }
+  .mobile-bottom-nav { display: none; }
+  .mobile-topbar { display: none; }
+  .mobile-content { padding-left: 260px; }
+}
+</style>
+
 <script>
-document.getElementById('dashMenuToggle').addEventListener('click', function() {
-  document.getElementById('dashSidebar').classList.toggle('open');
+document.querySelectorAll('.mobile-nav-item').forEach(el => {
+  if (el.getAttribute('href') === window.location.pathname) {
+    el.classList.add('active');
+  }
 });
 </script>
 {% endblock %}
