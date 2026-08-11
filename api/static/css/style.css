@@ -492,8 +492,11 @@ body.artisan-page main.container { padding: 0; max-width: none; }
   .lp-header-logo { font-size: 1.25rem; }
   .lp-header-guinee { display: none; }
   .lp-btn-yellow { padding: 10px 14px; font-size: 0.85rem; }
-  .lp-hero { padding: 110px 16px 60px; }
-  .lp-hero-inner { padding: 0; }
+  .lp-hero { padding: 110px 16px 60px; text-align: left; }
+  .lp-hero-inner { max-width: none; margin: 0; text-align: left; }
+  .lp-hero h1 { text-align: left; }
+  .lp-hero-sub { text-align: left; }
+  .lp-hero-actions { justify-content: flex-start; }
   .lp-hero h1 { font-size: 2rem; line-height: 1.15; }
   .lp-hero-sub { font-size: 1rem; }
   .lp-hero-actions { display: grid; grid-template-columns: 1fr; gap: 12px; }
