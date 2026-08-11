@@ -27,6 +27,10 @@ CREATE TABLE IF NOT EXISTS users (
     longitude       REAL DEFAULT 0,
     hourly_rate     REAL DEFAULT 0,
     is_verified     INTEGER DEFAULT 0,
+    photo_url       TEXT,
+    quartier        TEXT,
+    availability_status TEXT DEFAULT 'hors_ligne',
+    estimated_delay TEXT,
     created_at      TEXT DEFAULT CURRENT_TIMESTAMP
 );
 

@@ -1,0 +1,52 @@
+{% macro artisan_card(artisan) %}
+{% set status_colors = {
+  'en_ligne': ('#3ddc84', 'En ligne'),
+  'occupe': ('#f7c873', 'Occupe'),
+  'hors_ligne': ('#8A94A9', 'Hors ligne')
+} %}
+{% set color = status_colors.get(artisan.availability_status or 'hors_ligne', status_colors['hors_ligne']) %}
+
+<a class="artisan-card" href="{{ url_for('artisans_page', category=artisan.profession or '') }}" data-name="{{ artisan.full_name|lower }}" data-profession="{{ (artisan.profession or '')|lower }}" data-category="{{ (artisan.profession or '')|lower }}">
+  <div class="artisan-photo-wrap">
+    {% if artisan.photo_url %}
+    <img class="artisan-photo" src="{{ artisan.photo_url }}" alt="{{ artisan.full_name }}" loading="lazy" />
+    {% else %}
+    <div class="artisan-photo artisan-photo-placeholder">
+      <span>{{ (artisan.full_name or '?')[0]|upper }}</span>
+    </div>
+    {% endif %}
+
+    {% if artisan.is_verified %}
+    <span class="artisan-badge verified-badge" title="Verifie">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+    </span>
+    {% endif %}
+
+    <span class="artisan-badge status-badge" style="background: {{ color[0] }}; color: {% if color[0] == '#f7c873' %}#1a1206{% else %}#fff{% endif %};">
+      {{ color[1] }}
+    </span>
+  </div>
+
+  <div class="artisan-body">
+    <div class="artisan-row artisan-row-title">
+      <span class="artisan-name truncate">{{ artisan.full_name }}</span>
+    </div>
+    <div class="artisan-profession">{{ artisan.profession or 'Technicien' }}</div>
+    <div class="artisan-meta">
+      <span class="artisan-rating">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="12" height="12"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.2-5.4-2.9-5.4 2.9 1-6.2L3.2 9.5l6.1-.9z"/></svg>
+        {% if artisan.review_count %}
+          {{ "%.1f"|format(artisan.avg_rating|float) }} ({{ artisan.review_count }} avis)
+        {% else %}
+          Nouveau
+        {% endif %}
+      </span>
+      <span class="artisan-location">{{ artisan.quartier or artisan.city or 'Conakry' }}</span>
+    </div>
+    <div class="artisan-row artisan-row-price">
+      <span class="artisan-delay">{{ artisan.estimated_delay or 'Disponible' }}</span>
+      <span class="artisan-price">{{ "{:,}".format((artisan.hourly_rate or 0)|int).replace(",", " ") }} GNF</span>
+    </div>
+  </div>
+</a>
+{% endmacro %}

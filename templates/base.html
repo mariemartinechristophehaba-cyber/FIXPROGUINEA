@@ -21,7 +21,7 @@
 
     {% block header %}{% endblock %}
 
-    {% if nav_user %}
+    {% if nav_user and request.endpoint != 'dashboard' %}
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-top">
         <a class="brand" href="{{ url_for('index') }}">
@@ -83,6 +83,7 @@
         </div>
       </header>
       {% else %}
+      {% if request.endpoint != 'dashboard' %}
       <header class="topbar">
         <h1 class="topbar-title">{% block page_title %}{% endblock %}</h1>
         <a class="btn btn-primary btn-sm" href="{{ url_for('request_new') }}">
@@ -90,6 +91,7 @@
           Nouvelle demande
         </a>
       </header>
+      {% endif %}
       {% endif %}
 
       <main class="page {% block main_class %}{% endblock %}">

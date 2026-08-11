@@ -756,87 +756,43 @@ def dashboard():
                 (f"%{c['name']}%",)).fetchone()["n"]
             artisan_counts[c["name"]] = count
 
-        # Artisans a proximite (tous les artisans verifies pour l'instant)
-        artisans = conn.execute(
-            "SELECT id, full_name, profession, city, hourly_rate, is_verified"
-            " FROM users WHERE role = 'artisan' AND is_verified = 1"
-            " ORDER BY full_name LIMIT 5").fetchall()
+        # Tous les artisans verifies avec notes et avis
+        artisans = conn.execute("""
+            SELECT u.id, u.full_name, u.profession, u.city, u.quartier,
+                   u.hourly_rate, u.is_verified, u.photo_url,
+                   u.availability_status, u.estimated_delay,
+                   COALESCE((SELECT AVG(rating) FROM reviews WHERE artisan_id = u.id), 0) AS avg_rating,
+                   COALESCE((SELECT COUNT(*) FROM reviews WHERE artisan_id = u.id), 0) AS review_count
+            FROM users u
+            WHERE u.role = 'artisan' AND u.is_verified = 1
+            ORDER BY u.full_name
+        """).fetchall()
 
-        # Statistiques
-        rows = conn.execute(
-            "SELECT status FROM requests WHERE client_id = ?",
-            (user["id"],)).fetchall()
-        paid = conn.execute(
-            "SELECT COALESCE(SUM(amount), 0) AS total FROM payments p"
-            " JOIN requests r ON r.id = p.request_id"
-            " WHERE p.status = 'completed' AND r.client_id = ?",
-            (user["id"],)).fetchone()
-
-        # Active requests (pending, assigned, in_progress)
-        active_requests = sum(1 for r in rows if r["status"] in ("pending", "assigned", "in_progress"))
-
-        # Average rating given by client (if reviews table missing, default 0)
+        # Unread messages count
         try:
-            avg = conn.execute(
-                "SELECT COALESCE(AVG(rating), 0) AS m FROM reviews WHERE client_id = ?",
-                (user["id"],)).fetchone()
-            avg_rating = round(float(avg["m"]) if avg and avg["m"] is not None else 0, 1)
+            unread = conn.execute(
+                "SELECT COUNT(*) AS n FROM messages"
+                " WHERE sender_id != ? AND request_id IN"
+                " (SELECT id FROM requests WHERE client_id = ?)",
+                (user["id"], user["id"])).fetchone()
+            unread_count = unread["n"] if unread else 0
         except Exception:
-            avg_rating = 0.0
-
-        stats = {
-            "active_requests": active_requests,
-            "completed": sum(1 for r in rows if r["status"] == "completed"),
-            "total_spent": float(paid["total"] or 0),
-            "month_spent": 0.0,
-            "avg_rating": avg_rating,
-        }
+            unread_count = 0
     except Exception as exc:
         import traceback
         traceback.print_exc()
         flash(f"Erreur dashboard : {exc}", "error")
         return render_template("dashboard_client.html", user=user,
-                               stats={"active_requests": 0, "completed": 0, "total_spent": 0.0, "month_spent": 0.0, "avg_rating": 0.0},
                                categories=categories if 'categories' in locals() else [],
-                               artisan_counts=artisan_counts if 'artisan_counts' in locals() else {},
-                               artisans=artisans if 'artisans' in locals() else [])
+                               artisans=artisans if 'artisans' in locals() else [],
+                               unread_count=0)
     finally:
         if 'conn' in locals() and conn:
             conn.close()
 
-    try:
-        conn = get_db_connection()
-        try:
-            # Recent client requests
-            recent_requests = conn.execute(
-                "SELECT r.id, r.title, r.status, r.updated_at, u.full_name AS artisan_name"
-                " FROM requests r LEFT JOIN users u ON u.id = r.artisan_id"
-                " WHERE r.client_id = ? ORDER BY r.updated_at DESC LIMIT 5",
-                (user["id"],)).fetchall()
-
-            # Unread messages count
-            try:
-                unread = conn.execute(
-                    "SELECT COUNT(*) AS n FROM messages"
-                    " WHERE sender_id != ? AND request_id IN"
-                    " (SELECT id FROM requests WHERE client_id = ?)",
-                    (user["id"], user["id"])).fetchone()
-                unread_count = unread["n"] if unread else 0
-            except Exception:
-                unread_count = 0
-        finally:
-            conn.close()
-    except Exception as exc:
-        import traceback
-        traceback.print_exc()
-        recent_requests = []
-        unread_count = 0
-
-    return render_template("dashboard_client.html", user=user, stats=stats,
+    return render_template("dashboard_client.html", user=user,
                            categories=categories,
-                           artisan_counts=artisan_counts,
                            artisans=artisans,
-                           recent_requests=recent_requests,
                            unread_count=unread_count)
 
 
