@@ -733,13 +733,6 @@ def dashboard():
             " FROM users WHERE role = 'artisan' AND is_verified = 1"
             " ORDER BY full_name LIMIT 5").fetchall()
 
-        # Requetes recentes du client avec nom artisan
-        recent_requests = conn.execute(
-            "SELECT r.id, r.title, r.status, r.updated_at, u.full_name AS artisan_name"
-            " FROM requests r LEFT JOIN users u ON u.id = r.artisan_id"
-            " WHERE r.client_id = ? ORDER BY r.updated_at DESC LIMIT 5",
-            (user["id"],)).fetchall()
-
         # Statistiques
         rows = conn.execute(
             "SELECT status FROM requests WHERE client_id = ?",
@@ -750,40 +743,32 @@ def dashboard():
             " WHERE p.status = 'completed' AND r.client_id = ?",
             (user["id"],)).fetchone()
 
-        month_paid = conn.execute(
-            "SELECT COALESCE(SUM(amount), 0) AS total FROM payments p"
-            " JOIN requests r ON r.id = p.request_id"
-            " WHERE p.status = 'completed' AND r.client_id = ?"
-            " AND p.created_at >= date('now', '-30 days')",
-            (user["id"],)).fetchone()
+        # Active requests (pending, assigned, in_progress)
+        active_requests = sum(1 for r in rows if r["status"] in ("pending", "assigned", "in_progress"))
+
+        # Average rating given by client (if reviews table missing, default 0)
+        try:
+            avg = conn.execute(
+                "SELECT COALESCE(AVG(rating), 0) AS m FROM reviews WHERE client_id = ?",
+                (user["id"],)).fetchone()
+            avg_rating = round(float(avg["m"]) if avg and avg["m"] is not None else 0, 1)
+        except Exception:
+            avg_rating = 0.0
+
+        stats = {
+            "active_requests": active_requests,
+            "completed": sum(1 for r in rows if r["status"] == "completed"),
+            "total_spent": float(paid["total"] or 0),
+            "month_spent": 0.0,
+            "avg_rating": avg_rating,
+        }
     finally:
         conn.close()
-
-    # Active requests (pending, assigned, in_progress)
-    active_requests = sum(1 for r in rows if r["status"] in ("pending", "assigned", "in_progress"))
-
-    # Average rating given by client (if reviews table missing, default 0)
-    try:
-        avg = conn.execute(
-            "SELECT COALESCE(AVG(rating), 0) AS m FROM reviews WHERE client_id = ?",
-            (user["id"],)).fetchone()
-        avg_rating = round(float(avg["m"]) if avg and avg["m"] is not None else 0, 1)
-    except Exception:
-        avg_rating = 0.0
-
-    stats = {
-        "active_requests": active_requests,
-        "completed": sum(1 for r in rows if r["status"] == "completed"),
-        "total_spent": float(paid["total"] or 0),
-        "month_spent": float(month_paid["total"] or 0),
-        "avg_rating": avg_rating,
-    }
 
     return render_template("dashboard_client.html", user=user, stats=stats,
                            categories=categories,
                            artisan_counts=artisan_counts,
-                           artisans=artisans,
-                           recent_requests=recent_requests)
+                           artisans=artisans)
 
 
 @app.route("/mobile_dashboard")
