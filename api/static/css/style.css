@@ -431,7 +431,7 @@ body.artisan-page main.container { padding: 0; max-width: none; }
 .lp-hero { background: linear-gradient(135deg, #0b1220 0%, #071026 100%); color: var(--text); }
 .lp-hero h1, .lp-hero-sub { color: var(--text); }
 .lp-btn-dark { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); }
-.lp-btn-yellow { background: linear-gradient(90deg, var(--accent-blue), #1f63f0); color: white; }
+.lp-btn-yellow { background: linear-gradient(135deg, #f5a623 0%, #e8941f 100%); color: #070c17; font-weight: 700; box-shadow: 0 4px 16px rgba(245,166,35,0.3); }
 .lp-services { background: var(--bg); }
 .lp-section h2 { color: var(--text); }
 .lp-discover { background: linear-gradient(135deg, #0f1522, #0b1220); color: var(--text); }

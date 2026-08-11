@@ -7,7 +7,7 @@
     <span class="lp-header-guinee">Guinée</span>
   </a>
   <div class="lp-header-right">
-    <a class="lp-btn lp-btn-yellow" href="{{ url_for('register', role='artisan') }}">Devenir technicien</a>
+    <a class="lp-btn lp-btn-yellow" href="{{ url_for('register', role='artisan') }}">S'inscrire en tant que technicien</a>
     <button class="lp-menu-btn" type="button" aria-label="Menu" onclick="document.querySelector('.lp-nav').classList.toggle('open')">
       <span></span><span></span><span></span>
     </button>
@@ -15,7 +15,7 @@
 </header>
 <nav class="lp-nav">
   <a href="{{ url_for('client_signup') }}">J'ai besoin d'un artisan</a>
-  <a href="{{ url_for('register', role='artisan') }}">Devenir technicien</a>
+  <a href="{{ url_for('register', role='artisan') }}">S'inscrire en tant que technicien</a>
   <a href="{{ url_for('login') }}">Connexion</a>
 </nav>
 {% endblock %}
@@ -28,7 +28,7 @@
     <p class="lp-hero-sub">Plombiers, électriciens, frigoristes, maçons, menuisiers, serruriers. Réservez un professionnel vérifié à Conakry.</p>
     <div class="lp-hero-actions">
       <a class="lp-btn lp-btn-dark" href="{{ url_for('client_signup') }}">J'ai besoin d'un artisan</a>
-      <a class="lp-btn lp-btn-yellow" href="{{ url_for('register', role='artisan') }}">Devenir technicien</a>
+      <a class="lp-btn lp-btn-yellow" href="{{ url_for('register', role='artisan') }}">S'inscrire en tant que technicien</a>
     </div>
     <div class="lp-hero-artwork">
       <div class="lp-worker"></div>
@@ -164,7 +164,7 @@
         <li><span class="lp-check">✓</span> Paiement Orange Money direct</li>
         <li><span class="lp-check">✓</span> Visibilité auprès des clients</li>
       </ul>
-      <a class="lp-btn lp-btn-yellow" href="{{ url_for('register', role='artisan') }}">Devenir technicien</a>
+      <a class="lp-btn lp-btn-yellow" href="{{ url_for('register', role='artisan') }}">S'inscrire en tant que technicien</a>
     </div>
     <div class="lp-artisan-mockup">
       <div class="lp-float-card">
@@ -206,7 +206,7 @@
   <div class="lp-footer-inner">
     <div><strong>FixPro</strong><p>Plateforme de mise en relation artisan-client à Conakry.</p></div>
     <div><strong>Services</strong><a href="{{ url_for('client_signup') }}">Plomberie</a><a href="{{ url_for('client_signup') }}">Électricité</a><a href="{{ url_for('client_signup') }}">Climatisation</a></div>
-    <div><strong>Entreprise</strong><a href="{{ url_for('register', role='artisan') }}">Devenir technicien</a><a href="{{ url_for('login') }}">Connexion</a></div>
+    <div><strong>Entreprise</strong><a href="{{ url_for('register', role='artisan') }}">S'inscrire en tant que technicien</a><a href="{{ url_for('login') }}">Connexion</a></div>
     <div><strong>Aide</strong><a href="https://wa.me/224627316069">WhatsApp</a><a href="{{ url_for('conversations') }}">Support</a></div>
   </div>
 </section>
