@@ -1,4 +1,4 @@
-{% include '_category_colors.html' %}
+{% from '_category_colors.html' import category_colors, default_category_color %}
 {% macro artisan_card(artisan) %}
 {% set status_colors = {
   'en_ligne': ('#3ddc84', 'En ligne'),
