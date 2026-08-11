@@ -1,216 +1,109 @@
 {% extends 'base.html' %}
 
-{% block header %}
-<header class="lp-header">
-  <a class="lp-header-logo" href="{{ url_for('index') }}">
-    Fix<span class="pro">Pro</span>
-    <span class="lp-header-guinee">Guinée</span>
-  </a>
-  <div class="lp-header-right">
-    <a class="lp-btn lp-btn-yellow" href="{{ url_for('register', role='artisan') }}">S'inscrire en tant que technicien</a>
-    <button class="lp-menu-btn" type="button" aria-label="Menu" onclick="document.querySelector('.lp-nav').classList.toggle('open')">
-      <span></span><span></span><span></span>
-    </button>
-  </div>
-</header>
-<nav class="lp-nav">
-  <a href="{{ url_for('client_signup') }}">J'ai besoin d'un artisan</a>
-  <a href="{{ url_for('register', role='artisan') }}">S'inscrire en tant que technicien</a>
-  <a href="{{ url_for('login') }}">Connexion</a>
-</nav>
+{% block header %}{% endblock %}
+{% block footer %}{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css', v='1') }}" />
 {% endblock %}
 
 {% block content %}
+<div class="ld">
 
-<section class="lp-hero">
-  <div class="lp-hero-inner">
-    <h1>Un technicien, quand vous en avez besoin.</h1>
-    <p class="lp-hero-sub">Plombiers, électriciens, frigoristes, maçons, menuisiers, serruriers. Réservez un professionnel vérifié à Conakry.</p>
-    <div class="lp-hero-actions">
-      <a class="lp-btn lp-btn-dark" href="{{ url_for('client_signup') }}">J'ai besoin d'un artisan</a>
-      <a class="lp-btn lp-btn-yellow" href="{{ url_for('register', role='artisan') }}">S'inscrire en tant que technicien</a>
-    </div>
-    <div class="lp-hero-artwork">
-      <div class="lp-worker"></div>
-    </div>
-  </div>
-</section>
+  <header class="ld-header">
+    <a class="ld-logo" href="{{ url_for('index') }}">Fix<span>Pro</span></a>
+    <a class="ld-header-cta" href="{{ url_for('login') }}">Connexion</a>
+  </header>
 
-<section class="lp-section lp-services">
-  <div class="lp-container">
-    <p class="lp-eyebrow">Nos services</p>
-    <h2>Nos différents métiers</h2>
-    <div class="lp-service-grid">
-      <div class="lp-service-card">
-        <div class="lp-service-icon yellow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0a3 3 0 0 1 3 3v3H9v-3a3 3 0 0 1 3-3m0-12c0-1.1.9-2 2-2s2 .9 2 2v4c0 1.1-.9 2-2 2h-4c-1.1 0-2-.9-2-2V3c0-1.1.9-2 2-2s2 .9 2 2"/><circle cx="12" cy="21" r="1"/></svg></div>
-        <h3>Plomberie</h3>
-        <p>Fuite, robinet, wc, tuyauterie.</p>
-        <a href="{{ url_for('client_signup') }}">Réserver</a>
-      </div>
-      <div class="lp-service-card">
-        <div class="lp-service-icon yellow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L8 12h6l-1 10 6-10h-6l3-10z"/></svg></div>
-        <h3>Électricité</h3>
-        <p>Prise, disjoncteur, installation.</p>
-        <a href="{{ url_for('client_signup') }}">Réserver</a>
-      </div>
-      <div class="lp-service-card">
-        <div class="lp-service-icon yellow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M8 10l-3-3 3-3M16 10l3-3-3-3M5 15a6 6 0 0 1 14 0 6 6 0 0 1-4 8H9a6 6 0 0 1-4-8z"/></svg></div>
-        <h3>Froid & Clim</h3>
-        <p>Climatisation, frigo, fuite de gaz.</p>
-        <a href="{{ url_for('client_signup') }}">Réserver</a>
-      </div>
-      <div class="lp-service-card">
-        <div class="lp-service-icon yellow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/></svg></div>
-        <h3>Menuiserie</h3>
-        <p>Porte, fenêtre, meuble, parquet.</p>
-        <a href="{{ url_for('client_signup') }}">Réserver</a>
-      </div>
+  <section class="ld-hero">
+    <span class="ld-badge">Conakry, Guinee</span>
+    <h1>Un technicien de confiance, en quelques minutes.</h1>
+    <p>Plombiers, electriciens, frigoristes, menuisiers. Tous verifies, notes par les clients, payables par Orange Money.</p>
+    <div class="ld-hero-actions">
+      <a class="ld-btn ld-btn-primary" href="{{ url_for('client_signup') }}">Trouver un technicien</a>
+      <a class="ld-btn ld-btn-ghost" href="{{ url_for('register', role='artisan') }}">Je suis technicien</a>
     </div>
-  </div>
-</section>
+    <div class="ld-hero-stats">
+      <div><strong>100%</strong><span>profils verifies</span></div>
+      <div><strong>48h</strong><span>validation artisan</span></div>
+      <div><strong>OM</strong><span>paiement mobile</span></div>
+    </div>
+  </section>
 
-<section class="lp-section lp-discover">
-  <div class="lp-discover-inner">
-    <div class="lp-discover-copy">
-      <h2>Découvrez FixPro</h2>
-      <p>La première plateforme guinéenne qui met en relation clients et techniciens indépendants, vérifiés et notés.</p>
-      <a class="lp-btn lp-btn-yellow" href="{{ url_for('client_signup') }}">Trouver un artisan</a>
+  <section class="ld-section">
+    <p class="ld-eyebrow">Nos services</p>
+    <h2>Tous les metiers du batiment</h2>
+    <div class="ld-services">
+      <a class="ld-service" href="{{ url_for('client_signup') }}">
+        <div class="ld-service-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12m0 0a3 3 0 0 1 3 3v3H9v-3a3 3 0 0 1 3-3"/><path d="M8 3h8v4a4 4 0 0 1-8 0V3z"/></svg></div>
+        <div><h3>Plomberie</h3><p>Fuite, robinet, wc, tuyauterie</p></div>
+        <span class="ld-arrow">&rsaquo;</span>
+      </a>
+      <a class="ld-service" href="{{ url_for('client_signup') }}">
+        <div class="ld-service-icon amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M13 2L8 12h6l-1 10 6-10h-6l3-10z"/></svg></div>
+        <div><h3>Electricite</h3><p>Prise, disjoncteur, installation</p></div>
+        <span class="ld-arrow">&rsaquo;</span>
+      </a>
+      <a class="ld-service" href="{{ url_for('client_signup') }}">
+        <div class="ld-service-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></div>
+        <div><h3>Froid et Climatisation</h3><p>Clim, frigo, fuite de gaz</p></div>
+        <span class="ld-arrow">&rsaquo;</span>
+      </a>
+      <a class="ld-service" href="{{ url_for('client_signup') }}">
+        <div class="ld-service-icon amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></div>
+        <div><h3>Menuiserie</h3><p>Porte, fenetre, meuble</p></div>
+        <span class="ld-arrow">&rsaquo;</span>
+      </a>
     </div>
-    <div class="lp-discover-mockup">
-      <div class="lp-arrow left">←</div>
-      <div class="lp-mockup-card">
-        <div class="lp-mockup-screen">
-          <div class="lp-mockup-row"><span>Plomberie</span><span class="dot"></span></div>
-          <div class="lp-mockup-row"><span>Électricité</span><span class="dot"></span></div>
-          <div class="lp-mockup-row"><span>Climatisation</span><span class="dot"></span></div>
-        </div>
-      </div>
-      <div class="lp-arrow right">→</div>
-    </div>
-  </div>
-</section>
+  </section>
 
-<section class="lp-section lp-how">
-  <div class="lp-container">
-    <div class="lp-how-grid">
-      <div class="lp-how-mockup">
-        <div class="lp-phone">
-          <div class="lp-phone-bar">FixPro</div>
-          <div class="lp-phone-chat">
-            <div class="lp-bubble-in">Je arrive dans 10 min</div>
-            <div class="lp-bubble-out">Parfait, merci !</div>
-          </div>
-        </div>
+  <section class="ld-section">
+    <p class="ld-eyebrow">Comment ca marche</p>
+    <h2>Simple comme trois etapes</h2>
+    <div class="ld-steps">
+      <div class="ld-step">
+        <span class="ld-step-num">1</span>
+        <div><h3>Decrivez votre besoin</h3><p>Choisissez le metier et expliquez le probleme.</p></div>
       </div>
-      <div class="lp-how-copy">
-        <h2>Comment ça marche</h2>
-        <div class="lp-step">
-          <span class="lp-step-num">1</span>
-          <div><h3>Créez votre demande</h3><p>Décrivez votre problème et choisissez le métier.</p></div>
-        </div>
-        <div class="lp-step">
-          <span class="lp-step-num">2</span>
-          <div><h3>Recevez un devis</h3><p>Un technicien vérifié vous propose un tarif clair.</p></div>
-        </div>
-        <div class="lp-step">
-          <span class="lp-step-num">3</span>
-          <div><h3>Payez en toute sécurité</h3><p>Réglez une fois l'intervention terminée.</p></div>
-        </div>
+      <div class="ld-step">
+        <span class="ld-step-num">2</span>
+        <div><h3>Recevez un devis</h3><p>Un technicien verifie vous propose un tarif clair.</p></div>
+      </div>
+      <div class="ld-step">
+        <span class="ld-step-num">3</span>
+        <div><h3>Payez apres le travail</h3><p>Reglez par Orange Money une fois satisfait.</p></div>
       </div>
     </div>
-  </div>
-</section>
+  </section>
 
-<section class="lp-section lp-why">
-  <div class="lp-container">
-    <p class="lp-eyebrow">Pourquoi FixPro</p>
-    <h2>Tout ce dont vous avez besoin</h2>
-    <div class="lp-why-grid">
-      <div class="lp-why-card"><h3>Profils vérifiés</h3><p>Chaque technicien est contrôlé avant d'être visible.</p></div>
-      <div class="lp-why-card"><h3>Chat intégré</h3><p>Discutez directement sans quitter l'application.</p></div>
-      <div class="lp-why-card"><h3>Suivi en temps réel</h3><p>Suivez l'arrivée du technicien pendant l'intervention.</p></div>
-      <div class="lp-why-card"><h3>Paiement sécurisé</h3><p>Orange Money et autres moyens, payé à la fin.</p></div>
+  <section class="ld-section">
+    <p class="ld-eyebrow">Pourquoi FixPro</p>
+    <h2>La confiance avant tout</h2>
+    <div class="ld-features">
+      <div class="ld-feature"><h3>Profils verifies</h3><p>Identite et competences controlees avant publication.</p></div>
+      <div class="ld-feature"><h3>Chat integre</h3><p>Discutez directement avec le technicien.</p></div>
+      <div class="ld-feature"><h3>Avis clients</h3><p>Des notes reelles apres chaque intervention.</p></div>
+      <div class="ld-feature"><h3>Paiement securise</h3><p>Orange Money, paye seulement a la fin.</p></div>
     </div>
-  </div>
-</section>
+  </section>
 
-<section class="lp-section lp-banner">
-  <div class="lp-banner-inner">
-    <h2>FixPro est la première plateforme de mise en relation artisan-client en Guinée.</h2>
-    <a class="lp-btn lp-btn-yellow" href="{{ url_for('client_signup') }}">Réserver maintenant</a>
-  </div>
-</section>
+  <section class="ld-cta">
+    <h2>Vous etes artisan a Conakry ?</h2>
+    <p>Recevez des demandes pres de chez vous. Inscription gratuite, validation sous 48h, zero commission le premier mois.</p>
+    <a class="ld-btn ld-btn-amber" href="{{ url_for('register', role='artisan') }}">S'inscrire comme technicien</a>
+  </section>
 
-<section class="lp-section lp-trust">
-  <div class="lp-container">
-    <p class="lp-eyebrow">Un service de confiance</p>
-    <h2>Plusieurs pôles dédiés</h2>
-    <div class="lp-trust-grid">
-      <div class="lp-trust-card"><span class="lp-num">01</span><h3>Vérification</h3><p>Contrôle des pièces d'identité et des compétences.</p></div>
-      <div class="lp-trust-card"><span class="lp-num">02</span><h3>Disponibilité</h3><p>Des techniciens actifs et géolocalisés à Conakry.</p></div>
-      <div class="lp-trust-card"><span class="lp-num">03</span><h3>Assistance</h3><p>Un support client disponible pour vous aider.</p></div>
-    </div>
-  </div>
-</section>
+  <footer class="ld-footer">
+    <a class="ld-logo" href="{{ url_for('index') }}">Fix<span>Pro</span></a>
+    <p>Plateforme de mise en relation artisan-client a Conakry.</p>
+    <nav>
+      <a href="{{ url_for('client_signup') }}">Trouver un technicien</a>
+      <a href="{{ url_for('register', role='artisan') }}">Devenir partenaire</a>
+      <a href="{{ url_for('login') }}">Connexion</a>
+      <a href="https://wa.me/224627316069" target="_blank" rel="noopener">WhatsApp</a>
+    </nav>
+    <span class="ld-copy">FixPro Guinee</span>
+  </footer>
 
-<section class="lp-section lp-artisan">
-  <div class="lp-artisan-inner">
-    <div class="lp-artisan-copy">
-      <p class="lp-eyebrow light">Vous êtes artisan à Conakry ?</p>
-      <h2>Recevez des demandes près de chez vous</h2>
-      <p>Gérez vos interventions depuis votre téléphone. Inscription gratuite, validation sous 48h.</p>
-      <ul class="lp-list">
-        <li><span class="lp-check">✓</span> Zéro commission le premier mois</li>
-        <li><span class="lp-check">✓</span> Paiement Orange Money direct</li>
-        <li><span class="lp-check">✓</span> Visibilité auprès des clients</li>
-      </ul>
-      <a class="lp-btn lp-btn-yellow" href="{{ url_for('register', role='artisan') }}">S'inscrire en tant que technicien</a>
-    </div>
-    <div class="lp-artisan-mockup">
-      <div class="lp-float-card">
-        <div class="lp-float-row"><span>Nouvelle demande</span><span class="lp-badge">1</span></div>
-        <div class="lp-float-row"><span>Installation prise</span><span class="lp-green">45 000 GNF/h</span></div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section class="lp-section lp-contact">
-  <div class="lp-container">
-    <p class="lp-eyebrow">Besoin d'aide ?</p>
-    <h2>Nous sommes là pour vous</h2>
-    <div class="lp-contact-grid">
-      <a class="lp-contact-card" href="https://wa.me/224627316069" target="_blank" rel="noopener"><h3>WhatsApp Business</h3><p>Réponse sous 24h ouvrables.</p></a>
-      <a class="lp-contact-card" href="{{ url_for('conversations') }}"><h3>Chat intégré</h3><p>Discutez avec le support connecté.</p></a>
-    </div>
-  </div>
-</section>
-
-<section class="lp-section lp-app">
-  <div class="lp-app-inner">
-    <div class="lp-app-copy">
-      <h2>Téléchargez notre application</h2>
-      <p>Disponible prochainement sur iOS et Android. Gérez vos demandes où que vous soyez.</p>
-      <div class="lp-stores"><span class="lp-store">App Store</span><span class="lp-store">Google Play</span></div>
-    </div>
-    <div class="lp-app-mockup">
-      <div class="lp-phone small">
-        <div class="lp-phone-bar">FixPro</div>
-        <div class="lp-phone-cats"><span>Plomberie</span><span>Électricité</span><span>Serrurerie</span></div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section class="lp-footer">
-  <div class="lp-footer-inner">
-    <div><strong>FixPro</strong><p>Plateforme de mise en relation artisan-client à Conakry.</p></div>
-    <div><strong>Services</strong><a href="{{ url_for('client_signup') }}">Plomberie</a><a href="{{ url_for('client_signup') }}">Électricité</a><a href="{{ url_for('client_signup') }}">Climatisation</a></div>
-    <div><strong>Entreprise</strong><a href="{{ url_for('register', role='artisan') }}">S'inscrire en tant que technicien</a><a href="{{ url_for('login') }}">Connexion</a></div>
-    <div><strong>Aide</strong><a href="https://wa.me/224627316069">WhatsApp</a><a href="{{ url_for('conversations') }}">Support</a></div>
-  </div>
-</section>
-
+</div>
 {% endblock %}
-
-{% block footer %}{% endblock %}
