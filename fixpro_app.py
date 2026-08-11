@@ -265,8 +265,6 @@ def calculate_distance(lat1, lon1, lat2, lon2):
 
 @app.route("/")
 def index():
-    if session.get("user_id"):
-        return redirect(url_for("dashboard"))
     return render_template("landing.html")
 
 
