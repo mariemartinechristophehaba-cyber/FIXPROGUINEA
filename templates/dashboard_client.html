@@ -8,7 +8,7 @@
       Fix<span style="color: var(--accent-orange);">Pro</span>
     </a>
     <div class="mobile-topbar-right">
-      <a href="{{ url_for('conversations') }}" class="mobile-notif" title="Messages">
+      <a href="{{ url_for('notifications') }}" class="mobile-notif" title="Notifications">
         <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
         {% if unread_count %}<span class="mobile-notif-badge">{{ unread_count }}</span>{% endif %}
       </a>
@@ -23,10 +23,10 @@
     </section>
 
     <section class="mobile-actions">
-      <button class="mobile-action-btn mobile-action-secondary" type="button" onclick="alert('Export a venir')">
+      <a href="{{ url_for('export_requests') }}" class="mobile-action-btn mobile-action-secondary">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         Exporter
-      </button>
+      </a>
       <a href="{{ url_for('request_new') }}" class="mobile-action-btn mobile-action-primary">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         Nouvelle demande
@@ -34,25 +34,25 @@
     </section>
 
     <section class="mobile-kpi-grid">
-      <div class="mobile-kpi">
+      <a href="{{ url_for('requests_list') }}" class="mobile-kpi" style="text-decoration: none; color: inherit;">
         <div class="small muted">Reservations actives</div>
         <div class="mobile-kpi-value">{{ stats.active_requests }}</div>
         {% if stats.active_requests %}<div class="small muted" style="margin-top: 4px;">En cours</div>{% endif %}
-      </div>
-      <div class="mobile-kpi">
+      </a>
+      <a href="{{ url_for('requests_list') }}" class="mobile-kpi" style="text-decoration: none; color: inherit;">
         <div class="small muted">Travaux termines</div>
         <div class="mobile-kpi-value">{{ stats.completed }}</div>
         {% if stats.completed %}<div class="small muted" style="margin-top: 4px;">Cette annee</div>{% endif %}
-      </div>
-      <div class="mobile-kpi">
+      </a>
+      <a href="{{ url_for('reviews') }}" class="mobile-kpi" style="text-decoration: none; color: inherit;">
         <div class="small muted">Note moyenne</div>
         <div class="mobile-kpi-value">{{ stats.avg_rating }}</div>
         {% if stats.avg_rating %}<div class="small muted" style="margin-top: 4px;">Donnee</div>{% endif %}
-      </div>
-      <div class="mobile-kpi">
+      </a>
+      <a href="{{ url_for('payments') }}" class="mobile-kpi" style="text-decoration: none; color: inherit;">
         <div class="small muted">Total depense</div>
         <div class="mobile-kpi-value">{{ "{:,}".format(stats.total_spent|int).replace(",", " ") }} GNF</div>
-      </div>
+      </a>
     </section>
 
     <section class="mobile-section">
@@ -62,7 +62,7 @@
       </div>
       <div class="mobile-cat-scroll">
         {% for category in categories %}
-        <a class="mobile-cat-chip" href="{{ url_for('request_new', category=category.name) }}" title="Nouvelle demande {{ category.name }}">
+        <a class="mobile-cat-chip" href="{{ url_for('artisans_page', category=category.name) }}" title="Artisans {{ category.name }}">
           <div class="mobile-cat-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg></div>
           <span>{{ category.name }}</span>
         </a>
@@ -78,7 +78,7 @@
       {% if artisans %}
       <div class="mobile-tech-list">
         {% for artisan in artisans %}
-        <div class="mobile-tech-card">
+        <a class="mobile-tech-card" href="{{ url_for('artisans_page', category=artisan.profession) }}" style="text-decoration: none; color: inherit;">
           <div class="mobile-tech-avatar">{{ artisan.full_name[0]|upper }}</div>
           <div class="mobile-tech-info">
             <div class="mobile-tech-name">
@@ -93,7 +93,7 @@
           <div class="mobile-tech-right">
             <div class="small muted">En ligne</div>
           </div>
-        </div>
+        </a>
         {% endfor %}
       </div>
       {% else %}

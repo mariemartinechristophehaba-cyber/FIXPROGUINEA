@@ -8,6 +8,8 @@ Les acces a la base passent tous par le module `db`, ce qui permet
 d'ecrire les requetes une seule fois pour les deux moteurs.
 """
 
+import csv
+import io
 import math
 import re
 from datetime import datetime, timezone
@@ -1010,6 +1012,22 @@ def conversations():
     return render_template("conversations.html", conversations=threads, user=user)
 
 
+@app.route("/notifications")
+@login_required
+def notifications():
+    """Liste les notifications du client (provisoire, sans table dediee)."""
+    user = get_current_user()
+    conn = get_db_connection()
+    try:
+        rows = conn.execute(
+            "SELECT id, title, status, updated_at FROM requests"
+            " WHERE client_id = ? ORDER BY updated_at DESC LIMIT 10",
+            (user["id"],)).fetchall()
+    finally:
+        conn.close()
+    return render_template("notifications.html", user=user, notifications=rows)
+
+
 # ---------------------------------------------------------------------------
 # Demandes d'intervention
 # ---------------------------------------------------------------------------
@@ -1031,6 +1049,33 @@ def requests_list():
     finally:
         conn.close()
     return render_template("requests.html", requests=rows, user=user)
+
+
+@app.route("/export/requests")
+@login_required
+def export_requests():
+    """Exporte les demandes du client en CSV."""
+    user = get_current_user()
+    conn = get_db_connection()
+    try:
+        rows = conn.execute(
+            "SELECT id, title, category, status, budget, created_at"
+            " FROM requests WHERE client_id = ? ORDER BY created_at DESC",
+            (user["id"],)).fetchall()
+    finally:
+        conn.close()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["ID", "Titre", "Categorie", "Statut", "Budget", "Date"])
+    for row in rows:
+        writer.writerow([row["id"], row["title"], row["category"],
+                         row["status"], row["budget"], row["created_at"]])
+
+    response = app.make_response(output.getvalue())
+    response.headers["Content-Type"] = "text/csv; charset=utf-8"
+    response.headers["Content-Disposition"] = "attachment; filename=demandes_fixpro.csv"
+    return response
 
 
 @app.route("/requests/new", methods=["GET", "POST"])
