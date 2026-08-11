@@ -878,6 +878,8 @@ body.no-tabbar .site-footer { padding-bottom: 26px; }
 
   .sidebar { display: flex; position: fixed; }
   .app-wrap { margin-left: 240px; }
+  body.no-sidebar .app-wrap { margin-left: 0; }
+  body.no-sidebar .sidebar { display: none !important; }
   .topbar { display: flex; padding: 18px 32px; }
   .page { padding: 24px 32px 40px; max-width: 960px; }
   .site-footer { padding: 32px 32px 40px; }
