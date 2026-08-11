@@ -485,3 +485,31 @@ body.artisan-page main.container { padding: 0; max-width: none; }
 .ar-phone-prefix { background: var(--surface-2); color: var(--text); border-right: 1px solid var(--border); }
 .ar-phone-wrap input { background: transparent; color: var(--text); }
 
+
+/* Landing mobile */
+@media (max-width: 720px) {
+  .lp-header { padding: 14px 16px; }
+  .lp-header-logo { font-size: 1.25rem; }
+  .lp-header-guinee { display: none; }
+  .lp-btn-yellow { padding: 10px 14px; font-size: 0.85rem; }
+  .lp-hero { padding: 110px 16px 60px; }
+  .lp-hero-inner { padding: 0; }
+  .lp-hero h1 { font-size: 2rem; line-height: 1.15; }
+  .lp-hero-sub { font-size: 1rem; }
+  .lp-hero-actions { display: grid; grid-template-columns: 1fr; gap: 12px; }
+  .lp-hero-actions a { width: 100%; text-align: center; }
+  .lp-service-grid { grid-template-columns: 1fr; gap: 16px; }
+  .lp-service-card { padding: 24px; }
+  .lp-how-grid { grid-template-columns: 1fr; }
+  .lp-why-grid, .lp-trust-grid { grid-template-columns: 1fr; }
+  .lp-footer-inner { grid-template-columns: 1fr; gap: 24px; text-align: center; }
+  .lp-discover-mockup { display: none; }
+  .lp-artisan-inner { grid-template-columns: 1fr; }
+  .lp-artisan-mockup { display: none; }
+  .lp-app-mockup { display: none; }
+  .lp-app-inner, .lp-discover-inner, .lp-banner-inner, .lp-artisan-inner { padding: 40px 16px; }
+  .lp-section { padding: 40px 16px; }
+  .lp-contact-grid { grid-template-columns: 1fr; }
+  .lp-stores { flex-direction: column; gap: 12px; }
+  .lp-store { width: 100%; text-align: center; }
+}
