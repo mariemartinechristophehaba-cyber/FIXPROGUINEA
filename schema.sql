@@ -78,6 +78,16 @@ CREATE TABLE IF NOT EXISTS payments (
     updated_at   TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS reviews (
+    id          SERIAL PRIMARY KEY,
+    request_id  INTEGER REFERENCES requests(id) ON DELETE CASCADE,
+    client_id   INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    artisan_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    rating      INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+    comment     TEXT,
+    created_at  TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE INDEX IF NOT EXISTS idx_users_email          ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_role           ON users(role);
 CREATE INDEX IF NOT EXISTS idx_requests_client_id   ON requests(client_id);

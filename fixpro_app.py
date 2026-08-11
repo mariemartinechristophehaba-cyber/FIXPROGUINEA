@@ -786,6 +786,38 @@ def mobile_dashboard():
     return render_template("mobile_dashboard.html", user=get_current_user())
 
 
+@app.route("/payments")
+@login_required
+def payments():
+    user = get_current_user()
+    conn = get_db_connection()
+    try:
+        rows = conn.execute(
+            "SELECT p.id, p.amount, p.status, p.created_at, r.title"
+            " FROM payments p JOIN requests r ON r.id = p.request_id"
+            " WHERE r.client_id = ? ORDER BY p.created_at DESC",
+            (user["id"],)).fetchall()
+    finally:
+        conn.close()
+    return render_template("payments.html", user=user, payments=rows)
+
+
+@app.route("/reviews")
+@login_required
+def reviews():
+    user = get_current_user()
+    conn = get_db_connection()
+    try:
+        rows = conn.execute(
+            "SELECT r.id, r.rating, r.comment, r.created_at, u.full_name AS artisan_name"
+            " FROM reviews r JOIN users u ON u.id = r.artisan_id"
+            " WHERE r.client_id = ? ORDER BY r.created_at DESC",
+            (user["id"],)).fetchall()
+    finally:
+        conn.close()
+    return render_template("reviews.html", user=user, reviews=rows)
+
+
 @app.route("/profile", methods=["GET", "POST"])
 @login_required
 def profile():
@@ -928,18 +960,6 @@ def conversations():
     finally:
         conn.close()
     return render_template("conversations.html", conversations=threads, user=user)
-
-
-@app.route("/payments")
-@login_required
-def payments():
-    return render_template("payments.html", user=get_current_user())
-
-
-@app.route("/reviews")
-@login_required
-def reviews():
-    return render_template("reviews.html", user=get_current_user())
 
 
 # ---------------------------------------------------------------------------

@@ -1,8 +1,24 @@
 {% extends 'base.html' %}
 {% block content %}
-<section class="card" style="max-width: 520px; margin: 80px auto; text-align: center; padding: 48px 32px;">
-  <h2 style="margin: 0 0 12px;">Mes avis</h2>
-  <p class="muted">Cette section sera disponible prochainement.</p>
-  <a href="{{ url_for('dashboard') }}" class="btn btn-primary" style="margin-top: 24px;">Retour au tableau de bord</a>
+<section class="card" style="padding: 28px;">
+  <h2 style="margin: 0 0 20px;">Mes avis</h2>
+  {% if reviews %}
+  <div style="display: grid; gap: 12px;">
+    {% for r in reviews %}
+    <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 18px;">
+      <div style="display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 8px;">
+        <div style="font-weight: 700;">{{ r.artisan_name }}</div>
+        <div style="font-weight: 800; color: var(--accent-orange);">{{ r.rating }} / 5</div>
+      </div>
+      {% if r.comment %}
+        <p style="margin: 0; color: var(--text);">{{ r.comment }}</p>
+      {% endif %}
+      <div class="small muted" style="margin-top: 8px;">{{ r.created_at }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="muted">Aucun avis laisse pour le moment.</p>
+  {% endif %}
 </section>
 {% endblock %}
