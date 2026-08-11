@@ -1,116 +1,128 @@
 {% extends 'base.html' %}
 {% block content %}
-<section class="card" style="padding: 28px;">
-  <div class="dashboard-header" style="border-bottom: 1px solid var(--border); padding-bottom: 20px;">
-    <div class="greeting" style="gap: 14px;">
-      <div class="avatar" style="background: linear-gradient(135deg, var(--accent-blue), #1f63f0); font-size: 1.4rem;">{{ user.full_name[0]|upper }}</div>
-      <div>
-        <h2 style="margin: 0; font-size: 1.6rem;">Bonjour {{ user.full_name.split(' ')[0] }}</h2>
-        <div class="small muted">Trouvez le technicien qu'il vous faut aujourd'hui</div>
-      </div>
+<div class="dash-layout">
+  <aside class="dash-sidebar" id="dashSidebar">
+    <div class="dash-brand">
+      <a href="{{ url_for('index') }}" style="text-decoration: none; color: inherit;">Fix<span style="color: var(--accent-orange);">Pro</span></a>
     </div>
-    <div class="actions">
-      <a href="{{ url_for('conversations') }}" class="btn btn-outline" style="padding: 10px 18px;">Messages</a>
-    </div>
-  </div>
 
-  <form class="search-block" action="{{ url_for('artisans_page') }}" method="get" style="margin-top: 24px;">
-    <input class="search-input" name="q" placeholder="Ex: plombier, electricien, frigoriste..." />
-    <select class="select-zone" name="zone">
-      <option value="">Toute Conakry</option>
-      <option value="Kaloum">Kaloum</option>
-      <option value="Matam">Matam</option>
-      <option value="Dixinn">Dixinn</option>
-      <option value="Ratoma">Ratoma</option>
-    </select>
-    <button class="btn btn-primary search-btn" type="submit">Rechercher</button>
-  </form>
+    <nav class="dash-nav">
+      <div class="dash-group">
+        <div class="dash-label">General</div>
+        <a class="dash-link active" href="{{ url_for('dashboard') }}">Tableau de bord</a>
+        <a class="dash-link" href="{{ url_for('artisans_page') }}">Rechercher un artisan</a>
+        <a class="dash-link" href="{{ url_for('artisans_page') }}">Techniciens</a>
+      </div>
+      <div class="dash-group">
+        <div class="dash-label">Activite</div>
+        <a class="dash-link" href="{{ url_for('requests') }}">Reservations</a>
+        <a class="dash-link" href="{{ url_for('conversations') }}">Messages</a>
+        <a class="dash-link" href="{{ url_for('index') }}">Mes avis</a>
+      </div>
+      <div class="dash-group">
+        <div class="dash-label">Compte</div>
+        <a class="dash-link" href="{{ url_for('index') }}">Paiements</a>
+        <a class="dash-link" href="{{ url_for('profile') }}">Profil</a>
+      </div>
+    </nav>
+  </aside>
 
-  <div class="category-grid" style="margin-top: 24px;">
-    {% for category in categories %}
-    <a class="category-card" href="{{ url_for('artisans_page', category=category.name) }}">
-      <div class="icon"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72 1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></div>
-      <div>
-        <strong>{{ category.name }}</strong>
-        <div class="small muted">{{ artisan_counts.get(category.name, 0) }} techniciens</div>
+  <div class="dash-main">
+    <header class="dash-topbar">
+      <div class="dash-topbar-left">
+        <button type="button" class="dash-menu-toggle" id="dashMenuToggle" aria-label="Menu">
+          <span></span><span></span><span></span>
+        </button>
+        <form class="dash-search" action="{{ url_for('artisans_page') }}" method="get">
+          <input type="text" name="q" placeholder="Rechercher un artisan, un metier..." />
+          <button type="submit" class="btn btn-primary" style="padding: 8px 16px;">Rechercher</button>
+        </form>
       </div>
-    </a>
-    {% endfor %}
-  </div>
+      <div class="dash-topbar-right">
+        <a href="{{ url_for('conversations') }}" class="dash-icon-link" title="Messages">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </a>
+        <a href="{{ url_for('profile') }}" class="dash-avatar" title="Profil">{{ user.full_name[0]|upper }}</a>
+      </div>
+    </header>
 
-  <div class="stat-grid" style="margin-top: 24px;">
-    <div class="stat-card" style="background: var(--surface); border: 1px solid var(--border); padding: 16px; border-radius: 16px;">
-      <div>
-        <div class="small muted">Contrats en cours</div>
-        <strong style="font-size: 1.4rem;">{{ stats.contracts }}</strong>
-      </div>
-    </div>
-    <div class="stat-card" style="background: var(--surface); border: 1px solid var(--border); padding: 16px; border-radius: 16px;">
-      <div>
-        <div class="small muted">Travaux termines</div>
-        <strong style="font-size: 1.4rem;">{{ stats.completed }}</strong>
-      </div>
-    </div>
-    <div class="stat-card" style="background: var(--surface); border: 1px solid var(--border); padding: 16px; border-radius: 16px;">
-      <div>
-        <div class="small muted">Note moyenne</div>
-        <strong style="font-size: 1.4rem;">4.7</strong>
-      </div>
-    </div>
-    <div class="stat-card" style="background: var(--surface); border: 1px solid var(--border); padding: 16px; border-radius: 16px;">
-      <div>
-        <div class="small muted">Total depense</div>
-        <strong style="font-size: 1.2rem;">{{ "{:,}".format(stats.total_spent|int).replace(",", " ") }} GNF</strong>
-        <div class="small muted">Ce mois : {{ "{:,}".format(stats.month_spent|int).replace(",", " ") }} GNF</div>
-      </div>
-    </div>
-  </div>
-
-  <h3 style="margin-top: 32px; font-size: 1.2rem;">Techniciens pres de vous</h3>
-  <div class="tech-list" style="margin-top: 12px;">
-    {% for artisan in artisans %}
-    <div class="tech-item" style="background: var(--surface); border: 1px solid var(--border);">
-      <div style="display:flex;align-items:center;gap:12px;">
-        <div class="avatar" style="background: var(--surface-2); color: var(--text);">{{ artisan.full_name[0]|upper }}</div>
+    <main class="dash-content">
+      <section class="dash-header">
         <div>
-          <strong>{{ artisan.full_name }}</strong>
-          <div class="small muted">{{ artisan.profession or '' }} - {{ artisan.city or 'Conakry' }}</div>
+          <h1 style="margin: 0 0 6px;">Bonjour {{ user.full_name.split(' ')[0] }}</h1>
+          <p class="muted" style="margin: 0;">Trouvez le technicien qu'il vous faut aujourd'hui.</p>
         </div>
-      </div>
-      <div style="text-align:right">
-        <div class="small muted">{{ "{:,}".format((artisan.hourly_rate or 0)|int).replace(",", " ") }} GNF/h</div>
-        <a href="{{ url_for('artisans_page') }}">Voir tout</a>
-      </div>
-    </div>
-    {% endfor %}
-  </div>
+        <div class="dash-actions">
+          <button type="button" class="btn btn-outline" onclick="alert('Export a venir')">Exporter</button>
+          <a href="{{ url_for('request_new') }}" class="btn btn-cta-orange">+ Nouvelle demande</a>
+        </div>
+      </section>
 
-  <h3 style="margin-top: 32px; font-size: 1.2rem;">Mes demandes recentes</h3>
-  <div class="contracts-list" style="margin-top: 12px;">
-    {% for req in recent_requests %}
-    <a class="card tech-item" href="{{ url_for('request_detail', request_id=req.id) }}" style="background: var(--surface); border: 1px solid var(--border);">
-      <div style="display:flex;gap:12px;align-items:center;">
-        <div class="icon"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div>
-        <div>
-          <strong>{{ req.title or 'Demande #' ~ req.id }}</strong>
-          <div class="small muted">{{ req.artisan_name or 'En attente' }} - {{ req.updated_at or '' }}</div>
+      <section class="dash-kpi-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-top: 24px;">
+        <div class="dash-kpi">
+          <div class="small muted">Reservations actives</div>
+          <div class="dash-kpi-value">{{ stats.active_requests }}</div>
         </div>
-      </div>
-      <div>
-        <div class="badge {{ 'done' if req.status == 'completed' else 'inprogress' if req.status in ('assigned', 'in_progress') else '' }}">
-          {% if req.status == 'completed' %}Termine
-          {% elif req.status in ('assigned', 'in_progress') %}En cours
-          {% elif req.status == 'pending' %}En attente
-          {% else %}{{ req.status }}
-          {% endif %}
+        <div class="dash-kpi">
+          <div class="small muted">Travaux termines</div>
+          <div class="dash-kpi-value">{{ stats.completed }}</div>
         </div>
-      </div>
-    </a>
-    {% endfor %}
-    {% if not recent_requests %}
-    <p class="small muted">Aucune demande pour l'instant. <a href="{{ url_for('request_new') }}">Creer une demande</a></p>
-    {% endif %}
-  </div>
+        <div class="dash-kpi">
+          <div class="small muted">Note moyenne donnee</div>
+          <div class="dash-kpi-value">{{ stats.avg_rating }}</div>
+        </div>
+        <div class="dash-kpi">
+          <div class="small muted">Total depense</div>
+          <div class="dash-kpi-value">{{ "{:,}".format(stats.total_spent|int).replace(",", " ") }} GNF</div>
+        </div>
+      </section>
 
-</section>
+      <section class="dash-categories" style="margin-top: 32px;">
+        <h3 style="margin: 0 0 16px;">Categories de services</h3>
+        <div class="dash-cat-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px;">
+          {% for category in categories %}
+          <a class="dash-cat-card" href="{{ url_for('artisans_page', category=category.name) }}" style="text-decoration: none; color: inherit;">
+            <div class="dash-cat-icon"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg></div>
+            <div>
+              <strong>{{ category.name }}</strong>
+              <div class="small muted">{{ artisan_counts.get(category.name, 0) }} techniciens</div>
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section class="dash-artisans" style="margin-top: 32px;">
+        <h3 style="margin: 0 0 16px;">Techniciens disponibles</h3>
+        {% if artisans %}
+        <div style="display: grid; gap: 12px;">
+          {% for artisan in artisans %}
+          <div class="dash-artisan-card" style="background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div class="dash-avatar" style="background: var(--surface-2); color: var(--text); width: 44px; height: 44px; font-size: 1.1rem;">{{ artisan.full_name[0]|upper }}</div>
+              <div>
+                <div style="font-weight: 700;">{{ artisan.full_name }}{% if artisan.is_verified %} <span class="badge success" style="font-size: 0.7rem;">Verifie</span>{% endif %}</div>
+                <div class="small muted">{{ artisan.profession or '' }} - {{ artisan.city or 'Conakry' }}</div>
+              </div>
+            </div>
+            <div style="text-align: right;">
+              <div class="small muted">{{ "{:,}".format((artisan.hourly_rate or 0)|int).replace(",", " ") }} GNF/h</div>
+              <a href="{{ url_for('artisans_page') }}" class="btn btn-primary" style="padding: 6px 14px; font-size: 0.85rem; margin-top: 6px;">Reserver</a>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="muted">Aucun technicien disponible pour le moment.</p>
+        {% endif %}
+      </section>
+    </main>
+  </div>
+</div>
+
+<script>
+document.getElementById('dashMenuToggle').addEventListener('click', function() {
+  document.getElementById('dashSidebar').classList.toggle('open');
+});
+</script>
 {% endblock %}

@@ -728,8 +728,9 @@ def dashboard():
 
         # Artisans a proximite (tous les artisans verifies pour l'instant)
         artisans = conn.execute(
-            "SELECT id, full_name, profession, city, hourly_rate"
-            " FROM users WHERE role = 'artisan' ORDER BY full_name LIMIT 5").fetchall()
+            "SELECT id, full_name, profession, city, hourly_rate, is_verified"
+            " FROM users WHERE role = 'artisan' AND is_verified = 1"
+            " ORDER BY full_name LIMIT 5").fetchall()
 
         # Requetes recentes du client avec nom artisan
         recent_requests = conn.execute(
@@ -757,12 +758,24 @@ def dashboard():
     finally:
         conn.close()
 
+    # Active requests (pending, assigned, in_progress)
+    active_requests = sum(1 for r in rows if r["status"] in ("pending", "assigned", "in_progress"))
+
+    # Average rating given by client (if reviews table missing, default 0)
+    try:
+        avg = conn.execute(
+            "SELECT COALESCE(AVG(rating), 0) AS m FROM reviews WHERE client_id = ?",
+            (user["id"],)).fetchone()
+        avg_rating = round(float(avg["m"]) if avg and avg["m"] is not None else 0, 1)
+    except Exception:
+        avg_rating = 0.0
+
     stats = {
-        "contracts": sum(1 for r in rows if r["status"] not in
-                         ("completed", "cancelled")),
+        "active_requests": active_requests,
         "completed": sum(1 for r in rows if r["status"] == "completed"),
         "total_spent": float(paid["total"] or 0),
         "month_spent": float(month_paid["total"] or 0),
+        "avg_rating": avg_rating,
     }
 
     return render_template("dashboard_client.html", user=user, stats=stats,
