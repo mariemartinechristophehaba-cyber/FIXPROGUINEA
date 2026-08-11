@@ -1,13 +1,13 @@
 ﻿:root {
-  --bg: #111827;
-  --surface: #1f2937;
-  --surface-2: #374151;
-  --text: #f9fafb;
-  --muted: #9ca3af;
+  --bg: #050A1A;
+  --surface: #0E1526;
+  --surface-2: #141D33;
+  --text: #ffffff;
+  --muted: #8B94A7;
   --accent-green: #22c55e;
   --accent-blue: #3b82f6;
   --accent-orange: #f59e0b;
-  --border: #374151;
+  --border: #252D3D;
 }
 
 html, body { margin: 0; padding: 0; }
@@ -107,15 +107,15 @@ input:focus, select:focus, textarea:focus { border-color: rgba(255,255,255,0.32)
 
 /* Mobile-first exact design overrides per spec */
 :root {
-  --mobile-bg-from: #111827;
-  --mobile-bg-to: #1f2937;
-  --card-from: #1f2937;
-  --card-to: #374151;
+  --mobile-bg-from: #050A1A;
+  --mobile-bg-to: #0B1220;
+  --card-from: #0E1526;
+  --card-to: #141D33;
   --search-from: #1d4ed8;
   --search-to: #3b82f6;
   --btn-orange: #f59e0b;
   --btn-blue: #3b82f6;
-  --text-desc: #9ca3af;
+  --text-desc: #8B94A7;
   --success: #22c55e;
   --accent-orange: #f59e0b;
 }
@@ -486,41 +486,50 @@ body.artisan-page main.container { padding: 0; max-width: none; }
 .ar-phone-wrap input { background: transparent; color: var(--text); }
 
 
-/* Landing mobile */
+/* Landing mobile premium */
 @media (max-width: 720px) {
-  .lp-header { padding: 14px 16px; }
-  .lp-header-logo { font-size: 1.25rem; }
+  .lp-header { padding: 14px 16px; background: rgba(5,10,26,0.92); backdrop-filter: blur(14px); border-bottom: 1px solid rgba(59,130,246,0.12); }
+  .lp-header-logo { font-size: 1.35rem; font-weight: 900; }
   .lp-header-guinee { display: none; }
-  .lp-btn-yellow { padding: 10px 14px; font-size: 0.85rem; }
+  .lp-btn { border-radius: 16px; padding: 16px; font-weight: 800; font-size: 1rem; }
+  .lp-btn-yellow { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color: #fff; box-shadow: 0 8px 24px rgba(59,130,246,0.35); }
+  .lp-btn-dark { background: rgba(255,255,255,0.04); color: #fff; border: 1px solid rgba(255,255,255,0.1); }
   .lp-hero, .lp-section, .lp-discover, .lp-banner, .lp-artisan, .lp-app, .lp-footer { padding-left: 0 !important; padding-right: 0 !important; }
-  .lp-hero { padding: 110px 0 60px; text-align: left; }
-  .lp-hero-inner { max-width: none; margin: 0; padding: 0 16px; text-align: left; }
-  .lp-hero h1 { text-align: left; }
-  .lp-hero-sub { text-align: left; }
-  .lp-hero-actions { justify-content: flex-start; }
-  .lp-hero h1 { font-size: 2rem; line-height: 1.15; }
-  .lp-hero-sub { font-size: 1rem; }
-  .lp-hero-actions { display: grid; grid-template-columns: 1fr; gap: 12px; }
-  .lp-hero-actions a { width: 100%; text-align: center; }
-  .lp-service-grid { grid-template-columns: 1fr; gap: 16px; }
-  .lp-service-card { padding: 24px; }
-  .lp-how-grid { grid-template-columns: 1fr; }
-  .lp-why-grid, .lp-trust-grid { grid-template-columns: 1fr; }
-  .lp-footer-inner { grid-template-columns: 1fr; gap: 24px; text-align: center; }
-  .lp-discover-mockup { display: none; }
-  .lp-artisan-inner { grid-template-columns: 1fr; }
-  .lp-artisan-mockup { display: none; }
-  .lp-app-mockup { display: none; }
-  .lp-app-inner, .lp-discover-inner, .lp-banner-inner, .lp-artisan-inner,
-  .lp-how-grid, .lp-why-grid, .lp-trust-grid, .lp-contact-grid,
-  .lp-footer-inner, .lp-float-card { width: 100%; max-width: none; margin: 0; padding: 0 16px; }
-  .lp-section { padding: 60px 0; }
-  .lp-section .lp-container { padding: 0 16px; max-width: none; }
-  .lp-service-grid { padding: 0 16px; }
-  .lp-hero-artwork { display: none; }
-  .lp-contact-grid { grid-template-columns: 1fr; }
-  .lp-stores { flex-direction: column; gap: 12px; }
-  .lp-store { width: 100%; text-align: center; }
-  .lp-section h2 { text-align: left; }
-  .lp-eyebrow { text-align: left; }
+  .lp-hero { padding: 110px 0 64px; text-align: left; background: linear-gradient(180deg, #050A1A 0%, #0B1220 100%); }
+  .lp-hero-inner { max-width: none; margin: 0; padding: 0 20px; text-align: left; }
+  .lp-hero h1 { text-align: left; font-size: 2.4rem; line-height: 1.1; letter-spacing: -0.02em; font-weight: 900; }
+  .lp-hero-sub { text-align: left; font-size: 1.05rem; color: #8B94A7; margin: 18px 0 28px; }
+  .lp-hero-actions { display: grid; grid-template-columns: 1fr; gap: 14px; }
+  .lp-hero-actions a { width: 100%; text-align: center; border-radius: 16px; }
+  .lp-section { padding: 64px 0; background: #050A1A; }
+  .lp-section h2 { font-size: 1.7rem; font-weight: 800; margin: 0 0 28px; text-align: left; padding: 0 20px; }
+  .lp-eyebrow { font-size: 0.8rem; font-weight: 800; color: #3b82f6; text-transform: uppercase; letter-spacing: 0.12em; text-align: left; padding: 0 20px; margin-bottom: 10px; }
+  .lp-section .lp-container { padding: 0 20px; max-width: none; }
+  .lp-service-grid { display: grid; grid-template-columns: 1fr; gap: 16px; padding: 0; }
+  .lp-service-card { background: linear-gradient(145deg, #0E1526, #141D33); border: 1px solid rgba(59,130,246,0.12); border-radius: 24px; padding: 26px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
+  .lp-service-card h3 { font-size: 1.3rem; font-weight: 800; margin: 14px 0 6px; }
+  .lp-service-card p { font-size: 0.95rem; color: #8B94A7; }
+  .lp-service-card a { color: #3b82f6; font-weight: 700; margin-top: 14px; display: inline-block; }
+  .lp-service-icon { width: 56px; height: 56px; background: linear-gradient(135deg, #2563eb, #1d4ed8); border-radius: 16px; }
+  .lp-service-icon svg { width: 28px; height: 28px; }
+  .lp-discover, .lp-how, .lp-why, .lp-trust, .lp-contact, .lp-app, .lp-banner, .lp-artisan { background: #050A1A; padding: 64px 0; }
+  .lp-discover-inner, .lp-how-grid, .lp-banner-inner, .lp-artisan-inner, .lp-app-inner, .lp-why-grid, .lp-trust-grid, .lp-contact-grid, .lp-footer-inner, .lp-float-card { max-width: none; margin: 0; width: 100%; padding: 0 20px; }
+  .lp-discover h2, .lp-how h2, .lp-why h2, .lp-trust h2, .lp-contact h2, .lp-app h2, .lp-banner h2, .lp-artisan h2 { font-size: 1.7rem; font-weight: 800; margin: 0 0 18px; text-align: left; }
+  .lp-why-card, .lp-trust-card, .lp-contact-card { background: linear-gradient(145deg, #0E1526, #141D33); border: 1px solid rgba(59,130,246,0.1); border-radius: 24px; padding: 24px; }
+  .lp-why-card h3, .lp-trust-card h3, .lp-contact-card h3 { font-size: 1.15rem; font-weight: 800; margin: 0 0 8px; }
+  .lp-why-card p, .lp-trust-card p, .lp-contact-card p { color: #8B94A7; font-size: 0.95rem; }
+  .lp-step { gap: 16px; }
+  .lp-step-num { width: 44px; height: 44px; background: linear-gradient(135deg, #f59e0b, #d97706); color: #050A1A; font-weight: 900; border-radius: 14px; }
+  .lp-step h3 { font-size: 1.1rem; font-weight: 800; }
+  .lp-step p { color: #8B94A7; }
+  .lp-banner { text-align: left; padding: 64px 0; }
+  .lp-banner-inner { padding: 0 20px; }
+  .lp-banner h2 { text-align: left; margin-bottom: 24px; }
+  .lp-footer { background: #050A1A; border-top: 1px solid rgba(59,130,246,0.12); padding: 48px 0 32px; }
+  .lp-footer-inner { display: flex; flex-direction: column; gap: 28px; text-align: left; }
+  .lp-footer strong { font-size: 1rem; color: #fff; }
+  .lp-footer a { color: #8B94A7; font-size: 0.95rem; }
+  .lp-discover-mockup, .lp-artisan-mockup, .lp-app-mockup, .lp-hero-artwork { display: none; }
+  .lp-stores { flex-direction: column; gap: 14px; }
+  .lp-store { width: 100%; text-align: center; background: #0E1526; border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 14px; }
 }
