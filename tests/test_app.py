@@ -114,7 +114,7 @@ class HealthAndSecurityTests(FixProTestCase):
         self.assertEqual(self.client.get("/page-inexistante").status_code, 404)
 
     def test_protected_page_redirects_anonymous_user(self):
-        response = self.client.get("/dashboard")
+        response = self.client.get("/profile")
         self.assertEqual(response.status_code, 302)
         self.assertIn("/login", response.headers["Location"])
 

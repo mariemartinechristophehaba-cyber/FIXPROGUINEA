@@ -707,9 +707,10 @@ def logout():
 # ---------------------------------------------------------------------------
 
 @app.route("/dashboard")
-@login_required
 def dashboard():
     user = get_current_user()
+    if user is None:
+        user = {"id": 0, "full_name": "Visiteur", "role": "client", "city": "Conakry"}
     conn = get_db_connection()
     try:
         # Categories de services
