@@ -1,4 +1,5 @@
 {% from '_artisan_card.html' import artisan_card %}
+{% include '_category_colors.html' %}
 {% extends 'base.html' %}
 {% block title %}Accueil - FixPro{% endblock %}
 {% block main_class %}home{% endblock %}
@@ -39,7 +40,7 @@
   <button class="home-cat active" data-category="">Tous</button>
   {% for category in categories %}
   <button class="home-cat" data-category="{{ category.name|lower }}">
-    <span class="home-cat-dot" style="background: {{ ['#3d5bff','#f5a623','#3ddc84','#ff7900','#f7c873','#8A94A9'][loop.index0 % 6] }}"></span>
+    <span class="home-cat-dot" style="background: {{ category_colors.get(category.name, default_category_color) }}"></span>
     {{ category.name }}
   </button>
   {% endfor %}

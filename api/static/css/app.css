@@ -1028,8 +1028,6 @@ body.no-tabbar .site-footer { padding-bottom: 26px; }
 .artisan-photo-placeholder {
   display: flex; align-items: center; justify-content: center;
   font-size: 2.4rem; font-weight: 800;
-  background: linear-gradient(160deg, #132040 0%, #0e162a 100%);
-  color: var(--brand);
 }
 
 .artisan-badge {
@@ -1059,7 +1057,6 @@ body.no-tabbar .site-footer { padding-bottom: 26px; }
 .artisan-name { font-weight: 700; font-size: 0.96rem; }
 .artisan-profession {
   font-size: 0.78rem; font-weight: 600;
-  color: var(--brand);
   margin: 3px 0 8px;
 }
 .artisan-meta { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }

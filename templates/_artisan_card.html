@@ -1,3 +1,4 @@
+{% include '_category_colors.html' %}
 {% macro artisan_card(artisan) %}
 {% set status_colors = {
   'en_ligne': ('#3ddc84', 'En ligne'),
@@ -5,14 +6,15 @@
   'hors_ligne': ('#8A94A9', 'Hors ligne')
 } %}
 {% set color = status_colors.get(artisan.availability_status or 'hors_ligne', status_colors['hors_ligne']) %}
+{% set cat_color = category_colors.get(artisan.profession, default_category_color) %}
 
 <a class="artisan-card" href="{{ url_for('artisans_page', category=artisan.profession or '') }}" data-name="{{ artisan.full_name|lower }}" data-profession="{{ (artisan.profession or '')|lower }}" data-category="{{ (artisan.profession or '')|lower }}">
   <div class="artisan-photo-wrap">
     {% if artisan.photo_url %}
     <img class="artisan-photo" src="{{ artisan.photo_url }}" alt="{{ artisan.full_name }}" loading="lazy" />
     {% else %}
-    <div class="artisan-photo artisan-photo-placeholder">
-      <span>{{ (artisan.full_name or '?')[0]|upper }}</span>
+    <div class="artisan-photo artisan-photo-placeholder" style="background: linear-gradient(160deg, {{ cat_color }}, #0d1526 85%);">
+      <span style="color: #fff;">{{ (artisan.full_name or '?')[0]|upper }}</span>
     </div>
     {% endif %}
 
@@ -31,14 +33,14 @@
     <div class="artisan-row artisan-row-title">
       <span class="artisan-name truncate">{{ artisan.full_name }}</span>
     </div>
-    <div class="artisan-profession">{{ artisan.profession or 'Technicien' }}</div>
+    <div class="artisan-profession" style="color: {{ cat_color }};">{{ artisan.profession or 'Technicien' }}</div>
     <div class="artisan-meta">
       <span class="artisan-rating">
         <svg viewBox="0 0 24 24" fill="currentColor" width="12" height="12"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.2-5.4-2.9-5.4 2.9 1-6.2L3.2 9.5l6.1-.9z"/></svg>
         {% if artisan.review_count %}
           {{ "%.1f"|format(artisan.avg_rating|float) }} ({{ artisan.review_count }} avis)
         {% else %}
-          Nouveau
+          <span style="color: var(--muted);">Nouveau</span>
         {% endif %}
       </span>
       <span class="artisan-location">{{ artisan.quartier or artisan.city or 'Conakry' }}</span>
