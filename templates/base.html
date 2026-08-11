@@ -14,67 +14,104 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css', v='5') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css', v='6') }}" />
     {% block extra_head %}{% endblock %}
   </head>
-  <body class="{% block body_class %}{% endblock %}{% if not nav_user %} no-tabbar{% endif %}">
+  <body class="{% if not nav_user %} no-tabbar{% endif %}">
 
-    {% block header %}
-    <header class="appbar">
-      <a class="brand" href="{{ url_for('index') }}">
-        <span class="brand-mark">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
-          </svg>
-        </span>
-        Fix<em>Pro</em>
-      </a>
+    {% block header %}{% endblock %}
 
-      {% if nav_user %}
-      <nav class="appbar-nav">
-        <a href="{{ url_for('dashboard') }}" class="{{ 'active' if request.endpoint == 'dashboard' }}">Accueil</a>
-        <a href="{{ url_for('artisans_page') }}" class="{{ 'active' if request.endpoint == 'artisans_page' }}">Techniciens</a>
-        <a href="{{ url_for('requests_list') }}" class="{{ 'active' if request.endpoint in ('requests_list', 'request_new', 'request_detail') }}">Demandes</a>
-        <a href="{{ url_for('conversations') }}" class="{{ 'active' if request.endpoint == 'conversations' }}">Messages</a>
-        <a href="{{ url_for('payments') }}" class="{{ 'active' if request.endpoint == 'payments' }}">Paiements</a>
+    {% if nav_user %}
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-top">
+        <a class="brand" href="{{ url_for('index') }}">
+          <span class="brand-mark">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+            </svg>
+          </span>
+          Fix<em>Pro</em>
+        </a>
+        <p class="sidebar-tagline">Votre technicien a portee de main.</p>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a class="sidebar-link {{ 'active' if request.endpoint == 'dashboard' }}" href="{{ url_for('dashboard') }}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
+          Accueil
+        </a>
+        <a class="sidebar-link {{ 'active' if request.endpoint == 'artisans_page' }}" href="{{ url_for('artisans_page') }}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          Techniciens
+        </a>
+        <a class="sidebar-link {{ 'active' if request.endpoint in ('requests_list', 'request_new', 'request_detail') }}" href="{{ url_for('requests_list') }}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M9 14h6M9 17h4"/></svg>
+          Demandes
+        </a>
+        <a class="sidebar-link {{ 'active' if request.endpoint == 'conversations' }}" href="{{ url_for('conversations') }}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 21l1.9-5.1A8.4 8.4 0 0 1 4 11.5a8.5 8.5 0 0 1 8.5-8.5A8.5 8.5 0 0 1 21 11.5z"/></svg>
+          Messages
+        </a>
+        <a class="sidebar-link {{ 'active' if request.endpoint == 'payments' }}" href="{{ url_for('payments') }}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+          Paiements
+        </a>
       </nav>
-      <div class="appbar-actions">
+
+      <div class="sidebar-bottom">
         <a class="icon-btn" href="{{ url_for('notifications') }}" aria-label="Notifications">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-          </svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
           {% if unread_count %}<span class="dot-badge">{{ unread_count }}</span>{% endif %}
         </a>
         <a class="avatar" href="{{ url_for('profile') }}" aria-label="Mon profil">{{ (nav_user.full_name or 'U')[0]|upper }}</a>
       </div>
+    </aside>
+    {% endif %}
+
+    <div class="app-wrap">
+      {% if not nav_user %}
+      <header class="appbar guest-appbar">
+        <a class="brand" href="{{ url_for('index') }}">
+          <span class="brand-mark">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+          </span>
+          Fix<em>Pro</em>
+        </a>
+        <div class="appbar-actions">
+          <a class="btn btn-soft btn-sm" href="{{ url_for('login') }}">Connexion</a>
+          <a class="btn btn-primary btn-sm" href="{{ url_for('client_signup') }}">Inscription</a>
+        </div>
+      </header>
       {% else %}
-      <div class="appbar-actions">
-        <a class="btn btn-soft btn-sm" href="{{ url_for('login') }}">Connexion</a>
-        <a class="btn btn-primary btn-sm hide-mobile" href="{{ url_for('client_signup') }}">Inscription</a>
-      </div>
+      <header class="topbar">
+        <h1 class="topbar-title">{% block page_title %}{% endblock %}</h1>
+        <a class="btn btn-primary btn-sm" href="{{ url_for('request_new') }}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          Nouvelle demande
+        </a>
+      </header>
       {% endif %}
-    </header>
-    {% endblock %}
 
-    <main class="{% block main_class %}page{% endblock %}">
-      {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-          <div class="flash-list">
-            {% for category, message in messages %}
-              <div class="flash {{ category }}">{{ message }}</div>
-            {% endfor %}
-          </div>
-        {% endif %}
-      {% endwith %}
+      <main class="page {% block main_class %}{% endblock %}">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="flash-list">
+              {% for category, message in messages %}
+                <div class="flash {{ category }}">{{ message }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
 
-      {% block content %}{% endblock %}
-    </main>
+        {% block content %}{% endblock %}
+      </main>
 
-    {% block footer %}
-    <footer class="site-footer">
-      FixPro Guinee - Plateforme de mise en relation artisan et client a Conakry.
-    </footer>
-    {% endblock %}
+      {% block footer %}
+      <footer class="site-footer">
+        FixPro Guinee - Plateforme de mise en relation artisan et client a Conakry.
+      </footer>
+      {% endblock %}
+    </div>
 
     {% if nav_user %}
     {% block tabbar %}
@@ -85,7 +122,7 @@
       </a>
       <a class="tab {{ 'active' if request.endpoint == 'artisans_page' }}" href="{{ url_for('artisans_page') }}">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-        <span>Recherche</span>
+        <span>Techniciens</span>
       </a>
       <a class="tab {{ 'active' if request.endpoint in ('requests_list', 'request_new', 'request_detail') }}" href="{{ url_for('requests_list') }}">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M9 14h6M9 17h4"/></svg>

@@ -1,25 +1,17 @@
 {% extends 'base.html' %}
-{% block title %}Tableau de bord - FixPro{% endblock %}
-
 {% set first_name = (user.full_name or 'Visiteur').split(' ')[0] %}
+{% block page_title %}Accueil{% endblock %}
+{% block title %}Tableau de bord - FixPro{% endblock %}
 
 {% block content %}
 
-<section class="page-head">
-  <h1>Bonjour {{ first_name }}</h1>
-  <p>Trouvez le technicien qu'il vous faut, aujourd'hui.</p>
+<section class="hero">
+  <div class="hero-content">
+    <p class="eyebrow">Bienvenue, {{ first_name }}</p>
+    <h1>Trouvez un technicien verifie, partout a Conakry.</h1>
+    <p class="muted">Plomberie, electricite, froid, menuiserie... Votre prochaine intervention commence ici.</p>
+  </div>
 </section>
-
-<div class="btn-row">
-  <a class="btn btn-soft" href="{{ url_for('export_requests') }}">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>
-    Exporter
-  </a>
-  <a class="btn btn-primary" href="{{ url_for('request_new') }}">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-    Nouvelle demande
-  </a>
-</div>
 
 <section class="section">
   <div class="kpi-grid">
