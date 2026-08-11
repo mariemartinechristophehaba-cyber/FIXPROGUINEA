@@ -756,17 +756,24 @@ def dashboard():
                 (f"%{c['name']}%",)).fetchone()["n"]
             artisan_counts[c["name"]] = count
 
-        # Tous les artisans verifies avec notes et avis
-        artisans = conn.execute("""
-            SELECT u.id, u.full_name, u.profession, u.city, u.quartier,
-                   u.hourly_rate, u.is_verified, u.photo_url,
-                   u.availability_status, u.estimated_delay,
-                   COALESCE((SELECT AVG(rating) FROM reviews WHERE artisan_id = u.id), 0) AS avg_rating,
-                   COALESCE((SELECT COUNT(*) FROM reviews WHERE artisan_id = u.id), 0) AS review_count
-            FROM users u
-            WHERE u.role = 'artisan' AND u.is_verified = 1
-            ORDER BY u.full_name
-        """).fetchall()
+        # Tous les artisans verifies avec notes et avis (fallback si reviews non prete)
+        try:
+            artisans = conn.execute("""
+                SELECT u.id, u.full_name, u.profession, u.city, u.quartier,
+                       u.hourly_rate, u.is_verified, u.photo_url,
+                       u.availability_status, u.estimated_delay,
+                       COALESCE((SELECT AVG(rating) FROM reviews WHERE artisan_id = u.id), 0) AS avg_rating,
+                       COALESCE((SELECT COUNT(*) FROM reviews WHERE artisan_id = u.id), 0) AS review_count
+                FROM users u
+                WHERE u.role = 'artisan' AND u.is_verified = 1
+                ORDER BY u.full_name
+            """).fetchall()
+        except Exception:
+            artisans = conn.execute(
+                "SELECT id, full_name, profession, city, quartier, hourly_rate, is_verified,"
+                " photo_url, availability_status, estimated_delay"
+                " FROM users WHERE role = 'artisan' AND is_verified = 1"
+                " ORDER BY full_name").fetchall()
 
         # Unread messages count
         try:
