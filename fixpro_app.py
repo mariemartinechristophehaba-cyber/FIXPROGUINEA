@@ -1329,7 +1329,7 @@ def page_not_found(error):
 @app.errorhandler(500)
 def internal_error(error):
     logger.exception("Erreur interne: %s", error)
-    return render_template("500.html"), 500
+    return render_template("500.html", message=str(error)), 500
 
 
 if __name__ == "__main__":

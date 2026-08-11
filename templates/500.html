@@ -3,7 +3,7 @@
 {% block content %}
 <section class="card">
   <h1>Une erreur est survenue</h1>
-  <p>Nos équipes ont été informées. Merci de réessayer dans quelques instants.</p>
-  <a class="btn btn-primary" href="{{ url_for('index') }}">Retour à l'accueil</a>
+  <p>{{ message }}</p>
+  <a class="btn btn-primary" href="{{ url_for('index') }}">Retour a l'accueil</a>
 </section>
 {% endblock %}
