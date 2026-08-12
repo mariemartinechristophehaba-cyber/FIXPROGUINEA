@@ -1116,7 +1116,7 @@ def artisan_detail(artisan_id):
         import traceback
         app.logger.error("artisan_detail error: %s", exc)
         app.logger.error(traceback.format_exc())
-        return f"Erreur: {exc}", 500
+        return f"<pre>Erreur: {exc}\n{traceback.format_exc()}</pre>", 200
     finally:
         conn.close()
 
