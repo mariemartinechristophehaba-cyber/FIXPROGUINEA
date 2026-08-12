@@ -100,7 +100,7 @@
     <li><span>Zone</span><strong>{{ artisan.quartier or artisan.city or 'Conakry' }}</strong></li>
     <li><span>Mobilite</span><strong>{{ artisan.mobility or 'Conakry et environs' }}</strong></li>
     <li><span>Assurance</span><strong>{{ artisan.insurance or 'Non renseignee' }}</strong></li>
-    <li><span>Sur FixPro depuis</span><strong>{{ artisan.created_at[:10] if artisan.created_at else 'Inconnu' }}</strong></li>
+    <li><span>Sur FixPro depuis</span><strong>{{ (artisan.created_at|string)[:10] if artisan.created_at else 'Inconnu' }}</strong></li>
   </ul>
 </div>
 
@@ -188,7 +188,7 @@
     <div class="kpi"><span class="kpi-label">Interventions</span><span class="kpi-value">{{ completed }}</span></div>
     <div class="kpi"><span class="kpi-label">Avis</span><span class="kpi-value">{{ review_stats.count }}</span></div>
     <div class="kpi"><span class="kpi-label">Note</span><span class="kpi-value">{{ "%.1f"|format(review_stats.avg_rating|float) if review_stats.count else 'N/A' }}</span></div>
-    <div class="kpi"><span class="kpi-label">Anciennete</span><span class="kpi-value sm">{{ artisan.created_at[:10] if artisan.created_at else 'N/A' }}</span></div>
+    <div class="kpi"><span class="kpi-label">Anciennete</span><span class="kpi-value sm">{{ (artisan.created_at|string)[:10] if artisan.created_at else 'N/A' }}</span></div>
   </div>
 </div>
 
@@ -205,7 +205,7 @@
         <div class="list-item-title"><span class="truncate">{{ review.client_name }}</span> <span class="small muted">— {{ review.rating }}/5</span></div>
         <div class="list-item-sub">{{ review.comment or 'Aucun commentaire' }}</div>
       </div>
-      <span class="tiny muted">{{ review.created_at[:10] if review.created_at else '' }}</span>
+      <span class="tiny muted">{{ (review.created_at|string)[:10] if review.created_at else '' }}</span>
     </div>
     {% endfor %}
   </div>
