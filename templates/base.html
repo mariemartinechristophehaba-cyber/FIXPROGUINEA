@@ -17,11 +17,11 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css', v='6') }}" />
     {% block extra_head %}{% endblock %}
   </head>
-  <body class="{% if not nav_user %} no-tabbar{% endif %}{% if request.endpoint == 'dashboard' %} no-sidebar{% endif %}">
+  <body class="{% if not nav_user or request.endpoint == 'index' %} no-tabbar{% endif %}{% if request.endpoint == 'dashboard' %} no-sidebar{% endif %}{% if request.endpoint == 'index' %} landing{% endif %}">
 
     {% block header %}{% endblock %}
 
-    {% if nav_user and request.endpoint != 'dashboard' %}
+    {% if nav_user and request.endpoint != 'dashboard' and request.endpoint != 'index' %}
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-top">
         <a class="brand" href="{{ url_for('index') }}">
@@ -69,7 +69,7 @@
     {% endif %}
 
     <div class="app-wrap">
-      {% if not nav_user and request.endpoint != 'dashboard' %}
+      {% if not nav_user and request.endpoint not in ('dashboard', 'index') %}
       <header class="appbar guest-appbar">
         <a class="brand" href="{{ url_for('index') }}">
           <span class="brand-mark">
@@ -83,7 +83,7 @@
         </div>
       </header>
       {% else %}
-      {% if request.endpoint != 'dashboard' %}
+      {% if request.endpoint not in ('dashboard', 'index') %}
       <header class="topbar">
         <h1 class="topbar-title">{% block page_title %}{% endblock %}</h1>
         <a class="btn btn-primary btn-sm" href="{{ url_for('request_new') }}">
@@ -115,7 +115,7 @@
       {% endblock %}
     </div>
 
-    {% if nav_user %}
+    {% if nav_user and request.endpoint != 'index' %}
     {% block tabbar %}
     <nav class="tabbar">
       <a class="tab {{ 'active' if request.endpoint == 'dashboard' }}" href="{{ url_for('dashboard') }}">
