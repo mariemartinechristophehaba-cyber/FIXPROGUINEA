@@ -103,6 +103,15 @@ CREATE TABLE IF NOT EXISTS admin_tickets (
     updated_at  TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS admin_messages (
+    id          SERIAL PRIMARY KEY,
+    ticket_id   INTEGER NOT NULL REFERENCES admin_tickets(id) ON DELETE CASCADE,
+    sender_id   INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    content     TEXT NOT NULL,
+    created_at  TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_admin_messages_ticket ON admin_messages(ticket_id);
 CREATE INDEX IF NOT EXISTS idx_users_email          ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_role           ON users(role);
 CREATE INDEX IF NOT EXISTS idx_requests_client_id   ON requests(client_id);

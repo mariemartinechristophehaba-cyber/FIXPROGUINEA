@@ -552,6 +552,106 @@ def admin_tickets():
         conn.close()
 
 
+@app.route("/tickets/new", methods=["POST"])
+@login_required
+def ticket_new():
+    """Cree un ticket client -> FixPro pour le technicien consulte."""
+    user = get_current_user()
+    if user["role"] != "client":
+        flash("Action reservee aux clients.", "error")
+        return redirect(url_for("artisans_page"))
+
+    artisan_id = request.form.get("artisan_id")
+    conn = get_db_connection()
+    try:
+        artisan = conn.execute(
+            "SELECT full_name, profession FROM users"
+            " WHERE id = ? AND role = 'artisan'", (artisan_id,)).fetchone()
+        if not artisan:
+            flash("Technicien introuvable.", "error")
+            return redirect(url_for("artisans_page"))
+
+        existing = conn.execute(
+            "SELECT id FROM admin_tickets"
+            " WHERE client_id = ? AND artisan_id = ? AND status = 'open'"
+            " ORDER BY created_at DESC LIMIT 1",
+            (user["id"], artisan_id)).fetchone()
+        if existing:
+            return redirect(url_for("ticket_detail", ticket_id=existing["id"]))
+
+        result = conn.execute(
+            "INSERT INTO admin_tickets (client_id, artisan_id, subject, message, status)"
+            " VALUES (?, ?, ?, ?, 'open')",
+            (user["id"], artisan_id,
+             f"Concerne {artisan['full_name']}",
+             f"Conversation demarree pour le technicien {artisan['full_name']} ({artisan['profession']})."))
+        conn.commit()
+        ticket_id = result.lastrowid
+
+        # Message d'accueil de FixPro
+        fixpro = conn.execute(
+            "SELECT id FROM users WHERE role = 'admin' LIMIT 1").fetchone()
+        sender_id = fixpro["id"] if fixpro else user["id"]
+        conn.execute(
+            "INSERT INTO admin_messages (ticket_id, sender_id, content)"
+            " VALUES (?, ?, ?)",
+            (ticket_id, sender_id,
+             "Bienvenue sur FixPro ! Comment puis-je vous aider ?"))
+        conn.commit()
+    finally:
+        conn.close()
+    return redirect(url_for("ticket_detail", ticket_id=ticket_id))
+
+
+@app.route("/tickets/<int:ticket_id>", methods=["GET", "POST"])
+@login_required
+def ticket_detail(ticket_id):
+    """Conversation client <-> FixPro autour d'un ticket."""
+    user = get_current_user()
+    conn = get_db_connection()
+    try:
+        ticket = conn.execute(
+            "SELECT t.*, c.full_name AS client_name, a.full_name AS artisan_name"
+            " FROM admin_tickets t"
+            " JOIN users c ON c.id = t.client_id"
+            " LEFT JOIN users a ON a.id = t.artisan_id"
+            " WHERE t.id = ?", (ticket_id,)).fetchone()
+        if not ticket:
+            flash("Conversation introuvable.", "error")
+            return redirect(url_for("artisans_page"))
+
+        if user["role"] != "admin" and ticket["client_id"] != user["id"]:
+            flash("Acces refuse.", "error")
+            return redirect(url_for("artisans_page"))
+
+        if request.method == "POST" and request.form.get("content"):
+            content = request.form.get("content", "").strip()
+            if not content:
+                flash("Veuillez ecrire un message.", "error")
+            else:
+                conn.execute(
+                    "INSERT INTO admin_messages (ticket_id, sender_id, content)"
+                    " VALUES (?, ?, ?)",
+                    (ticket_id, user["id"], content))
+                conn.execute(
+                    "UPDATE admin_tickets SET updated_at = CURRENT_TIMESTAMP"
+                    " WHERE id = ?", (ticket_id,))
+                conn.commit()
+                return redirect(url_for("ticket_detail", ticket_id=ticket_id))
+
+        messages = conn.execute(
+            "SELECT m.*, u.full_name AS sender_name, u.role AS sender_role"
+            " FROM admin_messages m"
+            " JOIN users u ON u.id = m.sender_id"
+            " WHERE m.ticket_id = ?"
+            " ORDER BY m.created_at ASC",
+            (ticket_id,)).fetchall()
+    finally:
+        conn.close()
+    return render_template("ticket_detail.html", user=user, ticket=ticket,
+                           messages=messages)
+
+
 @app.route("/admin/logout")
 def admin_logout():
     session.pop("admin_logged_in", None)
@@ -1035,9 +1135,11 @@ def artisan_detail(artisan_id):
 
         # Distance approximative
         distance = None
-        if user and user.get("latitude") and user.get("longitude") and artisan["latitude"] and artisan["longitude"]:
+        client_lat = float(user["latitude"]) if user and user.get("latitude") else session.get("client_lat")
+        client_lon = float(user["longitude"]) if user and user.get("longitude") else session.get("client_lon")
+        if client_lat and client_lon and artisan["latitude"] and artisan["longitude"]:
             distance = calculate_distance(
-                float(user["latitude"]), float(user["longitude"]),
+                client_lat, client_lon,
                 float(artisan["latitude"]), float(artisan["longitude"]))
 
         # Le client peut-il laisser un avis ?
@@ -1123,6 +1225,22 @@ def artisan_detail(artisan_id):
                            completed=completed,
                            distance=distance,
                            can_review=can_review)
+
+
+@app.route("/artisans/<int:artisan_id>/location", methods=["POST"])
+def artisan_location(artisan_id):
+    """Recoit la position GPS du client et la stocke en session."""
+    try:
+        data = request.get_json(silent=True) or {}
+        lat = data.get("lat")
+        lon = data.get("lon")
+        if lat is not None and lon is not None:
+            session["client_lat"] = float(lat)
+            session["client_lon"] = float(lon)
+            return jsonify({"ok": True, "redirect": url_for("artisan_detail", artisan_id=artisan_id)})
+    except (TypeError, ValueError):
+        pass
+    return jsonify({"ok": False}), 400
 
 
 @app.route("/conversations")
