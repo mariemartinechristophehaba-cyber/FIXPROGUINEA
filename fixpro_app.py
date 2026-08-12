@@ -1112,11 +1112,6 @@ def artisan_detail(artisan_id):
                 conn.commit()
                 flash("Avis enregistré. Merci pour votre retour.", "success")
                 return redirect(url_for("artisan_detail", artisan_id=artisan_id))
-    except Exception as exc:
-        import traceback
-        app.logger.error("artisan_detail error: %s", exc)
-        app.logger.error(traceback.format_exc())
-        return f"<pre>Erreur: {exc}\n{traceback.format_exc()}</pre>", 200
     finally:
         conn.close()
 
