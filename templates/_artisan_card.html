@@ -8,7 +8,7 @@
 {% set color = status_colors.get(artisan.availability_status or 'hors_ligne', status_colors['hors_ligne']) %}
 {% set cat_color = category_colors.get(artisan.profession, default_category_color) %}
 
-<a class="artisan-card" href="{{ url_for('artisans_page', category=artisan.profession or '') }}" data-name="{{ artisan.full_name|lower }}" data-profession="{{ (artisan.profession or '')|lower }}" data-category="{{ (artisan.profession or '')|lower }}">
+<a class="artisan-card" href="{{ url_for('artisan_detail', artisan_id=artisan.id) }}" data-name="{{ artisan.full_name|lower }}" data-profession="{{ (artisan.profession or '')|lower }}" data-category="{{ (artisan.profession or '')|lower }}">
   <div class="artisan-photo-wrap">
     {% if artisan.photo_url %}
     <img class="artisan-photo" src="{{ artisan.photo_url }}" alt="{{ artisan.full_name }}" loading="lazy" />

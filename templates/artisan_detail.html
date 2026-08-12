@@ -1,0 +1,200 @@
+{% from '_category_colors.html' import category_colors, default_category_color %}
+{% set cat_color = category_colors.get(artisan.profession, default_category_color) %}
+{% set status_colors = {
+  'en_ligne': ('#3ddc84', 'Disponible'),
+  'occupe': ('#f7c873', 'Occupe'),
+  'hors_ligne': ('#8A94A9', 'Hors ligne')
+} %}
+{% set status = status_colors.get(artisan.availability_status or 'hors_ligne', status_colors['hors_ligne']) %}
+{% extends 'base.html' %}
+{% block title %}{{ artisan.full_name }} - FixPro{% endblock %}
+{% block page_title %}Profil technicien{% endblock %}
+
+{% block content %}
+
+<a class="btn btn-soft btn-sm" href="{{ url_for('artisans_page') }}" style="margin-bottom: 18px;">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+  Retour aux techniciens
+</a>
+
+<div class="detail-hero" style="background: linear-gradient(160deg, {{ cat_color }}33, #0d1526 85%);">
+  <div class="detail-avatar-wrap">
+    {% if artisan.photo_url %}
+    <img class="detail-avatar" src="{{ artisan.photo_url }}" alt="{{ artisan.full_name }}" />
+    {% else %}
+    <div class="detail-avatar" style="background: linear-gradient(160deg, {{ cat_color }}, #0d1526 85%); color: #fff;">
+      {{ (artisan.full_name or '?')[0]|upper }}
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="detail-hero-info">
+    <div class="detail-name-row">
+      <h1>{{ artisan.full_name }}</h1>
+      {% if artisan.is_verified %}
+      <span class="detail-badge verified" title="Profil verifie">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        Verifie
+      </span>
+      {% endif %}
+    </div>
+    <p class="detail-profession" style="color: {{ cat_color }};">{{ artisan.profession or 'Technicien' }}</p>
+
+    <div class="detail-meta">
+      <span class="detail-rating">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.2-5.4-2.9-5.4 2.9 1-6.2L3.2 9.5l6.1-.9z"/></svg>
+        {% if review_stats.count %}
+          {{ "%.1f"|format(review_stats.avg_rating|float) }} ({{ review_stats.count }} avis)
+        {% else %}
+          Nouveau
+        {% endif %}
+      </span>
+      <span class="detail-stat">{{ completed }} intervention{{ 's' if completed > 1 }} terminee{{ 's' if completed > 1 }}</span>
+      <span class="detail-status" style="background: {{ status[0] }}; color: {% if status[0] == '#f7c873' %}#1a1206{% else %}#fff{% endif %};">{{ status[1] }}</span>
+    </div>
+
+    <p class="detail-location">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+      {{ artisan.quartier or artisan.city or 'Conakry' }}
+      {% if distance is not none %}
+        <span class="detail-distance">(~ {{ "%.1f"|format(distance) }} km)</span>
+      {% endif %}
+    </p>
+  </div>
+</div>
+
+<div class="detail-actions">
+  <a class="btn btn-primary btn-block" href="#contactForm">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 21l1.9-5.1A8.4 8.4 0 0 1 4 11.5a8.5 8.5 0 0 1 8.5-8.5A8.5 8.5 0 0 1 21 11.5z"/></svg>
+    Contacter FixPro
+  </a>
+  <a class="btn btn-soft btn-block" href="#requestForm">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M9 14h6M9 17h4"/></svg>
+    Demander une intervention
+  </a>
+</div>
+
+<div class="detail-card">
+  <h3>A propos</h3>
+  <p class="detail-bio">{{ artisan.bio or 'Aucune presentation pour le moment.' }}</p>
+  <div class="detail-tags">
+    {% if artisan.skills %}
+    {% for skill in artisan.skills.split(',') %}
+    <span class="chip">{{ skill.strip() }}</span>
+    {% endfor %}
+    {% endif %}
+  </div>
+</div>
+
+<div class="detail-card">
+  <h3>Informations professionnelles</h3>
+  <ul class="detail-list">
+    <li><span>Metier</span><strong style="color: {{ cat_color }};">{{ artisan.profession or 'Technicien' }}</strong></li>
+    <li><span>Zone</span><strong>{{ artisan.quartier or artisan.city or 'Conakry' }}</strong></li>
+    <li><span>Mobilite</span><strong>{{ artisan.mobility or 'Conakry et environs' }}</strong></li>
+    <li><span>Assurance</span><strong>{{ artisan.insurance or 'Non renseignee' }}</strong></li>
+    <li><span>Sur FixPro depuis</span><strong>{{ artisan.created_at[:10] if artisan.created_at else 'Inconnu' }}</strong></li>
+  </ul>
+</div>
+
+<div class="detail-card" id="contactForm">
+  <h3>Contacter FixPro</h3>
+  <p class="small muted">Votre message sera transmis a FixPro. Les echanges passent par notre equipe pour garantir la securite de la mise en relation.</p>
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+    <input type="hidden" name="action" value="contact" />
+    <label class="field">
+      <span>Service recherche</span>
+      <input type="text" name="service" placeholder="Ex: reparation robinet" />
+    </label>
+    <label class="field">
+      <span>Message</span>
+      <textarea name="message" required placeholder="Decrivez votre besoin. FixPro traitera votre demande."></textarea>
+    </label>
+    <button class="btn btn-primary btn-block" type="submit">Envoyer a FixPro</button>
+  </form>
+</div>
+
+<div class="detail-card" id="requestForm">
+  <h3>Demander une intervention</h3>
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+    <input type="hidden" name="action" value="request" />
+    <label class="field">
+      <span>Service recherche</span>
+      <input type="text" name="title" required placeholder="Fuite d'eau sous l'evier" />
+    </label>
+    <label class="field">
+      <span>Description du probleme</span>
+      <textarea name="description" required placeholder="Expliquez le probleme en detail."></textarea>
+    </label>
+    <div class="field-2">
+      <label class="field">
+        <span>Localisation</span>
+        <input type="text" name="address" placeholder="Kaloum, Conakry" />
+      </label>
+      <label class="field">
+        <span>Date/heure souhaitee</span>
+        <input type="text" name="date_time" placeholder="Demain a 14h" />
+      </label>
+    </div>
+    <button class="btn btn-primary btn-block" type="submit">Envoyer la demande</button>
+  </form>
+</div>
+
+{% if can_review %}
+<div class="detail-card" id="reviewForm">
+  <h3>Comment s'est passee votre intervention ?</h3>
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+    <input type="hidden" name="action" value="review" />
+    <label class="field">
+      <span>Note</span>
+      <select name="rating" required>
+        <option value="5">5 - Excellent</option>
+        <option value="4">4 - Tres bien</option>
+        <option value="3">3 - Correct</option>
+        <option value="2">2 - Insuffisant</option>
+        <option value="1">1 - Decevant</option>
+      </select>
+    </label>
+    <label class="field">
+      <span>Commentaire</span>
+      <textarea name="comment" placeholder="Ponctualite, qualite, professionnalisme..."></textarea>
+    </label>
+    <button class="btn btn-primary btn-block" type="submit">Laisser un avis</button>
+  </form>
+</div>
+{% endif %}
+
+<div class="detail-card">
+  <h3>Historique et reputation</h3>
+  <div class="kpi-grid kpi-grid-4">
+    <div class="kpi"><span class="kpi-label">Interventions</span><span class="kpi-value">{{ completed }}</span></div>
+    <div class="kpi"><span class="kpi-label">Avis</span><span class="kpi-value">{{ review_stats.count }}</span></div>
+    <div class="kpi"><span class="kpi-label">Note</span><span class="kpi-value">{{ "%.1f"|format(review_stats.avg_rating|float) if review_stats.count else 'N/A' }}</span></div>
+    <div class="kpi"><span class="kpi-label">Anciennete</span><span class="kpi-value sm">{{ artisan.created_at[:10] if artisan.created_at else 'N/A' }}</span></div>
+  </div>
+</div>
+
+{% if reviews %}
+<div class="detail-card">
+  <h3>Avis clients</h3>
+  <div class="list">
+    {% for review in reviews %}
+    <div class="list-item" style="cursor: default;">
+      <span class="list-icon amber">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.2-5.4-2.9-5.4 2.9 1-6.2L3.2 9.5l6.1-.9z"/></svg>
+      </span>
+      <div class="grow">
+        <div class="list-item-title"><span class="truncate">{{ review.client_name }}</span> <span class="small muted">— {{ review.rating }}/5</span></div>
+        <div class="list-item-sub">{{ review.comment or 'Aucun commentaire' }}</div>
+      </div>
+      <span class="tiny muted">{{ review.created_at[:10] if review.created_at else '' }}</span>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

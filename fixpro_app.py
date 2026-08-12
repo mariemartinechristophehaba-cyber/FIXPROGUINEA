@@ -959,6 +959,132 @@ def artisan_contact(artisan_id):
     return redirect(url_for("request_new"))
 
 
+@app.route("/artisans/<int:artisan_id>", methods=["GET", "POST"])
+@login_required
+def artisan_detail(artisan_id):
+    user = get_current_user()
+    if user["role"] != "client":
+        flash("Cette page est réservée aux clients.", "error")
+        return redirect(url_for("artisans_page"))
+
+    conn = get_db_connection()
+    try:
+        artisan = conn.execute(
+            "SELECT * FROM users WHERE id = ? AND role = 'artisan'",
+            (artisan_id,)).fetchone()
+        if not artisan:
+            flash("Technicien introuvable.", "error")
+            return redirect(url_for("artisans_page"))
+
+        # Avis
+        reviews = conn.execute(
+            "SELECT r.id, r.rating, r.comment, r.created_at, u.full_name AS client_name"
+            " FROM reviews r JOIN users u ON u.id = r.client_id"
+            " WHERE r.artisan_id = ? ORDER BY r.created_at DESC",
+            (artisan_id,)).fetchall()
+        review_stats = conn.execute(
+            "SELECT COALESCE(AVG(rating), 0) AS avg_rating, COUNT(*) AS count"
+            " FROM reviews WHERE artisan_id = ?",
+            (artisan_id,)).fetchone()
+
+        # Interventions realisees (status completed)
+        completed = conn.execute(
+            "SELECT COUNT(*) AS n FROM requests"
+            " WHERE artisan_id = ? AND status = 'completed'",
+            (artisan_id,)).fetchone()["n"]
+
+        # Distance approximative
+        distance = None
+        if user.get("latitude") and user.get("longitude") and artisan["latitude"] and artisan["longitude"]:
+            distance = calculate_distance(
+                float(user["latitude"]), float(user["longitude"]),
+                float(artisan["latitude"]), float(artisan["longitude"]))
+
+        # Le client peut-il laisser un avis ?
+        can_review = False
+        review_request_id = None
+        req = conn.execute(
+            "SELECT id FROM requests"
+            " WHERE client_id = ? AND artisan_id = ? AND status = 'completed'"
+            " AND id NOT IN (SELECT request_id FROM reviews WHERE client_id = ?)"
+            " ORDER BY updated_at DESC LIMIT 1",
+            (user["id"], artisan_id, user["id"])).fetchone()
+        if req:
+            can_review = True
+            review_request_id = req["id"]
+
+        if request.method == "POST":
+            action = request.form.get("action")
+
+            if action == "contact":
+                message = (request.form.get("message") or "").strip()
+                if not message:
+                    flash("Veuillez écrire un message.", "error")
+                    return redirect(url_for("artisan_detail", artisan_id=artisan_id))
+                conn.execute(
+                    "INSERT INTO requests"
+                    " (client_id, artisan_id, title, description, category, status, created_at, updated_at)"
+                    " VALUES (?, ?, ?, ?, ?, 'pending', datetime('now'), datetime('now'))",
+                    (user["id"], artisan_id,
+                     f"Contact FixPro concernant {artisan['full_name']}",
+                     message, artisan["profession"] or "Autre"))
+                conn.commit()
+                flash("Votre message a été transmis à FixPro. Nous vous recontacterons.", "success")
+                return redirect(url_for("artisan_detail", artisan_id=artisan_id))
+
+            if action == "request":
+                title = (request.form.get("title") or "").strip()
+                description = (request.form.get("description") or "").strip()
+                address = (request.form.get("address") or "").strip()
+                date_time = (request.form.get("date_time") or "").strip()
+                if not title or not description:
+                    flash("Veuillez remplir le service et la description.", "error")
+                    return redirect(url_for("artisan_detail", artisan_id=artisan_id))
+                full_desc = description
+                if date_time:
+                    full_desc += f"\n\nDate/heure souhaitée : {date_time}"
+                if address:
+                    full_desc += f"\n\nAdresse : {address}"
+                result = conn.execute(
+                    "INSERT INTO requests"
+                    " (client_id, artisan_id, title, description, category, address, status, created_at, updated_at)"
+                    " VALUES (?, ?, ?, ?, ?, ?, 'pending', datetime('now'), datetime('now'))",
+                    (user["id"], artisan_id, title, full_desc,
+                     artisan["profession"] or "Autre", address))
+                conn.commit()
+                flash("Demande d'intervention créée. Le technicien en sera informé.", "success")
+                return redirect(url_for("request_detail", request_id=result.lastrowid))
+
+            if action == "review" and can_review:
+                rating = request.form.get("rating")
+                comment = (request.form.get("comment") or "").strip()
+                try:
+                    rating_int = int(rating)
+                    if not 1 <= rating_int <= 5:
+                        raise ValueError
+                except (TypeError, ValueError):
+                    flash("Veuillez sélectionner une note entre 1 et 5.", "error")
+                    return redirect(url_for("artisan_detail", artisan_id=artisan_id))
+                conn.execute(
+                    "INSERT INTO reviews (request_id, client_id, artisan_id, rating, comment)"
+                    " VALUES (?, ?, ?, ?, ?)",
+                    (review_request_id, user["id"], artisan_id, rating_int, comment))
+                conn.commit()
+                flash("Avis enregistré. Merci pour votre retour.", "success")
+                return redirect(url_for("artisan_detail", artisan_id=artisan_id))
+    finally:
+        conn.close()
+
+    return render_template("artisan_detail.html",
+                           user=user,
+                           artisan=artisan,
+                           reviews=reviews,
+                           review_stats=review_stats,
+                           completed=completed,
+                           distance=distance,
+                           can_review=can_review)
+
+
 @app.route("/conversations")
 @login_required
 def conversations():
