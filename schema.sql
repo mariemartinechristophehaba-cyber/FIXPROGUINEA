@@ -92,6 +92,17 @@ CREATE TABLE IF NOT EXISTS reviews (
     created_at  TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS admin_tickets (
+    id          SERIAL PRIMARY KEY,
+    client_id   INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    artisan_id  INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    subject     TEXT,
+    message     TEXT NOT NULL,
+    status      TEXT DEFAULT 'open',
+    created_at  TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at  TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE INDEX IF NOT EXISTS idx_users_email          ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_role           ON users(role);
 CREATE INDEX IF NOT EXISTS idx_requests_client_id   ON requests(client_id);

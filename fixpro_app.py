@@ -515,6 +515,43 @@ def admin_artisans():
         conn.close()
 
 
+@app.route("/admin/tickets", methods=["GET", "POST"])
+@limiter.limit("60 per hour", methods=["POST"])
+def admin_tickets():
+    """Interface admin pour consulter les tickets client."""
+    if not session.get("admin_logged_in"):
+        return render_template("admin_login.html")
+
+    conn = get_db_connection()
+    try:
+        if request.method == "POST" and request.form.get("action"):
+            ticket_id = request.form.get("ticket_id")
+            action = request.form.get("action")
+            if action == "close":
+                conn.execute(
+                    "UPDATE admin_tickets SET status = 'closed',"
+                    " updated_at = datetime('now') WHERE id = ?", (ticket_id,))
+                conn.commit()
+                flash("Ticket cloture.", "success")
+            elif action == "open":
+                conn.execute(
+                    "UPDATE admin_tickets SET status = 'open',"
+                    " updated_at = datetime('now') WHERE id = ?", (ticket_id,))
+                conn.commit()
+                flash("Ticket rouvert.", "success")
+            return redirect(url_for("admin_tickets"))
+
+        tickets = conn.execute(
+            "SELECT t.*, c.full_name AS client_name, a.full_name AS artisan_name"
+            " FROM admin_tickets t"
+            " JOIN users c ON c.id = t.client_id"
+            " LEFT JOIN users a ON a.id = t.artisan_id"
+            " ORDER BY t.created_at DESC").fetchall()
+        return render_template("admin_tickets.html", tickets=tickets)
+    finally:
+        conn.close()
+
+
 @app.route("/admin/logout")
 def admin_logout():
     session.pop("admin_logged_in", None)
@@ -960,11 +997,14 @@ def artisan_contact(artisan_id):
 
 
 @app.route("/artisans/<int:artisan_id>", methods=["GET", "POST"])
-@login_required
 def artisan_detail(artisan_id):
     user = get_current_user()
-    if user["role"] != "client":
-        flash("Cette page est réservée aux clients.", "error")
+
+    if request.method == "POST" and not user:
+        return redirect(url_for("login"))
+
+    if request.method == "POST" and user["role"] != "client":
+        flash("Cette action est reservee aux clients.", "error")
         return redirect(url_for("artisans_page"))
 
     conn = get_db_connection()
@@ -995,7 +1035,7 @@ def artisan_detail(artisan_id):
 
         # Distance approximative
         distance = None
-        if user.get("latitude") and user.get("longitude") and artisan["latitude"] and artisan["longitude"]:
+        if user and user.get("latitude") and user.get("longitude") and artisan["latitude"] and artisan["longitude"]:
             distance = calculate_distance(
                 float(user["latitude"]), float(user["longitude"]),
                 float(artisan["latitude"]), float(artisan["longitude"]))
@@ -1003,15 +1043,16 @@ def artisan_detail(artisan_id):
         # Le client peut-il laisser un avis ?
         can_review = False
         review_request_id = None
-        req = conn.execute(
-            "SELECT id FROM requests"
-            " WHERE client_id = ? AND artisan_id = ? AND status = 'completed'"
-            " AND id NOT IN (SELECT request_id FROM reviews WHERE client_id = ?)"
-            " ORDER BY updated_at DESC LIMIT 1",
-            (user["id"], artisan_id, user["id"])).fetchone()
-        if req:
-            can_review = True
-            review_request_id = req["id"]
+        if user:
+            req = conn.execute(
+                "SELECT id FROM requests"
+                " WHERE client_id = ? AND artisan_id = ? AND status = 'completed'"
+                " AND id NOT IN (SELECT request_id FROM reviews WHERE client_id = ?)"
+                " ORDER BY updated_at DESC LIMIT 1",
+                (user["id"], artisan_id, user["id"])).fetchone()
+            if req:
+                can_review = True
+                review_request_id = req["id"]
 
         if request.method == "POST":
             action = request.form.get("action")
@@ -1022,12 +1063,11 @@ def artisan_detail(artisan_id):
                     flash("Veuillez écrire un message.", "error")
                     return redirect(url_for("artisan_detail", artisan_id=artisan_id))
                 conn.execute(
-                    "INSERT INTO requests"
-                    " (client_id, artisan_id, title, description, category, status, created_at, updated_at)"
-                    " VALUES (?, ?, ?, ?, ?, 'pending', datetime('now'), datetime('now'))",
+                    "INSERT INTO admin_tickets"
+                    " (client_id, artisan_id, subject, message, status, created_at, updated_at)"
+                    " VALUES (?, ?, ?, ?, 'open', datetime('now'), datetime('now'))",
                     (user["id"], artisan_id,
-                     f"Contact FixPro concernant {artisan['full_name']}",
-                     message, artisan["profession"] or "Autre"))
+                     f"Contact concernant {artisan['full_name']}", message))
                 conn.commit()
                 flash("Votre message a été transmis à FixPro. Nous vous recontacterons.", "success")
                 return redirect(url_for("artisan_detail", artisan_id=artisan_id))
