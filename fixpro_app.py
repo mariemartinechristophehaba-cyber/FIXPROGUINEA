@@ -1115,14 +1115,20 @@ def artisan_detail(artisan_id):
     finally:
         conn.close()
 
-    return render_template("artisan_detail.html",
-                           user=user,
-                           artisan=artisan,
-                           reviews=reviews,
-                           review_stats=review_stats,
-                           completed=completed,
-                           distance=distance,
-                           can_review=can_review)
+    try:
+        return render_template("artisan_detail.html",
+                               user=user,
+                               artisan=artisan,
+                               reviews=reviews,
+                               review_stats=review_stats,
+                               completed=completed,
+                               distance=distance,
+                               can_review=can_review)
+    except Exception as exc:
+        import traceback
+        app.logger.error("artisan_detail render error: %s", exc)
+        app.logger.error(traceback.format_exc())
+        return f"Erreur de rendu: {exc}", 500
 
 
 @app.route("/conversations")
