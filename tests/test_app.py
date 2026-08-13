@@ -65,24 +65,59 @@ class FixProTestCase(unittest.TestCase):
         }, follow_redirects=True)
 
     def register_artisan(self, email, phone="+224621111111", password="mdp123",
-                         name="Mamadou Bah"):
-        response = self.client.post("/register?role=artisan", data={
-            "role": "artisan",
-            "full_name": name,
-            "email": email,
+                         name="Mamadou Bah", last_name=None):
+        doc = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+
+        parts = name.split(maxsplit=1)
+        first_name = parts[0]
+        last_name = parts[1] if len(parts) > 1 and not last_name else (last_name or "")
+
+        self.client.get("/register/artisan")
+
+        self.client.post("/register/artisan/1", data={
+            "civility": "Mr",
+            "first_name": first_name,
+            "last_name": last_name,
             "phone": phone,
-            "profession": "Plombier",
-            "city": "Conakry",
-            "password": password,
+            "email": email,
+            "identity_doc_type": "carte_identite",
+            "identity_doc": doc,
+            "identity_doc_name": "cni.png",
         }, follow_redirects=True)
+
+        self.client.post("/register/artisan/2", data={
+            "profession": "Plombier",
+            "skills": "Reparations, installations",
+            "years_experience": "3",
+            "bio": "Plombier experimente.",
+        }, follow_redirects=True)
+
+        self.client.post("/register/artisan/3", data={
+            "city": "Conakry",
+            "quartier": "Kaloum",
+            "zone_intervention": "Conakry",
+            "mobility": "local",
+        }, follow_redirects=True)
+
+        response = self.client.post("/register/artisan/4", data={
+            "diploma_doc": doc,
+            "diploma_doc_name": "diplome.png",
+        }, follow_redirects=True)
+
+        self.client.post("/register/artisan/5", data={
+            "wizard_action": "submit",
+        }, follow_redirects=True)
+
         # Valide automatiquement l'artisan pour les tests.
         conn = db.connect(sqlite_path=self.db_path)
         try:
             user = conn.execute(
                 "SELECT id FROM users WHERE email = ?", (email,)).fetchone()
             if user:
-                conn.execute("UPDATE users SET is_verified = 1 WHERE id = ?",
-                             (user["id"],))
+                conn.execute(
+                    "UPDATE users SET is_verified = 1, is_active = 1,"
+                    " password_hash = ? WHERE id = ?",
+                    (fixpro_app.generate_password_hash(password), user["id"]))
                 conn.commit()
         finally:
             conn.close()

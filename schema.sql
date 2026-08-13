@@ -30,6 +30,8 @@ CREATE TABLE IF NOT EXISTS users (
     is_active       INTEGER DEFAULT 1,
     photo_url       TEXT,
     quartier        TEXT,
+    zone_intervention TEXT,
+    years_experience  INTEGER DEFAULT 0,
     availability_status TEXT DEFAULT 'hors_ligne',
     estimated_delay TEXT,
     created_at      TEXT DEFAULT CURRENT_TIMESTAMP
@@ -120,6 +122,20 @@ CREATE TABLE IF NOT EXISTS technician_locations (
     longitude REAL NOT NULL,
     updated_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS technician_documents (
+    id              SERIAL PRIMARY KEY,
+    technician_id   INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    document_type   TEXT NOT NULL,
+    file_name       TEXT,
+    mime_type       TEXT,
+    file_size       INTEGER,
+    content_base64  TEXT,
+    status          TEXT DEFAULT 'pending',
+    created_at      TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_technician_documents_technician ON technician_documents(technician_id);
 
 CREATE TABLE IF NOT EXISTS admin_logs (
     id              SERIAL PRIMARY KEY,

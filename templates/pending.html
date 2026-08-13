@@ -1,15 +1,21 @@
 {% extends 'base.html' %}
+{% block title %}Inscription en attente - FixPro{% endblock %}
+{% block main_class %}page page-narrow{% endblock %}
+
 {% block content %}
-<section class="card" style="max-width: 520px; margin: 80px auto; text-align: center; padding: 48px 32px;">
-  <div style="width: 72px; height: 72px; border-radius: 50%; background: rgba(245,166,35,0.12); color: var(--accent-orange); display: grid; place-items: center; margin: 0 auto 24px;">
-    <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<section class="pending-card card card-pad-lg" style="max-width: 520px; margin: 60px auto; text-align: center;">
+  <div class="pending-icon">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <circle cx="12" cy="12" r="10"/>
       <polyline points="12 6 12 12 16 14"/>
     </svg>
   </div>
-  <h2 style="margin: 0 0 12px;">Votre compte est en cours de validation</h2>
-  <p class="muted" style="line-height: 1.7;">L'equipe FixPro verifie vos informations. Vous recevrez une confirmation des que votre compte sera active.</p>
-  <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin: 28px 0;">
+  <h2 style="margin: 0 0 12px;">En attente de verification</h2>
+  <p class="muted" style="line-height: 1.7;">Votre demande d'inscription a bien ete recue. L'equipe FixPro va verifier vos informations et vos documents avant de valider votre profil.</p>
+  <div class="pending-status">
+    <span class="badge pending">Statut : En attente de verification</span>
+  </div>
+  <div style="background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; margin: 28px 0; text-align: left;">
     <div class="small muted" style="margin-bottom: 6px;">Delai habituel</div>
     <strong>Jusqu'a 48 heures</strong>
   </div>

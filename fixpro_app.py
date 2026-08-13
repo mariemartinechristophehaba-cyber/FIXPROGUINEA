@@ -330,6 +330,31 @@ def health_db():
 # Authentification
 # ---------------------------------------------------------------------------
 
+def _phone_with_prefix(phone):
+    """Ajoute le prefixe guineen si absent."""
+    phone = (phone or "").strip().replace(" ", "")
+    if phone and not phone.startswith("+"):
+        phone = f"+224{phone}"
+    return phone
+
+
+def _parse_base64_file(data_uri):
+    """Extrait le mime, le nom et le contenu binaire depuis un data URI base64."""
+    if not data_uri or not data_uri.startswith("data:"):
+        return None, None, None
+    try:
+        meta, encoded = data_uri.split(",", 1)
+        mime = meta.split(";")[0].replace("data:", "")
+        ext = ".jpg"
+        if "png" in mime:
+            ext = ".png"
+        elif "pdf" in mime:
+            ext = ".pdf"
+        return mime, ext, encoded
+    except Exception:
+        return None, None, None
+
+
 @app.route("/register", methods=["GET", "POST"])
 @limiter.limit("10 per hour", methods=["POST"])
 def register():
@@ -338,132 +363,195 @@ def register():
     if role not in ("client", "artisan"):
         role = "client"
 
-    if request.method == "POST":
+    if role == "client" and request.method == "POST":
+        first_name = request.form.get("first_name", "").strip()
+        last_name = request.form.get("last_name", "").strip()
+        full_name = f"{first_name} {last_name}".strip()
+        phone = _phone_with_prefix(request.form.get("phone", "").strip())
+        city = request.form.get("city", "").strip()
         password = request.form.get("password", "")
 
-        if role == "client":
-            # Inscription simplifiee pour le client : nom, prenom, telephone, ville.
-            first_name = request.form.get("first_name", "").strip()
-            last_name = request.form.get("last_name", "").strip()
-            full_name = f"{first_name} {last_name}".strip()
-            phone = request.form.get("phone", "").strip()
-            city = request.form.get("city", "").strip()
-
-            if not first_name or not last_name or not phone or not city or not password:
-                flash("Veuillez remplir tous les champs obligatoires.", "error")
-                return redirect(url_for("register", role=role))
-        else:
-            # Inscription artisan simplifiee.
-            civility = request.form.get("civility", "").strip()
-            first_name = request.form.get("first_name", "").strip()
-            last_name = request.form.get("last_name", "").strip()
-            full_name_legacy = request.form.get("full_name", "").strip()
-            if first_name and last_name:
-                full_name = f"{civility} {first_name} {last_name}".strip()
-            else:
-                full_name = full_name_legacy
-            email = request.form.get("email", "").strip().lower()
-            phone = request.form.get("phone", "").strip()
-            city = request.form.get("city", "").strip()
-
-            # Ajoute le prefixe guineen si absent.
-            if phone and not phone.startswith("+"):
-                phone = f"+224 {phone}"
-
-            if not full_name or not email or not phone or not city:
-                flash("Veuillez remplir tous les champs obligatoires.", "error")
-                return redirect(url_for("register", role=role))
-
-            try:
-                validate_email(email, check_deliverability=False)
-            except EmailNotValidError:
-                flash("Format d'email invalide.", "error")
-                return redirect(url_for("register", role=role))
-
-            # Mot de passe genere automatiquement depuis le numero.
-            if not password:
-                password = phone.replace(" ", "").replace("+", "")
+        if not first_name or not last_name or not phone or not city or not password:
+            flash("Veuillez remplir tous les champs obligatoires.", "error")
+            return redirect(url_for("register", role=role))
 
         if len(password) < 6:
-            flash("Le mot de passe doit contenir au moins 6 caractères.", "error")
+            flash("Le mot de passe doit contenir au moins 6 caracteres.", "error")
             return redirect(url_for("register", role=role))
 
         conn = get_db_connection()
         try:
-            existing = conn.execute(
-                "SELECT id FROM users WHERE phone = ?", (phone,)).fetchone()
-            if existing:
-                flash("Ce numéro de téléphone est déjà utilisé.", "error")
+            if conn.execute("SELECT id FROM users WHERE phone = ?", (phone,)).fetchone():
+                flash("Ce numero de telephone est deja utilise.", "error")
                 return redirect(url_for("register", role=role))
 
-            hourly_rate = _to_float(request.form.get("hourly_rate")) if role == "artisan" else 0
-            email = request.form.get("email", "").strip().lower() if role == "artisan" else None
-
-            try:
-                if role == "artisan":
-                    skills = ", ".join(request.form.getlist("skills"))
-                    conn.execute(
-                        "INSERT INTO users (email, phone, password_hash, role, full_name, civility,"
-                        " company_name, profession, skills, mobility, insurance, insurance_policy,"
-                        " bank_name, bank_account, city, bio, hourly_rate)"
-                        " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                        (email, phone, generate_password_hash(password), role,
-                         full_name,
-                         request.form.get("civility", "").strip(),
-                         request.form.get("company_name", "").strip(),
-                         request.form.get("profession", "").strip(),
-                         skills,
-                         request.form.get("mobility", "").strip(),
-                         request.form.get("insurance", "").strip(),
-                         request.form.get("insurance_policy", "").strip(),
-                         request.form.get("bank_name", "").strip(),
-                         request.form.get("bank_account", "").strip(),
-                         city,
-                         request.form.get("bio", "").strip(),
-                         hourly_rate),
-                    )
-                else:
-                    conn.execute(
-                        "INSERT INTO users (email, phone, password_hash, role, full_name,"
-                        " profession, city, bio, hourly_rate)"
-                        " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                        (email, phone, generate_password_hash(password), role, full_name,
-                         request.form.get("profession", "").strip(),
-                         city,
-                         request.form.get("bio", "").strip(),
-                         hourly_rate),
-                    )
-                conn.commit()
-            except Exception as exc:  # pragma: no cover - aide au debug en production
-                flash(f"Erreur lors de l'inscription : {exc}", "error")
-                return redirect(url_for("register", role=role))
-
-            # Recupere le compte nouvellement cree pour le connecter directement.
+            email = request.form.get("email", "").strip().lower() or None
+            conn.execute(
+                "INSERT INTO users (email, phone, password_hash, role, full_name,"
+                " profession, city, bio, hourly_rate)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (email,
+                 phone, generate_password_hash(password), role, full_name,
+                 request.form.get("profession", "").strip(),
+                 city,
+                 request.form.get("bio", "").strip(),
+                 0))
+            conn.commit()
             new_user = conn.execute(
                 "SELECT * FROM users WHERE phone = ?", (phone,)).fetchone()
             session.clear()
             session["user_id"] = new_user["id"]
             session.permanent = True
             flash("Bienvenue dans FixPro.", "success")
-
-            if role == "client":
-                return redirect(url_for("artisans_page"))
-            # Les artisans passent en attente de validation manuelle.
-            return redirect(url_for("artisan_pending"))
+            return redirect(url_for("artisans_page"))
         finally:
             conn.close()
 
     if role == "artisan":
-        title = "Créer un compte artisan"
-        subtitle = "Recevez des demandes d'intervention et proposez vos devis."
-        button_label = "S'inscrire en tant qu'artisan"
-    else:
-        title = "Créer un compte client"
-        subtitle = "Trouvez un artisan en 30 secondes."
-        button_label = "S'inscrire en 30 secondes"
+        return redirect(url_for("register_artisan"))
 
-    return render_template("register.html", role=role, title=title,
-                           subtitle=subtitle, button_label=button_label)
+    return render_template("register.html", role="client")
+
+
+@app.route("/register/artisan", methods=["GET", "POST"])
+@app.route("/register/artisan/<int:step>", methods=["GET", "POST"])
+@limiter.limit("10 per hour", methods=["POST"])
+def register_artisan(step=1):
+    """Parcours d'inscription professionnel en 5 etapes."""
+    if step < 1 or step > 5:
+        return redirect(url_for("register_artisan", step=1))
+
+    wizard = session.setdefault("artisan_wizard", {})
+    categories = []
+    conn = get_db_connection()
+    try:
+        categories = conn.execute(
+            "SELECT name FROM service_categories ORDER BY name").fetchall()
+    finally:
+        conn.close()
+
+    if request.method == "POST":
+        action = request.form.get("wizard_action", "next")
+
+        if step == 1:
+            wizard["civility"] = request.form.get("civility", "").strip()
+            wizard["first_name"] = request.form.get("first_name", "").strip()
+            wizard["last_name"] = request.form.get("last_name", "").strip()
+            wizard["phone"] = _phone_with_prefix(request.form.get("phone", "").strip())
+            wizard["email"] = request.form.get("email", "").strip().lower()
+            wizard["identity_doc_type"] = request.form.get("identity_doc_type", "").strip()
+            wizard["identity_doc"] = request.form.get("identity_doc", "").strip()
+            wizard["identity_doc_name"] = request.form.get("identity_doc_name", "").strip()
+
+            if not all([wizard["first_name"], wizard["last_name"], wizard["phone"],
+                        wizard["email"], wizard["identity_doc_type"], wizard["identity_doc"]]):
+                flash("Veuillez remplir tous les champs et ajouter la piece d'identite.", "error")
+                return redirect(url_for("register_artisan", step=1))
+            try:
+                validate_email(wizard["email"], check_deliverability=False)
+            except EmailNotValidError:
+                flash("Format d'email invalide.", "error")
+                return redirect(url_for("register_artisan", step=1))
+
+        elif step == 2:
+            wizard["profession"] = request.form.get("profession", "").strip()
+            wizard["skills"] = ", ".join(request.form.getlist("skills"))
+            wizard["years_experience"] = _to_int(request.form.get("years_experience", "0"))
+            wizard["bio"] = request.form.get("bio", "").strip()
+
+            if not wizard["profession"]:
+                flash("Veuillez choisir un metier.", "error")
+                return redirect(url_for("register_artisan", step=2))
+
+        elif step == 3:
+            wizard["city"] = request.form.get("city", "").strip()
+            wizard["quartier"] = request.form.get("quartier", "").strip()
+            wizard["zone_intervention"] = request.form.get("zone_intervention", "").strip()
+            wizard["mobility"] = request.form.get("mobility", "").strip()
+
+            if not all([wizard["city"], wizard["quartier"], wizard["zone_intervention"]]):
+                flash("Veuillez remplir la localisation et la zone d'intervention.", "error")
+                return redirect(url_for("register_artisan", step=3))
+
+        elif step == 4:
+            wizard["diploma_doc"] = request.form.get("diploma_doc", "").strip()
+            wizard["diploma_doc_name"] = request.form.get("diploma_doc_name", "").strip()
+
+            if not wizard["diploma_doc"]:
+                flash("Veuillez ajouter votre diplome ou attestation professionnelle.", "error")
+                return redirect(url_for("register_artisan", step=4))
+
+        elif step == 5 and action == "submit":
+            return _finalize_artisan_registration(wizard)
+
+        session["artisan_wizard"] = wizard
+
+        if action == "prev" and step > 1:
+            return redirect(url_for("register_artisan", step=step - 1))
+        if step < 5:
+            return redirect(url_for("register_artisan", step=step + 1))
+        return redirect(url_for("register_artisan", step=step))
+
+    return render_template("register_artisan.html", step=step, wizard=wizard,
+                           categories=categories, total_steps=5)
+
+
+def _finalize_artisan_registration(wizard):
+    """Inscrit l'artisan et ses documents, puis redirige vers l'attente."""
+    required = ["first_name", "last_name", "phone", "email", "identity_doc",
+                "profession", "city", "quartier", "diploma_doc"]
+    for field in required:
+        if not wizard.get(field):
+            flash("Certaines informations sont manquantes. Veuillez recommencer.", "error")
+            return redirect(url_for("register_artisan", step=1))
+
+    conn = get_db_connection()
+    try:
+        if conn.execute("SELECT id FROM users WHERE phone = ?", (wizard["phone"],)).fetchone():
+            flash("Ce numero de telephone est deja utilise.", "error")
+            return redirect(url_for("register_artisan", step=1))
+
+        full_name = f"{wizard['civility']} {wizard['first_name']} {wizard['last_name']}".strip()
+        password = wizard["phone"].replace("+", "").replace(" ", "")
+
+        conn.execute(
+            "INSERT INTO users (email, phone, password_hash, role, full_name, civility,"
+            " profession, skills, city, quartier, zone_intervention, mobility,"
+            " years_experience, bio, hourly_rate, is_verified, is_active)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (wizard["email"], wizard["phone"], generate_password_hash(password),
+             "artisan", full_name, wizard["civility"], wizard["profession"],
+             wizard["skills"], wizard["city"], wizard["quartier"],
+             wizard["zone_intervention"], wizard["mobility"],
+             wizard["years_experience"], wizard["bio"], 0, 0, 1))
+        conn.commit()
+
+        artisan = conn.execute(
+            "SELECT id FROM users WHERE phone = ?", (wizard["phone"],)).fetchone()
+        artisan_id = artisan["id"]
+
+        for doc_type, field, name_field in [
+            ("identity", "identity_doc", "identity_doc_name"),
+            ("diploma", "diploma_doc", "diploma_doc_name"),
+        ]:
+            mime, ext, encoded = _parse_base64_file(wizard.get(field, ""))
+            if encoded:
+                file_name = (wizard.get(name_field, "") or f"{doc_type}{ext}").strip()
+                conn.execute(
+                    "INSERT INTO technician_documents (technician_id, document_type,"
+                    " file_name, mime_type, content_base64)"
+                    " VALUES (?, ?, ?, ?, ?)",
+                    (artisan_id, doc_type, file_name, mime, encoded))
+        conn.commit()
+    except Exception as exc:  # pragma: no cover - aide au debug en production
+        flash(f"Erreur lors de l'inscription : {exc}", "error")
+        return redirect(url_for("register_artisan", step=1))
+    finally:
+        conn.close()
+
+    session.pop("artisan_wizard", None)
+    flash("Votre demande d'inscription a bien ete recue. L'equipe FixPro va verifier vos informations.", "success")
+    return redirect(url_for("artisan_pending"))
 
 
 @app.route("/artisan-pending")
@@ -720,6 +808,60 @@ def admin_artisans():
     finally:
         conn.close()
     return render_template("admin_artisans.html", user=user, artisans=artisans)
+
+
+@app.route("/admin/artisans/<int:artisan_id>")
+@login_required
+@admin_required
+def admin_artisan_detail(artisan_id):
+    """Dossier detaille d'un technicien avec documents."""
+    user = get_current_user()
+    conn = get_db_connection()
+    try:
+        artisan = conn.execute(
+            "SELECT * FROM users WHERE id = ? AND role = 'artisan'", (artisan_id,)).fetchone()
+        if not artisan:
+            flash("Technicien introuvable.", "error")
+            return redirect(url_for("admin_artisans"))
+
+        documents = conn.execute(
+            "SELECT * FROM technician_documents WHERE technician_id = ?",
+            (artisan_id,)).fetchall()
+    finally:
+        conn.close()
+    return render_template("admin_artisan_detail.html", user=user,
+                           artisan=artisan, documents=documents)
+
+
+@app.route("/admin/document/<int:doc_id>")
+@login_required
+@admin_required
+def admin_document(doc_id):
+    """Affiche un document en base64 (reserve aux admins)."""
+    conn = get_db_connection()
+    try:
+        doc = conn.execute(
+            "SELECT * FROM technician_documents WHERE id = ?", (doc_id,)).fetchone()
+        if not doc:
+            return "Document introuvable.", 404
+        if not doc["content_base64"]:
+            return "Contenu vide.", 404
+    finally:
+        conn.close()
+
+    mime = doc["mime_type"] or "image/jpeg"
+    data = doc["content_base64"]
+    if not data.startswith("data:"):
+        data = f"data:{mime};base64,{data}"
+
+    return f"""<!doctype html>
+<html lang="fr">
+<head><meta charset="utf-8"><title>Document {doc['file_name']}</title></head>
+<body style="margin:0;background:#000;display:grid;place-items:center;height:100vh;">
+  <img src="{data}" style="max-width:100%;max-height:100vh;" alt="Document" />
+  <a href="{url_for('admin_artisan_detail', artisan_id=doc['technician_id'])}" style="position:fixed;top:16px;left:16px;color:#fff;text-decoration:none;font-weight:700;">&larr; Retour</a>
+</body>
+</html>"""
 
 
 @app.route("/admin/clients", methods=["GET", "POST"])
@@ -1420,6 +1562,13 @@ def profile():
 def _to_float(value, default=0.0):
     try:
         return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _to_int(value, default=0):
+    try:
+        return int(value)
     except (TypeError, ValueError):
         return default
 
