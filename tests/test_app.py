@@ -463,6 +463,80 @@ class GeolocationTests(FixProTestCase):
         self.assertEqual(response.status_code, 404)
 
 
+class AdminPanelTests(FixProTestCase):
+    """Panneau administrateur : acces, actions et logs."""
+
+    def setUp(self):
+        super().setUp()
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute(
+                "INSERT INTO users (email, phone, password_hash, role, full_name,"
+                " is_verified, is_active) VALUES (?, ?, ?, 'admin', ?, 1, 1)",
+                ("admin@fixpro.local", "+224000000000",
+                 fixpro_app.generate_password_hash("adminpass"), "Administrateur"))
+            conn.commit()
+        finally:
+            conn.close()
+
+    def login_admin(self):
+        with self.client.session_transaction() as sess:
+            sess["user_id"] = 1
+
+    def test_non_admin_cannot_access_dashboard(self):
+        self.register_client(phone="+224620000000")
+        response = self.client.get("/admin/dashboard")
+        self.assertEqual(response.status_code, 302)
+
+    def test_admin_dashboard_loads_with_kpi(self):
+        self.login_admin()
+        response = self.client.get("/admin/dashboard")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Vue d'ensemble", response.data)
+
+    def test_admin_can_suspend_and_restore_artisan(self):
+        self.register_artisan("artisan@example.com", phone="+224621111111")
+        self.login_admin()
+
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            artisan = conn.execute(
+                "SELECT id FROM users WHERE role = 'artisan'").fetchone()
+            artisan_id = artisan["id"]
+        finally:
+            conn.close()
+
+        response = self.client.post("/admin/artisans", data={
+            "action": "suspend", "artisan_id": str(artisan_id)}, follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
+
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            updated = conn.execute(
+                "SELECT is_active FROM users WHERE id = ?", (artisan_id,)).fetchone()
+            self.assertEqual(updated["is_active"], 0)
+            log = conn.execute("SELECT * FROM admin_logs WHERE action = 'suspend'").fetchone()
+        finally:
+            conn.close()
+        self.assertIsNotNone(log)
+
+    def test_admin_can_close_ticket(self):
+        self.login_admin()
+        self.register_client(phone="+224620000000")
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute(
+                "INSERT INTO admin_tickets (client_id, message, status)"
+                " VALUES (?, ?, 'open')", (1, "Probleme signale"))
+            conn.commit()
+        finally:
+            conn.close()
+
+        response = self.client.post("/admin/tickets", data={
+            "action": "close", "ticket_id": "1"}, follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
+
+
 class DatabaseLayerTests(unittest.TestCase):
     """La traduction SQLite -> PostgreSQL doit etre fiable."""
 

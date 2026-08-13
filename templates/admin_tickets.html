@@ -1,49 +1,54 @@
-{% extends 'base.html' %}
-{% block title %}Tickets - Admin FixPro{% endblock %}
-{% block page_title %}Tickets client{% endblock %}
+{% extends 'admin_base.html' %}
+{% block title %}Signalements - FixPro Admin{% endblock %}
+{% block admin_title %}Signalements{% endblock %}
 
-{% block content %}
-
-<div class="page-head">
-  <h1>Tickets de contact FixPro</h1>
-  <p>Demandes et messages transmis par les clients.</p>
-</div>
-
-{% if tickets %}
-<div class="list">
-  {% for ticket in tickets %}
-  <div class="list-item" style="align-items: flex-start; flex-direction: column;">
-    <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 10px;">
-      <div class="grow">
-        <div class="list-item-title">{{ ticket.subject or 'Ticket sans sujet' }}</div>
-        <div class="list-item-sub">Client : {{ ticket.client_name }} — Technicien : {{ ticket.artisan_name or 'Non specifie' }}</div>
-      </div>
-      <span class="badge {{ 'success' if ticket.status == 'closed' else 'pending' }}">{{ 'Cloture' if ticket.status == 'closed' else 'Ouvert' }}</span>
-    </div>
-    <p class="small muted" style="margin-top: 10px; width: 100%;">{{ ticket.message }}</p>
-    <div class="tiny muted" style="margin-top: 6px;">{{ ticket.created_at }}</div>
-    <form method="post" style="margin-top: 10px;">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-      <input type="hidden" name="ticket_id" value="{{ ticket.id }}" />
-      {% if ticket.status == 'open' %}
-      <input type="hidden" name="action" value="close" />
-      <button class="btn btn-soft btn-sm" type="submit">Cloturer</button>
-      {% else %}
-      <input type="hidden" name="action" value="open" />
-      <button class="btn btn-soft btn-sm" type="submit">Rouvrir</button>
-      {% endif %}
-    </form>
+{% block admin_content %}
+<div class="admin-card">
+  <div class="admin-section-head"><h3>Tickets et signalements</h3></div>
+  <div class="admin-table-wrap">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Sujet</th>
+          <th>Client</th>
+          <th>Technicien</th>
+          <th>Message</th>
+          <th>Date</th>
+          <th>Statut</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ticket in tickets %}
+        <tr>
+          <td>{{ ticket.subject or '—' }}</td>
+          <td>{{ ticket.client_name }}</td>
+          <td>{{ ticket.artisan_name or '—' }}</td>
+          <td class="small" style="max-width: 280px;">{{ ticket.message }}</td>
+          <td>{{ (ticket.created_at|string)[:16] }}</td>
+          <td>
+            {% if ticket.status == 'open' %}<span class="badge pending">En attente</span>
+            {% else %}<span class="badge success">Traite</span>{% endif %}
+          </td>
+          <td>
+            <form method="post" class="admin-inline-form">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+              <input type="hidden" name="ticket_id" value="{{ ticket.id }}" />
+              {% if ticket.status == 'open' %}
+              <button class="btn btn-success btn-sm" type="submit" name="action" value="close" onclick="return confirm('Marquer ce signalement comme traite ?')">Marquer traite</button>
+              {% else %}
+              <button class="btn btn-soft btn-sm" type="submit" name="action" value="open" onclick="return confirm('Rouvrir ce signalement ?')">Rouvrir</button>
+              {% endif %}
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" class="muted" style="text-align: center; padding: 24px;">Aucun signalement.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
-  {% endfor %}
 </div>
-{% else %}
-<div class="empty">
-  <span class="empty-icon">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 21l1.9-5.1A8.4 8.4 0 0 1 4 11.5a8.5 8.5 0 0 1 8.5-8.5A8.5 8.5 0 0 1 21 11.5z"/></svg>
-  </span>
-  <h3>Aucun ticket</h3>
-  <p>Les messages envoyes via "Contacter FixPro" apparaitront ici.</p>
-</div>
-{% endif %}
-
 {% endblock %}

@@ -3,7 +3,7 @@
 <section class="card form-card" style="max-width: 420px; margin: 80px auto;">
   <h2>Administration FixPro</h2>
   <p class="muted">Connectez-vous pour gérer les artisans.</p>
-  <form method="post" action="{{ url_for('admin_artisans') }}">
+  <form method="post" action="{{ url_for('admin_login') }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
     <label>Mot de passe admin</label>
     <input type="password" name="admin_password" required />

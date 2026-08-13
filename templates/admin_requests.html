@@ -1,0 +1,43 @@
+{% extends 'admin_base.html' %}
+{% block title %}Demandes - FixPro Admin{% endblock %}
+{% block admin_title %}Demandes d'intervention{% endblock %}
+
+{% block admin_content %}
+<div class="admin-card">
+  <div class="admin-section-head"><h3>Demandes</h3></div>
+  <div class="admin-table-wrap">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Titre</th>
+          <th>Client</th>
+          <th>Technicien</th>
+          <th>Statut</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for req in requests %}
+        <tr>
+          <td>#{{ req.id }}</td>
+          <td>{{ req.title }}</td>
+          <td>{{ req.client_name or '—' }}</td>
+          <td>{{ req.artisan_name or 'Non assigne' }}</td>
+          <td>
+            <span class="badge {% if req.status == 'completed' %}success{% elif req.status in ('assigned', 'in_progress') %}info{% elif req.status == 'pending' %}pending{% else %}neutral{% endif %}">
+              {{ req.status }}
+            </span>
+          </td>
+          <td>{{ (req.created_at|string)[:16] }}</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="6" class="muted" style="text-align: center; padding: 24px;">Aucune demande.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

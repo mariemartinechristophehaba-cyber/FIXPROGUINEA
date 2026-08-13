@@ -1,0 +1,52 @@
+{% extends 'admin_base.html' %}
+{% block title %}Clients - FixPro Admin{% endblock %}
+{% block admin_title %}Gestion des clients{% endblock %}
+
+{% block admin_content %}
+<div class="admin-card">
+  <div class="admin-section-head"><h3>Clients inscrits</h3></div>
+  <div class="admin-table-wrap">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Nom</th>
+          <th>Telephone</th>
+          <th>Ville</th>
+          <th>Demandes</th>
+          <th>Statut</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for client in clients %}
+        <tr>
+          <td>{{ client.full_name }}</td>
+          <td>{{ client.phone or '—' }}</td>
+          <td>{{ client.city or '—' }}</td>
+          <td>{{ client.request_count or 0 }}</td>
+          <td>
+            {% if client.is_active %}<span class="badge success">Actif</span>
+            {% else %}<span class="badge failed">Suspendu</span>{% endif %}
+          </td>
+          <td>
+            <form method="post" class="admin-inline-form">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+              <input type="hidden" name="client_id" value="{{ client.id }}" />
+              {% if client.is_active %}
+              <button class="btn btn-danger btn-sm" type="submit" name="action" value="suspend" onclick="return confirm('Suspendre ce client ?')">Bloquer</button>
+              {% else %}
+              <button class="btn btn-success btn-sm" type="submit" name="action" value="restore" onclick="return confirm('Reactiver ce client ?')">Reactiver</button>
+              {% endif %}
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="6" class="muted" style="text-align: center; padding: 24px;">Aucun client.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -72,15 +72,16 @@ CREATE TABLE IF NOT EXISTS messages (
 );
 
 CREATE TABLE IF NOT EXISTS payments (
-    id           SERIAL PRIMARY KEY,
-    request_id   INTEGER NOT NULL REFERENCES requests(id) ON DELETE CASCADE,
-    amount       REAL NOT NULL,
-    method       TEXT DEFAULT 'cash',
-    status       TEXT DEFAULT 'pending',
-    reference    TEXT,
-    details      TEXT,
-    created_at   TEXT DEFAULT CURRENT_TIMESTAMP,
-    updated_at   TEXT DEFAULT CURRENT_TIMESTAMP
+    id                SERIAL PRIMARY KEY,
+    request_id        INTEGER NOT NULL REFERENCES requests(id) ON DELETE CASCADE,
+    amount            REAL NOT NULL,
+    commission_amount REAL DEFAULT 0,
+    method            TEXT DEFAULT 'cash',
+    status            TEXT DEFAULT 'pending',
+    reference         TEXT,
+    details           TEXT,
+    created_at        TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at        TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS reviews (
@@ -119,6 +120,17 @@ CREATE TABLE IF NOT EXISTS technician_locations (
     updated_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS admin_logs (
+    id              SERIAL PRIMARY KEY,
+    admin_id        INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    action          TEXT NOT NULL,
+    target_type     TEXT,
+    target_id       INTEGER,
+    details         TEXT,
+    created_at      TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_admin_logs_created_at        ON admin_logs(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_admin_messages_ticket        ON admin_messages(ticket_id);
 CREATE INDEX IF NOT EXISTS idx_technician_locations_updated ON technician_locations(updated_at);
 CREATE INDEX IF NOT EXISTS idx_users_email                  ON users(email);

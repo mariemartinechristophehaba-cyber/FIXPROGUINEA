@@ -1,31 +1,59 @@
-{% extends 'base.html' %}
-{% block title %}Transactions - FixPro{% endblock %}
-{% block content %}
-<section class="card" style="max-width: 1100px; margin: 0 auto; padding: 24px;">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
-    <h2 style="margin: 0;">Transactions</h2>
-    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline">Retour</a>
-  </div>
+{% extends 'admin_base.html' %}
+{% block title %}Paiements - FixPro Admin{% endblock %}
+{% block admin_title %}Transactions et commissions{% endblock %}
 
-  {% if payments %}
-  <div class="list">
-    {% for p in payments %}
-    <div class="list-item" style="cursor: default;">
-      <div class="grow">
-        <div class="list-item-title">{{ "{:,}".format(p.amount|int).replace(",", " ") }} GNF — {{ payment_method_label(p.method) }}</div>
-        <div class="list-item-sub">
-          {{ p.client_name }} → {{ p.artisan_name or '—' }}<br/>
-          Ref : {{ p.reference or '—' }} — {{ p.title or '—' }} — {{ (p.created_at|string)[:16] }}
-        </div>
-      </div>
-      <span class="badge {% if p.status == 'completed' %}success{% elif p.status == 'pending' %}pending{% else %}failed{% endif %}">
-        {{ p.status }}
-      </span>
-    </div>
-    {% endfor %}
+{% block admin_content %}
+<div class="admin-card">
+  <div class="admin-section-head">
+    <h3>Transactions</h3>
+    <span class="small muted">Taux de commission : {{ (commission_rate * 100)|int }}%</span>
   </div>
-  {% else %}
-  <p class="muted">Aucune transaction enregistree.</p>
-  {% endif %}
-</section>
+  <div class="admin-table-wrap">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Client</th>
+          <th>Technicien</th>
+          <th>Demande</th>
+          <th>Montant</th>
+          <th>Commission</th>
+          <th>Statut</th>
+          <th>Date</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in payments %}
+        <tr>
+          <td>{{ p.client_name }}</td>
+          <td>{{ p.artisan_name or '—' }}</td>
+          <td>{{ p.title or '—' }}</td>
+          <td class="admin-amount">{{ "{:,}".format(p.amount|int).replace(",", " ") }} GNF</td>
+          <td>
+            <form method="post" class="admin-inline-form" style="gap: 6px;">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+              <input type="hidden" name="payment_id" value="{{ p.id }}" />
+              <input type="number" name="commission_amount" value="{{ p.commission_amount or (p.amount * commission_rate)|round(2) }}" min="0" step="1000" class="admin-input-sm" />
+              <button class="btn btn-soft btn-sm" type="submit">OK</button>
+            </form>
+          </td>
+          <td>
+            <span class="badge {% if p.status == 'completed' %}success{% elif p.status == 'pending' %}pending{% else %}failed{% endif %}">
+              {{ p.status }}
+            </span>
+          </td>
+          <td>{{ (p.created_at|string)[:16] }}</td>
+          <td>
+            <span class="small muted">{{ payment_method_label(p.method) }}</span>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="8" class="muted" style="text-align: center; padding: 24px;">Aucune transaction.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
 {% endblock %}

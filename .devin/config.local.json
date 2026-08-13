@@ -26,7 +26,8 @@
       "Exec(Start-Sleep)",
       "Exec(@\")",
       "Exec(.\\.venv\\Scripts\\python.exe)",
-      "Exec(\"--- re-verif ---\")"
+      "Exec(\"--- re-verif ---\")",
+      "Exec(.venv\\Scripts\\python.exe)"
     ]
   }
 }

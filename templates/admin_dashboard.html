@@ -1,67 +1,129 @@
-{% extends 'base.html' %}
-{% block title %}Administration FixPro{% endblock %}
-{% block content %}
-<section class="card" style="max-width: 1100px; margin: 0 auto; padding: 24px;">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
-    <h2 style="margin: 0;">Tableau de bord</h2>
-    <a href="{{ url_for('admin_logout') }}" class="btn btn-outline" style="padding: 10px 18px;">Deconnexion admin</a>
-  </div>
+{% extends 'admin_base.html' %}
+{% set pending_artisans = stats.pending_artisans %}
+{% set open_requests = stats.open_requests %}
+{% set open_tickets = stats.open_tickets %}
+{% block title %}Tableau de bord - FixPro Admin{% endblock %}
+{% block admin_title %}Vue d'ensemble{% endblock %}
 
-  <div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin-bottom: 24px;">
-    <div class="kpi">
-      <div class="kpi-label">Clients</div>
-      <div class="kpi-value">{{ stats.clients }}</div>
-    </div>
-    <div class="kpi">
-      <div class="kpi-label">En attente</div>
-      <div class="kpi-value" style="color: #f5a623;">{{ stats.pending_artisans }}</div>
-    </div>
-    <div class="kpi">
-      <div class="kpi-label">Actifs</div>
-      <div class="kpi-value" style="color: #3ddc84;">{{ stats.active_artisans }}</div>
-    </div>
-    <div class="kpi">
-      <div class="kpi-label">Suspendus</div>
-      <div class="kpi-value" style="color: #ff5b5b;">{{ stats.suspended_artisans }}</div>
-    </div>
-    <div class="kpi">
-      <div class="kpi-label">Demandes</div>
-      <div class="kpi-value">{{ stats.requests }}</div>
-    </div>
-    <div class="kpi">
-      <div class="kpi-label">Paiements</div>
-      <div class="kpi-value sm">{{ stats.total_payments|int }} GNF</div>
-    </div>
-  </div>
-
-  <div style="margin-bottom: 24px;">
-    <h3 style="margin-bottom: 14px;">Gestion</h3>
-    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-      <a href="{{ url_for('admin_artisans') }}" class="btn btn-primary">Valider les artisans</a>
-      <a href="{{ url_for('admin_tickets') }}" class="btn btn-soft">Conversations</a>
-      <a href="{{ url_for('admin_payments') }}" class="btn btn-soft">Transactions</a>
-    </div>
-  </div>
-
+{% block admin_content %}
+{% if stats.open_tickets > 0 %}
+<div class="admin-alert">
   <div>
-    <h3 style="margin-bottom: 14px;">Transactions recentes</h3>
-    {% if recent_payments %}
-    <div class="list">
-      {% for p in recent_payments %}
-      <div class="list-item" style="cursor: default;">
-        <div class="grow">
-          <div class="list-item-title">{{ "{:,}".format(p.amount|int).replace(",", " ") }} GNF</div>
-          <div class="list-item-sub">{{ p.method }} — {{ p.client_name }} — {{ (p.created_at|string)[:16] }}</div>
-        </div>
-        <span class="badge {% if p.status == 'completed' %}success{% elif p.status == 'pending' %}pending{% else %}failed{% endif %}">
-          {{ p.status }}
-        </span>
+    <strong>{{ stats.open_tickets }} signalement{{ 's' if stats.open_tickets > 1 }} en attente</strong>
+    <span class="small muted"> Examiner rapidement les tickets ouverts.</span>
+  </div>
+  <a class="btn btn-danger" href="{{ url_for('admin_tickets') }}">Examiner</a>
+</div>
+{% endif %}
+
+<div class="admin-kpi-grid">
+  <div class="admin-kpi">
+    <div class="admin-kpi-icon blue">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    </div>
+    <div class="admin-kpi-body">
+      <div class="admin-kpi-label">Clients inscrits</div>
+      <div class="admin-kpi-value">{{ stats.clients_total }}</div>
+      <div class="admin-kpi-sub">+{{ stats.clients_month }} ce mois</div>
+    </div>
+  </div>
+
+  <div class="admin-kpi">
+    <div class="admin-kpi-icon green">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    </div>
+    <div class="admin-kpi-body">
+      <div class="admin-kpi-label">Techniciens actifs</div>
+      <div class="admin-kpi-value">{{ stats.artisans_total }}</div>
+      <div class="admin-kpi-sub">+{{ stats.artisans_month }} ce mois</div>
+    </div>
+  </div>
+
+  <div class="admin-kpi">
+    <div class="admin-kpi-icon amber">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+    </div>
+    <div class="admin-kpi-body">
+      <div class="admin-kpi-label">Commission totale</div>
+      <div class="admin-kpi-value sm">{{ "{:,}".format(stats.commission_total|int).replace(",", " ") }} GNF</div>
+      <div class="admin-kpi-sub">sur {{ "{:,}".format(stats.completed_total|int).replace(",", " ") }} GNF payes</div>
+    </div>
+  </div>
+
+  <div class="admin-kpi">
+    <div class="admin-kpi-icon purple">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg>
+    </div>
+    <div class="admin-kpi-body">
+      <div class="admin-kpi-label">Demandes en cours</div>
+      <div class="admin-kpi-value">{{ stats.open_requests }}</div>
+    </div>
+  </div>
+</div>
+
+<div class="admin-sections">
+  <div class="admin-card">
+    <h3>Techniciens en attente</h3>
+    {% if stats.pending_artisans > 0 %}
+    <div class="admin-alert-soft">
+      <span class="badge pending">{{ stats.pending_artisans }}</span>
+      <span>profil{{ 's' if stats.pending_artisans > 1 }} a examiner</span>
+      <a class="btn btn-primary btn-sm" href="{{ url_for('admin_artisans') }}">Valider</a>
+    </div>
+    {% else %}
+    <p class="muted">Aucun technicien en attente de validation.</p>
+    {% endif %}
+  </div>
+
+  <div class="admin-card">
+    <h3>Activite recente</h3>
+    {% if recent_logs %}
+    <div class="admin-logs">
+      {% for log in recent_logs %}
+      <div class="admin-log">
+        <span class="admin-log-admin">{{ log.admin_name or 'Systeme' }}</span>
+        <span class="admin-log-action">{{ log.action }}</span>
+        <span class="admin-log-time">{{ (log.created_at|string)[:16] }}</span>
       </div>
       {% endfor %}
     </div>
     {% else %}
-    <p class="muted">Aucune transaction pour le moment.</p>
+    <p class="muted">Aucune action enregistree.</p>
     {% endif %}
   </div>
-</section>
+</div>
+
+<div class="admin-card" style="margin-top: 24px;">
+  <h3>Transactions recentes</h3>
+  {% if recent_payments %}
+  <div class="admin-table-wrap">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Montant</th>
+          <th>Client</th>
+          <th>Technicien</th>
+          <th>Methode</th>
+          <th>Date</th>
+          <th>Statut</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in recent_payments %}
+        <tr>
+          <td class="admin-amount">{{ "{:,}".format(p.amount|int).replace(",", " ") }} GNF</td>
+          <td>{{ p.client_name }}</td>
+          <td>{{ p.artisan_name or '—' }}</td>
+          <td>{{ payment_method_label(p.method) }}</td>
+          <td>{{ (p.created_at|string)[:16] }}</td>
+          <td><span class="badge {% if p.status == 'completed' %}success{% elif p.status == 'pending' %}pending{% else %}failed{% endif %}">{{ p.status }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="muted">Aucune transaction pour le moment.</p>
+  {% endif %}
+</div>
 {% endblock %}
