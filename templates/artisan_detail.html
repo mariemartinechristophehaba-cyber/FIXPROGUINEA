@@ -59,10 +59,14 @@
       Demander une intervention
     </button>
     {% if user %}
-    <button class="btn btn-soft btn-block" type="button" id="btnChat" onclick="toggleChat()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 21l1.9-5.1A8.4 8.4 0 0 1 4 11.5a8.5 8.5 0 0 1 8.5-8.5A8.5 8.5 0 0 1 21 11.5z"/></svg>
-      Contacter ce technicien
-    </button>
+    <form class="profile-action-form" method="post" action="{{ url_for('ticket_new') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      <input type="hidden" name="artisan_id" value="{{ artisan.id }}" />
+      <button class="btn btn-soft btn-block" type="submit">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 21l1.9-5.1A8.4 8.4 0 0 1 4 11.5a8.5 8.5 0 0 1 8.5-8.5A8.5 8.5 0 0 1 21 11.5z"/></svg>
+        Contacter ce technicien
+      </button>
+    </form>
     {% else %}
     <a class="btn btn-soft btn-block" href="{{ url_for('login') }}">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M13.8 12H3"/></svg>
@@ -97,28 +101,6 @@
         </label>
       </div>
       <button class="btn btn-primary btn-block" type="submit">Envoyer la demande</button>
-    </form>
-  </div>
-
-  <div class="profile-section hidden" id="chatPanel">
-    <div class="profile-sep"></div>
-    <div class="chat-banner">Conversation moderee par l'equipe FixPro pour votre securite.</div>
-    <div class="chat-messages" id="chatMessages">
-      {% for message in chat_messages %}
-      <div class="chat-bubble {% if message.sender_id == user.id %}out{% else %}in{% endif %}">
-        <div class="chat-author">{{ message.sender_name }}</div>
-        <p>{{ message.content }}</p>
-        <div class="chat-time">{{ (message.created_at|string)[:16] if message.created_at else '' }}</div>
-      </div>
-      {% endfor %}
-    </div>
-    <form method="post" class="chat-form" onsubmit="return sendChat(event)">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-      <input type="hidden" name="action" value="chat" />
-      <input type="text" name="content" id="chatInput" required placeholder="Ecrivez votre message..." autocomplete="off" />
-      <button class="btn btn-primary" type="submit" aria-label="Envoyer">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4 20-7z"/></svg>
-      </button>
     </form>
   </div>
   {% endif %}
@@ -185,18 +167,32 @@
     </div>
   </div>
   {% endif %}
+
+{% if user and user.role == 'client' %}
+<div class="chat-fab">
+  {% if ticket_id %}
+  <a class="chat-fab-btn" href="{{ url_for('ticket_detail', ticket_id=ticket_id) }}" aria-label="Ouvrir la conversation">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 21l1.9-5.1A8.4 8.4 0 0 1 4 11.5a8.5 8.5 0 0 1 8.5-8.5A8.5 8.5 0 0 1 21 11.5z"/></svg>
+    <span class="chat-fab-pulse"></span>
+  </a>
+  {% else %}
+  <form class="chat-fab-form" method="post" action="{{ url_for('ticket_new') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+    <input type="hidden" name="artisan_id" value="{{ artisan.id }}" />
+    <button class="chat-fab-btn" type="submit" aria-label="Contacter ce technicien">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 21l1.9-5.1A8.4 8.4 0 0 1 4 11.5a8.5 8.5 0 0 1 8.5-8.5A8.5 8.5 0 0 1 21 11.5z"/></svg>
+      <span class="chat-fab-pulse"></span>
+    </button>
+  </form>
+  {% endif %}
+</div>
+{% endif %}
+
 </div>
 
 <script>
   function toggleRequest() {
     document.getElementById('requestPanel').classList.toggle('hidden');
-    document.getElementById('chatPanel').classList.add('hidden');
-  }
-  function toggleChat() {
-    document.getElementById('chatPanel').classList.toggle('hidden');
-    document.getElementById('requestPanel').classList.add('hidden');
-    const box = document.getElementById('chatMessages');
-    if (box) box.scrollTop = box.scrollHeight;
   }
 
   function askLocation() {
@@ -218,23 +214,6 @@
     );
   }
   document.addEventListener("DOMContentLoaded", askLocation);
-
-  function sendChat(e) {
-    e.preventDefault();
-    const input = document.getElementById('chatInput');
-    const content = input.value.trim();
-    if (!content) return false;
-    const form = e.target;
-    fetch("{{ url_for('artisan_detail', artisan_id=artisan.id) }}", {
-      method: "POST",
-      headers: {"X-Requested-With": "XMLHttpRequest"},
-      body: new FormData(form)
-    }).then(() => {
-      input.value = "";
-      window.location.reload();
-    });
-    return false;
-  }
 </script>
 
 {% endblock %}

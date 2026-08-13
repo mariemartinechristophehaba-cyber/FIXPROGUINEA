@@ -603,6 +603,26 @@ def ticket_new():
     return redirect(url_for("ticket_detail", ticket_id=ticket_id))
 
 
+def build_assistant_reply(message):
+    """Genere une reponse automatique simple basee sur des mots-cles."""
+    text = message.lower()
+    if any(w in text for w in ("prix", "tarif", "combien", "coute")):
+        return ("Le prix d'une intervention est defini par le devis de l'artisan."
+                " Voulez-vous que je vous aide a obtenir un devis gratuit ?")
+    if any(w in text for w in ("horaire", "heure", "quand", "date", "disponible")):
+        return ("Vous pouvez proposer une date et une heure dans votre demande."
+                " L'artisan confirmera sa disponibilite.")
+    if any(w in text for w in ("annuler", "supprimer", "arreter")):
+        return ("Votre demande peut etre annulee avant le debut de l'intervention."
+                " Voulez-vous que je transmette votre demande a l'equipe ?")
+    if any(w in text for w in ("contact", "appeler", "telephone")):
+        return ("Vous etes en contact avec l'equipe FixPro."
+                " Un conseiller vous repondra tres vite.")
+    if any(w in text for w in ("bonjour", "salut", "hello", "bonsoir")):
+        return "Bonjour ! Je suis l'assistante FixPro. Comment puis-je vous aider ?"
+    return None
+
+
 @app.route("/tickets/<int:ticket_id>", methods=["GET", "POST"])
 @login_required
 def ticket_detail(ticket_id):
@@ -637,6 +657,24 @@ def ticket_detail(ticket_id):
                     "UPDATE admin_tickets SET updated_at = CURRENT_TIMESTAMP"
                     " WHERE id = ?", (ticket_id,))
                 conn.commit()
+
+                # Reponse automatique de l'assistante FixPro
+                if user["role"] == "client":
+                    reply = build_assistant_reply(content)
+                    if reply:
+                        fixpro = conn.execute(
+                            "SELECT id FROM users WHERE role = 'admin' LIMIT 1"
+                        ).fetchone()
+                        sender_id = fixpro["id"] if fixpro else user["id"]
+                        conn.execute(
+                            "INSERT INTO admin_messages (ticket_id, sender_id, content)"
+                            " VALUES (?, ?, ?)",
+                            (ticket_id, sender_id, f"[Assistant] {reply}"))
+                        conn.execute(
+                            "UPDATE admin_tickets SET updated_at = CURRENT_TIMESTAMP"
+                            " WHERE id = ?", (ticket_id,))
+                        conn.commit()
+
                 return redirect(url_for("ticket_detail", ticket_id=ticket_id))
 
         messages = conn.execute(
@@ -1267,7 +1305,7 @@ def artisan_detail(artisan_id):
                            completed=completed,
                            distance=distance,
                            can_review=can_review,
-                           chat_messages=chat_messages)
+                           ticket_id=ticket_id)
 
 
 @app.route("/artisans/<int:artisan_id>/location", methods=["POST"])
