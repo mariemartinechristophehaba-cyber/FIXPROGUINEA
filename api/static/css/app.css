@@ -2656,6 +2656,24 @@ body.no-tabbar .site-footer { padding-bottom: 26px; }
   cursor: pointer;
 }
 
+.admin-table-large { font-size: 0.9rem; }
+
+.admin-table-large th { white-space: nowrap; padding: 14px 16px; }
+
+.admin-table-large td { padding: 16px; vertical-align: top; }
+
+.admin-table-large .admin-user-name { font-weight: 700; }
+
+.admin-settings-grid {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: 1fr 1fr;
+}
+
+@media (max-width: 1024px) {
+  .admin-settings-grid { grid-template-columns: 1fr; }
+}
+
 @media (max-width: 480px) {
   .wizard-steps { gap: 4px; font-size: 0.6rem; }
   .wizard-steps span { padding: 4px 6px; }

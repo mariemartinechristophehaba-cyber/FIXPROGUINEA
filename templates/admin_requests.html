@@ -4,36 +4,77 @@
 
 {% block admin_content %}
 <div class="admin-card">
-  <div class="admin-section-head"><h3>Demandes</h3></div>
+  <div class="admin-section-head">
+    <h3>Demandes d'intervention</h3>
+  </div>
+
+  <form class="admin-filters" method="get" action="{{ url_for('admin_requests') }}">
+    <input type="text" name="q" class="form-input" value="{{ q }}" placeholder="Titre, client ou technicien" />
+    <select name="status" onchange="this.form.submit()">
+      <option value="" {% if not status_filter %}selected{% endif %}>Tous les statuts</option>
+      <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>En attente</option>
+      <option value="assigned" {% if status_filter == 'assigned' %}selected{% endif %}>Assignee</option>
+      <option value="in_progress" {% if status_filter == 'in_progress' %}selected{% endif %}>En cours</option>
+      <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Terminee</option>
+      <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Annulee</option>
+    </select>
+    <button type="submit" class="btn btn-soft btn-sm">Filtrer</button>
+  </form>
+
   <div class="admin-table-wrap">
-    <table class="admin-table">
+    <table class="admin-table admin-table-large">
       <thead>
         <tr>
           <th>ID</th>
           <th>Titre</th>
           <th>Client</th>
           <th>Technicien</th>
+          <th>Budget</th>
           <th>Statut</th>
-          <th>Date</th>
+          <th>Mise a jour</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody>
         {% for req in requests %}
         <tr>
           <td>#{{ req.id }}</td>
-          <td>{{ req.title }}</td>
-          <td>{{ req.client_name or '—' }}</td>
-          <td>{{ req.artisan_name or 'Non assigne' }}</td>
           <td>
-            <span class="badge {% if req.status == 'completed' %}success{% elif req.status in ('assigned', 'in_progress') %}info{% elif req.status == 'pending' %}pending{% else %}neutral{% endif %}">
+            <div class="admin-user-name">{{ req.title }}</div>
+            <div class="small muted">{{ req.description[:60] }}...</div>
+          </td>
+          <td>
+            <div class="small">{{ req.client_name or '—' }}</div>
+            <div class="small muted">{{ req.client_phone or '—' }}</div>
+          </td>
+          <td>
+            <div class="small">{{ req.artisan_name or 'Non assigne' }}</div>
+            <div class="small muted">{{ req.artisan_phone or '—' }}</div>
+          </td>
+          <td>
+            {% if req.quote_amount %}
+            <strong>{{ "{:,}".format(req.quote_amount|int).replace(",", " ") }} GNF</strong>
+            {% elif req.budget %}
+            {{ "{:,}".format(req.budget|int).replace(",", " ") }} GNF
+            {% else %}
+            —
+            {% endif %}
+          </td>
+          <td>
+            <span class="badge {% if req.status == 'completed' %}success{% elif req.status in ('assigned', 'in_progress') %}info{% elif req.status == 'pending' %}pending{% elif req.status == 'cancelled' %}failed{% else %}neutral{% endif %}">
               {{ req.status }}
             </span>
           </td>
-          <td>{{ (req.created_at|string)[:16] }}</td>
+          <td>{{ (req.updated_at|string)[:16] }}</td>
+          <td>
+            <a class="btn btn-soft btn-sm" href="{{ url_for('request_detail', request_id=req.id) }}">Voir</a>
+          </td>
         </tr>
         {% else %}
         <tr>
-          <td colspan="6" class="muted" style="text-align: center; padding: 24px;">Aucune demande.</td>
+          <td colspan="8" class="muted" style="text-align: center; padding: 32px;">
+            <div style="font-size: 1.1rem; font-weight: 700;">Aucune demande</div>
+          </td>
         </tr>
         {% endfor %}
       </tbody>

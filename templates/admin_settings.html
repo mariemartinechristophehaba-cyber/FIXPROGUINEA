@@ -3,16 +3,28 @@
 {% block admin_title %}Parametres systeme{% endblock %}
 
 {% block admin_content %}
-<div class="admin-card">
-  <h3>Taux de commission FixPro</h3>
-  <form method="post" class="admin-inline-form" style="display: flex; gap: 12px; align-items: flex-end; margin-top: 18px;">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-    <label class="field" style="flex: 1;">
-      <span>Taux de commission (0.10 = 10%)</span>
-      <input type="number" name="commission_rate" step="0.01" min="0" max="1" value="{{ commission_rate }}" class="form-input" required />
-    </label>
-    <button type="submit" class="btn btn-primary">Mettre a jour</button>
-  </form>
-  <p class="small muted" style="margin-top: 12px;">Applique aux nouveaux paiements calcules automatiquement.</p>
+<div class="admin-settings-grid">
+  <div class="admin-card">
+    <h3>Taux de commission FixPro</h3>
+    <p class="small muted" style="margin: 8px 0 18px;">Taux preleve par FixPro sur chaque intervention payee.</p>
+    <form method="post" class="admin-inline-form" style="display: flex; gap: 12px; align-items: flex-end;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      <label class="field" style="flex: 1; max-width: 220px;">
+        <span>Taux (ex : 0.10 = 10%)</span>
+        <input type="number" name="commission_rate" step="0.01" min="0" max="1" value="{{ commission_rate }}" class="form-input" required />
+      </label>
+      <button type="submit" class="btn btn-primary">Mettre a jour</button>
+    </form>
+    <p class="small muted" style="margin-top: 12px;">Applique aux nouveaux paiements calcules automatiquement.</p>
+  </div>
+
+  <div class="admin-card">
+    <h3>Configuration actuelle</h3>
+    <div class="admin-detail-grid" style="margin-top: 18px;">
+      <div><span class="admin-detail-label">Taux commission</span><span class="admin-detail-value">{{ (commission_rate * 100)|int }}%</span></div>
+      <div><span class="admin-detail-label">Environnement</span><span class="admin-detail-value">{{ config.FLASK_ENV }}</span></div>
+      <div><span class="admin-detail-label">Base de donnees</span><span class="admin-detail-value">{% if config.DATABASE_URL %}PostgreSQL{% else %}SQLite{% endif %}</span></div>
+    </div>
+  </div>
 </div>
 {% endblock %}

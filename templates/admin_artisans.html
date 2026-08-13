@@ -8,6 +8,7 @@
 <div class="admin-card">
   <div class="admin-section-head">
     <h3>Tous les techniciens</h3>
+    <span class="small muted" id="artisanCount"></span>
   </div>
 
   <form class="admin-filters" method="get" action="{{ url_for('admin_artisans') }}">
@@ -34,10 +35,14 @@
   </form>
 
   <div class="admin-table-wrap">
-    <table class="admin-table">
+    <table class="admin-table admin-table-large">
       <thead>
         <tr>
           <th>Technicien</th>
+          <th>Contact</th>
+          <th>Metier</th>
+          <th>Ville / Quartier</th>
+          <th>Documents</th>
           <th>Statut</th>
           <th>Missions</th>
           <th>Note</th>
@@ -56,9 +61,24 @@
               </span>
               <div>
                 <div class="admin-user-name">{{ artisan.full_name }}</div>
-                <div class="small muted">{{ artisan.profession or 'Non precise' }} - {{ artisan.city or 'Conakry' }}</div>
               </div>
             </div>
+          </td>
+          <td>
+            <div class="small">{{ artisan.phone }}</div>
+            <div class="small muted">{{ artisan.email or '—' }}</div>
+          </td>
+          <td>{{ artisan.profession or 'Non precise' }}</td>
+          <td>
+            <div class="small">{{ artisan.city or '—' }}</div>
+            <div class="small muted">{{ artisan.quartier or '—' }}</div>
+          </td>
+          <td>
+            {% if artisan.doc_count and artisan.doc_count > 0 %}
+            <span class="badge success">{{ artisan.doc_count }} fourni(s)</span>
+            {% else %}
+            <span class="badge pending">Aucun</span>
+            {% endif %}
           </td>
           <td>
             {% if artisan.is_verified == 0 %}
@@ -80,15 +100,16 @@
           <td>{{ (artisan.created_at|string)[:10] }}</td>
           <td>
             <div class="admin-actions">
+              <a class="btn btn-soft btn-sm" href="{{ url_for('admin_artisan_detail', artisan_id=artisan.id) }}">Dossier</a>
               {% if artisan.is_verified == 0 %}
-              <form method="post" class="admin-inline-form">
+              <form method="post" class="admin-inline-form" style="display: inline;">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                 <input type="hidden" name="artisan_id" value="{{ artisan.id }}" />
                 <button class="btn btn-primary btn-sm" type="submit" name="action" value="verify" onclick="return confirm('Valider ce technicien ?')">Valider</button>
                 <button class="btn btn-outline btn-sm" type="submit" name="action" value="reject" onclick="return confirm('Refuser et supprimer ce profil ?')">Refuser</button>
               </form>
               {% else %}
-              <form method="post" class="admin-inline-form">
+              <form method="post" class="admin-inline-form" style="display: inline;">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                 <input type="hidden" name="artisan_id" value="{{ artisan.id }}" />
                 {% if artisan.is_active %}
@@ -98,13 +119,15 @@
                 {% endif %}
               </form>
               {% endif %}
-              <a class="btn btn-soft btn-sm" href="{{ url_for('admin_artisan_detail', artisan_id=artisan.id) }}">Voir le dossier</a>
             </div>
           </td>
         </tr>
         {% else %}
         <tr>
-          <td colspan="6" class="muted" style="text-align: center; padding: 24px;">Aucun technicien.</td>
+          <td colspan="10" class="muted" style="text-align: center; padding: 32px;">
+            <div style="font-size: 1.1rem; font-weight: 700; margin-bottom: 6px;">Aucun technicien</div>
+            <div class="small muted">Aucun compte ne correspond aux filtres actuels.</div>
+          </td>
         </tr>
         {% endfor %}
       </tbody>

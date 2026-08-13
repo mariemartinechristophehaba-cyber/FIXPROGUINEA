@@ -841,7 +841,8 @@ def admin_artisans():
         artisans = conn.execute(
             "SELECT u.*,"
             " (SELECT COUNT(*) FROM requests WHERE artisan_id = u.id AND status = 'completed') AS completed,"
-            " (SELECT COALESCE(AVG(rating), 0) FROM reviews WHERE artisan_id = u.id) AS avg_rating"
+            " (SELECT COALESCE(AVG(rating), 0) FROM reviews WHERE artisan_id = u.id) AS avg_rating,"
+            " (SELECT COUNT(*) FROM technician_documents WHERE technician_id = u.id) AS doc_count"
             " FROM users u"
             + where_clause +
             " ORDER BY u.is_verified ASC, u.is_active DESC, u.created_at DESC",
@@ -943,34 +944,69 @@ def admin_clients():
                 flash("Client reactive.", "success")
             return redirect(url_for("admin_clients"))
 
+        q = request.args.get("q", "").strip()
+        status_filter = request.args.get("status", "").strip()
+
+        where_parts = ["u.role = 'client'"]
+        params = []
+        if q:
+            where_parts.append("(u.full_name LIKE ? OR u.phone LIKE ? OR u.email LIKE ?)")
+            like = f"%{q}%"
+            params.extend([like, like, like])
+        if status_filter == "active":
+            where_parts.append("u.is_active = 1")
+        elif status_filter == "suspended":
+            where_parts.append("u.is_active = 0")
+
+        where_clause = " WHERE " + " AND ".join(where_parts)
+
         clients = conn.execute(
             "SELECT u.*,"
             " (SELECT COUNT(*) FROM requests WHERE client_id = u.id) AS request_count"
             " FROM users u"
-            " WHERE u.role = 'client'"
-            " ORDER BY u.created_at DESC").fetchall()
+            + where_clause +
+            " ORDER BY u.created_at DESC", tuple(params)).fetchall()
     finally:
         conn.close()
-    return render_template("admin_clients.html", user=user, clients=clients)
+    return render_template("admin_clients.html", user=user, clients=clients,
+                           q=q, status_filter=status_filter)
 
 
 @app.route("/admin/requests")
 @login_required
 @admin_required
 def admin_requests():
-    """Liste des demandes en cours et historique."""
+    """Liste des demandes en cours et historique avec filtres."""
     user = get_current_user()
     conn = get_db_connection()
     try:
+        status_filter = request.args.get("status", "").strip()
+        q = request.args.get("q", "").strip()
+
+        where_parts = []
+        params = []
+        if status_filter:
+            where_parts.append("r.status = ?")
+            params.append(status_filter)
+        if q:
+            where_parts.append("(r.title LIKE ? OR c.full_name LIKE ? OR a.full_name LIKE ?)")
+            like = f"%{q}%"
+            params.extend([like, like, like])
+
+        where_clause = (" WHERE " + " AND ".join(where_parts)) if where_parts else ""
+
         requests_list = conn.execute(
-            "SELECT r.*, c.full_name AS client_name, a.full_name AS artisan_name"
+            "SELECT r.*, c.full_name AS client_name, c.phone AS client_phone,"
+            " a.full_name AS artisan_name, a.phone AS artisan_phone"
             " FROM requests r"
             " LEFT JOIN users c ON c.id = r.client_id"
             " LEFT JOIN users a ON a.id = r.artisan_id"
-            " ORDER BY r.updated_at DESC").fetchall()
+            + where_clause +
+            " ORDER BY r.updated_at DESC", tuple(params)).fetchall()
     finally:
         conn.close()
-    return render_template("admin_requests.html", user=user, requests=requests_list)
+    return render_template("admin_requests.html", user=user, requests=requests_list,
+                           status_filter=status_filter, q=q)
 
 
 @app.route("/admin/tickets", methods=["GET", "POST"])

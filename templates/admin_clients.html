@@ -4,30 +4,60 @@
 
 {% block admin_content %}
 <div class="admin-card">
-  <div class="admin-section-head"><h3>Clients inscrits</h3></div>
+  <div class="admin-section-head">
+    <h3>Tous les clients</h3>
+  </div>
+
+  <form class="admin-filters" method="get" action="{{ url_for('admin_clients') }}">
+    <input type="text" name="q" class="form-input" value="{{ q }}" placeholder="Nom, telephone ou email" />
+    <select name="status" onchange="this.form.submit()">
+      <option value="" {% if not status_filter %}selected{% endif %}>Tous les statuts</option>
+      <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Actif</option>
+      <option value="suspended" {% if status_filter == 'suspended' %}selected{% endif %}>Suspendu</option>
+    </select>
+    <button type="submit" class="btn btn-soft btn-sm">Filtrer</button>
+  </form>
+
   <div class="admin-table-wrap">
-    <table class="admin-table">
+    <table class="admin-table admin-table-large">
       <thead>
         <tr>
-          <th>Nom</th>
-          <th>Telephone</th>
+          <th>Client</th>
+          <th>Contact</th>
           <th>Ville</th>
           <th>Demandes</th>
           <th>Statut</th>
+          <th>Inscription</th>
           <th>Actions</th>
         </tr>
       </thead>
       <tbody>
         {% for client in clients %}
         <tr>
-          <td>{{ client.full_name }}</td>
-          <td>{{ client.phone or '—' }}</td>
+          <td>
+            <div class="admin-user-cell">
+              <span class="admin-avatar" style="background: var(--brand-soft); color: var(--brand);">
+                {{ (client.full_name or '?')[0]|upper }}
+              </span>
+              <div>
+                <div class="admin-user-name">{{ client.full_name }}</div>
+              </div>
+            </div>
+          </td>
+          <td>
+            <div class="small">{{ client.phone }}</div>
+            <div class="small muted">{{ client.email or '—' }}</div>
+          </td>
           <td>{{ client.city or '—' }}</td>
           <td>{{ client.request_count or 0 }}</td>
           <td>
-            {% if client.is_active %}<span class="badge success">Actif</span>
-            {% else %}<span class="badge failed">Suspendu</span>{% endif %}
+            {% if client.is_active == 0 %}
+              <span class="badge failed">Suspendu</span>
+            {% else %}
+              <span class="badge success">Actif</span>
+            {% endif %}
           </td>
+          <td>{{ (client.created_at|string)[:10] }}</td>
           <td>
             <form method="post" class="admin-inline-form">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
@@ -42,7 +72,9 @@
         </tr>
         {% else %}
         <tr>
-          <td colspan="6" class="muted" style="text-align: center; padding: 24px;">Aucun client.</td>
+          <td colspan="7" class="muted" style="text-align: center; padding: 32px;">
+            <div style="font-size: 1.1rem; font-weight: 700;">Aucun client</div>
+          </td>
         </tr>
         {% endfor %}
       </tbody>
