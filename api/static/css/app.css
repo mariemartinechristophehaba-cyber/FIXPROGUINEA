@@ -2168,6 +2168,25 @@ body.no-tabbar .site-footer { padding-bottom: 26px; }
   max-width: 360px;
 }
 
+.admin-login-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.admin-login-divider::before, .admin-login-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+.admin-login-form { display: grid; gap: 14px; }
+
+
 .badge.warning { background: rgba(255, 102, 0, 0.15); color: #FF6600; }
 
 .admin-filters {

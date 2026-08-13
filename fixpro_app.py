@@ -472,14 +472,36 @@ def artisan_pending():
     return render_template("pending.html")
 
 
-@app.route("/admin/login")
+@app.route("/admin/login", methods=["GET", "POST"])
 def admin_login():
     """Ecran d'accueil admin : redirige si deja connecte."""
     if session.get("user_id"):
         user = get_current_user()
         if user and user["role"] == "admin":
             return redirect(url_for("admin_dashboard"))
-    return render_template("admin_login.html")
+
+    fallback_enabled = bool(app.config.get("ADMIN_PASSWORD"))
+    if request.method == "POST" and fallback_enabled:
+        admin_password = request.form.get("admin_password", "").strip()
+        if admin_password == app.config.get("ADMIN_PASSWORD"):
+            conn = get_db_connection()
+            try:
+                admin = conn.execute(
+                    "SELECT id FROM users WHERE role = 'admin' LIMIT 1").fetchone()
+                if admin:
+                    session["user_id"] = admin["id"]
+                    session.permanent = True
+                    flash("Bienvenue dans l'administration FixPro.", "success")
+                    return redirect(url_for("admin_dashboard"))
+            finally:
+                conn.close()
+            flash("Aucun compte administrateur enregistre.", "error")
+        else:
+            flash("Mot de passe incorrect.", "error")
+
+    return render_template("admin_login.html",
+                           google_configured=bool(_get_google_client()),
+                           fallback_enabled=fallback_enabled)
 
 
 @app.route("/admin/login/google")

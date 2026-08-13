@@ -57,8 +57,10 @@ class Config:
         "GOOGLE_REDIRECT_URI", "").strip()
 
     # Liste d'emails administrateurs autorises (separes par des virgules).
-    # La connexion admin passe exclusivement par Google OAuth.
+    # La connexion admin passe par Google OAuth. Le mot de passe ci-dessous
+    # sert de secours si Google OAuth n'est pas configure (developpement).
     ADMIN_EMAILS = [e.strip().lower() for e in os.getenv("ADMIN_EMAILS", "").split(",") if e.strip()]
+    ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin" if FLASK_ENV == "development" else "").strip()
 
     # Developpement uniquement : contourne l'authentification et injecte un
     # compte de test. Ne JAMAIS activer en production.
