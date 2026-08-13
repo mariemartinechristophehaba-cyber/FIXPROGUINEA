@@ -16,70 +16,86 @@
 </div>
 {% endif %}
 
-<div class="admin-kpi-grid" data-refresh="dashboard" style="grid-template-columns: repeat(6, 1fr);">
-  <div class="admin-kpi">
-    <div class="admin-kpi-icon green">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+<section class="admin-kpi-section">
+  <h2 class="admin-section-title-large">Aujourd'hui</h2>
+  <div class="admin-kpi-grid two-cols">
+    <div class="admin-kpi large">
+      <div class="admin-kpi-icon green">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+      </div>
+      <div class="admin-kpi-body">
+        <div class="admin-kpi-label">Revenus du jour</div>
+        <div class="admin-kpi-value">{{ "{:,}".format(stats.today_revenue|int).replace(",", " ") }} GNF</div>
+        <div class="admin-kpi-sub">Commission FixPro</div>
+      </div>
     </div>
-    <div class="admin-kpi-body">
-      <div class="admin-kpi-label">Revenus du jour</div>
-      <div class="admin-kpi-value sm">{{ "{:,}".format(stats.today_revenue|int).replace(",", " ") }} GNF</div>
-    </div>
-  </div>
 
-  <div class="admin-kpi">
-    <div class="admin-kpi-icon blue">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-    </div>
-    <div class="admin-kpi-body">
-      <div class="admin-kpi-label">Inscrits aujourd'hui</div>
-      <div class="admin-kpi-value">{{ stats.today_signups }}</div>
+    <div class="admin-kpi large">
+      <div class="admin-kpi-icon blue">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      </div>
+      <div class="admin-kpi-body">
+        <div class="admin-kpi-label">Nouveaux inscrits</div>
+        <div class="admin-kpi-value">{{ stats.today_signups }}</div>
+        <div class="admin-kpi-sub">
+          {% for row in stats.today_signups_breakdown %}
+            {{ row.n }} {{ 'clients' if row.role == 'client' else 'techniciens' }}{{ ',' if not loop.last }}
+          {% else %}
+            Aucun aujourd'hui
+          {% endfor %}
+        </div>
+      </div>
     </div>
   </div>
+</section>
 
-  <div class="admin-kpi">
-    <div class="admin-kpi-icon blue">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+<section class="admin-kpi-section">
+  <h2 class="admin-section-title-large">Panorama</h2>
+  <div class="admin-kpi-grid four-cols">
+    <div class="admin-kpi">
+      <div class="admin-kpi-icon blue">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      </div>
+      <div class="admin-kpi-body">
+        <div class="admin-kpi-label">Clients inscrits</div>
+        <div class="admin-kpi-value">{{ stats.clients_total }}</div>
+        <div class="admin-kpi-sub">+{{ stats.clients_month }} ce mois</div>
+      </div>
     </div>
-    <div class="admin-kpi-body">
-      <div class="admin-kpi-label">Clients inscrits</div>
-      <div class="admin-kpi-value">{{ stats.clients_total }}</div>
-      <div class="admin-kpi-sub">+{{ stats.clients_month }} ce mois</div>
-    </div>
-  </div>
 
-  <div class="admin-kpi">
-    <div class="admin-kpi-icon green">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <div class="admin-kpi">
+      <div class="admin-kpi-icon green">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      </div>
+      <div class="admin-kpi-body">
+        <div class="admin-kpi-label">Techniciens actifs</div>
+        <div class="admin-kpi-value">{{ stats.artisans_total }}</div>
+        <div class="admin-kpi-sub">+{{ stats.artisans_month }} ce mois</div>
+      </div>
     </div>
-    <div class="admin-kpi-body">
-      <div class="admin-kpi-label">Techniciens actifs</div>
-      <div class="admin-kpi-value">{{ stats.artisans_total }}</div>
-      <div class="admin-kpi-sub">+{{ stats.artisans_month }} ce mois</div>
-    </div>
-  </div>
 
-  <div class="admin-kpi">
-    <div class="admin-kpi-icon amber">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+    <div class="admin-kpi">
+      <div class="admin-kpi-icon amber">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+      </div>
+      <div class="admin-kpi-body">
+        <div class="admin-kpi-label">Commission totale</div>
+        <div class="admin-kpi-value sm">{{ "{:,}".format(stats.commission_total|int).replace(",", " ") }} GNF</div>
+        <div class="admin-kpi-sub">sur {{ "{:,}".format(stats.completed_total|int).replace(",", " ") }} GNF payes</div>
+      </div>
     </div>
-    <div class="admin-kpi-body">
-      <div class="admin-kpi-label">Commission totale</div>
-      <div class="admin-kpi-value sm">{{ "{:,}".format(stats.commission_total|int).replace(",", " ") }} GNF</div>
-      <div class="admin-kpi-sub">sur {{ "{:,}".format(stats.completed_total|int).replace(",", " ") }} GNF payes</div>
-    </div>
-  </div>
 
-  <div class="admin-kpi">
-    <div class="admin-kpi-icon purple">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg>
-    </div>
-    <div class="admin-kpi-body">
-      <div class="admin-kpi-label">Demandes en cours</div>
-      <div class="admin-kpi-value">{{ stats.open_requests }}</div>
+    <div class="admin-kpi">
+      <div class="admin-kpi-icon purple">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg>
+      </div>
+      <div class="admin-kpi-body">
+        <div class="admin-kpi-label">Demandes en cours</div>
+        <div class="admin-kpi-value">{{ stats.open_requests }}</div>
+      </div>
     </div>
   </div>
-</div>
+</section>
 
 <div class="admin-sections">
   <div class="admin-card">
@@ -101,7 +117,7 @@
     <div class="admin-logs">
       {% for log in recent_logs %}
       <div class="admin-log">
-        <span class="admin-log-admin">{{ log.admin_name or 'Systeme' }}</span>
+        <span class="admin-log-admin">{{ log.admin_name or log.admin_email or 'Systeme' }}</span>
         <span class="admin-log-action">{{ log.action }}</span>
         <span class="admin-log-time">{{ (log.created_at|string)[:16] }}</span>
       </div>
@@ -149,9 +165,7 @@
 
 <script>
   (function() {
-    setInterval(function() {
-      window.location.reload();
-    }, 45000);
+    setInterval(function() { window.location.reload(); }, 45000);
   })();
 </script>
 {% endblock %}

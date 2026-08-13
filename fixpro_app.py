@@ -620,8 +620,13 @@ def admin_dashboard():
             " FROM payments WHERE status = 'completed' AND created_at LIKE ?",
             (today + "%",)).fetchone()["commission"]
         today_signups = conn.execute(
-            "SELECT COUNT(*) AS n FROM users WHERE created_at LIKE ?",
+            "SELECT COUNT(*) AS n FROM users"
+            " WHERE role IN ('client', 'artisan') AND created_at LIKE ?",
             (today + "%",)).fetchone()["n"]
+        today_signups_breakdown = conn.execute(
+            "SELECT role, COUNT(*) AS n FROM users"
+            " WHERE role IN ('client', 'artisan') AND created_at LIKE ?"
+            " GROUP BY role", (today + "%",)).fetchall()
 
         recent_payments = conn.execute(
             "SELECT p.*, u.full_name AS client_name, a.full_name AS artisan_name"
@@ -649,6 +654,7 @@ def admin_dashboard():
             "open_tickets": open_tickets,
             "today_revenue": today_revenue,
             "today_signups": today_signups,
+            "today_signups_breakdown": today_signups_breakdown,
         }
     finally:
         conn.close()

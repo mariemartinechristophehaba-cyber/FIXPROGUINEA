@@ -1958,26 +1958,44 @@ body.no-tabbar .site-footer { padding-bottom: 26px; }
   border-radius: var(--r);
 }
 
+.admin-kpi-section { margin-bottom: 32px; }
+
+.admin-section-title-large {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-2);
+  margin: 0 0 16px;
+}
+
 .admin-kpi-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
   gap: 18px;
   margin-bottom: 24px;
 }
+
+.admin-kpi-grid.two-cols { grid-template-columns: repeat(2, 1fr); }
+.admin-kpi-grid.four-cols { grid-template-columns: repeat(4, 1fr); }
 
 .admin-kpi {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--r-lg);
-  padding: 20px;
+  padding: 22px;
   display: flex;
   gap: 16px;
-  align-items: flex-start;
+  align-items: center;
+  transition: transform .15s, box-shadow .15s;
 }
 
+.admin-kpi:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
+
+.admin-kpi.large { padding: 28px; }
+
+.admin-kpi.large .admin-kpi-value { font-size: 2.2rem; }
+
 .admin-kpi-icon {
-  width: 46px;
-  height: 46px;
+  width: 52px;
+  height: 52px;
   border-radius: var(--r);
   display: grid;
   place-items: center;
@@ -1989,17 +2007,17 @@ body.no-tabbar .site-footer { padding-bottom: 26px; }
 .admin-kpi-icon.amber { background: rgba(245, 158, 11, 0.12); color: #f5a623; }
 .admin-kpi-icon.purple { background: rgba(139, 92, 246, 0.12); color: #a78bfa; }
 
-.admin-kpi-icon svg { width: 24px; height: 24px; }
+.admin-kpi-icon svg { width: 26px; height: 26px; }
 
 .admin-kpi-body { flex: 1; }
 
-.admin-kpi-label { font-size: 0.82rem; color: var(--muted); margin-bottom: 6px; }
+.admin-kpi-label { font-size: 0.85rem; color: var(--muted); margin-bottom: 8px; }
 
-.admin-kpi-value { font-size: 1.9rem; font-weight: 800; line-height: 1; }
+.admin-kpi-value { font-size: 1.7rem; font-weight: 800; line-height: 1; }
 
-.admin-kpi-value.sm { font-size: 1.3rem; }
+.admin-kpi-value.sm { font-size: 1.2rem; }
 
-.admin-kpi-sub { font-size: 0.75rem; color: var(--muted); margin-top: 6px; }
+.admin-kpi-sub { font-size: 0.8rem; color: var(--faint); margin-top: 8px; }
 
 .admin-sections {
   display: grid;
@@ -2101,7 +2119,8 @@ body.no-tabbar .site-footer { padding-bottom: 26px; }
 .admin-log-time { color: var(--faint); font-size: 0.75rem; }
 
 @media (max-width: 1024px) {
-  .admin-kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .admin-kpi-grid.four-cols { grid-template-columns: repeat(2, 1fr); }
+  .admin-kpi-grid.two-cols { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 768px) {
