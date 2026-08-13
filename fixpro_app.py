@@ -1142,6 +1142,23 @@ def artisan_detail(artisan_id):
                 client_lat, client_lon,
                 float(artisan["latitude"]), float(artisan["longitude"]))
 
+        # Conversation client - FixPro pour ce technicien
+        chat_messages = []
+        ticket_id = None
+        if user:
+            ticket = conn.execute(
+                "SELECT id FROM admin_tickets"
+                " WHERE client_id = ? AND artisan_id = ?"
+                " ORDER BY created_at DESC LIMIT 1",
+                (user["id"], artisan_id)).fetchone()
+            if ticket:
+                ticket_id = ticket["id"]
+                chat_messages = conn.execute(
+                    "SELECT m.*, u.full_name AS sender_name"
+                    " FROM admin_messages m JOIN users u ON u.id = m.sender_id"
+                    " WHERE m.ticket_id = ? ORDER BY m.created_at ASC",
+                    (ticket_id,)).fetchall()
+
         # Le client peut-il laisser un avis ?
         can_review = False
         review_request_id = None
@@ -1159,19 +1176,44 @@ def artisan_detail(artisan_id):
         if request.method == "POST":
             action = request.form.get("action")
 
-            if action == "contact":
-                message = (request.form.get("message") or "").strip()
-                if not message:
-                    flash("Veuillez écrire un message.", "error")
+            if action == "chat":
+                content = (request.form.get("content") or "").strip()
+                if not content:
                     return redirect(url_for("artisan_detail", artisan_id=artisan_id))
+
+                # Cree le ticket s'il n'existe pas encore
+                if not ticket_id:
+                    result = conn.execute(
+                        "INSERT INTO admin_tickets (client_id, artisan_id, subject, message, status)"
+                        " VALUES (?, ?, ?, ?, 'open')",
+                        (user["id"], artisan_id,
+                         f"Concerne {artisan['full_name']}",
+                         f"Conversation demarree pour {artisan['full_name']}."))
+                    conn.commit()
+                    ticket_id = result.lastrowid
+
+                    # Message d'accueil de FixPro
+                    fixpro = conn.execute(
+                        "SELECT id FROM users WHERE role = 'admin' LIMIT 1").fetchone()
+                    sender_id = fixpro["id"] if fixpro else user["id"]
+                    conn.execute(
+                        "INSERT INTO admin_messages (ticket_id, sender_id, content)"
+                        " VALUES (?, ?, ?)",
+                        (ticket_id, sender_id,
+                         f"Bienvenue sur FixPro. Comment puis-je vous aider avec {artisan['full_name']} ?"))
+                    conn.commit()
+
                 conn.execute(
-                    "INSERT INTO admin_tickets"
-                    " (client_id, artisan_id, subject, message, status, created_at, updated_at)"
-                    " VALUES (?, ?, ?, ?, 'open', datetime('now'), datetime('now'))",
-                    (user["id"], artisan_id,
-                     f"Contact concernant {artisan['full_name']}", message))
+                    "INSERT INTO admin_messages (ticket_id, sender_id, content)"
+                    " VALUES (?, ?, ?)",
+                    (ticket_id, user["id"], content))
+                conn.execute(
+                    "UPDATE admin_tickets SET updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                    (ticket_id,))
                 conn.commit()
-                flash("Votre message a été transmis à FixPro. Nous vous recontacterons.", "success")
+
+                if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                    return jsonify({"ok": True})
                 return redirect(url_for("artisan_detail", artisan_id=artisan_id))
 
             if action == "request":
@@ -1224,7 +1266,8 @@ def artisan_detail(artisan_id):
                            review_stats=review_stats,
                            completed=completed,
                            distance=distance,
-                           can_review=can_review)
+                           can_review=can_review,
+                           chat_messages=chat_messages)
 
 
 @app.route("/artisans/<int:artisan_id>/location", methods=["POST"])

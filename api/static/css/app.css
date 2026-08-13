@@ -1093,168 +1093,231 @@ body.no-tabbar .site-footer { padding-bottom: 26px; }
    Profil technicien detaille
    -------------------------------------------------------------------------- */
 
-.detail-hero {
-  display: flex; flex-direction: column; align-items: flex-start; gap: 14px;
-  padding: 16px;
-  border-radius: var(--r-xl);
+.profile-card {
+  background: #0d1526;
   border: 1px solid rgba(255,255,255,0.07);
-  margin-bottom: 16px;
+  border-radius: var(--r-xl);
+  padding: 16px;
+  margin: 0 auto 20px;
+  width: 100%;
+  box-sizing: border-box;
 }
-.detail-avatar-wrap { flex-shrink: 0; position: relative; }
-.detail-avatar {
-  width: 76px; height: 76px;
-  border-radius: var(--r-lg);
+
+.profile-header {
+  display: flex; align-items: center; gap: 16px;
+}
+
+.profile-avatar-wrap { flex-shrink: 0; position: relative; }
+
+.profile-avatar {
+  width: 84px; height: 84px;
+  border-radius: 50%;
   object-fit: cover;
   display: flex; align-items: center; justify-content: center;
-  font-size: 2rem; font-weight: 800;
+  font-size: 2.2rem; font-weight: 800;
   box-shadow: 0 8px 30px rgba(0,0,0,0.3);
 }
-.detail-avatar-badge {
-  position: absolute; bottom: -4px; right: -4px;
-  width: 22px; height: 22px;
+
+.profile-verified {
+  position: absolute; bottom: 0; right: 0;
+  width: 24px; height: 24px;
   background: #3ddc84; color: #fff;
   border-radius: 50%;
   display: grid; place-items: center;
   border: 2px solid #0d1526;
 }
-.detail-avatar-badge svg { width: 12px; height: 12px; }
-.detail-hero-info { width: 100%; min-width: 0; }
-.detail-name-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.detail-name-row h1 { font-size: 1.25rem; margin: 0; }
-.detail-profession { font-size: 0.85rem; font-weight: 700; margin: 4px 0 8px; }
-.detail-meta {
-  display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
-  margin-bottom: 8px;
-}
-.detail-rating { display: inline-flex; align-items: center; gap: 4px; font-size: 0.82rem; color: var(--text-2); }
-.detail-rating svg { color: #f7c873; }
-.detail-stat { font-size: 0.78rem; color: var(--muted); }
-.detail-status {
-  font-size: 0.7rem; font-weight: 800; text-transform: uppercase;
-  padding: 3px 8px; border-radius: 20px;
-}
-.detail-location {
-  display: inline-flex; align-items: center; gap: 6px;
-  font-size: 0.85rem; color: var(--muted); margin: 0;
-}
-.detail-location svg { color: var(--faint); }
-.detail-distance { color: var(--text-2); font-weight: 600; }
-.detail-badge.verified {
-  display: inline-flex; align-items: center; gap: 4px;
-  background: #3ddc84; color: #fff;
-  padding: 3px 7px; border-radius: 20px;
-  font-size: 0.7rem; font-weight: 800;
-}
-.detail-badge.verified svg { width: 11px; height: 11px; }
 
-.detail-actions {
-  display: flex; flex-direction: column;
-  gap: 10px;
-  margin-bottom: 16px;
+.profile-verified svg { width: 13px; height: 13px; }
+
+.profile-header-info { flex: 1; min-width: 0; }
+
+.profile-header-info h1 {
+  font-size: 1.35rem; margin: 0 0 4px;
 }
-.detail-actions a,
-.detail-actions button {
+
+.profile-metier {
+  font-size: 0.9rem; font-weight: 700; margin: 0 0 8px;
+}
+
+.profile-status {
+  display: inline-block;
+  font-size: 0.72rem; font-weight: 800; text-transform: uppercase;
+  padding: 4px 10px; border-radius: 20px;
+}
+
+.profile-zone {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin-top: 12px; font-size: 0.85rem; color: var(--muted);
+}
+
+.profile-zone svg { color: var(--faint); }
+
+.profile-distance { color: var(--text-2); font-weight: 600; margin-left: 4px; }
+
+.profile-sep {
+  height: 1px; background: rgba(255,255,255,0.07); margin: 16px 0;
+}
+
+.profile-actions {
+  display: flex; flex-direction: column; gap: 10px;
+}
+
+.profile-actions .btn,
+.profile-actions button {
   width: 100%;
-  padding: 12px 16px;
   min-height: 48px;
   font-size: 0.95rem;
   box-sizing: border-box;
 }
-.detail-actions svg {
-  width: 18px; height: 18px;
-  flex-shrink: 0;
-}
-.detail-card {
-  background: #0d1526;
-  border: 1px solid rgba(255,255,255,0.07);
-  border-radius: var(--r-xl);
-  padding: 16px;
-  margin-bottom: 14px;
-}
-.detail-card h3 { font-size: 1rem; margin: 0 0 12px; }
-.detail-bio { color: var(--text-2); font-size: 0.9rem; line-height: 1.55; margin: 0 0 12px; word-break: break-word; }
-.detail-tags { display: flex; flex-wrap: wrap; gap: 8px; }
 
-.detail-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
-.detail-list li {
-  display: flex; flex-direction: column; align-items: flex-start;
-  padding: 8px 0; border-bottom: 1px solid var(--line);
-  word-break: break-word;
+.profile-actions .btn-primary {
+  background: #f5a623; color: #1a1206; border-color: #f5a623;
 }
-.detail-list li:last-child { border-bottom: none; }
-.detail-list li span { color: var(--muted); font-size: 0.8rem; margin-bottom: 2px; }
-.detail-list li strong { font-weight: 600; font-size: 0.86rem; }
 
-.detail-grid {
-  display: grid; gap: 14px;
+.profile-actions .btn-primary:hover {
+  background: #f7c873; color: #1a1206;
 }
-.detail-action-form { width: 100%; margin: 0; }
 
-.chat-box {
-  display: flex; flex-direction: column; gap: 10px;
-  max-height: 420px; overflow-y: auto;
-  padding: 12px;
+.profile-actions svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+.profile-section h3 {
+  font-size: 1rem; margin: 0 0 10px;
 }
-.chat-message {
-  display: flex; width: 100%;
+
+.profile-bio {
+  color: var(--text-2); font-size: 0.9rem; line-height: 1.5;
+  margin: 0 0 10px;
 }
-.chat-message.sent { justify-content: flex-end; }
-.chat-message.received { justify-content: flex-start; }
+
+.profile-infos {
+  list-style: none; padding: 0; margin: 0; display: grid; gap: 10px;
+}
+
+.profile-infos li {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.profile-infos li:last-child { border-bottom: none; }
+
+.profile-infos li span { color: var(--muted); font-size: 0.8rem; }
+
+.profile-infos li b {
+  font-weight: 600; font-size: 0.85rem; text-align: right;
+  max-width: 55%; word-break: break-word;
+}
+
+.profile-footer {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
+  gap: 8px;
+  font-size: 0.8rem; color: var(--text-2);
+  text-align: center;
+}
+
+.profile-footer .dot {
+  width: 4px; height: 4px; border-radius: 50%; background: var(--muted);
+}
+
+.profile-reviews { display: grid; gap: 10px; }
+
+.profile-review {
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.profile-review:last-child { border-bottom: none; padding-bottom: 0; }
+
+.review-head {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 4px;
+}
+
+.review-name { font-weight: 600; font-size: 0.85rem; }
+
+.review-stars { color: #f7c873; font-size: 0.8rem; font-weight: 700; }
+
+.profile-review p { margin: 0 0 4px; font-size: 0.85rem; color: var(--text-2); }
+
+.review-date { font-size: 0.72rem; color: var(--muted); }
+
+.hidden { display: none !important; }
+
+.chat-banner {
+  font-size: 0.75rem; color: var(--muted); text-align: center;
+  padding: 8px; background: rgba(255,255,255,0.03);
+  border-radius: var(--r); margin-bottom: 10px;
+}
+
+.chat-messages {
+  display: flex; flex-direction: column; gap: 8px;
+  max-height: 260px; overflow-y: auto;
+  margin-bottom: 10px; padding-right: 4px;
+}
+
 .chat-bubble {
-  max-width: 85%;
-  padding: 10px 14px;
-  border-radius: var(--r-lg);
-  background: #1a2236;
-  border: 1px solid rgba(255,255,255,0.07);
+  max-width: 85%; padding: 10px 12px; border-radius: var(--r-lg);
+  background: #1a2236; border: 1px solid rgba(255,255,255,0.07);
   word-break: break-word;
 }
-.chat-message.sent .chat-bubble {
+
+.chat-bubble.out {
+  align-self: flex-end;
   background: #3d5bff; color: #fff;
   border-bottom-right-radius: 4px;
 }
-.chat-message.received .chat-bubble {
+
+.chat-bubble.in {
+  align-self: flex-start;
   background: #0d1526;
   border-bottom-left-radius: 4px;
 }
-.chat-bubble p { margin: 0; font-size: 0.9rem; line-height: 1.4; }
-.chat-meta {
-  font-size: 0.7rem; color: var(--muted); margin-bottom: 4px;
-  display: flex; justify-content: space-between; gap: 8px;
+
+.chat-bubble .chat-author {
+  font-size: 0.7rem; color: var(--muted); margin-bottom: 2px;
 }
-.chat-message.sent .chat-meta { color: rgba(255,255,255,0.85); }
-.chat-form-card { padding: 10px; }
+
+.chat-bubble.out .chat-author { color: rgba(255,255,255,0.8); }
+
+.chat-bubble p { margin: 0; font-size: 0.88rem; line-height: 1.35; }
+
+.chat-bubble .chat-time {
+  font-size: 0.65rem; color: var(--muted); margin-top: 4px;
+  text-align: right;
+}
+
 .chat-form {
-  display: flex; gap: 10px; align-items: stretch;
+  display: flex; gap: 8px; align-items: stretch;
 }
-.chat-form input { margin: 0; }
-.chat-form .field { margin-bottom: 0; }
+
+.chat-form input[type="text"] {
+  flex: 1; margin: 0;
+}
+
+.chat-form .btn { width: auto; padding: 0 14px; min-height: 44px; }
 
 @media (min-width: 640px) {
-  .detail-hero {
-    flex-direction: row; align-items: center; gap: 20px;
-    padding: 24px;
-    margin-bottom: 22px;
-  }
-  .detail-avatar { width: 96px; height: 96px; font-size: 2.4rem; }
-  .detail-avatar-wrap { flex-shrink: 0; }
-  .detail-hero-info { flex: 1; }
-  .detail-name-row h1 { font-size: 1.5rem; }
-  .detail-profession { font-size: 0.9rem; }
+  .profile-card { padding: 24px; max-width: 720px; }
+  .profile-avatar { width: 100px; height: 100px; font-size: 2.6rem; }
+  .profile-header-info h1 { font-size: 1.6rem; }
+  .profile-metier { font-size: 1rem; }
 
-  .detail-actions {
-    display: grid; grid-template-columns: 1fr 1fr;
+  .profile-actions {
     flex-direction: row;
     gap: 12px;
-    margin-bottom: 22px;
   }
 
-  .detail-list li {
-    flex-direction: row; justify-content: space-between; align-items: center;
+  .profile-actions .btn,
+  .profile-actions button {
+    width: auto; flex: 1;
   }
-  .detail-list li span { margin-bottom: 0; }
-  .detail-card { padding: 20px; }
-  .detail-grid { grid-template-columns: 1fr 1fr; gap: 16px; }
+
+  .profile-infos li b { max-width: 60%; }
   .chat-bubble { max-width: 70%; }
+}
+
+@media (min-width: 1024px) {
+  .profile-card { max-width: 760px; }
+  .chat-messages { max-height: 320px; }
 }
 
 /* --------------------------------------------------------------------------
