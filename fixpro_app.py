@@ -1851,6 +1851,106 @@ def api_messages(request_id):
     ]})
 
 
+@app.route("/api/technicien/status", methods=["POST"])
+@login_required
+def api_technicien_status():
+    """Met a jour le statut de disponibilite de l'artisan."""
+    user = get_current_user()
+    if not user or user["role"] != "artisan":
+        return jsonify({"error": "Reserve aux techniciens."}), 403
+
+    status = (request.form.get("status") or "").strip()
+    if status not in ("en_ligne", "occupe", "hors_ligne"):
+        return jsonify({"error": "Statut inconnu."}), 400
+
+    conn = get_db_connection()
+    try:
+        conn.execute(
+            "UPDATE users SET availability_status = ? WHERE id = ?",
+            (status, user["id"]))
+        conn.commit()
+    finally:
+        conn.close()
+    return jsonify({"ok": True, "status": status})
+
+
+@app.route("/api/technicien/position", methods=["POST"])
+@login_required
+def api_technicien_position():
+    """Recoit et stocke la position GPS en temps reel du technicien."""
+    user = get_current_user()
+    if not user or user["role"] != "artisan":
+        return jsonify({"error": "Reserve aux techniciens."}), 403
+
+    try:
+        lat = float(request.form.get("lat") or "")
+        lon = float(request.form.get("lon") or "")
+    except (TypeError, ValueError):
+        return jsonify({"error": "Coordonnees invalides."}), 400
+
+    if not (-90 <= lat <= 90) or not (-180 <= lon <= 180):
+        return jsonify({"error": "Coordonnees hors limites."}), 400
+
+    conn = get_db_connection()
+    try:
+        artisan = conn.execute(
+            "SELECT availability_status FROM users WHERE id = ?",
+            (user["id"],)).fetchone()
+        if not artisan or artisan["availability_status"] != "en_ligne":
+            return jsonify({"ok": False,
+                            "reason": "Statut non en ligne, position ignoree."}), 200
+
+        conn.execute(
+            "INSERT INTO technician_locations (technician_id, latitude, longitude)"
+            " VALUES (?, ?, ?)"
+            " ON CONFLICT (technician_id) DO UPDATE SET"
+            " latitude = excluded.latitude, longitude = excluded.longitude,"
+            " updated_at = CURRENT_TIMESTAMP",
+            (user["id"], lat, lon))
+        conn.commit()
+    finally:
+        conn.close()
+    return jsonify({"ok": True})
+
+
+@app.route("/api/technicien/<int:technician_id>/position")
+def api_technicien_position_read(technician_id):
+    """Renvoie la derniere position connue si le technicien est en ligne."""
+    freshness = 180  # 3 minutes
+    conn = get_db_connection()
+    try:
+        row = conn.execute(
+            "SELECT l.latitude, l.longitude, l.updated_at, u.availability_status"
+            " FROM technician_locations l"
+            " JOIN users u ON u.id = l.technician_id"
+            " WHERE l.technician_id = ?",
+            (technician_id,)).fetchone()
+    finally:
+        conn.close()
+
+    if not row:
+        return jsonify({"error": "Aucune position connue."}), 404
+
+    if row["availability_status"] != "en_ligne":
+        return jsonify({"error": "Technicien hors ligne."}), 404
+
+    try:
+        updated = datetime.fromisoformat(row["updated_at"].replace("Z", "+00:00"))
+        if updated.tzinfo is None:
+            updated = updated.replace(tzinfo=timezone.utc)
+    except (TypeError, ValueError):
+        updated = None
+
+    if updated and (datetime.now(timezone.utc) - updated).total_seconds() > freshness:
+        return jsonify({"error": "Position perimee."}), 404
+
+    return jsonify({
+        "latitude": row["latitude"],
+        "longitude": row["longitude"],
+        "updated_at": row["updated_at"],
+    })
+
+
 # ---------------------------------------------------------------------------
 # Pages d'erreur
 # ---------------------------------------------------------------------------

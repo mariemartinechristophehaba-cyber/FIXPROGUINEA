@@ -112,8 +112,16 @@ CREATE TABLE IF NOT EXISTS admin_messages (
     created_at  TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX IF NOT EXISTS idx_admin_messages_ticket ON admin_messages(ticket_id);
-CREATE INDEX IF NOT EXISTS idx_users_email          ON users(email);
+CREATE TABLE IF NOT EXISTS technician_locations (
+    technician_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    latitude REAL NOT NULL,
+    longitude REAL NOT NULL,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_admin_messages_ticket        ON admin_messages(ticket_id);
+CREATE INDEX IF NOT EXISTS idx_technician_locations_updated ON technician_locations(updated_at);
+CREATE INDEX IF NOT EXISTS idx_users_email                  ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_role           ON users(role);
 CREATE INDEX IF NOT EXISTS idx_requests_client_id   ON requests(client_id);
 CREATE INDEX IF NOT EXISTS idx_requests_artisan_id  ON requests(artisan_id);

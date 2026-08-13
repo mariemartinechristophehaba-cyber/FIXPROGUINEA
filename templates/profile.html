@@ -73,6 +73,45 @@
   </form>
 </div>
 
+{% if user.role == 'artisan' %}
+<div class="card card-pad-lg section" id="disponibilite">
+  <h3 style="margin-bottom: 8px;">Ma disponibilite</h3>
+  <p class="small muted" style="margin-bottom: 18px;">Passe en ligne pour partager votre position avec les clients proches.</p>
+
+  <form method="post" id="statusForm" action="{{ url_for('api_technicien_status') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+    <div class="status-chooser">
+      <label class="status-option {% if (user.availability_status or 'hors_ligne') == 'en_ligne' %}active{% endif %}">
+        <input type="radio" name="status" value="en_ligne" {% if (user.availability_status or 'hors_ligne') == 'en_ligne' %}checked{% endif %} />
+        <span class="status-dot" style="background: #3ddc84;"></span>
+        <span class="status-label">En ligne</span>
+      </label>
+      <label class="status-option {% if user.availability_status == 'occupe' %}active{% endif %}">
+        <input type="radio" name="status" value="occupe" {% if user.availability_status == 'occupe' %}checked{% endif %} />
+        <span class="status-dot" style="background: #f7c873;"></span>
+        <span class="status-label">Occupe</span>
+      </label>
+      <label class="status-option {% if (user.availability_status or 'hors_ligne') == 'hors_ligne' %}active{% endif %}">
+        <input type="radio" name="status" value="hors_ligne" {% if (user.availability_status or 'hors_ligne') == 'hors_ligne' %}checked{% endif %} />
+        <span class="status-dot" style="background: #8A94A9;"></span>
+        <span class="status-label">Hors ligne</span>
+      </label>
+    </div>
+  </form>
+
+  <div class="geo-status" id="geoStatus" style="display: none;">
+    <div class="geo-status-line">
+      <span class="geo-dot" id="geoDot"></span>
+      <span class="geo-text" id="geoText">Position en attente...</span>
+    </div>
+  </div>
+
+  <p class="input-hint" id="geoHint" style="margin-top: 12px; display: none;">
+    Votre navigateur demandera l'autorisation d'acceder a votre position. Refuser ne bloque pas le changement de statut.
+  </p>
+</div>
+{% endif %}
+
 <div class="section">
   <div class="list">
     <a class="list-item" href="{{ url_for('payments') }}">
@@ -99,3 +138,111 @@
   </div>
 </div>
 {% endblock %}
+
+{% if user.role == 'artisan' %}
+{% block scripts %}
+<script>
+(function () {
+  const form = document.getElementById('statusForm');
+  const options = form.querySelectorAll('input[name="status"]');
+  const geoStatus = document.getElementById('geoStatus');
+  const geoDot = document.getElementById('geoDot');
+  const geoText = document.getElementById('geoText');
+  const geoHint = document.getElementById('geoHint');
+  let watchId = null;
+  let intervalId = null;
+
+  function setGeoMessage(ok, text) {
+    geoDot.style.background = ok ? '#3ddc84' : '#f7c873';
+    geoText.textContent = text;
+    geoStatus.style.display = 'block';
+  }
+
+  function sendPosition(lat, lon) {
+    const formData = new FormData();
+    formData.append('csrf_token', form.querySelector('input[name="csrf_token"]').value);
+    formData.append('lat', lat);
+    formData.append('lon', lon);
+    fetch('{{ url_for("api_technicien_position") }}', {
+      method: 'POST',
+      body: formData,
+    }).then(r => r.json()).then(data => {
+      if (data.ok) {
+        setGeoMessage(true, 'Position partagee (' + lat.toFixed(5) + ', ' + lon.toFixed(5) + ')');
+      } else {
+        setGeoMessage(false, data.reason || 'Partage non actif');
+      }
+    }).catch(() => {
+      setGeoMessage(false, 'Erreur d\'envoi de position');
+    });
+  }
+
+  function startSharing() {
+    if (!navigator.geolocation) {
+      setGeoMessage(false, 'Geolocalisation non supportee');
+      return;
+    }
+    geoHint.style.display = 'block';
+    watchId = navigator.geolocation.watchPosition(
+      function (pos) {
+        const lat = pos.coords.latitude;
+        const lon = pos.coords.longitude;
+        sendPosition(lat, lon);
+      },
+      function () {
+        setGeoMessage(false, 'Position refusee ou indisponible');
+      },
+      { enableHighAccuracy: true, maximumAge: 15000, timeout: 10000 }
+    );
+  }
+
+  function stopSharing() {
+    if (watchId !== null) {
+      navigator.geolocation.clearWatch(watchId);
+      watchId = null;
+    }
+    if (intervalId !== null) {
+      clearInterval(intervalId);
+      intervalId = null;
+    }
+    geoStatus.style.display = 'none';
+    geoHint.style.display = 'none';
+  }
+
+  function updateStatus(status) {
+    const formData = new FormData(form);
+    formData.set('status', status);
+    fetch('{{ url_for("api_technicien_status") }}', {
+      method: 'POST',
+      body: formData,
+    }).then(r => r.json()).then(data => {
+      if (data.ok) {
+        form.querySelectorAll('.status-option').forEach(opt => {
+          const radio = opt.querySelector('input');
+          opt.classList.toggle('active', radio.value === status);
+          radio.checked = radio.value === status;
+        });
+        if (status === 'en_ligne') {
+          startSharing();
+        } else {
+          stopSharing();
+        }
+      }
+    });
+  }
+
+  options.forEach(radio => {
+    radio.addEventListener('change', function () {
+      if (radio.checked) updateStatus(radio.value);
+    });
+  });
+
+  // Si on arrive deja en ligne (rechargement), on relance le partage.
+  const current = form.querySelector('input[name="status"]:checked');
+  if (current && current.value === 'en_ligne') {
+    startSharing();
+  }
+})();
+</script>
+{% endblock %}
+{% endif %}

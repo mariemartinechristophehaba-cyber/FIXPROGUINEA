@@ -375,6 +375,94 @@ class MessagingTests(FixProTestCase):
             "Bonjour, quand pouvez-vous passer pour la fuite ?"))
 
 
+class GeolocationTests(FixProTestCase):
+    """Geolocalisation temps reel des techniciens."""
+
+    def setUp(self):
+        super().setUp()
+        self.register_artisan("artisan@example.com", phone="+224621111111")
+        self.client.get("/logout")
+
+    def test_artisan_can_update_availability_status(self):
+        self.login("artisan@example.com")
+        response = self.client.post("/api/technicien/status", data={
+            "status": "en_ligne"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json()["ok"], True)
+
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            row = conn.execute(
+                "SELECT availability_status FROM users WHERE phone = ?",
+                ("+224621111111",)).fetchone()
+        finally:
+            conn.close()
+        self.assertEqual(row["availability_status"], "en_ligne")
+
+    def test_position_stored_only_when_artisan_is_online(self):
+        self.login("artisan@example.com")
+        self.client.post("/api/technicien/status", data={"status": "en_ligne"})
+        response = self.client.post("/api/technicien/position", data={
+            "lat": "9.5", "lon": "-13.7"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json()["ok"], True)
+
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            row = conn.execute(
+                "SELECT * FROM technician_locations").fetchone()
+        finally:
+            conn.close()
+        self.assertIsNotNone(row)
+        self.assertAlmostEqual(row["latitude"], 9.5)
+        self.assertAlmostEqual(row["longitude"], -13.7)
+
+    def test_position_ignored_when_artisan_is_offline(self):
+        self.login("artisan@example.com")
+        response = self.client.post("/api/technicien/position", data={
+            "lat": "9.5", "lon": "-13.7"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json()["ok"], False)
+
+    def test_client_can_read_artisan_position(self):
+        # Artisan en ligne avec position.
+        self.login("artisan@example.com")
+        self.client.post("/api/technicien/status", data={"status": "en_ligne"})
+        self.client.post("/api/technicien/position", data={
+            "lat": "9.5", "lon": "-13.7"})
+        self.client.get("/logout")
+
+        # Client consulte le profil.
+        self.register_client(phone="+224620000000")
+        response = self.client.get("/artisans/1")
+        self.assertEqual(response.status_code, 200)
+
+        response = self.client.get("/api/technicien/1/position")
+        self.assertEqual(response.status_code, 200)
+        data = response.get_json()
+        self.assertAlmostEqual(data["latitude"], 9.5)
+        self.assertAlmostEqual(data["longitude"], -13.7)
+
+    def test_client_cannot_read_expired_position(self):
+        self.login("artisan@example.com")
+        self.client.post("/api/technicien/status", data={"status": "en_ligne"})
+        self.client.get("/logout")
+
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute(
+                "INSERT INTO technician_locations"
+                " (technician_id, latitude, longitude, updated_at)"
+                " VALUES (?, ?, ?, datetime('now', '-4 minutes'))",
+                (1, 9.5, -13.7))
+            conn.commit()
+        finally:
+            conn.close()
+
+        response = self.client.get("/api/technicien/1/position")
+        self.assertEqual(response.status_code, 404)
+
+
 class DatabaseLayerTests(unittest.TestCase):
     """La traduction SQLite -> PostgreSQL doit etre fiable."""
 
