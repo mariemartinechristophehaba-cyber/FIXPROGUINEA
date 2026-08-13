@@ -10,6 +10,29 @@
     <h3>Tous les techniciens</h3>
   </div>
 
+  <form class="admin-filters" method="get" action="{{ url_for('admin_artisans') }}">
+    <input type="text" name="q" class="form-input" value="{{ q }}" placeholder="Nom, telephone ou email" />
+    <select name="status" onchange="this.form.submit()">
+      <option value="" {% if not status_filter %}selected{% endif %}>Tous les statuts</option>
+      <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>En attente</option>
+      <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Actif</option>
+      <option value="suspended" {% if status_filter == 'suspended' %}selected{% endif %}>Suspendu</option>
+    </select>
+    <select name="city" onchange="this.form.submit()">
+      <option value="" {% if not city_filter %}selected{% endif %}>Toutes les villes</option>
+      {% for c in cities %}
+      <option value="{{ c.city }}" {% if city_filter == c.city %}selected{% endif %}>{{ c.city }}</option>
+      {% endfor %}
+    </select>
+    <select name="profession" onchange="this.form.submit()">
+      <option value="" {% if not profession_filter %}selected{% endif %}>Tous les metiers</option>
+      {% for p in professions %}
+      <option value="{{ p.profession }}" {% if profession_filter == p.profession %}selected{% endif %}>{{ p.profession }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="btn btn-soft btn-sm">Filtrer</button>
+  </form>
+
   <div class="admin-table-wrap">
     <table class="admin-table">
       <thead>

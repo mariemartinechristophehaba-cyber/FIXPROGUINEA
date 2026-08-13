@@ -2618,6 +2618,44 @@ body.no-tabbar .site-footer { padding-bottom: 26px; }
 
 .pending-status { margin: 24px 0; }
 
+.admin-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-modal-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.85); }
+
+.admin-modal-content {
+  position: relative;
+  z-index: 1;
+  width: 90%;
+  max-width: 720px;
+  max-height: 90vh;
+  overflow: auto;
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  padding: 16px;
+  text-align: center;
+}
+
+.admin-modal-content img { max-width: 100%; height: auto; border-radius: var(--r); }
+
+.admin-modal-close {
+  margin-top: 16px;
+  padding: 10px 20px;
+  background: var(--brand);
+  color: #fff;
+  border: none;
+  border-radius: var(--r);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 @media (max-width: 480px) {
   .wizard-steps { gap: 4px; font-size: 0.6rem; }
   .wizard-steps span { padding: 4px 6px; }

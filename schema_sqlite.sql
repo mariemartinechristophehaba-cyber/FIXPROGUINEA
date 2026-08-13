@@ -137,6 +137,11 @@ CREATE TABLE IF NOT EXISTS technician_documents (
 
 CREATE INDEX IF NOT EXISTS idx_technician_documents_technician ON technician_documents(technician_id);
 
+CREATE TABLE IF NOT EXISTS settings (
+    key   TEXT PRIMARY KEY,
+    value TEXT
+);
+
 CREATE TABLE IF NOT EXISTS admin_logs (
     id              INTEGER PRIMARY KEY AUTOINCREMENT,
     admin_id        INTEGER REFERENCES users(id) ON DELETE SET NULL,

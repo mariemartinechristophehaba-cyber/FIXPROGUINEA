@@ -228,12 +228,27 @@ def payment_method_label(method):
 
 @app.context_processor
 def inject_layout_context():
-    """Expose l'utilisateur connecte a tous les gabarits pour la navigation."""
+    """Expose l'utilisateur connecte et les compteurs admin a tous les gabarits."""
     try:
         connected = get_current_user()
     except Exception:
         connected = None
-    return {"nav_user": connected}
+
+    stats = {}
+    if connected and connected.get("role") == "admin":
+        conn = get_db_connection()
+        try:
+            stats["pending_artisans"] = conn.execute(
+                "SELECT COUNT(*) AS n FROM users WHERE role = 'artisan' AND is_verified = 0").fetchone()["n"]
+            stats["open_requests"] = conn.execute(
+                "SELECT COUNT(*) AS n FROM requests"
+                " WHERE status NOT IN ('completed', 'cancelled')").fetchone()["n"]
+            stats["open_tickets"] = conn.execute(
+                "SELECT COUNT(*) AS n FROM admin_tickets WHERE status = 'open'").fetchone()["n"]
+        finally:
+            conn.close()
+
+    return {"nav_user": connected, "admin_stats": stats}
 
 
 def can_access_request(user, req):
@@ -798,16 +813,52 @@ def admin_artisans():
                 flash("Technicien reactive.", "success")
             return redirect(url_for("admin_artisans"))
 
+        q = request.args.get("q", "").strip()
+        status_filter = request.args.get("status", "").strip()
+        city_filter = request.args.get("city", "").strip()
+        profession_filter = request.args.get("profession", "").strip()
+
+        where_parts = ["u.role = 'artisan'"]
+        params = []
+        if q:
+            where_parts.append("(u.full_name LIKE ? OR u.phone LIKE ? OR u.email LIKE ?)")
+            like = f"%{q}%"
+            params.extend([like, like, like])
+        if status_filter == "pending":
+            where_parts.append("u.is_verified = 0")
+        elif status_filter == "active":
+            where_parts.append("u.is_verified = 1 AND u.is_active = 1")
+        elif status_filter == "suspended":
+            where_parts.append("u.is_active = 0")
+        if city_filter:
+            where_parts.append("u.city = ?")
+            params.append(city_filter)
+        if profession_filter:
+            where_parts.append("u.profession = ?")
+            params.append(profession_filter)
+
+        where_clause = " WHERE " + " AND ".join(where_parts)
         artisans = conn.execute(
             "SELECT u.*,"
             " (SELECT COUNT(*) FROM requests WHERE artisan_id = u.id AND status = 'completed') AS completed,"
             " (SELECT COALESCE(AVG(rating), 0) FROM reviews WHERE artisan_id = u.id) AS avg_rating"
             " FROM users u"
-            " WHERE u.role = 'artisan'"
-            " ORDER BY u.is_verified ASC, u.is_active DESC, u.created_at DESC").fetchall()
+            + where_clause +
+            " ORDER BY u.is_verified ASC, u.is_active DESC, u.created_at DESC",
+            tuple(params)).fetchall()
+
+        cities = conn.execute(
+            "SELECT DISTINCT city FROM users WHERE role = 'artisan' AND city IS NOT NULL"
+            " ORDER BY city").fetchall()
+        professions = conn.execute(
+            "SELECT DISTINCT profession FROM users WHERE role = 'artisan' AND profession IS NOT NULL"
+            " ORDER BY profession").fetchall()
     finally:
         conn.close()
-    return render_template("admin_artisans.html", user=user, artisans=artisans)
+    return render_template("admin_artisans.html", user=user, artisans=artisans,
+                           cities=cities, professions=professions,
+                           q=q, status_filter=status_filter,
+                           city_filter=city_filter, profession_filter=profession_filter)
 
 
 @app.route("/admin/artisans/<int:artisan_id>")
@@ -2431,7 +2482,52 @@ def internal_error(error):
     return render_template("500.html", message=message), 500
 
 
+def _load_settings():
+    """Charge les parametres stockes en base pour ecraser les variables d'environnement."""
+    conn = get_db_connection()
+    try:
+        for row in conn.execute("SELECT key, value FROM settings").fetchall():
+            if row["key"] == "FIXPRO_COMMISSION_RATE" and row["value"]:
+                try:
+                    app.config["FIXPRO_COMMISSION_RATE"] = float(row["value"])
+                except ValueError:
+                    pass
+    finally:
+        conn.close()
+
+
+@app.route("/admin/settings", methods=["GET", "POST"])
+@login_required
+@admin_required
+@limiter.limit("60 per hour", methods=["POST"])
+def admin_settings():
+    """Parametres systeme modifiables par les admins."""
+    user = get_current_user()
+    conn = get_db_connection()
+    try:
+        if request.method == "POST":
+            new_rate = _to_float(request.form.get("commission_rate"), 0.10)
+            if new_rate < 0 or new_rate > 1:
+                flash("Le taux de commission doit etre entre 0 et 1.", "error")
+            else:
+                conn.execute(
+                    "INSERT INTO settings (key, value) VALUES (?, ?)"
+                    " ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+                    ("FIXPRO_COMMISSION_RATE", str(new_rate)))
+                conn.commit()
+                app.config["FIXPRO_COMMISSION_RATE"] = new_rate
+                log_admin_action(user["id"], user["email"], "update_commission_rate",
+                                 "settings", 0, f"Nouveau taux {new_rate}")
+                flash("Taux de commission mis a jour.", "success")
+
+        rate = app.config.get("FIXPRO_COMMISSION_RATE", 0.10)
+    finally:
+        conn.close()
+    return render_template("admin_settings.html", user=user, commission_rate=rate)
+
+
 if __name__ == "__main__":
+    _load_settings()
     logger.info("Démarrage de FixPro (environnement: %s)",
                 app.config.get("FLASK_ENV"))
     app.run(host=app.config["HOST"], port=app.config["PORT"],
