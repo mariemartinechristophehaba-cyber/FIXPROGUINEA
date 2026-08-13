@@ -488,14 +488,22 @@ def admin_login():
             try:
                 admin = conn.execute(
                     "SELECT id FROM users WHERE role = 'admin' LIMIT 1").fetchone()
-                if admin:
-                    session["user_id"] = admin["id"]
-                    session.permanent = True
-                    flash("Bienvenue dans l'administration FixPro.", "success")
-                    return redirect(url_for("admin_dashboard"))
+                if not admin:
+                    conn.execute(
+                        "INSERT INTO users (email, phone, password_hash, role,"
+                        " full_name, is_verified, is_active)"
+                        " VALUES (?, ?, ?, 'admin', ?, 1, 1)",
+                        ("admin@fixpro.local", "+224000000000",
+                         generate_password_hash("unused"), "Administrateur"))
+                    conn.commit()
+                    admin = conn.execute(
+                        "SELECT id FROM users WHERE role = 'admin' LIMIT 1").fetchone()
+                session["user_id"] = admin["id"]
+                session.permanent = True
+                flash("Bienvenue dans l'administration FixPro.", "success")
+                return redirect(url_for("admin_dashboard"))
             finally:
                 conn.close()
-            flash("Aucun compte administrateur enregistre.", "error")
         else:
             flash("Mot de passe incorrect.", "error")
 
