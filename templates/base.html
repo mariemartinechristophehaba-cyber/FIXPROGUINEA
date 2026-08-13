@@ -17,11 +17,12 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css', v='6') }}" />
     {% block extra_head %}{% endblock %}
   </head>
-  <body class="{% if not nav_user or request.endpoint in ('index', 'ticket_detail') %} no-tabbar{% endif %}{% if request.endpoint == 'dashboard' %} no-sidebar{% endif %}{% if request.endpoint == 'index' %} landing{% endif %}">
+  {% set is_admin_route = request.endpoint and request.endpoint.startswith('admin') %}
+  <body class="{% if not nav_user or request.endpoint in ('index', 'ticket_detail') %} no-tabbar{% endif %}{% if request.endpoint == 'dashboard' or is_admin_route %} no-sidebar{% endif %}{% if request.endpoint == 'index' %} landing{% endif %}{% if is_admin_route %} admin-page{% endif %}">
 
     {% block header %}{% endblock %}
 
-    {% if nav_user and request.endpoint != 'dashboard' and request.endpoint != 'index' %}
+    {% if nav_user and not is_admin_route and request.endpoint != 'dashboard' and request.endpoint != 'index' %}
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-top">
         <a class="brand" href="{{ url_for('index') }}">
@@ -69,7 +70,7 @@
     {% endif %}
 
     <div class="app-wrap">
-      {% if not nav_user and request.endpoint not in ('dashboard', 'index') %}
+      {% if not is_admin_route and not nav_user and request.endpoint not in ('dashboard', 'index') %}
       <header class="appbar guest-appbar">
         <a class="brand" href="{{ url_for('index') }}">
           <span class="brand-mark">
@@ -82,7 +83,7 @@
           <a class="btn btn-primary btn-sm" href="{{ url_for('client_signup') }}">Inscription</a>
         </div>
       </header>
-      {% else %}
+      {% elif not is_admin_route %}
       {% if request.endpoint not in ('dashboard', 'index') %}
       <header class="topbar">
         <h1 class="topbar-title">{% block page_title %}{% endblock %}</h1>
@@ -108,14 +109,16 @@
         {% block content %}{% endblock %}
       </main>
 
+      {% if not is_admin_route %}
       {% block footer %}
       <footer class="site-footer">
         FixPro Guinee - Plateforme de mise en relation artisan et client a Conakry.
       </footer>
       {% endblock %}
+      {% endif %}
     </div>
 
-    {% if nav_user and request.endpoint != 'index' %}
+    {% if nav_user and not is_admin_route and request.endpoint != 'index' %}
     {% block tabbar %}
     <nav class="tabbar">
       <a class="tab {{ 'active' if request.endpoint == 'dashboard' }}" href="{{ url_for('dashboard') }}">

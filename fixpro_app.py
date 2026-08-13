@@ -182,14 +182,14 @@ def admin_required(view_func):
     return wrapper
 
 
-def log_admin_action(admin_id, action, target_type=None, target_id=None, details=None):
+def log_admin_action(admin_id, admin_email, action, target_type=None, target_id=None, details=None):
     """Enregistre une action sensible dans admin_logs."""
     conn = get_db_connection()
     try:
         conn.execute(
-            "INSERT INTO admin_logs (admin_id, action, target_type, target_id, details)"
-            " VALUES (?, ?, ?, ?, ?)",
-            (admin_id, action, target_type, target_id, details))
+            "INSERT INTO admin_logs (admin_id, admin_email, action, target_type, target_id, details)"
+            " VALUES (?, ?, ?, ?, ?, ?)",
+            (admin_id, admin_email, action, target_type, target_id, details))
         conn.commit()
     finally:
         conn.close()
@@ -472,27 +472,77 @@ def artisan_pending():
     return render_template("pending.html")
 
 
-@app.route("/admin/login", methods=["GET", "POST"])
+@app.route("/admin/login")
 def admin_login():
-    """Connexion admin par mot de passe (transition vers role = 'admin')."""
-    if request.method == "POST":
-        admin_password = request.form.get("admin_password", "").strip()
-        if admin_password == app.config.get("ADMIN_PASSWORD"):
-            conn = get_db_connection()
-            try:
-                admin = conn.execute(
-                    "SELECT id FROM users WHERE role = 'admin' LIMIT 1").fetchone()
-                if admin:
-                    session["user_id"] = admin["id"]
-                    session.permanent = True
-                    flash("Bienvenue dans l'administration FixPro.", "success")
-                    return redirect(url_for("admin_dashboard"))
-            finally:
-                conn.close()
-            flash("Aucun compte administrateur enregistre.", "error")
-        else:
-            flash("Mot de passe incorrect.", "error")
+    """Ecran d'accueil admin : redirige si deja connecte."""
+    if session.get("user_id"):
+        user = get_current_user()
+        if user and user["role"] == "admin":
+            return redirect(url_for("admin_dashboard"))
     return render_template("admin_login.html")
+
+
+@app.route("/admin/login/google")
+def admin_google_login():
+    """Redirige vers Google pour authentifier un administrateur."""
+    google_client = _get_google_client()
+    if not google_client:
+        flash("La connexion Google n'est pas configuree.", "error")
+        return redirect(url_for("admin_login"))
+    session["oauth_admin"] = True
+    redirect_uri = app.config.get("GOOGLE_REDIRECT_URI")
+    return google_client.authorize_redirect(redirect_uri)
+
+
+@app.route("/admin/login/google/callback")
+def admin_google_callback():
+    """Google retourne ici : on valide l'email contre la whitelist."""
+    google_client = _get_google_client()
+    if not google_client:
+        flash("La connexion Google n'est pas configuree.", "error")
+        return redirect(url_for("admin_login"))
+
+    try:
+        token = google_client.authorize_access_token()
+        userinfo = token.get("userinfo") or google_client.get(
+            "https://openidconnect.googleapis.com/v1/userinfo").json()
+    except Exception as exc:
+        logger.error("Erreur Google OAuth admin : %s", exc)
+        flash("La connexion avec Google a echoue.", "error")
+        return redirect(url_for("admin_login"))
+
+    email = (userinfo.get("email") or "").strip().lower()
+    full_name = userinfo.get("name", "").strip()
+    authorized = [e.lower() for e in app.config.get("ADMIN_EMAILS", [])]
+
+    if not email:
+        flash("Google n'a pas transmis d'email.", "error")
+        return redirect(url_for("admin_login"))
+
+    if email not in authorized:
+        flash("Cet email n'est pas autorise a acceder a l'administration.", "error")
+        return redirect(url_for("index"))
+
+    conn = get_db_connection()
+    try:
+        user = conn.execute(
+            "SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+        if not user:
+            conn.execute(
+                "INSERT INTO users (email, phone, password_hash, role, full_name, is_verified, is_active)"
+                " VALUES (?, ?, ?, 'admin', ?, 1, 1)",
+                (email, "+224000000000", generate_password_hash("google_oauth"), full_name))
+            conn.commit()
+            user = conn.execute(
+                "SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+
+        session.clear()
+        session["user_id"] = user["id"]
+        session.permanent = True
+        flash("Bienvenue dans l'administration FixPro.", "success")
+    finally:
+        conn.close()
+    return redirect(url_for("admin_dashboard"))
 
 
 @app.route("/admin/dashboard")
@@ -504,6 +554,7 @@ def admin_dashboard():
     conn = get_db_connection()
     try:
         this_month = datetime.now(timezone.utc).strftime("%Y-%m")
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
         clients_total = conn.execute(
             "SELECT COUNT(*) AS n FROM users WHERE role = 'client'").fetchone()["n"]
@@ -534,6 +585,14 @@ def admin_dashboard():
         open_tickets = conn.execute(
             "SELECT COUNT(*) AS n FROM admin_tickets WHERE status = 'open'").fetchone()["n"]
 
+        today_revenue = conn.execute(
+            "SELECT COALESCE(SUM(commission_amount), 0) AS commission"
+            " FROM payments WHERE status = 'completed' AND created_at LIKE ?",
+            (today + "%",)).fetchone()["commission"]
+        today_signups = conn.execute(
+            "SELECT COUNT(*) AS n FROM users WHERE created_at LIKE ?",
+            (today + "%",)).fetchone()["n"]
+
         recent_payments = conn.execute(
             "SELECT p.*, u.full_name AS client_name, a.full_name AS artisan_name"
             " FROM payments p"
@@ -558,6 +617,8 @@ def admin_dashboard():
             "commission_total": completed_payments["commission"],
             "open_requests": open_requests,
             "open_tickets": open_tickets,
+            "today_revenue": today_revenue,
+            "today_signups": today_signups,
         }
     finally:
         conn.close()
@@ -584,7 +645,7 @@ def admin_artisans():
                     "UPDATE users SET is_verified = 1 WHERE id = ? AND role = 'artisan'",
                     (artisan_id,))
                 conn.commit()
-                log_admin_action(user["id"], "verify", "user", artisan_id,
+                log_admin_action(user["id"], user["email"], "verify", "user", artisan_id,
                                  reason or "Validation du profil artisan")
                 flash("Technicien valide.", "success")
             elif action == "reject":
@@ -592,7 +653,7 @@ def admin_artisans():
                     "DELETE FROM users WHERE id = ? AND role = 'artisan' AND is_verified = 0",
                     (artisan_id,))
                 conn.commit()
-                log_admin_action(user["id"], "reject", "user", artisan_id,
+                log_admin_action(user["id"], user["email"], "reject", "user", artisan_id,
                                  reason or "Refus de l'inscription")
                 flash("Inscription refusee.", "success")
             elif action == "suspend":
@@ -600,7 +661,7 @@ def admin_artisans():
                     "UPDATE users SET is_active = 0 WHERE id = ? AND role = 'artisan'",
                     (artisan_id,))
                 conn.commit()
-                log_admin_action(user["id"], "suspend", "user", artisan_id,
+                log_admin_action(user["id"], user["email"], "suspend", "user", artisan_id,
                                  reason or "Suspension du compte")
                 flash("Technicien suspendu.", "success")
             elif action == "restore":
@@ -608,7 +669,7 @@ def admin_artisans():
                     "UPDATE users SET is_active = 1 WHERE id = ? AND role = 'artisan'",
                     (artisan_id,))
                 conn.commit()
-                log_admin_action(user["id"], "restore", "user", artisan_id,
+                log_admin_action(user["id"], user["email"], "restore", "user", artisan_id,
                                  reason or "Reactivation du compte")
                 flash("Technicien reactive.", "success")
             return redirect(url_for("admin_artisans"))
@@ -642,14 +703,14 @@ def admin_clients():
                     "UPDATE users SET is_active = 0 WHERE id = ? AND role = 'client'",
                     (client_id,))
                 conn.commit()
-                log_admin_action(user["id"], "suspend_client", "user", client_id)
+                log_admin_action(user["id"], user["email"], "suspend_client", "user", client_id)
                 flash("Client suspendu.", "success")
             elif action == "restore":
                 conn.execute(
                     "UPDATE users SET is_active = 1 WHERE id = ? AND role = 'client'",
                     (client_id,))
                 conn.commit()
-                log_admin_action(user["id"], "restore_client", "user", client_id)
+                log_admin_action(user["id"], user["email"], "restore_client", "user", client_id)
                 flash("Client reactive.", "success")
             return redirect(url_for("admin_clients"))
 
@@ -700,14 +761,14 @@ def admin_tickets():
                     "UPDATE admin_tickets SET status = 'closed',"
                     " updated_at = CURRENT_TIMESTAMP WHERE id = ?", (ticket_id,))
                 conn.commit()
-                log_admin_action(user["id"], "close_ticket", "admin_ticket", ticket_id)
+                log_admin_action(user["id"], user["email"], "close_ticket", "admin_ticket", ticket_id)
                 flash("Signalement marque comme traite.", "success")
             elif action == "open":
                 conn.execute(
                     "UPDATE admin_tickets SET status = 'open',"
                     " updated_at = CURRENT_TIMESTAMP WHERE id = ?", (ticket_id,))
                 conn.commit()
-                log_admin_action(user["id"], "open_ticket", "admin_ticket", ticket_id)
+                log_admin_action(user["id"], user["email"], "open_ticket", "admin_ticket", ticket_id)
                 flash("Signalement rouvert.", "success")
             return redirect(url_for("admin_tickets"))
 
@@ -727,21 +788,24 @@ def admin_tickets():
 @admin_required
 @limiter.limit("60 per hour", methods=["POST"])
 def admin_payments():
-    """Transactions et commissions."""
+    """Transactions et commissions avec filtres."""
     user = get_current_user()
     rate = app.config.get("FIXPRO_COMMISSION_RATE", 0.10)
     conn = get_db_connection()
     try:
-        if request.method == "POST" and request.form.get("payment_id"):
-            payment_id = request.form.get("payment_id")
-            commission = _to_float(request.form.get("commission_amount"))
-            conn.execute(
-                "UPDATE payments SET commission_amount = ? WHERE id = ?",
-                (commission, payment_id))
-            conn.commit()
-            log_admin_action(user["id"], "update_commission", "payment", payment_id)
-            flash("Commission mise a jour.", "success")
-            return redirect(url_for("admin_payments"))
+        status_filter = request.args.get("status", "")
+        method_filter = request.args.get("method", "")
+
+        where_parts = []
+        params = []
+        if status_filter:
+            where_parts.append("p.status = ?")
+            params.append(status_filter)
+        if method_filter:
+            where_parts.append("p.method = ?")
+            params.append(method_filter)
+
+        where_clause = (" WHERE " + " AND ".join(where_parts)) if where_parts else ""
 
         payments = conn.execute(
             "SELECT p.*, u.full_name AS client_name, a.full_name AS artisan_name, r.title"
@@ -749,12 +813,61 @@ def admin_payments():
             " JOIN requests r ON r.id = p.request_id"
             " JOIN users u ON u.id = r.client_id"
             " LEFT JOIN users a ON a.id = r.artisan_id"
-            " ORDER BY p.created_at DESC").fetchall()
+            + where_clause +
+            " ORDER BY p.created_at DESC", tuple(params)).fetchall()
     finally:
         conn.close()
     return render_template("admin_payments.html", user=user, payments=payments,
                            payment_method_label=payment_method_label,
-                           commission_rate=rate)
+                           commission_rate=rate, status_filter=status_filter,
+                           method_filter=method_filter)
+
+
+@app.route("/admin/payments/<int:payment_id>")
+@login_required
+@admin_required
+def admin_payment_detail(payment_id):
+    """Vue detaillee d'une transaction."""
+    user = get_current_user()
+    conn = get_db_connection()
+    try:
+        payment = conn.execute(
+            "SELECT p.*, u.full_name AS client_name, a.full_name AS artisan_name,"
+            " r.title, r.budget, r.status AS request_status"
+            " FROM payments p"
+            " JOIN requests r ON r.id = p.request_id"
+            " JOIN users u ON u.id = r.client_id"
+            " LEFT JOIN users a ON a.id = r.artisan_id"
+            " WHERE p.id = ?", (payment_id,)).fetchone()
+        if not payment:
+            flash("Transaction introuvable.", "error")
+            return redirect(url_for("admin_payments"))
+    finally:
+        conn.close()
+    return render_template("admin_payment_detail.html", user=user, payment=payment,
+                           payment_method_label=payment_method_label)
+
+
+@app.route("/admin/payments/<int:payment_id>/pay", methods=["POST"])
+@login_required
+@admin_required
+@limiter.limit("60 per hour", methods=["POST"])
+def admin_payment_pay(payment_id):
+    """Marque un paiement comme verse au technicien."""
+    user = get_current_user()
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+    conn = get_db_connection()
+    try:
+        conn.execute(
+            "UPDATE payments SET paid_to_artisan_at = ? WHERE id = ?",
+            (now, payment_id))
+        conn.commit()
+        log_admin_action(user["id"], user["email"], "mark_paid_to_artisan",
+                         "payment", payment_id, "Verse au technicien le " + now)
+        flash("Paiement marque comme verse au technicien.", "success")
+    finally:
+        conn.close()
+    return redirect(url_for("admin_payment_detail", payment_id=payment_id))
 
 
 @app.route("/tickets/new", methods=["POST"])

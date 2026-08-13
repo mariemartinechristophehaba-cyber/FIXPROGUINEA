@@ -1,0 +1,35 @@
+{% extends 'admin_base.html' %}
+{% block title %}Transaction - FixPro Admin{% endblock %}
+{% block admin_title %}Detail de la transaction{% endblock %}
+
+{% block admin_content %}
+<div class="admin-card">
+  <div class="admin-section-head">
+    <h3>{{ "{:,}".format(payment.amount|int).replace(",", " ") }} GNF</h3>
+    <span class="badge {% if payment.status == 'completed' %}success{% elif payment.status == 'pending' %}pending{% else %}failed{% endif %}">{{ payment.status }}</span>
+  </div>
+
+  <div class="admin-detail-grid">
+    <div><span class="admin-detail-label">Client</span><span class="admin-detail-value">{{ payment.client_name }}</span></div>
+    <div><span class="admin-detail-label">Technicien</span><span class="admin-detail-value">{{ payment.artisan_name or '—' }}</span></div>
+    <div><span class="admin-detail-label">Demande</span><span class="admin-detail-value">{{ payment.title or '—' }}</span></div>
+    <div><span class="admin-detail-label">Moyen</span><span class="admin-detail-value" style="color: #FF6600;">{{ payment_method_label(payment.method) }}</span></div>
+    <div><span class="admin-detail-label">Reference</span><span class="admin-detail-value">{{ payment.reference or '—' }}</span></div>
+    <div><span class="admin-detail-label">Details</span><span class="admin-detail-value">{{ payment.details or '—' }}</span></div>
+    <div><span class="admin-detail-label">Commission</span><span class="admin-detail-value">{{ "{:,}".format(payment.commission_amount|int).replace(",", " ") }} GNF</span></div>
+    <div><span class="admin-detail-label">Date</span><span class="admin-detail-value">{{ payment.created_at }}</span></div>
+    <div><span class="admin-detail-label">Date de confirmation admin</span><span class="admin-detail-value">{{ payment.paid_to_artisan_at or 'Non confirme' }}</span></div>
+  </div>
+
+  {% if payment.status == 'completed' and not payment.paid_to_artisan_at %}
+  <form method="post" action="{{ url_for('admin_payment_pay', payment_id=payment.id) }}" style="margin-top: 20px;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+    <button class="btn btn-primary" type="submit" onclick="return confirm('Confirmer le versement au technicien ?')">Marquer comme verse au technicien</button>
+  </form>
+  {% elif payment.paid_to_artisan_at %}
+  <p class="small muted" style="margin-top: 20px;">Verse au technicien le {{ payment.paid_to_artisan_at }}.</p>
+  {% endif %}
+
+  <a class="btn btn-soft btn-sm" href="{{ url_for('admin_payments') }}" style="margin-top: 20px;">Retour aux transactions</a>
+</div>
+{% endblock %}

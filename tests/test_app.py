@@ -487,6 +487,30 @@ class AdminPanelTests(FixProTestCase):
         self.register_client(phone="+224620000000")
         response = self.client.get("/admin/dashboard")
         self.assertEqual(response.status_code, 302)
+        self.assertIn("/admin/login", response.location)
+
+    def test_admin_logs_contain_email(self):
+        self.register_artisan("artisan@example.com", phone="+224621111111")
+        self.login_admin()
+
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            artisan = conn.execute(
+                "SELECT id FROM users WHERE role = 'artisan'").fetchone()
+            artisan_id = artisan["id"]
+        finally:
+            conn.close()
+
+        self.client.post("/admin/artisans", data={
+            "action": "suspend", "artisan_id": str(artisan_id)}, follow_redirects=True)
+
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            log = conn.execute(
+                "SELECT admin_email FROM admin_logs WHERE action = 'suspend'").fetchone()
+        finally:
+            conn.close()
+        self.assertEqual(log["admin_email"], "admin@fixpro.local")
 
     def test_admin_dashboard_loads_with_kpi(self):
         self.login_admin()

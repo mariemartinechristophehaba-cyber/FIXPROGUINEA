@@ -72,16 +72,17 @@ CREATE TABLE IF NOT EXISTS messages (
 );
 
 CREATE TABLE IF NOT EXISTS payments (
-    id                SERIAL PRIMARY KEY,
-    request_id        INTEGER NOT NULL REFERENCES requests(id) ON DELETE CASCADE,
-    amount            REAL NOT NULL,
-    commission_amount REAL DEFAULT 0,
-    method            TEXT DEFAULT 'cash',
-    status            TEXT DEFAULT 'pending',
-    reference         TEXT,
-    details           TEXT,
-    created_at        TEXT DEFAULT CURRENT_TIMESTAMP,
-    updated_at        TEXT DEFAULT CURRENT_TIMESTAMP
+    id                 SERIAL PRIMARY KEY,
+    request_id         INTEGER NOT NULL REFERENCES requests(id) ON DELETE CASCADE,
+    amount             REAL NOT NULL,
+    commission_amount  REAL DEFAULT 0,
+    paid_to_artisan_at TEXT,
+    method             TEXT DEFAULT 'cash',
+    status             TEXT DEFAULT 'pending',
+    reference          TEXT,
+    details            TEXT,
+    created_at         TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at         TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS reviews (
@@ -123,6 +124,7 @@ CREATE TABLE IF NOT EXISTS technician_locations (
 CREATE TABLE IF NOT EXISTS admin_logs (
     id              SERIAL PRIMARY KEY,
     admin_id        INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    admin_email     TEXT,
     action          TEXT NOT NULL,
     target_type     TEXT,
     target_id       INTEGER,

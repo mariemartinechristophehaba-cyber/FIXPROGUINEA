@@ -8,15 +8,32 @@
     <h3>Transactions</h3>
     <span class="small muted">Taux de commission : {{ (commission_rate * 100)|int }}%</span>
   </div>
+
+  <form class="admin-filters" method="get" action="{{ url_for('admin_payments') }}">
+    <select name="status" onchange="this.form.submit()">
+      <option value="">Tous les statuts</option>
+      <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Paye</option>
+      <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>En attente</option>
+      <option value="failed" {% if status_filter == 'failed' %}selected{% endif %}>Echoue</option>
+    </select>
+    <select name="method" onchange="this.form.submit()">
+      <option value="">Tous les moyens</option>
+      <option value="orange_money" {% if method_filter == 'orange_money' %}selected{% endif %}>Orange Money</option>
+      <option value="mtn_mobile_money" {% if method_filter == 'mtn_mobile_money' %}selected{% endif %}>MTN Mobile Money</option>
+      <option value="card" {% if method_filter == 'card' %}selected{% endif %}>Carte bancaire</option>
+      <option value="cash" {% if method_filter == 'cash' %}selected{% endif %}>Espèces</option>
+    </select>
+  </form>
+
   <div class="admin-table-wrap">
     <table class="admin-table">
       <thead>
         <tr>
           <th>Client</th>
           <th>Technicien</th>
-          <th>Demande</th>
           <th>Montant</th>
           <th>Commission</th>
+          <th>Moyen</th>
           <th>Statut</th>
           <th>Date</th>
           <th>Actions</th>
@@ -27,15 +44,12 @@
         <tr>
           <td>{{ p.client_name }}</td>
           <td>{{ p.artisan_name or '—' }}</td>
-          <td>{{ p.title or '—' }}</td>
           <td class="admin-amount">{{ "{:,}".format(p.amount|int).replace(",", " ") }} GNF</td>
+          <td>{{ "{:,}".format(p.commission_amount|int).replace(",", " ") }} GNF</td>
           <td>
-            <form method="post" class="admin-inline-form" style="gap: 6px;">
-              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-              <input type="hidden" name="payment_id" value="{{ p.id }}" />
-              <input type="number" name="commission_amount" value="{{ p.commission_amount or (p.amount * commission_rate)|round(2) }}" min="0" step="1000" class="admin-input-sm" />
-              <button class="btn btn-soft btn-sm" type="submit">OK</button>
-            </form>
+            <span class="badge {% if p.method == 'orange_money' %}warning{% else %}neutral{% endif %}">
+              {{ payment_method_label(p.method) }}
+            </span>
           </td>
           <td>
             <span class="badge {% if p.status == 'completed' %}success{% elif p.status == 'pending' %}pending{% else %}failed{% endif %}">
@@ -44,7 +58,7 @@
           </td>
           <td>{{ (p.created_at|string)[:16] }}</td>
           <td>
-            <span class="small muted">{{ payment_method_label(p.method) }}</span>
+            <a class="btn btn-soft btn-sm" href="{{ url_for('admin_payment_detail', payment_id=p.id) }}">Details</a>
           </td>
         </tr>
         {% else %}

@@ -16,7 +16,27 @@
 </div>
 {% endif %}
 
-<div class="admin-kpi-grid">
+<div class="admin-kpi-grid" data-refresh="dashboard" style="grid-template-columns: repeat(6, 1fr);">
+  <div class="admin-kpi">
+    <div class="admin-kpi-icon green">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+    </div>
+    <div class="admin-kpi-body">
+      <div class="admin-kpi-label">Revenus du jour</div>
+      <div class="admin-kpi-value sm">{{ "{:,}".format(stats.today_revenue|int).replace(",", " ") }} GNF</div>
+    </div>
+  </div>
+
+  <div class="admin-kpi">
+    <div class="admin-kpi-icon blue">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    </div>
+    <div class="admin-kpi-body">
+      <div class="admin-kpi-label">Inscrits aujourd'hui</div>
+      <div class="admin-kpi-value">{{ stats.today_signups }}</div>
+    </div>
+  </div>
+
   <div class="admin-kpi">
     <div class="admin-kpi-icon blue">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -126,4 +146,12 @@
   <p class="muted">Aucune transaction pour le moment.</p>
   {% endif %}
 </div>
+
+<script>
+  (function() {
+    setInterval(function() {
+      window.location.reload();
+    }, 45000);
+  })();
+</script>
 {% endblock %}
