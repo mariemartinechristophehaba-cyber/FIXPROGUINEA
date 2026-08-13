@@ -100,12 +100,49 @@
 <div class="admin-sections">
   <div class="admin-card">
     <h3>Techniciens en attente</h3>
-    {% if stats.pending_artisans > 0 %}
-    <div class="admin-alert-soft">
-      <span class="badge pending">{{ stats.pending_artisans }}</span>
-      <span>profil{{ 's' if stats.pending_artisans > 1 }} a examiner</span>
-      <a class="btn btn-primary btn-sm" href="{{ url_for('admin_artisans') }}">Valider</a>
+    {% if pending_artisans_list %}
+    <div class="admin-table-wrap">
+      <table class="admin-table admin-table-large">
+        <thead>
+          <tr>
+            <th>Nom</th>
+            <th>Metier</th>
+            <th>Ville / Quartier</th>
+            <th>Telephone</th>
+            <th>Documents</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for artisan in pending_artisans_list %}
+          <tr>
+            <td>{{ artisan.full_name }}</td>
+            <td>{{ artisan.profession or '—' }}</td>
+            <td>{{ artisan.city or '—' }} {{ artisan.quartier or '' }}</td>
+            <td>{{ artisan.phone }}</td>
+            <td>
+              {% if artisan.doc_count and artisan.doc_count > 0 %}
+              <span class="badge success">{{ artisan.doc_count }} ok</span>
+              {% else %}
+              <span class="badge failed">0</span>
+              {% endif %}
+            </td>
+            <td>
+              <form method="post" action="{{ url_for('admin_artisans') }}" class="admin-inline-form" style="display: inline;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <input type="hidden" name="artisan_id" value="{{ artisan.id }}" />
+                <button class="btn btn-success btn-sm" type="submit" name="action" value="verify" onclick="return confirm('Accepter ce technicien ?')">Accepter</button>
+                <button class="btn btn-danger btn-sm" type="submit" name="action" value="reject" onclick="return confirm('Refuser ce technicien ?')">Refuser</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
+    {% if stats.pending_artisans > 5 %}
+    <a class="btn btn-soft btn-sm" href="{{ url_for('admin_artisans', status='pending') }}" style="margin-top: 12px;">Voir les {{ stats.pending_artisans }} inscriptions</a>
+    {% endif %}
     {% else %}
     <p class="muted">Aucun technicien en attente de validation.</p>
     {% endif %}

@@ -739,6 +739,12 @@ def admin_dashboard():
             " LEFT JOIN users a ON a.id = r.artisan_id"
             " ORDER BY p.created_at DESC LIMIT 10").fetchall()
 
+        pending_artisans_list = conn.execute(
+            "SELECT u.*, (SELECT COUNT(*) FROM technician_documents WHERE technician_id = u.id) AS doc_count"
+            " FROM users u"
+            " WHERE u.role = 'artisan' AND u.is_verified = 0"
+            " ORDER BY u.created_at DESC LIMIT 5").fetchall()
+
         recent_logs = conn.execute(
             "SELECT l.*, u.full_name AS admin_name"
             " FROM admin_logs l"
@@ -762,7 +768,8 @@ def admin_dashboard():
     finally:
         conn.close()
     return render_template("admin_dashboard.html", user=user, stats=stats,
-                           recent_payments=recent_payments, recent_logs=recent_logs)
+                           recent_payments=recent_payments, recent_logs=recent_logs,
+                           pending_artisans_list=pending_artisans_list)
 
 
 @app.route("/admin/artisans", methods=["GET", "POST"])

@@ -2664,6 +2664,32 @@ body.no-tabbar .site-footer { padding-bottom: 26px; }
 
 .admin-table-large .admin-user-name { font-weight: 700; }
 
+.admin-table-grid th,
+.admin-table-grid td { text-align: left; }
+
+.admin-table-grid .cell-index {
+  width: 32px;
+  text-align: center;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.admin-table-grid .cell-email { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.admin-table-grid .pending-row { background: rgba(245, 158, 11, 0.06); }
+
+.admin-table-grid .pending-row:hover { background: rgba(245, 158, 11, 0.12); }
+
+.admin-actions-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: nowrap;
+}
+
+.admin-actions-row .btn-success { background: #3ddc84; color: #062c15; border: none; }
+
+.admin-actions-row .btn-danger { background: #ef4444; color: #fff; border: none; }
+
 .admin-settings-grid {
   display: grid;
   gap: 24px;
