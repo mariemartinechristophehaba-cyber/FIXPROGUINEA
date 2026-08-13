@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block title %}Transactions - FixPro{% endblock %}
+{% block content %}
+<section class="card" style="max-width: 1100px; margin: 0 auto; padding: 24px;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+    <h2 style="margin: 0;">Transactions</h2>
+    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline">Retour</a>
+  </div>
+
+  {% if payments %}
+  <div class="list">
+    {% for p in payments %}
+    <div class="list-item" style="cursor: default;">
+      <div class="grow">
+        <div class="list-item-title">{{ "{:,}".format(p.amount|int).replace(",", " ") }} GNF — {{ payment_method_label(p.method) }}</div>
+        <div class="list-item-sub">
+          {{ p.client_name }} → {{ p.artisan_name or '—' }}<br/>
+          Ref : {{ p.reference or '—' }} — {{ p.title or '—' }} — {{ (p.created_at|string)[:16] }}
+        </div>
+      </div>
+      <span class="badge {% if p.status == 'completed' %}success{% elif p.status == 'pending' %}pending{% else %}failed{% endif %}">
+        {{ p.status }}
+      </span>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="muted">Aucune transaction enregistree.</p>
+  {% endif %}
+</section>
+{% endblock %}

@@ -17,7 +17,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css', v='6') }}" />
     {% block extra_head %}{% endblock %}
   </head>
-  <body class="{% if not nav_user or request.endpoint == 'index' %} no-tabbar{% endif %}{% if request.endpoint == 'dashboard' %} no-sidebar{% endif %}{% if request.endpoint == 'index' %} landing{% endif %}">
+  <body class="{% if not nav_user or request.endpoint in ('index', 'ticket_detail') %} no-tabbar{% endif %}{% if request.endpoint == 'dashboard' %} no-sidebar{% endif %}{% if request.endpoint == 'index' %} landing{% endif %}">
 
     {% block header %}{% endblock %}
 

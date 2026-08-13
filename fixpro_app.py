@@ -458,16 +458,30 @@ def admin_dashboard():
             "SELECT COUNT(*) AS n FROM users WHERE role = 'client'").fetchone()["n"]
         pending = conn.execute(
             "SELECT COUNT(*) AS n FROM users WHERE role = 'artisan' AND is_verified = 0").fetchone()["n"]
-        verified = conn.execute(
-            "SELECT COUNT(*) AS n FROM users WHERE role = 'artisan' AND is_verified = 1").fetchone()["n"]
+        active = conn.execute(
+            "SELECT COUNT(*) AS n FROM users WHERE role = 'artisan' AND is_verified = 1 AND is_active = 1").fetchone()["n"]
+        suspended = conn.execute(
+            "SELECT COUNT(*) AS n FROM users WHERE role = 'artisan' AND is_active = 0").fetchone()["n"]
         requests = conn.execute(
             "SELECT COUNT(*) AS n FROM requests").fetchone()["n"]
+        payments = conn.execute(
+            "SELECT COALESCE(SUM(amount), 0) AS total FROM payments WHERE status = 'completed'"
+        ).fetchone()["total"]
+        recent = conn.execute(
+            "SELECT p.*, u.full_name AS client_name"
+            " FROM payments p"
+            " JOIN requests r ON r.id = p.request_id"
+            " JOIN users u ON u.id = r.client_id"
+            " ORDER BY p.created_at DESC LIMIT 10"
+        ).fetchall()
         return render_template("admin_dashboard.html", stats={
             "clients": clients,
             "pending_artisans": pending,
-            "verified_artisans": verified,
+            "active_artisans": active,
+            "suspended_artisans": suspended,
             "requests": requests,
-        })
+            "total_payments": payments,
+        }, recent_payments=recent)
     finally:
         conn.close()
 
@@ -501,6 +515,18 @@ def admin_artisans():
                 conn.execute("DELETE FROM users WHERE id = ?", (artisan_id,))
                 conn.commit()
                 flash("Artisan refusé.", "success")
+            elif action == "suspend":
+                conn.execute(
+                    "UPDATE users SET is_active = 0 WHERE id = ? AND role = 'artisan'",
+                    (artisan_id,))
+                conn.commit()
+                flash("Artisan suspendu.", "success")
+            elif action == "restore":
+                conn.execute(
+                    "UPDATE users SET is_active = 1 WHERE id = ? AND role = 'artisan'",
+                    (artisan_id,))
+                conn.commit()
+                flash("Artisan réactivé.", "success")
             return redirect(url_for("admin_artisans"))
 
         artisans = conn.execute(
@@ -508,7 +534,7 @@ def admin_artisans():
             " ORDER BY created_at DESC").fetchall()
         verified = conn.execute(
             "SELECT * FROM users WHERE role = 'artisan' AND is_verified = 1"
-            " ORDER BY created_at DESC").fetchall()
+            " ORDER BY is_active DESC, created_at DESC").fetchall()
         return render_template("admin_artisans.html", artisans=artisans,
                                verified=verified)
     finally:
@@ -550,6 +576,26 @@ def admin_tickets():
         return render_template("admin_tickets.html", tickets=tickets)
     finally:
         conn.close()
+
+
+@app.route("/admin/payments")
+def admin_payments():
+    """Liste complete des transactions pour l'administrateur."""
+    if not session.get("admin_logged_in"):
+        return redirect(url_for("admin_login"))
+    conn = get_db_connection()
+    try:
+        payments = conn.execute(
+            "SELECT p.*, u.full_name AS client_name, a.full_name AS artisan_name, r.title"
+            " FROM payments p"
+            " JOIN requests r ON r.id = p.request_id"
+            " JOIN users u ON u.id = r.client_id"
+            " LEFT JOIN users a ON a.id = r.artisan_id"
+            " ORDER BY p.created_at DESC").fetchall()
+    finally:
+        conn.close()
+    return render_template("admin_payments.html", payments=payments,
+                           payment_method_label=payment_method_label)
 
 
 @app.route("/tickets/new", methods=["POST"])
@@ -604,23 +650,30 @@ def ticket_new():
 
 
 def build_assistant_reply(message):
-    """Genere une reponse automatique simple basee sur des mots-cles."""
+    """Genere une reponse automatique simple, professionnelle et humaine."""
     text = message.lower()
-    if any(w in text for w in ("prix", "tarif", "combien", "coute")):
-        return ("Le prix d'une intervention est defini par le devis de l'artisan."
-                " Voulez-vous que je vous aide a obtenir un devis gratuit ?")
-    if any(w in text for w in ("horaire", "heure", "quand", "date", "disponible")):
-        return ("Vous pouvez proposer une date et une heure dans votre demande."
-                " L'artisan confirmera sa disponibilite.")
-    if any(w in text for w in ("annuler", "supprimer", "arreter")):
-        return ("Votre demande peut etre annulee avant le debut de l'intervention."
-                " Voulez-vous que je transmette votre demande a l'equipe ?")
-    if any(w in text for w in ("contact", "appeler", "telephone")):
-        return ("Vous etes en contact avec l'equipe FixPro."
-                " Un conseiller vous repondra tres vite.")
-    if any(w in text for w in ("bonjour", "salut", "hello", "bonsoir")):
-        return "Bonjour ! Je suis l'assistante FixPro. Comment puis-je vous aider ?"
-    return None
+    if any(w in text for w in ("bonjour", "salut", "hello", "bonsoir", "coucou")):
+        return ("Bonjour, je suis votre assistante FixPro. Je transmets votre demande a notre equipe."
+                " Que puis-je faire pour vous aujourd'hui ?")
+    if any(w in text for w in ("prix", "tarif", "combien", "coute", "cout")):
+        return ("Le prix d'une intervention depend du devis etabli par le technicien apres diagnostic."
+                " Souhaitez-vous que je vous aide a planifier une visite pour obtenir un devis detaille ?")
+    if any(w in text for w in ("horaire", "heure", "quand", "date", "disponible", "rdv", "rendez-vous")):
+        return ("Vous pouvez indiquer la date et l'heure qui vous conviennent."
+                " Le technicien confirmera son creneau des reception de votre demande.")
+    if any(w in text for w in ("annuler", "supprimer", "arreter", "annulation")):
+        return ("Une demande peut etre annulee tant que l'intervention n'a pas debute."
+                " Confirmez votre souhait d'annulation et notre equipe traitera votre demande rapidement.")
+    if any(w in text for w in ("contact", "appeler", "telephone", "joindre", "appelle")):
+        return ("Vous etes bien en contact avec l'equipe FixPro."
+                " Un conseiller prendra le relais des qu'il sera disponible.")
+    if any(w in text for w in ("payement", "payer", "paiement", "orange money", "carte", "bancaire")):
+        return ("Vous pouvez regler votre intervention par Orange Money, MTN Mobile Money ou carte bancaire directement dans l'application."
+                " Le paiement securise est gere par l'equipe FixPro.")
+    if any(w in text for w in ("technicien", "artisan", "reparateur", "plombier", "electricien")):
+        return ("Votre technicien sera informe de votre message."
+                " En attendant, notre equipe peut repondre a toutes vos questions.")
+    return "Merci pour votre message. Notre equipe FixPro vous repondra dans les plus brefs delais."
 
 
 @app.route("/tickets/<int:ticket_id>", methods=["GET", "POST"])
@@ -669,7 +722,7 @@ def ticket_detail(ticket_id):
                         conn.execute(
                             "INSERT INTO admin_messages (ticket_id, sender_id, content)"
                             " VALUES (?, ?, ?)",
-                            (ticket_id, sender_id, f"[Assistant] {reply}"))
+                            (ticket_id, sender_id, reply))
                         conn.execute(
                             "UPDATE admin_tickets SET updated_at = CURRENT_TIMESTAMP"
                             " WHERE id = ?", (ticket_id,))

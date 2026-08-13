@@ -1,44 +1,43 @@
 {% extends 'base.html' %}
 {% block title %}Conversation - FixPro{% endblock %}
-{% block page_title %}Conversation{% endblock %}
 
 {% block content %}
 
-<div class="chat-page">
-  <div class="chat-page-header">
-    <a class="btn btn-ghost btn-sm" href="{{ url_for('artisan_detail', artisan_id=ticket.artisan_id) }}">
+<div class="chat-container">
+  <header class="chat-topbar">
+    <a class="chat-back" href="{{ url_for('artisan_detail', artisan_id=ticket.artisan_id) }}" aria-label="Retour">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
     </a>
-    <div class="chat-header-info">
-      <h2>{{ ticket.artisan_name or 'FixPro' }}</h2>
-      <span class="chat-status">Conversation avec l'equipe FixPro</span>
+    <div class="chat-topbar-info">
+      <h1>{{ ticket.artisan_name or 'FixPro' }}</h1>
+      <span>Conversation avec l'equipe FixPro</span>
     </div>
-    <div class="chat-avatar">
-      {% if ticket.artisan_name %}{{ ticket.artisan_name[0]|upper }}{% else %}F{% endif %}
+    <div class="chat-topbar-avatar">
+      {{ (ticket.artisan_name or 'FixPro')[0]|upper }}
     </div>
-  </div>
+  </header>
 
-  <div class="chat-page-banner">
+  <div class="chat-notice">
     Conversation moderee par l'equipe FixPro pour votre securite.
   </div>
 
-  <div class="chat-page-messages" id="chatMessages">
-    {% for message in messages %}
-    <div class="chat-msg {% if message.sender_id == user.id %}chat-msg-out{% else %}chat-msg-in{% endif %}">
-      <div class="chat-msg-bubble">
-        {% if message.sender_role == 'admin' %}
-        <span class="chat-msg-name">FixPro</span>
-        {% else %}
-        <span class="chat-msg-name">{{ message.sender_name }}</span>
+  <main class="chat-flow" id="chatFlow">
+    <div class="chat-messages" id="chatMessages">
+      {% for message in messages %}
+      <div class="chat-msg {% if message.sender_id == user.id %}chat-msg-out{% else %}chat-msg-in{% endif %}">
+        {% if message.sender_id != user.id %}
+        <span class="chat-msg-sender">{% if message.sender_role == 'admin' %}FixPro{% else %}{{ message.sender_name }}{% endif %}</span>
         {% endif %}
-        <p>{{ message.content }}</p>
+        <div class="chat-msg-bubble">
+          <p>{{ message.content }}</p>
+        </div>
         <span class="chat-msg-time">{{ (message.created_at|string)[:16] if message.created_at else '' }}</span>
       </div>
+      {% endfor %}
     </div>
-    {% endfor %}
-  </div>
+  </main>
 
-  <form class="chat-page-form" method="post">
+  <form class="chat-footer" method="post">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
     <input type="text" name="content" required placeholder="Ecrivez votre message..." autocomplete="off" />
     <button class="btn btn-primary" type="submit" aria-label="Envoyer">
@@ -48,8 +47,10 @@
 </div>
 
 <script>
-  const box = document.getElementById('chatMessages');
-  if (box) box.scrollTop = box.scrollHeight;
+  (function() {
+    const flow = document.getElementById('chatFlow');
+    if (flow) flow.scrollTop = flow.scrollHeight;
+  })();
 </script>
 
 {% endblock %}
