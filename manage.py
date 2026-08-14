@@ -9,6 +9,7 @@ Commandes disponibles :
     python manage.py inspect      Affiche le contenu de la base
     python manage.py secret       Genere une SECRET_KEY solide
     python manage.py create-admin Cree un compte administrateur
+    python manage.py seed         Insere des donnees de demonstration
 """
 
 import getpass
@@ -145,12 +146,83 @@ def cmd_create_admin(config):
     return 0
 
 
+def cmd_seed(config):
+    """Insere des donnees de demonstration dans la base."""
+    import datetime as dt
+
+    conn = _connect(config)
+    try:
+        # Nettoie les anciennes donnees de demo
+        conn.execute("DELETE FROM payments")
+        conn.execute("DELETE FROM requests")
+        conn.execute("DELETE FROM technician_documents")
+        conn.execute("DELETE FROM users WHERE role IN ('client', 'artisan')")
+        conn.commit()
+
+        # Client de demonstration
+        conn.execute(
+            "INSERT INTO users (email, phone, password_hash, role, full_name,"
+            " city, quartier, is_verified, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            ('client@demo.fixpro', '+224620000001', generate_password_hash('client001'),
+             'client', 'Amadou Diallo', 'Conakry', 'Kaloum', 1, 1))
+
+        # Trois artisans de demonstration
+        artisans = [
+            ('Mamadou Bah', '+224620000002', 'Plomberie', 'Conakry', 'Kaloum'),
+            ('Fatou Camara', '+224620000003', 'Electricite', 'Conakry', 'Dixinn'),
+            ('Ibrahim Sylla', '+224620000004', 'Menuiserie', 'Conakry', 'Matam'),
+        ]
+        for name, phone, profession, city, quartier in artisans:
+            conn.execute(
+                "INSERT INTO users (email, phone, password_hash, role, full_name,"
+                " profession, city, quartier, is_verified, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (f'demo-{phone}@fixpro.app', phone, generate_password_hash(phone.replace('+', '')),
+                 'artisan', name, profession, city, quartier, 1, 1))
+
+        # Recupere les IDs
+        client = conn.execute("SELECT id FROM users WHERE role = 'client'").fetchone()
+        artisan_rows = conn.execute("SELECT id, profession FROM users WHERE role = 'artisan'").fetchall()
+
+        # Quatre demandes de demonstration
+        requests = [
+            ('Fuite sous evier', 'La cuisine coule depuis ce matin.', 'Plomberie', 'Kaloum', 150000, 'pending', None),
+            ('Luminaire a installer', 'Installation de lustres dans le salon.', 'Electricite', 'Dixinn', 225000, 'assigned', artisan_rows[1]["id"]),
+            ('Porte cassee', 'La porte d entree ne ferme plus.', 'Menuiserie', 'Matam', 320000, 'completed', artisan_rows[2]["id"]),
+            ('Climatisation en panne', 'Unite exterieure ne demarre pas.', 'Froid', 'Coleah', 180000, 'pending', None),
+        ]
+        today = dt.datetime.now().strftime('%Y-%m-%d')
+        for title, description, category, address, amount, status, artisan_id in requests:
+            conn.execute(
+                "INSERT INTO requests (client_id, artisan_id, title, description, category,"
+                " address, status, quote_amount, budget, created_at, updated_at)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (client["id"], artisan_id, title, description, category, address, status,
+                 amount, amount, f'{today} 10:00:00', f'{today} 10:00:00'))
+
+        # Un paiement complet
+        req = conn.execute(
+            "SELECT id, quote_amount FROM requests WHERE artisan_id = ? AND status = 'completed'",
+            (2,)).fetchone()
+        if req:
+            conn.execute(
+                "INSERT INTO payments (request_id, amount, commission_amount, method, status, created_at)"
+                " VALUES (?, ?, ?, ?, ?, ?)",
+                (req["id"], req["quote_amount"], int(req["quote_amount"] * 0.10), 'orange_money', 'completed', f'{today} 10:00:00'))
+
+        conn.commit()
+    finally:
+        conn.close()
+    print("Donnees de demonstration inserees.")
+    return 0
+
+
 COMMANDS = {
     "init-db": cmd_init_db,
     "check": cmd_check,
     "inspect": cmd_inspect,
     "secret": cmd_secret,
     "create-admin": cmd_create_admin,
+    "seed": cmd_seed,
 }
 
 
