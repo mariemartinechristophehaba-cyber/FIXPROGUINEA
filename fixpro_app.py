@@ -581,7 +581,7 @@ def admin_login():
     if session.get("user_id"):
         user = get_current_user()
         if user and user["role"] == "admin":
-            return redirect(url_for("admin_dashboard"))
+            return redirect(app.config.get("ADMIN_DASHBOARD_URL", url_for("admin_dashboard")))
 
     fallback_enabled = bool(app.config.get("ADMIN_PASSWORD"))
     if request.method == "POST" and fallback_enabled:
@@ -604,7 +604,7 @@ def admin_login():
                 session["user_id"] = admin["id"]
                 session.permanent = True
                 flash("Bienvenue dans l'administration FixPro.", "success")
-                return redirect(url_for("admin_dashboard"))
+                return redirect(app.config.get("ADMIN_DASHBOARD_URL", url_for("admin_dashboard")))
             finally:
                 conn.close()
         else:
@@ -678,13 +678,18 @@ def admin_google_callback():
     return redirect(url_for("admin_dashboard"))
 
 
+@app.route("/admin")
+def admin_root():
+    """Redirige vers le tableau de bord Next.js."""
+    return redirect(app.config.get("ADMIN_DASHBOARD_URL", "http://localhost:3000/admin"))
+
+
 @app.route("/admin/dashboard")
 @login_required
 @admin_required
 def admin_dashboard():
-    """Tableau de bord admin avec KPI reels."""
-    user = get_current_user()
-    conn = get_db_connection()
+    """Tableau de bord admin : redirige vers le dashboard Next.js."""
+    return redirect(app.config.get("ADMIN_DASHBOARD_URL", "http://localhost:3000/admin"))
     try:
         this_month = datetime.now(timezone.utc).strftime("%Y-%m")
         today = datetime.now(timezone.utc).strftime("%Y-%m-%d")

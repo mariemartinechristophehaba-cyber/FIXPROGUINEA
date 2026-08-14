@@ -34,6 +34,9 @@ class Config:
     DEBUG = _bool("FLASK_DEBUG")
     TESTING = False
 
+    # Tableau de bord admin Next.js. Si defini, /admin redirige vers cette URL.
+    ADMIN_DASHBOARD_URL = os.getenv("ADMIN_DASHBOARD_URL", "http://localhost:3000/admin").strip().rstrip("/")
+
     # Base de donnees : PostgreSQL/Supabase si DATABASE_URL est defini,
     # sinon fichier SQLite local.
     DATABASE_URL = os.getenv("DATABASE_URL", "").strip()

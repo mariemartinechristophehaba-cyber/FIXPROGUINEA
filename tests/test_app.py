@@ -547,11 +547,11 @@ class AdminPanelTests(FixProTestCase):
             conn.close()
         self.assertEqual(log["admin_email"], "admin@fixpro.local")
 
-    def test_admin_dashboard_loads_with_kpi(self):
+    def test_admin_dashboard_redirects_to_nextjs(self):
         self.login_admin()
         response = self.client.get("/admin/dashboard")
-        self.assertEqual(response.status_code, 200)
-        self.assertIn(b"Vue d'ensemble", response.data)
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("3000/admin", response.location)
 
     def test_admin_can_suspend_and_restore_artisan(self):
         self.register_artisan("artisan@example.com", phone="+224621111111")

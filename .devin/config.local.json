@@ -27,7 +27,13 @@
       "Exec(@\")",
       "Exec(.\\.venv\\Scripts\\python.exe)",
       "Exec(\"--- re-verif ---\")",
-      "Exec(.venv\\Scripts\\python.exe)"
+      "Exec(.venv\\Scripts\\python.exe)",
+      "Exec(npm)",
+      "Exec(npx)",
+      "Exec(Set-ExecutionPolicy)",
+      "Exec(cmd)",
+      "Exec(curl)",
+      "Exec(Invoke-WebRequest)"
     ]
   }
 }
