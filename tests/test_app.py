@@ -242,7 +242,8 @@ class RequestWorkflowTests(FixProTestCase):
             "category": "Plombier", "address": "Kaloum", "budget": "75000",
         }, follow_redirects=True)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(self._request_field(1, "status"), "pending")
+        # La demande est maintenant automatiquement assignee a un artisan
+        self.assertEqual(self._request_field(1, "status"), "assigned")
 
     def test_diagnostic_price_comes_from_category(self):
         self.login("+224620000000")

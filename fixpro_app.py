@@ -2197,19 +2197,37 @@ def request_new():
                 "SELECT diagnostic_price FROM service_categories WHERE name = ?",
                 (category,)).fetchone()
 
+            # Recherche un artisan disponible dans la meme categorie et ville
+            city = user.get("city") or ""
+            artisan = conn.execute(
+                "SELECT id FROM users"
+                " WHERE role = 'artisan' AND is_verified = 1 AND is_active = 1"
+                " AND (profession = ? OR ? = '')"
+                " AND (city = ? OR ? = '')"
+                " ORDER BY availability_status DESC, RANDOM() LIMIT 1",
+                (category, category, city, city)).fetchone()
+
+            status = "pending" if not artisan else "assigned"
+            artisan_id = artisan["id"] if artisan else None
+
             conn.execute(
-                "INSERT INTO requests (client_id, title, description, category,"
+                "INSERT INTO requests (client_id, artisan_id, title, description, category,"
                 " address, photo_url, diagnostic_price, budget, status)"
-                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')",
-                (user["id"], title, description, category,
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (user["id"], artisan_id, title, description, category,
                  request.form.get("address", "").strip(),
                  request.form.get("photo_url", "").strip(),
                  float(category_row["diagnostic_price"]) if category_row else 0,
-                 _to_float(request.form.get("budget"))),
+                 _to_float(request.form.get("budget")),
+                 status),
             )
             conn.commit()
-            flash("Demande d'intervention créée. Un artisan pourra maintenant "
-                  "la prendre en charge.", "success")
+
+            if artisan:
+                flash("Demande creee et assignee a un technicien disponible.", "success")
+            else:
+                flash("Demande d'intervention créée. Un artisan pourra maintenant "
+                      "la prendre en charge.", "success")
             return redirect(url_for("requests_list"))
     finally:
         conn.close()
@@ -2484,10 +2502,12 @@ def process_payment(request_id):
         if method == "card" and payment_info:
             details = "Carte terminant par %s" % payment_info[-4:] if payment_info.isdigit() and len(payment_info) >= 4 else payment_info
 
+        rate = app.config.get("FIXPRO_COMMISSION_RATE", 0.10)
+        commission = amount * rate
         conn.execute(
-            "INSERT INTO payments (request_id, amount, method, status,"
-            " reference, details) VALUES (?, ?, ?, 'pending', ?, ?)",
-            (request_id, amount, method, reference, details))
+            "INSERT INTO payments (request_id, amount, commission_amount, method, status,"
+            " reference, details) VALUES (?, ?, ?, ?, 'pending', ?, ?)",
+            (request_id, amount, commission, method, reference, details))
         conn.commit()
         flash("Paiement de %s GNF enregistré par %s. En attente de confirmation." %
               ("{:,}".format(int(amount)).replace(",", " "), payment_method_label(method)),
