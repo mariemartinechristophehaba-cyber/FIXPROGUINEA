@@ -2836,6 +2836,13 @@ def api_admin_reject_artisan(artisan_id):
     return jsonify({"ok": True})
 
 
+csrf.exempt(api_admin_stats)
+csrf.exempt(api_admin_techniciens)
+csrf.exempt(api_admin_demandes)
+csrf.exempt(api_admin_verify_artisan)
+csrf.exempt(api_admin_reject_artisan)
+
+
 if __name__ == "__main__":
     _load_settings()
     logger.info("Démarrage de FixPro (environnement: %s)",
