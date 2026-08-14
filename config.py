@@ -40,6 +40,13 @@ class Config:
     # Cle API pour le dashboard Next.js (V1 : auth simple par cle partagee).
     ADMIN_API_KEY = os.getenv("ADMIN_API_KEY", "").strip()
 
+    # Notifications email (optionnel).
+    SMTP_HOST = os.getenv("SMTP_HOST", "").strip()
+    SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
+    SMTP_USER = os.getenv("SMTP_USER", "").strip()
+    SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "").strip()
+    ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "").strip()
+
     # Base de donnees : PostgreSQL/Supabase si DATABASE_URL est defini,
     # sinon fichier SQLite local.
     DATABASE_URL = os.getenv("DATABASE_URL", "").strip()

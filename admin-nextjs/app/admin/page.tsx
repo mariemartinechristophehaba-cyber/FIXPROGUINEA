@@ -44,6 +44,22 @@ export default async function DashboardPage() {
     <div>
       <Header title="Tableau de bord" />
       <div className="p-6 space-y-8">
+        {(stats.pending_artisans || 0) > 0 && (
+          <div className="bg-orange-500/10 border border-orange-500/20 rounded-xl p-4 flex items-center justify-between">
+            <div>
+              <div className="font-medium text-orange-400">
+                {stats.pending_artisans} inscription(s) en attente de validation
+              </div>
+              <div className="text-sm text-zinc-400">
+                Un nouvel artisan s'est inscrit. Veuillez verifier son dossier.
+              </div>
+            </div>
+            <a href="/admin/techniciens/" className="px-4 py-2 bg-orange-500 text-black text-sm font-medium rounded-md hover:bg-orange-400 transition-colors">
+              Voir les inscriptions
+            </a>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
           {kpis.map((k) => (
             <KPICard key={k.title} {...k} />

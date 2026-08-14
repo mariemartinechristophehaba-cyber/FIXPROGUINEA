@@ -12,7 +12,9 @@ import csv
 import io
 import math
 import re
+import smtplib
 from datetime import datetime, timezone
+from email.mime.text import MIMEText
 from functools import wraps
 
 from authlib.integrations.flask_client import OAuth
@@ -518,6 +520,30 @@ def register_artisan(step=1):
                            categories=categories, total_steps=5)
 
 
+def _send_admin_notification(subject, body):
+    """Envoie un email a l'admin si la configuration SMTP est presente."""
+    host = app.config.get("SMTP_HOST", "")
+    port = app.config.get("SMTP_PORT", 587)
+    user = app.config.get("SMTP_USER", "")
+    password = app.config.get("SMTP_PASSWORD", "")
+    to = app.config.get("ADMIN_EMAIL", "")
+    if not all([host, user, password, to]):
+        logger.info("Notification admin (pas d'email configure) : %s", subject)
+        return
+    try:
+        msg = MIMEText(body, "plain", "utf-8")
+        msg["Subject"] = subject
+        msg["From"] = user
+        msg["To"] = to
+        with smtplib.SMTP(host, port, timeout=10) as server:
+            server.starttls()
+            server.login(user, password)
+            server.sendmail(user, [to], msg.as_bytes())
+        logger.info("Notification admin envoyee a %s", to)
+    except Exception as exc:  # pragma: no cover
+        logger.exception("Echec envoi notification admin : %s", exc)
+
+
 def _finalize_artisan_registration(wizard):
     """Inscrit l'artisan et ses documents, puis redirige vers l'attente."""
     required = ["first_name", "last_name", "phone", "email", "identity_doc",
@@ -572,6 +598,15 @@ def _finalize_artisan_registration(wizard):
         conn.close()
 
     session.pop("artisan_wizard", None)
+    _send_admin_notification(
+        f"[FixPro] Nouvelle inscription artisan : {full_name}",
+        f"Un nouvel artisan s'est inscrit sur FixPro.\n\n"
+        f"Nom : {full_name}\n"
+        f"Metier : {wizard.get('profession', 'Non precise')}\n"
+        f"Telephone : {wizard.get('phone', '')}\n"
+        f"Ville : {wizard.get('city', '')}\n"
+        f"Quartier : {wizard.get('quartier', '')}\n\n"
+        f"Connectez-vous au tableau de bord pour valider son inscription.")
     flash("Votre demande d'inscription a bien ete recue. L'equipe FixPro va verifier vos informations.", "success")
     return redirect(url_for("artisan_pending"))
 
