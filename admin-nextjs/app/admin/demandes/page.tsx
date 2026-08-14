@@ -1,25 +1,37 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import Header from '@/components/Header';
 import StatusBadge from '@/components/StatusBadge';
+import { api } from '@/lib/api';
 import { Eye } from 'lucide-react';
 
-const demandes = [
-  { id: '#D-001', client: 'Amadou Diallo', telephone: '+224 620 00 00 01', metier: 'Plomberie', zone: 'Kaloum', date: '2025-08-12', statut: 'new', montant: '150 000 GNF' },
-  { id: '#D-002', client: 'Fatou Camara', telephone: '+224 620 00 00 02', metier: 'Electricite', zone: 'Dixinn', date: '2025-08-11', statut: 'assigned', montant: '225 000 GNF' },
-  { id: '#D-003', client: 'Mamadou Barry', telephone: '+224 620 00 00 03', metier: 'Froid', zone: 'Matam', date: '2025-08-10', statut: 'done', montant: '180 000 GNF' },
-  { id: '#D-004', client: 'Aminata Sow', telephone: '+224 620 00 00 04', metier: 'Menuiserie', zone: 'Coleah', date: '2025-08-09', statut: 'new', montant: '320 000 GNF' },
-];
+const statusLabel: Record<string, string> = { new: 'Nouveau', assigned: 'Assigne', done: 'Termine', completed: 'Termine', cancelled: 'Annule' };
 
-const statusLabel: Record<string, string> = { new: 'Nouveau', assigned: 'Assigne', done: 'Termine' };
+function statusBadge(statut: string) {
+  const s = statut || 'new';
+  if (s === 'new') return <StatusBadge variant="warning">{statusLabel[s]}</StatusBadge>;
+  if (s === 'assigned') return <StatusBadge variant="info">{statusLabel[s]}</StatusBadge>;
+  if (s === 'done' || s === 'completed') return <StatusBadge variant="success">{statusLabel[s]}</StatusBadge>;
+  return <StatusBadge variant="danger">{statusLabel[s]}</StatusBadge>;
+}
 
 export default function DemandesPage() {
+  const [demandes, setDemandes] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api.demandes().then((d) => { setDemandes(d); setLoading(false); });
+  }, []);
+
   return (
     <div>
       <Header title="Demandes" />
       <div className="p-6 space-y-6">
         <h3 className="text-lg font-medium">Demandes d'intervention</h3>
-        <div className="overflow-x-auto border border-border rounded-xl">
+        <div className="overflow-x-auto border border-zinc-800 rounded-xl">
           <table className="w-full text-sm text-left">
-            <thead className="bg-white/5 text-muted uppercase text-xs">
+            <thead className="bg-white/5 text-zinc-400 uppercase text-xs">
               <tr>
                 <th className="px-4 py-3 font-medium">ID demande</th>
                 <th className="px-4 py-3 font-medium">Client</th>
@@ -32,21 +44,19 @@ export default function DemandesPage() {
                 <th className="px-4 py-3 font-medium">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border">
-              {demandes.map((d) => (
+            <tbody className="divide-y divide-zinc-800">
+              {loading ? (
+                <tr><td colSpan={9} className="px-4 py-8 text-center text-zinc-500">Chargement...</td></tr>
+              ) : demandes.map((d: any) => (
                 <tr key={d.id} className="hover:bg-white/[0.03] transition-colors group">
-                  <td className="px-4 py-3">{d.id}</td>
-                  <td className="px-4 py-3">{d.client}</td>
-                  <td className="px-4 py-3">{d.telephone}</td>
+                  <td className="px-4 py-3">#{d.id}</td>
+                  <td className="px-4 py-3">{d.client_name || d.client_nom}</td>
+                  <td className="px-4 py-3">{d.client_phone || d.client_tel || '—'}</td>
                   <td className="px-4 py-3">{d.metier}</td>
                   <td className="px-4 py-3">{d.zone}</td>
-                  <td className="px-4 py-3">{d.date}</td>
-                  <td className="px-4 py-3">
-                    {d.statut === 'new' ? <StatusBadge variant="warning">{statusLabel[d.statut]}</StatusBadge> :
-                     d.statut === 'assigned' ? <StatusBadge variant="info">{statusLabel[d.statut]}</StatusBadge> :
-                     <StatusBadge variant="success">{statusLabel[d.statut]}</StatusBadge>}
-                  </td>
-                  <td className="px-4 py-3">{d.montant}</td>
+                  <td className="px-4 py-3">{d.created_at ? d.created_at.slice(0, 10) : '—'}</td>
+                  <td className="px-4 py-3">{statusBadge(d.statut)}</td>
+                  <td className="px-4 py-3">{d.montant ? `${Number(d.montant).toLocaleString('fr-FR')} GNF` : '—'}</td>
                   <td className="px-4 py-3">
                     <button className="p-1.5 hover:bg-white/10 rounded opacity-0 group-hover:opacity-100 transition-opacity">
                       <Eye size={16} />
@@ -54,6 +64,9 @@ export default function DemandesPage() {
                   </td>
                 </tr>
               ))}
+              {!loading && demandes.length === 0 && (
+                <tr><td colSpan={9} className="px-4 py-8 text-center text-zinc-500">Aucune demande</td></tr>
+              )}
             </tbody>
           </table>
         </div>

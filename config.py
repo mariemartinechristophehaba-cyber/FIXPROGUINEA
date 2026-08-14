@@ -37,6 +37,9 @@ class Config:
     # Tableau de bord admin Next.js. Si defini, /admin redirige vers cette URL.
     ADMIN_DASHBOARD_URL = os.getenv("ADMIN_DASHBOARD_URL", "http://localhost:3000/admin").strip().rstrip("/")
 
+    # Cle API pour le dashboard Next.js (V1 : auth simple par cle partagee).
+    ADMIN_API_KEY = os.getenv("ADMIN_API_KEY", "").strip()
+
     # Base de donnees : PostgreSQL/Supabase si DATABASE_URL est defini,
     # sinon fichier SQLite local.
     DATABASE_URL = os.getenv("DATABASE_URL", "").strip()

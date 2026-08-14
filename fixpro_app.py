@@ -21,6 +21,7 @@ from flask import (Flask, flash, jsonify, redirect, render_template, request,
                    session, url_for)
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from flask_cors import CORS
 from flask_wtf.csrf import CSRFProtect
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -33,6 +34,9 @@ app.config.from_object(config)
 
 logger = setup_logging(app)
 csrf = CSRFProtect(app)
+
+# CORS autorise le dashboard Next.js a appeler l'API Flask en local.
+CORS(app, resources={r"/api/admin/*": {"origins": ["http://localhost:3000"]}})
 
 limiter = Limiter(
     app=app,
@@ -2572,6 +2576,128 @@ def admin_settings():
     finally:
         conn.close()
     return render_template("admin_settings.html", user=user, commission_rate=rate)
+
+
+# ---------------------------------------------------------------------------
+# API interne pour le dashboard admin Next.js
+# ---------------------------------------------------------------------------
+
+def _require_api_key():
+    """Verifie la cle API partagee entre Flask et le dashboard Next.js.
+
+    En developpement, une cle vide est acceptee pour faciliter les tests.
+    """
+    key = app.config.get("ADMIN_API_KEY", "")
+    is_dev = app.config.get("FLASK_ENV", "development") == "development"
+    header = request.headers.get("X-API-Key", "")
+    if not key and is_dev:
+        return None
+    if not key:
+        return jsonify({"error": "ADMIN_API_KEY non configuree"}), 500
+    if header != key:
+        return jsonify({"error": "Non autorise"}), 401
+    return None
+
+
+@app.route("/api/admin/stats")
+def api_admin_stats():
+    """KPI du dashboard admin."""
+    auth = _require_api_key()
+    if auth:
+        return auth
+    conn = get_db_connection()
+    try:
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        stats = {
+            "techniciens": conn.execute("SELECT COUNT(*) AS n FROM users WHERE role = 'artisan'").fetchone()["n"],
+            "clients": conn.execute("SELECT COUNT(*) AS n FROM users WHERE role = 'client'").fetchone()["n"],
+            "demandes_mois": conn.execute(
+                "SELECT COUNT(*) AS n FROM requests WHERE created_at LIKE ?",
+                (datetime.now(timezone.utc).strftime("%Y-%m") + "%",)).fetchone()["n"],
+            "revenus": int(conn.execute(
+                "SELECT COALESCE(SUM(commission_amount), 0) AS commission"
+                " FROM payments WHERE status = 'completed' AND created_at LIKE ?",
+                (today + "%",)).fetchone()["commission"]),
+            "avis_moyen": conn.execute(
+                "SELECT COALESCE(AVG(rating), 0) AS avg FROM reviews").fetchone()["avg"],
+            "pending_artisans": conn.execute(
+                "SELECT COUNT(*) AS n FROM users WHERE role = 'artisan' AND is_verified = 0").fetchone()["n"],
+            "open_requests": conn.execute(
+                "SELECT COUNT(*) AS n FROM requests WHERE status NOT IN ('completed', 'cancelled')").fetchone()["n"],
+        }
+        return jsonify(stats)
+    finally:
+        conn.close()
+
+
+@app.route("/api/admin/techniciens")
+def api_admin_techniciens():
+    """Liste des techniciens pour le dashboard admin."""
+    auth = _require_api_key()
+    if auth:
+        return auth
+    conn = get_db_connection()
+    try:
+        rows = conn.execute(
+            "SELECT u.*,"
+            " (SELECT COUNT(*) FROM technician_documents WHERE technician_id = u.id) AS doc_count,"
+            " (SELECT COUNT(*) FROM requests WHERE artisan_id = u.id AND status = 'completed') AS completed,"
+            " (SELECT COALESCE(AVG(rating), 0) FROM reviews WHERE artisan_id = u.id) AS avg_rating"
+            " FROM users u WHERE u.role = 'artisan'"
+            " ORDER BY u.is_verified ASC, u.is_active DESC, u.created_at DESC").fetchall()
+        return jsonify([dict(r) for r in rows])
+    finally:
+        conn.close()
+
+
+@app.route("/api/admin/demandes")
+def api_admin_demandes():
+    """Liste des demandes pour le dashboard admin."""
+    auth = _require_api_key()
+    if auth:
+        return auth
+    conn = get_db_connection()
+    try:
+        rows = conn.execute(
+            "SELECT r.*, c.full_name AS client_name, c.phone AS client_phone,"
+            " a.full_name AS artisan_name, a.phone AS artisan_phone"
+            " FROM requests r"
+            " LEFT JOIN users c ON c.id = r.client_id"
+            " LEFT JOIN users a ON a.id = r.artisan_id"
+            " ORDER BY r.updated_at DESC").fetchall()
+        return jsonify([dict(r) for r in rows])
+    finally:
+        conn.close()
+
+
+@app.route("/api/admin/techniciens/<int:artisan_id>/verify", methods=["POST"])
+def api_admin_verify_artisan(artisan_id):
+    """Valider un technicien."""
+    auth = _require_api_key()
+    if auth:
+        return auth
+    conn = get_db_connection()
+    try:
+        conn.execute("UPDATE users SET is_verified = 1 WHERE id = ? AND role = 'artisan'", (artisan_id,))
+        conn.commit()
+    finally:
+        conn.close()
+    return jsonify({"ok": True})
+
+
+@app.route("/api/admin/techniciens/<int:artisan_id>/reject", methods=["POST"])
+def api_admin_reject_artisan(artisan_id):
+    """Refuser/supprimer un technicien."""
+    auth = _require_api_key()
+    if auth:
+        return auth
+    conn = get_db_connection()
+    try:
+        conn.execute("DELETE FROM users WHERE id = ? AND role = 'artisan' AND is_verified = 0", (artisan_id,))
+        conn.commit()
+    finally:
+        conn.close()
+    return jsonify({"ok": True})
 
 
 if __name__ == "__main__":
