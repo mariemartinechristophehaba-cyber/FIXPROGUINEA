@@ -1813,7 +1813,6 @@ def _to_int(value, default=0):
 
 
 @app.route("/artisans")
-@login_required
 def artisans_page():
     user = get_current_user()
     query = request.args.get("q", "").strip()
@@ -1846,7 +1845,7 @@ def artisans_page():
     try:
         artisans = conn.execute(sql, params).fetchall()
         active_requests = {}
-        if user["role"] == "client":
+        if user and user["role"] == "client":
             rows = conn.execute(
                 "SELECT id, artisan_id FROM requests WHERE client_id = ?"
                 " AND artisan_id IS NOT NULL AND status != 'pending'"
