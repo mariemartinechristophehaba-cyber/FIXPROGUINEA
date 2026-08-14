@@ -35,8 +35,11 @@ app.config.from_object(config)
 logger = setup_logging(app)
 csrf = CSRFProtect(app)
 
-# CORS autorise le dashboard Next.js a appeler l'API Flask en local.
-CORS(app, resources={r"/api/admin/*": {"origins": ["http://localhost:3000"]}})
+# CORS autorise le dashboard Next.js a appeler l'API Flask en local (dev uniquement).
+_cors_origins = ["*"] if app.config.get("FLASK_ENV", "development") == "development" else [
+    "https://fixproguinea.vercel.app"
+]
+CORS(app, resources={r"/api/admin/*": {"origins": _cors_origins}})
 
 limiter = Limiter(
     app=app,
