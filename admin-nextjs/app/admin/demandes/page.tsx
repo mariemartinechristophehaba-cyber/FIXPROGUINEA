@@ -19,9 +19,12 @@ function statusBadge(statut: string) {
 export default function DemandesPage() {
   const [demandes, setDemandes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    api.demandes().then((d) => { setDemandes(d); setLoading(false); });
+    api.demandes()
+      .then((d) => { setDemandes(d); setLoading(false); })
+      .catch((e: any) => { setError(e.message || 'Impossible de charger les demandes.'); setLoading(false); });
   }, []);
 
   return (
@@ -29,6 +32,13 @@ export default function DemandesPage() {
       <Header title="Demandes" />
       <div className="p-6 space-y-6">
         <h3 className="text-lg font-medium">Demandes d'intervention</h3>
+
+        {error && (
+          <div className="p-3 rounded-md bg-red-500/10 text-red-400 text-sm border border-red-500/20">
+            {error}
+          </div>
+        )}
+
         <div className="overflow-x-auto border border-zinc-800 rounded-xl">
           <table className="w-full text-sm text-left">
             <thead className="bg-white/5 text-zinc-400 uppercase text-xs">

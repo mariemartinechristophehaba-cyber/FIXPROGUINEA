@@ -15,15 +15,19 @@ function statusBadge(statut: string) {
 export default function TechniciensPage() {
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [query, setQuery] = useState('');
   const [page, setPage] = useState(1);
   const pageSize = 5;
 
   const load = async () => {
+    setError('');
     setLoading(true);
     try {
       const data = await api.techniciens();
       setRows(data);
+    } catch (e: any) {
+      setError(e.message || 'Impossible de charger les techniciens.');
     } finally {
       setLoading(false);
     }
@@ -41,14 +45,22 @@ export default function TechniciensPage() {
   const visible = filtered.slice(start, start + pageSize);
 
   const verify = async (id: number) => {
-    await api.verifyArtisan(id);
-    load();
+    try {
+      await api.verifyArtisan(id);
+      load();
+    } catch (e: any) {
+      setError(e.message || 'Erreur lors de la validation.');
+    }
   };
 
   const reject = async (id: number) => {
     if (!confirm('Refuser ce technicien ?')) return;
-    await api.rejectArtisan(id);
-    load();
+    try {
+      await api.rejectArtisan(id);
+      load();
+    } catch (e: any) {
+      setError(e.message || 'Erreur lors du refus.');
+    }
   };
 
   return (
@@ -62,6 +74,12 @@ export default function TechniciensPage() {
             Ajouter
           </button>
         </div>
+
+        {error && (
+          <div className="p-3 rounded-md bg-red-500/10 text-red-400 text-sm border border-red-500/20">
+            {error}
+          </div>
+        )}
 
         <input
           type="text"
