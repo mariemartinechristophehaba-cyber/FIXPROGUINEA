@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'api_service.dart';
 import 'supabase_service.dart';
 
 /// Erreur d'authentification lisible pour l'UI.
@@ -60,6 +61,7 @@ class AuthService {
     }
   }
 
+  /// Inscription via Supabase. Utilisée si le backend Flask n'est pas configuré.
   Future<void> signUp({
     required String phone,
     required String code,
@@ -91,6 +93,39 @@ class AuthService {
     } on AuthException catch (e) {
       throw AuthFailure(_friendly(e.message));
     }
+  }
+
+  /// Inscription complete via le backend FixPro Flask.
+  ///
+  /// A utiliser preferentiellement : l'artisan est enregistre dans la base
+  /// du backend et apparait directement dans le tableau de bord admin.
+  Future<void> signUpWithBackend({
+    required String firstName,
+    required String lastName,
+    required String phone,
+    String? email,
+    String? profession,
+    String? city,
+    String? quartier,
+    String? identityDoc,
+    String? diplomaDoc,
+  }) async {
+    if (!ApiService.isConfigured) {
+      throw const AuthFailure(
+        "API_URL non configure. Verifiez --dart-define=API_URL=...",
+      );
+    }
+    await ApiService.registerArtisan(
+      firstName: firstName,
+      lastName: lastName,
+      phone: phone,
+      email: email,
+      profession: profession,
+      city: city,
+      quartier: quartier,
+      identityDoc: identityDoc,
+      diplomaDoc: diplomaDoc,
+    );
   }
 
   /// Connexion via Google (OAuth). Sur le web, redirige vers Google puis

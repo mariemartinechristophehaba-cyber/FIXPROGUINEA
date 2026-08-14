@@ -617,6 +617,104 @@ def artisan_pending():
     return render_template("pending.html")
 
 
+@app.route("/api/mobile/register", methods=["POST"])
+def api_mobile_register():
+    """Inscription artisan depuis l'application mobile (JSON)."""
+    data = request.get_json(silent=True) or {}
+    required = ["first_name", "last_name", "phone", "profession", "city", "quartier"]
+    missing = [f for f in required if not data.get(f)]
+    if missing:
+        return jsonify({"error": "Champs manquants", "missing": missing}), 400
+
+    phone = _phone_with_prefix(data["phone"])
+    if not phone or len(phone.replace("+", "").replace(" ", "")) < 8:
+        return jsonify({"error": "Numero de telephone invalide"}), 400
+
+    conn = get_db_connection()
+    try:
+        if conn.execute("SELECT id FROM users WHERE phone = ?", (phone,)).fetchone():
+            return jsonify({"error": "Ce numero est deja inscrit"}), 409
+    finally:
+        conn.close()
+
+    password = phone.replace("+", "").replace(" ", "")
+    wizard = {
+        "civility": data.get("civility", "").strip(),
+        "first_name": data["first_name"].strip(),
+        "last_name": data["last_name"].strip(),
+        "phone": phone,
+        "email": data.get("email", "").strip(),
+        "profession": data["profession"].strip(),
+        "skills": data.get("skills", "").strip(),
+        "years_experience": _to_int(data.get("years_experience", 0)),
+        "bio": data.get("bio", "").strip(),
+        "city": data["city"].strip(),
+        "quartier": data["quartier"].strip(),
+        "zone_intervention": data.get("zone_intervention", "").strip(),
+        "mobility": data.get("mobility", "").strip(),
+        "identity_doc": data.get("identity_doc", "").strip(),
+        "identity_doc_name": data.get("identity_doc_name", "identite").strip(),
+        "diploma_doc": data.get("diploma_doc", "").strip(),
+        "diploma_doc_name": data.get("diploma_doc_name", "diplome").strip(),
+    }
+
+    _finalize_artisan_registration_json(wizard)
+    return jsonify({"ok": True, "message": "Inscription enregistree. Verification en cours."}), 201
+
+
+csrf.exempt(api_mobile_register)
+
+
+def _finalize_artisan_registration_json(wizard):
+    """Version API JSON de l'inscription artisan (sans session ni redirect)."""
+    full_name = f"{wizard['civility']} {wizard['first_name']} {wizard['last_name']}".strip()
+    password = wizard["phone"].replace("+", "").replace(" ", "")
+
+    conn = get_db_connection()
+    try:
+        conn.execute(
+            "INSERT INTO users (email, phone, password_hash, role, full_name, civility,"
+            " profession, skills, city, quartier, zone_intervention, mobility,"
+            " years_experience, bio, hourly_rate, is_verified, is_active)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (wizard["email"], wizard["phone"], generate_password_hash(password),
+             "artisan", full_name, wizard["civility"], wizard["profession"],
+             wizard["skills"], wizard["city"], wizard["quartier"],
+             wizard["zone_intervention"], wizard["mobility"],
+             wizard["years_experience"], wizard["bio"], 0, 0, 1))
+        conn.commit()
+
+        artisan = conn.execute(
+            "SELECT id FROM users WHERE phone = ?", (wizard["phone"],)).fetchone()
+        artisan_id = artisan["id"]
+
+        for doc_type, field, name_field in [
+            ("identity", "identity_doc", "identity_doc_name"),
+            ("diploma", "diploma_doc", "diploma_doc_name"),
+        ]:
+            mime, ext, encoded = _parse_base64_file(wizard.get(field, ""))
+            if encoded:
+                file_name = (wizard.get(name_field, "") or f"{doc_type}{ext}").strip()
+                conn.execute(
+                    "INSERT INTO technician_documents (technician_id, document_type,"
+                    " file_name, mime_type, content_base64)"
+                    " VALUES (?, ?, ?, ?, ?)",
+                    (artisan_id, doc_type, file_name, mime, encoded))
+        conn.commit()
+    finally:
+        conn.close()
+
+    _send_admin_notification(
+        f"[FixPro] Nouvelle inscription artisan : {full_name}",
+        f"Un nouvel artisan s'est inscrit depuis l'application mobile.\n\n"
+        f"Nom : {full_name}\n"
+        f"Metier : {wizard.get('profession', 'Non precise')}\n"
+        f"Telephone : {wizard.get('phone', '')}\n"
+        f"Ville : {wizard.get('city', '')}\n"
+        f"Quartier : {wizard.get('quartier', '')}\n\n"
+        f"Connectez-vous au tableau de bord pour valider son inscription.")
+
+
 @app.route("/admin/login", methods=["GET", "POST"])
 def admin_login():
     """Ecran d'accueil admin : redirige si deja connecte."""
