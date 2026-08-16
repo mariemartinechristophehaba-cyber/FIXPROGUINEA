@@ -8,6 +8,7 @@ Les acces a la base passent tous par le module `db`, ce qui permet
 d'ecrire les requetes une seule fois pour les deux moteurs.
 """
 
+import base64
 import csv
 import io
 import math
@@ -414,6 +415,19 @@ def health_db():
 # Authentification
 # ---------------------------------------------------------------------------
 
+def _validate_password_strength(password):
+    """Verifie la force d'un mot de passe."""
+    if len(password) < 8:
+        return "Le mot de passe doit contenir au moins 8 caracteres."
+    if not re.search(r"[A-Z]", password):
+        return "Le mot de passe doit contenir au moins une majuscule."
+    if not re.search(r"[a-z]", password):
+        return "Le mot de passe doit contenir au moins une minuscule."
+    if not re.search(r"[0-9]", password):
+        return "Le mot de passe doit contenir au moins un chiffre."
+    return None
+
+
 def _phone_with_prefix(phone):
     """Ajoute le prefixe guineen si absent."""
     phone = (phone or "").strip().replace(" ", "")
@@ -425,7 +439,7 @@ def _phone_with_prefix(phone):
 def _parse_base64_file(data_uri):
     """Extrait le mime, le nom et le contenu binaire depuis un data URI base64.
 
-    Valide le type MIME et refuse les fichiers trop lourds.
+    Valide le type MIME, la taille et les magic bytes du fichier decode.
     """
     if not data_uri or not data_uri.startswith("data:"):
         return None, None, None
@@ -438,6 +452,18 @@ def _parse_base64_file(data_uri):
 
         # Limite approximative : base64 est ~33% plus gros que binaire
         if len(encoded) > 3 * 1024 * 1024:
+            return None, None, None
+
+        # Verification des magic bytes pour eviter les fichiers deguises
+        raw = base64.b64decode(encoded)
+        if not raw:
+            return None, None, None
+        magic = raw[:8]
+        if mime in ("image/jpeg", "image/jpg") and not magic.startswith(b"\xff\xd8"):
+            return None, None, None
+        if mime == "image/png" and not magic.startswith(b"\x89PNG\r\n\x1a\n"):
+            return None, None, None
+        if mime == "application/pdf" and not magic.startswith(b"%PDF"):
             return None, None, None
 
         ext = ".jpg"
@@ -470,8 +496,9 @@ def register():
             flash("Veuillez remplir tous les champs obligatoires.", "error")
             return redirect(url_for("register", role=role))
 
-        if len(password) < 6:
-            flash("Le mot de passe doit contenir au moins 6 caracteres.", "error")
+        pwd_error = _validate_password_strength(password)
+        if pwd_error:
+            flash(pwd_error, "error")
             return redirect(url_for("register", role=role))
 
         conn = get_db_connection()
@@ -666,7 +693,8 @@ def _finalize_artisan_registration(wizard):
                     (artisan_id, doc_type, file_name, mime, encoded))
         conn.commit()
     except Exception as exc:  # pragma: no cover - aide au debug en production
-        flash(f"Erreur lors de l'inscription : {exc}", "error")
+        logger.exception("Echec de l'inscription artisan : %s", exc)
+        flash("Une erreur est survenue lors de l'inscription. Veuillez reessayer ou contacter le support.", "error")
         return redirect(url_for("register_artisan", step=1))
     finally:
         conn.close()
@@ -908,91 +936,6 @@ def admin_root():
 def admin_dashboard():
     """Tableau de bord admin : redirige vers le dashboard Next.js."""
     return redirect(app.config.get("ADMIN_DASHBOARD_URL", "http://localhost:3000/admin"))
-    try:
-        this_month = datetime.now(timezone.utc).strftime("%Y-%m")
-        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-
-        clients_total = conn.execute(
-            "SELECT COUNT(*) AS n FROM users WHERE role = 'client'").fetchone()["n"]
-        clients_month = conn.execute(
-            "SELECT COUNT(*) AS n FROM users WHERE role = 'client'"
-            " AND created_at LIKE ?", (this_month + "%",)).fetchone()["n"]
-
-        artisans_total = conn.execute(
-            "SELECT COUNT(*) AS n FROM users WHERE role = 'artisan'"
-            " AND is_verified = 1 AND is_active = 1").fetchone()["n"]
-        artisans_month = conn.execute(
-            "SELECT COUNT(*) AS n FROM users WHERE role = 'artisan'"
-            " AND is_verified = 1 AND is_active = 1"
-            " AND created_at LIKE ?", (this_month + "%",)).fetchone()["n"]
-
-        pending_artisans = conn.execute(
-            "SELECT COUNT(*) AS n FROM users WHERE role = 'artisan'"
-            " AND is_verified = 0").fetchone()["n"]
-
-        completed_payments = conn.execute(
-            "SELECT COALESCE(SUM(amount), 0) AS total,"
-            " COALESCE(SUM(commission_amount), 0) AS commission"
-            " FROM payments WHERE status = 'completed'").fetchone()
-
-        open_requests = conn.execute(
-            "SELECT COUNT(*) AS n FROM requests"
-            " WHERE status NOT IN ('completed', 'cancelled')").fetchone()["n"]
-        open_tickets = conn.execute(
-            "SELECT COUNT(*) AS n FROM admin_tickets WHERE status = 'open'").fetchone()["n"]
-
-        today_revenue = conn.execute(
-            "SELECT COALESCE(SUM(commission_amount), 0) AS commission"
-            " FROM payments WHERE status = 'completed' AND created_at LIKE ?",
-            (today + "%",)).fetchone()["commission"]
-        today_signups = conn.execute(
-            "SELECT COUNT(*) AS n FROM users"
-            " WHERE role IN ('client', 'artisan') AND created_at LIKE ?",
-            (today + "%",)).fetchone()["n"]
-        today_signups_breakdown = conn.execute(
-            "SELECT role, COUNT(*) AS n FROM users"
-            " WHERE role IN ('client', 'artisan') AND created_at LIKE ?"
-            " GROUP BY role", (today + "%",)).fetchall()
-
-        recent_payments = conn.execute(
-            "SELECT p.*, u.full_name AS client_name, a.full_name AS artisan_name"
-            " FROM payments p"
-            " JOIN requests r ON r.id = p.request_id"
-            " JOIN users u ON u.id = r.client_id"
-            " LEFT JOIN users a ON a.id = r.artisan_id"
-            " ORDER BY p.created_at DESC LIMIT 10").fetchall()
-
-        pending_artisans_list = conn.execute(
-            "SELECT u.*, (SELECT COUNT(*) FROM technician_documents WHERE technician_id = u.id) AS doc_count"
-            " FROM users u"
-            " WHERE u.role = 'artisan' AND u.is_verified = 0"
-            " ORDER BY u.created_at DESC LIMIT 5").fetchall()
-
-        recent_logs = conn.execute(
-            "SELECT l.*, u.full_name AS admin_name"
-            " FROM admin_logs l"
-            " LEFT JOIN users u ON u.id = l.admin_id"
-            " ORDER BY l.created_at DESC LIMIT 10").fetchall()
-
-        stats = {
-            "clients_total": clients_total,
-            "clients_month": clients_month,
-            "artisans_total": artisans_total,
-            "artisans_month": artisans_month,
-            "pending_artisans": pending_artisans,
-            "completed_total": completed_payments["total"],
-            "commission_total": completed_payments["commission"],
-            "open_requests": open_requests,
-            "open_tickets": open_tickets,
-            "today_revenue": today_revenue,
-            "today_signups": today_signups,
-            "today_signups_breakdown": today_signups_breakdown,
-        }
-    finally:
-        conn.close()
-    return render_template("admin_dashboard.html", user=user, stats=stats,
-                           recent_payments=recent_payments, recent_logs=recent_logs,
-                           pending_artisans_list=pending_artisans_list)
 
 
 @app.route("/admin/artisans", methods=["GET", "POST"])
@@ -1541,8 +1484,9 @@ def client_signup():
             flash("Format d'email invalide.", "error")
             return redirect(url_for("client_signup"))
 
-        if len(password) < 6:
-            flash("Le mot de passe doit contenir au moins 6 caractères.", "error")
+        pwd_error = _validate_password_strength(password)
+        if pwd_error:
+            flash(pwd_error, "error")
             return redirect(url_for("client_signup"))
 
         conn = get_db_connection()

@@ -53,7 +53,7 @@ class FixProTestCase(unittest.TestCase):
 
     # -- utilitaires ----------------------------------------------------
 
-    def register_client(self, phone="+224620000000", password="mdp123",
+    def register_client(self, phone="+224620000000", password="FixPro2026!",
                         first_name="Aminata", last_name="Sow", city="Conakry"):
         return self.client.post("/register?role=client", data={
             "role": "client",
@@ -64,7 +64,7 @@ class FixProTestCase(unittest.TestCase):
             "password": password,
         }, follow_redirects=True)
 
-    def register_artisan(self, email, phone="+224621111111", password="mdp123",
+    def register_artisan(self, email, phone="+224621111111", password="FixPro2026!",
                          name="Mamadou Bah", last_name=None):
         doc = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
 
@@ -123,7 +123,7 @@ class FixProTestCase(unittest.TestCase):
             conn.close()
         return response
 
-    def login(self, identifier, password="mdp123"):
+    def login(self, identifier, password="FixPro2026!"):
         return self.client.post("/login", data={
             "identifier": identifier, "password": password},
             follow_redirects=True)
@@ -186,7 +186,7 @@ class ClientRegistrationTests(FixProTestCase):
                 ("+224620000001",)).fetchone()
         finally:
             conn.close()
-        self.assertNotIn("mdp123", row["password_hash"])
+        self.assertNotIn("FixPro2026!", row["password_hash"])
 
     def test_client_is_redirected_to_artisans_after_login(self):
         self.register_client()
