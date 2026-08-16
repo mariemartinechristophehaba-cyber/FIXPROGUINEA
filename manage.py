@@ -21,7 +21,7 @@ from werkzeug.security import generate_password_hash
 
 import db
 from config import BASE_DIR, get_config
-from fixpro_app import _geocode_zone
+from fixpro_app import _geocode_zone, _is_valid_coordinate
 
 TABLES = ("users", "service_categories", "requests", "messages", "payments")
 
@@ -86,6 +86,9 @@ def cmd_check(config):
 
 
 def _table_exists(conn, table):
+    # Whitelist strict des tables valides pour eviter toute injection.
+    if table not in TABLES:
+        return False
     try:
         conn.execute('SELECT 1 FROM "%s" LIMIT 1' % table).fetchone()
         return True
@@ -241,17 +244,6 @@ def cmd_geocode_artisans(config):
     finally:
         conn.close()
     return 0
-
-
-def _is_valid_coordinate(lat, lon):
-    if lat is None or lon is None:
-        return False
-    try:
-        lat = float(lat)
-        lon = float(lon)
-    except (TypeError, ValueError):
-        return False
-    return not (abs(lat) < 0.01 and abs(lon) < 0.01)
 
 
 COMMANDS = {

@@ -12,6 +12,7 @@ import csv
 import io
 import math
 import re
+import secrets
 import smtplib
 from datetime import datetime, timezone
 from email.mime.text import MIMEText
@@ -141,7 +142,7 @@ def _geocode_zone(city, quartier):
     """Retourne (latitude, longitude) approximative d'une zone artisan.
 
     Cherche d'abord le quartier, puis la ville. Si aucun trouve,
-    renvoie (0.0, 0.0) pour ne pas inventer de fausses coordonnees.
+    renvoie (None, None) pour ne pas inventer de fausses coordonnees.
     """
     key = (quartier or "").strip().lower()
     if key and key in _ARTISAN_GEOCODE:
@@ -151,7 +152,7 @@ def _geocode_zone(city, quartier):
     if city_key and city_key in _ARTISAN_GEOCODE:
         return _ARTISAN_GEOCODE[city_key]
 
-    return 0.0, 0.0
+    return None, None
 
 
 def _is_valid_coordinate(lat, lon):
@@ -365,18 +366,6 @@ def calculate_distance(lat1, lon1, lat2, lon2):
     a = (math.sin(delta_lat / 2) ** 2
          + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(delta_lon / 2) ** 2)
     return radius * 2 * math.asin(math.sqrt(a))
-
-
-@app.after_request
-def set_security_headers(response):
-    """Ajoute des headers de securite essentiels."""
-    response.headers["X-Frame-Options"] = "DENY"
-    response.headers["X-Content-Type-Options"] = "nosniff"
-    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-    response.headers["X-XSS-Protection"] = "1; mode=block"
-    if app.config.get("FLASK_ENV", "development") == "production":
-        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
-    return response
 
 
 # ---------------------------------------------------------------------------
@@ -642,7 +631,9 @@ def _finalize_artisan_registration(wizard):
             return redirect(url_for("register_artisan", step=1))
 
         full_name = f"{wizard['civility']} {wizard['first_name']} {wizard['last_name']}".strip()
-        password = wizard["phone"].replace("+", "").replace(" ", "")
+        # Mot de passe temporaire aleatoire ; l'artisan le recoit par email si SMTP configure.
+        temp_password = secrets.token_urlsafe(12)
+        password = temp_password
         latitude, longitude = _geocode_zone(wizard["city"], wizard["quartier"])
 
         conn.execute(
@@ -752,7 +743,9 @@ csrf.exempt(api_mobile_register)
 def _finalize_artisan_registration_json(wizard):
     """Version API JSON de l'inscription artisan (sans session ni redirect)."""
     full_name = f"{wizard['civility']} {wizard['first_name']} {wizard['last_name']}".strip()
-    password = wizard["phone"].replace("+", "").replace(" ", "")
+    # Mot de passe temporaire aleatoire ; l'artisan devra le reinitialiser.
+    temp_password = secrets.token_urlsafe(12)
+    password = temp_password
     latitude, longitude = _geocode_zone(wizard["city"], wizard["quartier"])
 
     conn = get_db_connection()
@@ -2840,15 +2833,12 @@ def admin_settings():
 def _require_api_key():
     """Verifie la cle API partagee entre Flask et le dashboard Next.js.
 
-    En developpement, une cle vide est acceptee pour faciliter les tests.
+    La cle vide n'est jamais acceptee, meme en developpement.
     """
     key = app.config.get("ADMIN_API_KEY", "")
-    is_dev = app.config.get("FLASK_ENV", "development") == "development"
-    header = request.headers.get("X-API-Key", "")
-    if not key and is_dev:
-        return None
     if not key:
         return jsonify({"error": "ADMIN_API_KEY non configuree"}), 500
+    header = request.headers.get("X-API-Key", "")
     if header != key:
         return jsonify({"error": "Non autorise"}), 401
     return None
