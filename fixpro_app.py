@@ -57,6 +57,29 @@ limiter = Limiter(
     storage_uri="memory://",
 )
 
+# Coordonnees approximatives des quartiers/zones de Conakry utilisees
+# pour la geolocalisation des artisans a l'inscription.
+_ARTISAN_GEOCODE = {
+    "conakry": (9.6412, -13.5784),
+    "kaloum": (9.5077, -13.7114),
+    "dixinn": (9.5700, -13.6778),
+    "matam": (9.6472, -13.6333),
+    "matam centre": (9.6472, -13.6333),
+    "nongo": (9.6200, -13.5800),
+    "tombo": (9.4289, -13.5833),
+    "cite chemin de fer": (9.5186, -13.7075),
+    "bambeto": (9.6500, -13.5333),
+    "enco": (9.6500, -13.5500),
+    "encoville": (9.6500, -13.5500),
+    "kaporo": (9.6678, -13.5569),
+    "sonfonia": (9.6400, -13.5100),
+    "wanindara": (9.6700, -13.4900),
+    "yimbaya": (9.6400, -13.5000),
+    "mambeto": (9.6400, -13.5300),
+    "kagbaneh": (9.6300, -13.5400),
+    "taouyah": (9.6100, -13.6000),
+}
+
 oauth = OAuth(app)
 
 
@@ -112,6 +135,35 @@ def _get_google_client():
 
 def now_iso():
     return datetime.now(timezone.utc).isoformat()
+
+
+def _geocode_zone(city, quartier):
+    """Retourne (latitude, longitude) approximative d'une zone artisan.
+
+    Cherche d'abord le quartier, puis la ville. Si aucun trouve,
+    renvoie (0.0, 0.0) pour ne pas inventer de fausses coordonnees.
+    """
+    key = (quartier or "").strip().lower()
+    if key and key in _ARTISAN_GEOCODE:
+        return _ARTISAN_GEOCODE[key]
+
+    city_key = (city or "").strip().lower()
+    if city_key and city_key in _ARTISAN_GEOCODE:
+        return _ARTISAN_GEOCODE[city_key]
+
+    return 0.0, 0.0
+
+
+def _is_valid_coordinate(lat, lon):
+    """Exclut les coordonnees non renseignees (0, 0) par defaut."""
+    if lat is None or lon is None:
+        return False
+    try:
+        lat = float(lat)
+        lon = float(lon)
+    except (TypeError, ValueError):
+        return False
+    return not (abs(lat) < 0.01 and abs(lon) < 0.01)
 
 
 def get_db_connection():
@@ -591,17 +643,18 @@ def _finalize_artisan_registration(wizard):
 
         full_name = f"{wizard['civility']} {wizard['first_name']} {wizard['last_name']}".strip()
         password = wizard["phone"].replace("+", "").replace(" ", "")
+        latitude, longitude = _geocode_zone(wizard["city"], wizard["quartier"])
 
         conn.execute(
             "INSERT INTO users (email, phone, password_hash, role, full_name, civility,"
             " profession, skills, city, quartier, zone_intervention, mobility,"
-            " years_experience, bio, hourly_rate, is_verified, is_active)"
-            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            " years_experience, bio, hourly_rate, latitude, longitude, is_verified, is_active)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (wizard["email"], wizard["phone"], generate_password_hash(password),
              "artisan", full_name, wizard["civility"], wizard["profession"],
              wizard["skills"], wizard["city"], wizard["quartier"],
              wizard["zone_intervention"], wizard["mobility"],
-             wizard["years_experience"], wizard["bio"], 0, 0, 1))
+             wizard["years_experience"], wizard["bio"], 0, latitude, longitude, 0, 1))
         conn.commit()
 
         artisan = conn.execute(
@@ -700,19 +753,20 @@ def _finalize_artisan_registration_json(wizard):
     """Version API JSON de l'inscription artisan (sans session ni redirect)."""
     full_name = f"{wizard['civility']} {wizard['first_name']} {wizard['last_name']}".strip()
     password = wizard["phone"].replace("+", "").replace(" ", "")
+    latitude, longitude = _geocode_zone(wizard["city"], wizard["quartier"])
 
     conn = get_db_connection()
     try:
         conn.execute(
             "INSERT INTO users (email, phone, password_hash, role, full_name, civility,"
             " profession, skills, city, quartier, zone_intervention, mobility,"
-            " years_experience, bio, hourly_rate, is_verified, is_active)"
-            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            " years_experience, bio, hourly_rate, latitude, longitude, is_verified, is_active)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (wizard["email"], wizard["phone"], generate_password_hash(password),
              "artisan", full_name, wizard["civility"], wizard["profession"],
              wizard["skills"], wizard["city"], wizard["quartier"],
              wizard["zone_intervention"], wizard["mobility"],
-             wizard["years_experience"], wizard["bio"], 0, 0, 1))
+             wizard["years_experience"], wizard["bio"], 0, latitude, longitude, 0, 1))
         conn.commit()
 
         artisan = conn.execute(
@@ -1964,7 +2018,8 @@ def artisan_detail(artisan_id):
         distance = None
         client_lat = float(user["latitude"]) if user and user.get("latitude") else session.get("client_lat")
         client_lon = float(user["longitude"]) if user and user.get("longitude") else session.get("client_lon")
-        if client_lat and client_lon and artisan["latitude"] and artisan["longitude"]:
+        if (_is_valid_coordinate(client_lat, client_lon)
+                and _is_valid_coordinate(artisan["latitude"], artisan["longitude"])):
             distance = calculate_distance(
                 client_lat, client_lon,
                 float(artisan["latitude"]), float(artisan["longitude"]))

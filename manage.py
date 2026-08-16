@@ -21,6 +21,7 @@ from werkzeug.security import generate_password_hash
 
 import db
 from config import BASE_DIR, get_config
+from fixpro_app import _geocode_zone
 
 TABLES = ("users", "service_categories", "requests", "messages", "payments")
 
@@ -173,11 +174,13 @@ def cmd_seed(config):
             ('Ibrahim Sylla', '+224620000004', 'Menuiserie', 'Conakry', 'Matam'),
         ]
         for name, phone, profession, city, quartier in artisans:
+            lat, lon = _geocode_zone(city, quartier)
             conn.execute(
                 "INSERT INTO users (email, phone, password_hash, role, full_name,"
-                " profession, city, quartier, is_verified, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                " profession, city, quartier, latitude, longitude, is_verified, is_active)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (f'demo-{phone}@fixpro.app', phone, generate_password_hash(phone.replace('+', '')),
-                 'artisan', name, profession, city, quartier, 1, 1))
+                 'artisan', name, profession, city, quartier, lat, lon, 1, 1))
 
         # Recupere les IDs
         client = conn.execute("SELECT id FROM users WHERE role = 'client'").fetchone()
@@ -216,6 +219,41 @@ def cmd_seed(config):
     return 0
 
 
+def cmd_geocode_artisans(config):
+    """Re-geocode les coordonnees des artisans existants a partir de leur quartier."""
+    conn = _connect(config)
+    try:
+        rows = conn.execute(
+            "SELECT id, city, quartier, latitude, longitude"
+            " FROM users WHERE role = 'artisan'").fetchall()
+        updated = 0
+        for row in rows:
+            if _is_valid_coordinate(row["latitude"], row["longitude"]):
+                continue
+            lat, lon = _geocode_zone(row["city"], row["quartier"])
+            if _is_valid_coordinate(lat, lon):
+                conn.execute(
+                    "UPDATE users SET latitude = ?, longitude = ? WHERE id = ?",
+                    (lat, lon, row["id"]))
+                updated += 1
+        conn.commit()
+        print("%d artisan(s) mis a jour avec des coordonnees." % updated)
+    finally:
+        conn.close()
+    return 0
+
+
+def _is_valid_coordinate(lat, lon):
+    if lat is None or lon is None:
+        return False
+    try:
+        lat = float(lat)
+        lon = float(lon)
+    except (TypeError, ValueError):
+        return False
+    return not (abs(lat) < 0.01 and abs(lon) < 0.01)
+
+
 COMMANDS = {
     "init-db": cmd_init_db,
     "check": cmd_check,
@@ -223,6 +261,7 @@ COMMANDS = {
     "secret": cmd_secret,
     "create-admin": cmd_create_admin,
     "seed": cmd_seed,
+    "geocode-artisans": cmd_geocode_artisans,
 }
 
 
