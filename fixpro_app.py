@@ -37,10 +37,17 @@ app.config.from_object(config)
 logger = setup_logging(app)
 csrf = CSRFProtect(app)
 
-# CORS autorise le dashboard Next.js a appeler l'API Flask en local (dev uniquement).
-_cors_origins = ["*"] if app.config.get("FLASK_ENV", "development") == "development" else [
-    "https://fixproguinea.vercel.app"
+# CORS autorise le dashboard Next.js. En dev, localhost. En prod, domaine FixPro.
+_admin_dashboard = app.config.get("ADMIN_DASHBOARD_URL", "http://localhost:3000").rstrip("/")
+_cors_origins = [
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:3001",
+    _admin_dashboard,
 ]
+if app.config.get("FLASK_ENV", "development") != "development":
+    _cors_origins = [_admin_dashboard]
 CORS(app, resources={r"/api/admin/*": {"origins": _cors_origins}})
 
 limiter = Limiter(
@@ -308,6 +315,18 @@ def calculate_distance(lat1, lon1, lat2, lon2):
     return radius * 2 * math.asin(math.sqrt(a))
 
 
+@app.after_request
+def set_security_headers(response):
+    """Ajoute des headers de securite essentiels."""
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    if app.config.get("FLASK_ENV", "development") == "production":
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    return response
+
+
 # ---------------------------------------------------------------------------
 # Pages publiques
 # ---------------------------------------------------------------------------
@@ -363,12 +382,23 @@ def _phone_with_prefix(phone):
 
 
 def _parse_base64_file(data_uri):
-    """Extrait le mime, le nom et le contenu binaire depuis un data URI base64."""
+    """Extrait le mime, le nom et le contenu binaire depuis un data URI base64.
+
+    Valide le type MIME et refuse les fichiers trop lourds.
+    """
     if not data_uri or not data_uri.startswith("data:"):
         return None, None, None
     try:
         meta, encoded = data_uri.split(",", 1)
-        mime = meta.split(";")[0].replace("data:", "")
+        mime = meta.split(";")[0].replace("data:", "").lower()
+        allowed = ("image/jpeg", "image/jpg", "image/png", "application/pdf")
+        if mime not in allowed:
+            return None, None, None
+
+        # Limite approximative : base64 est ~33% plus gros que binaire
+        if len(encoded) > 3 * 1024 * 1024:
+            return None, None, None
+
         ext = ".jpg"
         if "png" in mime:
             ext = ".png"
@@ -618,6 +648,7 @@ def artisan_pending():
 
 
 @app.route("/api/mobile/register", methods=["POST"])
+@limiter.limit("10 per hour")
 def api_mobile_register():
     """Inscription artisan depuis l'application mobile (JSON)."""
     data = request.get_json(silent=True) or {}
@@ -1921,6 +1952,14 @@ def artisan_detail(artisan_id):
             " WHERE artisan_id = ? AND status = 'completed'",
             (artisan_id,)).fetchone()["n"]
 
+        # Documents verifies du technicien
+        documents = conn.execute(
+            "SELECT document_type, status"
+            " FROM technician_documents"
+            " WHERE technician_id = ?",
+            (artisan_id,)).fetchall()
+        verified_docs = {d["document_type"]: d["status"] for d in documents}
+
         # Distance approximative
         distance = None
         client_lat = float(user["latitude"]) if user and user.get("latitude") else session.get("client_lat")
@@ -2047,6 +2086,10 @@ def artisan_detail(artisan_id):
     finally:
         conn.close()
 
+    # Date d'inscription lisible
+    member_since = (str(artisan["created_at"])[:10] if artisan["created_at"]
+                    else "Date inconnue")
+
     return render_template("artisan_detail.html",
                            user=user,
                            artisan=artisan,
@@ -2055,7 +2098,9 @@ def artisan_detail(artisan_id):
                            completed=completed,
                            distance=distance,
                            can_review=can_review,
-                           ticket_id=ticket_id)
+                           ticket_id=ticket_id,
+                           verified_docs=verified_docs,
+                           member_since=member_since)
 
 
 @app.route("/artisans/<int:artisan_id>/location", methods=["POST"])
@@ -2755,6 +2800,7 @@ def _require_api_key():
 
 
 @app.route("/api/admin/stats")
+@limiter.limit("100 per hour")
 def api_admin_stats():
     """KPI du dashboard admin."""
     auth = _require_api_key()
@@ -2786,6 +2832,7 @@ def api_admin_stats():
 
 
 @app.route("/api/admin/techniciens")
+@limiter.limit("100 per hour")
 def api_admin_techniciens():
     """Liste des techniciens pour le dashboard admin."""
     auth = _require_api_key()
@@ -2806,6 +2853,7 @@ def api_admin_techniciens():
 
 
 @app.route("/api/admin/demandes")
+@limiter.limit("100 per hour")
 def api_admin_demandes():
     """Liste des demandes pour le dashboard admin."""
     auth = _require_api_key()
@@ -2826,6 +2874,7 @@ def api_admin_demandes():
 
 
 @app.route("/api/admin/techniciens/<int:artisan_id>/verify", methods=["POST"])
+@limiter.limit("60 per hour", methods=["POST"])
 def api_admin_verify_artisan(artisan_id):
     """Valider un technicien."""
     auth = _require_api_key()
@@ -2841,6 +2890,7 @@ def api_admin_verify_artisan(artisan_id):
 
 
 @app.route("/api/admin/techniciens/<int:artisan_id>/reject", methods=["POST"])
+@limiter.limit("60 per hour", methods=["POST"])
 def api_admin_reject_artisan(artisan_id):
     """Refuser/supprimer un technicien."""
     auth = _require_api_key()

@@ -27,8 +27,9 @@
       {% if artisan.photo_url %}
       <img class="profile-avatar" src="{{ artisan.photo_url }}" alt="{{ artisan.full_name }}" style="background: linear-gradient(160deg, {{ cat_color }}, #0d1526 85%);" />
       {% else %}
-      <div class="profile-avatar" style="background: linear-gradient(160deg, {{ cat_color }}, #0d1526 85%); color: #fff;">
-        {{ (artisan.full_name or '?')[0]|upper }}
+      <div class="profile-avatar" style="background: linear-gradient(160deg, {{ cat_color }}, #0d1526 85%); color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.7rem; line-height: 1.1;">
+        <span style="font-size: 1.4rem; margin-bottom: 2px;">+</span>
+        <span style="font-size: 0.6rem;">Ajoutez une photo</span>
       </div>
       {% endif %}
       {% if artisan.is_verified %}
@@ -41,7 +42,34 @@
     <div class="profile-header-info">
       <h1>{{ artisan.full_name }}</h1>
       <p class="profile-metier" style="color: {{ cat_color }};">{{ artisan.profession or 'Technicien' }}</p>
-      <span class="profile-status" style="background: {{ status[0] }}; color: {% if status[0] == '#f7c873' %}#1a1206{% else %}#fff{% endif %};">{{ status[1] }}</span>
+      <div class="profile-rating" style="display: flex; align-items: center; gap: 10px; margin: 4px 0 8px;">
+        {% if review_stats.count %}
+          <span style="color: #f7c873; font-size: 1.1rem;">
+            {% for i in range(1, 6) %}
+              {% if i <= review_stats.avg_rating|round(0, 'floor')|int %}
+                &#9733;
+              {% else %}
+                &#9734;
+              {% endif %}
+            {% endfor %}
+          </span>
+          <span><b>{{ "%.1f"|format(review_stats.avg_rating|float) }}</b>/5 ({{ review_stats.count }} avis)</span>
+        {% else %}
+          <span class="muted">Soyez le premier a laisser un avis.</span>
+        {% endif %}
+      </div>
+      <div class="profile-badges" style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px;">
+        {% if artisan.is_verified %}
+          <span class="chip" style="background: rgba(61, 220, 132, 0.12); color: #3ddc84;">Profil verifie</span>
+        {% endif %}
+        {% if verified_docs.get('identity') == 'verified' %}
+          <span class="chip" style="background: rgba(61, 220, 132, 0.12); color: #3ddc84;">Identite verifiee</span>
+        {% endif %}
+        {% if verified_docs.get('diploma') == 'verified' %}
+          <span class="chip" style="background: rgba(61, 220, 132, 0.12); color: #3ddc84;">Diplome certifie</span>
+        {% endif %}
+      </div>
+      <span class="profile-status" style="background: {{ status[0] }}; color: {% if status[0] == '#f7c873' %}#1a1206{% else %}#fff{% endif %}; display: inline-flex;">{{ status[1] }}</span>
     </div>
   </div>
 
@@ -74,7 +102,8 @@
     {% else %}
     <a class="btn btn-soft btn-block" href="{{ url_for('login') }}">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M13.8 12H3"/></svg>
-      Se connecter pour contacter
+      <span>Connexion requise</span>
+      <small style="display: block; font-size: 0.78rem; opacity: 0.75;">Connectez-vous pour voir le numero et discuter directement</small>
     </a>
     {% endif %}
   </div>
@@ -113,12 +142,22 @@
 
   <div class="profile-section">
     <h3>A propos</h3>
-    <p class="profile-bio">{{ artisan.bio or 'Aucune presentation pour le moment.' }}</p>
+    {% if artisan.bio %}
+      <p class="profile-bio">{{ artisan.bio }}</p>
+    {% else %}
+      <p class="profile-bio" style="font-style: italic; opacity: 0.7;">Aucune presentation pour le moment. Demandez-lui directement ce qu'il peut faire pour vous.</p>
+    {% endif %}
     {% if artisan.skills %}
     <div class="detail-tags">
       {% for skill in artisan.skills.split(',') %}
       <span class="chip">{{ skill.strip() }}</span>
       {% endfor %}
+    </div>
+    {% endif %}
+    {% if artisan.hourly_rate and artisan.hourly_rate > 0 %}
+    <div class="profile-tarif" style="margin-top: 12px; padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.07);">
+      <span style="color: var(--muted); font-size: 0.8rem;">Tarif indicatif</span>
+      <b style="display: block; font-size: 1.1rem; margin-top: 2px;">{{ "%.0f"|format(artisan.hourly_rate) }} GNF / heure</b>
     </div>
     {% endif %}
   </div>
@@ -161,10 +200,10 @@
     <span>Membre depuis <b>{{ (artisan.created_at|string)[:10] }}</b></span>
   </div>
 
-  {% if reviews %}
   <div class="profile-sep"></div>
   <div class="profile-section">
     <h3>Avis clients</h3>
+    {% if reviews %}
     <div class="profile-reviews">
       {% for review in reviews[:3] %}
       <div class="profile-review">
@@ -177,8 +216,10 @@
       </div>
       {% endfor %}
     </div>
+    {% else %}
+    <p style="opacity: 0.7; font-style: italic;">Soyez le premier a laisser un avis apres une intervention.</p>
+    {% endif %}
   </div>
-  {% endif %}
 
 {% if user and user.role == 'client' %}
 <div class="chat-fab">
