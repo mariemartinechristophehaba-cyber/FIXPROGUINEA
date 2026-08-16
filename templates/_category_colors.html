@@ -1,10 +1,18 @@
+{% set _brand_blue = '#3d5bff' %}
+{% set _brand_amber = '#f5a623' %}
+{% set _brand_green = '#3ddc84' %}
+{% set _brand_grey = '#8A94A9' %}
+
+{# Palette unifiee FixPro : le metier est toujours identifie par la couleur orange marque. #}
 {% set category_colors = {
-  'Tous': '#f5a623',
-  'Plombier': '#3d5bff',
-  'Électricien': '#f5a623',
-  'Frigoriste': '#3ddc84',
-  'Chauffagiste': '#ff7900',
-  'Menuisier': '#ff7900',
-  'Serrurier': '#3d5bff'
+  'Tous': _brand_amber,
+  'Plombier': _brand_amber,
+  'Electricien': _brand_amber,
+  'Électricien': _brand_amber,
+  'Frigoriste': _brand_amber,
+  'Chauffagiste': _brand_amber,
+  'Menuisier': _brand_amber,
+  'Serrurier': _brand_amber
 } %}
-{% set default_category_color = '#3d5bff' %}
+{% set default_category_color = _brand_amber %}
+{% set default_avatar_gradient = 'linear-gradient(160deg, #3d5bff, #f5a623 85%)' %}

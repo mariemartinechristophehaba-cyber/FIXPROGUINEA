@@ -1,7 +1,7 @@
-{% from '_category_colors.html' import category_colors, default_category_color %}
+{% from '_category_colors.html' import category_colors, default_category_color, default_avatar_gradient %}
 {% macro artisan_card(artisan) %}
 {% set status_colors = {
-  'en_ligne': ('#3ddc84', 'En ligne'),
+  'en_ligne': ('#3ddc84', 'Disponible'),
   'occupe': ('#f7c873', 'Occupe'),
   'hors_ligne': ('#8A94A9', 'Hors ligne')
 } %}
@@ -13,7 +13,7 @@
     {% if artisan.photo_url %}
     <img class="artisan-photo" src="{{ artisan.photo_url }}" alt="{{ artisan.full_name }}" loading="lazy" />
     {% else %}
-    <div class="artisan-photo artisan-photo-placeholder" style="background: linear-gradient(160deg, {{ cat_color }}, #0d1526 85%);">
+    <div class="artisan-photo artisan-photo-placeholder" style="background: {{ default_avatar_gradient }};">
       <span style="color: #fff;">{{ (artisan.full_name or '?')[0]|upper }}</span>
     </div>
     {% endif %}

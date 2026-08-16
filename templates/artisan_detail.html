@@ -1,4 +1,4 @@
-{% from '_category_colors.html' import category_colors, default_category_color %}
+{% from '_category_colors.html' import category_colors, default_category_color, default_avatar_gradient %}
 {% set cat_color = category_colors.get(artisan.profession, default_category_color) %}
 {% set status_colors = {
   'en_ligne': ('#3ddc84', 'Disponible'),
@@ -25,9 +25,9 @@
   <div class="profile-header">
     <div class="profile-avatar-wrap">
       {% if artisan.photo_url %}
-      <img class="profile-avatar" src="{{ artisan.photo_url }}" alt="{{ artisan.full_name }}" style="background: linear-gradient(160deg, {{ cat_color }}, #0d1526 85%);" />
+      <img class="profile-avatar" src="{{ artisan.photo_url }}" alt="{{ artisan.full_name }}" style="background: {{ default_avatar_gradient }};" />
       {% else %}
-      <div class="profile-avatar" style="background: linear-gradient(160deg, {{ cat_color }}, #0d1526 85%); color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.7rem; line-height: 1.1;">
+      <div class="profile-avatar" style="background: {{ default_avatar_gradient }}; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.7rem; line-height: 1.1;">
         <span style="font-size: 1.4rem; margin-bottom: 2px;">+</span>
         <span style="font-size: 0.6rem;">Ajoutez une photo</span>
       </div>

@@ -2018,6 +2018,9 @@ def artisan_detail(artisan_id):
         distance = None
         client_lat = float(user["latitude"]) if user and user.get("latitude") else session.get("client_lat")
         client_lon = float(user["longitude"]) if user and user.get("longitude") else session.get("client_lon")
+        logger.info(
+            "DISTANCE DEBUG - artisan_id=%s artisan=(%s,%s) client=(%s,%s) user_id=%s",
+            artisan_id, artisan["latitude"], artisan["longitude"], client_lat, client_lon, user["id"] if user else None)
         if (_is_valid_coordinate(client_lat, client_lon)
                 and _is_valid_coordinate(artisan["latitude"], artisan["longitude"])):
             distance = calculate_distance(

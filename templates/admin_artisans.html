@@ -2,7 +2,7 @@
 {% block title %}Techniciens - FixPro Admin{% endblock %}
 {% block admin_title %}Gestion des techniciens{% endblock %}
 
-{% from '_category_colors.html' import category_colors, default_category_color %}
+{% from '_category_colors.html' import category_colors, default_category_color, default_avatar_gradient %}
 
 {% block admin_content %}
 <div class="admin-card">
@@ -61,7 +61,7 @@
           <td class="cell-index">{{ loop.index }}</td>
           <td>
             <div class="admin-user-cell compact">
-              <span class="admin-avatar small" style="background: {{ cat_color }}; color: #fff;">
+              <span class="admin-avatar small" style="background: {{ default_avatar_gradient }}; color: #fff;">
                 {{ (artisan.full_name or '?')[0]|upper }}
               </span>
               <div>
