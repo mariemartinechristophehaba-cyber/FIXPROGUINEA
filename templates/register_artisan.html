@@ -1,406 +1,195 @@
 {% extends 'base.html' %}
 {% block title %}Devenir technicien - FixPro{% endblock %}
+{% block header %}{% endblock %}
+{% block footer %}{% endblock %}
 
 {% block content %}
 <style>
-  .tech-wrap { min-height:100vh; display:flex; flex-direction:column; background:var(--paper); }
-  .tech-top { background:var(--ink); color:#fff; padding:18px 18px 22px; position:sticky; top:0; z-index:10; }
-  .tech-back { color:#DCE3F0; text-decoration:none; font-size:13px; display:flex; align-items:center; gap:6px; }
-  .tech-top h3 { margin:10px 0 4px; font-family:var(--font-display); font-size:20px; }
-  .tech-top p { margin:0; color:#9FB0CC; font-size:12px; }
-  .tech-stepper { display:flex; align-items:center; justify-content:center; gap:6px; margin-top:14px; }
-  .tech-dot { width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:10.5px; font-weight:700; font-family:var(--font-mono); }
-  .tech-dot.done { background:var(--green); color:#fff; }
-  .tech-dot.active { background:var(--amber); color:var(--ink); }
-  .tech-dot.pending { background:rgba(255,255,255,.12); color:#9FB0CC; }
-  .tech-line { flex:1; height:2px; background:rgba(255,255,255,.12); border-radius:1px; max-width:22px; }
-  .tech-line.done { background:var(--green); }
-  .tech-form { padding:22px 18px 120px; max-width:560px; margin:0 auto; width:100%; box-sizing:border-box; flex:1; }
-  .tech-step { display:none; }
-  .tech-step.active { display:block; }
-  .tech-step h4 { font-family:var(--font-display); font-size:18px; margin:0 0 4px; color:var(--ink); }
-  .tech-step .sub { font-size:12.5px; color:var(--slate); margin:0 0 22px; }
-  .tech-fg { margin-bottom:18px; }
-  .tech-fl { font-size:11px; color:var(--slate); text-transform:uppercase; letter-spacing:0.3px; margin-bottom:6px; font-weight:600; }
-  .tech-fb { width:100%; border:1px solid var(--line); border-radius:12px; padding:13px 14px; font-size:14px; background:var(--paper-2); color:var(--ink); box-sizing:border-box; font-family:var(--font-body); }
-  .tech-fb:focus { outline:none; border-color:var(--amber); }
-  .tech-photo { position:relative; width:110px; height:110px; border-radius:50%; border:2px dashed var(--line); display:flex; flex-direction:column; align-items:center; justify-content:center; margin:0 auto 24px; color:var(--slate); cursor:pointer; background:var(--paper-2); overflow:hidden; }
-  .tech-photo img { width:100%; height:100%; object-fit:cover; }
-  .tech-photo input { display:none; }
-  .tech-phone { display:flex; gap:8px; }
-  .tech-phone .prefix { flex:0 0 auto; display:flex; align-items:center; padding:0 14px; background:var(--paper-2); border:1px solid var(--line); border-radius:12px; font-size:13px; color:var(--slate); font-weight:600; }
-  .tech-chips { display:flex; flex-wrap:wrap; gap:8px; }
-  .tech-chip { border:1px solid var(--line); background:var(--paper-2); border-radius:20px; padding:8px 14px; font-size:12.5px; color:var(--slate); cursor:pointer; }
-  .tech-chip.active { background:var(--amber-soft); border-color:var(--amber); color:var(--ink); }
-  .tech-upload { width:100%; border:1px dashed var(--line); border-radius:12px; padding:18px; text-align:center; color:var(--slate); cursor:pointer; background:var(--paper-2); font-size:13px; }
-  .tech-upload.done { border-style:solid; border-color:var(--green); color:var(--green); background:var(--green-soft); }
-  .tech-info { background:var(--green-soft); color:#166846; border-radius:12px; padding:14px; display:flex; gap:10px; align-items:flex-start; font-size:12.5px; line-height:1.5; }
-  .tech-nav { display:flex; gap:10px; padding:14px 18px 22px; background:var(--paper); border-top:1px solid var(--line); position:fixed; bottom:0; left:0; right:0; }
-  .tech-nav .fx-dock-btn { flex:1; }
-  .tech-nav .ghost { background:transparent; color:var(--ink); border:1px solid var(--line); }
-  .tech-recap { background:var(--paper-2); border:1px solid var(--line); border-radius:12px; padding:14px; margin-bottom:12px; }
-  .tech-recap .row { display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--line); font-size:13px; }
-  .tech-recap .row:last-child { border-bottom:none; }
-  .tech-recap .row span { color:var(--slate); }
-  .tech-recap .row b { color:var(--ink); font-weight:600; }
-  .tech-recap .row a { color:var(--amber-dark); font-size:11px; font-weight:600; text-decoration:none; }
-  .tech-error { color:#A23723; font-size:12px; margin-top:4px; display:none; }
-  .tech-portfolio { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:10px; }
-  .tech-portfolio .p { aspect-ratio:1; border-radius:10px; background:var(--paper-2); border:1px dashed var(--line); display:flex; align-items:center; justify-content:center; color:var(--slate); font-size:11px; cursor:pointer; }
-  .tech-portfolio .p img { width:100%; height:100%; object-fit:cover; border-radius:10px; }
-  @media (min-width: 768px) {
-    .tech-top h3 { font-size:24px; }
-    .tech-form { padding:32px 24px 140px; }
-    .tech-nav { padding:18px 24px 28px; justify-content:center; }
-    .tech-nav .fx-dock-btn { max-width:260px; }
-  }
+  .rart-wrap { min-height:100vh; display:flex; flex-direction:column; background:var(--paper); }
+  .rart-head { background:var(--ink); color:#fff; padding:18px 16px 22px; position:sticky; top:0; z-index:10; }
+  .rart-back { color:#DCE3F0; text-decoration:none; font-size:13px; display:inline-flex; align-items:center; gap:6px; }
+  .rart-head h1 { font-family:var(--font-display); font-size:22px; margin:12px 0 4px; font-weight:700; }
+  .rart-head p { margin:0; color:#9FB0CC; font-size:13px; }
+  .rart-form { padding:22px 16px 110px; }
+  .rart-fg { margin-bottom:18px; }
+  .rart-fl { font-size:13px; color:var(--slate); text-transform:uppercase; letter-spacing:0.3px; margin-bottom:6px; font-weight:600; }
+  .rart-fb { width:100%; border:1px solid var(--line); border-radius:12px; padding:14px 14px; font-size:15px; background:var(--paper-2); color:var(--ink); box-sizing:border-box; font-family:var(--font-body); }
+  .rart-fb:focus { outline:none; border-color:var(--amber); }
+  .rart-photo { position:relative; width:110px; height:110px; border-radius:50%; border:2px dashed #BFC6D4; display:flex; flex-direction:column; align-items:center; justify-content:center; margin:0 auto 26px; color:var(--slate); cursor:pointer; background:var(--paper-2); overflow:hidden; }
+  .rart-photo img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
+  .rart-photo input { display:none; }
+  .rart-phone { display:flex; gap:8px; }
+  .rart-phone .prefix { flex:0 0 auto; display:flex; align-items:center; padding:0 14px; background:var(--paper-2); border:1px solid var(--line); border-radius:12px; font-size:14px; color:var(--slate); font-weight:600; }
+  .rart-upload { width:100%; border:1px dashed var(--line); border-radius:12px; padding:18px; text-align:center; color:var(--slate); cursor:pointer; background:var(--paper-2); font-size:13px; display:flex; flex-direction:column; align-items:center; gap:8px; }
+  .rart-upload img { width:100%; max-height:120px; object-fit:cover; border-radius:8px; margin-bottom:6px; }
+  .rart-info { background:#DCEFE5; color:#166846; border-radius:12px; padding:14px; display:flex; gap:10px; align-items:flex-start; font-size:12.5px; line-height:1.5; }
+  .rart-info svg { width:20px; height:20px; flex:0 0 auto; color:#166846; }
+  .rart-sticky { position:fixed; bottom:0; left:0; right:0; padding:14px 16px calc(14px + env(safe-area-inset-bottom)); background:var(--paper); border-top:1px solid var(--line); }
+  .rart-sticky .rart-btn { width:100%; border:none; border-radius:12px; padding:15px; font-size:15px; font-weight:700; background:var(--amber); color:var(--ink); cursor:pointer; font-family:var(--font-body); }
+  .rart-sticky .rart-btn:disabled { opacity:.6; cursor:wait; }
 </style>
 
-<div class="tech-wrap">
-  <div class="tech-top">
-    <a href="{{ url_for('index') }}" class="tech-back">← Retour</a>
-    <h3>Devenir technicien FixPro</h3>
+<div class="rart-wrap">
+  <div class="rart-head">
+    <a href="{{ url_for('index') }}" class="rart-back">← Retour</a>
+    <h1>Devenir technicien FixPro</h1>
     <p>Votre profil sera vérifié avant publication</p>
-    <div class="tech-stepper" id="stepper"></div>
   </div>
 
-  <form method="post" class="tech-form" id="techForm" enctype="multipart/form-data" onsubmit="return false;">
+  <form method="post" class="rart-form" id="rartForm" enctype="multipart/form-data" onsubmit="return false;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
 
-    <div class="tech-step active" data-step="1">
-      <h4>Vos informations</h4>
-      <p class="sub">Renseignez vos informations personnelles</p>
+    <label class="rart-photo" id="photoBox">
+      <input type="file" id="photoInput" accept="image/jpeg,image/png,image/webp" />
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="12" r="4"/><path d="M3 9h6l2-2h3l2 2h5"/></svg>
+      <span style="font-size:10px;margin-top:4px;">Ajouter votre photo</span>
+    </label>
+    <input type="hidden" name="photo" id="photoBase64" />
 
-      <label class="tech-photo" id="photoBox">
-        <input type="file" id="photoInput" accept="image/*" />
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="12" r="4"/><path d="M3 9h6l2-2h3l2 2h5"/></svg>
-        <span style="font-size:10.5px;margin-top:4px;">Ajouter votre photo</span>
-      </label>
-      <input type="hidden" name="photo" id="photoBase64" />
+    <div class="rart-fg">
+      <div class="rart-fl">Nom complet</div>
+      <input class="rart-fb" type="text" name="full_name" id="fullName" placeholder="Entrez votre nom complet" required />
+    </div>
 
-      <div class="tech-fg">
-        <div class="tech-fl">Nom complet</div>
-        <input class="tech-fb" type="text" name="full_name" id="fullName" placeholder="Entrez votre nom complet" />
-      </div>
+    <div class="rart-fg">
+      <div class="rart-fl">Métier</div>
+      <select class="rart-fb" name="profession" id="profession" required>
+        <option value="" disabled selected>Choisissez un métier</option>
+        <option value="Plombier">Plombier</option>
+        <option value="Électricien">Électricien</option>
+        <option value="Climatisation">Climatisation</option>
+        <option value="Frigoriste">Frigoriste</option>
+        <option value="Maçon">Maçon</option>
+        <option value="Menuisier">Menuisier</option>
+        <option value="Peintre">Peintre</option>
+        <option value="Soudeur">Soudeur</option>
+        <option value="Informaticien">Informaticien</option>
+        <option value="Mécanicien">Mécanicien</option>
+        {% for cat in categories %}
+        <option value="{{ cat.name }}">{{ cat.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
 
-      <div class="tech-fg">
-        <div class="tech-fl">Numéro de téléphone</div>
-        <div class="tech-phone">
-          <span class="prefix">+224</span>
-          <input class="tech-fb" type="tel" name="phone" id="phone" placeholder="620 00 00 00" style="flex:1;" />
-        </div>
+    <div class="rart-fg">
+      <div class="rart-fl">Numéro de téléphone</div>
+      <div class="rart-phone">
+        <span class="prefix">+224</span>
+        <input class="rart-fb" type="tel" name="phone" id="phone" placeholder="620 00 00 00" style="flex:1;" inputmode="tel" pattern="[0-9 ]*" required />
       </div>
     </div>
 
-    <div class="tech-step" data-step="2">
-      <h4>Votre activité</h4>
-      <p class="sub">Parlez-nous de votre métier et de votre expérience</p>
-
-      <div class="tech-fg">
-        <div class="tech-fl">Métier</div>
-        <select class="tech-fb" name="profession" id="profession">
-          <option value="" disabled selected>Choisissez un métier</option>
-          <option value="Électricien">Électricien</option>
-          <option value="Plombier">Plombier</option>
-          <option value="Maçon">Maçon</option>
-          <option value="Menuisier">Menuisier</option>
-          <option value="Peintre">Peintre</option>
-          <option value="Climatisation">Climatisation</option>
-          <option value="Froid">Froid</option>
-          <option value="Électronique">Électronique</option>
-          <option value="Informatique">Informatique</option>
-          <option value="Mécanique">Mécanique</option>
-          {% for cat in categories %}
-          <option value="{{ cat.name }}">{{ cat.name }}</option>
-          {% endfor %}
-        </select>
-      </div>
-
-      <div class="tech-fg">
-        <div class="tech-fl">Spécialité</div>
-        <input class="tech-fb" type="text" name="specialite" id="specialite" placeholder="Installation et dépannage électrique" />
-      </div>
-
-      <div class="tech-fg">
-        <div class="tech-fl">Expérience</div>
-        <input type="hidden" name="experience" id="experience" />
-        <div class="tech-chips" id="expChips">
-          <span class="tech-chip" data-v="Moins d'1 an">Moins d'1 an</span>
-          <span class="tech-chip" data-v="1–3 ans">1–3 ans</span>
-          <span class="tech-chip" data-v="3–5 ans">3–5 ans</span>
-          <span class="tech-chip" data-v="5–10 ans">5–10 ans</span>
-          <span class="tech-chip" data-v="10+ ans">10+ ans</span>
-        </div>
-      </div>
-
-      <div class="tech-fg">
-        <div class="tech-fl">Présentez votre savoir-faire</div>
-        <textarea class="tech-fb" name="bio" id="bio" rows="4" maxlength="300" placeholder="Décrivez votre expérience, vos compétences et les services que vous proposez."></textarea>
-        <div style="font-size:10px;color:var(--slate);text-align:right;margin-top:4px;"><span id="bioCount">0</span>/300</div>
-      </div>
+    <div class="rart-fg">
+      <div class="rart-fl">Zone d'intervention</div>
+      <input class="rart-fb" type="text" name="address" id="address" placeholder="Localisation en cours..." required readonly />
+      <input type="hidden" name="lat" id="lat" />
+      <input type="hidden" name="lon" id="lon" />
     </div>
 
-    <div class="tech-step" data-step="3">
-      <h4>Votre zone d'intervention</h4>
-      <p class="sub">Définissez où vous intervenez pour vos clients</p>
-
-      <div class="tech-fg">
-        <div class="tech-fl">Localisation</div>
-        <input class="tech-fb" type="text" name="address" id="address" readonly placeholder="Utiliser le bouton ci-dessus" />
-        <button type="button" class="fx-dock-btn primary" id="locBtn" style="margin-top:8px;width:100%;">Utiliser ma position</button>
+    <div class="rart-fg">
+      <div class="rart-fl">Pièce d'identité</div>
+      <div class="rart-upload" id="idBox">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 5V4a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1"/><circle cx="12" cy="11" r="2"/></svg>
+        <div>Ajouter une photo de la pièce</div>
       </div>
-
-      <div class="tech-fg">
-        <div class="tech-fl">Rayon d'intervention</div>
-        <input type="hidden" name="rayon" id="rayon" />
-        <div class="tech-chips" id="rayonChips">
-          <span class="tech-chip" data-v="5 km">5 km</span>
-          <span class="tech-chip" data-v="10 km">10 km</span>
-          <span class="tech-chip" data-v="20 km">20 km</span>
-          <span class="tech-chip" data-v="Toute la ville">Toute la ville</span>
-        </div>
-      </div>
+      <input type="file" id="idInput" accept="image/jpeg,image/png,image/webp" style="display:none;" />
+      <input type="hidden" name="identity_doc" id="idBase64" />
     </div>
 
-    <div class="tech-step" data-step="4">
-      <h4>Vérification de votre profil</h4>
-      <p class="sub">Ces informations permettent à FixPro de vérifier votre profil</p>
-
-      <div class="tech-fg">
-        <div class="tech-fl">Pièce d'identité</div>
-        <div class="tech-upload" id="idBox">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:4px;"><rect x="3" y="8" width="18" height="12" rx="2"/><path d="M7 8V6a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2"/><circle cx="12" cy="14" r="2"/></svg>
-          <div>Carte d'identité, passeport ou permis</div>
-        </div>
-        <input type="file" id="idInput" accept="image/*" style="display:none;" />
-        <input type="hidden" name="identity_doc" id="idBase64" />
+    <div class="rart-fg">
+      <div class="rart-info">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+        <span>L'équipe FixPro examine chaque dossier avant d'attribuer le sceau de vérification et de publier votre profil.</span>
       </div>
-
-      <div class="tech-fg">
-        <div class="tech-fl">Photos de vos réalisations</div>
-        <div class="tech-portfolio" id="portfolioGrid">
-          <div class="p" id="addPhoto">0/5</div>
-        </div>
-        <input type="file" id="portfolioInput" accept="image/*" multiple style="display:none;" />
-        <input type="hidden" name="portfolio" id="portfolioBase64" />
-      </div>
-
-      <div class="tech-fg">
-        <div class="tech-info">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#166846" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
-          <span>Vos informations sont utilisées pour vérifier votre profil et vous permettre d'utiliser FixPro.</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="tech-step" data-step="5">
-      <h4>Vérifiez votre profil</h4>
-      <p class="sub">Vérifiez vos informations avant l'envoi</p>
-      <div id="recapBox"></div>
-    </div>
-
-    <div class="tech-step" data-step="6">
-      <div style="text-align:center;padding:40px 20px;">
-        <svg width="80" height="80" viewBox="0 0 100 100" style="margin:0 auto 18px;"><path fill="#1F9D6B" d="M50 2 L58 10 L69 8 L74 18 L85 22 L84 34 L92 42 L86 52 L92 62 L84 70 L85 82 L74 86 L69 96 L58 94 L50 100 L42 94 L31 96 L26 86 L15 82 L16 70 L8 62 L14 52 L8 42 L16 34 L15 22 L26 18 L31 8 L42 10 Z"/><path fill="none" stroke="#F7F4EE" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" d="M34 51 L45 62 L68 38"/></svg>
-        <h4 style="font-size:22px;">Votre dossier a bien été envoyé</h4>
-        <p class="sub">L'équipe FixPro examine votre dossier avant de publier votre profil.</p>
-      </div>
-    </div>
-
-    <div class="tech-nav" id="techNav">
-      <button type="button" class="fx-dock-btn ghost" id="prevBtn" style="display:none;">Retour</button>
-      <button type="button" class="fx-dock-btn primary" id="nextBtn">Continuer</button>
     </div>
   </form>
+
+  <div class="rart-sticky">
+    <button type="button" class="rart-btn" id="submitBtn">Envoyer ma demande</button>
+  </div>
 </div>
 
 <script>
-  const steps = [
-    { key:1, title:'Informations' },
-    { key:2, title:'Activité' },
-    { key:3, title:'Zone' },
-    { key:4, title:'Vérification' },
-    { key:5, title:'Validation' }
-  ];
-  let current = 1;
-  const data = {};
-  const portfolio = [];
+  (function(){
+    const form = document.getElementById('rartForm');
+    const submitBtn = document.getElementById('submitBtn');
 
-  function renderStepper(){
-    const el = document.getElementById('stepper');
-    el.innerHTML = '';
-    steps.forEach((s,i)=>{
-      const st = i+1 < current ? 'done' : (i+1 === current ? 'active' : 'pending');
-      const txt = i+1 < current ? '✓' : (i+1);
-      el.innerHTML += `<div class="tech-dot ${st}">${txt}</div>`;
-      if (i < steps.length-1){
-        const lt = i+1 < current ? 'done' : '';
-        el.innerHTML += `<div class="tech-line ${lt}"></div>`;
-      }
-    });
-  }
-
-  function showStep(n){
-    document.querySelectorAll('.tech-step').forEach(s=>s.classList.remove('active'));
-    const target = document.querySelector(`.tech-step[data-step="${n}"]`);
-    if (target) target.classList.add('active');
-    document.getElementById('prevBtn').style.display = n === 1 ? 'none' : 'inline-block';
-    const next = document.getElementById('nextBtn');
-    next.textContent = n === 5 ? 'Soumettre mon profil' : 'Continuer';
-    current = n;
-    renderStepper();
-    if (n === 5) buildRecap();
-    window.scrollTo(0,0);
-  }
-
-  function validate(step){
-    if (step === 1){
-      if (!document.getElementById('fullName').value.trim()){ alert('Veuillez entrer votre nom complet.'); return false; }
-      const p = document.getElementById('phone').value.trim();
-      if (!/^[0-9]{8,}$/.test(p.replace(/\s/g,''))){ alert('Veuillez entrer un numéro de téléphone valide.'); return false; }
+    function readFile(input, cb, max=5*1024*1024){
+      const f = input.files[0];
+      if (!f) return;
+      if (f.size > max){ alert('Photo trop volumineuse. Maximum 5 Mo.'); return; }
+      const r = new FileReader();
+      r.onload = e => cb(e.target.result, f.name);
+      r.readAsDataURL(f);
     }
-    if (step === 2){
-      if (!document.getElementById('profession').value){ alert('Veuillez choisir un métier.'); return false; }
-      if (!document.getElementById('experience').value){ alert('Veuillez sélectionner une expérience.'); return false; }
-    }
-    if (step === 3){
-      if (!document.getElementById('address').value){ alert('Veuillez définir votre zone d\'intervention.'); return false; }
-      if (!document.getElementById('rayon').value){ alert('Veuillez sélectionner un rayon.'); return false; }
-    }
-    if (step === 4){
-      if (!document.getElementById('idBase64').value){ alert('Veuillez ajouter une pièce d\'identité.'); return false; }
-    }
-    return true;
-  }
 
-  function buildRecap(){
-    const full = document.getElementById('fullName').value;
-    const phone = '+224 ' + document.getElementById('phone').value;
-    const profession = document.getElementById('profession').value;
-    const specialite = document.getElementById('specialite').value || '—';
-    const experience = document.getElementById('experience').value || '—';
-    const address = document.getElementById('address').value;
-    const rayon = document.getElementById('rayon').value || '—';
-    const rows = [
-      ['Nom', full, 1], ['Téléphone', phone, 1], ['Métier', profession, 2], ['Spécialité', specialite, 2],
-      ['Expérience', experience, 2], ['Zone', address, 3], ['Rayon', rayon, 3]
-    ];
-    document.getElementById('recapBox').innerHTML = rows.map(([l,v,s])=>`
-      <div class="tech-recap">
-        <div class="row"><span>${l}</span><a href="javascript:showStep(${s})">Modifier</a></div>
-        <div class="row"><b>${v}</b></div>
-      </div>
-    `).join('');
-  }
-
-  function readFile(input, cb){
-    const f = input.files[0];
-    if (!f) return;
-    if (f.size > 5 * 1024 * 1024){ alert('Cette photo est trop volumineuse. Choisissez une image de moins de 5 Mo.'); return; }
-    const r = new FileReader();
-    r.onload = e => cb(e.target.result);
-    r.readAsDataURL(f);
-  }
-
-  function setupUpload(boxId, inputId, hiddenId, cb){
-    const box = document.getElementById(boxId);
-    const input = document.getElementById(inputId);
-    box.addEventListener('click', ()=>input.click());
-    input.addEventListener('change', ()=>{
-      readFile(input, res=>{
-        document.getElementById(hiddenId).value = res;
-        if (cb) cb(res, input.files[0].name);
+    document.getElementById('photoBox').addEventListener('click', ()=>document.getElementById('photoInput').click());
+    document.getElementById('photoInput').addEventListener('change', function(){
+      readFile(this, res=>{
+        document.getElementById('photoBase64').value = res;
+        document.getElementById('photoBox').innerHTML = `<img src="${res}" alt="photo">`;
       });
     });
-  }
 
-  setupUpload('photoBox','photoInput','photoBase64', res=>{
-    document.getElementById('photoBox').innerHTML = `<img src="${res}" alt="photo"><div style="position:absolute;bottom:4px;right:0;background:var(--ink);color:#fff;font-size:9px;padding:2px 6px;border-radius:8px;">Modifier</div>`;
-    data.photo = res;
-  });
-
-  setupUpload('idBox','idInput','idBase64', res=>{
-    document.getElementById('idBox').innerHTML = `<div style="font-size:12px;font-weight:600;">Document ajouté</div>`;
-    document.getElementById('idBox').classList.add('done');
-  });
-
-  document.getElementById('addPhoto').addEventListener('click', ()=>document.getElementById('portfolioInput').click());
-  document.getElementById('portfolioInput').addEventListener('change', function(){
-    [...this.files].forEach(f=>{
-      if (portfolio.length >= 5) return;
-      if (f.size > 5*1024*1024){ alert('Cette photo est trop volumineuse.'); return; }
-      const r = new FileReader();
-      r.onload = e => { portfolio.push(e.target.result); renderPortfolio(); };
-      r.readAsDataURL(f);
+    document.getElementById('idBox').addEventListener('click', ()=>document.getElementById('idInput').click());
+    document.getElementById('idInput').addEventListener('change', function(){
+      readFile(this, res=>{
+        document.getElementById('idBase64').value = res;
+        document.getElementById('idBox').innerHTML = `<img src="${res}" alt="piece d'identite"><div>Photo ajoutee</div>`;
+      });
     });
-  });
 
-  function renderPortfolio(){
-    const grid = document.getElementById('portfolioGrid');
-    grid.innerHTML = portfolio.map((p,i)=>`<div class="p"><img src="${p}"></div>`).join('');
-    if (portfolio.length < 5){
-      grid.innerHTML += `<div class="p" id="addPhoto2">${portfolio.length}/5</div>`;
-      document.getElementById('addPhoto2').addEventListener('click', ()=>document.getElementById('portfolioInput').click());
+    function formatPhone(v){
+      const raw = v.replace(/\D/g,'').replace(/^224?/,'').slice(0,9);
+      const p = raw.match(/(\d{0,3})(\d{0,2})(\d{0,2})(\d{0,2})/);
+      return [p[1],p[2],p[3],p[4]].filter(Boolean).join(' ').trim();
     }
-    document.getElementById('portfolioBase64').value = JSON.stringify(portfolio);
-  }
-
-  document.getElementById('expChips').addEventListener('click', e=>{
-    if (!e.target.classList.contains('tech-chip')) return;
-    document.querySelectorAll('#expChips .tech-chip').forEach(c=>c.classList.remove('active'));
-    e.target.classList.add('active');
-    document.getElementById('experience').value = e.target.dataset.v;
-  });
-
-  document.getElementById('rayonChips').addEventListener('click', e=>{
-    if (!e.target.classList.contains('tech-chip')) return;
-    document.querySelectorAll('#rayonChips .tech-chip').forEach(c=>c.classList.remove('active'));
-    e.target.classList.add('active');
-    document.getElementById('rayon').value = e.target.dataset.v;
-  });
-
-  document.getElementById('locBtn').addEventListener('click', function(){
-    if (!navigator.geolocation){ alert('La localisation n\'est pas disponible.'); return; }
-    this.textContent = 'Localisation en cours…';
-    this.disabled = true;
-    navigator.geolocation.getCurrentPosition(pos=>{
-      document.getElementById('address').value = `Position détectée (${pos.coords.latitude.toFixed(2)}, ${pos.coords.longitude.toFixed(2)})`;
-      this.textContent = 'Position utilisée';
-    }, ()=>{
-      this.textContent = 'Utiliser ma position';
-      this.disabled = false;
-      alert('Impossible d\'obtenir votre position. Veuillez vérifier les permissions.');
+    const phoneInput = document.getElementById('phone');
+    ['input','paste','keyup','change'].forEach(evt=>{
+      phoneInput.addEventListener(evt, function(e){
+        if (e.type==='paste'){
+          const txt = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g,'').replace(/^224?/,'').slice(0,9);
+          setTimeout(()=>{ this.value = formatPhone(txt); }, 0);
+          return;
+        }
+        this.value = formatPhone(this.value.replace(/\D/g,''));
+      });
     });
-  });
 
-  document.getElementById('bio').addEventListener('input', e=>{
-    document.getElementById('bioCount').textContent = e.target.value.length;
-  });
-
-  document.getElementById('prevBtn').addEventListener('click', ()=>showStep(current-1));
-  document.getElementById('nextBtn').addEventListener('click', ()=>{
-    if (!validate(current)) return;
-    if (current < 5) showStep(current+1);
-    else submitForm();
-  });
-
-  async function submitForm(){
-    const btn = document.getElementById('nextBtn');
-    btn.textContent = 'Soumission en cours…';
-    btn.disabled = true;
-    const form = document.getElementById('techForm');
-    const fd = new FormData(form);
-    const res = await fetch('{{ url_for('register_artisan') }}', { method:'POST', body: fd });
-    if (res.ok || res.redirected){
-      showStep(6);
-      document.getElementById('techNav').style.display = 'none';
-    } else {
-      alert('Une erreur est survenue. Veuillez réessayer.');
-      btn.textContent = 'Soumettre mon profil';
-      btn.disabled = false;
+    function getLocation(){
+      if (!navigator.geolocation){
+        document.getElementById('address').value = 'Conakry';
+        document.getElementById('lat').value = '9.541';
+        document.getElementById('lon').value = '-13.677';
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(pos=>{
+        document.getElementById('address').value = 'Position detectee';
+        document.getElementById('lat').value = pos.coords.latitude.toFixed(6);
+        document.getElementById('lon').value = pos.coords.longitude.toFixed(6);
+      }, ()=>{
+        document.getElementById('address').value = 'Conakry';
+        document.getElementById('lat').value = '9.541';
+        document.getElementById('lon').value = '-13.677';
+      });
     }
-  }
+    getLocation();
 
-  renderStepper();
+    submitBtn.addEventListener('click', async function(){
+      if (!form.checkValidity()){ form.reportValidity(); return; }
+      if (!document.getElementById('idBase64').value){ alert('Ajoutez une photo de votre piece d\'identite.'); return; }
+      const fd = new FormData(form);
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Envoi en cours...';
+      const res = await fetch('{{ url_for('register_artisan') }}', { method:'POST', body: fd });
+      if (res.ok || res.redirected){
+        window.location.href = '{{ url_for('artisan_pending') }}';
+      } else {
+        alert('Une erreur est survenue. Verifiez vos informations.');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Envoyer ma demande';
+      }
+    });
+  })();
 </script>
 {% endblock %}
