@@ -684,7 +684,7 @@ def register():
 @app.route("/inscription/technicien", methods=["GET", "POST"])
 @limiter.limit("10 per hour", methods=["POST"])
 def register_artisan():
-    """Formulaire d'inscription technicien en 5 etapes."""
+    """Formulaire d'inscription technicien sur une seule page."""
     categories = []
     conn = get_db_connection()
     try:
@@ -808,13 +808,13 @@ def _finalize_artisan_registration(wizard):
     for field in required:
         if not wizard.get(field):
             flash("Certaines informations sont manquantes. Veuillez recommencer.", "error")
-            return redirect(url_for("register_artisan", step=1))
+            return redirect(url_for("register_artisan"))
 
     conn = get_db_connection()
     try:
         if conn.execute("SELECT id FROM users WHERE phone = ?", (wizard["phone"],)).fetchone():
             flash("Ce numero de telephone est deja utilise.", "error")
-            return redirect(url_for("register_artisan", step=1))
+            return redirect(url_for("register_artisan"))
 
         full_name = f"{wizard['civility']} {wizard['first_name']} {wizard['last_name']}".strip()
         # Mot de passe temporaire aleatoire ; l'artisan le recoit par email si SMTP configure.
@@ -854,7 +854,7 @@ def _finalize_artisan_registration(wizard):
     except Exception as exc:  # pragma: no cover - aide au debug en production
         logger.exception("Echec de l'inscription artisan : %s", exc)
         flash("Une erreur est survenue lors de l'inscription. Veuillez reessayer ou contacter le support.", "error")
-        return redirect(url_for("register_artisan", step=1))
+        return redirect(url_for("register_artisan"))
     finally:
         conn.close()
 
