@@ -1,53 +1,77 @@
 {% extends 'base.html' %}
 {% block title %}Techniciens - FixPro{% endblock %}
+{% block main_class %}{% endblock %}
 
 {% block content %}
-<section class="page-head">
-  <h1>Techniciens</h1>
-  <p>{{ artisans|length }} professionnel{{ 's' if artisans|length > 1 }} trouve{{ 's' if artisans|length > 1 }}{% if category %} en {{ category }}{% endif %}.</p>
-</section>
-
-<form method="get" class="search-bar">
-  <div class="search-input">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-    <input type="search" name="q" value="{{ query }}" placeholder="Nom, metier ou ville" />
-  </div>
-  <button class="btn btn-primary" type="submit">Chercher</button>
-</form>
-
-{% if category or zone or query %}
-<div class="filter-row">
-  {% if query %}<span class="chip">{{ query }}</span>{% endif %}
-  {% if category %}<span class="chip">{{ category }}</span>{% endif %}
-  {% if zone %}<span class="chip">{{ zone }}</span>{% endif %}
-  <a class="chip" href="{{ url_for('artisans_page') }}">Reinitialiser</a>
-</div>
-{% endif %}
-
-{% if artisans %}
-<div class="list" style="margin-top: 18px;">
-  {% for artisan in artisans %}
-  <div class="list-item">
-    <span class="avatar">{{ (artisan['nom'] or '?')[0]|upper }}</span>
-    <div class="grow">
-      <div class="list-item-title"><span class="truncate">{{ artisan['nom'] }}</span></div>
-      <div class="list-item-sub">{{ artisan['metier'] or 'Technicien' }} - {{ artisan['city'] or 'Conakry' }}</div>
-      <div class="list-item-sub strong" style="color: var(--text-2);">
-        {{ "{:,}".format((artisan['hourly_rate'] or 0)|int).replace(",", " ") }} GNF / heure
-      </div>
+<div class="fx-screen" style="background:var(--paper);">
+  <div class="fx-top" id="homeTop">
+    <div class="row1">
+      <a class="fx-brand" href="{{ url_for('index') }}">
+        <svg class="seal-svg seal-sm" viewBox="0 0 100 100"><path fill="#1F9D6B" d="M50 2 L58 10 L69 8 L74 18 L85 22 L84 34 L92 42 L86 52 L92 62 L84 70 L85 82 L74 86 L69 96 L58 94 L50 100 L42 94 L31 96 L26 86 L15 82 L16 70 L8 62 L14 52 L8 42 L16 34 L15 22 L26 18 L31 8 L42 10 Z"/><path fill="none" stroke="#F7F4EE" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" d="M34 51 L45 62 L68 38"/></svg>
+        FixPro
+      </a>
+      <a href="{{ url_for('notifications') }}" style="font-size:18px;color:#fff;text-decoration:none;">🔔</a>
     </div>
-    <a class="btn btn-primary btn-sm" href="{{ url_for('artisan_contact', artisan_id=artisan['id']) }}">Contacter</a>
+    <div class="fx-loc">📍 <span id="clientLoc">Conakry</span> — position en direct</div>
+    <div class="fx-chips">
+      <a class="fx-chip {{ 'active' if not category_filter }}" href="{{ url_for('artisans_page') }}">🔧 Tous</a>
+      {% for cat in categories %}
+      <a class="fx-chip {{ 'active' if category_filter == cat }}" href="{{ url_for('artisans_page', category=cat) }}">{{ cat }}</a>
+      {% endfor %}
+    </div>
   </div>
-  {% endfor %}
+
+  <div class="fx-map" id="homeMap">
+    {% for artisan in artisans[:3] %}
+    <svg class="fx-map-pin" style="left:{{ loop.cycle(32,58,75) }}%;top:{{ loop.cycle(60,42,70) }}%" viewBox="0 0 100 100"><path fill="#1F9D6B" d="M50 2 L58 10 L69 8 L74 18 L85 22 L84 34 L92 42 L86 52 L92 62 L84 70 L85 82 L74 86 L69 96 L58 94 L50 100 L42 94 L31 96 L26 86 L15 82 L16 70 L8 62 L14 52 L8 42 L16 34 L15 22 L26 18 L31 8 L42 10 Z"/></svg>
+    {% endfor %}
+  </div>
+
+  <div class="fx-list" id="artisanList">
+    <div class="fx-list-title">Techniciens proches <span class="cnt">{{ artisans|length }} disponible{{ 's' if artisans|length > 1 }}</span></div>
+    {% if artisans %}
+    {% for artisan in artisans %}
+    <a class="fx-card" href="{{ url_for('artisan_detail', artisan_id=artisan.id) }}">
+      <div class="fx-avatar" style="background:{{ artisan.gradient or 'linear-gradient(155deg,#2C4066,#13203B)' }}">
+        {% if artisan.photo_url %}
+        <img src="{{ artisan.photo_url }}" alt="{{ artisan.full_name }}" />
+        {% else %}
+        <span class="initials">{{ (artisan.full_name or '?').split(' ')[:2]|map('first')|join('')|upper }}</span>
+        {% endif %}
+        {% if artisan.is_verified %}
+        <svg class="seal-svg mini-seal" viewBox="0 0 100 100"><path fill="#1F9D6B" d="M50 2 L58 10 L69 8 L74 18 L85 22 L84 34 L92 42 L86 52 L92 62 L84 70 L85 82 L74 86 L69 96 L58 94 L50 100 L42 94 L31 96 L26 86 L15 82 L16 70 L8 62 L14 52 L8 42 L16 34 L15 22 L26 18 L31 8 L42 10 Z"/></svg>
+        {% endif %}
+      </div>
+      <div class="fx-body">
+        <div class="fx-name">{{ artisan.full_name }}</div>
+        <div class="fx-trade">{{ artisan.profession or 'Technicien' }} · {{ artisan.completed or 0 }} interventions</div>
+        <div class="fx-meta">
+          {% if artisan.rating and artisan.rating_count %}
+          <span class="fx-stars">★ {{ "%.1f"|format(artisan.rating) }}</span>
+          {% endif %}
+          {% if artisan.distance is not none %}
+          <span class="fx-dist">{{ "%.1f"|format(artisan.distance) }} km</span>
+          {% endif %}
+          {% if artisan.availability_status == 'en_ligne' %}
+          <span class="fx-dot-live"></span>
+          {% endif %}
+        </div>
+      </div>
+    </a>
+    {% endfor %}
+    {% else %}
+    <div class="fx-empty">
+      Aucun technicien trouvé dans ce secteur.
+    </div>
+    {% endif %}
+  </div>
+
+  <nav class="fx-tabbar">
+    <a class="fx-tab active" href="{{ url_for('artisans_page') }}"><div class="fx-tab-ic"></div>Accueil</a>
+    <a class="fx-tab" href="{{ url_for('requests_list') }}"><div class="fx-tab-ic"></div>Historique</a>
+    <a class="fx-tab" href="{{ url_for('conversations') }}"><div class="fx-tab-ic"></div>Messages</a>
+    <a class="fx-tab" href="{{ url_for('profile') }}"><div class="fx-tab-ic"></div>Profil</a>
+  </nav>
 </div>
-{% else %}
-<div class="empty" style="margin-top: 18px;">
-  <span class="empty-icon">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-  </span>
-  <h3>Aucun technicien trouve</h3>
-  <p>Essayez un autre metier ou une autre ville.</p>
-  <a class="btn btn-soft" href="{{ url_for('artisans_page') }}">Voir tous les techniciens</a>
-</div>
-{% endif %}
+
 {% endblock %}

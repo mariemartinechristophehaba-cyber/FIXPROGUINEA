@@ -1,372 +1,132 @@
-{% from '_category_colors.html' import category_colors, default_category_color, default_avatar_gradient %}
-{% set cat_color = category_colors.get(artisan.profession, default_category_color) %}
-{% set status_colors = {
-  'en_ligne': ('#3ddc84', 'Disponible'),
-  'occupe': ('#f7c873', 'Occupe'),
-  'hors_ligne': ('#8A94A9', 'Hors ligne')
-} %}
-{% set status = status_colors.get(artisan.availability_status or 'hors_ligne', status_colors['hors_ligne']) %}
 {% extends 'base.html' %}
 {% block title %}{{ artisan.full_name }} - FixPro{% endblock %}
-{% block page_title %}Profil{% endblock %}
-
-{% block extra_head %}
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-{% endblock %}
 
 {% block content %}
-
-<a class="btn btn-soft btn-sm" href="{{ url_for('artisans_page') }}" style="margin-bottom: 14px;">
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-  Retour
-</a>
-
-<div class="profile-card" style="--cat-color: {{ cat_color }};">
-  <div class="profile-header" style="align-items: flex-start;">
-    <div class="profile-avatar-wrap" style="width: 64px; height: 64px; flex-shrink: 0;">
-      {% if artisan.photo_url %}
-      <img class="profile-avatar" src="{{ artisan.photo_url }}" alt="{{ artisan.full_name }}" style="width: 64px; height: 64px; background: {{ default_avatar_gradient }};" />
-      {% else %}
-      <div class="profile-avatar" style="width: 64px; height: 64px; background: {{ default_avatar_gradient }}; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.7rem; line-height: 1.1;">
-        <span style="font-size: 1.4rem; margin-bottom: 2px;">+</span>
-      </div>
-      {% endif %}
-      {% if artisan.is_verified %}
-      <span class="profile-verified" title="Profil verifie">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-      </span>
-      {% endif %}
+<div class="fx-screen">
+  <div class="fx-hero">
+    <div class="fx-back-row">
+      <a href="{{ url_for('artisans_page') }}">← Retour</a>
+      <span>⋯</span>
     </div>
-
-    <div class="profile-header-info" style="margin-left: 16px;">
-      <h1>{{ artisan.full_name }}</h1>
-      <p class="profile-metier" style="color: {{ cat_color }};">{{ artisan.profession or 'Technicien' }}</p>
-      <div class="profile-rating" style="display: flex; align-items: center; gap: 8px; margin: 4px 0 8px; font-size: 0.95rem;">
-        {% if review_stats.count %}
-          <span style="color: #f5a623;">&#9733; {{ "%.1f"|format(review_stats.avg_rating|float) }}</span>
-          <span class="muted">({{ review_stats.count }} avis)</span>
+    <div class="fx-p-wrap">
+      <div class="fx-p-avatar" style="background:{{ artisan.gradient or 'linear-gradient(155deg,#3A5580,#132038)' }}">
+        {% if artisan.photo_url %}
+        <img src="{{ artisan.photo_url }}" alt="{{ artisan.full_name }}" />
         {% else %}
-          <span class="muted">Pas encore d'avis</span>
+        <span class="initials">{{ (artisan.full_name or '?').split(' ')[:2]|map('first')|join('')|upper }}</span>
         {% endif %}
-      </div>
-      <div class="profile-badges" style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px;">
-        <span class="chip" style="background: {{ status[0] }}20; color: {{ status[0] }};">{{ status[1] }}</span>
         {% if artisan.is_verified %}
-          <span class="chip" style="background: rgba(61, 220, 132, 0.12); color: #3ddc84;">Profil verifie</span>
+        <svg class="seal-svg mini-seal" viewBox="0 0 100 100"><path fill="#1F9D6B" d="M50 2 L58 10 L69 8 L74 18 L85 22 L84 34 L92 42 L86 52 L92 62 L84 70 L85 82 L74 86 L69 96 L58 94 L50 100 L42 94 L31 96 L26 86 L15 82 L16 70 L8 62 L14 52 L8 42 L16 34 L15 22 L26 18 L31 8 L42 10 Z"/></svg>
         {% endif %}
       </div>
+      <div>
+        <div class="fx-p-name">{{ artisan.full_name }}</div>
+        <div class="fx-p-trade">{{ artisan.profession or 'Technicien' }} · {{ artisan.quartier or artisan.city or 'Conakry' }}</div>
+      </div>
+    </div>
+    <div class="fx-p-stats">
+      <div class="fx-p-stat"><b>★ {{ "%.1f"|format(review_stats.avg_rating|float) }}</b><span>{{ review_stats.count }} avis</span></div>
+      <div class="fx-p-stat"><b>{{ completed }}</b><span>interventions</span></div>
+      <div class="fx-p-stat"><b>{{ "%.1f"|format(distance) if distance is not none else '—' }}</b><span>distance</span></div>
     </div>
   </div>
 
-  <div class="profile-zone" style="margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; color: var(--text-2); font-size: 0.9rem;">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-    <span>{{ artisan.quartier or artisan.city or 'Conakry' }}</span>
-    {% if distance is not none %}
-    <span class="profile-distance" id="distanceLabel">(~ {{ "%.1f"|format(distance) }} km)</span>
-    {% endif %}
-    <span class="muted" style="margin-left: auto;">Membre depuis {{ (artisan.created_at|string)[:7] }}</span>
+  <div class="fx-p-body">
+    <div class="fx-p-card">
+      <h4>🟢 Disponible maintenant</h4>
+      <p>Intervient généralement sous 30 à 45 minutes dans sa zone.</p>
+    </div>
+    <div class="fx-p-card">
+      <h4>A propos</h4>
+      <p>{{ artisan.bio or 'Aucune presentation pour le moment.' }}</p>
+      <div class="fx-p-tags">
+        {% for skill in (artisan.skills or '').split(',') %}
+        {% if skill.strip() %}<span class="fx-p-tag">{{ skill.strip() }}</span>{% endif %}
+        {% endfor %}
+      </div>
+    </div>
+    <div class="fx-p-card">
+      <h4>Zone d'intervention</h4>
+      <div class="fx-p-zone"><div class="fx-p-radius"></div></div>
+      <p>{{ artisan.quartier or artisan.city or 'Conakry' }} et environs — adresse exacte partagee apres confirmation.</p>
+    </div>
+    <div class="fx-p-card">
+      <h4>Avis apres intervention</h4>
+      {% if reviews %}
+      {% for review in reviews[:3] %}
+      <div class="fx-review">
+        <div class="fx-review-head"><span>{{ review.client_name }}</span><span class="fx-stars">{{ '★' * review.rating }}{{ '☆' * (5-review.rating) }}</span></div>
+        <div class="fx-review-text">{{ review.comment or 'Aucun commentaire' }}</div>
+      </div>
+      {% endfor %}
+      {% else %}
+      <p>Soyez le premier a laisser un avis apres une intervention.</p>
+      {% endif %}
+    </div>
   </div>
 
-  <div class="profile-sep"></div>
-
-  <div class="profile-stats" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
-    <div class="card" style="padding: 14px; border: 1px solid rgba(255,255,255,0.07); border-radius: 12px;">
-      <span style="font-size: 0.8rem; color: var(--muted); display: block;">Tarif indicatif</span>
-      <b style="font-size: 1.1rem; color: var(--text);">{{ "{:,}".format((artisan.hourly_rate or 0)|int).replace(",", " ") }} GNF/h</b>
-    </div>
-    <div class="card" style="padding: 14px; border: 1px solid rgba(255,255,255,0.07); border-radius: 12px;">
-      <span style="font-size: 0.8rem; color: var(--muted); display: block;">Interventions realisees</span>
-      <b style="font-size: 1.1rem; color: var(--text);">{{ completed }}</b>
-    </div>
-  </div>
-
-  <div class="profile-actions" style="display: flex; gap: 10px; align-items: stretch;">
+  <div class="fx-dock" style="position:fixed;">
     {% if user %}
-    <button class="btn btn-primary btn-block" type="button" id="btnRequest" onclick="toggleRequest()" style="flex: 1;">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 18px; height: 18px;"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M9 14h6M9 17h4"/></svg>
-      Demander une intervention
-    </button>
-    {% else %}
-    <a class="btn btn-primary btn-block" href="{{ url_for('login', next=url_for('artisan_detail', artisan_id=artisan.id, action='request')) }}" style="flex: 1;">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 18px; height: 18px;"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M9 14h6M9 17h4"/></svg>
-      Demander une intervention
-    </a>
-    {% endif %}
-    {% if user %}
-    <form class="profile-action-form" method="post" action="{{ url_for('ticket_new') }}" style="margin: 0;">
+    <form class="profile-action-form" method="post" action="{{ url_for('ticket_new') }}" style="margin:0;flex:1;display:flex;">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
       <input type="hidden" name="artisan_id" value="{{ artisan.id }}" />
-      <button class="btn btn-soft" type="submit" style="width: 44px; height: 100%; padding: 0; display: flex; align-items: center; justify-content: center;">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 21l1.9-5.1A8.4 8.4 0 0 1 4 11.5a8.5 8.5 0 0 1 8.5-8.5A8.5 8.5 0 0 1 21 11.5z"/></svg>
-      </button>
+      <button class="fx-dock-btn ghost" type="submit" style="width:100%;">Contacter FixPro</button>
     </form>
     {% else %}
-    <a class="btn btn-soft" href="{{ url_for('login') }}" style="width: 44px; height: auto; padding: 0; display: flex; align-items: center; justify-content: center;">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M13.8 12H3"/></svg>
-    </a>
+    <a class="fx-dock-btn ghost" href="{{ url_for('login') }}">Contacter FixPro</a>
+    {% endif %}
+
+    {% if user %}
+    <button class="fx-dock-btn primary" type="button" onclick="toggleRequest()">Demander une intervention</button>
+    {% else %}
+    <a class="fx-dock-btn primary" href="{{ url_for('login', next=url_for('artisan_detail', artisan_id=artisan.id, action='request')) }}">Demander une intervention</a>
     {% endif %}
   </div>
 
   {% if user %}
-  <div class="profile-section hidden" id="requestPanel">
-    <div class="profile-sep"></div>
-    <h3>Demander une intervention</h3>
-    <form method="post" class="profile-form" id="requestForm">
+  <div id="requestPanel" style="display:none;position:fixed;inset:0;background:var(--paper);z-index:60;overflow-y:auto;">
+    <div class="fx-form-top" style="position:sticky;top:0;z-index:5;">
+      <div class="fx-back-row" style="margin-bottom:10px;"><a href="javascript:toggleRequest()">← Retour au profil</a></div>
+      <h3>Demander une intervention</h3>
+      <p>{{ artisan.full_name }} · {{ artisan.profession or 'Technicien' }}</p>
+    </div>
+    <form method="post" class="fx-form-body" id="requestForm" style="padding-bottom:120px;">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
       <input type="hidden" name="action" value="request" />
-      <label class="field">
-        <span>Service recherche</span>
-        <input type="text" name="title" required placeholder="Fuite d'eau sous l'evier" />
-      </label>
-      <label class="field">
-        <span>Description du probleme</span>
-        <textarea name="description" required minlength="10" placeholder="Expliquez le probleme en detail."></textarea>
-      </label>
-      <label class="field">
-        <span>Urgence</span>
-        <div class="urgency-options" style="display: flex; gap: 8px; flex-wrap: wrap;">
-          <label class="chip" style="cursor: pointer;">
-            <input type="radio" name="urgency" value="urgent" style="display: none;" required /> Aujourd'hui
-          </label>
-          <label class="chip" style="cursor: pointer;">
-            <input type="radio" name="urgency" value="cette_semaine" style="display: none;" checked /> Cette semaine
-          </label>
-          <label class="chip" style="cursor: pointer;">
-            <input type="radio" name="urgency" value="pas_presse" style="display: none;" /> Pas presse
-          </label>
-        </div>
-      </label>
-      <div class="field-2">
-        <label class="field">
-          <span>Localisation</span>
-          <input type="text" name="address" value="{{ user.quartier or user.city or '' }}" placeholder="Kaloum, Conakry" />
-        </label>
-        <label class="field">
-          <span>Telephone de contact</span>
-          <input type="tel" name="phone_contact" value="{{ user.phone or '' }}" required placeholder="+224 620 00 00 00" />
-        </label>
+      <div class="fx-fg">
+        <div class="fx-fl">📍 Votre position</div>
+        <input class="fx-fb filled" type="text" name="address" value="{{ user.quartier or user.city or '' }}" required />
       </div>
-      <label class="field">
-        <span>Date/heure souhaitee</span>
-        <input type="text" name="date_time" placeholder="Demain a 14h" />
-      </label>
-      <button class="btn btn-primary btn-block" type="submit">Envoyer la demande</button>
+      <div class="fx-fg">
+        <div class="fx-fl">Decrivez le probleme</div>
+        <textarea class="fx-fb" name="description" required minlength="10" placeholder="Expliquez le probleme en detail."></textarea>
+      </div>
+      <div class="fx-fg">
+        <div class="fx-fl">Urgence</div>
+        <div class="fx-urg-row">
+          <label class="fx-urg active"><input type="radio" name="urgency" value="normal" checked />Normal</label>
+          <label class="fx-urg"><input type="radio" name="urgency" value="urgent" />Urgent</label>
+        </div>
+      </div>
+      <div class="fx-fg">
+        <div class="fx-fl">Photo (optionnel)</div>
+        <div class="fx-photo-box">📷 Ajouter une photo</div>
+      </div>
+      <button class="fx-dock-btn primary" type="submit" style="width:100%;margin-top:10px;">Confirmer la demande</button>
     </form>
   </div>
   {% endif %}
-
-  <div class="profile-sep"></div>
-
-  <div class="profile-section">
-    <h3>A propos</h3>
-    {% if artisan.bio %}
-      <p class="profile-bio">{{ artisan.bio }}</p>
-    {% else %}
-      <p class="profile-bio" style="font-style: italic; opacity: 0.7;">Aucune presentation pour le moment. Demandez-lui directement ce qu'il peut faire pour vous.</p>
-    {% endif %}
-    {% if artisan.skills %}
-    <div class="detail-tags">
-      {% for skill in artisan.skills.split(',') %}
-      <span class="chip">{{ skill.strip() }}</span>
-      {% endfor %}
-    </div>
-    {% endif %}
-    {% if artisan.hourly_rate and artisan.hourly_rate > 0 %}
-    <div class="profile-tarif" style="margin-top: 12px; padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.07);">
-      <span style="color: var(--muted); font-size: 0.8rem;">Tarif indicatif</span>
-      <b style="display: block; font-size: 1.1rem; margin-top: 2px;">{{ "%.0f"|format(artisan.hourly_rate) }} GNF / heure</b>
-    </div>
-    {% endif %}
-  </div>
-
-  <div class="profile-sep"></div>
-
-  <div class="profile-section">
-    <h3>Informations professionnelles</h3>
-    <ul class="profile-infos">
-      <li><span>Metier</span><b>{{ artisan.profession or 'Technicien' }}</b></li>
-      <li><span>Zone</span><b>{{ artisan.quartier or artisan.city or 'Conakry' }}</b></li>
-      <li><span>Mobilite</span><b>{{ artisan.mobility or 'Conakry et environs' }}</b></li>
-      <li><span>Assurance</span><b>{{ artisan.insurance or 'Non renseignee' }}</b></li>
-    </ul>
-  </div>
-
-  <div class="profile-sep"></div>
-
-  <div class="profile-section">
-    <h3>Realisations</h3>
-    {% if portfolio %}
-    <div class="portfolio-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
-      {% for photo in portfolio %}
-      <div class="portfolio-item" style="border-radius: 12px; overflow: hidden; aspect-ratio: 4/3;">
-        <img src="{{ photo.photo_url }}" alt="{{ photo.caption or artisan.full_name }}" style="width: 100%; height: 100%; object-fit: cover;" />
-      </div>
-      {% endfor %}
-    </div>
-    {% else %}
-    <p style="opacity: 0.7; font-style: italic;">Cet artisan n'a pas encore ajoute de photos de ses realisations.</p>
-    {% endif %}
-  </div>
-
-  <div class="profile-sep"></div>
-
-  <div class="profile-section" id="mapSection" style="display: none;">
-    <h3>Position en temps reel</h3>
-    <div id="artisanMap" style="height: 280px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.07); background: #0d1526;"></div>
-    <p class="small muted" id="mapUpdated" style="margin-top: 8px;"></p>
-  </div>
-
-  <div class="profile-sep" id="mapSep" style="display: none;"></div>
-
-  <div class="profile-footer">
-    <span><b>{{ completed }}</b> intervention{{ 's' if completed > 1 }}</span>
-    <span class="dot"></span>
-    <span><b>{{ review_stats.count }}</b> avis</span>
-    <span class="dot"></span>
-    <span>
-      {% if review_stats.count %}
-      <b>{{ "%.1f"|format(review_stats.avg_rating|float) }}</b>/5
-      {% else %}
-      Aucun avis
-      {% endif %}
-    </span>
-    <span class="dot"></span>
-    <span>Membre depuis <b>{{ (artisan.created_at|string)[:10] }}</b></span>
-  </div>
-
-  <div class="profile-sep"></div>
-  <div class="profile-section">
-    <h3>Avis clients</h3>
-    {% if reviews %}
-    <div class="profile-reviews">
-      {% for review in reviews[:3] %}
-      <div class="profile-review">
-        <div class="review-head">
-          <span class="review-name">{{ review.client_name }}</span>
-          <span class="review-stars">{{ review.rating }}/5</span>
-        </div>
-        <p>{{ review.comment or 'Aucun commentaire' }}</p>
-        <div class="review-date">{{ (review.created_at|string)[:10] }}</div>
-      </div>
-      {% endfor %}
-    </div>
-    {% else %}
-    <p style="opacity: 0.7; font-style: italic;">Soyez le premier a laisser un avis apres une intervention.</p>
-    {% endif %}
-  </div>
-
-{% if user and user.role == 'client' %}
-<div class="chat-fab">
-  {% if ticket_id %}
-  <a class="chat-fab-btn" href="{{ url_for('ticket_detail', ticket_id=ticket_id) }}" aria-label="Ouvrir la conversation">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 21l1.9-5.1A8.4 8.4 0 0 1 4 11.5a8.5 8.5 0 0 1 8.5-8.5A8.5 8.5 0 0 1 21 11.5z"/></svg>
-    <span class="chat-fab-pulse"></span>
-  </a>
-  {% else %}
-  <form class="chat-fab-form" method="post" action="{{ url_for('ticket_new') }}">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-    <input type="hidden" name="artisan_id" value="{{ artisan.id }}" />
-    <button class="chat-fab-btn" type="submit" aria-label="Contacter ce technicien">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 21l1.9-5.1A8.4 8.4 0 0 1 4 11.5a8.5 8.5 0 0 1 8.5-8.5A8.5 8.5 0 0 1 21 11.5z"/></svg>
-      <span class="chat-fab-pulse"></span>
-    </button>
-  </form>
-  {% endif %}
-</div>
-{% endif %}
-
 </div>
 
-{% block scripts %}
 <script>
-  function toggleRequest() {
-    document.getElementById('requestPanel').classList.toggle('hidden');
+  function toggleRequest(){
+    const p = document.getElementById('requestPanel');
+    p.style.display = p.style.display === 'none' ? 'block' : 'none';
   }
-
-  document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('DOMContentLoaded', function(){
     if (window.location.search.indexOf('action=request') !== -1) {
       toggleRequest();
     }
   });
-
-  function askLocation() {
-    if (!navigator.geolocation) return;
-    navigator.geolocation.getCurrentPosition(
-      function(pos) {
-        fetch("{{ url_for('artisan_location', artisan_id=artisan.id) }}", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-CSRFToken": "{{ csrf_token() }}"
-          },
-          body: JSON.stringify({lat: pos.coords.latitude, lon: pos.coords.longitude})
-        }).then(r => r.json()).then(data => {
-          if (data.ok) window.location.reload();
-        }).catch(() => {});
-      },
-      function() {}
-    );
-  }
-  document.addEventListener("DOMContentLoaded", askLocation);
 </script>
-
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-<script>
-(function () {
-  const artisanId = {{ artisan.id }};
-  const status = '{{ artisan.availability_status or 'hors_ligne' }}';
-  const mapSection = document.getElementById('mapSection');
-  const mapSep = document.getElementById('mapSep');
-
-  if (status !== 'en_ligne') return;
-
-  let map = null;
-  let marker = null;
-
-  function initMap(lat, lon) {
-    if (!map) {
-      map = L.map('artisanMap').setView([lat, lon], 15);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '&copy; OpenStreetMap'
-      }).addTo(map);
-    } else {
-      map.setView([lat, lon], 15);
-    }
-    if (marker) map.removeLayer(marker);
-    const icon = L.divIcon({
-      className: 'artisan-marker',
-      html: '<span class="artisan-marker-dot"></span>',
-      iconSize: [20, 20],
-      iconAnchor: [10, 10]
-    });
-    marker = L.marker([lat, lon], {icon: icon}).addTo(map)
-      .bindPopup('Position actuelle').openPopup();
-  }
-
-  function loadPosition() {
-    fetch('{{ url_for("api_technicien_position_read", technician_id=artisan.id) }}')
-      .then(r => {
-        if (!r.ok) throw new Error('perimee');
-        return r.json();
-      })
-      .then(data => {
-        mapSection.style.display = 'block';
-        mapSep.style.display = 'block';
-        initMap(data.latitude, data.longitude);
-        document.getElementById('mapUpdated').textContent =
-          'Mise a jour : ' + new Date(data.updated_at).toLocaleTimeString('fr-FR');
-      })
-      .catch(() => {
-        mapSection.style.display = 'none';
-        mapSep.style.display = 'none';
-      });
-  }
-
-  loadPosition();
-  setInterval(loadPosition, 12000);
-})();
-</script>
-{% endblock %}
-
 {% endblock %}

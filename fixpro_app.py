@@ -1842,6 +1842,66 @@ def _to_int(value, default=0):
         return default
 
 
+import math
+
+
+def _haversine(lat1, lon1, lat2, lon2):
+    R = 6371
+    phi1 = math.radians(lat1)
+    phi2 = math.radians(lat2)
+    dphi = math.radians(lat2 - lat1)
+    dlambda = math.radians(lon2 - lon1)
+    a = (math.sin(dphi / 2) ** 2 +
+         math.cos(phi1) * math.cos(phi2) * math.sin(dlambda / 2) ** 2)
+    return 2 * R * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+
+def _enrich_artisan(row, client_lat, client_lon):
+    artisan = dict(row)
+    artisan["full_name"] = artisan.get("nom") or artisan.get("full_name", "")
+    artisan["profession"] = artisan.get("metier") or artisan.get("profession", "Technicien")
+    artisan["gradient"] = _avatar_gradient(artisan["full_name"])
+    artisan_lat = _to_float(artisan.get("latitude"))
+    artisan_lon = _to_float(artisan.get("longitude"))
+    artisan["distance"] = _haversine(client_lat, client_lon, artisan_lat, artisan_lon) if client_lat and artisan_lat else None
+    artisan["completed"] = _completed_count(artisan["id"])
+    artisan["rating"] = _artisan_rating(artisan["id"])
+    return artisan
+
+
+def _completed_count(artisan_id):
+    conn = get_db_connection()
+    try:
+        r = conn.execute(
+            "SELECT COUNT(*) AS n FROM requests WHERE artisan_id = ? AND status = 'completed'",
+            (artisan_id,)).fetchone()
+        return r["n"] if r else 0
+    finally:
+        conn.close()
+
+
+def _artisan_rating(artisan_id):
+    conn = get_db_connection()
+    try:
+        r = conn.execute(
+            "SELECT AVG(rating) AS avg, COUNT(*) AS n FROM reviews WHERE artisan_id = ?",
+            (artisan_id,)).fetchone()
+        if r and r["n"]:
+            return round(r["avg"], 1)
+        return None
+    finally:
+        conn.close()
+
+
+def _avatar_gradient(full_name):
+    h = sum(ord(c) for c in (full_name or "")) % 3
+    return [
+        "linear-gradient(155deg,#2C4066,#13203B)",
+        "linear-gradient(155deg,#3F7A5A,#164430)",
+        "linear-gradient(155deg,#8A5A0B,#4A3103)",
+    ][h]
+
+
 @app.route("/artisans")
 def artisans_page():
     user = get_current_user()
@@ -1851,8 +1911,9 @@ def artisans_page():
 
     sql = (
         "SELECT id, full_name AS nom, profession AS metier, city,"
-        " hourly_rate, latitude, longitude FROM users"
-        " WHERE role = 'artisan'")
+        " hourly_rate, latitude, longitude, photo_url, is_verified,"
+        " availability_status"
+        " FROM users WHERE role = 'artisan'")
     params = []
 
     if query:
@@ -1871,21 +1932,34 @@ def artisans_page():
 
     sql += " ORDER BY full_name"
 
+    client_lat = _to_float(user.get("latitude")) if user else None
+    client_lon = _to_float(user.get("longitude")) if user else None
+
     conn = get_db_connection()
     try:
-        artisans = conn.execute(sql, params).fetchall()
+        rows = conn.execute(sql, params).fetchall()
+        artisans = [_enrich_artisan(row, client_lat, client_lon) for row in rows]
         active_requests = {}
         if user and user["role"] == "client":
-            rows = conn.execute(
+            rows_req = conn.execute(
                 "SELECT id, artisan_id FROM requests WHERE client_id = ?"
                 " AND artisan_id IS NOT NULL AND status != 'pending'"
                 " ORDER BY updated_at DESC", (user["id"],)).fetchall()
-            active_requests = {r["artisan_id"]: r["id"] for r in rows}
+            active_requests = {r["artisan_id"]: r["id"] for r in rows_req}
+        categories = [c["profession"] for c in conn.execute(
+            "SELECT DISTINCT profession FROM users WHERE role = 'artisan' AND profession IS NOT NULL AND profession != '' ORDER BY profession").fetchall()]
     finally:
         conn.close()
+
+    if request.args.get("lat") and request.args.get("lon"):
+        client_lat = _to_float(request.args.get("lat"))
+        client_lon = _to_float(request.args.get("lon"))
+        artisans = [_enrich_artisan({**a, "latitude": a.get("latitude"), "longitude": a.get("longitude")}, client_lat, client_lon) for a in artisans]
+
     return render_template("artisans.html", artisans=artisans, user=user,
-                           active_requests=active_requests,
-                           query=query, category=category, zone=zone)
+                           active_requests=active_requests, categories=categories,
+                           category_filter=category,
+                           query=query, zone=zone)
 
 
 @app.route("/artisans/<int:artisan_id>/contact")
@@ -1933,6 +2007,9 @@ def artisan_detail(artisan_id):
         if not artisan:
             flash("Technicien introuvable.", "error")
             return redirect(url_for("artisans_page"))
+
+        artisan = dict(artisan)
+        artisan["gradient"] = _avatar_gradient(artisan["full_name"])
 
         # Avis
         reviews = conn.execute(
