@@ -277,8 +277,11 @@ def get_current_user():
         return None
     conn = get_db_connection()
     try:
-        return conn.execute(
-            "SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+        user = conn.execute(
+            "SELECT * FROM users WHERE id = ? AND is_active = 1", (user_id,)).fetchone()
+        if not user:
+            session.pop("user_id", None)
+        return user
     finally:
         conn.close()
 
