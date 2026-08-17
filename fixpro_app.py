@@ -544,16 +544,10 @@ def register():
 
 
 @app.route("/register/artisan", methods=["GET", "POST"])
-@app.route("/register/artisan/<int:step>", methods=["GET", "POST"])
 @app.route("/inscription/technicien", methods=["GET", "POST"])
-@app.route("/inscription/technicien/<int:step>", methods=["GET", "POST"])
 @limiter.limit("10 per hour", methods=["POST"])
-def register_artisan(step=1):
-    """Parcours d'inscription professionnel en 5 etapes."""
-    if step < 1 or step > 5:
-        return redirect(url_for("register_artisan", step=1))
-
-    wizard = session.setdefault("artisan_wizard", {})
+def register_artisan():
+    """Formulaire simple d'inscription technicien."""
     categories = []
     conn = get_db_connection()
     try:
@@ -563,69 +557,49 @@ def register_artisan(step=1):
         conn.close()
 
     if request.method == "POST":
-        action = request.form.get("wizard_action", "next")
+        full_name = request.form.get("full_name", "").strip()
+        profession = request.form.get("profession", "").strip()
+        phone = _phone_with_prefix(request.form.get("phone", "").strip())
+        address = request.form.get("address", "").strip()
+        identity_doc = request.form.get("identity_doc", "").strip()
 
-        if step == 1:
-            wizard["civility"] = request.form.get("civility", "").strip()
-            wizard["first_name"] = request.form.get("first_name", "").strip()
-            wizard["last_name"] = request.form.get("last_name", "").strip()
-            wizard["phone"] = _phone_with_prefix(request.form.get("phone", "").strip())
-            wizard["email"] = request.form.get("email", "").strip().lower()
-            wizard["identity_doc_type"] = request.form.get("identity_doc_type", "").strip()
-            wizard["identity_doc"] = request.form.get("identity_doc", "").strip()
-            wizard["identity_doc_name"] = request.form.get("identity_doc_name", "").strip()
+        if not full_name or not profession or not phone or not address or not identity_doc:
+            flash("Veuillez remplir tous les champs et ajouter la pièce d'identité.", "error")
+            return redirect(url_for("register_artisan"))
 
-            if not all([wizard["first_name"], wizard["last_name"], wizard["phone"],
-                        wizard["email"], wizard["identity_doc_type"], wizard["identity_doc"]]):
-                flash("Veuillez remplir tous les champs et ajouter la piece d'identite.", "error")
-                return redirect(url_for("register_artisan", step=1))
-            try:
-                validate_email(wizard["email"], check_deliverability=False)
-            except EmailNotValidError:
-                flash("Format d'email invalide.", "error")
-                return redirect(url_for("register_artisan", step=1))
+        conn = get_db_connection()
+        try:
+            if conn.execute("SELECT id FROM users WHERE phone = ?", (phone,)).fetchone():
+                flash("Ce numéro de téléphone est déjà utilisé.", "error")
+                return redirect(url_for("register_artisan"))
 
-        elif step == 2:
-            wizard["profession"] = request.form.get("profession", "").strip()
-            wizard["skills"] = ", ".join(request.form.getlist("skills"))
-            wizard["years_experience"] = _to_int(request.form.get("years_experience", "0"))
-            wizard["bio"] = request.form.get("bio", "").strip()
+            temp_password = secrets.token_urlsafe(12)
+            lat, lon = _geocode_zone(address, "")
+            conn.execute(
+                "INSERT INTO users (phone, password_hash, role, full_name, profession,"
+                " city, latitude, longitude, is_verified, is_active)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (phone, generate_password_hash(temp_password), "artisan",
+                 full_name, profession, address, lat, lon, 0, 1))
+            conn.commit()
 
-            if not wizard["profession"]:
-                flash("Veuillez choisir un metier.", "error")
-                return redirect(url_for("register_artisan", step=2))
+            artisan = conn.execute(
+                "SELECT id FROM users WHERE phone = ?", (phone,)).fetchone()
+            mime, ext, encoded = _parse_base64_file(identity_doc)
+            if encoded:
+                conn.execute(
+                    "INSERT INTO technician_documents (technician_id, document_type,"
+                    " file_name, mime_type, content_base64)"
+                    " VALUES (?, ?, ?, ?, ?)",
+                    (artisan["id"], "identity", f"identite{ext}", mime, encoded))
+                conn.commit()
+        finally:
+            conn.close()
 
-        elif step == 3:
-            wizard["city"] = request.form.get("city", "").strip()
-            wizard["quartier"] = request.form.get("quartier", "").strip()
-            wizard["zone_intervention"] = request.form.get("zone_intervention", "").strip()
-            wizard["mobility"] = request.form.get("mobility", "").strip()
+        flash("Votre demande d'inscription a bien été reçue. L'équipe FixPro va vérifier vos informations.", "success")
+        return redirect(url_for("artisan_pending"))
 
-            if not all([wizard["city"], wizard["quartier"], wizard["zone_intervention"]]):
-                flash("Veuillez remplir la localisation et la zone d'intervention.", "error")
-                return redirect(url_for("register_artisan", step=3))
-
-        elif step == 4:
-            wizard["diploma_doc"] = request.form.get("diploma_doc", "").strip()
-            wizard["diploma_doc_name"] = request.form.get("diploma_doc_name", "").strip()
-
-            if not wizard["diploma_doc"]:
-                flash("Veuillez ajouter votre diplome ou attestation professionnelle.", "error")
-                return redirect(url_for("register_artisan", step=4))
-
-        elif step == 5 and action == "submit":
-            return _finalize_artisan_registration(wizard)
-
-        session["artisan_wizard"] = wizard
-
-        if action == "prev" and step > 1:
-            return redirect(url_for("register_artisan", step=step - 1))
-        if step < 5:
-            return redirect(url_for("register_artisan", step=step + 1))
-        return redirect(url_for("register_artisan", step=step))
-
-    return render_template("register_artisan.html", step=step, wizard=wizard,
-                           categories=categories, total_steps=5)
+    return render_template("register_artisan.html", categories=categories)
 
 
 def _send_admin_notification(subject, body):

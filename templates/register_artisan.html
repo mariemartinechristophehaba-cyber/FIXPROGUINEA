@@ -1,302 +1,127 @@
 {% extends 'base.html' %}
 {% block title %}Devenir technicien - FixPro{% endblock %}
-{% block main_class %}page page-narrow{% endblock %}
 
 {% block content %}
-<section class="wizard-head">
-  <h1>Devenir technicien FixPro</h1>
-  <p class="small muted">Inscription gratuite. Validation sous 48 heures.</p>
+<style>
+  .artisan-wrap { min-height:100vh; display:flex; flex-direction:column; background:var(--paper); }
+  .artisan-top { background:var(--ink); color:#fff; padding:22px 20px 28px; position:sticky; top:0; z-index:5; }
+  .artisan-top a { color:#DCE3F0; text-decoration:none; font-size:14px; }
+  .artisan-top h3 { margin:10px 0 4px; font-family:var(--font-display); font-size:22px; }
+  .artisan-top p { margin:0; color:#9FB0CC; font-size:12.5px; }
+  .artisan-form { padding:22px 20px 100px; max-width:600px; margin:0 auto; width:100%; box-sizing:border-box; }
+  .artisan-fg { margin-bottom:18px; }
+  .artisan-fl { font-size:11.5px; color:var(--slate); text-transform:uppercase; letter-spacing:0.3px; margin-bottom:6px; }
+  .artisan-fb { width:100%; border:1px solid var(--line); border-radius:12px; padding:12px 14px; font-size:14px; background:var(--paper-2); color:var(--ink); box-sizing:border-box; font-family:var(--font-body); }
+  .artisan-fb:focus { outline:none; border-color:var(--amber); }
+  .artisan-photo { width:96px; height:96px; border-radius:50%; border:2px dashed var(--line); display:flex; flex-direction:column; align-items:center; justify-content:center; margin:0 auto 24px; color:var(--slate); cursor:pointer; background:var(--paper-2); font-size:11px; }
+  .artisan-photo svg { margin-bottom:6px; }
+  .artisan-phone { display:flex; gap:8px; }
+  .artisan-phone .prefix { flex:0 0 auto; display:flex; align-items:center; padding:0 14px; background:var(--paper); border:1px solid var(--line); border-radius:12px; font-size:13px; color:var(--slate); }
+  .artisan-upload { width:100%; border:1px dashed var(--line); border-radius:12px; padding:18px; text-align:center; color:var(--slate); cursor:pointer; background:var(--paper-2); font-size:13px; }
+  .artisan-info { background:#DCEFE5; color:#166846; border-radius:12px; padding:14px; display:flex; gap:10px; align-items:flex-start; font-size:12.5px; line-height:1.5; }
+  .artisan-submit { position:fixed; bottom:0; left:0; right:0; padding:14px 20px 24px; background:var(--paper); border-top:1px solid var(--line); }
+  .artisan-submit .fx-dock-btn { width:100%; }
+</style>
 
-  <div class="wizard-progress" role="progressbar" aria-valuenow="{{ step }}" aria-valuemax="{{ total_steps }}">
-    <div class="wizard-bar" style="width: {{ (step / total_steps * 100)|int }}%"></div>
-    <span class="wizard-count">Etape {{ step }} / {{ total_steps }}</span>
+<div class="artisan-wrap">
+  <div class="artisan-top">
+    <a href="{{ url_for('index') }}">← Retour</a>
+    <h3>Devenir technicien FixPro</h3>
+    <p>Votre profil sera vérifié avant publication</p>
   </div>
 
-  <div class="wizard-steps">
-    <span class="{% if step >= 1 %}active{% endif %}">Identite</span>
-    <span class="{% if step >= 2 %}active{% endif %}">Metier</span>
-    <span class="{% if step >= 3 %}active{% endif %}">Localisation</span>
-    <span class="{% if step >= 4 %}active{% endif %}">Documents</span>
-    <span class="{% if step >= 5 %}active{% endif %}">Recap</span>
-  </div>
-</section>
-
-<div class="card wizard-card">
-  <form method="post" action="{{ url_for('register_artisan', step=step) }}" id="wizardForm" novalidate>
+  <form method="post" class="artisan-form" enctype="multipart/form-data">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-    <input type="hidden" name="wizard_action" id="wizardAction" value="next" />
 
-    {% if step == 1 %}
-    <div class="wizard-step active" data-step="1">
-      <h2 class="wizard-step-title">Etape 1 - Identite</h2>
-      <p class="wizard-step-sub">Ces informations restent confidentielles.</p>
+    <div class="artisan-photo" id="photoBox">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="12" r="4"/><path d="M3 9h6l2-2h3l2 2h5"/></svg>
+      <span>Photo</span>
+    </div>
+    <input type="file" id="photoInput" accept="image/*" style="display:none;" />
+    <input type="hidden" name="photo" id="photoBase64" value="" />
 
-      <div class="field">
-        <span class="lbl">Civilite</span>
-        <div class="radio-row">
-          <label class="radio-chip"><input type="radio" name="civility" value="Mr" {% if wizard.civility == 'Mme' %}{% else %}checked{% endif %} /><span>Mr</span></label>
-          <label class="radio-chip"><input type="radio" name="civility" value="Mme" {% if wizard.civility == 'Mme' %}checked{% endif %} /><span>Mme</span></label>
-        </div>
-      </div>
+    <div class="artisan-fg">
+      <div class="artisan-fl">Nom complet</div>
+      <input class="artisan-fb" type="text" name="full_name" required placeholder="Mamadou Konte" />
+    </div>
 
-      <div class="field-2">
-        <label class="field">
-          <span>Prenom *</span>
-          <input type="text" name="first_name" value="{{ wizard.first_name or '' }}" required placeholder="Mamadou" />
-        </label>
-        <label class="field">
-          <span>Nom *</span>
-          <input type="text" name="last_name" value="{{ wizard.last_name or '' }}" required placeholder="Diallo" />
-        </label>
-      </div>
+    <div class="artisan-fg">
+      <div class="artisan-fl">Métier</div>
+      <select class="artisan-fb" name="profession" required>
+        <option value="" disabled selected>Choisissez un métier</option>
+        <option value="Plombier">Plombier</option>
+        <option value="Électricien">Électricien</option>
+        <option value="Maçon">Maçon</option>
+        <option value="Menuisier">Menuisier</option>
+        <option value="Frigoriste">Frigoriste</option>
+        <option value="Serrurier">Serrurier</option>
+        <option value="Chauffagiste">Chauffagiste</option>
+        {% for cat in categories %}
+        <option value="{{ cat.name }}">{{ cat.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
 
-      <label class="field">
-        <span>Telephone *</span>
-        <div class="input-group">
-          <span class="prefix">+224</span>
-          <input type="tel" name="phone" value="{{ wizard.phone or '' }}" required placeholder="620 00 00 00" pattern="[0-9 ]{9,}" />
-        </div>
-      </label>
-
-      <label class="field">
-        <span>Email *</span>
-        <input type="email" name="email" value="{{ wizard.email or '' }}" required placeholder="vous@email.com" />
-      </label>
-
-      <div class="field">
-        <span class="lbl">Type de piece d'identite *</span>
-        <select name="identity_doc_type" required>
-          <option value="" disabled {% if not wizard.identity_doc_type %}selected{% endif %}>Choisissez</option>
-          <option value="carte_identite" {% if wizard.identity_doc_type == 'carte_identite' %}selected{% endif %}>Carte d'identite nationale / biométrique</option>
-          <option value="passeport" {% if wizard.identity_doc_type == 'passeport' %}selected{% endif %}>Passeport</option>
-          <option value="autre" {% if wizard.identity_doc_type == 'autre' %}selected{% endif %}>Autre document accepte par FixPro</option>
-        </select>
-      </div>
-
-      <div class="document-uploader" id="identityUploader">
-        <input type="file" id="identityFileInput" accept="image/*" capture="environment" />
-        <button type="button" class="uploader-btn" id="identityUploadBtn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>
-          <span>Ajouter un document</span>
-          <span class="uploader-hint">Prendre une photo ou choisir un fichier</span>
-        </button>
-        <div class="uploader-preview" id="identityPreview" style="display: none;">
-          <img src="" alt="Apercu" />
-          <div>
-            <div class="uploader-name" id="identityFileName"></div>
-            <button type="button" class="uploader-remove" id="identityRemove">Remplacer / Supprimer</button>
-          </div>
-        </div>
-        <input type="hidden" name="identity_doc" id="identityDocBase64" value="{{ wizard.identity_doc or '' }}" />
-        <input type="hidden" name="identity_doc_name" id="identityDocName" value="{{ wizard.identity_doc_name or '' }}" />
+    <div class="artisan-fg">
+      <div class="artisan-fl">Numéro de téléphone</div>
+      <div class="artisan-phone">
+        <span class="prefix">+224</span>
+        <input class="artisan-fb" type="tel" name="phone" required placeholder="620 00 00 00" style="flex:1;" />
       </div>
     </div>
 
-    {% elif step == 2 %}
-    <div class="wizard-step active" data-step="2">
-      <h2 class="wizard-step-title">Etape 2 - Profil professionnel</h2>
-      <p class="wizard-step-sub">Decrivez votre expertise.</p>
-
-      <label class="field">
-        <span>Metier principal *</span>
-        <select name="profession" required>
-          <option value="" disabled {% if not wizard.profession %}selected{% endif %}>Choisissez un metier</option>
-          {% for cat in categories %}
-          <option value="{{ cat.name }}" {% if wizard.profession == cat.name %}selected{% endif %}>{{ cat.name }}</option>
-          {% endfor %}
-        </select>
-      </label>
-
-      <label class="field">
-        <span>Specialites / Competences</span>
-        <input type="text" name="skills" value="{{ wizard.skills or '' }}" placeholder="Ex: installation, reparation, depannage" />
-      </label>
-
-      <label class="field">
-        <span>Annees d'experience</span>
-        <input type="number" name="years_experience" value="{{ wizard.years_experience or 0 }}" min="0" max="50" />
-      </label>
-
-      <label class="field">
-        <span>Description professionnelle / Services proposes</span>
-        <textarea name="bio" rows="3" placeholder="Decrivez votre experience et vos services...">{{ wizard.bio or '' }}</textarea>
-      </label>
+    <div class="artisan-fg">
+      <div class="artisan-fl">📍 Zone d'intervention</div>
+      <input class="artisan-fb" type="text" name="address" id="addressInput" required placeholder="Détection GPS en cours…" />
     </div>
 
-    {% elif step == 3 %}
-    <div class="wizard-step active" data-step="3">
-      <h2 class="wizard-step-title">Etape 3 - Localisation</h2>
-      <p class="wizard-step-sub">Votre zone d'intervention.</p>
-
-      <label class="field">
-        <span>Ville *</span>
-        <select name="city" required>
-          <option value="" disabled {% if not wizard.city %}selected{% endif %}>Choisissez une ville</option>
-          <option value="Conakry" {% if wizard.city == 'Conakry' %}selected{% endif %}>Conakry</option>
-          <option value="Nzerekore" {% if wizard.city == 'Nzerekore' %}selected{% endif %}>Nzerekore</option>
-          <option value="Kankan" {% if wizard.city == 'Kankan' %}selected{% endif %}>Kankan</option>
-          <option value="Kindia" {% if wizard.city == 'Kindia' %}selected{% endif %}>Kindia</option>
-          <option value="Boke" {% if wizard.city == 'Boke' %}selected{% endif %}>Boke</option>
-          <option value="Labe" {% if wizard.city == 'Labe' %}selected{% endif %}>Labe</option>
-          <option value="Mamou" {% if wizard.city == 'Mamou' %}selected{% endif %}>Mamou</option>
-          <option value="Kamsar" {% if wizard.city == 'Kamsar' %}selected{% endif %}>Kamsar</option>
-          <option value="Kissidougou" {% if wizard.city == 'Kissidougou' %}selected{% endif %}>Kissidougou</option>
-          <option value="Gueckedou" {% if wizard.city == 'Gueckedou' %}selected{% endif %}>Gueckedou</option>
-          <option value="Macenta" {% if wizard.city == 'Macenta' %}selected{% endif %}>Macenta</option>
-          <option value="Coyah" {% if wizard.city == 'Coyah' %}selected{% endif %}>Coyah</option>
-        </select>
-      </label>
-
-      <label class="field">
-        <span>Quartier *</span>
-        <input type="text" name="quartier" value="{{ wizard.quartier or '' }}" required placeholder="Ex: Kaloum, Dixinn" />
-      </label>
-
-      <label class="field">
-        <span>Zone d'intervention *</span>
-        <input type="text" name="zone_intervention" value="{{ wizard.zone_intervention or '' }}" required placeholder="Ex: Conakry, Coyah" />
-      </label>
-
-      <label class="field">
-        <span>Mobilite</span>
-        <select name="mobility">
-          <option value="" disabled {% if not wizard.mobility %}selected{% endif %}>Choisissez</option>
-          <option value="local" {% if wizard.mobility == 'local' %}selected{% endif %}>Quartier / Ville</option>
-          <option value="regional" {% if wizard.mobility == 'regional' %}selected{% endif %}>Region</option>
-          <option value="national" {% if wizard.mobility == 'national' %}selected{% endif %}>Toute la Guinee</option>
-        </select>
-      </label>
+    <div class="artisan-fg">
+      <div class="artisan-upload" id="identityBox">
+        🪪 Ajouter une photo de la pièce
+      </div>
+      <input type="file" id="identityInput" accept="image/*" style="display:none;" />
+      <input type="hidden" name="identity_doc" id="identityBase64" value="" />
     </div>
 
-    {% elif step == 4 %}
-    <div class="wizard-step active" data-step="4">
-      <h2 class="wizard-step-title">Etape 4 - Documents professionnels</h2>
-      <p class="wizard-step-sub">Diplome ou attestation de votre metier.</p>
-
-      <div class="document-uploader" id="diplomaUploader">
-        <input type="file" id="diplomaFileInput" accept="image/*" capture="environment" />
-        <button type="button" class="uploader-btn" id="diplomaUploadBtn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>
-          <span>Ajouter le diplome</span>
-          <span class="uploader-hint">Prendre une photo ou choisir un fichier</span>
-        </button>
-        <div class="uploader-preview" id="diplomaPreview" style="display: none;">
-          <img src="" alt="Apercu" />
-          <div>
-            <div class="uploader-name" id="diplomaFileName"></div>
-            <button type="button" class="uploader-remove" id="diplomaRemove">Remplacer / Supprimer</button>
-          </div>
-        </div>
-        <input type="hidden" name="diploma_doc" id="diplomaDocBase64" value="{{ wizard.diploma_doc or '' }}" />
-        <input type="hidden" name="diploma_doc_name" id="diplomaDocName" value="{{ wizard.diploma_doc_name or '' }}" />
+    <div class="artisan-fg">
+      <div class="artisan-info">
+        <span style="font-size:16px;">🛡️</span>
+        <span>L'équipe FixPro examine chaque dossier avant d'attribuer le sceau de vérification et de publier votre profil.</span>
       </div>
     </div>
 
-    {% elif step == 5 %}
-    <div class="wizard-step active" data-step="5">
-      <h2 class="wizard-step-title">Etape 5 - Recapitulatif</h2>
-      <p class="wizard-step-sub">Verifiez vos informations avant l'envoi.</p>
-
-      <div class="recap-list">
-        <div class="recap-item">
-          <span class="recap-label">Identite</span>
-          <span class="recap-value">{{ wizard.civility or 'Mr' }} {{ wizard.first_name or '' }} {{ wizard.last_name or '' }}<br><small>{{ wizard.phone or '' }} — {{ wizard.email or '' }}</small></span>
-        </div>
-        <div class="recap-item">
-          <span class="recap-label">Profession</span>
-          <span class="recap-value">{{ wizard.profession or '' }}<br><small>{{ wizard.skills or '' }} — {{ wizard.years_experience or 0 }} an(s)</small></span>
-        </div>
-        <div class="recap-item">
-          <span class="recap-label">Localisation</span>
-          <span class="recap-value">{{ wizard.city or '' }}, {{ wizard.quartier or '' }}<br><small>Zone : {{ wizard.zone_intervention or '' }}</small></span>
-        </div>
-        <div class="recap-item">
-          <span class="recap-label">Documents</span>
-          <span class="recap-value">
-            <span class="{% if wizard.identity_doc %}success{% else %}missing{% endif %}">Piece d'identite</span>
-            <span class="{% if wizard.diploma_doc %}success{% else %}missing{% endif %}">Diplome</span>
-          </span>
-        </div>
-      </div>
-
-      <p class="small muted">En cliquant sur "Envoyer ma candidature", vous confirmez l'exactitude des informations fournies.</p>
-    </div>
-    {% endif %}
-
-    <div class="wizard-nav">
-      {% if step > 1 %}
-      <button type="submit" name="wizard_action" value="prev" class="btn btn-soft">Precedent</button>
-      {% else %}
-      <span></span>
-      {% endif %}
-
-      {% if step < 5 %}
-      <button type="submit" class="btn btn-primary">Continuer</button>
-      {% else %}
-      <button type="submit" name="wizard_action" value="submit" class="btn btn-primary btn-lg">Envoyer ma candidature</button>
-      {% endif %}
+    <div class="artisan-submit">
+      <button class="fx-dock-btn primary" type="submit">Envoyer ma demande</button>
     </div>
   </form>
 </div>
 
-<p class="small muted center" style="margin-top: 18px;">
-  Deja inscrit ? <a href="{{ url_for('login') }}">Se connecter</a>
-</p>
-{% endblock %}
-
-{% block scripts %}
 <script>
-(function () {
-  function setupUploader(fileInputId, uploadBtnId, previewId, fileNameId, removeId, base64Id, nameId) {
-    const fileInput = document.getElementById(fileInputId);
-    const uploadBtn = document.getElementById(uploadBtnId);
-    const preview = document.getElementById(previewId);
-    const fileName = document.getElementById(fileNameId);
-    const removeBtn = document.getElementById(removeId);
-    const base64Field = document.getElementById(base64Id);
-    const nameField = document.getElementById(nameId);
-
-    uploadBtn.addEventListener('click', function () { fileInput.click(); });
-
-    fileInput.addEventListener('change', function (e) {
+  function setupBox(boxId, inputId, hiddenId){
+    const box = document.getElementById(boxId);
+    const input = document.getElementById(inputId);
+    const hidden = document.getElementById(hiddenId);
+    box.addEventListener('click', () => input.click());
+    input.addEventListener('change', function(e){
       const file = e.target.files[0];
       if (!file) return;
-      if (file.size > 2 * 1024 * 1024) {
-        alert('Le fichier est trop lourd (max 2 Mo).');
-        return;
-      }
-
       const reader = new FileReader();
-      reader.onload = function (evt) {
-        base64Field.value = evt.target.result;
-        nameField.value = file.name;
-        preview.querySelector('img').src = evt.target.result;
-        fileName.textContent = file.name;
-        uploadBtn.style.display = 'none';
-        preview.style.display = 'flex';
-      };
+      reader.onload = function(ev){ hidden.value = ev.target.result; box.innerHTML = '✓ ' + file.name; };
       reader.readAsDataURL(file);
     });
-
-    removeBtn.addEventListener('click', function () {
-      fileInput.value = '';
-      base64Field.value = '';
-      nameField.value = '';
-      preview.querySelector('img').src = '';
-      uploadBtn.style.display = 'flex';
-      preview.style.display = 'none';
-    });
-
-    if (base64Field.value) {
-      preview.querySelector('img').src = base64Field.value;
-      fileName.textContent = nameField.value || 'Document';
-      uploadBtn.style.display = 'none';
-      preview.style.display = 'flex';
-    }
   }
+  setupBox('photoBox','photoInput','photoBase64');
+  setupBox('identityBox','identityInput','identityBase64');
 
-  setupUploader('identityFileInput', 'identityUploadBtn', 'identityPreview', 'identityFileName', 'identityRemove', 'identityDocBase64', 'identityDocName');
-  setupUploader('diplomaFileInput', 'diplomaUploadBtn', 'diplomaPreview', 'diplomaFileName', 'diplomaRemove', 'diplomaDocBase64', 'diplomaDocName');
-})();
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      function(pos){
+        document.getElementById('addressInput').placeholder = 'Position détectée (lat: ' + pos.coords.latitude.toFixed(3) + ')';
+      },
+      function(){
+        document.getElementById('addressInput').placeholder = 'Conakry';
+      }
+    );
+  }
 </script>
 {% endblock %}
