@@ -1,198 +1,101 @@
 {% extends 'base.html' %}
+{% block title %}Suivi - FixPro{% endblock %}
+
 {% block content %}
-<section class="card">
-  <h2>{{ request_item['title'] }}</h2>
-  <p class="muted">{{ request_item['description'] }}</p>
-  <p><strong>Catégorie :</strong> {{ request_item['category'] or '—' }}</p>
-  <p><strong>Prix diagnostic :</strong> {{ request_item['diagnostic_price'] or 0 }} GNF</p>
-  <p><strong>Adresse :</strong> {{ request_item.get('address') or '—' }}</p>
-  <p><strong>Urgence :</strong> {{ request_item.get('urgency') or '—' }}</p>
-  <p><strong>Telephone de contact :</strong> {{ request_item.get('phone_contact') or '—' }}</p>
-  {% if request_item['photo_url'] %}
-    <p><strong>Photo du problème :</strong> <a href="{{ request_item['photo_url'] }}" target="_blank">Voir la photo</a></p>
-  {% endif %}
-  <p><strong>Budget estimé :</strong> {{ request_item['budget'] }} GNF</p>
-  <p><strong>Statut :</strong> {{ request_item['status'] }}</p>
-  {% if request_item['quote_status'] == 'pending' %}
-    <p class="muted">Devis en attente d’acceptation du client.</p>
-  {% elif request_item['quote_status'] == 'accepted' %}
-    <p class="muted">Devis accepté. L’intervention est validée.</p>
-  {% elif request_item['quote_status'] == 'rejected' %}
-    <p class="muted">Devis rejeté. L’artisan peut proposer un nouveau devis.</p>
-  {% endif %}
-
-  {% if request_item['quote_status'] != 'none' %}
-    <div class="card quote-card">
-      <h3>Devis</h3>
-      <p><strong>Montant proposé :</strong> {{ request_item['quote_amount'] or 0 }} GNF</p>
-      <p><strong>Description :</strong> {{ request_item['quote_description'] or '—' }}</p>
-      {% if request_item['quote_proposed_at'] %}
-        <p class="small muted">Proposé le {{ request_item['quote_proposed_at'] }}</p>
-      {% endif %}
-    </div>
-  {% endif %}
-
-  {% if user.role == 'artisan' and request_item['artisan_id'] == user.id and request_item['status'] in ['assigned', 'quote_rejected', 'quote_proposed'] %}
-    <section class="card">
-      <h3>Proposer ou modifier le devis</h3>
-      <form method="post" action="{{ url_for('propose_quote', request_id=request_item['id']) }}">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-        <label>Montant du devis (GNF)</label>
-        <input type="number" name="quote_amount" step="1000" min="0" value="{{ request_item['quote_amount'] or '' }}" required />
-        <label>Description du devis</label>
-        <textarea name="quote_description" required>{{ request_item['quote_description'] or '' }}</textarea>
-        <button class="btn btn-primary" type="submit">Proposer le devis</button>
-      </form>
-    </section>
-  {% endif %}
-
-  {% if user.role == 'client' and request_item['quote_status'] == 'pending' %}
-    <section class="card">
-      <h3>Décider du devis</h3>
-      <form method="post" action="{{ url_for('accept_quote', request_id=request_item['id']) }}">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-        <button class="btn btn-primary" type="submit">Accepter le devis</button>
-      </form>
-      <form method="post" action="{{ url_for('reject_quote', request_id=request_item['id']) }}" style="margin-top: 0.75rem;">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-        <button class="btn btn-outline" type="submit">Rejeter le devis</button>
-      </form>
-    </section>
-  {% endif %}
-
-  {% if user.role == 'artisan' and request_item['status'] == 'pending' %}
-    <form method="post" action="{{ url_for('accept_request', request_id=request_item['id']) }}">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-      <button class="btn btn-primary" type="submit">Accepter cette demande</button>
-    </form>
-  {% endif %}
-  {% if user.role == 'client' and request_item['status'] == 'quote_accepted' %}
-    {% set has_confirmed_payment = false %}
-    {% for payment in payments %}
-      {% if payment['status'] == 'confirmé' %}
-        {% set has_confirmed_payment = true %}
-      {% endif %}
-    {% endfor %}
-    
-    {% if has_confirmed_payment %}
-      <form method="post" action="{{ url_for('complete_request', request_id=request_item['id']) }}">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-        <button class="btn btn-primary" type="submit">Marquer comme terminée</button>
-      </form>
-    {% else %}
-      <div class="card" style="background-color: #fff3cd; border-color: #ffc107; margin-top: 1rem;">
-        <p style="color: #856404; margin: 0;">
-          <strong>⚠️ Paiement requis :</strong> Veuillez d'abord créer et confirmer le paiement avant de marquer l'intervention comme terminée.
-        </p>
-      </div>
-    {% endif %}
-  {% endif %}
-</section>
-
-<section class="card">
-  <h3>Conversation</h3>
-  <div id="chatStatus" class="small muted">Connexion au chat en cours…</div>
-  <div id="chatList" class="chat-list">
-    {% for msg in messages %}
-      <div class="chat-item">
-        <div class="chat-bubble {{ 'outgoing' if msg['sender_id'] == user['id'] else 'incoming' }}">
-          <div>{{ msg['content'] }}</div>
-        </div>
-        <div class="chat-meta">{{ 'Vous' if msg['sender_id'] == user['id'] else msg['sender_name'] }} · {{ msg['created_at'] }}</div>
-      </div>
-    {% else %}
-      <p class="muted">Aucun message pour le moment.</p>
-    {% endfor %}
+<div class="fx-screen">
+  <div class="fx-track-map grid-map" style="height:260px;">
+    <svg viewBox="0 0 300 230" width="100%" height="100%" style="position:absolute;inset:0">
+      <path d="M60 170 C 110 120, 150 150, 230 60" fill="none" stroke="#D98812" stroke-width="3" stroke-linecap="round" stroke-dasharray="2 10">
+        <animate attributeName="stroke-dashoffset" from="0" to="-24" dur="1.1s" repeatCount="indefinite"/>
+      </path>
+      <circle cx="60" cy="170" r="7" fill="#13203B"/>
+      <circle cx="230" cy="60" r="9" fill="#1F9D6B" stroke="#F7F4EE" stroke-width="2.5"/>
+    </svg>
   </div>
-  <form id="chatForm" class="chat-form" method="post">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-    <label>Message</label>
-    <textarea name="message" placeholder="Écrivez votre message ici..."></textarea>
-    <button class="btn btn-primary" type="submit">Envoyer</button>
-  </form>
-</section>
 
-<section class="card">
-  <h3>Paiement</h3>
-  {% if user.role == 'client' %}
-    {% if request_item.quote_status == 'accepted' %}
-      <p class="muted">Utilisez la page de paiement pour sélectionner Orange Money, MTN Mobile Money ou Carte bancaire et confirmer votre transaction.</p>
-      <a class="btn btn-primary" href="{{ url_for('payment_page', request_id=request_item['id']) }}">Aller au paiement</a>
-    {% else %}
-      <p class="muted">Le paiement est disponible dès que le devis est accepté.</p>
-    {% endif %}
-  {% endif %}
-
-  {% if payments %}
-    <div class="chat-list">
-      {% for payment in payments %}
-        <div class="payment-option">
-          <div><strong>{{ payment['amount'] }} GNF</strong> · {{ payment_method_label(payment['method']) }}</div>
-          <div class="small">Statut : <span class="badge {{ 'success' if payment['status'] == 'confirmé' else 'pending' if payment['status'] == 'en_attente' else 'failed' }}">{{ payment['status'] }}</span></div>
-          <div class="small">Détails : {{ payment.details or '—' }}</div>
-          <div class="small">Créé le {{ payment.created_at }}</div>
-        </div>
-      {% endfor %}
+  <div class="fx-eta">
+    <div class="fx-eta-avatar" style="background:{{ artisan.gradient or 'linear-gradient(155deg,#2C4066,#13203B)' }}">
+      {% if artisan.photo_url %}
+      <img src="{{ artisan.photo_url }}" alt="{{ artisan.full_name }}" style="width:100%;height:100%;object-fit:cover;" />
+      {% else %}
+      {{ (artisan.full_name or '?').split(' ')[:2]|map('first')|join('')|upper }}
+      {% endif %}
+      <svg class="seal-svg mini-seal" viewBox="0 0 100 100"><path fill="#1F9D6B" d="M50 2 L58 10 L69 8 L74 18 L85 22 L84 34 L92 42 L86 52 L92 62 L84 70 L85 82 L74 86 L69 96 L58 94 L50 100 L42 94 L31 96 L26 86 L15 82 L16 70 L8 62 L14 52 L8 42 L16 34 L15 22 L26 18 L31 8 L42 10 Z"/></svg>
     </div>
-  {% else %}
-    <p class="muted">Aucun paiement enregistré pour cette intervention.</p>
+    <div style="flex:1">
+      <div class="fx-eta-desc">{{ (artisan.full_name or 'Le technicien').split(' ')[0] }} arrive dans</div>
+      <div class="fx-eta-time">07 <span>min</span></div>
+    </div>
+    <span class="fx-dot-live"></span>
+  </div>
+
+  <div class="fx-stepper">
+    <div class="fx-step done">
+      <div class="fx-step-dot">✓</div>
+      <div class="fx-step-txt"><b>Demande envoyee</b><span>{{ (request_item.created_at|string)[:16] }}</span></div>
+    </div>
+    <div class="fx-step {{ 'done' if request_item.status in ('accepted','assigned','quote_proposed','quote_accepted','in_progress','completed') }}">
+      <div class="fx-step-dot">{% if request_item.status in ('accepted','assigned','quote_proposed','quote_accepted','in_progress','completed') %}✓{% endif %}</div>
+      <div class="fx-step-txt"><b>Acceptee par {{ (artisan.full_name or 'le technicien').split(' ')[0] }}</b><span>{{ (request_item.updated_at|string)[:16] if request_item.status in ('accepted','assigned','quote_proposed','quote_accepted','in_progress','completed') else '—' }}</span></div>
+    </div>
+    <div class="fx-step {{ 'active' if request_item.status in ('assigned','in_progress','quote_accepted') else ('done' if request_item.status == 'completed' else '') }}">
+      <div class="fx-step-dot"></div>
+      <div class="fx-step-txt"><b>En route vers vous</b><span>ETA 9:47</span></div>
+    </div>
+    <div class="fx-step {{ 'done' if request_item.status == 'completed' }}">
+      <div class="fx-step-dot"></div>
+      <div class="fx-step-txt"><b>Arrivee sur place</b><span>{{ '—' if request_item.status != 'completed' else (request_item.updated_at|string)[:16] }}</span></div>
+    </div>
+  </div>
+
+  <div style="padding:12px 16px 24px;display:flex;gap:8px;flex:0 0 auto;">
+    {% if ticket_id %}
+    <a class="fx-dock-btn ghost" href="{{ url_for('ticket_detail', ticket_id=ticket_id) }}">Contacter FixPro</a>
+    {% else %}
+    <form class="profile-action-form" method="post" action="{{ url_for('ticket_new') }}" style="margin:0;flex:1;display:flex;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      <input type="hidden" name="artisan_id" value="{{ artisan.id }}" />
+      <button class="fx-dock-btn ghost" type="submit" style="width:100%;">Contacter FixPro</button>
+    </form>
+    {% endif %}
+
+    {% if user.role == 'client' and request_item.status in ('pending','assigned','quote_proposed') %}
+    <form method="post" action="{{ url_for('request_detail', request_id=request_item.id) }}" style="margin:0;flex:1;display:flex;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      <input type="hidden" name="action" value="cancel" />
+      <button class="fx-dock-btn ghost" type="submit" style="width:100%;color:#A23723;border-color:var(--coral);" onclick="return confirm('Annuler cette intervention ?')">Annuler</button>
+    </form>
+    {% endif %}
+  </div>
+
+  {% if user.role == 'client' and request_item.quote_status == 'pending' %}
+  <div class="fx-p-card" style="margin:0 16px 16px;">
+    <h4>Devis propose</h4>
+    <p>{{ request_item.quote_description or 'Aucune description' }}</p>
+    <div style="font-family:var(--font-mono);font-size:14px;font-weight:600;">{{ "{:,}".format((request_item.quote_amount or 0)|int).replace(",", " ") }} GNF</div>
+    <form method="post" action="{{ url_for('accept_quote', request_id=request_item.id) }}" style="display:inline;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      <button class="fx-dock-btn primary" type="submit" style="margin-top:10px;">Accepter le devis</button>
+    </form>
+    <form method="post" action="{{ url_for('reject_quote', request_id=request_item.id) }}" style="display:inline;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      <button class="fx-dock-btn ghost" type="submit" style="margin-top:10px;">Refuser</button>
+    </form>
+  </div>
   {% endif %}
-</section>
-{% endblock %}
 
-{% block scripts %}
-<script>
-  // Les WebSockets ne sont pas disponibles en execution serverless : les
-  // nouveaux messages sont recuperes periodiquement via l'API HTTP.
-  const requestId = {{ request_item['id'] }};
-  const currentUserId = {{ user['id'] }};
-  const chatList = document.getElementById('chatList');
-  const chatStatus = document.getElementById('chatStatus');
-  let lastMessageId = 0;
+  {% if user.role == 'client' and request_item.status == 'quote_accepted' %}
+  <div class="fx-p-card" style="margin:0 16px 16px;">
+    <h4>Paiement</h4>
+    <a class="fx-dock-btn primary" href="{{ url_for('payment_page', request_id=request_item.id) }}" style="display:block;text-align:center;">Aller au paiement</a>
+  </div>
+  {% endif %}
 
-  function renderMessage(message) {
-    const empty = chatList.querySelector('p.muted');
-    if (empty) { empty.remove(); }
-
-    const item = document.createElement('div');
-    item.className = 'chat-item';
-
-    const bubble = document.createElement('div');
-    bubble.className = 'chat-bubble ' + (message.is_own ? 'outgoing' : 'incoming');
-    const text = document.createElement('div');
-    text.textContent = message.content;
-    bubble.appendChild(text);
-
-    const meta = document.createElement('div');
-    meta.className = 'chat-meta';
-    meta.textContent = (message.is_own ? 'Vous' : message.sender_name) + ' \u00b7 ' + message.created_at;
-
-    item.appendChild(bubble);
-    item.appendChild(meta);
-    chatList.appendChild(item);
-    chatList.scrollTop = chatList.scrollHeight;
-  }
-
-  async function refreshMessages() {
-    try {
-      const response = await fetch('/api/messages/' + requestId);
-      if (!response.ok) { return; }
-      const data = await response.json();
-      const fresh = data.messages.filter(m => m.id > lastMessageId);
-      if (lastMessageId === 0) {
-        lastMessageId = Math.max(0, ...data.messages.map(m => m.id));
-        return;
-      }
-      fresh.forEach(message => {
-        renderMessage(message);
-        lastMessageId = Math.max(lastMessageId, message.id);
-      });
-    } catch (error) {
-      if (chatStatus) { chatStatus.textContent = 'Reconnexion en cours...'; }
-    }
-  }
-
-  refreshMessages();
-  setInterval(refreshMessages, 5000);
-</script>
+  <nav class="fx-tabbar">
+    <a class="fx-tab" href="{{ url_for('artisans_page') }}"><div class="fx-tab-ic"></div>Accueil</a>
+    <a class="fx-tab active" href="{{ url_for('requests_list') }}"><div class="fx-tab-ic"></div>Historique</a>
+    <a class="fx-tab" href="{{ url_for('conversations') }}"><div class="fx-tab-ic"></div>Messages</a>
+    <a class="fx-tab" href="{{ url_for('profile') }}"><div class="fx-tab-ic"></div>Profil</a>
+  </nav>
+</div>
 {% endblock %}

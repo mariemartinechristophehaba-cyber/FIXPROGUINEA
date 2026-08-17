@@ -2,55 +2,34 @@
 {% block title %}Conversation - FixPro{% endblock %}
 
 {% block content %}
-
-<div class="chat-container">
-  <header class="chat-topbar">
-    <a class="chat-back" href="{{ url_for('artisan_detail', artisan_id=ticket.artisan_id) }}" aria-label="Retour">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-    </a>
-    <div class="chat-topbar-info">
-      <h1>{{ ticket.artisan_name or 'FixPro' }}</h1>
-      <span>Conversation avec l'equipe FixPro</span>
+<div class="fx-screen">
+  <div class="fx-chat-top">
+    <a href="{{ url_for('artisan_detail', artisan_id=ticket.artisan_id) }}" style="color:#fff;text-decoration:none;font-size:14px;margin-right:6px;">←</a>
+    <div class="fx-chat-av">
+      <svg width="18" height="18" viewBox="0 0 100 100"><path fill="#1F9D6B" d="M50 2 L58 10 L69 8 L74 18 L85 22 L84 34 L92 42 L86 52 L92 62 L84 70 L85 82 L74 86 L69 96 L58 94 L50 100 L42 94 L31 96 L26 86 L15 82 L16 70 L8 62 L14 52 L8 42 L16 34 L15 22 L26 18 L31 8 L42 10 Z"/></svg>
     </div>
-    <div class="chat-topbar-avatar">
-      {{ (ticket.artisan_name or 'FixPro')[0]|upper }}
+    <div>
+      <div class="fx-chat-name">Equipe FixPro</div>
+      <div class="fx-chat-status"><span class="fx-dot-live"></span>En ligne</div>
     </div>
-  </header>
-
-  <div class="chat-notice">
-    Conversation moderee par l'equipe FixPro pour votre securite.
   </div>
 
-  <main class="chat-flow" id="chatFlow">
-    <div class="chat-messages" id="chatMessages">
-      {% for message in messages %}
-      <div class="chat-msg {% if message.sender_id == user.id %}chat-msg-out{% else %}chat-msg-in{% endif %}">
-        {% if message.sender_id != user.id %}
-        <span class="chat-msg-sender">{% if message.sender_role == 'admin' %}FixPro{% else %}{{ message.sender_name }}{% endif %}</span>
-        {% endif %}
-        <div class="chat-msg-bubble">
-          <p>{{ message.content }}</p>
-        </div>
-        <span class="chat-msg-time">{{ (message.created_at|string)[:16] if message.created_at else '' }}</span>
-      </div>
-      {% endfor %}
+  <div class="fx-chat-body">
+    <div style="text-align:center">
+      <span class="fx-context">🔧 A propos de {{ ticket.artisan_name or 'ce technicien' }} — {{ ticket.profession or 'Technicien' }}</span>
     </div>
-  </main>
+    {% for message in messages %}
+    <div class="fx-bubble {{ 'out' if message.sender_id == user.id else 'in' }}">
+      {{ message.content }}
+      <div class="t">{{ (message.created_at|string)[:16] }}{% if message.sender_id == user.id %} ✓✓{% endif %}</div>
+    </div>
+    {% endfor %}
+  </div>
 
-  <form class="chat-footer" method="post">
+  <form class="fx-chat-input" method="post">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-    <input type="text" name="content" required placeholder="Ecrivez votre message..." autocomplete="off" />
-    <button class="btn btn-primary" type="submit" aria-label="Envoyer">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4 20-7z"/></svg>
-    </button>
+    <input type="text" name="content" required placeholder="Ecrire un message…" autocomplete="off" />
+    <button class="send" type="submit" aria-label="Envoyer">➤</button>
   </form>
 </div>
-
-<script>
-  (function() {
-    const flow = document.getElementById('chatFlow');
-    if (flow) flow.scrollTop = flow.scrollHeight;
-  })();
-</script>
-
 {% endblock %}

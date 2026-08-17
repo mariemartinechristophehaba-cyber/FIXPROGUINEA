@@ -1,59 +1,56 @@
 {% extends 'base.html' %}
-{% block title %}{% if user.role == 'artisan' %}Demandes disponibles{% else %}Mes demandes{% endif %} - FixPro{% endblock %}
+{% block title %}Historique - FixPro{% endblock %}
 
 {% block content %}
-<section class="page-head row-between">
-  <div>
-    <h1>{% if user.role == 'artisan' %}Demandes disponibles{% else %}Mes demandes{% endif %}</h1>
-    <p>{{ requests|length }} demande{{ 's' if requests|length > 1 }} au total.</p>
+<div class="fx-screen">
+  <div class="fx-hist-top">
+    <h3>Historique</h3>
+    <p>Vos interventions passees</p>
   </div>
-  {% if user.role == 'client' %}
-  <a class="btn btn-primary btn-sm" href="{{ url_for('request_new') }}">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-    Nouvelle
-  </a>
-  {% endif %}
-</section>
-
-{% if requests %}
-<div class="list">
-  {% for item in requests %}
-  <a class="list-item" href="{{ url_for('request_detail', request_id=item['id']) }}">
-    <span class="list-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg>
-    </span>
-    <div class="grow">
-      <div class="list-item-title"><span class="truncate">{{ item['title'] }}</span></div>
-      <div class="list-item-sub">
-        {{ item['category'] or 'Sans categorie' }}
-        {%- if item['budget'] %} - {{ "{:,}".format(item['budget']|int).replace(",", " ") }} GNF{% endif %}
+  <div class="fx-hist-list">
+    {% if requests %}
+    {% for item in requests %}
+    <a class="fx-hist-card" href="{{ url_for('request_detail', request_id=item.id) }}">
+      <div class="fx-hist-row">
+        <div class="l">
+          <b>{{ item.artisan_name or 'Technicien' }}</b>
+          <span>{{ item.category or 'Intervention' }}{% if item.description %} · {{ item.description[:24] }}{% endif %}</span>
+        </div>
+        <div class="r">
+          {% if item.status == 'completed' %}
+          <span class="pill pill-green">Terminee</span>
+          {% elif item.status == 'cancelled' %}
+          <span class="pill pill-amber">Annulee</span>
+          {% elif item.status in ('assigned','in_progress','quote_accepted') %}
+          <span class="pill pill-amber">En cours</span>
+          {% else %}
+          <span class="pill pill-coral">{{ item.status }}</span>
+          {% endif %}
+        </div>
       </div>
-    </div>
-    <span class="badge {% if item['status'] == 'completed' %}success{% elif item['status'] in ('assigned', 'in_progress') %}info{% else %}pending{% endif %}">
-      {%- if item['status'] == 'completed' %}Termine
-      {%- elif item['status'] in ('assigned', 'in_progress') %}En cours
-      {%- elif item['status'] == 'pending' %}En attente
-      {%- else %}{{ item['status'] }}{% endif -%}
-    </span>
-  </a>
-  {% endfor %}
+      <div class="fx-hist-foot">
+        {% if item.client_rating %}
+        <span class="fx-stars">{{ '★' * item.client_rating }}{{ '☆' * (5-item.client_rating) }} votre avis</span>
+        {% else %}
+        <span style="font-size:11px;color:var(--slate-light);">Avis non laisse</span>
+        {% endif %}
+        {% if item.status == 'completed' and item.quote_amount %}
+        <span class="hist-price">{{ "{:,}".format(item.quote_amount|int).replace(",", " ") }} GNF</span>
+        {% elif item.updated_at %}
+        <span style="font-family:var(--font-mono);font-size:10.5px;color:var(--slate-light);">{{ item.updated_at[:10] }}</span>
+        {% endif %}
+      </div>
+    </a>
+    {% endfor %}
+    {% else %}
+    <div class="fx-empty">Aucune intervention passee.</div>
+    {% endif %}
+  </div>
+  <nav class="fx-tabbar">
+    <a class="fx-tab" href="{{ url_for('artisans_page') }}"><div class="fx-tab-ic"></div>Accueil</a>
+    <a class="fx-tab active" href="{{ url_for('requests_list') }}"><div class="fx-tab-ic"></div>Historique</a>
+    <a class="fx-tab" href="{{ url_for('conversations') }}"><div class="fx-tab-ic"></div>Messages</a>
+    <a class="fx-tab" href="{{ url_for('profile') }}"><div class="fx-tab-ic"></div>Profil</a>
+  </nav>
 </div>
-{% else %}
-<div class="empty">
-  <span class="empty-icon">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg>
-  </span>
-  <h3>Aucune demande</h3>
-  <p>
-    {%- if user.role == 'artisan' -%}
-      Aucune demande ouverte pour le moment. Revenez plus tard.
-    {%- else -%}
-      Creez votre premiere demande pour recevoir des devis de techniciens verifies.
-    {%- endif -%}
-  </p>
-  {% if user.role == 'client' %}
-  <a class="btn btn-primary" href="{{ url_for('request_new') }}">Creer une demande</a>
-  {% endif %}
-</div>
-{% endif %}
 {% endblock %}

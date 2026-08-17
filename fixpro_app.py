@@ -2334,12 +2334,18 @@ def requests_list():
     try:
         if user["role"] == "artisan":
             rows = conn.execute(
-                "SELECT * FROM requests WHERE artisan_id = ? OR status = 'pending'"
-                " ORDER BY created_at DESC", (user["id"],)).fetchall()
+                "SELECT r.*, u.full_name AS artisan_name,"
+                " (SELECT rating FROM reviews WHERE reviews.request_id = r.id AND reviews.client_id = ? LIMIT 1) AS client_rating"
+                " FROM requests r LEFT JOIN users u ON u.id = r.client_id"
+                " WHERE r.artisan_id = ? OR r.status = 'pending'"
+                " ORDER BY r.created_at DESC", (user["id"], user["id"])).fetchall()
         else:
             rows = conn.execute(
-                "SELECT * FROM requests WHERE client_id = ?"
-                " ORDER BY created_at DESC", (user["id"],)).fetchall()
+                "SELECT r.*, u.full_name AS artisan_name,"
+                " (SELECT rating FROM reviews WHERE reviews.request_id = r.id AND reviews.client_id = ? LIMIT 1) AS client_rating"
+                " FROM requests r LEFT JOIN users u ON u.id = r.artisan_id"
+                " WHERE r.client_id = ?"
+                " ORDER BY r.created_at DESC", (user["id"], user["id"])).fetchall()
     finally:
         conn.close()
     return render_template("requests.html", requests=rows, user=user)
@@ -2449,6 +2455,16 @@ def request_detail(request_id):
             return redirect(url_for("requests_list"))
 
         if request.method == "POST":
+            action = request.form.get("action", "")
+            if action == "cancel" and user["role"] == "client":
+                if req["status"] in ("pending", "assigned", "quote_proposed"):
+                    conn.execute(
+                        "UPDATE requests SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                        (request_id,))
+                    conn.commit()
+                    flash("Intervention annulee.", "success")
+                return redirect(url_for("request_detail", request_id=request_id))
+
             content = request.form.get("message", "").strip()
             if content:
                 if is_prohibited_message(content):
@@ -2468,6 +2484,9 @@ def request_detail(request_id):
         artisan = conn.execute(
             "SELECT * FROM users WHERE id = ?", (req["artisan_id"],)
         ).fetchone() if req["artisan_id"] else None
+        if artisan:
+            artisan = dict(artisan)
+            artisan["gradient"] = _avatar_gradient(artisan["full_name"])
         messages = conn.execute(
             "SELECT m.*, u.full_name AS sender_name FROM messages m"
             " JOIN users u ON u.id = m.sender_id"
@@ -2476,12 +2495,21 @@ def request_detail(request_id):
         payments = conn.execute(
             "SELECT * FROM payments WHERE request_id = ?"
             " ORDER BY created_at DESC", (request_id,)).fetchall()
+        ticket_id = None
+        if user and user["role"] == "client" and artisan:
+            ticket = conn.execute(
+                "SELECT id FROM admin_tickets"
+                " WHERE client_id = ? AND artisan_id = ? LIMIT 1",
+                (user["id"], artisan["id"])).fetchone()
+            if ticket:
+                ticket_id = ticket["id"]
     finally:
         conn.close()
 
     return render_template("request_detail.html", request_item=req,
                            client=client, artisan=artisan, messages=messages,
                            payments=payments, user=user,
+                           ticket_id=ticket_id,
                            payment_method_label=payment_method_label)
 
 
