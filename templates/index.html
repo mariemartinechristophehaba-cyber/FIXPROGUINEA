@@ -94,11 +94,12 @@
   .m-title { margin: 0 0 14px; }
   .m-title h1 {
     font-family: var(--m-display);
-    font-size: 34px;
-    font-weight: 700;
-    line-height: 1.1;
+    font-size: 38px;
+    font-weight: 800;
+    line-height: 1.05;
     color: var(--m-ink);
     margin: 0;
+    letter-spacing: -0.5px;
   }
   .m-title .m-blue { color: var(--m-blue); }
 
@@ -131,33 +132,29 @@
 
   .m-hero-blob {
     position: absolute;
-    right: 10px;
-    top: 30px;
-    width: 240px;
-    height: 280px;
+    right: -20px;
+    top: 10px;
+    width: 280px;
+    height: 340px;
     background: linear-gradient(135deg, #EAF2FF 0%, #DBEAFE 100%);
     border-radius: 60% 40% 50% 50%;
     z-index: 1;
   }
 
-  .m-benefits { padding: 24px 20px; max-width: 420px; }
+  .m-benefits { padding: 16px 20px 24px; max-width: 420px; }
   .m-benefit {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 14px;
-    margin-bottom: 16px;
-    background: var(--m-white);
-    border: 1px solid var(--m-line);
-    border-radius: var(--m-radius-sm);
-    padding: 14px;
-    box-shadow: 0 2px 12px rgba(0,0,0,.03);
+    margin-bottom: 14px;
   }
   .m-benefit:last-child { margin-bottom: 0; }
   .m-benefit-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    background: var(--m-blue-light);
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    border: 1px solid var(--m-line);
+    background: var(--m-white);
     color: var(--m-blue);
     display: flex;
     align-items: center;
