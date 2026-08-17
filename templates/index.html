@@ -159,17 +159,24 @@
 
   .lp-rating { color: var(--lp-amber); font-weight: 700; font-size: 16px; }
 
-  .lp-illustration {
-    position: absolute;
-    right: 0;
-    bottom: 0;
-    width: 320px;
-    height: 420px;
-    display: none;
-    z-index: 0;
+  .lp-hero-img {
+    display: block;
+    width: 100%;
+    max-width: 360px;
+    height: auto;
+    border-radius: 24px;
+    margin: 34px auto 0;
+    object-fit: cover;
+    object-position: center top;
   }
 
-  .lp-illustration svg { width: 100%; height: 100%; }
+  .lp-hero-img img {
+    width: 100%;
+    height: 420px;
+    border-radius: 24px;
+    object-fit: cover;
+    display: block;
+  }
 
   .lp-dots {
     position: absolute;
@@ -284,14 +291,16 @@
 
   .lp-tech-card {
     background: var(--lp-white);
-    border-radius: 18px;
-    padding: 16px;
+    border-radius: 22px;
+    padding: 18px;
     display: flex;
-    gap: 14px;
+    gap: 16px;
     text-decoration: none;
     color: var(--lp-ink);
-    box-shadow: 0 2px 10px rgba(10,17,34,.05);
+    box-shadow: 0 4px 18px rgba(10,17,34,.08);
+    transition: transform .12s, box-shadow .12s;
   }
+  .lp-tech-card:active { transform: scale(0.98); }
 
   .lp-tech-avatar {
     width: 64px;
@@ -315,14 +324,19 @@
     .lp-hero { padding-bottom: 80px; }
     .lp-hero h1 { font-size: 52px; }
     .lp-hero p { font-size: 18px; }
-    .lp-illustration { display: block; width: 420px; height: 540px; right: 20px; bottom: -30px; }
+    .lp-hero-img { position: absolute; right: 20px; bottom: -40px; width: 42%; max-width: 480px; margin: 0; }
+    .lp-hero-img img { height: 540px; }
     .lp-why-grid { grid-template-columns: repeat(4, 1fr); }
     .lp-cats-grid { grid-template-columns: repeat(4, 1fr); }
+    .lp-tech-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+    .lp-tech-card { flex-direction: column; align-items: center; text-align: center; padding: 22px; }
+    .lp-tech-avatar { width: 90px; height: 90px; border-radius: 18px; margin-bottom: 12px; }
+    .lp-tech-meta { justify-content: center; }
   }
 
   @media (min-width: 1024px) {
     .lp-hero h1 { font-size: 58px; }
-    .lp-illustration { width: 480px; height: 620px; }
+    .lp-hero-img img { height: 620px; }
   }
 </style>
 
@@ -362,21 +376,8 @@
       </div>
     </div>
 
-    <div class="lp-illustration" aria-hidden="true">
-      <svg viewBox="0 0 400 520" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <ellipse cx="200" cy="500" rx="160" ry="20" fill="#0A1122" fill-opacity="0.3"/>
-        <rect x="110" y="80" width="180" height="300" rx="20" fill="#F5A623"/>
-        <rect x="120" y="120" width="160" height="80" rx="10" fill="#0A1122"/>
-        <circle cx="200" cy="160" r="28" fill="#FFFFFF" fill-opacity="0.12"/>
-        <path d="M180 350h40v70h-40z" fill="#0A1122"/>
-        <circle cx="200" cy="210" r="46" fill="#111C35" stroke="#1E2B47" stroke-width="2"/>
-        <circle cx="184" cy="205" r="4" fill="#FFFFFF" fill-opacity="0.9"/>
-        <circle cx="216" cy="205" r="4" fill="#FFFFFF" fill-opacity="0.9"/>
-        <path d="M190 225c4 4 16 4 20 0" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" fill="none"/>
-        <rect x="160" y="350" width="80" height="120" rx="6" fill="#FFFFFF" fill-opacity="0.08"/>
-        <path d="M140 120 L80 40" stroke="#F5A623" stroke-width="6" stroke-linecap="round"/>
-        <circle cx="80" cy="40" r="14" fill="#F5A623" stroke="#0A1122" stroke-width="4"/>
-      </svg>
+    <div class="lp-hero-img">
+      <img src="{{ url_for('static', filename='img/technician-hero.jpg') }}" alt="Technicien FixPro professionnel" onerror="this.src='https://images.unsplash.com/photo-1687422810663-c316494f725a?w=800&auto=format&fit=crop'" />
     </div>
   </section>
 
@@ -448,7 +449,7 @@
       <div class="lp-tech-list">
         {% for artisan in artisans %}
         <a href="{{ url_for('artisan_detail', artisan_id=artisan.id) }}" class="lp-tech-card">
-          <img src="{{ artisan.photo_url or url_for('static', filename='img/default-avatar.jpg') }}" alt="{{ artisan.full_name }}" class="lp-tech-avatar" onerror="this.src='{{ url_for('static', filename='img/default-avatar.jpg') }}'" />
+          <img src="{{ artisan.photo_url or url_for('static', filename='img/technician-hero.jpg') }}" alt="{{ artisan.full_name }}" class="lp-tech-avatar" onerror="this.src='{{ url_for('static', filename='img/technician-hero.jpg') }}'" />
           <div class="lp-tech-info">
             <h4 class="lp-tech-name">{{ artisan.full_name }}</h4>
             <p class="lp-tech-trade">{{ artisan.profession }}</p>
