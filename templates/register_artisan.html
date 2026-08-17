@@ -5,63 +5,99 @@
 
 {% block content %}
 <style>
-  .rart-page { min-height:100vh; display:flex; flex-direction:column; background:var(--paper); }
-  .rart-topbar { display:flex; align-items:center; justify-content:space-between; padding:12px 16px; background:var(--ink); color:#fff; }
-  .rart-logo { font-family:var(--font-display); font-size:17px; font-weight:700; color:#fff; text-decoration:none; }
-  .rart-logo span { color:var(--amber); }
-  .rart-burger { background:none; border:none; color:#fff; padding:4px; }
+  :root {
+    --rart-g: 16px;
+    --rart-field-h: 50px;
+    --rart-ink: #13203B;
+    --rart-paper: #F7F4EE;
+    --rart-paper-2: #FFFFFF;
+    --rart-line: #E0DCD5;
+    --rart-slate: #596475;
+    --rart-amber: #F5A623;
+    --rart-amber-soft: #FFF4E0;
+    --rart-green: #1F9D6B;
+    --rart-radius: 10px;
+    --rart-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --rart-display: 'Space Grotesk', sans-serif;
+  }
+
+  .rart-page { min-height:100vh; background:var(--rart-paper); font-family:var(--rart-font); padding-bottom:90px; }
+
+  .rart-header { display:flex; align-items:center; justify-content:space-between; padding:14px var(--rart-g); background:var(--rart-ink); color:#fff; position:sticky; top:0; z-index:100; }
+  .rart-logo { font-family:var(--rart-display); font-size:18px; font-weight:700; color:#fff; text-decoration:none; letter-spacing:-0.3px; }
+  .rart-logo span { color:var(--rart-amber); }
+  .rart-burger { width:40px; height:40px; display:flex; align-items:center; justify-content:center; background:none; border:none; color:#fff; cursor:pointer; margin-right:-8px; }
   .rart-burger svg { width:22px; height:22px; }
-  .rart-mobile-menu { display:none; background:var(--ink); padding:8px 16px 16px; }
-  .rart-mobile-menu a { display:block; color:#DCE3F0; text-decoration:none; padding:10px 0; font-size:14px; border-bottom:1px solid rgba(255,255,255,.08); }
-  .rart-head { padding:22px 16px 18px; }
-  .rart-head h1 { font-family:var(--font-display); font-size:25px; margin:0 0 6px; color:var(--ink); }
-  .rart-head p { margin:0; font-size:13px; color:var(--slate); }
-  .rart-form { padding:0 16px 110px; }
-  .rart-sep { border-bottom:1px solid var(--line); margin:18px 0; }
-  .rart-sec-title { font-family:var(--font-display); font-size:18px; color:var(--ink); margin:0 0 14px; }
-  .rart-fg { margin-bottom:14px; }
-  .rart-fl { font-size:13px; color:var(--slate); margin-bottom:5px; font-weight:600; }
-  .rart-fb { width:100%; border:1px solid var(--line); border-radius:10px; padding:14px; font-size:15px; background:var(--paper-2); color:var(--ink); box-sizing:border-box; font-family:var(--font-body); height:52px; }
-  .rart-fb:focus { outline:none; border-color:var(--amber); }
-  .rart-photo { position:relative; width:90px; height:90px; border-radius:50%; border:2px dashed #BFC6D4; display:flex; flex-direction:column; align-items:center; justify-content:center; color:var(--slate); cursor:pointer; background:var(--paper-2); overflow:hidden; margin:0 auto 18px; }
+  .rart-mobile-menu { display:none; background:var(--rart-ink); padding:0 var(--rart-g) 16px; }
+  .rart-mobile-menu a { display:block; color:rgba(255,255,255,.85); text-decoration:none; padding:12px 0; font-size:14px; border-bottom:1px solid rgba(255,255,255,.08); }
+
+  .rart-hero { padding:22px var(--rart-g) 6px; }
+  .rart-hero h1 { font-family:var(--rart-display); font-size:25px; font-weight:700; color:var(--rart-ink); margin:0 0 6px; line-height:1.2; }
+  .rart-hero p { font-size:14px; color:var(--rart-slate); margin:0; line-height:1.45; }
+
+  .rart-form { padding:8px var(--rart-g) 24px; }
+
+  .rart-section { padding:18px 0; border-bottom:1px solid var(--rart-line); }
+  .rart-section:last-of-type { border-bottom:none; }
+  .rart-sec-title { font-family:var(--rart-display); font-size:20px; font-weight:700; color:var(--rart-ink); margin:0 0 14px; }
+
+  .rart-fg { margin-bottom:20px; }
+  .rart-fg:last-child { margin-bottom:0; }
+  .rart-fl { font-size:14px; font-weight:600; color:var(--rart-ink); margin-bottom:8px; display:block; }
+
+  .rart-fb, .rart-fb-select { width:100%; height:var(--rart-field-h); border:1px solid var(--rart-line); border-radius:var(--rart-radius); padding:0 14px; font-size:15px; color:var(--rart-ink); background:var(--rart-paper-2); box-sizing:border-box; font-family:var(--rart-font); }
+  .rart-fb:focus, .rart-fb-select:focus { outline:none; border-color:var(--rart-amber); }
+  .rart-fb::placeholder { color:#A8B0BB; font-size:15px; }
+  .rart-fb-select { appearance:none; -webkit-appearance:none; background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%23596475' stroke-width='1.5' fill='none'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position: right 14px center; }
+  .rart-fb-select:invalid, .rart-fb-select option[value=""] { color:#A8B0BB; }
+
+  .rart-phone { display:flex; gap:8px; }
+  .rart-phone .rart-prefix { flex:0 0 auto; width:66px; display:flex; align-items:center; justify-content:center; height:var(--rart-field-h); border:1px solid var(--rart-line); border-radius:var(--rart-radius); background:var(--rart-paper-2); font-size:14px; font-weight:600; color:var(--rart-slate); }
+  .rart-phone .rart-fb { flex:1; }
+
+  .rart-photo { width:86px; height:86px; border-radius:50%; border:2px dashed #C6CCD8; display:flex; flex-direction:column; align-items:center; justify-content:center; color:var(--rart-slate); cursor:pointer; background:var(--rart-paper-2); overflow:hidden; margin:0 auto 6px; }
   .rart-photo img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
   .rart-photo input { display:none; }
-  .rart-photo-txt { font-size:9px; margin-top:2px; }
-  .rart-phone { display:flex; gap:8px; }
-  .rart-prefix { flex:0 0 auto; display:flex; align-items:center; padding:0 12px; background:var(--paper-2); border:1px solid var(--line); border-radius:10px; font-size:14px; color:var(--slate); font-weight:600; }
-  .rart-chips { display:flex; flex-wrap:wrap; gap:8px; }
-  .rart-chip { border:1px solid var(--line); background:var(--paper-2); border-radius:18px; padding:10px 15px; font-size:13px; color:var(--slate); cursor:pointer; }
-  .rart-chip.active { background:var(--amber-soft); border-color:var(--amber); color:var(--ink); }
-  .rart-upload { width:100%; border:1px dashed var(--line); border-radius:10px; padding:16px; text-align:center; color:var(--slate); cursor:pointer; background:var(--paper-2); font-size:14px; display:flex; flex-direction:column; align-items:center; gap:5px; }
+  .rart-photo-label { text-align:center; font-size:12px; color:var(--rart-slate); margin-top:2px; }
+
+  .rart-chips { display:flex; flex-wrap:wrap; gap:10px; }
+  .rart-chip { border:1px solid var(--rart-line); background:var(--rart-paper-2); border-radius:20px; padding:11px 16px; font-size:14px; color:var(--rart-slate); cursor:pointer; user-select:none; }
+  .rart-chip.active { background:var(--rart-amber-soft); border-color:var(--rart-amber); color:var(--rart-ink); font-weight:600; }
+
+  .rart-text { font-size:13px; color:var(--rart-slate); line-height:1.5; margin:-8px 0 14px; }
+
+  .rart-upload { width:100%; min-height:70px; border:1px dashed var(--rart-line); border-radius:var(--rart-radius); padding:14px; text-align:center; color:var(--rart-slate); cursor:pointer; background:var(--rart-paper-2); font-size:14px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; }
   .rart-upload img { max-height:90px; object-fit:cover; border-radius:8px; }
-  .rart-loc-msg { font-size:13px; color:var(--ink); margin-top:6px; font-weight:600; min-height:18px; }
-  .rart-check { display:flex; align-items:flex-start; gap:8px; margin:18px 0; font-size:13px; color:var(--slate); }
-  .rart-check input { margin-top:2px; }
-  .rart-submit-wrap { padding:0 16px 24px; }
-  .rart-submit { width:100%; border:none; border-radius:10px; padding:15px; font-size:15px; font-weight:700; background:var(--amber); color:var(--ink); cursor:pointer; font-family:var(--font-body); height:52px; }
-  .rart-submit:disabled { opacity:.6; }
-  .rart-sticky { position:fixed; bottom:0; left:0; right:0; padding:12px 16px calc(12px + env(safe-area-inset-bottom)); background:var(--paper); border-top:1px solid var(--line); }
-  .rart-sticky .rart-submit { width:100%; }
+
+  .rart-check { display:flex; align-items:flex-start; gap:10px; margin:20px 0 24px; font-size:14px; color:var(--rart-slate); line-height:1.45; }
+  .rart-check input { width:18px; height:18px; margin-top:1px; accent-color:var(--rart-amber); flex:0 0 18px; }
+
+  .rart-sticky { position:fixed; bottom:0; left:0; right:0; padding:12px var(--rart-g) calc(12px + env(safe-area-inset-bottom)); background:var(--rart-paper); border-top:1px solid var(--rart-line); z-index:50; }
+  .rart-submit { width:100%; height:52px; border:none; border-radius:var(--rart-radius); font-size:16px; font-weight:700; background:var(--rart-amber); color:var(--rart-ink); cursor:pointer; font-family:var(--rart-font); }
+  .rart-submit:disabled { opacity:.65; }
+
+  .rart-desktop-btn { display:none; }
+
   @media (min-width: 768px) {
-    .rart-form, .rart-head, .rart-submit-wrap { max-width:640px; margin:0 auto; padding-left:24px; padding-right:24px; }
-    .rart-form { padding-bottom:24px; }
-    .rart-sticky { display:none; }
-    .rart-submit-wrap { display:block; }
-    .rart-head h1 { font-size:28px; }
-    .rart-topbar { padding:14px 24px; }
+    .rart-page { padding-bottom:40px; }
+    .rart-header, .rart-mobile-menu, .rart-hero, .rart-form, .rart-sticky { max-width:600px; margin:0 auto; }
+    .rart-header { border-radius:0 0 14px 14px; }
+    .rart-hero h1 { font-size:28px; }
+    .rart-sticky { position:static; border-top:none; background:transparent; padding:0 var(--rart-g); }
+    .rart-submit { max-width:560px; }
   }
-  @media (max-width: 767px) {
-    .rart-submit-wrap { display:none; }
+  @media (min-width: 768px) and (max-width: 1023px) {
+    .rart-header, .rart-mobile-menu, .rart-hero, .rart-form, .rart-sticky { max-width:540px; }
   }
 </style>
 
 <div class="rart-page">
-  <div class="rart-topbar">
+  <header class="rart-header">
     <a href="{{ url_for('index') }}" class="rart-logo">Fix<span>Pro</span></a>
     <button type="button" class="rart-burger" id="rartBurger" aria-label="Menu">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
     </button>
-  </div>
+  </header>
   <nav class="rart-mobile-menu" id="rartMenu">
     <a href="{{ url_for('index') }}">Accueil</a>
     <a href="{{ url_for('artisans_page') }}">Trouver un technicien</a>
@@ -70,105 +106,108 @@
     <a href="{{ url_for('register') }}">Inscription</a>
   </nav>
 
-  <div class="rart-head">
-    <h1>Devenir technicien FixPro</h1>
+  <div class="rart-hero">
+    <h1>Devenir technicien</h1>
     <p>Votre profil sera vérifié avant publication</p>
   </div>
 
   <form method="post" class="rart-form" id="rartForm" enctype="multipart/form-data" onsubmit="return false;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
 
-    <label class="rart-photo" id="photoBox">
-      <input type="file" id="photoInput" accept="image/jpeg,image/png,image/webp" />
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="12" r="4"/><path d="M3 9h6l2-2h3l2 2h5"/></svg>
-      <span class="rart-photo-txt" id="photoLabel">Ajouter une photo</span>
-    </label>
-    <input type="hidden" name="photo" id="photoBase64" />
-
-    <div class="rart-fg">
-      <div class="rart-fl">Nom complet</div>
-      <input class="rart-fb" type="text" name="full_name" id="fullName" placeholder="Entrez votre nom complet" required />
+    <div class="rart-section" style="padding-top:10px;">
+      <label class="rart-photo" id="photoBox" aria-label="Ajouter une photo">
+        <input type="file" id="photoInput" accept="image/jpeg,image/png,image/webp" />
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="12" r="4"/><path d="M3 9h6l2-2h3l2 2h5"/></svg>
+      </label>
+      <div class="rart-photo-label" id="photoLabel">Ajouter une photo</div>
+      <input type="hidden" name="photo" id="photoBase64" />
     </div>
-    <div class="rart-fg">
-      <div class="rart-fl">Téléphone</div>
-      <div class="rart-phone">
-        <span class="rart-prefix">+224</span>
-        <input class="rart-fb" type="tel" name="phone" id="phone" placeholder="624 12 34 56" style="flex:1;" inputmode="tel" required />
+
+    <div class="rart-section">
+      <h2 class="rart-sec-title">Vos informations</h2>
+      <div class="rart-fg">
+        <label class="rart-fl" for="fullName">Nom complet</label>
+        <input class="rart-fb" type="text" name="full_name" id="fullName" placeholder="Entrez votre nom complet" required />
+      </div>
+      <div class="rart-fg">
+        <label class="rart-fl" for="phone">Téléphone</label>
+        <div class="rart-phone">
+          <span class="rart-prefix">+224</span>
+          <input class="rart-fb" type="tel" name="phone" id="phone" placeholder="624 12 34 56" inputmode="tel" required />
+        </div>
       </div>
     </div>
 
-    <div class="rart-sep"></div>
-
-    <h2 class="rart-sec-title">Votre activité</h2>
-    <div class="rart-fg">
-      <div class="rart-fl">Métier</div>
-      <select class="rart-fb" name="profession" id="profession" required>
-        <option value="" disabled selected>Choisir un métier</option>
-        <option value="Plombier">Plombier</option>
-        <option value="Électricien">Électricien</option>
-        <option value="Climatisation">Climatisation</option>
-        <option value="Frigoriste">Frigoriste</option>
-        <option value="Maçon">Maçon</option>
-        <option value="Menuisier">Menuisier</option>
-        <option value="Peintre">Peintre</option>
-        <option value="Soudeur">Soudeur</option>
-        <option value="Informaticien">Informaticien</option>
-        <option value="Mécanicien">Mécanicien</option>
-        {% for cat in categories %}
-        <option value="{{ cat.name }}">{{ cat.name }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    <div class="rart-fg">
-      <div class="rart-fl">Spécialité</div>
-      <input class="rart-fb" type="text" name="specialite" placeholder="Ex. Installation électrique" />
-    </div>
-    <div class="rart-fg">
-      <div class="rart-fl">Années d'expérience</div>
-      <input type="hidden" name="experience" id="experience" />
-      <div class="rart-chips" id="expChips">
-        <span class="rart-chip" data-v="Débutant">Débutant</span>
-        <span class="rart-chip" data-v="1–3 ans">1–3 ans</span>
-        <span class="rart-chip" data-v="3–5 ans">3–5 ans</span>
-        <span class="rart-chip" data-v="5+ ans">5+ ans</span>
+    <div class="rart-section">
+      <h2 class="rart-sec-title">Votre activité</h2>
+      <div class="rart-fg">
+        <label class="rart-fl" for="profession">Métier</label>
+        <select class="rart-fb rart-fb-select" name="profession" id="profession" required>
+          <option value="" disabled selected>Choisir un métier</option>
+          <option value="Plombier">Plombier</option>
+          <option value="Électricien">Électricien</option>
+          <option value="Climatisation">Climatisation</option>
+          <option value="Frigoriste">Frigoriste</option>
+          <option value="Maçon">Maçon</option>
+          <option value="Menuisier">Menuisier</option>
+          <option value="Peintre">Peintre</option>
+          <option value="Soudeur">Soudeur</option>
+          <option value="Informaticien">Informaticien</option>
+          <option value="Mécanicien">Mécanicien</option>
+          {% for cat in categories %}
+          <option value="{{ cat.name }}">{{ cat.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="rart-fg">
+        <label class="rart-fl" for="specialite">Spécialité</label>
+        <input class="rart-fb" type="text" name="specialite" id="specialite" placeholder="Ex. Installation électrique" />
+      </div>
+      <div class="rart-fg">
+        <span class="rart-fl">Années d'expérience</span>
+        <input type="hidden" name="experience" id="experience" />
+        <div class="rart-chips" id="expChips">
+          <span class="rart-chip" data-v="Débutant" tabindex="0" role="button">Débutant</span>
+          <span class="rart-chip" data-v="1–3 ans" tabindex="0" role="button">1–3 ans</span>
+          <span class="rart-chip" data-v="3–5 ans" tabindex="0" role="button">3–5 ans</span>
+          <span class="rart-chip" data-v="5+ ans" tabindex="0" role="button">5+ ans</span>
+        </div>
       </div>
     </div>
 
-    <div class="rart-sep"></div>
-
-    <h2 class="rart-sec-title">Zone d'intervention</h2>
-    <div class="rart-fg">
-      <button type="button" class="rart-fb" id="locBtn" style="background:var(--paper);border-style:dashed;text-align:left;">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:6px;"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 13 8 13s8-7.75 8-13a8 8 0 0 0-8-8z"/></svg>
-        Utiliser ma position
-      </button>
-      <input type="hidden" name="address" id="address" />
-      <input type="hidden" name="lat" id="lat" />
-      <input type="hidden" name="lon" id="lon" />
-      <div class="rart-loc-msg" id="locMsg"></div>
-    </div>
-    <div class="rart-fg">
-      <div class="rart-fl">Zone d'intervention</div>
-      <input type="hidden" name="rayon" id="rayon" />
-      <div class="rart-chips" id="rayonChips">
-        <span class="rart-chip" data-v="5 km">5 km</span>
-        <span class="rart-chip" data-v="10 km">10 km</span>
-        <span class="rart-chip" data-v="20 km">20 km</span>
-        <span class="rart-chip" data-v="Toute la ville">Toute la ville</span>
+    <div class="rart-section">
+      <h2 class="rart-sec-title">Zone d'intervention</h2>
+      <div class="rart-fg">
+        <button type="button" class="rart-fb" id="locBtn" style="background:transparent; border-style:dashed; text-align:left; padding-left:14px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; margin-right:8px;"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 13 8 13s8-7.75 8-13a8 8 0 0 0-8-8z"/></svg>
+          Utiliser ma position
+        </button>
+        <input type="hidden" name="address" id="address" />
+        <input type="hidden" name="lat" id="lat" />
+        <input type="hidden" name="lon" id="lon" />
+        <div class="rart-photo-label" id="locMsg" style="text-align:left; margin-top:8px; min-height:18px;"></div>
+      </div>
+      <div class="rart-fg">
+        <span class="rart-fl">Rayon d'intervention</span>
+        <input type="hidden" name="rayon" id="rayon" />
+        <div class="rart-chips" id="rayonChips">
+          <span class="rart-chip" data-v="5 km" tabindex="0" role="button">5 km</span>
+          <span class="rart-chip" data-v="10 km" tabindex="0" role="button">10 km</span>
+          <span class="rart-chip" data-v="20 km" tabindex="0" role="button">20 km</span>
+          <span class="rart-chip" data-v="Toute la ville" tabindex="0" role="button">Toute la ville</span>
+        </div>
       </div>
     </div>
 
-    <div class="rart-sep"></div>
-
-    <h2 class="rart-sec-title">Vérification d'identité</h2>
-    <p style="font-size:13px;color:var(--slate);margin:-10px 0 14px;">Votre pièce d'identité permet à FixPro de vérifier votre profil.</p>
-    <div class="rart-fg">
-      <div class="rart-upload" id="idBox">+ Ajouter une pièce d'identité</div>
-      <input type="file" id="idInput" accept="image/jpeg,image/png,image/webp" style="display:none;" />
-      <input type="hidden" name="identity_doc" id="idBase64" />
+    <div class="rart-section">
+      <h2 class="rart-sec-title">Vérification d'identité</h2>
+      <p class="rart-text">Votre pièce d'identité permet à FixPro de vérifier votre profil.</p>
+      <div class="rart-fg">
+        <div class="rart-upload" id="idBox" role="button" tabindex="0">+ Ajouter une pièce d'identité</div>
+        <input type="file" id="idInput" accept="image/jpeg,image/png,image/webp" style="display:none;" />
+        <input type="hidden" name="identity_doc" id="idBase64" />
+      </div>
     </div>
-
-    <div class="rart-sep"></div>
 
     <label class="rart-check">
       <input type="checkbox" id="conditions" required />
@@ -176,12 +215,8 @@
     </label>
   </form>
 
-  <div class="rart-submit-wrap">
-    <button type="button" class="rart-submit" id="submitBtn">Devenir technicien</button>
-  </div>
-
   <div class="rart-sticky">
-    <button type="button" class="rart-submit" id="submitBtnSticky">Devenir technicien</button>
+    <button type="button" class="rart-submit" id="submitBtn">Devenir technicien</button>
   </div>
 </div>
 
@@ -208,6 +243,7 @@
       readFile(this, res=>{
         document.getElementById('photoBase64').value = res;
         document.getElementById('photoBox').innerHTML = `<img src="${res}" alt="photo">`;
+        document.getElementById('photoLabel').textContent = 'Modifier la photo';
       });
     });
 
@@ -232,18 +268,16 @@
       this.value = formatPhone(txt);
     });
 
-    document.getElementById('expChips').addEventListener('click', e=>{
+    function activateChip(containerId, hiddenId, e){
       if (!e.target.classList.contains('rart-chip')) return;
-      document.querySelectorAll('#expChips .rart-chip').forEach(c=>c.classList.remove('active'));
+      document.querySelectorAll(`#${containerId} .rart-chip`).forEach(c=>c.classList.remove('active'));
       e.target.classList.add('active');
-      document.getElementById('experience').value = e.target.dataset.v;
-    });
-
-    document.getElementById('rayonChips').addEventListener('click', e=>{
-      if (!e.target.classList.contains('rart-chip')) return;
-      document.querySelectorAll('#rayonChips .rart-chip').forEach(c=>c.classList.remove('active'));
-      e.target.classList.add('active');
-      document.getElementById('rayon').value = e.target.dataset.v;
+      document.getElementById(hiddenId).value = e.target.dataset.v;
+    }
+    document.getElementById('expChips').addEventListener('click', e=>activateChip('expChips','experience',e));
+    document.getElementById('rayonChips').addEventListener('click', e=>activateChip('rayonChips','rayon',e));
+    document.querySelectorAll('.rart-chip').forEach(c=>{
+      c.addEventListener('keydown', e=>{ if (e.key==='Enter' || e.key===' '){ e.preventDefault(); c.click(); } });
     });
 
     function setLoc(label, lat, lon){
@@ -275,22 +309,20 @@
       return true;
     }
 
-    async function submit(btn){
+    document.getElementById('submitBtn').addEventListener('click', async function(){
       if (!validate()) return;
-      btn.disabled = true;
-      btn.textContent = 'Inscription en cours...';
+      this.disabled = true;
+      this.textContent = 'Inscription en cours...';
       const fd = new FormData(form);
       const res = await fetch('{{ url_for('register_artisan') }}', { method:'POST', body: fd });
       if (res.ok || res.redirected){
         window.location.href = '{{ url_for('artisan_pending') }}';
       } else {
         alert('Une erreur est survenue. Vérifiez vos informations.');
-        btn.disabled = false;
-        btn.textContent = 'Devenir technicien';
+        this.disabled = false;
+        this.textContent = 'Devenir technicien';
       }
-    }
-    document.getElementById('submitBtn').addEventListener('click', function(){ submit(this); });
-    document.getElementById('submitBtnSticky').addEventListener('click', function(){ submit(this); });
+    });
   })();
 </script>
 {% endblock %}
