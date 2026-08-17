@@ -304,6 +304,19 @@ body {
   border-bottom: 1px solid rgba(255,255,255,0.05);
 }
 
+.support-fab {
+  position: fixed;
+  bottom: 86px; right: 16px;
+  z-index: 90;
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(140deg, var(--brand), var(--brand-strong));
+  color: #fff;
+  display: grid; place-items: center;
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.35);
+}
+.support-fab svg { width: 24px; height: 24px; }
+
 @media (min-width: 768px) {
   .appbar-nav { display: flex; margin-left: 24px; flex: 1; }
   .burger { display: none; }

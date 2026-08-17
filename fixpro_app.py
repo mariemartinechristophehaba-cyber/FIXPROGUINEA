@@ -2160,6 +2160,70 @@ def conversations():
     return render_template("conversations.html", conversations=threads, user=user)
 
 
+@app.route("/tickets")
+@login_required
+def client_tickets():
+    """Liste des tickets de support du client connecte."""
+    user = get_current_user()
+    conn = get_db_connection()
+    try:
+        tickets = conn.execute(
+            "SELECT t.*, a.full_name AS artisan_name"
+            " FROM admin_tickets t"
+            " LEFT JOIN users a ON a.id = t.artisan_id"
+            " WHERE t.client_id = ? ORDER BY t.updated_at DESC",
+            (user["id"],)).fetchall()
+    finally:
+        conn.close()
+    return render_template("tickets.html", tickets=tickets, user=user)
+
+
+@app.route("/admin/tickets")
+@login_required
+@admin_required
+def admin_tickets_list():
+    """Dashboard admin : liste de tous les tickets de support."""
+    conn = get_db_connection()
+    try:
+        tickets = conn.execute(
+            "SELECT t.*, c.full_name AS client_name,"
+            " (SELECT content FROM admin_messages WHERE ticket_id = t.id"
+            " ORDER BY created_at DESC LIMIT 1) AS last_message,"
+            " (SELECT created_at FROM admin_messages WHERE ticket_id = t.id"
+            " ORDER BY created_at DESC LIMIT 1) AS last_message_at"
+            " FROM admin_tickets t"
+            " JOIN users c ON c.id = t.client_id"
+            " ORDER BY t.updated_at DESC").fetchall()
+    finally:
+        conn.close()
+    return render_template("admin_tickets.html", tickets=tickets)
+
+
+@app.route("/tickets/<int:ticket_id>/close", methods=["POST"])
+@login_required
+def ticket_close(ticket_id):
+    """Client ou admin ferme un ticket de support."""
+    user = get_current_user()
+    conn = get_db_connection()
+    try:
+        ticket = conn.execute(
+            "SELECT * FROM admin_tickets WHERE id = ?", (ticket_id,)).fetchone()
+        if not ticket:
+            flash("Ticket introuvable.", "error")
+            return redirect(url_for("client_tickets"))
+        if user["role"] != "admin" and ticket["client_id"] != user["id"]:
+            flash("Acces refuse.", "error")
+            return redirect(url_for("client_tickets"))
+        conn.execute("UPDATE admin_tickets SET status = 'resolved' WHERE id = ?", (ticket_id,))
+        conn.commit()
+        flash("Ticket marque comme resolu.", "success")
+    finally:
+        conn.close()
+    if user["role"] == "admin":
+        return redirect(url_for("admin_tickets_list"))
+    return redirect(url_for("client_tickets"))
+
+
 @app.route("/notifications")
 @login_required
 def notifications():

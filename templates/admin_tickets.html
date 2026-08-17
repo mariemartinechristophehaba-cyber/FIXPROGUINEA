@@ -1,54 +1,29 @@
-{% extends 'admin_base.html' %}
-{% block title %}Signalements - FixPro Admin{% endblock %}
-{% block admin_title %}Signalements{% endblock %}
+{% extends 'base.html' %}
+{% block title %}Tickets support - FixPro{% endblock %}
+{% block page_title %}Tickets support{% endblock %}
 
-{% block admin_content %}
-<div class="admin-card">
-  <div class="admin-section-head"><h3>Tickets et signalements</h3></div>
-  <div class="admin-table-wrap">
-    <table class="admin-table">
-      <thead>
-        <tr>
-          <th>Sujet</th>
-          <th>Client</th>
-          <th>Technicien</th>
-          <th>Message</th>
-          <th>Date</th>
-          <th>Statut</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for ticket in tickets %}
-        <tr>
-          <td>{{ ticket.subject or '—' }}</td>
-          <td>{{ ticket.client_name }}</td>
-          <td>{{ ticket.artisan_name or '—' }}</td>
-          <td class="small" style="max-width: 280px;">{{ ticket.message }}</td>
-          <td>{{ (ticket.created_at|string)[:16] }}</td>
-          <td>
-            {% if ticket.status == 'open' %}<span class="badge pending">En attente</span>
-            {% else %}<span class="badge success">Traite</span>{% endif %}
-          </td>
-          <td>
-            <form method="post" class="admin-inline-form">
-              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-              <input type="hidden" name="ticket_id" value="{{ ticket.id }}" />
-              {% if ticket.status == 'open' %}
-              <button class="btn btn-success btn-sm" type="submit" name="action" value="close" onclick="return confirm('Marquer ce signalement comme traite ?')">Marquer traite</button>
-              {% else %}
-              <button class="btn btn-soft btn-sm" type="submit" name="action" value="open" onclick="return confirm('Rouvrir ce signalement ?')">Rouvrir</button>
-              {% endif %}
-            </form>
-          </td>
-        </tr>
-        {% else %}
-        <tr>
-          <td colspan="7" class="muted" style="text-align: center; padding: 24px;">Aucun signalement.</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</div>
+{% block content %}
+<section class="card">
+  <h2>Tickets ouverts</h2>
+  {% if tickets %}
+  <ul class="ticket-list" style="list-style: none; padding: 0; margin: 0;">
+    {% for t in tickets %}
+    <li style="border-bottom: 1px solid rgba(255,255,255,0.05); padding: 14px 0;">
+      <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+        <a href="{{ url_for('ticket_detail', ticket_id=t.id) }}" style="color: var(--text); text-decoration: none; flex: 1;">
+          <strong>{{ t.client_name }}</strong> - {{ t.subject }}
+          <div class="small muted">{{ t.last_message or 'Pas encore de message' }} - {{ t.last_message_at or t.updated_at }}</div>
+        </a>
+        <form method="post" action="{{ url_for('ticket_close', ticket_id=t.id) }}" style="margin: 0;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+          <button class="btn btn-soft btn-sm" type="submit">Resolu</button>
+        </form>
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="muted">Aucun ticket de support.</p>
+  {% endif %}
+</section>
 {% endblock %}

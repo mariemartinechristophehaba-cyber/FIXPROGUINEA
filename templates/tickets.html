@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block title %}Mes tickets - FixPro{% endblock %}
+{% block page_title %}Support{% endblock %}
+
+{% block content %}
+<section class="card">
+  <h2>Assistance FixPro</h2>
+  {% if tickets %}
+  <ul class="ticket-list" style="list-style: none; padding: 0; margin: 0;">
+    {% for t in tickets %}
+    <li style="border-bottom: 1px solid rgba(255,255,255,0.05); padding: 14px 0;">
+      <a href="{{ url_for('ticket_detail', ticket_id=t.id) }}" style="color: var(--text); text-decoration: none; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <strong>{{ t.subject }}</strong>
+          <div class="small muted">{{ t.status }} - {{ t.updated_at }}</div>
+        </div>
+        <span class="btn btn-soft btn-sm">Ouvrir</span>
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="muted">Aucun ticket. Cliquez sur l'icone d'aide pour en ouvrir un.</p>
+  {% endif %}
+</section>
+{% endblock %}
