@@ -420,6 +420,19 @@ def get_payment_provider():
     return MockPaymentProvider()
 
 
+def create_notification(user_id, title, body, notif_type="info", data=None):
+    """Cree une notification in-app pour un utilisateur."""
+    conn = get_db_connection()
+    try:
+        conn.execute(
+            "INSERT INTO notifications (user_id, title, body, type, data)"
+            " VALUES (?, ?, ?, ?, ?)",
+            (user_id, title, body, notif_type, data or ""))
+        conn.commit()
+    finally:
+        conn.close()
+
+
 @app.context_processor
 def inject_layout_context():
     """Expose l'utilisateur connecte et les compteurs admin a tous les gabarits."""
@@ -2569,17 +2582,36 @@ def ticket_close(ticket_id):
 @app.route("/notifications")
 @login_required
 def notifications():
-    """Liste les notifications du client (provisoire, sans table dediee)."""
+    """Liste les notifications in-app de l'utilisateur."""
     user = get_current_user()
     conn = get_db_connection()
     try:
         rows = conn.execute(
-            "SELECT id, title, status, updated_at FROM requests"
-            " WHERE client_id = ? ORDER BY updated_at DESC LIMIT 10",
+            "SELECT * FROM notifications"
+            " WHERE user_id = ? ORDER BY created_at DESC LIMIT 50",
             (user["id"],)).fetchall()
+        unread = conn.execute(
+            "SELECT COUNT(*) AS n FROM notifications"
+            " WHERE user_id = ? AND is_read = 0",
+            (user["id"],)).fetchone()["n"]
     finally:
         conn.close()
-    return render_template("notifications.html", user=user, notifications=rows)
+    return render_template("notifications.html", user=user, notifications=rows, unread=unread)
+
+
+@app.route("/notifications/<int:notif_id>/read", methods=["POST"])
+@login_required
+def mark_notification_read(notif_id):
+    user = get_current_user()
+    conn = get_db_connection()
+    try:
+        notif = conn.execute("SELECT * FROM notifications WHERE id = ?", (notif_id,)).fetchone()
+        if notif and (user["role"] == "admin" or notif["user_id"] == user["id"]):
+            conn.execute("UPDATE notifications SET is_read = 1 WHERE id = ?", (notif_id,))
+            conn.commit()
+    finally:
+        conn.close()
+    return jsonify({"ok": True})
 
 
 # ---------------------------------------------------------------------------
@@ -2668,7 +2700,7 @@ def request_new():
             status = "pending" if not best else "assigned"
             artisan_id = best["id"] if best else None
 
-            conn.execute(
+            cursor = conn.execute(
                 "INSERT INTO requests (client_id, artisan_id, title, description, category,"
                 " address, photo_url, diagnostic_price, budget, status)"
                 " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
@@ -2679,13 +2711,23 @@ def request_new():
                  _to_float(request.form.get("budget")),
                  status),
             )
+            new_request_id = cursor.lastrowid
             conn.commit()
 
+            request_address = request.form.get("address", "").strip()
             if best:
+                create_notification(
+                    best["id"], "Nouvelle demande",
+                    f"Nouvelle demande : {title} - {request_address or 'Conakry'}",
+                    "new_request", f"request_id:{new_request_id}")
                 flash("Demande creee et assignee au meilleur technicien disponible.", "success")
             else:
                 flash("Demande d'intervention creee. Un artisan pourra maintenant "
                       "la prendre en charge.", "success")
+            create_notification(
+                user["id"], "Demande enregistree",
+                f"Votre demande '{title}' a ete enregistree.",
+                "request_created", f"request_id:{new_request_id}")
             return redirect(url_for("requests_list"))
     finally:
         conn.close()
@@ -2791,6 +2833,12 @@ def accept_request(request_id):
             " updated_at = ? WHERE id = ? AND status = 'pending'",
             (user["id"], now_iso(), request_id))
         conn.commit()
+        req = conn.execute("SELECT client_id FROM requests WHERE id = ?", (request_id,)).fetchone()
+        if req:
+            create_notification(
+                req["client_id"], "Artisan trouve",
+                "Un technicien a accepte votre demande.",
+                "request_accepted", f"request_id:{request_id}")
         flash("Demande attribuée. Proposez un devis afin que le client puisse "
               "l'accepter.", "success")
     finally:
