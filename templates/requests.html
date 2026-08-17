@@ -18,9 +18,9 @@
         </div>
         <div class="r">
           {% if item.status == 'completed' %}
-          <span class="pill pill-green">Terminee</span>
+          <span class="pill pill-green">Terminée</span>
           {% elif item.status == 'cancelled' %}
-          <span class="pill pill-amber">Annulee</span>
+          <span class="pill pill-amber">Annulée</span>
           {% elif item.status in ('assigned','in_progress','quote_accepted') %}
           <span class="pill pill-amber">En cours</span>
           {% else %}
@@ -32,7 +32,7 @@
         {% if item.client_rating %}
         <span class="fx-stars">{{ '★' * item.client_rating }}{{ '☆' * (5-item.client_rating) }} votre avis</span>
         {% else %}
-        <span style="font-size:11px;color:var(--slate-light);">Avis non laisse</span>
+        <span style="font-size:11px;color:var(--slate-light);">Avis non laissé</span>
         {% endif %}
         {% if item.status == 'completed' and item.quote_amount %}
         <span class="hist-price">{{ "{:,}".format(item.quote_amount|int).replace(",", " ") }} GNF</span>

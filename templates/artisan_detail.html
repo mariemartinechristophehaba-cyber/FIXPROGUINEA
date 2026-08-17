@@ -48,10 +48,10 @@
     <div class="fx-p-card">
       <h4>Zone d'intervention</h4>
       <div class="fx-p-zone"><div class="fx-p-radius"></div></div>
-      <p>{{ artisan.quartier or artisan.city or 'Conakry' }} et environs — adresse exacte partagee apres confirmation.</p>
+      <p>{{ artisan.quartier or artisan.city or 'Conakry' }} et environs — adresse exacte partagée après confirmation.</p>
     </div>
     <div class="fx-p-card">
-      <h4>Avis apres intervention</h4>
+      <h4>Avis après intervention</h4>
       {% if reviews %}
       {% for review in reviews[:3] %}
       <div class="fx-review">
@@ -60,7 +60,7 @@
       </div>
       {% endfor %}
       {% else %}
-      <p>Soyez le premier a laisser un avis apres une intervention.</p>
+      <p>Soyez le premier à laisser un avis après une intervention.</p>
       {% endif %}
     </div>
   </div>

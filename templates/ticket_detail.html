@@ -16,7 +16,7 @@
 
   <div class="fx-chat-body">
     <div style="text-align:center">
-      <span class="fx-context">🔧 A propos de {{ ticket.artisan_name or 'ce technicien' }} — {{ ticket.profession or 'Technicien' }}</span>
+      <span class="fx-context">À propos de {{ ticket.artisan_name or 'ce technicien' }} — {{ ticket.profession or 'Technicien' }}</span>
     </div>
     {% for message in messages %}
     <div class="fx-bubble {{ 'out' if message.sender_id == user.id else 'in' }}">
@@ -28,7 +28,7 @@
 
   <form class="fx-chat-input" method="post">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-    <input type="text" name="content" required placeholder="Ecrire un message…" autocomplete="off" />
+    <input type="text" name="content" required placeholder="Écrire un message…" autocomplete="off" />
     <button class="send" type="submit" aria-label="Envoyer">➤</button>
   </form>
 </div>
