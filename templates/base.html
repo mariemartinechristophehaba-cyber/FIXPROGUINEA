@@ -72,15 +72,39 @@
     <div class="app-wrap">
       {% if not is_admin_route and not nav_user and request.endpoint not in ('dashboard', 'index') %}
       <header class="appbar guest-appbar">
-        <a class="brand" href="{{ url_for('index') }}">
+        <a class="brand" href="{{ url_for('index') }}" style="transition: opacity .15s;">
           <span class="brand-mark">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
           </span>
           Fix<em>Pro</em>
         </a>
+
+        <nav class="appbar-nav" id="appbarNav">
+          <a class="appbar-link" href="{{ url_for('index') }}">Accueil</a>
+          <a class="appbar-link" href="{{ url_for('artisans_page') }}">Trouver un technicien</a>
+          <a class="appbar-link" href="{{ url_for('register', role='artisan') }}">Devenir technicien</a>
+        </nav>
+
         <div class="appbar-actions">
+          {% if nav_user %}
+          <div class="user-menu">
+            <button class="user-menu-trigger" type="button" aria-label="Menu utilisateur">
+              <span class="avatar-sm">{{ (nav_user.full_name or 'U')[0]|upper }}</span>
+              <span class="user-name">{{ (nav_user.full_name or 'Utilisateur').split(' ')[0] }}</span>
+            </button>
+            <div class="user-menu-dropdown">
+              <a href="{{ url_for('profile') }}">Mon profil</a>
+              <a href="{{ url_for('requests_list') }}">Mes demandes</a>
+              <a href="{{ url_for('logout') }}">Deconnexion</a>
+            </div>
+          </div>
+          {% else %}
           <a class="btn btn-soft btn-sm" href="{{ url_for('login') }}">Connexion</a>
           <a class="btn btn-primary btn-sm" href="{{ url_for('client_signup') }}">Inscription</a>
+          {% endif %}
+          <button class="burger" id="burgerBtn" type="button" aria-label="Ouvrir le menu">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+          </button>
         </div>
       </header>
       {% elif not is_admin_route %}
@@ -94,6 +118,17 @@
       </header>
       {% endif %}
       {% endif %}
+
+      <nav class="mobile-nav" id="mobileNav">
+        <a class="mobile-link" href="{{ url_for('index') }}">Accueil</a>
+        <a class="mobile-link" href="{{ url_for('artisans_page') }}">Trouver un technicien</a>
+        <a class="mobile-link" href="{{ url_for('register', role='artisan') }}">Devenir technicien</a>
+        {% if nav_user %}
+        <a href="{{ url_for('profile') }}">Mon profil</a>
+        <a href="{{ url_for('requests_list') }}">Mes demandes</a>
+        <a href="{{ url_for('logout') }}">Deconnexion</a>
+        {% endif %}
+      </nav>
 
       <main class="page {% block main_class %}{% endblock %}">
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -146,6 +181,28 @@
     {% endblock %}
     {% endif %}
 
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const burger = document.getElementById('burgerBtn');
+        const mobileNav = document.getElementById('mobileNav');
+        if (burger && mobileNav) {
+          burger.addEventListener('click', function() {
+            mobileNav.classList.toggle('open');
+          });
+        }
+        const userMenu = document.querySelector('.user-menu');
+        if (userMenu) {
+          const trigger = userMenu.querySelector('.user-menu-trigger');
+          trigger.addEventListener('click', function(e) {
+            e.stopPropagation();
+            userMenu.classList.toggle('open');
+          });
+          document.addEventListener('click', function() {
+            userMenu.classList.remove('open');
+          });
+        }
+      });
+    </script>
     {% block scripts %}{% endblock %}
   </body>
 </html>

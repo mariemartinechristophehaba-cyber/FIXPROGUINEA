@@ -223,9 +223,93 @@ body {
 }
 .brand-mark svg { width: 17px; height: 17px; }
 
-.appbar-nav { display: none; }
+.appbar-nav { display: none; align-items: center; gap: 8px; }
 
 .appbar-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+
+.appbar-link {
+  color: var(--text-2);
+  text-decoration: none;
+  font-size: 0.9rem;
+  padding: 6px 10px;
+  border-radius: 8px;
+  transition: color .15s, background .15s;
+}
+.appbar-link:hover { color: var(--text); background: rgba(255,255,255,0.05); }
+
+.burger {
+  display: grid;
+  place-items: center;
+  width: 38px; height: 38px;
+  border-radius: 11px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--text-2);
+  cursor: pointer;
+}
+.burger svg { width: 20px; height: 20px; }
+
+.user-menu { position: relative; }
+.user-menu-trigger {
+  display: flex; align-items: center; gap: 8px;
+  background: transparent; border: 0; color: var(--text);
+  cursor: pointer; padding: 4px 8px 4px 4px;
+  border-radius: 24px; border: 1px solid var(--line);
+}
+.user-name { display: none; font-size: 0.9rem; }
+.avatar-sm {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  background: linear-gradient(140deg, var(--brand), var(--amber));
+  color: #fff; font-weight: 700; font-size: 0.85rem;
+}
+.user-menu-dropdown {
+  display: none;
+  position: absolute;
+  top: 110%; right: 0;
+  min-width: 160px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+  z-index: 70;
+}
+.user-menu.open .user-menu-dropdown { display: block; }
+.user-menu-dropdown a {
+  display: block;
+  padding: 10px 14px;
+  color: var(--text-2);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+.user-menu-dropdown a:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+
+.mobile-nav {
+  display: none;
+  position: fixed;
+  top: var(--appbar-h); left: 0; right: 0;
+  background: rgba(11, 15, 26, 0.96);
+  border-bottom: 1px solid var(--line);
+  padding: 12px 16px;
+  z-index: 59;
+  flex-direction: column;
+  gap: 8px;
+}
+.mobile-nav.open { display: flex; }
+.mobile-nav a {
+  color: var(--text-2);
+  text-decoration: none;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+@media (min-width: 768px) {
+  .appbar-nav { display: flex; margin-left: 24px; flex: 1; }
+  .burger { display: none; }
+  .user-name { display: inline; }
+  .mobile-nav { display: none !important; }
+}
 
 .icon-btn {
   position: relative;
