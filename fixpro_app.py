@@ -318,6 +318,54 @@ def can_transition_request(current_status, new_status):
     return new_status in allowed
 
 
+def _score_artisan(artisan, client_city=""):
+    """Calcule un score de matching pour un artisan.
+
+    Plus le score est eleve, plus l'artisan est pertinent pour la demande.
+    """
+    score = 0
+    if artisan.get("is_verified"):
+        score += 100
+    if artisan.get("is_active"):
+        score += 50
+    if artisan.get("availability_status") == "en_ligne":
+        score += 80
+    elif artisan.get("availability_status") == "occupe":
+        score += 20
+    score += float(artisan.get("avg_rating") or 0) * 15
+    score += int(artisan.get("review_count") or 0) * 2
+    score += int(artisan.get("completed") or 0) * 3
+    if client_city and (artisan.get("city") == client_city or artisan.get("quartier") == client_city):
+        score += 40
+    return score
+
+
+def match_artisans(conn, category, client_city, lat=None, lon=None, limit=5):
+    """Retourne les artisans les mieux adaptes a la demande."""
+    sql = """
+        SELECT u.id, u.full_name, u.profession, u.city, u.quartier, u.latitude, u.longitude,
+               u.is_verified, u.is_active, u.availability_status, u.hourly_rate,
+               COALESCE((SELECT AVG(rating) FROM reviews WHERE artisan_id = u.id), 0) AS avg_rating,
+               COALESCE((SELECT COUNT(*) FROM reviews WHERE artisan_id = u.id), 0) AS review_count,
+               COALESCE((SELECT COUNT(*) FROM requests WHERE artisan_id = u.id AND status = 'completed'), 0) AS completed
+        FROM users u
+        WHERE u.role = 'artisan' AND u.is_verified = 1 AND u.is_active = 1
+        AND (u.profession = ? OR ? = '')
+    """
+    rows = conn.execute(sql, (category, category)).fetchall()
+    artisans = [dict(r) for r in rows]
+    for a in artisans:
+        a["score"] = _score_artisan(a, client_city)
+        if lat is not None and lon is not None and a["latitude"] and a["longitude"]:
+            try:
+                a["distance"] = calculate_distance(lat, lon, float(a["latitude"]), float(a["longitude"]))
+                a["score"] += max(0, 30 - a["distance"])
+            except (TypeError, ValueError):
+                a["distance"] = None
+    artisans.sort(key=lambda a: a["score"], reverse=True)
+    return artisans[:limit]
+
+
 class PaymentProvider(ABC):
     """Abstraction pour les fournisseurs de paiement.
 
@@ -2548,18 +2596,13 @@ def request_new():
                 "SELECT diagnostic_price FROM service_categories WHERE name = ?",
                 (category,)).fetchone()
 
-            # Recherche un artisan disponible dans la meme categorie et ville
+            # Matching : classe les artisans eligibles par score.
             city = user.get("city") or ""
-            artisan = conn.execute(
-                "SELECT id FROM users"
-                " WHERE role = 'artisan' AND is_verified = 1 AND is_active = 1"
-                " AND (profession = ? OR ? = '')"
-                " AND (city = ? OR ? = '')"
-                " ORDER BY availability_status DESC, RANDOM() LIMIT 1",
-                (category, category, city, city)).fetchone()
+            artisans = match_artisans(conn, category, city)
+            best = artisans[0] if artisans else None
 
-            status = "pending" if not artisan else "assigned"
-            artisan_id = artisan["id"] if artisan else None
+            status = "pending" if not best else "assigned"
+            artisan_id = best["id"] if best else None
 
             conn.execute(
                 "INSERT INTO requests (client_id, artisan_id, title, description, category,"
@@ -2574,10 +2617,10 @@ def request_new():
             )
             conn.commit()
 
-            if artisan:
-                flash("Demande creee et assignee a un technicien disponible.", "success")
+            if best:
+                flash("Demande creee et assignee au meilleur technicien disponible.", "success")
             else:
-                flash("Demande d'intervention créée. Un artisan pourra maintenant "
+                flash("Demande d'intervention creee. Un artisan pourra maintenant "
                       "la prendre en charge.", "success")
             return redirect(url_for("requests_list"))
     finally:
