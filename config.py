@@ -108,15 +108,19 @@ class ProductionConfig(Config):
 
 
 def get_config():
-    """Retourne la configuration correspondant a FLASK_ENV.
+    """Retourne la configuration correspondant a FLASK_ENV ou a Vercel.
 
     En production, SECRET_KEY doit imperativement etre fournie : une cle
     generee au demarrage serait differente sur chaque instance Vercel, ce
     qui deconnecterait les utilisateurs en permanence.
     """
     env = os.getenv("FLASK_ENV", "development").lower()
+    vercel_env = os.getenv("VERCEL_ENV", "").lower()
 
-    if env == "production":
+    is_production = (env == "production" or vercel_env == "production" or
+                     os.getenv("VERCEL") == "1")
+
+    if is_production:
         config = ProductionConfig()
         if not config.SECRET_KEY:
             raise RuntimeError(
