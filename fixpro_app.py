@@ -375,7 +375,15 @@ def calculate_distance(lat1, lon1, lat2, lon2):
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    conn = get_db_connection()
+    try:
+        techniciens = conn.execute(
+            "SELECT COUNT(*) AS n FROM users WHERE role = 'artisan' AND is_verified = 1").fetchone()["n"]
+        metiers = conn.execute(
+            "SELECT COUNT(DISTINCT profession) AS n FROM users WHERE role = 'artisan' AND profession IS NOT NULL AND profession != ''").fetchone()["n"]
+    finally:
+        conn.close()
+    return render_template("index.html", techniciens=techniciens, metiers=metiers)
 
 
 @app.route("/contact")
