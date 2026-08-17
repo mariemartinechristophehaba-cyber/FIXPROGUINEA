@@ -547,7 +547,7 @@ def register():
 @app.route("/inscription/technicien", methods=["GET", "POST"])
 @limiter.limit("10 per hour", methods=["POST"])
 def register_artisan():
-    """Formulaire simple d'inscription technicien."""
+    """Formulaire d'inscription technicien en 5 etapes."""
     categories = []
     conn = get_db_connection()
     try:
@@ -558,13 +558,19 @@ def register_artisan():
 
     if request.method == "POST":
         full_name = request.form.get("full_name", "").strip()
-        profession = request.form.get("profession", "").strip()
         phone = _phone_with_prefix(request.form.get("phone", "").strip())
+        profession = request.form.get("profession", "").strip()
+        specialite = request.form.get("specialite", "").strip()
+        experience = request.form.get("experience", "").strip()
+        bio = request.form.get("bio", "").strip()
         address = request.form.get("address", "").strip()
+        rayon = request.form.get("rayon", "").strip()
         identity_doc = request.form.get("identity_doc", "").strip()
+        photo = request.form.get("photo", "").strip()
+        portfolio_raw = request.form.get("portfolio", "").strip()
 
-        if not full_name or not profession or not phone or not address or not identity_doc:
-            flash("Veuillez remplir tous les champs et ajouter la pièce d'identité.", "error")
+        if not full_name or not phone or not profession or not address or not identity_doc:
+            flash("Veuillez remplir tous les champs obligatoires.", "error")
             return redirect(url_for("register_artisan"))
 
         conn = get_db_connection()
@@ -577,22 +583,38 @@ def register_artisan():
             lat, lon = _geocode_zone(address, "")
             conn.execute(
                 "INSERT INTO users (phone, password_hash, role, full_name, profession,"
-                " city, latitude, longitude, is_verified, is_active)"
-                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                " skills, years_experience, bio, city, zone_intervention, latitude, longitude,"
+                " is_verified, is_active, photo_url)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (phone, generate_password_hash(temp_password), "artisan",
-                 full_name, profession, address, lat, lon, 0, 1))
+                 full_name, profession, specialite, experience, bio, address,
+                 rayon, lat, lon, 0, 1, photo))
             conn.commit()
 
             artisan = conn.execute(
                 "SELECT id FROM users WHERE phone = ?", (phone,)).fetchone()
+            artisan_id = artisan["id"]
+
             mime, ext, encoded = _parse_base64_file(identity_doc)
             if encoded:
                 conn.execute(
                     "INSERT INTO technician_documents (technician_id, document_type,"
                     " file_name, mime_type, content_base64)"
                     " VALUES (?, ?, ?, ?, ?)",
-                    (artisan["id"], "identity", f"identite{ext}", mime, encoded))
-                conn.commit()
+                    (artisan_id, "identity", f"identite{ext}", mime, encoded))
+
+            try:
+                portfolio = json.loads(portfolio_raw) if portfolio_raw else []
+            except Exception:
+                portfolio = []
+            for i, p in enumerate(portfolio[:5]):
+                m, e, enc = _parse_base64_file(p)
+                if enc:
+                    conn.execute(
+                        "INSERT INTO artisan_portfolio (artisan_id, photo_url, caption)"
+                        " VALUES (?, ?, ?)",
+                        (artisan_id, p, f"Realisation {i+1}"))
+            conn.commit()
         finally:
             conn.close()
 
