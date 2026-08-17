@@ -1532,6 +1532,7 @@ def google_signup():
         flash("La connexion Google n'est pas encore configurée.", "error")
         return redirect(url_for("client_signup"))
 
+    session["google_next_url"] = request.args.get("next") or request.referrer or ""
     redirect_uri = app.config.get("GOOGLE_REDIRECT_URI")
     return google_client.authorize_redirect(redirect_uri)
 
@@ -1561,6 +1562,7 @@ def google_callback():
         return redirect(url_for("client_signup"))
 
     conn = get_db_connection()
+    next_url = session.pop("google_next_url", "")
     try:
         user = conn.execute(
             "SELECT * FROM users WHERE email = ?", (email,)).fetchone()
@@ -1568,13 +1570,15 @@ def google_callback():
             session.clear()
             session["user_id"] = user["id"]
             session.permanent = True
+            session["google_next_url"] = next_url
             flash("Bienvenue dans FixPro.", "success")
-            return redirect(url_for("dashboard"))
+            return redirect(next_url or url_for("dashboard"))
 
         # Nouvel utilisateur : stocke les donnees en session en attendant
         # le telephone et la ville.
         session["google_email"] = email
         session["google_name"] = full_name
+        session["google_next_url"] = next_url
         return redirect(url_for("complete_profile"))
     finally:
         conn.close()
@@ -1616,11 +1620,12 @@ def complete_profile():
 
             new_user = conn.execute(
                 "SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+            next_url = session.pop("google_next_url", "")
             session.clear()
             session["user_id"] = new_user["id"]
             session.permanent = True
             flash("Bienvenue dans FixPro.", "success")
-            return redirect(url_for("dashboard"))
+            return redirect(next_url or url_for("dashboard"))
         finally:
             conn.close()
 
