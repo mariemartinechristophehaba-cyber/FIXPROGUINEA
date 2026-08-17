@@ -6,76 +6,79 @@
 {% block content %}
 <style>
   .rart-wrap { min-height:100vh; display:flex; flex-direction:column; background:var(--paper); }
-  .rart-head { background:var(--ink); color:#fff; padding:14px 16px 18px; position:sticky; top:0; z-index:10; }
-  .rart-back { color:#DCE3F0; text-decoration:none; font-size:13px; display:inline-flex; align-items:center; gap:6px; }
-  .rart-title { font-family:var(--font-display); font-size:25px; margin:10px 0 3px; font-weight:700; }
-  .rart-sub { color:#9FB0CC; font-size:13px; margin:0; }
-  .rart-stepper { display:flex; align-items:center; justify-content:center; gap:4px; margin-top:12px; }
-  .rart-dot { width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:9.5px; font-weight:700; }
-  .rart-dot.done { background:var(--green); color:#fff; }
-  .rart-dot.active { background:var(--amber); color:var(--ink); }
-  .rart-dot.pending { background:rgba(255,255,255,.14); color:#9FB0CC; }
-  .rart-line { flex:1; height:2px; background:rgba(255,255,255,.12); border-radius:1px; max-width:18px; }
-  .rart-line.done { background:var(--green); }
-  .rart-form { padding:18px 16px 100px; flex:1; }
-  .rart-step { display:none; }
-  .rart-step.active { display:block; }
-  .rart-step-title { font-family:var(--font-display); font-size:19px; margin:0 0 3px; color:var(--ink); }
-  .rart-step-sub { font-size:13px; color:var(--slate); margin:0 0 18px; }
+  .rart-head { background:var(--ink); color:#fff; padding:16px 16px 18px; position:sticky; top:0; z-index:10; }
+  .rart-head .rart-back { color:#DCE3F0; text-decoration:none; font-size:12px; display:inline-flex; align-items:center; gap:6px; margin-bottom:10px; }
+  .rart-head h1 { font-family:var(--font-display); font-size:25px; margin:0 0 4px; font-weight:700; }
+  .rart-head p { margin:0; color:#9FB0CC; font-size:13px; line-height:1.45; }
+  .rart-trust { display:flex; align-items:center; gap:8px; margin-top:12px; font-size:12px; color:#DCE3F0; }
+  .rart-trust svg { width:16px; height:16px; color:var(--green); }
+  .rart-form { padding:18px 16px 100px; }
+  .rart-section { padding:18px 0; border-bottom:1px solid var(--line); }
+  .rart-section:last-of-type { border-bottom:none; }
+  .rart-section-title { font-family:var(--font-display); font-size:19px; margin:0 0 14px; color:var(--ink); }
   .rart-fg { margin-bottom:14px; }
-  .rart-fl { font-size:13px; color:var(--slate); text-transform:uppercase; letter-spacing:0.3px; margin-bottom:5px; font-weight:600; }
-  .rart-fb { width:100%; border:1px solid var(--line); border-radius:12px; padding:13px 14px; font-size:15px; background:var(--paper-2); color:var(--ink); box-sizing:border-box; font-family:var(--font-body); }
+  .rart-fl { font-size:13px; color:var(--slate); margin-bottom:5px; font-weight:600; }
+  .rart-fb { width:100%; border:1px solid var(--line); border-radius:10px; padding:13px 14px; font-size:15px; background:var(--paper-2); color:var(--ink); box-sizing:border-box; font-family:var(--font-body); }
   .rart-fb:focus { outline:none; border-color:var(--amber); }
-  .rart-photo { position:relative; width:96px; height:96px; border-radius:50%; border:2px dashed #BFC6D4; display:flex; flex-direction:column; align-items:center; justify-content:center; margin:0 auto 18px; color:var(--slate); cursor:pointer; background:var(--paper-2); overflow:hidden; }
+  .rart-photo { position:relative; width:86px; height:86px; border-radius:50%; border:2px dashed #BFC6D4; display:flex; flex-direction:column; align-items:center; justify-content:center; color:var(--slate); cursor:pointer; background:var(--paper-2); overflow:hidden; }
   .rart-photo img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
   .rart-photo input { display:none; }
+  .rart-photo-txt { font-size:9px; margin-top:2px; }
+  .rart-photo-wrap { display:flex; align-items:center; gap:12px; margin-bottom:18px; }
   .rart-phone { display:flex; gap:8px; }
-  .rart-prefix { flex:0 0 auto; display:flex; align-items:center; padding:0 12px; background:var(--paper-2); border:1px solid var(--line); border-radius:12px; font-size:14px; color:var(--slate); font-weight:600; }
+  .rart-prefix { flex:0 0 auto; display:flex; align-items:center; padding:0 12px; background:var(--paper-2); border:1px solid var(--line); border-radius:10px; font-size:14px; color:var(--slate); font-weight:600; }
   .rart-chips { display:flex; flex-wrap:wrap; gap:8px; }
-  .rart-chip { border:1px solid var(--line); background:var(--paper-2); border-radius:20px; padding:8px 14px; font-size:13px; color:var(--slate); cursor:pointer; }
+  .rart-chip { border:1px solid var(--line); background:var(--paper-2); border-radius:18px; padding:8px 13px; font-size:13px; color:var(--slate); cursor:pointer; }
   .rart-chip.active { background:var(--amber-soft); border-color:var(--amber); color:var(--ink); }
-  .rart-upload { width:100%; border:1px dashed var(--line); border-radius:12px; padding:16px; text-align:center; color:var(--slate); cursor:pointer; background:var(--paper-2); font-size:13px; display:flex; flex-direction:column; align-items:center; gap:6px; }
-  .rart-upload img { width:100%; max-height:120px; object-fit:cover; border-radius:8px; margin-bottom:4px; }
-  .rart-portfolio { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:10px; }
-  .rart-p { aspect-ratio:1; border-radius:10px; background:var(--paper-2); border:1px dashed var(--line); display:flex; align-items:center; justify-content:center; color:var(--slate); font-size:11px; cursor:pointer; }
+  .rart-textarea { min-height:90px; resize:vertical; }
+  .rart-upload { width:100%; border:1px dashed var(--line); border-radius:10px; padding:14px; text-align:center; color:var(--slate); cursor:pointer; background:var(--paper-2); font-size:13px; display:flex; flex-direction:column; align-items:center; gap:6px; }
+  .rart-upload img { max-height:100px; object-fit:cover; border-radius:8px; }
+  .rart-portfolio { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:10px; }
+  .rart-p { aspect-ratio:1; border-radius:10px; background:var(--paper-2); border:1px dashed var(--line); display:flex; align-items:center; justify-content:center; color:var(--slate); font-size:18px; cursor:pointer; }
   .rart-p img { width:100%; height:100%; object-fit:cover; border-radius:10px; }
-  .rart-recap { background:var(--paper-2); border:1px solid var(--line); border-radius:12px; padding:14px; margin-bottom:12px; }
-  .rart-recap .row { display:flex; justify-content:space-between; align-items:center; padding:7px 0; border-bottom:1px solid var(--line); font-size:13px; }
-  .rart-recap .row:last-child { border-bottom:none; }
-  .rart-recap .row span { color:var(--slate); }
-  .rart-recap .row b { color:var(--ink); font-weight:600; }
-  .rart-recap .row a { color:var(--amber-dark); font-size:11px; font-weight:600; text-decoration:none; }
-  .rart-nav { display:flex; gap:10px; padding:14px 16px; background:var(--paper); border-top:1px solid var(--line); position:fixed; bottom:0; left:0; right:0; }
-  .rart-nav .rart-btn { flex:1; padding:14px; border-radius:12px; font-weight:700; font-size:15px; border:none; cursor:pointer; }
-  .rart-nav .primary { background:var(--amber); color:var(--ink); }
-  .rart-nav .ghost { background:transparent; color:var(--ink); border:1px solid var(--line); }
+  .rart-recap-row { display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--line); font-size:13px; }
+  .rart-recap-row:last-child { border-bottom:none; }
+  .rart-recap-row span { color:var(--slate); }
+  .rart-recap-row b { color:var(--ink); font-weight:600; }
+  .rart-recap-row a { color:var(--amber-dark); font-size:11px; font-weight:600; text-decoration:none; }
+  .rart-sticky { position:fixed; bottom:0; left:0; right:0; padding:12px 16px calc(12px + env(safe-area-inset-bottom)); background:var(--paper); border-top:1px solid var(--line); }
+  .rart-sticky .rart-btn { width:100%; border:none; border-radius:10px; padding:15px; font-size:15px; font-weight:700; background:var(--amber); color:var(--ink); cursor:pointer; font-family:var(--font-body); }
+  .rart-sticky .rart-btn:disabled { opacity:.6; }
+  .rart-checkbox { display:flex; align-items:flex-start; gap:8px; margin:14px 0; font-size:13px; color:var(--slate); }
+  .rart-checkbox input { margin-top:2px; }
+  .rart-loc-msg { font-size:13px; color:var(--ink); margin-top:6px; font-weight:600; min-height:18px; }
   @media (min-width: 768px) {
-    .rart-form { max-width:560px; margin:0 auto; padding:26px 24px 110px; }
-    .rart-title { font-size:28px; }
-    .rart-step-title { font-size:21px; }
+    .rart-form { max-width:640px; margin:0 auto; padding:26px 24px 100px; }
+    .rart-head h1 { font-size:28px; }
+    .rart-sticky { padding:14px 24px; }
+    .rart-sticky .rart-btn { max-width:600px; margin:0 auto; }
   }
 </style>
 
 <div class="rart-wrap">
   <div class="rart-head">
     <a href="{{ url_for('index') }}" class="rart-back">← Retour</a>
-    <h1 class="rart-title">Devenir technicien FixPro</h1>
-    <p class="rart-sub">Votre profil sera vérifié avant publication</p>
-    <div class="rart-stepper" id="stepper"></div>
+    <h1>Devenir technicien FixPro</h1>
+    <p>Créez votre profil professionnel pour recevoir des demandes de clients près de chez vous.</p>
+    <div class="rart-trust">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+      <span>Votre profil sera vérifié avant publication</span>
+    </div>
   </div>
 
   <form method="post" class="rart-form" id="rartForm" enctype="multipart/form-data" onsubmit="return false;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
 
-    <div class="rart-step active" data-step="1">
-      <h2 class="rart-step-title">Vos informations</h2>
-      <p class="rart-step-sub">Renseignez vos informations personnelles</p>
-      <label class="rart-photo" id="photoBox">
-        <input type="file" id="photoInput" accept="image/jpeg,image/png,image/webp" />
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="12" r="4"/><path d="M3 9h6l2-2h3l2 2h5"/></svg>
-        <span style="font-size:9.5px;margin-top:3px;">Photo</span>
-      </label>
-      <input type="hidden" name="photo" id="photoBase64" />
+    <div class="rart-section" id="sec1">
+      <h2 class="rart-section-title">Vos informations</h2>
+      <div class="rart-photo-wrap">
+        <label class="rart-photo" id="photoBox">
+          <input type="file" id="photoInput" accept="image/jpeg,image/png,image/webp" />
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="12" r="4"/><path d="M3 9h6l2-2h3l2 2h5"/></svg>
+          <span class="rart-photo-txt">Photo</span>
+        </label>
+        <input type="hidden" name="photo" id="photoBase64" />
+      </div>
       <div class="rart-fg">
         <div class="rart-fl">Nom complet</div>
         <input class="rart-fb" type="text" name="full_name" id="fullName" placeholder="Entrez votre nom complet" required />
@@ -84,18 +87,18 @@
         <div class="rart-fl">Téléphone</div>
         <div class="rart-phone">
           <span class="rart-prefix">+224</span>
-          <input class="rart-fb" type="tel" name="phone" id="phone" placeholder="620 00 00 00" style="flex:1;" inputmode="tel" required />
+          <input class="rart-fb" type="tel" name="phone" id="phone" placeholder="624 12 34 56" style="flex:1;" inputmode="tel" required />
         </div>
       </div>
     </div>
 
-    <div class="rart-step" data-step="2">
-      <h2 class="rart-step-title">Votre activité</h2>
-      <p class="rart-step-sub">Parlez-nous de votre métier</p>
+    <div class="rart-section" id="sec2">
+      <h2 class="rart-section-title">Votre activité</h2>
+      <p style="font-size:13px;color:var(--slate);margin:-10px 0 14px;">Présentez votre métier et votre expérience.</p>
       <div class="rart-fg">
         <div class="rart-fl">Métier</div>
         <select class="rart-fb" name="profession" id="profession" required>
-          <option value="" disabled selected>Choisir un métier</option>
+          <option value="" disabled selected>Choisissez un métier</option>
           <option value="Plombier">Plombier</option>
           <option value="Électricien">Électricien</option>
           <option value="Climatisation">Climatisation</option>
@@ -113,7 +116,7 @@
       </div>
       <div class="rart-fg">
         <div class="rart-fl">Spécialité</div>
-        <input class="rart-fb" type="text" name="specialite" placeholder="Votre spécialité" />
+        <input class="rart-fb" type="text" name="specialite" placeholder="Ex: Installation et dépannage électrique" />
       </div>
       <div class="rart-fg">
         <div class="rart-fl">Expérience</div>
@@ -128,23 +131,23 @@
       </div>
       <div class="rart-fg">
         <div class="rart-fl">Description</div>
-        <textarea class="rart-fb" name="bio" rows="3" placeholder="Décrivez votre expérience..."></textarea>
+        <textarea class="rart-fb rart-textarea" name="bio" id="bio" rows="3" maxlength="300" placeholder="Décrivez votre expérience, vos compétences et les services que vous proposez."></textarea>
+        <div style="font-size:11px;color:var(--slate);text-align:right;margin-top:3px;"><span id="bioCount">0</span>/300</div>
       </div>
     </div>
 
-    <div class="rart-step" data-step="3">
-      <h2 class="rart-step-title">Votre zone</h2>
-      <p class="rart-step-sub">Où intervenez-vous ?</p>
+    <div class="rart-section" id="sec3">
+      <h2 class="rart-section-title">Votre zone d'intervention</h2>
       <div class="rart-fg">
         <div class="rart-fl">Position</div>
-        <button type="button" class="rart-fb" id="locBtn" style="text-align:left;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:6px;"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 13 8 13s8-7.75 8-13a8 8 0 0 0-8-8z"/></svg>
+        <button type="button" class="rart-fb" id="locBtn" style="text-align:left;background:var(--paper);border-style:dashed;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:6px;"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 13 8 13s8-7.75 8-13a8 8 0 0 0-8-8z"/></svg>
           Utiliser ma position
         </button>
         <input type="hidden" name="address" id="address" />
         <input type="hidden" name="lat" id="lat" />
         <input type="hidden" name="lon" id="lon" />
-        <div id="locDisplay" style="font-size:13px;color:var(--ink);margin-top:6px;font-weight:600;"></div>
+        <div class="rart-loc-msg" id="locMsg"></div>
       </div>
       <div class="rart-fg">
         <div class="rart-fl">Rayon d'intervention</div>
@@ -158,114 +161,53 @@
       </div>
     </div>
 
-    <div class="rart-step" data-step="4">
-      <h2 class="rart-step-title">Vérification</h2>
-      <p class="rart-step-sub">Documents pour vérifier votre profil</p>
+    <div class="rart-section" id="sec4">
+      <h2 class="rart-section-title">Vérification</h2>
+      <p style="font-size:13px;color:var(--slate);margin:-10px 0 14px;">Ces informations nous permettent de vérifier votre profil avant publication.</p>
       <div class="rart-fg">
         <div class="rart-fl">Pièce d'identité</div>
-        <div class="rart-upload" id="idBox">+ Ajouter</div>
+        <div class="rart-upload" id="idBox">+ Ajouter une pièce d'identité</div>
         <input type="file" id="idInput" accept="image/jpeg,image/png,image/webp" style="display:none;" />
         <input type="hidden" name="identity_doc" id="idBase64" />
       </div>
       <div class="rart-fg">
         <div class="rart-fl">Certificat / attestation (facultatif)</div>
-        <div class="rart-upload" id="certBox">+ Ajouter</div>
+        <div class="rart-upload" id="certBox">+ Ajouter un certificat</div>
         <input type="file" id="certInput" accept="image/jpeg,image/png,image/webp" style="display:none;" />
         <input type="hidden" name="certificate_doc" id="certBase64" />
       </div>
-      <div class="rart-fg">
-        <div class="rart-fl">Photos de réalisations (5 max)</div>
-        <div class="rart-portfolio" id="portfolioGrid">
-          <div class="rart-p" id="addPhoto">+</div>
-        </div>
-        <input type="file" id="portfolioInput" accept="image/jpeg,image/png,image/webp" multiple style="display:none;" />
-        <input type="hidden" name="portfolio" id="portfolioBase64" />
+    </div>
+
+    <div class="rart-section" id="sec5">
+      <h2 class="rart-section-title">Vos réalisations</h2>
+      <p style="font-size:13px;color:var(--slate);margin:-10px 0 14px;">Montrez quelques exemples de votre travail.</p>
+      <div class="rart-portfolio" id="portfolioGrid">
+        <div class="rart-p" id="addPhoto">+</div>
       </div>
+      <div style="font-size:11px;color:var(--slate);margin-top:6px;" id="portfolioCount">0/5</div>
+      <input type="file" id="portfolioInput" accept="image/jpeg,image/png,image/webp" multiple style="display:none;" />
+      <input type="hidden" name="portfolio" id="portfolioBase64" />
     </div>
 
-    <div class="rart-step" data-step="5">
-      <h2 class="rart-step-title">Validation</h2>
-      <p class="rart-step-sub">Vérifiez vos informations</p>
+    <div class="rart-section" id="sec6">
+      <h2 class="rart-section-title">Vérifiez vos informations</h2>
       <div id="recapBox"></div>
-    </div>
-
-    <div class="rart-nav" id="rartNav">
-      <button type="button" class="rart-btn ghost" id="prevBtn" style="display:none;">Retour</button>
-      <button type="button" class="rart-btn primary" id="nextBtn">Continuer</button>
+      <label class="rart-checkbox">
+        <input type="checkbox" id="confirmCheck" required />
+        <span>Je confirme que les informations fournies sont exactes.</span>
+      </label>
     </div>
   </form>
+
+  <div class="rart-sticky">
+    <button type="button" class="rart-btn" id="submitBtn">Soumettre mon profil</button>
+  </div>
 </div>
 
 <script>
   (function(){
-    const steps = ['Informations','Activité','Zone','Vérification','Validation'];
-    let current = 1;
-    const data = {};
+    const form = document.getElementById('rartForm');
     const portfolio = [];
-
-    function renderStepper(){
-      const el = document.getElementById('stepper');
-      el.innerHTML = '';
-      steps.forEach((s,i)=>{
-        const st = i+1 < current ? 'done' : (i+1 === current ? 'active' : 'pending');
-        const txt = i+1 < current ? '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>' : (i+1);
-        el.innerHTML += `<div class="rart-dot ${st}">${txt}</div>`;
-        if (i < steps.length-1){
-          el.innerHTML += `<div class="rart-line ${i+1 < current ? 'done' : ''}"></div>`;
-        }
-      });
-    }
-
-    function showStep(n){
-      document.querySelectorAll('.rart-step').forEach(s=>s.classList.remove('active'));
-      document.querySelector(`.rart-step[data-step="${n}"]`).classList.add('active');
-      document.getElementById('prevBtn').style.display = n === 1 ? 'none' : 'block';
-      const next = document.getElementById('nextBtn');
-      next.textContent = n === 5 ? 'Soumettre mon profil' : 'Continuer';
-      current = n;
-      renderStepper();
-      if (n === 5) buildRecap();
-      window.scrollTo(0,0);
-    }
-
-    function validate(n){
-      if (n === 1){
-        if (!document.getElementById('fullName').value.trim()){ alert('Entrez votre nom.'); return false; }
-        const p = document.getElementById('phone').value.trim().replace(/\s/g,'');
-        if (!/^[0-9]{8,9}$/.test(p)){ alert('Entrez un numéro de téléphone valide.'); return false; }
-      }
-      if (n === 2){
-        if (!document.getElementById('profession').value){ alert('Choisissez un métier.'); return false; }
-        if (!document.getElementById('experience').value){ alert('Sélectionnez une expérience.'); return false; }
-      }
-      if (n === 3){
-        if (!document.getElementById('address').value){ alert('Définissez votre zone d\'intervention.'); return false; }
-        if (!document.getElementById('rayon').value){ alert('Sélectionnez un rayon.'); return false; }
-      }
-      if (n === 4){
-        if (!document.getElementById('idBase64').value){ alert('Ajoutez une pièce d\'identité.'); return false; }
-      }
-      return true;
-    }
-
-    function buildRecap(){
-      const full = document.getElementById('fullName').value;
-      const phone = '+224 ' + document.getElementById('phone').value;
-      const profession = document.getElementById('profession').value;
-      const experience = document.getElementById('experience').value || '—';
-      const address = document.getElementById('address').value;
-      const rayon = document.getElementById('rayon').value || '—';
-      const rows = [
-        ['Nom', full, 1], ['Téléphone', phone, 1], ['Métier', profession, 2],
-        ['Expérience', experience, 2], ['Zone', address, 3], ['Rayon', rayon, 3]
-      ];
-      document.getElementById('recapBox').innerHTML = rows.map(([l,v,s])=>`
-        <div class="rart-recap">
-          <div class="row"><span>${l}</span><a href="javascript:showStep(${s})">Modifier</a></div>
-          <div class="row"><b>${v}</b></div>
-        </div>
-      `).join('');
-    }
 
     function readFile(input, cb, max=5*1024*1024){
       const f = input.files[0];
@@ -313,12 +255,13 @@
 
     function renderPortfolio(){
       const grid = document.getElementById('portfolioGrid');
-      grid.innerHTML = portfolio.map((p,i)=>`<div class="rart-p"><img src="${p}"></div>`).join('');
+      grid.innerHTML = portfolio.map((p)=>`<div class="rart-p"><img src="${p}"></div>`).join('');
       if (portfolio.length < 5){
         grid.innerHTML += '<div class="rart-p" id="addPhoto2">+</div>';
         document.getElementById('addPhoto2').addEventListener('click', ()=>document.getElementById('portfolioInput').click());
       }
       document.getElementById('portfolioBase64').value = JSON.stringify(portfolio);
+      document.getElementById('portfolioCount').textContent = `${portfolio.length}/5`;
     }
 
     function formatPhone(v){
@@ -348,53 +291,76 @@
       document.getElementById('rayon').value = e.target.dataset.v;
     });
 
-    document.getElementById('locBtn').addEventListener('click', function(){
+    document.getElementById('bio').addEventListener('input', e=>{
+      document.getElementById('bioCount').textContent = e.target.value.length;
+    });
+
+    function getLocation(){
       if (!navigator.geolocation){
-        document.getElementById('address').value = 'Conakry';
-        document.getElementById('lat').value = '9.541';
-        document.getElementById('lon').value = '-13.677';
-        document.getElementById('locDisplay').textContent = 'Conakry';
+        setLoc('Conakry', '9.541', '-13.677');
         return;
       }
-      this.textContent = 'Localisation en cours...';
+      document.getElementById('locMsg').textContent = 'Localisation en cours...';
       navigator.geolocation.getCurrentPosition(pos=>{
-        document.getElementById('address').value = 'Conakry';
-        document.getElementById('lat').value = pos.coords.latitude.toFixed(6);
-        document.getElementById('lon').value = pos.coords.longitude.toFixed(6);
-        document.getElementById('locDisplay').textContent = 'Conakry, position detectee';
-        this.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:6px;"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 13 8 13s8-7.75 8-13a8 8 0 0 0-8-8z"/></svg>Position detectee';
+        setLoc('Conakry, position detectee', pos.coords.latitude.toFixed(6), pos.coords.longitude.toFixed(6));
       }, ()=>{
-        document.getElementById('address').value = 'Conakry';
-        document.getElementById('lat').value = '9.541';
-        document.getElementById('lon').value = '-13.677';
-        document.getElementById('locDisplay').textContent = 'Conakry';
-        this.textContent = 'Utiliser ma position';
+        setLoc('Conakry', '9.541', '-13.677');
       });
-    });
+    }
+    function setLoc(label, lat, lon){
+      document.getElementById('address').value = label;
+      document.getElementById('lat').value = lat;
+      document.getElementById('lon').value = lon;
+      document.getElementById('locMsg').textContent = label;
+    }
+    document.getElementById('locBtn').addEventListener('click', getLocation);
 
-    document.getElementById('prevBtn').addEventListener('click', ()=>showStep(current-1));
-    document.getElementById('nextBtn').addEventListener('click', ()=>{
-      if (!validate(current)) return;
-      if (current < 5) showStep(current+1);
-      else submitForm();
-    });
+    function buildRecap(){
+      const rows = [
+        ['Nom', document.getElementById('fullName').value, 'sec1'],
+        ['Téléphone', '+224 ' + document.getElementById('phone').value, 'sec1'],
+        ['Métier', document.getElementById('profession').value, 'sec2'],
+        ['Expérience', document.getElementById('experience').value || '—', 'sec2'],
+        ['Zone', document.getElementById('address').value || '—', 'sec3'],
+        ['Rayon', document.getElementById('rayon').value || '—', 'sec3']
+      ];
+      document.getElementById('recapBox').innerHTML = rows.map(([l,v,id])=>`
+        <div class="rart-recap-row"><span>${l}</span><b>${v}</b><a href="javascript:document.getElementById('${id}').scrollIntoView({behavior:'smooth'})">Modifier</a></div>
+      `).join('');
+    }
 
-    async function submitForm(){
-      const btn = document.getElementById('nextBtn');
-      btn.textContent = 'Envoi en cours...';
+    function validate(){
+      if (!document.getElementById('fullName').value.trim()){ alert('Entrez votre nom complet.'); return false; }
+      const p = document.getElementById('phone').value.trim().replace(/\s/g,'');
+      if (!/^[0-9]{8,9}$/.test(p)){ alert('Entrez un numéro de téléphone valide.'); return false; }
+      if (!document.getElementById('profession').value){ alert('Choisissez un métier.'); return false; }
+      if (!document.getElementById('address').value){ alert('Définissez votre zone d\'intervention.'); return false; }
+      if (!document.getElementById('rayon').value){ alert('Sélectionnez un rayon.'); return false; }
+      if (!document.getElementById('idBase64').value){ alert('Ajoutez une pièce d\'identité.'); return false; }
+      return true;
+    }
+
+    document.querySelectorAll('input, select, textarea').forEach(el=>{
+      el.addEventListener('change', buildRecap);
+      el.addEventListener('input', buildRecap);
+    });
+    buildRecap();
+
+    document.getElementById('submitBtn').addEventListener('click', async function(){
+      if (!validate()) return;
+      const fd = new FormData(form);
+      const btn = document.getElementById('submitBtn');
       btn.disabled = true;
-      const fd = new FormData(document.getElementById('rartForm'));
+      btn.textContent = 'Envoi en cours...';
       const res = await fetch('{{ url_for('register_artisan') }}', { method:'POST', body: fd });
       if (res.ok || res.redirected){
         window.location.href = '{{ url_for('artisan_pending') }}';
       } else {
-        alert('Une erreur est survenue.');
-        btn.textContent = 'Soumettre mon profil';
+        alert('Une erreur est survenue. Vérifiez vos informations.');
         btn.disabled = false;
+        btn.textContent = 'Soumettre mon profil';
       }
-    }
-
-    renderStepper();
+    });
   })();
 </script>
 {% endblock %}
