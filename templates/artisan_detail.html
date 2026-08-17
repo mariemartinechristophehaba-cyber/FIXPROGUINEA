@@ -86,10 +86,17 @@
   <div class="profile-sep"></div>
 
   <div class="profile-actions">
+    {% if user %}
     <button class="btn btn-primary btn-block" type="button" id="btnRequest" onclick="toggleRequest()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M9 14h6M9 17h4"/></svg>
       Demander une intervention
     </button>
+    {% else %}
+    <a class="btn btn-primary btn-block" href="{{ url_for('login', next=url_for('artisan_detail', artisan_id=artisan.id, action='request')) }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M9 14h6M9 17h4"/></svg>
+      Demander une intervention
+    </a>
+    {% endif %}
     {% if user %}
     <form class="profile-action-form" method="post" action="{{ url_for('ticket_new') }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
@@ -112,7 +119,7 @@
   <div class="profile-section hidden" id="requestPanel">
     <div class="profile-sep"></div>
     <h3>Demander une intervention</h3>
-    <form method="post" class="profile-form">
+    <form method="post" class="profile-form" id="requestForm">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
       <input type="hidden" name="action" value="request" />
       <label class="field">
@@ -121,18 +128,36 @@
       </label>
       <label class="field">
         <span>Description du probleme</span>
-        <textarea name="description" required placeholder="Expliquez le probleme en detail."></textarea>
+        <textarea name="description" required minlength="10" placeholder="Expliquez le probleme en detail."></textarea>
+      </label>
+      <label class="field">
+        <span>Urgence</span>
+        <div class="urgency-options" style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <label class="chip" style="cursor: pointer;">
+            <input type="radio" name="urgency" value="urgent" style="display: none;" required /> Aujourd'hui
+          </label>
+          <label class="chip" style="cursor: pointer;">
+            <input type="radio" name="urgency" value="cette_semaine" style="display: none;" checked /> Cette semaine
+          </label>
+          <label class="chip" style="cursor: pointer;">
+            <input type="radio" name="urgency" value="pas_presse" style="display: none;" /> Pas presse
+          </label>
+        </div>
       </label>
       <div class="field-2">
         <label class="field">
           <span>Localisation</span>
-          <input type="text" name="address" placeholder="Kaloum, Conakry" />
+          <input type="text" name="address" value="{{ user.quartier or user.city or '' }}" placeholder="Kaloum, Conakry" />
         </label>
         <label class="field">
-          <span>Date/heure souhaitee</span>
-          <input type="text" name="date_time" placeholder="Demain a 14h" />
+          <span>Telephone de contact</span>
+          <input type="tel" name="phone_contact" value="{{ user.phone or '' }}" required placeholder="+224 620 00 00 00" />
         </label>
       </div>
+      <label class="field">
+        <span>Date/heure souhaitee</span>
+        <input type="text" name="date_time" placeholder="Demain a 14h" />
+      </label>
       <button class="btn btn-primary btn-block" type="submit">Envoyer la demande</button>
     </form>
   </div>
@@ -248,6 +273,12 @@
   function toggleRequest() {
     document.getElementById('requestPanel').classList.toggle('hidden');
   }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    if (window.location.search.indexOf('action=request') !== -1) {
+      toggleRequest();
+    }
+  });
 
   function askLocation() {
     if (!navigator.geolocation) return;

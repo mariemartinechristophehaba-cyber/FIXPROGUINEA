@@ -61,6 +61,8 @@ CREATE TABLE IF NOT EXISTS requests (
     quote_proposed_at  TEXT,
     quote_approved_at  TEXT,
     status             TEXT DEFAULT 'pending',
+    urgency            TEXT DEFAULT 'cette_semaine',
+    phone_contact      TEXT,
     created_at         TEXT DEFAULT CURRENT_TIMESTAMP,
     updated_at         TEXT DEFAULT CURRENT_TIMESTAMP
 );

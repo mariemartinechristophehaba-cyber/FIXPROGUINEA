@@ -11,6 +11,9 @@
 <div class="card card-pad-lg">
   <form method="post">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+    {% if next_url %}
+    <input type="hidden" name="next" value="{{ next_url }}" />
+    {% endif %}
 
     <label class="field">
       <span>Telephone ou email</span>
@@ -20,8 +23,8 @@
 
     <label class="field">
       <span>Mot de passe</span>
-      <input type="password" name="password" required minlength="6" autocomplete="current-password"
-             placeholder="6 caracteres minimum" />
+      <input type="password" name="password" required minlength="8" autocomplete="current-password"
+             placeholder="8 caracteres minimum" />
     </label>
 
     <button class="btn btn-primary btn-block btn-lg" type="submit">Se connecter</button>

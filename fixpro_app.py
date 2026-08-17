@@ -1631,6 +1631,7 @@ def complete_profile():
 @app.route("/login", methods=["GET", "POST"])
 @limiter.limit("20 per hour", methods=["POST"])
 def login():
+    next_url = request.args.get("next") or request.form.get("next") or ""
     if request.method == "POST":
         identifier = request.form.get("identifier", "").strip()
         password = request.form.get("password", "")
@@ -1653,6 +1654,8 @@ def login():
             session.permanent = True
             flash("Bienvenue dans FixPro.", "success")
 
+            if next_url:
+                return redirect(next_url)
             if user["role"] == "client":
                 return redirect(url_for("artisans_page"))
             return redirect(url_for("requests_list"))
@@ -1660,7 +1663,7 @@ def login():
         # Message identique pour ne pas reveler quel identifiant existe.
         flash("Identifiants incorrects.", "error")
 
-    return render_template("login.html")
+    return render_template("login.html", next_url=next_url)
 
 
 @app.route("/logout")
@@ -2040,20 +2043,22 @@ def artisan_detail(artisan_id):
                 description = (request.form.get("description") or "").strip()
                 address = (request.form.get("address") or "").strip()
                 date_time = (request.form.get("date_time") or "").strip()
+                urgency = (request.form.get("urgency") or "").strip()
+                phone_contact = (request.form.get("phone_contact") or "").strip()
                 if not title or not description:
                     flash("Veuillez remplir le service et la description.", "error")
                     return redirect(url_for("artisan_detail", artisan_id=artisan_id))
+                if urgency not in ("urgent", "cette_semaine", "pas_presse"):
+                    urgency = "cette_semaine"
                 full_desc = description
                 if date_time:
                     full_desc += f"\n\nDate/heure souhaitée : {date_time}"
-                if address:
-                    full_desc += f"\n\nAdresse : {address}"
                 result = conn.execute(
                     "INSERT INTO requests"
-                    " (client_id, artisan_id, title, description, category, address, status, created_at, updated_at)"
-                    " VALUES (?, ?, ?, ?, ?, ?, 'pending', datetime('now'), datetime('now'))",
+                    " (client_id, artisan_id, title, description, category, address, status, urgency, phone_contact, created_at, updated_at)"
+                    " VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?, datetime('now'), datetime('now'))",
                     (user["id"], artisan_id, title, full_desc,
-                     artisan["profession"] or "Autre", address))
+                     artisan["profession"] or "Autre", address, urgency, phone_contact))
                 conn.commit()
                 flash("Demande d'intervention créée. Le technicien en sera informé.", "success")
                 return redirect(url_for("request_detail", request_id=result.lastrowid))
