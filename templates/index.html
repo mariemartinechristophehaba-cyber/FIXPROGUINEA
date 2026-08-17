@@ -29,11 +29,11 @@
   .stat-card { background:var(--paper-2); border:1px solid var(--line); border-radius:12px; padding:14px 6px; text-align:center; }
   .stat-num { font-family:var(--font-mono); font-size:18px; font-weight:700; color:var(--ink); }
   .stat-label { font-size:10px; color:var(--slate); margin-top:4px; }
-  .steps { display:flex; flex-direction:column; gap:12px; }
-  .step-item { display:flex; align-items:center; gap:12px; }
-  .step-num { width:28px; height:28px; border-radius:50%; background:var(--green); color:#fff; font-family:var(--font-mono); font-weight:700; font-size:13px; display:flex; align-items:center; justify-content:center; flex:0 0 auto; }
-  .step-txt { font-size:12.5px; color:var(--slate); }
-  .steps-title { font-family:var(--font-display); font-size:15px; font-weight:700; margin:0 0 14px; color:var(--ink); }
+  .steps { display:flex; flex-direction:column; gap:18px; align-items:center; }
+  .step-item { display:flex; flex-direction:column; align-items:center; gap:6px; text-align:center; }
+  .step-num { width:28px; height:28px; border-radius:50%; background:var(--green); color:#fff; font-family:var(--font-mono); font-weight:700; font-size:13px; display:flex; align-items:center; justify-content:center; }
+  .step-txt { font-size:12.5px; color:var(--slate); max-width:220px; }
+  .steps-title { font-family:var(--font-display); font-size:15px; font-weight:700; margin:0 0 18px; color:var(--ink); text-align:center; }
 </style>
 
 <div class="welcome-wrap">
@@ -42,7 +42,7 @@
       <path fill="#1F9D6B" d="M50 2 L58 10 L69 8 L74 18 L85 22 L84 34 L92 42 L86 52 L92 62 L84 70 L85 82 L74 86 L69 96 L58 94 L50 100 L42 94 L31 96 L26 86 L15 82 L16 70 L8 62 L14 52 L8 42 L16 34 L15 22 L26 18 L31 8 L42 10 Z"/>
       <path fill="none" stroke="#F7F4EE" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" d="M34 51 L45 62 L68 38"/>
     </svg>
-    <h1 class="welcome-title">Bienvenue sur FixPro <span>Guinee</span></h1>
+    <h1 class="welcome-title">Bienvenue sur FixPro <span>Guinée</span></h1>
     <p class="welcome-sub">Des artisans vérifiés, près de chez vous à Conakry.</p>
   </div>
 
@@ -53,7 +53,7 @@
       </div>
       <div class="choice-txt">
         <b>Je suis client</b>
-        <span>Trouver un technicien pres de moi</span>
+        <span>Trouver un technicien près de moi</span>
       </div>
     </a>
     <a href="{{ url_for('register_artisan', step=1) }}" class="choice-card choice-tech">
@@ -67,8 +67,8 @@
 
   <div class="stats-row">
     <div class="stat-card"><div class="stat-num">{{ techniciens }}</div><div class="stat-label">Techniciens</div></div>
-    <div class="stat-card"><div class="stat-num">{{ metiers }}</div><div class="stat-label">Metiers</div></div>
-    <div class="stat-card"><div class="stat-num">100%</div><div class="stat-label">Verifies</div></div>
+    <div class="stat-card"><div class="stat-num">{{ metiers }}</div><div class="stat-label">Métiers</div></div>
+    <div class="stat-card"><div class="stat-num">100%</div><div class="stat-label">Vérifiés</div></div>
   </div>
 
   <h2 class="steps-title">Comment ca marche ?</h2>
