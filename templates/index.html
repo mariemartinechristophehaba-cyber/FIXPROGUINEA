@@ -4,26 +4,56 @@
 {% block footer %}{% endblock %}
 
 {% block content %}
-<div class="fx-screen" style="justify-content:center;align-items:center;padding:24px 18px;text-align:center;background:var(--ink);color:#fff;">
-  <div style="margin-bottom:28px;">
-    <svg width="84" height="84" viewBox="0 0 100 100" style="margin:0 auto;"><path fill="#1F9D6B" d="M50 2 L58 10 L69 8 L74 18 L85 22 L84 34 L92 42 L86 52 L92 62 L84 70 L85 82 L74 86 L69 96 L58 94 L50 100 L42 94 L31 96 L26 86 L15 82 L16 70 L8 62 L14 52 L8 42 L16 34 L15 22 L26 18 L31 8 L42 10 Z"/><path fill="none" stroke="#F7F4EE" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" d="M34 51 L45 62 L68 38"/></svg>
-    <h1 style="font-family:var(--font-display);font-size:28px;margin:16px 0 6px;">FixPro <span style="color:var(--amber);">Guinee</span></h1>
-    <p style="color:#9FB0CC;font-size:13px;line-height:1.55;max-width:260px;margin:0 auto;">Un technicien de confiance, en quelques minutes, a Conakry.</p>
+<style>
+  .welcome-wrap { min-height:100vh; display:flex; flex-direction:column; background:var(--paper); }
+  .welcome-top { background:var(--ink); color:#fff; text-align:center; padding:42px 24px 48px; position:relative; overflow:hidden; }
+  .welcome-top::before { content:''; position:absolute; inset:0; background-image:radial-gradient(rgba(245,166,35,.12) 1.5px, transparent 1.5px); background-size:22px 22px; opacity:.4; }
+  .welcome-top > * { position:relative; }
+  .welcome-seal { width:84px; height:84px; margin:0 auto 18px; display:block; }
+  .welcome-title { font-family:var(--font-display); font-size:26px; margin:0 0 6px; font-weight:700; }
+  .welcome-title span { color:var(--amber); }
+  .welcome-sub { color:#9FB0CC; font-size:13px; max-width:260px; margin:0 auto; line-height:1.55; }
+  .welcome-bottom { flex:1; padding:26px 20px 32px; display:flex; flex-direction:column; gap:14px; }
+  .choice-card { display:flex; align-items:center; gap:14px; padding:16px; border-radius:16px; text-decoration:none; }
+  .choice-client { background:var(--amber-soft); border:1.5px solid var(--amber); }
+  .choice-tech { background:var(--paper-2); border:1.5px solid var(--line); }
+  .choice-icon { width:46px; height:46px; border-radius:11px; display:flex; align-items:center; justify-content:center; font-size:22px; flex:0 0 auto; }
+  .client-icon { background:var(--ink); }
+  .tech-icon { background:var(--amber-dark); }
+  .choice-txt { text-align:left; }
+  .choice-txt b { display:block; font-family:var(--font-display); font-size:15px; font-weight:700; color:var(--ink); }
+  .choice-txt span { font-size:12px; color:var(--slate); }
+  .welcome-login { text-align:center; font-size:12.5px; color:var(--slate); padding-bottom:24px; }
+  .welcome-login a { color:var(--ink); font-weight:600; text-decoration:none; }
+</style>
+
+<div class="welcome-wrap">
+  <div class="welcome-top">
+    <svg class="welcome-seal" viewBox="0 0 100 100">
+      <path fill="#1F9D6B" d="M50 2 L58 10 L69 8 L74 18 L85 22 L84 34 L92 42 L86 52 L92 62 L84 70 L85 82 L74 86 L69 96 L58 94 L50 100 L42 94 L31 96 L26 86 L15 82 L16 70 L8 62 L14 52 L8 42 L16 34 L15 22 L26 18 L31 8 L42 10 Z"/>
+      <path fill="none" stroke="#F7F4EE" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" d="M34 51 L45 62 L68 38"/>
+    </svg>
+    <h1 class="welcome-title">Bienvenue sur FixPro <span>Guinee</span></h1>
+    <p class="welcome-sub">Des artisans verifies, pres de chez vous a Conakry.</p>
   </div>
 
-  <div style="width:100%;max-width:320px;display:flex;flex-direction:column;gap:12px;margin-bottom:28px;">
-    <a href="{{ url_for('client_signup') }}" class="fx-card" style="flex-direction:column;padding:22px 18px;background:var(--paper-2);color:var(--ink);text-align:center;text-decoration:none;">
-      <div style="font-size:28px;margin-bottom:6px;">👤</div>
-      <div style="font-family:var(--font-display);font-weight:700;font-size:16px;">Je suis client</div>
-      <div style="font-size:11.5px;color:var(--slate);margin-top:2px;">Trouvez un technicien verifie</div>
+  <div class="welcome-bottom">
+    <a href="{{ url_for('client_signup') }}" class="choice-card choice-client">
+      <div class="choice-icon client-icon">�</div>
+      <div class="choice-txt">
+        <b>Je suis client</b>
+        <span>Trouver un technicien pres de moi</span>
+      </div>
     </a>
-    <a href="{{ url_for('register_artisan', step=1) }}" class="fx-card" style="flex-direction:column;padding:22px 18px;background:var(--paper-2);color:var(--ink);text-align:center;text-decoration:none;">
-      <div style="font-size:28px;margin-bottom:6px;">🔧</div>
-      <div style="font-family:var(--font-display);font-weight:700;font-size:16px;">Je suis technicien</div>
-      <div style="font-size:11.5px;color:var(--slate);margin-top:2px;">Recevez des demandes pres de chez vous</div>
+    <a href="{{ url_for('register_artisan', step=1) }}" class="choice-card choice-tech">
+      <div class="choice-icon tech-icon">🔧</div>
+      <div class="choice-txt">
+        <b>Je suis technicien</b>
+        <span>Recevoir des demandes d'intervention</span>
+      </div>
     </a>
   </div>
 
-  <p style="font-size:12px;color:#9FB0CC;">Deja un compte ? <a href="{{ url_for('login') }}" style="color:var(--amber);font-weight:600;text-decoration:none;">Se connecter</a></p>
+  <p class="welcome-login">Deja un compte ? <a href="{{ url_for('login') }}">Se connecter</a></p>
 </div>
 {% endblock %}

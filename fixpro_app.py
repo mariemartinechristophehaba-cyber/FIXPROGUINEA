@@ -378,12 +378,6 @@ def index():
     return render_template("index.html")
 
 
-@app.route("/accueil")
-@login_required
-def accueil():
-    return redirect(url_for("artisans_page"))
-
-
 @app.route("/contact")
 def contact():
     return render_template("contact.html")
@@ -1911,6 +1905,7 @@ def _avatar_gradient(full_name):
     ][h]
 
 
+@app.route("/accueil")
 @app.route("/artisans")
 def artisans_page():
     user = get_current_user()
@@ -1998,6 +1993,7 @@ def artisan_contact(artisan_id):
 
 
 @app.route("/artisans/<int:artisan_id>", methods=["GET", "POST"])
+@app.route("/technicien/<int:artisan_id>", methods=["GET", "POST"])
 def artisan_detail(artisan_id):
     user = get_current_user()
 
@@ -2199,6 +2195,53 @@ def artisan_detail(artisan_id):
                            verified_docs=verified_docs,
                            member_since=member_since,
                            portfolio=portfolio)
+
+
+@app.route("/demande/<int:artisan_id>", methods=["GET", "POST"])
+@login_required
+def demande(artisan_id):
+    """Formulaire de demande d'intervention pour un technicien."""
+    user = get_current_user()
+    if user["role"] != "client":
+        flash("Cette action est reservee aux clients.", "error")
+        return redirect(url_for("artisans_page"))
+
+    conn = get_db_connection()
+    try:
+        artisan = conn.execute(
+            "SELECT * FROM users WHERE id = ? AND role = 'artisan'",
+            (artisan_id,)).fetchone()
+        if not artisan:
+            flash("Technicien introuvable.", "error")
+            return redirect(url_for("artisans_page"))
+
+        if request.method == "POST":
+            title = (request.form.get("title") or "").strip()
+            description = (request.form.get("description") or "").strip()
+            address = (request.form.get("address") or "").strip()
+            urgency = (request.form.get("urgency") or "cette_semaine").strip()
+            if urgency not in ("urgent", "cette_semaine", "pas_presse"):
+                urgency = "cette_semaine"
+            phone_contact = (user.get("phone") or "").strip()
+
+            if not title or not description:
+                flash("Veuillez remplir le titre et la description.", "error")
+                return redirect(url_for("demande", artisan_id=artisan_id))
+
+            result = conn.execute(
+                "INSERT INTO requests"
+                " (client_id, artisan_id, title, description, category, address,"
+                " status, urgency, phone_contact, created_at, updated_at)"
+                " VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?, datetime('now'), datetime('now'))",
+                (user["id"], artisan_id, title, description,
+                 artisan["profession"] or "Autre", address, urgency, phone_contact))
+            conn.commit()
+            flash("Demande creee. Le technicien en sera informe.", "success")
+            return redirect(url_for("request_detail", request_id=result.lastrowid))
+    finally:
+        conn.close()
+
+    return render_template("request_form.html", artisan=artisan, user=user)
 
 
 @app.route("/artisans/<int:artisan_id>/location", methods=["POST"])

@@ -1,69 +1,63 @@
 {% extends 'base.html' %}
-{% block title %}Nouvelle demande - FixPro{% endblock %}
-{% block main_class %}page page-mid{% endblock %}
+{% block title %}Demander une intervention - FixPro{% endblock %}
 
 {% block content %}
-<section class="page-head">
-  <h1>Nouvelle demande</h1>
-  <p>Decrivez votre besoin. Un technicien verifie vous repondra avec un devis.</p>
-</section>
+<div class="fx-screen">
+  <div class="fx-form-top" style="padding:16px 18px 22px;position:sticky;top:0;z-index:5;">
+    <a href="{{ url_for('artisan_detail', artisan_id=artisan.id) }}" style="color:#DCE3F0;text-decoration:none;font-size:12px;">← Retour au profil</a>
+    <h3 style="margin-top:12px;">Demander une intervention</h3>
+    <p>{{ artisan.full_name }} · {{ artisan.profession or 'Technicien' }}</p>
+  </div>
 
-<div class="card card-pad-lg">
-  <form method="post">
+  <form method="post" class="fx-form-body" style="padding-bottom:120px;" enctype="multipart/form-data">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+    <input type="hidden" name="artisan_id" value="{{ artisan.id }}" />
 
-    <label class="field">
-      <span>Titre de la demande</span>
-      <input type="text" name="title" required placeholder="Fuite sous l'evier de la cuisine" />
-    </label>
-
-    <label class="field">
-      <span>Description</span>
-      <textarea name="description" required placeholder="Expliquez le probleme, depuis quand il dure, et ce que vous avez deja essaye."></textarea>
-    </label>
-
-    <label class="field">
-      <span>Categorie</span>
-      <select name="category" id="categorySelect" required>
-        <option value="" disabled selected>Selectionnez une categorie</option>
-        {% for category in categories %}
-        <option value="{{ category['name'] }}" data-price="{{ category['diagnostic_price'] }}">{{ category['name'] }}</option>
-        {% endfor %}
-      </select>
-      <span class="hint" id="diagnosticHint">Le prix du diagnostic s'affichera ici.</span>
-    </label>
-
-    <label class="field">
-      <span>Adresse ou zone</span>
-      <input type="text" name="address" placeholder="Kaloum, Conakry" />
-    </label>
-
-    <div class="field-2">
-      <label class="field">
-        <span>Budget estime (GNF)</span>
-        <input type="number" name="budget" value="0" min="0" step="10000" />
-      </label>
-      <label class="field">
-        <span>Photo du probleme</span>
-        <input type="text" name="photo_url" placeholder="Lien de la photo" />
-      </label>
+    <div class="fx-fg">
+      <div class="fx-fl">📍 Votre position</div>
+      <input class="fx-fb filled" type="text" name="address" value="{{ user.quartier or user.city or '' }}" required />
     </div>
 
-    <button class="btn btn-primary btn-block btn-lg" type="submit">Publier ma demande</button>
+    <div class="fx-fg">
+      <div class="fx-fl">Decrivez le probleme</div>
+      <textarea class="fx-fb" name="description" required minlength="10" placeholder="Expliquez le probleme en detail."></textarea>
+    </div>
+
+    <div class="fx-fg">
+      <div class="fx-fl">Type d'intervention</div>
+      <input class="fx-fb" type="text" name="title" required placeholder="Ex: Fuite d'eau sous l'evier" />
+    </div>
+
+    <div class="fx-fg">
+      <div class="fx-fl">Urgence</div>
+      <div class="fx-urg-row">
+        <label class="fx-urg active"><input type="radio" name="urgency" value="normal" checked />Normal</label>
+        <label class="fx-urg"><input type="radio" name="urgency" value="urgent" />Urgent</label>
+      </div>
+    </div>
+
+    <div class="fx-fg">
+      <div class="fx-fl">Photo (optionnel)</div>
+      <div class="fx-photo-box" id="photoBox">📷 Ajouter une photo</div>
+      <input type="file" name="photo" id="photoInput" accept="image/*" style="display:none;" />
+      <input type="hidden" name="photo_url" id="photoUrl" value="" />
+    </div>
+
+    <button class="fx-dock-btn primary" type="submit" style="width:100%;margin-top:8px;">Confirmer la demande</button>
   </form>
 </div>
-{% endblock %}
 
-{% block scripts %}
 <script>
-  const categorySelect = document.getElementById('categorySelect');
-  const diagnosticHint = document.getElementById('diagnosticHint');
-  categorySelect.addEventListener('change', () => {
-    const option = categorySelect.selectedOptions[0];
-    const price = Number(option.dataset.price || 0);
-    diagnosticHint.textContent = price
-      ? 'Prix du diagnostic : ' + price.toLocaleString('fr-FR') + ' GNF'
-      : 'Le prix du diagnostic s\'affichera ici.';
+  document.getElementById('photoBox').addEventListener('click', () => document.getElementById('photoInput').click());
+  document.getElementById('photoInput').addEventListener('change', function(e){
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(ev){
+      document.getElementById('photoUrl').value = ev.target.result;
+      document.getElementById('photoBox').innerHTML = '✓ ' + file.name;
+    };
+    reader.readAsDataURL(file);
   });
 </script>
 {% endblock %}
