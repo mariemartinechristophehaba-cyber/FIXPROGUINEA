@@ -31,6 +31,7 @@ from flask_wtf.csrf import CSRFProtect
 from werkzeug.security import check_password_hash, generate_password_hash
 
 import db
+import storage
 from config import get_config, setup_logging
 
 config = get_config()
@@ -656,6 +657,16 @@ def register_artisan():
 
             temp_password = secrets.token_urlsafe(12)
             lat, lon = _geocode_zone(address, "")
+
+            store = storage.get_storage()
+            photo_url = photo
+            if photo:
+                try:
+                    photo_url = store.upload("photo", photo)
+                except ValueError as exc:
+                    flash(f"Photo invalide : {exc}", "error")
+                    return redirect(url_for("register_artisan"))
+
             conn.execute(
                 "INSERT INTO users (phone, password_hash, role, full_name, profession,"
                 " skills, years_experience, bio, city, zone_intervention, latitude, longitude,"
@@ -663,32 +674,38 @@ def register_artisan():
                 " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (phone, generate_password_hash(temp_password), "artisan",
                  full_name, profession, specialite, experience, bio, address,
-                 rayon, lat, lon, 0, 1, photo))
+                 rayon, lat, lon, 0, 1, photo_url))
             conn.commit()
 
             artisan = conn.execute(
                 "SELECT id FROM users WHERE phone = ?", (phone,)).fetchone()
             artisan_id = artisan["id"]
 
-            mime, ext, encoded = _parse_base64_file(identity_doc)
-            if encoded:
+            try:
+                id_url = store.upload("identite", identity_doc)
+                mime, ext, _ = _parse_base64_file(identity_doc)
                 conn.execute(
                     "INSERT INTO technician_documents (technician_id, document_type,"
                     " file_name, mime_type, content_base64)"
                     " VALUES (?, ?, ?, ?, ?)",
-                    (artisan_id, "identity", f"identite{ext}", mime, encoded))
+                    (artisan_id, "identity", f"identite{ext}", mime or "application/octet-stream", id_url))
+            except ValueError as exc:
+                flash(f"Document invalide : {exc}", "error")
+                return redirect(url_for("register_artisan"))
 
             try:
                 portfolio = json.loads(portfolio_raw) if portfolio_raw else []
             except Exception:
                 portfolio = []
             for i, p in enumerate(portfolio[:5]):
-                m, e, enc = _parse_base64_file(p)
-                if enc:
-                    conn.execute(
-                        "INSERT INTO artisan_portfolio (artisan_id, photo_url, caption)"
-                        " VALUES (?, ?, ?)",
-                        (artisan_id, p, f"Realisation {i+1}"))
+                try:
+                    p_url = store.upload(f"realisation-{i+1}", p)
+                except ValueError:
+                    continue
+                conn.execute(
+                    "INSERT INTO artisan_portfolio (artisan_id, photo_url, caption)"
+                    " VALUES (?, ?, ?)",
+                    (artisan_id, p_url, f"Realisation {i+1}"))
             conn.commit()
         finally:
             conn.close()
