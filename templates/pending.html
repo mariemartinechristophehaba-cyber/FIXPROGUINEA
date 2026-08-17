@@ -1,25 +1,17 @@
 {% extends 'base.html' %}
 {% block title %}Inscription en attente - FixPro{% endblock %}
-{% block main_class %}page page-narrow{% endblock %}
 
 {% block content %}
-<section class="pending-card card card-pad-lg" style="max-width: 520px; margin: 60px auto; text-align: center;">
-  <div class="pending-icon">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="12" cy="12" r="10"/>
-      <polyline points="12 6 12 12 16 14"/>
-    </svg>
+<div class="fx-screen" style="justify-content:center;align-items:center;text-align:center;padding:24px;background:var(--paper);color:var(--ink);">
+  <div style="width:100%;max-width:320px;">
+    <div style="width:80px;height:80px;border-radius:50%;background:var(--amber-soft);display:flex;align-items:center;justify-content:center;margin:0 auto 22px;font-size:32px;">⏳</div>
+    <h1 style="font-family:var(--font-display);font-size:22px;margin:0 0 10px;">Votre dossier est en cours d'examen</h1>
+    <p style="font-size:13px;color:var(--slate);line-height:1.6;margin:0 0 22px;">L'equipe FixPro verifie vos informations et vos documents avant de valider votre profil. Cela peut prendre jusqu'a 48 heures.</p>
+    <div style="background:var(--paper-2);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:24px;text-align:left;">
+      <div style="font-size:11px;color:var(--slate);margin-bottom:4px;">Statut</div>
+      <div style="font-weight:600;color:var(--amber-dark);">En attente de verification</div>
+    </div>
+    <a href="{{ url_for('index') }}" class="fx-dock-btn primary" style="display:block;">Retour a l'accueil</a>
   </div>
-  <h2 style="margin: 0 0 12px;">En attente de verification</h2>
-  <p class="muted" style="line-height: 1.7;">Votre demande d'inscription a bien ete recue. L'equipe FixPro va verifier vos informations et vos documents avant de valider votre profil.</p>
-  <div class="pending-status">
-    <span class="badge pending">Statut : En attente de verification</span>
-  </div>
-  <div style="background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; margin: 28px 0; text-align: left;">
-    <div class="small muted" style="margin-bottom: 6px;">Delai habituel</div>
-    <strong>Jusqu'a 48 heures</strong>
-  </div>
-  <p class="small" style="color: var(--muted);">En attendant, vous pouvez retourner a l'accueil.</p>
-  <a href="{{ url_for('index') }}" class="btn btn-primary" style="margin-top: 24px;">Retour a l'accueil</a>
-</section>
+</div>
 {% endblock %}

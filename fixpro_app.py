@@ -375,7 +375,13 @@ def calculate_distance(lat1, lon1, lat2, lon2):
 
 @app.route("/")
 def index():
-    return render_template("landing.html")
+    return render_template("index.html")
+
+
+@app.route("/accueil")
+@login_required
+def accueil():
+    return redirect(url_for("artisans_page"))
 
 
 @app.route("/contact")
@@ -537,6 +543,8 @@ def register():
 
 @app.route("/register/artisan", methods=["GET", "POST"])
 @app.route("/register/artisan/<int:step>", methods=["GET", "POST"])
+@app.route("/inscription/technicien", methods=["GET", "POST"])
+@app.route("/inscription/technicien/<int:step>", methods=["GET", "POST"])
 @limiter.limit("10 per hour", methods=["POST"])
 def register_artisan(step=1):
     """Parcours d'inscription professionnel en 5 etapes."""
@@ -1462,6 +1470,7 @@ def admin_logout():
 
 
 @app.route("/client-signup", methods=["GET", "POST"])
+@app.route("/inscription/client", methods=["GET", "POST"])
 @limiter.limit("10 per hour", methods=["POST"])
 def client_signup():
     """Inscription rapide client avec email et mot de passe."""
@@ -1517,7 +1526,7 @@ def client_signup():
             session["user_id"] = new_user["id"]
             session.permanent = True
             flash("Bienvenue dans FixPro.", "success")
-            return redirect(url_for("dashboard"))
+            return redirect(url_for("accueil"))
         finally:
             conn.close()
 
