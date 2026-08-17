@@ -25,7 +25,7 @@
   .lp-hero {
     background: var(--lp-ink);
     color: var(--lp-white);
-    padding: 18px 0 48px;
+    padding: 18px 0 80px;
     position: relative;
     overflow: hidden;
   }
@@ -98,7 +98,7 @@
 
   .lp-btn-amber:hover { transform: translateY(-1px); box-shadow: 0 8px 22px rgba(245, 166, 35, 0.35); }
 
-  .lp-hero-body { max-width: 520px; }
+  .lp-hero-body { max-width: 520px; position: relative; z-index: 2; }
 
   .lp-hero h1 {
     font-family: var(--lp-display);
@@ -132,10 +132,7 @@
     flex-wrap: wrap;
   }
 
-  .lp-avatars {
-    display: flex;
-  }
-
+  .lp-avatars { display: flex; }
   .lp-avatar {
     width: 38px;
     height: 38px;
@@ -151,12 +148,10 @@
     margin-left: -10px;
     overflow: hidden;
   }
-
   .lp-avatar:first-child { margin-left: 0; }
 
   .lp-proof-txt { font-size: 13px; line-height: 1.4; color: var(--lp-slate); }
   .lp-proof-txt b { display: block; color: var(--lp-white); font-weight: 600; }
-
   .lp-rating { color: var(--lp-amber); font-weight: 700; font-size: 16px; }
 
   .lp-hero-img {
@@ -222,19 +217,8 @@
     margin: 0 auto 16px;
   }
 
-  .lp-why-item h4 {
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--lp-ink);
-    margin: 0 0 8px;
-  }
-
-  .lp-why-item p {
-    font-size: 14px;
-    color: var(--lp-slate-dark);
-    line-height: 1.5;
-    margin: 0;
-  }
+  .lp-why-item h4 { font-size: 16px; font-weight: 700; color: var(--lp-ink); margin: 0 0 8px; }
+  .lp-why-item p { font-size: 14px; color: var(--lp-slate-dark); line-height: 1.5; margin: 0; }
 
   .lp-services-section { padding: 0 20px 48px; }
   .lp-services-inner { max-width: 980px; margin: 0 auto; }
@@ -244,15 +228,25 @@
     font-weight: 700;
     color: var(--lp-ink);
     margin: 0 0 22px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
   }
+  .lp-section-title a { font-size: 14px; color: var(--lp-amber); text-decoration: none; font-weight: 600; }
 
-  .lp-cats-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
+  .lp-cats-list {
+    display: flex;
     gap: 14px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
   }
+  .lp-cats-list::-webkit-scrollbar { display: none; }
 
-  .lp-cat-card {
+  .lp-cat-wide {
+    flex: 0 0 auto;
+    width: 170px;
     background: var(--lp-white);
     border-radius: 18px;
     padding: 18px 16px;
@@ -264,8 +258,7 @@
     box-shadow: 0 2px 10px rgba(10,17,34,.05);
     transition: transform .12s;
   }
-
-  .lp-cat-card:active { transform: scale(0.98); }
+  .lp-cat-wide:active { transform: scale(0.98); }
 
   .lp-cat-icon {
     width: 46px;
@@ -277,48 +270,146 @@
     flex: 0 0 auto;
   }
 
-  .lp-cat-name { font-weight: 700; font-size: 14px; margin-bottom: 2px; }
+  .lp-cat-name { font-weight: 700; font-size: 15px; margin-bottom: 2px; }
   .lp-cat-count { font-size: 12px; color: var(--lp-slate-dark); }
 
   .lp-tech-section { padding: 0 20px 64px; }
   .lp-tech-inner { max-width: 980px; margin: 0 auto; }
 
   .lp-tech-list {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 18px;
   }
 
   .lp-tech-card {
     background: var(--lp-white);
     border-radius: 22px;
-    padding: 18px;
-    display: flex;
-    gap: 16px;
+    padding: 16px;
     text-decoration: none;
     color: var(--lp-ink);
     box-shadow: 0 4px 18px rgba(10,17,34,.08);
-    transition: transform .12s, box-shadow .12s;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
   }
-  .lp-tech-card:active { transform: scale(0.98); }
 
+  .lp-tech-photo-wrap { position: relative; }
   .lp-tech-avatar {
-    width: 64px;
-    height: 64px;
-    border-radius: 14px;
+    width: 100%;
+    height: 220px;
+    border-radius: 16px;
     object-fit: cover;
     background: var(--lp-paper);
-    flex: 0 0 auto;
+    display: block;
   }
 
-  .lp-tech-info { flex: 1; min-width: 0; }
-  .lp-tech-name { font-weight: 700; font-size: 15px; margin: 0 0 4px; }
-  .lp-tech-trade { font-size: 13px; color: var(--lp-slate-dark); margin: 0 0 10px; }
-  .lp-tech-meta { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--lp-slate-dark); }
-  .lp-badge { font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 20px; background: #ECF9F2; color: #1F9D6B; }
+  .lp-tech-badge-top {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 6px 12px;
+    border-radius: 20px;
+    background: #ECF9F2;
+    color: var(--lp-ink);
+  }
+
+  .lp-tech-heart {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: var(--lp-white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--lp-slate-dark);
+    box-shadow: 0 2px 6px rgba(0,0,0,.08);
+  }
+
+  .lp-tech-info h4 { font-weight: 700; font-size: 16px; margin: 0 0 4px; }
+  .lp-tech-info p { font-size: 13px; color: var(--lp-slate-dark); margin: 0 0 10px; }
+
+  .lp-tech-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: var(--lp-slate-dark);
+    margin-bottom: 10px;
+  }
+
+  .lp-tech-vbadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: var(--lp-ink);
+    background: #ECF9F2;
+    padding: 4px 8px;
+    border-radius: 20px;
+    font-weight: 600;
+  }
+
   .lp-stars { color: var(--lp-amber); font-weight: 700; }
 
-  .lp-footer { background: var(--lp-ink); color: var(--lp-slate); text-align: center; padding: 28px 20px; font-size: 13px; }
+  .lp-tech-loc {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: var(--lp-slate-dark);
+    margin-bottom: 8px;
+  }
+
+  .lp-tech-price { font-size: 14px; font-weight: 700; color: var(--lp-ink); }
+  .lp-tech-price span { font-weight: 500; color: var(--lp-slate-dark); font-size: 12px; }
+
+  .lp-footer {
+    background: var(--lp-ink);
+    color: var(--lp-slate);
+    padding: 28px 20px;
+  }
+
+  .lp-footer-stats {
+    max-width: 980px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+
+  .lp-stat {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .lp-stat-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--lp-amber);
+  }
+
+  .lp-stat-num { color: var(--lp-white); font-weight: 700; font-size: 16px; margin: 0; }
+  .lp-stat-label { font-size: 12px; color: var(--lp-slate); margin: 0; }
+
+  .lp-footer-credit { text-align: center; font-size: 12px; color: var(--lp-slate); margin-top: 28px; }
+
+  @media (min-width: 640px) {
+    .lp-tech-list { grid-template-columns: repeat(2, 1fr); }
+    .lp-footer-stats { grid-template-columns: repeat(4, 1fr); }
+  }
 
   @media (min-width: 768px) {
     .lp-hero { padding-bottom: 80px; }
@@ -327,16 +418,13 @@
     .lp-hero-img { position: absolute; right: 20px; bottom: -40px; width: 42%; max-width: 480px; margin: 0; }
     .lp-hero-img img { height: 540px; }
     .lp-why-grid { grid-template-columns: repeat(4, 1fr); }
-    .lp-cats-grid { grid-template-columns: repeat(4, 1fr); }
-    .lp-tech-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
-    .lp-tech-card { flex-direction: column; align-items: center; text-align: center; padding: 22px; }
-    .lp-tech-avatar { width: 90px; height: 90px; border-radius: 18px; margin-bottom: 12px; }
-    .lp-tech-meta { justify-content: center; }
+    .lp-tech-list { grid-template-columns: repeat(3, 1fr); }
   }
 
   @media (min-width: 1024px) {
     .lp-hero h1 { font-size: 58px; }
     .lp-hero-img img { height: 620px; }
+    .lp-tech-list { grid-template-columns: repeat(4, 1fr); }
   }
 </style>
 
@@ -421,21 +509,28 @@
 
   <section class="lp-services-section">
     <div class="lp-services-inner">
-      <h2 class="lp-section-title">Nos services</h2>
-      <div class="lp-cats-grid">
-        <a href="{{ url_for('artisans_page', q='electricite') }}" class="lp-cat-card">
+      <div class="lp-section-title">
+        <h2 style="margin:0;">Nos services</h2>
+        <a href="{{ url_for('categories') }}">Voir plus</a>
+      </div>
+      <div class="lp-cats-list">
+        <a href="{{ url_for('artisans_page', q='electricite') }}" class="lp-cat-wide">
           <div class="lp-cat-icon" style="background:#FEF3C7;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#B45309" stroke-width="2"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
           <div><div class="lp-cat-name">Électricité</div><div class="lp-cat-count">{{ counts.get('Électricité', 0) }} technicien{{ 's' if counts.get('Électricité', 0) != 1 }}</div></div>
         </a>
-        <a href="{{ url_for('artisans_page', q='plomberie') }}" class="lp-cat-card">
+        <a href="{{ url_for('artisans_page', q='plomberie') }}" class="lp-cat-wide">
           <div class="lp-cat-icon" style="background:#DBEAFE;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" stroke-width="2"><path d="M19 9l-7 7-7-7"/></svg></div>
           <div><div class="lp-cat-name">Plomberie</div><div class="lp-cat-count">{{ counts.get('Plomberie', 0) }} technicien{{ 's' if counts.get('Plomberie', 0) != 1 }}</div></div>
         </a>
-        <a href="{{ url_for('artisans_page', q='climatisation') }}" class="lp-cat-card">
+        <a href="{{ url_for('artisans_page', q='climatisation') }}" class="lp-cat-wide">
           <div class="lp-cat-icon" style="background:#E0F2FE;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0369A1" stroke-width="2"><path d="M12 2v20M2 12h20M4.93 4.93l14.14 14.14M19.07 4.93 4.93 19.07"/></svg></div>
           <div><div class="lp-cat-name">Climatisation</div><div class="lp-cat-count">{{ counts.get('Climatisation', 0) }} technicien{{ 's' if counts.get('Climatisation', 0) != 1 }}</div></div>
         </a>
-        <a href="{{ url_for('categories') }}" class="lp-cat-card">
+        <a href="{{ url_for('artisans_page', q='refrigeration') }}" class="lp-cat-wide">
+          <div class="lp-cat-icon" style="background:#ECFDF5;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#047857" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 6v12M18 6v12"/></svg></div>
+          <div><div class="lp-cat-name">Réfrigération</div><div class="lp-cat-count">{{ counts.get('Réfrigération', 0) }} technicien{{ 's' if counts.get('Réfrigération', 0) != 1 }}</div></div>
+        </a>
+        <a href="{{ url_for('categories') }}" class="lp-cat-wide">
           <div class="lp-cat-icon" style="background:#F3F4F6;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#374151" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg></div>
           <div><div class="lp-cat-name">Voir plus</div><div class="lp-cat-count">Toutes les catégories</div></div>
         </a>
@@ -445,19 +540,33 @@
 
   <section class="lp-tech-section">
     <div class="lp-tech-inner">
-      <h2 class="lp-section-title">Techniciens populaires</h2>
+      <div class="lp-section-title">
+        <h2 style="margin:0;">Techniciens populaires</h2>
+        <a href="{{ url_for('artisans_page') }}">Voir tout</a>
+      </div>
       <div class="lp-tech-list">
         {% for artisan in artisans %}
         <a href="{{ url_for('artisan_detail', artisan_id=artisan.id) }}" class="lp-tech-card">
-          <img src="{{ artisan.photo_url or url_for('static', filename='img/technician-hero.jpg') }}" alt="{{ artisan.full_name }}" class="lp-tech-avatar" onerror="this.src='{{ url_for('static', filename='img/technician-hero.jpg') }}'" />
+          <div class="lp-tech-photo-wrap">
+            <img src="{{ artisan.photo_url or url_for('static', filename='img/technician-hero.jpg') }}" alt="{{ artisan.full_name }}" class="lp-tech-avatar" onerror="this.src='{{ url_for('static', filename='img/technician-hero.jpg') }}'" />
+            <span class="lp-tech-badge-top">{{ 'Disponible' if loop.index <= 3 else 'En mission' }}</span>
+            <span class="lp-tech-heart">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            </span>
+          </div>
           <div class="lp-tech-info">
-            <h4 class="lp-tech-name">{{ artisan.full_name }}</h4>
-            <p class="lp-tech-trade">{{ artisan.profession }}</p>
+            <h4>{{ artisan.full_name }}</h4>
+            <p>{{ artisan.profession }}</p>
             <div class="lp-tech-meta">
-              {% if artisan.is_verified %}<span class="lp-badge">Vérifié</span>{% endif %}
+              {% if artisan.is_verified %}<span class="lp-tech-vbadge">Vérifié</span>{% endif %}
               <span class="lp-stars">{{ "%.1f"|format(artisan.avg_rating or 0) }}</span>
-              <span>({{ artisan.review_count }} avis)</span>
+              <span style="color:var(--lp-slate-dark);">({{ artisan.review_count }} avis)</span>
             </div>
+            <div class="lp-tech-loc">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 13 8 13s8-7.75 8-13a8 8 0 0 0-8-8z"/></svg>
+              {{ artisan.city or 'Conakry' }}{{ ', ' + artisan.zone_intervention if artisan.zone_intervention else '' }}
+            </div>
+            <div class="lp-tech-price">À partir de <span>{{ "{:,.0f}".format(artisan.hourly_rate or 150000) }} GNF</span></div>
           </div>
         </a>
         {% else %}
@@ -468,7 +577,45 @@
   </section>
 
   <footer class="lp-footer">
-    FixPro Guinée - Plateforme de mise en relation artisan et client à Conakry.
+    <div class="lp-footer-stats">
+      <div class="lp-stat">
+        <div class="lp-stat-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+        </div>
+        <div>
+          <p class="lp-stat-num">+ 2 500</p>
+          <p class="lp-stat-label">Clients satisfaits</p>
+        </div>
+      </div>
+      <div class="lp-stat">
+        <div class="lp-stat-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
+        </div>
+        <div>
+          <p class="lp-stat-num">200+</p>
+          <p class="lp-stat-label">Techniciens vérifiés</p>
+        </div>
+      </div>
+      <div class="lp-stat">
+        <div class="lp-stat-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <div>
+          <p class="lp-stat-num">24h/7j</p>
+          <p class="lp-stat-label">Service d'urgence</p>
+        </div>
+      </div>
+      <div class="lp-stat">
+        <div class="lp-stat-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </div>
+        <div>
+          <p class="lp-stat-num">100 %</p>
+          <p class="lp-stat-label">Satisfaction garantie</p>
+        </div>
+      </div>
+    </div>
+    <p class="lp-footer-credit">FixPro Guinée - Plateforme de mise en relation artisan et client à Conakry.</p>
   </footer>
 </div>
 {% endblock %}
