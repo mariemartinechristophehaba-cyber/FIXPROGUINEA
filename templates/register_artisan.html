@@ -10,16 +10,14 @@
   .rart-back { color:#DCE3F0; text-decoration:none; font-size:12px; display:inline-flex; align-items:center; gap:6px; margin-bottom:12px; }
   .rart-head h1 { font-family:var(--font-display); font-size:25px; margin:0 0 5px; font-weight:700; }
   .rart-head p { margin:0; color:#9FB0CC; font-size:13px; }
-  .rart-form { padding:12px 16px 100px; }
+  .rart-form { padding:16px 16px 100px; }
   .rart-sep { border-bottom:1px solid var(--line); margin:18px 0; }
-  .rart-section { margin-bottom:14px; }
-  .rart-sec-title { font-size:12px; font-weight:700; color:var(--slate); text-transform:uppercase; letter-spacing:0.4px; margin:0 0 12px; display:flex; align-items:center; gap:7px; }
-  .rart-sec-title svg { width:16px; height:16px; color:var(--ink); }
-  .rart-fg { margin-bottom:12px; }
+  .rart-sec-title { font-family:var(--font-display); font-size:18px; color:var(--ink); margin:0 0 14px; }
+  .rart-fg { margin-bottom:14px; }
   .rart-fl { font-size:13px; color:var(--slate); margin-bottom:5px; font-weight:600; }
   .rart-fb { width:100%; border:1px solid var(--line); border-radius:10px; padding:13px 14px; font-size:15px; background:var(--paper-2); color:var(--ink); box-sizing:border-box; font-family:var(--font-body); }
   .rart-fb:focus { outline:none; border-color:var(--amber); }
-  .rart-photo { width:86px; height:86px; border-radius:50%; border:2px dashed #BFC6D4; display:flex; flex-direction:column; align-items:center; justify-content:center; color:var(--slate); cursor:pointer; background:var(--paper-2); overflow:hidden; margin-bottom:14px; }
+  .rart-photo { position:relative; width:86px; height:86px; border-radius:50%; border:2px dashed #BFC6D4; display:flex; flex-direction:column; align-items:center; justify-content:center; color:var(--slate); cursor:pointer; background:var(--paper-2); overflow:hidden; margin:0 auto 20px; }
   .rart-photo img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
   .rart-photo input { display:none; }
   .rart-photo-txt { font-size:9px; margin-top:2px; }
@@ -28,20 +26,16 @@
   .rart-chips { display:flex; flex-wrap:wrap; gap:8px; }
   .rart-chip { border:1px solid var(--line); background:var(--paper-2); border-radius:18px; padding:9px 14px; font-size:13px; color:var(--slate); cursor:pointer; }
   .rart-chip.active { background:var(--amber-soft); border-color:var(--amber); color:var(--ink); }
-  .rart-textarea { min-height:80px; resize:vertical; }
   .rart-upload { width:100%; border:1px dashed var(--line); border-radius:10px; padding:14px; text-align:center; color:var(--slate); cursor:pointer; background:var(--paper-2); font-size:13px; display:flex; flex-direction:column; align-items:center; gap:5px; }
   .rart-upload img { max-height:90px; object-fit:cover; border-radius:8px; }
-  .rart-portfolio { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:10px; }
-  .rart-p { aspect-ratio:1; border-radius:10px; background:var(--paper-2); border:1px dashed var(--line); display:flex; align-items:center; justify-content:center; color:var(--slate); font-size:18px; cursor:pointer; }
-  .rart-p img { width:100%; height:100%; object-fit:cover; border-radius:10px; }
+  .rart-loc-msg { font-size:13px; color:var(--ink); margin-top:6px; font-weight:600; min-height:18px; }
   .rart-check { display:flex; align-items:flex-start; gap:8px; margin:18px 0; font-size:13px; color:var(--slate); }
   .rart-check input { margin-top:2px; }
   .rart-sticky { position:fixed; bottom:0; left:0; right:0; padding:12px 16px calc(12px + env(safe-area-inset-bottom)); background:var(--paper); border-top:1px solid var(--line); }
   .rart-sticky .rart-btn { width:100%; border:none; border-radius:10px; padding:15px; font-size:15px; font-weight:700; background:var(--amber); color:var(--ink); cursor:pointer; font-family:var(--font-body); }
   .rart-sticky .rart-btn:disabled { opacity:.6; }
-  .rart-loc-msg { font-size:13px; color:var(--ink); margin-top:6px; font-weight:600; min-height:18px; }
   @media (min-width: 768px) {
-    .rart-form { max-width:600px; margin:0 auto; padding:20px 24px 100px; }
+    .rart-form { max-width:600px; margin:0 auto; padding:22px 24px 100px; }
     .rart-head h1 { font-size:28px; }
     .rart-sticky { padding:14px 24px; }
     .rart-sticky .rart-btn { max-width:560px; margin:0 auto; }
@@ -51,22 +45,18 @@
 <div class="rart-wrap">
   <div class="rart-head">
     <a href="{{ url_for('index') }}" class="rart-back">← Retour</a>
-    <h1>Devenir technicien FixPro</h1>
-    <p>Créez votre profil en quelques minutes. Votre profil sera vérifié avant publication.</p>
+    <h1>Devenir technicien</h1>
+    <p>Créez votre profil professionnel et commencez à recevoir des demandes.</p>
   </div>
 
   <form method="post" class="rart-form" id="rartForm" enctype="multipart/form-data" onsubmit="return false;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
 
     <div class="rart-section">
-      <div class="rart-sec-title">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="12" r="4"/><path d="M3 9h6l2-2h3l2 2h5"/></svg>
-        Photo
-      </div>
       <label class="rart-photo" id="photoBox">
         <input type="file" id="photoInput" accept="image/jpeg,image/png,image/webp" />
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="12" r="4"/><path d="M3 9h6l2-2h3l2 2h5"/></svg>
-        <span class="rart-photo-txt">Ajouter une photo</span>
+        <span class="rart-photo-txt" id="photoLabel">Ajouter une photo</span>
       </label>
       <input type="hidden" name="photo" id="photoBase64" />
     </div>
@@ -74,19 +64,13 @@
     <div class="rart-sep"></div>
 
     <div class="rart-section">
-      <div class="rart-sec-title">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-        Nom complet
+      <h2 class="rart-sec-title">Vos informations</h2>
+      <div class="rart-fg">
+        <div class="rart-fl">Nom complet</div>
+        <input class="rart-fb" type="text" name="full_name" id="fullName" placeholder="Entrez votre nom complet" required />
       </div>
       <div class="rart-fg">
-        <input class="rart-fb" type="text" name="full_name" id="fullName" placeholder="Votre nom complet" required />
-      </div>
-
-      <div class="rart-sec-title">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.9 12.9 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.9 12.9 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-        Téléphone
-      </div>
-      <div class="rart-fg">
+        <div class="rart-fl">Téléphone</div>
         <div class="rart-phone">
           <span class="rart-prefix">+224</span>
           <input class="rart-fb" type="tel" name="phone" id="phone" placeholder="624 12 34 56" style="flex:1;" inputmode="tel" required />
@@ -97,13 +81,11 @@
     <div class="rart-sep"></div>
 
     <div class="rart-section">
-      <div class="rart-sec-title">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-        Votre métier
-      </div>
+      <h2 class="rart-sec-title">Votre activité</h2>
       <div class="rart-fg">
+        <div class="rart-fl">Métier</div>
         <select class="rart-fb" name="profession" id="profession" required>
-          <option value="" disabled selected>Choisir un métier</option>
+          <option value="" disabled selected>Choisir votre métier</option>
           <option value="Plombier">Plombier</option>
           <option value="Électricien">Électricien</option>
           <option value="Climatisation">Climatisation</option>
@@ -119,12 +101,12 @@
           {% endfor %}
         </select>
       </div>
-
-      <div class="rart-sec-title">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-        Expérience
+      <div class="rart-fg">
+        <div class="rart-fl">Spécialité</div>
+        <input class="rart-fb" type="text" name="specialite" placeholder="Ex. Installation électrique" />
       </div>
       <div class="rart-fg">
+        <div class="rart-fl">Années d'expérience</div>
         <input type="hidden" name="experience" id="experience" />
         <div class="rart-chips" id="expChips">
           <span class="rart-chip" data-v="Débutant">Débutant</span>
@@ -138,10 +120,7 @@
     <div class="rart-sep"></div>
 
     <div class="rart-section">
-      <div class="rart-sec-title">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 13 8 13s8-7.75 8-13a8 8 0 0 0-8-8z"/></svg>
-        Zone d'intervention
-      </div>
+      <h2 class="rart-sec-title">Zone d'intervention</h2>
       <div class="rart-fg">
         <button type="button" class="rart-fb" id="locBtn" style="background:var(--paper);border-style:dashed;">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:6px;"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 13 8 13s8-7.75 8-13a8 8 0 0 0-8-8z"/></svg>
@@ -153,9 +132,12 @@
         <div class="rart-loc-msg" id="locMsg"></div>
       </div>
       <div class="rart-fg">
+        <div class="rart-fl">Zone d'intervention</div>
         <input type="hidden" name="rayon" id="rayon" />
         <div class="rart-chips" id="rayonChips">
-          <span class="rart-chip" data-v="Ma commune">Ma commune</span>
+          <span class="rart-chip" data-v="5 km">5 km</span>
+          <span class="rart-chip" data-v="10 km">10 km</span>
+          <span class="rart-chip" data-v="20 km">20 km</span>
           <span class="rart-chip" data-v="Toute la ville">Toute la ville</span>
         </div>
       </div>
@@ -164,25 +146,10 @@
     <div class="rart-sep"></div>
 
     <div class="rart-section">
-      <div class="rart-sec-title">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-        À propos de vous
-      </div>
+      <h2 class="rart-sec-title">Vérification d'identité</h2>
+      <p style="font-size:13px;color:var(--slate);margin:-10px 0 14px;">Votre pièce d'identité permet à FixPro de vérifier votre profil.</p>
       <div class="rart-fg">
-        <textarea class="rart-fb rart-textarea" name="bio" id="bio" rows="3" placeholder="Présentez brièvement votre savoir-faire"></textarea>
-      </div>
-    </div>
-
-    <div class="rart-sep"></div>
-
-    <div class="rart-section">
-      <div class="rart-sec-title">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 5V4a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v1"/><circle cx="12" cy="11" r="2"/></svg>
-        Vérification
-      </div>
-      <div class="rart-fl">Pièce d'identité</div>
-      <div class="rart-fg">
-        <div class="rart-upload" id="idBox">Ajouter</div>
+        <div class="rart-upload" id="idBox">+ Ajouter une pièce d'identité</div>
         <input type="file" id="idInput" accept="image/jpeg,image/png,image/webp" style="display:none;" />
         <input type="hidden" name="identity_doc" id="idBase64" />
       </div>
@@ -190,38 +157,20 @@
 
     <div class="rart-sep"></div>
 
-    <div class="rart-section">
-      <div class="rart-sec-title">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="12" r="4"/><path d="M3 9h6l2-2h3l2 2h5"/></svg>
-        Vos réalisations
-      </div>
-      <p style="font-size:12px;color:var(--slate);margin:-6px 0 10px;">Ajoutez quelques photos de votre travail. (Facultatif)</p>
-      <div class="rart-portfolio" id="portfolioGrid">
-        <div class="rart-p" id="addPhoto">+</div>
-        <div class="rart-p" id="addPhoto2">+</div>
-        <div class="rart-p" id="addPhoto3">+</div>
-      </div>
-      <input type="file" id="portfolioInput" accept="image/jpeg,image/png,image/webp" multiple style="display:none;" />
-      <input type="hidden" name="portfolio" id="portfolioBase64" />
-    </div>
-
-    <div class="rart-sep"></div>
-
     <label class="rart-check">
       <input type="checkbox" id="conditions" required />
-      <span>J'accepte les conditions FixPro</span>
+      <span>J'accepte les conditions d'utilisation de FixPro.</span>
     </label>
   </form>
 
   <div class="rart-sticky">
-    <button type="button" class="rart-btn" id="submitBtn">Envoyer ma demande</button>
+    <button type="button" class="rart-btn" id="submitBtn">Devenir technicien</button>
   </div>
 </div>
 
 <script>
   (function(){
     const form = document.getElementById('rartForm');
-    const portfolio = [];
 
     function readFile(input, cb, max=5*1024*1024){
       const f = input.files[0];
@@ -247,37 +196,6 @@
         document.getElementById('idBox').innerHTML = `<img src="${res}" alt="piece"><div>Photo ajoutee</div>`;
       });
     });
-
-    function addPortfolioSlot(id){
-      document.getElementById(id).addEventListener('click', ()=>document.getElementById('portfolioInput').click());
-    }
-    ['addPhoto','addPhoto2','addPhoto3'].forEach(addPortfolioSlot);
-    document.getElementById('portfolioInput').addEventListener('change', function(){
-      [...this.files].forEach(f=>{
-        if (portfolio.length >= 5) return;
-        if (f.size > 5*1024*1024){ alert('Fichier trop volumineux.'); return; }
-        const r = new FileReader();
-        r.onload = e => { portfolio.push(e.target.result); renderPortfolio(); };
-        r.readAsDataURL(f);
-      });
-    });
-
-    function renderPortfolio(){
-      const grid = document.getElementById('portfolioGrid');
-      grid.innerHTML = portfolio.map((p,i)=>`<div class="rart-p" onclick="delPhoto(${i})"><img src="${p}"></div>`).join('');
-      const slots = 3 - portfolio.length;
-      for (let i=0; i<slots; i++){
-        grid.innerHTML += `<div class="rart-p add-photo-slot" id="addPhoto${i}">+</div>`;
-      }
-      document.querySelectorAll('.add-photo-slot').forEach((el, i)=>{
-        el.addEventListener('click', ()=>document.getElementById('portfolioInput').click());
-      });
-      document.getElementById('portfolioBase64').value = JSON.stringify(portfolio);
-    }
-    window.delPhoto = function(i){
-      portfolio.splice(i,1);
-      renderPortfolio();
-    };
 
     function formatPhone(v){
       const raw = v.replace(/\D/g,'').replace(/^224?/,'').slice(0,9);
@@ -326,11 +244,11 @@
       if (!document.getElementById('fullName').value.trim()){ alert('Entrez votre nom complet.'); return false; }
       const p = document.getElementById('phone').value.trim().replace(/\s/g,'');
       if (!/^[0-9]{8,9}$/.test(p)){ alert('Entrez un numéro de téléphone valide.'); return false; }
-      if (!document.getElementById('profession').value){ alert('Choisissez un métier.'); return false; }
-      if (!document.getElementById('experience').value){ alert('Sélectionnez une expérience.'); return false; }
+      if (!document.getElementById('profession').value){ alert('Choisissez votre métier.'); return false; }
+      if (!document.getElementById('experience').value){ alert('Sélectionnez votre expérience.'); return false; }
       if (!document.getElementById('address').value){ alert('Définissez votre zone d\'intervention.'); return false; }
-      if (!document.getElementById('rayon').value){ alert('Sélectionnez une zone.'); return false; }
-      if (!document.getElementById('idBase64').value){ alert('Ajoutez une pièce d\'identité.'); return false; }
+      if (!document.getElementById('rayon').value){ alert('Sélectionnez votre zone.'); return false; }
+      if (!document.getElementById('idBase64').value){ alert('Ajoutez votre pièce d\'identité.'); return false; }
       if (!document.getElementById('conditions').checked){ alert('Vous devez accepter les conditions.'); return false; }
       return true;
     }
@@ -339,7 +257,7 @@
       if (!validate()) return;
       const btn = this;
       btn.disabled = true;
-      btn.textContent = 'Envoi en cours...';
+      btn.textContent = 'Inscription en cours...';
       const fd = new FormData(form);
       const res = await fetch('{{ url_for('register_artisan') }}', { method:'POST', body: fd });
       if (res.ok || res.redirected){
@@ -347,7 +265,7 @@
       } else {
         alert('Une erreur est survenue. Vérifiez vos informations.');
         btn.disabled = false;
-        btn.textContent = 'Envoyer ma demande';
+        btn.textContent = 'Devenir technicien';
       }
     });
   })();
