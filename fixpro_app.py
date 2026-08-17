@@ -1903,6 +1903,70 @@ def mobile_dashboard():
     return render_template("mobile_dashboard.html", user=get_current_user())
 
 
+@app.route("/dashboard/technicien")
+@login_required
+def artisan_dashboard():
+    """Tableau de bord professionnel du technicien."""
+    user = get_current_user()
+    if user["role"] != "artisan":
+        flash("Cet espace est reserve aux techniciens.", "error")
+        return redirect(url_for("dashboard"))
+
+    conn = get_db_connection()
+    try:
+        nouvelles = conn.execute(
+            "SELECT COUNT(*) AS n FROM requests"
+            " WHERE status = 'pending' AND (category = ? OR ? = '')"
+            " AND (client_id != ?)",
+            (user["profession"], user["profession"], user["id"])).fetchone()["n"]
+
+        assignees = conn.execute(
+            "SELECT COUNT(*) AS n FROM requests"
+            " WHERE artisan_id = ? AND status IN ('assigned', 'quote_proposed', 'quote_accepted', 'in_progress')",
+            (user["id"],)).fetchone()["n"]
+
+        terminees = conn.execute(
+            "SELECT COUNT(*) AS n FROM requests"
+            " WHERE artisan_id = ? AND status = 'completed'",
+            (user["id"],)).fetchone()["n"]
+
+        revenus = conn.execute(
+            "SELECT COALESCE(SUM(amount - commission_amount), 0) AS total"
+            " FROM payments"
+            " WHERE request_id IN (SELECT id FROM requests WHERE artisan_id = ?) AND status = 'success'",
+            (user["id"],)).fetchone()["total"]
+
+        note = conn.execute(
+            "SELECT COALESCE(AVG(rating), 0) AS avg, COUNT(*) AS cnt FROM reviews"
+            " WHERE artisan_id = ?", (user["id"],)).fetchone()
+
+        demandes = conn.execute("""
+            SELECT r.id, r.title, r.category, r.address, r.urgency, r.status,
+                   r.created_at, u.full_name AS client_name
+            FROM requests r
+            JOIN users u ON u.id = r.client_id
+            WHERE r.artisan_id = ? OR (r.status = 'pending' AND (r.category = ? OR ? = ''))
+            ORDER BY r.created_at DESC
+            LIMIT 20
+        """, (user["id"], user["profession"], user["profession"])).fetchall()
+
+        avis = conn.execute(
+            "SELECT r.rating, r.comment, r.created_at, u.full_name"
+            " FROM reviews r"
+            " JOIN users u ON u.id = r.client_id"
+            " WHERE r.artisan_id = ? ORDER BY r.created_at DESC LIMIT 5",
+            (user["id"],)).fetchall()
+
+    finally:
+        conn.close()
+
+    return render_template("dashboard_artisan.html", user=user,
+                           stats={"nouvelles": nouvelles, "assignees": assignees,
+                                  "terminees": terminees, "revenus": revenus,
+                                  "note_avg": note["avg"], "note_count": note["cnt"]},
+                           demandes=demandes, avis=avis)
+
+
 @app.route("/payments")
 @login_required
 def payments():

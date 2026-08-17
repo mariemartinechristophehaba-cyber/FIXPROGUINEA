@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% block title %}Tableau de bord - Technicien{% endblock %}
+
+{% block content %}
+<div class="fx-screen" style="background:var(--paper);">
+  <div class="fx-top" style="padding:14px 16px 18px;">
+    <div class="row1">
+      <a class="fx-brand" href="{{ url_for('index') }}">FixPro</a>
+      <a href="{{ url_for('notifications') }}" style="color:#fff;" aria-label="Notifications"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></a>
+    </div>
+    <div class="fx-loc" style="margin-top:10px;">Bonjour {{ user.full_name }}</div>
+  </div>
+
+  <div class="fx-list" style="padding:14px 16px 90px;">
+    <div class="fx-list-title">Aujourd'hui</div>
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:18px;">
+      <div style="background:var(--paper-2);border:1px solid var(--line);border-radius:12px;padding:14px;">
+        <div style="font-size:22px;font-weight:700;color:var(--ink);">{{ stats.nouvelles }}</div>
+        <div style="font-size:12px;color:var(--slate);">Nouvelles demandes</div>
+      </div>
+      <div style="background:var(--paper-2);border:1px solid var(--line);border-radius:12px;padding:14px;">
+        <div style="font-size:22px;font-weight:700;color:var(--ink);">{{ stats.assignees }}</div>
+        <div style="font-size:12px;color:var(--slate);">En cours</div>
+      </div>
+      <div style="background:var(--paper-2);border:1px solid var(--line);border-radius:12px;padding:14px;">
+        <div style="font-size:22px;font-weight:700;color:var(--ink);">{{ stats.terminees }}</div>
+        <div style="font-size:12px;color:var(--slate);">Terminees</div>
+      </div>
+      <div style="background:var(--paper-2);border:1px solid var(--line);border-radius:12px;padding:14px;">
+        <div style="font-size:22px;font-weight:700;color:var(--ink);">{{ "{:,}".format(stats.revenus|int).replace(",", " ") }} GNF</div>
+        <div style="font-size:12px;color:var(--slate);">Revenus</div>
+      </div>
+    </div>
+
+    <div class="fx-list-title">Demandes</div>
+    {% if demandes %}
+    {% for d in demandes %}
+    <a class="fx-card" href="{{ url_for('request_detail', request_id=d.id) }}" style="text-decoration:none;color:inherit;">
+      <div class="fx-body">
+        <div class="fx-name" style="font-size:14px;">{{ d.title }}</div>
+        <div class="fx-trade">{{ d.category }} · {{ d.client_name }}</div>
+        <div class="fx-meta">
+          <span class="pill {{ 'pill-green' if d.status == 'pending' else 'pill-amber' }}">{{ d.status }}</span>
+          <span style="font-size:11px;color:var(--slate);">{{ d.address or 'Conakry' }}</span>
+        </div>
+      </div>
+    </a>
+    {% endfor %}
+    {% else %}
+    <div class="fx-empty">Aucune demande pour le moment.</div>
+    {% endif %}
+
+    <div class="fx-list-title" style="margin-top:18px;">Avis recents</div>
+    {% if avis %}
+    {% for a in avis %}
+    <div style="background:var(--paper-2);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px;">
+      <div style="font-size:13px;font-weight:600;">{{ a.full_name }}</div>
+      <div style="font-size:12px;color:var(--slate);">Note {{ a.rating }}/5</div>
+      <p style="font-size:12px;color:var(--ink);margin:6px 0 0;">{{ a.comment or 'Aucun commentaire' }}</p>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="fx-empty">Aucun avis pour le moment.</div>
+    {% endif %}
+  </div>
+
+  <nav class="tabbar">
+    <a class="tabbar-link active" href="{{ url_for('artisan_dashboard') }}">Missions</a>
+    <a class="tabbar-link" href="{{ url_for('requests_list') }}">Demandes</a>
+    <a class="tabbar-link" href="{{ url_for('conversations') }}">Messages</a>
+    <a class="tabbar-link" href="{{ url_for('profile') }}">Profil</a>
+  </nav>
+</div>
+{% endblock %}
