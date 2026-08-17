@@ -47,12 +47,19 @@ body{
 .fx-screen{
   width:100%;
   min-height:100vh;
-  max-width:560px;
-  margin:0 auto;
   background:var(--paper);
   display:flex;
   flex-direction:column;
   position:relative;
+}
+.fx-narrow{ max-width:560px; margin:0 auto; }
+
+@media (min-width:720px){
+  .fx-screen{ min-height:0; border-radius:12px; margin:24px auto; box-shadow:0 20px 40px -18px rgba(19,32,59,.25); max-width:960px; }
+  .fx-narrow{ max-width:560px; }
+  .fx-top{ border-radius:12px 12px 0 0; }
+  .fx-map{ margin:14px 20px 0; }
+  .fx-list{ padding:14px 20px; }
 }
 
 /* ----- Top header (app) ----- */
