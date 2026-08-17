@@ -2085,11 +2085,14 @@ def artisan_detail(artisan_id):
         member_since = (str(artisan["created_at"])[:7] if artisan["created_at"]
                         else "Date inconnue")
 
-        # Photos de realisations
-        portfolio = conn.execute(
-            "SELECT id, photo_url, caption FROM artisan_portfolio"
-            " WHERE artisan_id = ? ORDER BY created_at DESC LIMIT 6",
-            (artisan_id,)).fetchall()
+        # Photos de realisations (table ignoree si non migree)
+        try:
+            portfolio = conn.execute(
+                "SELECT id, photo_url, caption FROM artisan_portfolio"
+                " WHERE artisan_id = ? ORDER BY created_at DESC LIMIT 6",
+                (artisan_id,)).fetchall()
+        except Exception:
+            portfolio = []
     finally:
         conn.close()
 

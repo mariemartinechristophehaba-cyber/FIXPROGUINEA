@@ -5,9 +5,9 @@
   <p class="muted">{{ request_item['description'] }}</p>
   <p><strong>Catégorie :</strong> {{ request_item['category'] or '—' }}</p>
   <p><strong>Prix diagnostic :</strong> {{ request_item['diagnostic_price'] or 0 }} GNF</p>
-  <p><strong>Adresse :</strong> {{ request_item['address'] or '—' }}</p>
-  <p><strong>Urgence :</strong> {{ request_item['urgency'] or '—' }}</p>
-  <p><strong>Telephone de contact :</strong> {{ request_item['phone_contact'] or '—' }}</p>
+  <p><strong>Adresse :</strong> {{ request_item.get('address') or '—' }}</p>
+  <p><strong>Urgence :</strong> {{ request_item.get('urgency') or '—' }}</p>
+  <p><strong>Telephone de contact :</strong> {{ request_item.get('phone_contact') or '—' }}</p>
   {% if request_item['photo_url'] %}
     <p><strong>Photo du problème :</strong> <a href="{{ request_item['photo_url'] }}" target="_blank">Voir la photo</a></p>
   {% endif %}
