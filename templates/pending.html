@@ -1,17 +1,24 @@
 {% extends 'base.html' %}
-{% block title %}Inscription en attente - FixPro{% endblock %}
+{% block title %}Inscription envoyée - FixPro Guinée{% endblock %}
+{% block header %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/fixpro-auth.css', v='1') }}" />{% endblock %}
 
 {% block content %}
-<div class="fx-screen" style="justify-content:center;align-items:center;text-align:center;padding:24px;background:var(--paper);color:var(--ink);">
-  <div style="width:100%;max-width:320px;">
-    <div style="width:80px;height:80px;border-radius:50%;background:var(--amber-soft);display:flex;align-items:center;justify-content:center;margin:0 auto 22px;font-size:32px;">⏳</div>
-    <h1 style="font-family:var(--font-display);font-size:22px;margin:0 0 10px;">Votre dossier est en cours d'examen</h1>
-    <p style="font-size:13px;color:var(--slate);line-height:1.6;margin:0 0 22px;">L'equipe FixPro verifie vos informations et vos documents avant de valider votre profil. Cela peut prendre jusqu'a 48 heures.</p>
-    <div style="background:var(--paper-2);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:24px;text-align:left;">
-      <div style="font-size:11px;color:var(--slate);margin-bottom:4px;">Statut</div>
-      <div style="font-weight:600;color:var(--amber-dark);">En attente de verification</div>
+<div class="fa-page">
+  <div class="fa-container" style="padding-top: 64px;">
+    <div class="fa-card" style="text-align:center;">
+      <div class="fa-confirm-icon">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg>
+      </div>
+      <h1 class="fa-title">Votre demande a été envoyée</h1>
+      <p class="fa-sub">Merci ! Notre équipe va vérifier votre profil. Vous recevrez une confirmation dès que votre compte sera validé.</p>
+
+      <div class="fa-status"><span class="fa-dot"></span> Vérification en cours</div>
+
+      <a href="{{ url_for('index') }}" class="fa-btn" style="margin-bottom:12px;">Retour à l'accueil</a>
+      <a href="{{ url_for('login') }}" class="fa-btn fa-btn-outline" style="margin-bottom:0;">Voir mon profil</a>
     </div>
-    <a href="{{ url_for('index') }}" class="fx-dock-btn primary" style="display:block;">Retour a l'accueil</a>
   </div>
 </div>
 {% endblock %}

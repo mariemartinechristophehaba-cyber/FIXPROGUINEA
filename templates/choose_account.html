@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block title %}Bienvenue sur FixPro - Choisissez votre profil{% endblock %}
+{% block header %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/fixpro-auth.css', v='1') }}" />{% endblock %}
+
+{% block content %}
+<div class="fa-page">
+  <header class="fa-header fa-header-plain">
+    <a href="{{ url_for('index') }}" class="fa-back" aria-label="Retour">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+    </a>
+    <a href="{{ url_for('index') }}" class="fa-logo" style="color:var(--fa-ink);">
+      <div class="fa-logo-mark"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0A1122" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></div>
+      FixPro<small>GUINÉE</small>
+    </a>
+    <span></span>
+  </header>
+
+  <div class="fa-container">
+    <div class="fa-card" style="text-align:center;">
+      <h1 class="fa-title">Bienvenue sur FixPro</h1>
+      <p class="fa-sub">Comment souhaitez-vous utiliser FixPro ?</p>
+
+      <div class="fa-choice-grid">
+        <a href="{{ url_for('client_signup') }}" class="fa-choice-card">
+          <div class="fa-choice-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0A1122" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
+          </div>
+          <h3>Je cherche un technicien</h3>
+          <p>Trouvez rapidement un professionnel qualifié près de chez vous.</p>
+          <span class="fa-btn" style="width:auto; height:42px; padding:0 24px;">Créer mon compte client</span>
+        </a>
+
+        <a href="{{ url_for('register_artisan') }}" class="fa-choice-card">
+          <div class="fa-choice-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0A1122" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+          </div>
+          <h3>Je suis technicien</h3>
+          <p>Proposez vos services et trouvez de nouveaux clients.</p>
+          <span class="fa-btn" style="width:auto; height:42px; padding:0 24px;">Devenir technicien</span>
+        </a>
+      </div>
+
+      <p class="fa-foot">Vous avez déjà un compte ? <a href="{{ url_for('login') }}">Se connecter</a></p>
+    </div>
+  </div>
+</div>
+{% endblock %}

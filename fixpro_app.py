@@ -730,7 +730,7 @@ def register():
     if role == "artisan":
         return redirect(url_for("register_artisan"))
 
-    return render_template("register.html", role="client")
+    return render_template("choose_account.html")
 
 
 @app.route("/register/artisan", methods=["GET", "POST"])

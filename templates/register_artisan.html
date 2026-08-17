@@ -1,328 +1,223 @@
 {% extends 'base.html' %}
-{% block title %}Devenir technicien - FixPro{% endblock %}
+{% block title %}Devenir technicien - FixPro Guinée{% endblock %}
 {% block header %}{% endblock %}
 {% block footer %}{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/fixpro-auth.css', v='1') }}" />{% endblock %}
 
 {% block content %}
 <style>
-  :root {
-    --rart-g: 16px;
-    --rart-field-h: 50px;
-    --rart-ink: #13203B;
-    --rart-paper: #F7F4EE;
-    --rart-paper-2: #FFFFFF;
-    --rart-line: #E0DCD5;
-    --rart-slate: #596475;
-    --rart-amber: #F5A623;
-    --rart-amber-soft: #FFF4E0;
-    --rart-green: #1F9D6B;
-    --rart-radius: 10px;
-    --rart-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    --rart-display: 'Space Grotesk', sans-serif;
-  }
-
-  .rart-page { min-height:100vh; background:var(--rart-paper); font-family:var(--rart-font); padding-bottom:90px; }
-
-  .rart-header { display:flex; align-items:center; justify-content:space-between; padding:14px var(--rart-g); background:var(--rart-ink); color:#fff; position:sticky; top:0; z-index:100; }
-  .rart-logo { font-family:var(--rart-display); font-size:18px; font-weight:700; color:#fff; text-decoration:none; letter-spacing:-0.3px; }
-  .rart-logo span { color:var(--rart-amber); }
-  .rart-burger { width:40px; height:40px; display:flex; align-items:center; justify-content:center; background:none; border:none; color:#fff; cursor:pointer; margin-right:-8px; }
-  .rart-burger svg { width:22px; height:22px; }
-  .rart-mobile-menu { display:none; background:var(--rart-ink); padding:0 var(--rart-g) 16px; }
-  .rart-mobile-menu a { display:block; color:rgba(255,255,255,.85); text-decoration:none; padding:12px 0; font-size:14px; border-bottom:1px solid rgba(255,255,255,.08); }
-
-  .rart-hero { padding:22px var(--rart-g) 6px; }
-  .rart-hero h1 { font-family:var(--rart-display); font-size:25px; font-weight:700; color:var(--rart-ink); margin:0 0 6px; line-height:1.2; }
-  .rart-hero p { font-size:14px; color:var(--rart-slate); margin:0; line-height:1.45; }
-
-  .rart-form { padding:8px var(--rart-g) 24px; }
-
-  .rart-section { padding:18px 0; border-bottom:1px solid var(--rart-line); }
-  .rart-section:last-of-type { border-bottom:none; }
-  .rart-sec-title { font-family:var(--rart-display); font-size:20px; font-weight:700; color:var(--rart-ink); margin:0 0 14px; }
-
-  .rart-fg { margin-bottom:20px; }
-  .rart-fg:last-child { margin-bottom:0; }
-  .rart-fl { font-size:14px; font-weight:600; color:var(--rart-ink); margin-bottom:8px; display:block; }
-
-  .rart-fb, .rart-fb-select { width:100%; height:var(--rart-field-h); border:1px solid var(--rart-line); border-radius:var(--rart-radius); padding:0 14px; font-size:15px; color:var(--rart-ink); background:var(--rart-paper-2); box-sizing:border-box; font-family:var(--rart-font); }
-  .rart-fb:focus, .rart-fb-select:focus { outline:none; border-color:var(--rart-amber); }
-  .rart-fb::placeholder { color:#A8B0BB; font-size:15px; }
-  .rart-fb-select { appearance:none; -webkit-appearance:none; background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%23596475' stroke-width='1.5' fill='none'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position: right 14px center; }
-  .rart-fb-select:invalid, .rart-fb-select option[value=""] { color:#A8B0BB; }
-
-  .rart-phone { display:flex; gap:8px; }
-  .rart-phone .rart-prefix { flex:0 0 auto; width:66px; display:flex; align-items:center; justify-content:center; height:var(--rart-field-h); border:1px solid var(--rart-line); border-radius:var(--rart-radius); background:var(--rart-paper-2); font-size:14px; font-weight:600; color:var(--rart-slate); }
-  .rart-phone .rart-fb { flex:1; }
-
-  .rart-photo { width:86px; height:86px; border-radius:50%; border:2px dashed #C6CCD8; display:flex; flex-direction:column; align-items:center; justify-content:center; color:var(--rart-slate); cursor:pointer; background:var(--rart-paper-2); overflow:hidden; margin:0 auto 6px; }
-  .rart-photo img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
-  .rart-photo input { display:none; }
-  .rart-photo-label { text-align:center; font-size:12px; color:var(--rart-slate); margin-top:2px; }
-
-  .rart-chips { display:flex; flex-wrap:wrap; gap:10px; }
-  .rart-chip { border:1px solid var(--rart-line); background:var(--rart-paper-2); border-radius:20px; padding:11px 16px; font-size:14px; color:var(--rart-slate); cursor:pointer; user-select:none; }
-  .rart-chip.active { background:var(--rart-amber-soft); border-color:var(--rart-amber); color:var(--rart-ink); font-weight:600; }
-
-  .rart-text { font-size:13px; color:var(--rart-slate); line-height:1.5; margin:-8px 0 14px; }
-
-  .rart-upload { width:100%; min-height:70px; border:1px dashed var(--rart-line); border-radius:var(--rart-radius); padding:14px; text-align:center; color:var(--rart-slate); cursor:pointer; background:var(--rart-paper-2); font-size:14px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; }
-  .rart-upload img { max-height:90px; object-fit:cover; border-radius:8px; }
-
-  .rart-check { display:flex; align-items:flex-start; gap:10px; margin:20px 0 24px; font-size:14px; color:var(--rart-slate); line-height:1.45; }
-  .rart-check input { width:18px; height:18px; margin-top:1px; accent-color:var(--rart-amber); flex:0 0 18px; }
-
-  .rart-sticky { position:fixed; bottom:0; left:0; right:0; padding:12px var(--rart-g) calc(12px + env(safe-area-inset-bottom)); background:var(--rart-paper); border-top:1px solid var(--rart-line); z-index:50; }
-  .rart-submit { width:100%; height:52px; border:none; border-radius:var(--rart-radius); font-size:16px; font-weight:700; background:var(--rart-amber); color:var(--rart-ink); cursor:pointer; font-family:var(--rart-font); }
-  .rart-submit:disabled { opacity:.65; }
-
-  .rart-desktop-btn { display:none; }
-
-  @media (min-width: 768px) {
-    .rart-page { padding-bottom:40px; }
-    .rart-header, .rart-mobile-menu, .rart-hero, .rart-form, .rart-sticky { max-width:600px; margin:0 auto; }
-    .rart-header { border-radius:0 0 14px 14px; }
-    .rart-hero h1 { font-size:28px; }
-    .rart-sticky { position:static; border-top:none; background:transparent; padding:0 var(--rart-g); }
-    .rart-submit { max-width:560px; }
-  }
-  @media (min-width: 768px) and (max-width: 1023px) {
-    .rart-header, .rart-mobile-menu, .rart-hero, .rart-form, .rart-sticky { max-width:540px; }
-  }
+  .fa-upload { border: 1.5px dashed var(--fa-line); border-radius: var(--fa-radius-sm); padding: 18px; text-align: center; cursor: pointer; color: var(--fa-slate); font-size: 13px; }
+  .fa-upload img { max-height: 80px; border-radius: 8px; }
+  .fa-textarea { height: 120px; padding: 14px; resize: none; }
+  .fa-radio-group { display: flex; flex-direction: column; gap: 10px; }
+  .fa-radio { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border: 1px solid var(--fa-line); border-radius: 12px; cursor: pointer; }
+  .fa-radio input { width: 18px; height: 18px; accent-color: var(--fa-amber); }
+  .fa-doc-card { display: flex; align-items: center; justify-content: space-between; padding: 14px; border: 1px solid var(--fa-line); border-radius: 12px; margin-bottom: 10px; }
+  .fa-doc-status { font-size: 12px; color: var(--fa-slate); }
+  .fa-doc-status.added { color: var(--fa-success); font-weight: 600; }
 </style>
 
-<div class="rart-page">
-  <header class="rart-header">
-    <a href="{{ url_for('index') }}" class="rart-logo">Fix<span>Pro</span></a>
-    <button type="button" class="rart-burger" id="rartBurger" aria-label="Menu">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-    </button>
+<div class="fa-page">
+  <header class="fa-header fa-header-plain">
+    <a href="{{ url_for('register') }}" class="fa-back" aria-label="Retour">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+    </a>
+    <a href="{{ url_for('index') }}" class="fa-logo" style="color:var(--fa-ink);">
+      <div class="fa-logo-mark"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0A1122" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></div>
+      FixPro<small>GUINÉE</small>
+    </a>
+    <span></span>
   </header>
-  <nav class="rart-mobile-menu" id="rartMenu">
-    <a href="{{ url_for('index') }}">Accueil</a>
-    <a href="{{ url_for('artisans_page') }}">Trouver un technicien</a>
-    <a href="{{ url_for('register_artisan') }}">Devenir technicien</a>
-    <a href="{{ url_for('login') }}">Connexion</a>
-    <a href="{{ url_for('register') }}">Inscription</a>
-  </nav>
 
-  <div class="rart-hero">
-    <h1>Devenir technicien</h1>
-    <p>Votre profil sera vérifié avant publication</p>
-  </div>
-
-  <form method="post" class="rart-form" id="rartForm" enctype="multipart/form-data" onsubmit="return false;">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-
-    <div class="rart-section" style="padding-top:10px;">
-      <label class="rart-photo" id="photoBox" aria-label="Ajouter une photo">
-        <input type="file" id="photoInput" accept="image/jpeg,image/png,image/webp" />
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="12" r="4"/><path d="M3 9h6l2-2h3l2 2h5"/></svg>
-      </label>
-      <div class="rart-photo-label" id="photoLabel">Ajouter une photo</div>
-      <input type="hidden" name="photo" id="photoBase64" />
-    </div>
-
-    <div class="rart-section">
-      <h2 class="rart-sec-title">Vos informations</h2>
-      <div class="rart-fg">
-        <label class="rart-fl" for="fullName">Nom complet</label>
-        <input class="rart-fb" type="text" name="full_name" id="fullName" placeholder="Entrez votre nom complet" required />
+  <div class="fa-container">
+    <div class="fa-card">
+      <div class="fa-stepper">
+        <span class="fa-step active" id="s1">Étape 1 sur 4</span>
+        <span class="fa-step" id="s2" style="color:var(--fa-slate-light);">Étape 2 sur 4</span>
+        <span class="fa-step" id="s3" style="color:var(--fa-slate-light);">Étape 3 sur 4</span>
+        <span class="fa-step" id="s4" style="color:var(--fa-slate-light);">Étape 4 sur 4</span>
       </div>
-      <div class="rart-fg">
-        <label class="rart-fl" for="phone">Téléphone</label>
-        <div class="rart-phone">
-          <span class="rart-prefix">+224</span>
-          <input class="rart-fb" type="tel" name="phone" id="phone" placeholder="624 12 34 56" inputmode="tel" required />
+      <div class="fa-progress"><div class="fa-progress-bar" id="pbar" style="width:25%"></div></div>
+
+      <form method="post" class="fa-form" id="artisanForm" onsubmit="return validateArtisan();">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+        <div id="step1">
+          <h1 class="fa-title">Parlons de vous</h1>
+          <p class="fa-sub">Vos informations de connexion.</p>
+
+          <div class="fa-fg">
+            <label class="fa-fl" for="first_name">Prénom</label>
+            <input id="first_name" class="fa-fb" type="text" required placeholder="Ibrahim" />
+          </div>
+          <div class="fa-fg">
+            <label class="fa-fl" for="last_name">Nom</label>
+            <input id="last_name" class="fa-fb" type="text" required placeholder="Sylla" />
+          </div>
+          <input type="hidden" name="full_name" id="full_name" />
+          <div class="fa-fg">
+            <label class="fa-fl" for="phone">Téléphone</label>
+            <input id="phone" class="fa-fb" type="tel" name="phone" required inputmode="tel" placeholder="620 00 00 00" />
+          </div>
+          <div class="fa-fg">
+            <label class="fa-fl" for="email">Email</label>
+            <input id="email" class="fa-fb" type="email" name="email" placeholder="vous@email.com" />
+          </div>
+          <div class="fa-fg">
+            <label class="fa-fl" for="password">Mot de passe</label>
+            <input id="password" class="fa-fb" type="password" required minlength="8" placeholder="8 caractères minimum" />
+          </div>
+          <div class="fa-fg">
+            <label class="fa-fl" for="confirm_password">Confirmer le mot de passe</label>
+            <input id="confirm_password" class="fa-fb" type="password" required minlength="8" placeholder="8 caractères minimum" />
+          </div>
+          <button type="button" class="fa-btn" onclick="go(2)">Continuer</button>
         </div>
-      </div>
-    </div>
 
-    <div class="rart-section">
-      <h2 class="rart-sec-title">Votre activité</h2>
-      <div class="rart-fg">
-        <label class="rart-fl" for="profession">Métier</label>
-        <select class="rart-fb rart-fb-select" name="profession" id="profession" required>
-          <option value="" disabled selected>Choisir un métier</option>
-          <option value="Plombier">Plombier</option>
-          <option value="Électricien">Électricien</option>
-          <option value="Climatisation">Climatisation</option>
-          <option value="Frigoriste">Frigoriste</option>
-          <option value="Maçon">Maçon</option>
-          <option value="Menuisier">Menuisier</option>
-          <option value="Peintre">Peintre</option>
-          <option value="Soudeur">Soudeur</option>
-          <option value="Informaticien">Informaticien</option>
-          <option value="Mécanicien">Mécanicien</option>
-          {% for cat in categories %}
-          <option value="{{ cat.name }}">{{ cat.name }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="rart-fg">
-        <label class="rart-fl" for="specialite">Spécialité</label>
-        <input class="rart-fb" type="text" name="specialite" id="specialite" placeholder="Ex. Installation électrique" />
-      </div>
-      <div class="rart-fg">
-        <span class="rart-fl">Années d'expérience</span>
-        <input type="hidden" name="experience" id="experience" />
-        <div class="rart-chips" id="expChips">
-          <span class="rart-chip" data-v="Débutant" tabindex="0" role="button">Débutant</span>
-          <span class="rart-chip" data-v="1–3 ans" tabindex="0" role="button">1–3 ans</span>
-          <span class="rart-chip" data-v="3–5 ans" tabindex="0" role="button">3–5 ans</span>
-          <span class="rart-chip" data-v="5+ ans" tabindex="0" role="button">5+ ans</span>
+        <div id="step2" style="display:none;">
+          <h1 class="fa-title">Votre activité</h1>
+          <p class="fa-sub">Dites-nous ce que vous savez faire.</p>
+
+          <div class="fa-fg">
+            <label class="fa-fl" for="profession">Métier</label>
+            <select id="profession" class="fa-fb-select" name="profession" required>
+              <option value="" disabled selected>Choisir un métier</option>
+              <option>Électricité</option>
+              <option>Plomberie</option>
+              <option>Climatisation</option>
+              <option>Réfrigération</option>
+              <option>Menuiserie</option>
+              <option>Peinture</option>
+              <option>Maçonnerie</option>
+              <option>Autres</option>
+            </select>
+          </div>
+          <div class="fa-fg">
+            <label class="fa-fl" for="specialite">Spécialité</label>
+            <input id="specialite" class="fa-fb" type="text" name="specialite" placeholder="Ex: Installation électrique" />
+          </div>
+          <div class="fa-fg">
+            <label class="fa-fl" for="experience">Années d'expérience</label>
+            <input id="experience" class="fa-fb" type="text" name="experience" placeholder="5 ans" />
+          </div>
+          <div class="fa-fg">
+            <label class="fa-fl" for="address">Zone d'intervention</label>
+            <input id="address" class="fa-fb" type="text" name="address" required placeholder="Conakry" />
+          </div>
+          <div class="fa-fg">
+            <label class="fa-fl" for="rayon">Rayon</label>
+            <input id="rayon" class="fa-fb" type="text" name="rayon" placeholder="10 km" />
+          </div>
+          <button type="button" class="fa-btn fa-btn-outline" onclick="go(1)">Retour</button>
+          <button type="button" class="fa-btn" style="margin-top:12px;" onclick="go(3)">Continuer</button>
         </div>
-      </div>
-    </div>
 
-    <div class="rart-section">
-      <h2 class="rart-sec-title">Zone d'intervention</h2>
-      <div class="rart-fg">
-        <button type="button" class="rart-fb" id="locBtn" style="background:transparent; border-style:dashed; text-align:left; padding-left:14px;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle; margin-right:8px;"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 13 8 13s8-7.75 8-13a8 8 0 0 0-8-8z"/></svg>
-          Utiliser ma position
-        </button>
-        <input type="hidden" name="address" id="address" />
-        <input type="hidden" name="lat" id="lat" />
-        <input type="hidden" name="lon" id="lon" />
-        <div class="rart-photo-label" id="locMsg" style="text-align:left; margin-top:8px; min-height:18px;"></div>
-      </div>
-      <div class="rart-fg">
-        <span class="rart-fl">Rayon d'intervention</span>
-        <input type="hidden" name="rayon" id="rayon" />
-        <div class="rart-chips" id="rayonChips">
-          <span class="rart-chip" data-v="5 km" tabindex="0" role="button">5 km</span>
-          <span class="rart-chip" data-v="10 km" tabindex="0" role="button">10 km</span>
-          <span class="rart-chip" data-v="20 km" tabindex="0" role="button">20 km</span>
-          <span class="rart-chip" data-v="Toute la ville" tabindex="0" role="button">Toute la ville</span>
+        <div id="step3" style="display:none;">
+          <h1 class="fa-title">Présentez votre profil</h1>
+          <p class="fa-sub">Attirez les clients avec un profil complet.</p>
+
+          <div class="fa-fg">
+            <div class="fa-upload" id="photoBox">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="12" r="4"/><path d="M3 9h6l2-2h3l2 2h5"/></svg>
+              <div style="margin-top:6px;">Ajouter une photo de profil</div>
+            </div>
+            <input type="file" id="photoInput" accept="image/*" style="display:none;" />
+            <input type="hidden" name="photo" id="photoBase64" />
+          </div>
+
+          <div class="fa-fg">
+            <label class="fa-fl" for="bio">Présentation</label>
+            <textarea id="bio" class="fa-fb fa-textarea" name="bio" placeholder="Présentez votre expérience et les services que vous proposez."></textarea>
+          </div>
+
+          <div class="fa-fg">
+            <label class="fa-fl" for="hourly_rate">Tarif indicatif (GNF)</label>
+            <input id="hourly_rate" class="fa-fb" type="number" name="hourly_rate" placeholder="150000" />
+          </div>
+
+          <div class="fa-fg">
+            <span class="fa-fl">Disponibilité</span>
+            <div class="fa-radio-group">
+              <label class="fa-radio"><input type="radio" name="availability" value="maintenant" checked /> Disponible maintenant</label>
+              <label class="fa-radio"><input type="radio" name="availability" value="certains_jours" /> Disponible certains jours</label>
+              <label class="fa-radio"><input type="radio" name="availability" value="rdv" /> Sur rendez-vous</label>
+            </div>
+          </div>
+
+          <button type="button" class="fa-btn fa-btn-outline" onclick="go(2)">Retour</button>
+          <button type="button" class="fa-btn" style="margin-top:12px;" onclick="go(4)">Continuer</button>
         </div>
-      </div>
+
+        <div id="step4" style="display:none;">
+          <h1 class="fa-title">Vérifions votre profil</h1>
+          <p class="fa-sub">La vérification permet de garantir la qualité et la sécurité de FixPro.</p>
+
+          <div class="fa-fg">
+            <label class="fa-fl">Pièce d'identité</label>
+            <div class="fa-upload" id="idBox">+ Ajouter la pièce d'identité</div>
+            <input type="file" id="idInput" accept="image/*" style="display:none;" />
+            <input type="hidden" name="identity_doc" id="idBase64" />
+          </div>
+
+          <div class="fa-fg">
+            <label class="fa-fl">Document professionnel</label>
+            <div class="fa-upload" id="dipBox">+ Ajouter un document professionnel</div>
+            <input type="file" id="dipInput" accept="image/*" style="display:none;" />
+            <input type="hidden" name="diploma_doc" id="dipBase64" />
+          </div>
+
+          <button type="button" class="fa-btn fa-btn-outline" onclick="go(3)">Retour</button>
+          <button type="submit" class="fa-btn" style="margin-top:12px;">Envoyer mon profil</button>
+        </div>
+      </form>
+
+      <p class="fa-foot">Vous avez déjà un compte ? <a href="{{ url_for('login') }}">Se connecter</a></p>
     </div>
-
-    <div class="rart-section">
-      <h2 class="rart-sec-title">Vérification d'identité</h2>
-      <p class="rart-text">Votre pièce d'identité permet à FixPro de vérifier votre profil.</p>
-      <div class="rart-fg">
-        <div class="rart-upload" id="idBox" role="button" tabindex="0">+ Ajouter une pièce d'identité</div>
-        <input type="file" id="idInput" accept="image/jpeg,image/png,image/webp" style="display:none;" />
-        <input type="hidden" name="identity_doc" id="idBase64" />
-      </div>
-    </div>
-
-    <label class="rart-check">
-      <input type="checkbox" id="conditions" required />
-      <span>J'accepte les conditions d'utilisation de FixPro.</span>
-    </label>
-  </form>
-
-  <div class="rart-sticky">
-    <button type="button" class="rart-submit" id="submitBtn">Devenir technicien</button>
   </div>
 </div>
 
 <script>
-  (function(){
-    const form = document.getElementById('rartForm');
+  function readFile(input, cb){
+    const f = input.files[0];
+    if (!f) return;
+    if (f.size > 5*1024*1024){ alert('Fichier trop volumineux. Max 5 Mo.'); return; }
+    const r = new FileReader();
+    r.onload = e => cb(e.target.result);
+    r.readAsDataURL(f);
+  }
 
-    function readFile(input, cb, max=5*1024*1024){
-      const f = input.files[0];
-      if (!f) return;
-      if (f.size > max){ alert('Fichier trop volumineux. Max 5 Mo.'); return; }
-      const r = new FileReader();
-      r.onload = e => cb(e.target.result, f.name);
-      r.readAsDataURL(f);
+  document.getElementById('photoBox').addEventListener('click', ()=>document.getElementById('photoInput').click());
+  document.getElementById('photoInput').addEventListener('change', function(){
+    readFile(this, res=>{ document.getElementById('photoBase64').value = res; document.getElementById('photoBox').innerHTML = `<img src="${res}" alt="photo" style="max-height:120px;"><div style="margin-top:8px;">Photo ajoutee</div>`; });
+  });
+
+  document.getElementById('idBox').addEventListener('click', ()=>document.getElementById('idInput').click());
+  document.getElementById('idInput').addEventListener('change', function(){
+    readFile(this, res=>{ document.getElementById('idBase64').value = res; document.getElementById('idBox').textContent = 'Document ajoute'; });
+  });
+
+  document.getElementById('dipBox').addEventListener('click', ()=>document.getElementById('dipInput').click());
+  document.getElementById('dipInput').addEventListener('change', function(){
+    readFile(this, res=>{ document.getElementById('dipBase64').value = res; document.getElementById('dipBox').textContent = 'Document ajoute'; });
+  });
+
+  function go(n){
+    for (let i=1;i<=4;i++){
+      document.getElementById('step'+i).style.display = i===n ? 'block' : 'none';
+      document.getElementById('s'+i).style.color = i<=n ? 'var(--fa-amber)' : 'var(--fa-slate-light)';
     }
+    document.getElementById('pbar').style.width = (n*25) + '%';
+  }
 
-    document.getElementById('rartBurger').addEventListener('click', ()=>{
-      const m = document.getElementById('rartMenu');
-      m.style.display = m.style.display === 'block' ? 'none' : 'block';
-    });
-
-    document.getElementById('photoBox').addEventListener('click', ()=>document.getElementById('photoInput').click());
-    document.getElementById('photoInput').addEventListener('change', function(){
-      readFile(this, res=>{
-        document.getElementById('photoBase64').value = res;
-        document.getElementById('photoBox').innerHTML = `<img src="${res}" alt="photo">`;
-        document.getElementById('photoLabel').textContent = 'Modifier la photo';
-      });
-    });
-
-    document.getElementById('idBox').addEventListener('click', ()=>document.getElementById('idInput').click());
-    document.getElementById('idInput').addEventListener('change', function(){
-      readFile(this, res=>{
-        document.getElementById('idBase64').value = res;
-        document.getElementById('idBox').innerHTML = `<img src="${res}" alt="piece"><div>Photo ajoutee</div>`;
-      });
-    });
-
-    function formatPhone(v){
-      const raw = v.replace(/\D/g,'').replace(/^224?/,'').slice(0,9);
-      const p = raw.match(/(\d{0,3})(\d{0,2})(\d{0,2})(\d{0,2})/);
-      return [p[1],p[2],p[3],p[4]].filter(Boolean).join(' ').trim();
-    }
-    const phoneInput = document.getElementById('phone');
-    phoneInput.addEventListener('input', function(){ this.value = formatPhone(this.value); });
-    phoneInput.addEventListener('paste', function(e){
-      e.preventDefault();
-      const txt = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g,'').replace(/^224?/,'').slice(0,9);
-      this.value = formatPhone(txt);
-    });
-
-    function activateChip(containerId, hiddenId, e){
-      if (!e.target.classList.contains('rart-chip')) return;
-      document.querySelectorAll(`#${containerId} .rart-chip`).forEach(c=>c.classList.remove('active'));
-      e.target.classList.add('active');
-      document.getElementById(hiddenId).value = e.target.dataset.v;
-    }
-    document.getElementById('expChips').addEventListener('click', e=>activateChip('expChips','experience',e));
-    document.getElementById('rayonChips').addEventListener('click', e=>activateChip('rayonChips','rayon',e));
-    document.querySelectorAll('.rart-chip').forEach(c=>{
-      c.addEventListener('keydown', e=>{ if (e.key==='Enter' || e.key===' '){ e.preventDefault(); c.click(); } });
-    });
-
-    function setLoc(label, lat, lon){
-      document.getElementById('address').value = label;
-      document.getElementById('lat').value = lat;
-      document.getElementById('lon').value = lon;
-      document.getElementById('locMsg').textContent = label;
-    }
-    document.getElementById('locBtn').addEventListener('click', function(){
-      if (!navigator.geolocation){ setLoc('Conakry', '9.541', '-13.677'); return; }
-      document.getElementById('locMsg').textContent = 'Localisation en cours...';
-      navigator.geolocation.getCurrentPosition(pos=>{
-        setLoc('Conakry, position detectee', pos.coords.latitude.toFixed(6), pos.coords.longitude.toFixed(6));
-      }, ()=>{
-        setLoc('Conakry', '9.541', '-13.677');
-      });
-    });
-
-    function validate(){
-      if (!document.getElementById('fullName').value.trim()){ alert('Entrez votre nom complet.'); return false; }
-      const p = document.getElementById('phone').value.trim().replace(/\s/g,'');
-      if (!/^[0-9]{8,9}$/.test(p)){ alert('Entrez un numéro de téléphone valide.'); return false; }
-      if (!document.getElementById('profession').value){ alert('Choisissez un métier.'); return false; }
-      if (!document.getElementById('experience').value){ alert('Sélectionnez votre expérience.'); return false; }
-      if (!document.getElementById('address').value){ alert('Définissez votre zone d\'intervention.'); return false; }
-      if (!document.getElementById('rayon').value){ alert('Sélectionnez votre zone.'); return false; }
-      if (!document.getElementById('idBase64').value){ alert('Ajoutez votre pièce d\'identité.'); return false; }
-      if (!document.getElementById('conditions').checked){ alert('Vous devez accepter les conditions.'); return false; }
-      return true;
-    }
-
-    document.getElementById('submitBtn').addEventListener('click', async function(){
-      if (!validate()) return;
-      this.disabled = true;
-      this.textContent = 'Inscription en cours...';
-      const fd = new FormData(form);
-      const res = await fetch('{{ url_for('register_artisan') }}', { method:'POST', body: fd });
-      if (res.ok || res.redirected){
-        window.location.href = '{{ url_for('artisan_pending') }}';
-      } else {
-        alert('Une erreur est survenue. Vérifiez vos informations.');
-        this.disabled = false;
-        this.textContent = 'Devenir technicien';
-      }
-    });
-  })();
+  function validateArtisan(){
+    const pwd = document.getElementById('password').value;
+    const confirm = document.getElementById('confirm_password').value;
+    if (pwd !== confirm) { alert('Les mots de passe ne correspondent pas.'); return false; }
+    const prenom = document.getElementById('first_name').value;
+    const nom = document.getElementById('last_name').value;
+    document.getElementById('full_name').value = prenom + ' ' + nom;
+    if (!document.getElementById('identity_doc').value) { alert('Ajoutez votre piece d\'identite.'); return false; }
+    return true;
+  }
 </script>
 {% endblock %}
