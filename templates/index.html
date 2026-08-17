@@ -1,102 +1,113 @@
 {% extends 'base.html' %}
-{% block title %}Bienvenue - FixPro{% endblock %}
+{% block title %}FixPro Guinee - Trouvez un technicien verifie{% endblock %}
 {% block header %}{% endblock %}
 {% block footer %}{% endblock %}
 
 {% block content %}
 <style>
-  .welcome-wrap { min-height:100vh; display:flex; flex-direction:column; background:var(--paper); }
-  .welcome-top { background:var(--ink); color:#fff; text-align:center; padding:42px 24px 48px; position:relative; overflow:hidden; }
-  .welcome-top::before { content:''; position:absolute; inset:0; background-image:radial-gradient(rgba(245,166,35,.12) 1.5px, transparent 1.5px); background-size:22px 22px; opacity:.4; }
-  .welcome-top > * { position:relative; }
-  .welcome-seal { width:84px; height:84px; margin:0 auto 18px; display:block; }
-  .welcome-title { font-family:var(--font-display); font-size:26px; margin:0 0 6px; font-weight:700; }
-  .welcome-title span { color:var(--amber); }
-  .welcome-sub { color:#9FB0CC; font-size:13px; max-width:260px; margin:0 auto; line-height:1.55; }
-  .welcome-bottom { flex:1; padding:26px 20px 32px; display:flex; flex-direction:column; gap:14px; }
-  .choice-card { display:flex; align-items:center; gap:14px; padding:16px; border-radius:16px; text-decoration:none; }
-  .choice-client { background:var(--amber-soft); border:1.5px solid var(--amber); }
-  .choice-tech { background:var(--paper-2); border:1.5px solid var(--line); }
-  .choice-icon { width:46px; height:46px; border-radius:11px; display:flex; align-items:center; justify-content:center; font-size:22px; flex:0 0 auto; }
-  .client-icon { background:var(--ink); }
-  .tech-icon { background:var(--amber-dark); }
-  .choice-txt { text-align:left; }
-  .choice-txt b { display:block; font-family:var(--font-display); font-size:15px; font-weight:700; color:var(--ink); }
-  .choice-txt span { font-size:12px; color:var(--slate); }
-  .welcome-login { text-align:center; font-size:12.5px; color:var(--slate); padding:20px 0 24px; }
-  .welcome-login a { color:var(--ink); font-weight:600; text-decoration:none; }
+  .lp-wrap { min-height:100vh; display:flex; flex-direction:column; background:var(--paper); }
+  .lp-hero { background:var(--ink); color:#fff; padding:50px 20px 64px; text-align:center; position:relative; overflow:hidden; }
+  .lp-hero::before { content:''; position:absolute; inset:0; background-image:radial-gradient(rgba(245,166,35,.12) 1.5px, transparent 1.5px); background-size:22px 22px; opacity:.4; }
+  .lp-hero > * { position:relative; }
+  .lp-seal { width:72px; height:72px; margin:0 auto 16px; }
+  .lp-hero h1 { font-family:var(--font-display); font-size:28px; margin:0 0 8px; line-height:1.15; }
+  .lp-hero h1 span { color:var(--amber); }
+  .lp-hero p { color:#9FB0CC; font-size:14px; max-width:320px; margin:0 auto 24px; line-height:1.55; }
+  .lp-cta { display:flex; flex-direction:column; gap:10px; max-width:320px; margin:0 auto; }
+  .lp-cta a { padding:14px 20px; border-radius:12px; font-weight:700; font-size:15px; text-decoration:none; text-align:center; }
+  .lp-cta .primary { background:var(--amber); color:var(--ink); }
+  .lp-cta .secondary { background:transparent; color:#DCE3F0; border:1.5px solid #33456C; }
+  .lp-cats { padding:26px 16px 18px; }
+  .lp-cats h2 { font-family:var(--font-display); font-size:16px; margin:0 0 14px; color:var(--ink); }
+  .lp-cat-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+  .lp-cat-card { background:var(--paper-2); border:1px solid var(--line); border-radius:14px; padding:14px; text-align:center; text-decoration:none; color:var(--ink); display:flex; flex-direction:column; align-items:center; gap:8px; }
+  .lp-cat-card svg { width:26px; height:26px; color:var(--amber-dark); }
+  .lp-cat-card span { font-size:12.5px; font-weight:600; }
+  .lp-steps { padding:26px 16px 18px; background:var(--paper-2); }
+  .lp-section-title { font-family:var(--font-display); font-size:16px; margin:0 0 16px; color:var(--ink); text-align:center; }
+  .lp-step-grid { display:flex; flex-direction:column; gap:14px; }
+  .lp-step { display:flex; align-items:flex-start; gap:12px; }
+  .lp-step-num { width:28px; height:28px; border-radius:50%; background:var(--green); color:#fff; font-family:var(--font-mono); font-weight:700; font-size:13px; display:flex; align-items:center; justify-content:center; flex:0 0 auto; }
+  .lp-step-txt b { font-size:13.5px; color:var(--ink); display:block; }
+  .lp-step-txt span { font-size:12px; color:var(--slate); }
+  .lp-trust { padding:26px 16px; }
+  .lp-trust-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+  .lp-trust-card { display:flex; align-items:center; gap:8px; background:var(--paper-2); border:1px solid var(--line); border-radius:12px; padding:12px; font-size:12px; color:var(--slate); }
+  .lp-trust-card svg { width:18px; height:18px; color:var(--green); flex:0 0 auto; }
+  .lp-stats { padding:0 16px 26px; }
+  .lp-stats-row { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+  .lp-stat { background:var(--paper-2); border:1px solid var(--line); border-radius:12px; padding:14px 6px; text-align:center; }
+  .lp-stat b { font-family:var(--font-mono); font-size:18px; color:var(--ink); }
+  .lp-stat span { font-size:10px; color:var(--slate); display:block; margin-top:4px; }
+  .lp-footer { padding:22px 16px 40px; text-align:center; font-size:12px; color:var(--slate); border-top:1px solid var(--line); margin-top:auto; }
+  .lp-login { text-align:center; padding:20px 0; font-size:13px; color:var(--slate); }
+  .lp-login a { color:var(--ink); font-weight:700; text-decoration:none; }
   @media (min-width: 768px) {
-    .welcome-top { padding:54px 24px 64px; }
-    .welcome-seal { width:110px; height:110px; margin-bottom:22px; }
-    .welcome-title { font-size:34px; }
-    .welcome-sub { font-size:15px; max-width:340px; }
-    .welcome-bottom { padding:40px 32px 28px; max-width:1200px; margin:0 auto; width:100%; box-sizing:border-box; flex-direction:row; flex-wrap:wrap; gap:24px; align-items:stretch; }
-    .choice-card { flex:1 1 calc(50% - 12px); padding:28px; }
-    .choice-icon { width:58px; height:58px; }
-    .choice-txt b { font-size:18px; }
-    .choice-txt span { font-size:14px; }
-    .stats-row { max-width:1200px; margin:0 auto 32px; padding:0 32px; gap:18px; }
-    .stat-card { padding:22px 10px; }
-    .stat-num { font-size:24px; }
-    .stat-label { font-size:12px; }
-    .steps-title { font-size:18px; text-align:center; width:100%; margin-bottom:22px; }
-    .steps { max-width:1200px; margin:0 auto; padding:0 32px; align-items:center; }
-    .step-txt { font-size:14px; max-width:300px; }
-    .welcome-login { font-size:14px; padding:28px 0 40px; }
+    .lp-hero { padding:80px 24px 90px; }
+    .lp-hero h1 { font-size:42px; }
+    .lp-hero p { font-size:16px; max-width:460px; }
+    .lp-cta { flex-direction:row; max-width:520px; }
+    .lp-cat-grid { grid-template-columns:repeat(4,1fr); max-width:1200px; margin:0 auto; }
+    .lp-step-grid { flex-direction:row; gap:24px; max-width:1200px; margin:0 auto; }
+    .lp-step { flex-direction:column; align-items:center; text-align:center; flex:1; }
+    .lp-trust-grid { grid-template-columns:repeat(4,1fr); max-width:1200px; margin:0 auto; }
+    .lp-cats, .lp-steps, .lp-trust, .lp-stats { padding-left:32px; padding-right:32px; }
   }
-  .stats-row { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:0 0 24px; }
-  .stat-card { background:var(--paper-2); border:1px solid var(--line); border-radius:12px; padding:14px 6px; text-align:center; }
-  .stat-num { font-family:var(--font-mono); font-size:18px; font-weight:700; color:var(--ink); }
-  .stat-label { font-size:10px; color:var(--slate); margin-top:4px; }
-  .steps { display:flex; flex-direction:column; gap:18px; align-items:center; }
-  .step-item { display:flex; flex-direction:column; align-items:center; gap:6px; text-align:center; }
-  .step-num { width:28px; height:28px; border-radius:50%; background:var(--green); color:#fff; font-family:var(--font-mono); font-weight:700; font-size:13px; display:flex; align-items:center; justify-content:center; }
-  .step-txt { font-size:12.5px; color:var(--slate); max-width:220px; }
-  .steps-title { font-family:var(--font-display); font-size:15px; font-weight:700; margin:0 0 18px; color:var(--ink); text-align:center; }
 </style>
 
-<div class="welcome-wrap">
-  <div class="welcome-top">
-    <svg class="welcome-seal" width="84" height="84" viewBox="0 0 100 100">
-      <path fill="#1F9D6B" d="M50 2 L58 10 L69 8 L74 18 L85 22 L84 34 L92 42 L86 52 L92 62 L84 70 L85 82 L74 86 L69 96 L58 94 L50 100 L42 94 L31 96 L26 86 L15 82 L16 70 L8 62 L14 52 L8 42 L16 34 L15 22 L26 18 L31 8 L42 10 Z"/>
-      <path fill="none" stroke="#F7F4EE" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" d="M34 51 L45 62 L68 38"/>
-    </svg>
-    <h1 class="welcome-title">Bienvenue sur FixPro <span>Guinée</span></h1>
-    <p class="welcome-sub">Des artisans vérifiés, près de chez vous à Conakry.</p>
+<div class="lp-wrap">
+  <div class="lp-hero">
+    <svg class="lp-seal" viewBox="0 0 100 100"><path fill="#1F9D6B" d="M50 2 L58 10 L69 8 L74 18 L85 22 L84 34 L92 42 L86 52 L92 62 L84 70 L85 82 L74 86 L69 96 L58 94 L50 100 L42 94 L31 96 L26 86 L15 82 L16 70 L8 62 L14 52 L8 42 L16 34 L15 22 L26 18 L31 8 L42 10 Z"/><path fill="none" stroke="#F7F4EE" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" d="M34 51 L45 62 L68 38"/></svg>
+    <h1>Le bon professionnel, <span>pres de chez vous</span></h1>
+    <p>Trouvez, reservez et payez un technicien verifie a Conakry en quelques minutes.</p>
+    <div class="lp-cta">
+      <a href="{{ url_for('artisans_page') }}" class="primary">Trouver un technicien</a>
+      <a href="{{ url_for('register_artisan') }}" class="secondary">Devenir technicien</a>
+    </div>
   </div>
 
-  <div class="welcome-bottom">
-    <a href="{{ url_for('client_signup') }}" class="choice-card choice-client">
-      <div class="choice-icon client-icon">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F7F4EE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
-      </div>
-      <div class="choice-txt">
-        <b>Je suis client</b>
-        <span>Trouver un technicien près de moi</span>
-      </div>
-    </a>
-    <a href="{{ url_for('register_artisan', step=1) }}" class="choice-card choice-tech">
-      <div class="choice-icon tech-icon">🔧</div>
-      <div class="choice-txt">
-        <b>Je suis technicien</b>
-        <span>Recevoir des demandes d'intervention</span>
-      </div>
-    </a>
+  <div class="lp-cats">
+    <h2>De quoi avez-vous besoin ?</h2>
+    <div class="lp-cat-grid">
+      <a class="lp-cat-card" href="{{ url_for('artisans_page', category='Plombier') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0a3 3 0 0 1 3 3v3H9v-3a3 3 0 0 1 3-3"/><path d="M8 3h8v4a4 4 0 0 1-8 0V3z"/></svg><span>Plomberie</span></a>
+      <a class="lp-cat-card" href="{{ url_for('artisans_page', category='Électricien') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L8 12h6l-1 10 6-10h-6l3-10z"/></svg><span>Électricité</span></a>
+      <a class="lp-cat-card" href="{{ url_for('artisans_page', category='Climatisation') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg><span>Climatisation</span></a>
+      <a class="lp-cat-card" href="{{ url_for('artisans_page', category='Frigoriste') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg><span>Froid</span></a>
+      <a class="lp-cat-card" href="{{ url_for('artisans_page', category='Maçon') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16M6 20v-8l6-4 6 4v8"/><path d="M6 12h12"/></svg><span>Maçonnerie</span></a>
+      <a class="lp-cat-card" href="{{ url_for('artisans_page', category='Menuisier') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h18M3 7l3 12h12l3-12"/><path d="M7 7l-2 4M17 7l2 4"/></svg><span>Menuiserie</span></a>
+      <a class="lp-cat-card" href="{{ url_for('artisans_page', category='Peintre') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 11l-7-7-7 7v9h14z"/><path d="M8 21v-6a4 4 0 0 1 8 0v6"/></svg><span>Peinture</span></a>
+      <a class="lp-cat-card" href="{{ url_for('artisans_page') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12h8M12 8v8"/></svg><span>Tous les métiers</span></a>
+    </div>
   </div>
 
-  <div class="stats-row">
-    <div class="stat-card"><div class="stat-num">{{ techniciens }}</div><div class="stat-label">Techniciens</div></div>
-    <div class="stat-card"><div class="stat-num">{{ metiers }}</div><div class="stat-label">Métiers</div></div>
-    <div class="stat-card"><div class="stat-num">100%</div><div class="stat-label">Vérifiés</div></div>
+  <div class="lp-steps">
+    <h2 class="lp-section-title">Comment ça marche ?</h2>
+    <div class="lp-step-grid">
+      <div class="lp-step"><div class="lp-step-num">1</div><div class="lp-step-txt"><b>Decrivez votre besoin</b><span>Choisissez le metier et expliquez le probleme.</span></div></div>
+      <div class="lp-step"><div class="lp-step-num">2</div><div class="lp-step-txt"><b>Trouvez un professionnel</b><span>Comparez les profils verifies pres de chez vous.</span></div></div>
+      <div class="lp-step"><div class="lp-step-num">3</div><div class="lp-step-txt"><b>Payez en toute securite</b><span>Réglez par Orange Money une fois le travail termine.</span></div></div>
+    </div>
   </div>
 
-  <h2 class="steps-title">Comment ca marche ?</h2>
-  <div class="steps">
-    <div class="step-item"><div class="step-num">1</div><div class="step-txt">Trouvez un technicien près de chez vous</div></div>
-    <div class="step-item"><div class="step-num">2</div><div class="step-txt">Décrivez votre besoin en quelques mots</div></div>
-    <div class="step-item"><div class="step-num">3</div><div class="step-txt">Payez après le travail, par Orange Money</div></div>
+  <div class="lp-trust">
+    <h2 class="lp-section-title">Pourquoi FixPro ?</h2>
+    <div class="lp-trust-grid">
+      <div class="lp-trust-card"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>Profils verifies</div>
+      <div class="lp-trust-card"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 13 8 13s8-7.75 8-13a8 8 0 0 0-8-8z"/></svg>Professionnels proches</div>
+      <div class="lp-trust-card"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 21l1.9-5.1A8.4 8.4 0 0 1 4 11.5a8.5 8.5 0 0 1 8.5-8.5A8.5 8.5 0 0 1 21 11.5z"/></svg>Assistance incluse</div>
+      <div class="lp-trust-card"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>Paiement simple</div>
+    </div>
   </div>
 
-  <p class="welcome-login">Déjà un compte ? <a href="{{ url_for('login') }}">Se connecter</a></p>
+  <div class="lp-stats">
+    <div class="lp-stats-row">
+      <div class="lp-stat"><b>{{ techniciens }}</b><span>Techniciens</span></div>
+      <div class="lp-stat"><b>{{ metiers }}</b><span>Métiers</span></div>
+      <div class="lp-stat"><b>100%</b><span>Vérifiés</span></div>
+    </div>
+  </div>
+
+  <p class="lp-login">Déjà un compte ? <a href="{{ url_for('login') }}">Se connecter</a></p>
+  <div class="lp-footer">FixPro Guinee — Des professionnels de confiance a portee de main.</div>
 </div>
 {% endblock %}
