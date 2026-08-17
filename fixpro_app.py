@@ -20,6 +20,7 @@ from email.mime.text import MIMEText
 from functools import wraps
 
 from authlib.integrations.flask_client import OAuth
+from abc import ABC, abstractmethod
 from email_validator import EmailNotValidError, validate_email
 from flask import (Flask, flash, jsonify, redirect, render_template, request,
                    session, url_for)
@@ -294,6 +295,80 @@ PAYMENT_METHODS = {
 
 def payment_method_label(method):
     return PAYMENT_METHODS.get(method, (method or "").replace("_", " ").title())
+
+
+# Transitions autorisees pour les demandes.
+# cle = statut actuel, valeur = ensemble de statuts cibles permis.
+REQUEST_TRANSITIONS = {
+    "pending": {"cancelled", "assigned"},
+    "assigned": {"in_progress", "quote_proposed", "cancelled"},
+    "quote_proposed": {"quote_accepted", "quote_rejected", "cancelled"},
+    "quote_accepted": {"in_progress", "cancelled"},
+    "in_progress": {"completed", "cancelled"},
+    "completed": set(),
+    "cancelled": set(),
+    "quote_rejected": {"quote_proposed", "cancelled"},
+}
+
+
+def can_transition_request(current_status, new_status):
+    """Verifie qu'un changement de statut de demande est autorise."""
+    allowed = REQUEST_TRANSITIONS.get(current_status, set())
+    return new_status in allowed
+
+
+class PaymentProvider(ABC):
+    """Abstraction pour les fournisseurs de paiement.
+
+    Permet d'integrer Orange Money, MTN, ou un mock sans melanger
+    la logique metier avec l'implementation du fournisseur.
+    """
+
+    @abstractmethod
+    def process(self, amount, method, reference, metadata):
+        """Initie un paiement et retourne un statut controle."""
+
+    @abstractmethod
+    def confirm(self, reference, payload):
+        """Verifie la confirmation cote fournisseur."""
+
+    @abstractmethod
+    def refund(self, reference, amount):
+        """Initie un remboursement."""
+
+
+class MockPaymentProvider(PaymentProvider):
+    """Fournisseur factice pour les environnements de test."""
+
+    def process(self, amount, method, reference, metadata):
+        return {
+            "ok": True,
+            "status": "pending",
+            "provider_reference": f"MOCK-{reference}",
+            "message": "Paiement en attente de confirmation (test).",
+        }
+
+    def confirm(self, reference, payload):
+        return {
+            "ok": True,
+            "status": "success",
+            "provider_reference": f"MOCK-{reference}",
+        }
+
+    def refund(self, reference, amount):
+        return {
+            "ok": True,
+            "status": "refunded",
+            "provider_reference": f"MOCK-{reference}",
+        }
+
+
+def get_payment_provider():
+    """Retourne le fournisseur de paiement actuel."""
+    if app.config.get("FLASK_ENV") == "testing" or app.config.get("PAYMENT_PROVIDER") == "mock":
+        return MockPaymentProvider()
+    # TODO : instancier OrangeMoneyProvider lorsque credentials configures.
+    return MockPaymentProvider()
 
 
 @app.context_processor
@@ -2513,12 +2588,14 @@ def request_detail(request_id):
         if request.method == "POST":
             action = request.form.get("action", "")
             if action == "cancel" and user["role"] == "client":
-                if req["status"] in ("pending", "assigned", "quote_proposed"):
+                if can_transition_request(req["status"], "cancelled"):
                     conn.execute(
                         "UPDATE requests SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP WHERE id = ?",
                         (request_id,))
                     conn.commit()
                     flash("Intervention annulee.", "success")
+                else:
+                    flash("Cette intervention ne peut plus etre annulee.", "error")
                 return redirect(url_for("request_detail", request_id=request_id))
 
             content = request.form.get("message", "").strip()
@@ -2573,8 +2650,8 @@ def request_detail(request_id):
 @login_required
 def accept_request(request_id):
     user = get_current_user()
-    if user["role"] != "artisan":
-        flash("Seuls les artisans peuvent accepter une demande.", "error")
+    if user["role"] != "artisan" or not user.get("is_verified"):
+        flash("Seuls les artisans verifies peuvent accepter une demande.", "error")
         return redirect(url_for("requests_list"))
 
     conn = get_db_connection()
@@ -2601,8 +2678,8 @@ def accept_request(request_id):
 @login_required
 def propose_quote(request_id):
     user = get_current_user()
-    if user["role"] != "artisan":
-        flash("Seuls les artisans peuvent proposer un devis.", "error")
+    if user["role"] != "artisan" or not user.get("is_verified"):
+        flash("Seuls les artisans verifies peuvent proposer un devis.", "error")
         return redirect(url_for("requests_list"))
 
     conn = get_db_connection()
@@ -2612,7 +2689,7 @@ def propose_quote(request_id):
         if not req or req["artisan_id"] != user["id"]:
             flash("Accès refusé.", "error")
             return redirect(url_for("requests_list"))
-        if req["status"] not in ("assigned", "quote_rejected", "quote_proposed"):
+        if not can_transition_request(req["status"], "quote_proposed"):
             flash("Impossible de proposer un devis pour cette demande.", "error")
             return redirect(url_for("request_detail", request_id=request_id))
 
@@ -2699,6 +2776,8 @@ def complete_request(request_id):
 
         if user["id"] not in (req["client_id"], req["artisan_id"]):
             flash("Action non autorisée.", "error")
+        elif not can_transition_request(req["status"], "completed"):
+            flash("Cette intervention ne peut pas etre marquee comme terminee.", "error")
         else:
             conn.execute(
                 "UPDATE requests SET status = 'completed', updated_at = ?"
@@ -2785,14 +2864,31 @@ def process_payment(request_id):
 
         rate = app.config.get("FIXPRO_COMMISSION_RATE", 0.10)
         commission = amount * rate
+
+        provider = get_payment_provider()
+        result = provider.process(amount, method, reference, {
+            "request_id": request_id,
+            "client_id": user["id"],
+            "details": details,
+        })
+
+        # Le statut vient du fournisseur. En l'absence de provider reel,
+        # le mock renvoie 'pending' : le paiement n'est jamais considere
+        # comme reussi sans confirmation explicite.
         conn.execute(
             "INSERT INTO payments (request_id, amount, commission_amount, method, status,"
-            " reference, details) VALUES (?, ?, ?, ?, 'pending', ?, ?)",
-            (request_id, amount, commission, method, reference, details))
+            " reference, details) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (request_id, amount, commission, method, result["status"], reference, details))
         conn.commit()
-        flash("Paiement de %s GNF enregistré par %s. En attente de confirmation." %
-              ("{:,}".format(int(amount)).replace(",", " "), payment_method_label(method)),
-              "success")
+
+        if result.get("ok"):
+            flash("Paiement de %s GNF enregistre par %s. Statut : %s." %
+                  ("{:,}".format(int(amount)).replace(",", " "),
+                   payment_method_label(method),
+                   result["status"].replace("_", " ").title()),
+                  "success")
+        else:
+            flash("Paiement refuse : %s" % result.get("message", ""), "error")
     finally:
         conn.close()
     return redirect(url_for("payment_page", request_id=request_id))
