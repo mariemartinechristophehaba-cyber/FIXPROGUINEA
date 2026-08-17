@@ -518,9 +518,18 @@ def index():
             "SELECT COUNT(*) AS n FROM users WHERE role = 'artisan' AND is_verified = 1").fetchone()["n"]
         metiers = conn.execute(
             "SELECT COUNT(DISTINCT profession) AS n FROM users WHERE role = 'artisan' AND profession IS NOT NULL AND profession != ''").fetchone()["n"]
+        artisans = conn.execute("""
+            SELECT u.id, u.full_name, u.profession, u.photo_url, u.is_verified,
+                   COALESCE((SELECT AVG(rating) FROM reviews WHERE artisan_id = u.id), 0) AS avg_rating,
+                   COALESCE((SELECT COUNT(*) FROM reviews WHERE artisan_id = u.id), 0) AS review_count
+            FROM users u
+            WHERE u.role = 'artisan' AND u.is_verified = 1 AND u.is_active = 1
+            ORDER BY avg_rating DESC, review_count DESC
+            LIMIT 5
+        """).fetchall()
     finally:
         conn.close()
-    return render_template("index.html", techniciens=techniciens, metiers=metiers)
+    return render_template("index.html", techniciens=techniciens, metiers=metiers, artisans=artisans)
 
 
 @app.route("/contact")
