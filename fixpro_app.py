@@ -566,8 +566,11 @@ def register_artisan():
         address = request.form.get("address", "").strip()
         rayon = request.form.get("rayon", "").strip()
         identity_doc = request.form.get("identity_doc", "").strip()
+        certificate_doc = request.form.get("certificate_doc", "").strip()
         photo = request.form.get("photo", "").strip()
         portfolio_raw = request.form.get("portfolio", "").strip()
+        lat = request.form.get("lat", "").strip()
+        lon = request.form.get("lon", "").strip()
 
         if not full_name or not phone or not profession or not address or not identity_doc:
             flash("Veuillez remplir tous les champs obligatoires.", "error")
@@ -580,7 +583,14 @@ def register_artisan():
                 return redirect(url_for("register_artisan"))
 
             temp_password = secrets.token_urlsafe(12)
-            lat, lon = _geocode_zone(address, "")
+            try:
+                lat_f = float(lat) if lat else None
+                lon_f = float(lon) if lon else None
+            except ValueError:
+                lat_f, lon_f = _geocode_zone(address, "")
+            if lat_f is None or lon_f is None:
+                lat_f, lon_f = _geocode_zone(address, "")
+            lat, lon = lat_f, lon_f
             conn.execute(
                 "INSERT INTO users (phone, password_hash, role, full_name, profession,"
                 " skills, years_experience, bio, city, zone_intervention, latitude, longitude,"
@@ -602,6 +612,14 @@ def register_artisan():
                     " file_name, mime_type, content_base64)"
                     " VALUES (?, ?, ?, ?, ?)",
                     (artisan_id, "identity", f"identite{ext}", mime, encoded))
+
+            cmime, cext, cenc = _parse_base64_file(certificate_doc)
+            if cenc:
+                conn.execute(
+                    "INSERT INTO technician_documents (technician_id, document_type,"
+                    " file_name, mime_type, content_base64)"
+                    " VALUES (?, ?, ?, ?, ?)",
+                    (artisan_id, "certificate", f"certificat{cext}", cmime, cenc))
 
             try:
                 portfolio = json.loads(portfolio_raw) if portfolio_raw else []

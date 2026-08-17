@@ -6,8 +6,8 @@
   .tech-wrap { min-height:100vh; display:flex; flex-direction:column; background:var(--paper); }
   .tech-top { background:var(--ink); color:#fff; padding:18px 18px 22px; position:sticky; top:0; z-index:10; }
   .tech-back { color:#DCE3F0; text-decoration:none; font-size:13px; display:flex; align-items:center; gap:6px; }
-  .tech-top h3 { margin:10px 0 4px; font-family:var(--font-display); font-size:20px; }
-  .tech-top p { margin:0; color:#9FB0CC; font-size:12px; }
+  .tech-top h3 { margin:10px 0 4px; font-family:var(--font-display); font-size:26px; font-weight:700; }
+  .tech-top p { margin:0; color:#9FB0CC; font-size:13px; }
   .tech-stepper { display:flex; align-items:center; justify-content:center; gap:6px; margin-top:14px; }
   .tech-dot { width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:10.5px; font-weight:700; font-family:var(--font-mono); }
   .tech-dot.done { background:var(--green); color:#fff; }
@@ -18,11 +18,11 @@
   .tech-form { padding:22px 18px 120px; max-width:560px; margin:0 auto; width:100%; box-sizing:border-box; flex:1; }
   .tech-step { display:none; }
   .tech-step.active { display:block; }
-  .tech-step h4 { font-family:var(--font-display); font-size:18px; margin:0 0 4px; color:var(--ink); }
-  .tech-step .sub { font-size:12.5px; color:var(--slate); margin:0 0 22px; }
-  .tech-fg { margin-bottom:18px; }
-  .tech-fl { font-size:11px; color:var(--slate); text-transform:uppercase; letter-spacing:0.3px; margin-bottom:6px; font-weight:600; }
-  .tech-fb { width:100%; border:1px solid var(--line); border-radius:12px; padding:13px 14px; font-size:14px; background:var(--paper-2); color:var(--ink); box-sizing:border-box; font-family:var(--font-body); }
+  .tech-step h4 { font-family:var(--font-display); font-size:20px; margin:0 0 4px; color:var(--ink); }
+  .tech-step .sub { font-size:13px; color:var(--slate); margin:0 0 20px; }
+  .tech-fg { margin-bottom:16px; }
+  .tech-fl { font-size:13px; color:var(--slate); text-transform:uppercase; letter-spacing:0.3px; margin-bottom:6px; font-weight:600; }
+  .tech-fb { width:100%; border:1px solid var(--line); border-radius:12px; padding:14px 14px; font-size:15px; background:var(--paper-2); color:var(--ink); box-sizing:border-box; font-family:var(--font-body); }
   .tech-fb:focus { outline:none; border-color:var(--amber); }
   .tech-photo { position:relative; width:110px; height:110px; border-radius:50%; border:2px dashed var(--line); display:flex; flex-direction:column; align-items:center; justify-content:center; margin:0 auto 24px; color:var(--slate); cursor:pointer; background:var(--paper-2); overflow:hidden; }
   .tech-photo img { width:100%; height:100%; object-fit:cover; }
@@ -71,11 +71,14 @@
       <h4>Vos informations</h4>
       <p class="sub">Renseignez vos informations personnelles</p>
 
-      <label class="tech-photo" id="photoBox">
-        <input type="file" id="photoInput" accept="image/*" />
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="12" r="4"/><path d="M3 9h6l2-2h3l2 2h5"/></svg>
-        <span style="font-size:10.5px;margin-top:4px;">Ajouter votre photo</span>
-      </label>
+      <div style="text-align:center;margin-bottom:20px;">
+        <label class="tech-photo" id="photoBox">
+          <input type="file" id="photoInput" accept="image/jpeg,image/png,image/webp" />
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="12" r="4"/><path d="M3 9h6l2-2h3l2 2h5"/></svg>
+          <span style="font-size:10.5px;margin-top:4px;">Ajouter votre photo</span>
+        </label>
+        <div style="font-size:10px;color:var(--slate);margin-top:6px;">JPG, PNG, WebP — max 5 Mo</div>
+      </div>
       <input type="hidden" name="photo" id="photoBase64" />
 
       <div class="tech-fg">
@@ -87,7 +90,7 @@
         <div class="tech-fl">Numéro de téléphone</div>
         <div class="tech-phone">
           <span class="prefix">+224</span>
-          <input class="tech-fb" type="tel" name="phone" id="phone" placeholder="620 00 00 00" style="flex:1;" />
+          <input class="tech-fb" type="tel" name="phone" id="phone" placeholder="620 00 00 00" style="flex:1;" inputmode="tel" pattern="[0-9 ]*" />
         </div>
       </div>
     </div>
@@ -147,6 +150,9 @@
       <div class="tech-fg">
         <div class="tech-fl">Localisation</div>
         <input class="tech-fb" type="text" name="address" id="address" readonly placeholder="Utiliser le bouton ci-dessus" />
+        <input type="hidden" name="lat" id="lat" />
+        <input type="hidden" name="lon" id="lon" />
+        <div id="locMsg" style="font-size:11px;color:var(--slate);margin-top:4px;"></div>
         <button type="button" class="fx-dock-btn primary" id="locBtn" style="margin-top:8px;width:100%;">Utiliser ma position</button>
       </div>
 
@@ -172,8 +178,18 @@
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:4px;"><rect x="3" y="8" width="18" height="12" rx="2"/><path d="M7 8V6a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2"/><circle cx="12" cy="14" r="2"/></svg>
           <div>Carte d'identité, passeport ou permis</div>
         </div>
-        <input type="file" id="idInput" accept="image/*" style="display:none;" />
+        <input type="file" id="idInput" accept="image/jpeg,image/png,image/webp" style="display:none;" />
         <input type="hidden" name="identity_doc" id="idBase64" />
+      </div>
+
+      <div class="tech-fg">
+        <div class="tech-fl">Certificat ou attestation (facultatif)</div>
+        <div class="tech-upload" id="certBox" style="background:var(--paper-2);">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:4px;"><path d="M12 2l7 4v6c0 5.25-3.8 8.74-7 10-3.2-1.26-7-4.75-7-10V6z"/><circle cx="12" cy="11" r="2"/></svg>
+          <div>Ajouter un certificat ou une attestation</div>
+        </div>
+        <input type="file" id="certInput" accept="image/jpeg,image/png,image/webp" style="display:none;" />
+        <input type="hidden" name="certificate_doc" id="certBase64" />
       </div>
 
       <div class="tech-fg">
@@ -200,10 +216,17 @@
     </div>
 
     <div class="tech-step" data-step="6">
-      <div style="text-align:center;padding:40px 20px;">
+      <div style="text-align:center;padding:32px 20px 40px;">
         <svg width="80" height="80" viewBox="0 0 100 100" style="margin:0 auto 18px;"><path fill="#1F9D6B" d="M50 2 L58 10 L69 8 L74 18 L85 22 L84 34 L92 42 L86 52 L92 62 L84 70 L85 82 L74 86 L69 96 L58 94 L50 100 L42 94 L31 96 L26 86 L15 82 L16 70 L8 62 L14 52 L8 42 L16 34 L15 22 L26 18 L31 8 L42 10 Z"/><path fill="none" stroke="#F7F4EE" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" d="M34 51 L45 62 L68 38"/></svg>
-        <h4 style="font-size:22px;">Votre dossier a bien été envoyé</h4>
-        <p class="sub">L'équipe FixPro examine votre dossier avant de publier votre profil.</p>
+        <h4 style="font-size:22px;margin:0 0 6px;">Votre dossier a bien ete envoye</h4>
+        <p class="sub" style="margin-bottom:24px;">L'equipe FixPro examine votre dossier avant de publier votre profil.</p>
+        <div style="max-width:320px;margin:0 auto;text-align:left;background:var(--paper-2);border:1px solid var(--line);border-radius:12px;padding:14px 16px;">
+          <div style="display:flex;align-items:center;gap:10px;padding:6px 0;font-size:13px;color:#166846;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1F9D6B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Dossier recu</div>
+          <div style="display:flex;align-items:center;gap:10px;padding:6px 0;font-size:13px;color:#166846;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1F9D6B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Informations enregistrees</div>
+          <div style="display:flex;align-items:center;gap:10px;padding:6px 0;font-size:13px;color:var(--amber-dark);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--amber-dark)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>Verification FixPro</div>
+          <div style="display:flex;align-items:center;gap:10px;padding:6px 0;font-size:13px;color:var(--slate);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--slate)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>Profil publie</div>
+        </div>
+        <a href="{{ url_for('index') }}" class="fx-dock-btn primary" style="display:block;width:100%;max-width:260px;margin:24px auto 0;">Retour a l'accueil</a>
       </div>
     </div>
 
@@ -231,7 +254,7 @@
     el.innerHTML = '';
     steps.forEach((s,i)=>{
       const st = i+1 < current ? 'done' : (i+1 === current ? 'active' : 'pending');
-      const txt = i+1 < current ? '✓' : (i+1);
+      const txt = i+1 < current ? '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>' : (i+1);
       el.innerHTML += `<div class="tech-dot ${st}">${txt}</div>`;
       if (i < steps.length-1){
         const lt = i+1 < current ? 'done' : '';
@@ -315,13 +338,18 @@
   }
 
   setupUpload('photoBox','photoInput','photoBase64', res=>{
-    document.getElementById('photoBox').innerHTML = `<img src="${res}" alt="photo"><div style="position:absolute;bottom:4px;right:0;background:var(--ink);color:#fff;font-size:9px;padding:2px 6px;border-radius:8px;">Modifier</div>`;
+    document.getElementById('photoBox').innerHTML = `<img src="${res}" alt="photo" style="border-radius:50%;"><div id="photoEdit" style="position:absolute;bottom:-2px;right:-2px;background:var(--ink);color:#fff;font-size:9px;padding:4px 8px;border-radius:10px;cursor:pointer;">Modifier</div>`;
     data.photo = res;
   });
 
   setupUpload('idBox','idInput','idBase64', res=>{
-    document.getElementById('idBox').innerHTML = `<div style="font-size:12px;font-weight:600;">Document ajouté</div>`;
+    document.getElementById('idBox').innerHTML = `<div style="font-size:12px;font-weight:600;">Document ajoute</div>`;
     document.getElementById('idBox').classList.add('done');
+  });
+
+  setupUpload('certBox','certInput','certBase64', res=>{
+    document.getElementById('certBox').innerHTML = `<div style="font-size:12px;font-weight:600;">Certificat ajoute</div>`;
+    document.getElementById('certBox').classList.add('done');
   });
 
   document.getElementById('addPhoto').addEventListener('click', ()=>document.getElementById('portfolioInput').click());
@@ -363,18 +391,43 @@
     if (!navigator.geolocation){ alert('La localisation n\'est pas disponible.'); return; }
     this.textContent = 'Localisation en cours…';
     this.disabled = true;
+    document.getElementById('locMsg').textContent = 'Recherche de votre position…';
     navigator.geolocation.getCurrentPosition(pos=>{
-      document.getElementById('address').value = `Position détectée (${pos.coords.latitude.toFixed(2)}, ${pos.coords.longitude.toFixed(2)})`;
-      this.textContent = 'Position utilisée';
+      document.getElementById('address').value = 'Conakry, position detectee';
+      document.getElementById('lat').value = pos.coords.latitude.toFixed(6);
+      document.getElementById('lon').value = pos.coords.longitude.toFixed(6);
+      this.textContent = 'Position utilisee';
+      document.getElementById('locMsg').textContent = 'Position enregistree.';
     }, ()=>{
       this.textContent = 'Utiliser ma position';
       this.disabled = false;
-      alert('Impossible d\'obtenir votre position. Veuillez vérifier les permissions.');
+      document.getElementById('address').value = 'Conakry';
+      document.getElementById('lat').value = '9.541';
+      document.getElementById('lon').value = '-13.677';
+      document.getElementById('locMsg').textContent = 'Position par defaut : Conakry. Vous pourrez la preciser plus tard.';
     });
   });
 
   document.getElementById('bio').addEventListener('input', e=>{
     document.getElementById('bioCount').textContent = e.target.value.length;
+  });
+
+  function formatPhone(v){
+    const raw = v.replace(/\D/g,'').replace(/^224?/,'').slice(0,9);
+    const p = raw.match(/(\d{0,3})(\d{0,2})(\d{0,2})(\d{0,2})/);
+    return [p[1],p[2],p[3],p[4]].filter(Boolean).join(' ').trim();
+  }
+  const phoneInput = document.getElementById('phone');
+  ['input','paste','keyup','change'].forEach(evt=>{
+    phoneInput.addEventListener(evt, function(e){
+      if (e.type==='paste'){
+        const txt = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g,'').replace(/^224?/,'').slice(0,9);
+        setTimeout(()=>{ this.value = formatPhone(txt); }, 0);
+        return;
+      }
+      const cur = this.value.replace(/\D/g,'');
+      this.value = formatPhone(cur);
+    });
   });
 
   document.getElementById('prevBtn').addEventListener('click', ()=>showStep(current-1));
