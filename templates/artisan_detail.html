@@ -22,14 +22,13 @@
 </a>
 
 <div class="profile-card" style="--cat-color: {{ cat_color }};">
-  <div class="profile-header">
-    <div class="profile-avatar-wrap">
+  <div class="profile-header" style="align-items: flex-start;">
+    <div class="profile-avatar-wrap" style="width: 64px; height: 64px; flex-shrink: 0;">
       {% if artisan.photo_url %}
-      <img class="profile-avatar" src="{{ artisan.photo_url }}" alt="{{ artisan.full_name }}" style="background: {{ default_avatar_gradient }};" />
+      <img class="profile-avatar" src="{{ artisan.photo_url }}" alt="{{ artisan.full_name }}" style="width: 64px; height: 64px; background: {{ default_avatar_gradient }};" />
       {% else %}
-      <div class="profile-avatar" style="background: {{ default_avatar_gradient }}; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.7rem; line-height: 1.1;">
+      <div class="profile-avatar" style="width: 64px; height: 64px; background: {{ default_avatar_gradient }}; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.7rem; line-height: 1.1;">
         <span style="font-size: 1.4rem; margin-bottom: 2px;">+</span>
-        <span style="font-size: 0.6rem;">Ajoutez une photo</span>
       </div>
       {% endif %}
       {% if artisan.is_verified %}
@@ -39,78 +38,71 @@
       {% endif %}
     </div>
 
-    <div class="profile-header-info">
+    <div class="profile-header-info" style="margin-left: 16px;">
       <h1>{{ artisan.full_name }}</h1>
       <p class="profile-metier" style="color: {{ cat_color }};">{{ artisan.profession or 'Technicien' }}</p>
-      <div class="profile-rating" style="display: flex; align-items: center; gap: 10px; margin: 4px 0 8px;">
+      <div class="profile-rating" style="display: flex; align-items: center; gap: 8px; margin: 4px 0 8px; font-size: 0.95rem;">
         {% if review_stats.count %}
-          <span style="color: #f7c873; font-size: 1.1rem;">
-            {% for i in range(1, 6) %}
-              {% if i <= review_stats.avg_rating|round(0, 'floor')|int %}
-                &#9733;
-              {% else %}
-                &#9734;
-              {% endif %}
-            {% endfor %}
-          </span>
-          <span><b>{{ "%.1f"|format(review_stats.avg_rating|float) }}</b>/5 ({{ review_stats.count }} avis)</span>
+          <span style="color: #f5a623;">&#9733; {{ "%.1f"|format(review_stats.avg_rating|float) }}</span>
+          <span class="muted">({{ review_stats.count }} avis)</span>
         {% else %}
-          <span class="muted">Soyez le premier a laisser un avis.</span>
+          <span class="muted">Pas encore d'avis</span>
         {% endif %}
       </div>
       <div class="profile-badges" style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px;">
+        <span class="chip" style="background: {{ status[0] }}20; color: {{ status[0] }};">{{ status[1] }}</span>
         {% if artisan.is_verified %}
           <span class="chip" style="background: rgba(61, 220, 132, 0.12); color: #3ddc84;">Profil verifie</span>
         {% endif %}
-        {% if verified_docs.get('identity') == 'verified' %}
-          <span class="chip" style="background: rgba(61, 220, 132, 0.12); color: #3ddc84;">Identite verifiee</span>
-        {% endif %}
-        {% if verified_docs.get('diploma') == 'verified' %}
-          <span class="chip" style="background: rgba(61, 220, 132, 0.12); color: #3ddc84;">Diplome certifie</span>
-        {% endif %}
       </div>
-      <span class="profile-status" style="background: {{ status[0] }}; color: {% if status[0] == '#f7c873' %}#1a1206{% else %}#fff{% endif %}; display: inline-flex;">{{ status[1] }}</span>
     </div>
   </div>
 
-  <div class="profile-zone">
+  <div class="profile-zone" style="margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; color: var(--text-2); font-size: 0.9rem;">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
     <span>{{ artisan.quartier or artisan.city or 'Conakry' }}</span>
     {% if distance is not none %}
     <span class="profile-distance" id="distanceLabel">(~ {{ "%.1f"|format(distance) }} km)</span>
-    {% else %}
-    <span class="profile-distance" id="distanceLabel"></span>
     {% endif %}
+    <span class="muted" style="margin-left: auto;">Membre depuis {{ (artisan.created_at|string)[:7] }}</span>
   </div>
 
   <div class="profile-sep"></div>
 
-  <div class="profile-actions">
+  <div class="profile-stats" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+    <div class="card" style="padding: 14px; border: 1px solid rgba(255,255,255,0.07); border-radius: 12px;">
+      <span style="font-size: 0.8rem; color: var(--muted); display: block;">Tarif indicatif</span>
+      <b style="font-size: 1.1rem; color: var(--text);">{{ "{:,}".format((artisan.hourly_rate or 0)|int).replace(",", " ") }} GNF/h</b>
+    </div>
+    <div class="card" style="padding: 14px; border: 1px solid rgba(255,255,255,0.07); border-radius: 12px;">
+      <span style="font-size: 0.8rem; color: var(--muted); display: block;">Interventions realisees</span>
+      <b style="font-size: 1.1rem; color: var(--text);">{{ completed }}</b>
+    </div>
+  </div>
+
+  <div class="profile-actions" style="display: flex; gap: 10px; align-items: stretch;">
     {% if user %}
-    <button class="btn btn-primary btn-block" type="button" id="btnRequest" onclick="toggleRequest()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M9 14h6M9 17h4"/></svg>
+    <button class="btn btn-primary btn-block" type="button" id="btnRequest" onclick="toggleRequest()" style="flex: 1;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 18px; height: 18px;"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M9 14h6M9 17h4"/></svg>
       Demander une intervention
     </button>
     {% else %}
-    <a class="btn btn-primary btn-block" href="{{ url_for('login', next=url_for('artisan_detail', artisan_id=artisan.id, action='request')) }}">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M9 14h6M9 17h4"/></svg>
+    <a class="btn btn-primary btn-block" href="{{ url_for('login', next=url_for('artisan_detail', artisan_id=artisan.id, action='request')) }}" style="flex: 1;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 18px; height: 18px;"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M9 14h6M9 17h4"/></svg>
       Demander une intervention
     </a>
     {% endif %}
     {% if user %}
-    <form class="profile-action-form" method="post" action="{{ url_for('ticket_new') }}">
+    <form class="profile-action-form" method="post" action="{{ url_for('ticket_new') }}" style="margin: 0;">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
       <input type="hidden" name="artisan_id" value="{{ artisan.id }}" />
-      <button class="btn btn-soft btn-block" type="submit">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 21l1.9-5.1A8.4 8.4 0 0 1 4 11.5a8.5 8.5 0 0 1 8.5-8.5A8.5 8.5 0 0 1 21 11.5z"/></svg>
-        Contacter ce technicien
+      <button class="btn btn-soft" type="submit" style="width: 44px; height: 100%; padding: 0; display: flex; align-items: center; justify-content: center;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 21l1.9-5.1A8.4 8.4 0 0 1 4 11.5a8.5 8.5 0 0 1 8.5-8.5A8.5 8.5 0 0 1 21 11.5z"/></svg>
       </button>
     </form>
     {% else %}
-    <a class="btn btn-soft btn-block" href="{{ url_for('login') }}">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M13.8 12H3"/></svg>
-      <span>Connexion requise</span>
-      <small style="display: block; font-size: 0.78rem; opacity: 0.75;">Connectez-vous pour voir le numero et discuter directement</small>
+    <a class="btn btn-soft" href="{{ url_for('login') }}" style="width: 44px; height: auto; padding: 0; display: flex; align-items: center; justify-content: center;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M13.8 12H3"/></svg>
     </a>
     {% endif %}
   </div>
@@ -197,6 +189,23 @@
       <li><span>Mobilite</span><b>{{ artisan.mobility or 'Conakry et environs' }}</b></li>
       <li><span>Assurance</span><b>{{ artisan.insurance or 'Non renseignee' }}</b></li>
     </ul>
+  </div>
+
+  <div class="profile-sep"></div>
+
+  <div class="profile-section">
+    <h3>Realisations</h3>
+    {% if portfolio %}
+    <div class="portfolio-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+      {% for photo in portfolio %}
+      <div class="portfolio-item" style="border-radius: 12px; overflow: hidden; aspect-ratio: 4/3;">
+        <img src="{{ photo.photo_url }}" alt="{{ photo.caption or artisan.full_name }}" style="width: 100%; height: 100%; object-fit: cover;" />
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p style="opacity: 0.7; font-style: italic;">Cet artisan n'a pas encore ajoute de photos de ses realisations.</p>
+    {% endif %}
   </div>
 
   <div class="profile-sep"></div>

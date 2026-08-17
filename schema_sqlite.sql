@@ -166,6 +166,16 @@ CREATE INDEX IF NOT EXISTS idx_requests_status      ON requests(status);
 CREATE INDEX IF NOT EXISTS idx_messages_request_id  ON messages(request_id);
 CREATE INDEX IF NOT EXISTS idx_payments_request_id  ON payments(request_id);
 
+CREATE TABLE IF NOT EXISTS artisan_portfolio (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    artisan_id      INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    photo_url       TEXT NOT NULL,
+    caption         TEXT,
+    created_at      TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_artisan_portfolio_artisan ON artisan_portfolio(artisan_id);
+
 INSERT OR IGNORE INTO service_categories (name, diagnostic_price) VALUES
     ('Plombier',     50000),
     ('Électricien',  45000),

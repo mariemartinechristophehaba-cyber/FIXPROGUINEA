@@ -2080,12 +2080,18 @@ def artisan_detail(artisan_id):
                 conn.commit()
                 flash("Avis enregistré. Merci pour votre retour.", "success")
                 return redirect(url_for("artisan_detail", artisan_id=artisan_id))
+
+        # Date d'inscription lisible
+        member_since = (str(artisan["created_at"])[:7] if artisan["created_at"]
+                        else "Date inconnue")
+
+        # Photos de realisations
+        portfolio = conn.execute(
+            "SELECT id, photo_url, caption FROM artisan_portfolio"
+            " WHERE artisan_id = ? ORDER BY created_at DESC LIMIT 6",
+            (artisan_id,)).fetchall()
     finally:
         conn.close()
-
-    # Date d'inscription lisible
-    member_since = (str(artisan["created_at"])[:10] if artisan["created_at"]
-                    else "Date inconnue")
 
     return render_template("artisan_detail.html",
                            user=user,
@@ -2097,7 +2103,8 @@ def artisan_detail(artisan_id):
                            can_review=can_review,
                            ticket_id=ticket_id,
                            verified_docs=verified_docs,
-                           member_since=member_since)
+                           member_since=member_since,
+                           portfolio=portfolio)
 
 
 @app.route("/artisans/<int:artisan_id>/location", methods=["POST"])
