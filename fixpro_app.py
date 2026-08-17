@@ -514,10 +514,36 @@ def calculate_distance(lat1, lon1, lat2, lon2):
 def index():
     conn = get_db_connection()
     try:
-        techniciens = conn.execute(
-            "SELECT COUNT(*) AS n FROM users WHERE role = 'artisan' AND is_verified = 1").fetchone()["n"]
-        metiers = conn.execute(
-            "SELECT COUNT(DISTINCT profession) AS n FROM users WHERE role = 'artisan' AND profession IS NOT NULL AND profession != ''").fetchone()["n"]
+        categories = conn.execute(
+            "SELECT name FROM service_categories ORDER BY name").fetchall()
+        counts = {}
+        for c in categories:
+            counts[c["name"]] = conn.execute(
+                "SELECT COUNT(*) AS n FROM users"
+                " WHERE role = 'artisan' AND is_verified = 1 AND is_active = 1"
+                " AND (profession = ? OR skills LIKE ?)",
+                (c["name"], f"%{c['name']}%")).fetchone()["n"]
+        artisans = conn.execute("""
+            SELECT u.id, u.full_name, u.profession, u.photo_url, u.is_verified,
+                   COALESCE((SELECT AVG(rating) FROM reviews WHERE artisan_id = u.id), 0) AS avg_rating,
+                   COALESCE((SELECT COUNT(*) FROM reviews WHERE artisan_id = u.id), 0) AS review_count
+            FROM users u
+            WHERE u.role = 'artisan' AND u.is_verified = 1 AND u.is_active = 1
+            ORDER BY avg_rating DESC, review_count DESC
+            LIMIT 4
+        """).fetchall()
+    finally:
+        conn.close()
+    return render_template("index.html", counts=counts, artisans=artisans)
+
+
+@app.route("/home")
+@login_required
+def home():
+    """Application accueil connecte."""
+    user = get_current_user()
+    conn = get_db_connection()
+    try:
         artisans = conn.execute("""
             SELECT u.id, u.full_name, u.profession, u.photo_url, u.is_verified,
                    COALESCE((SELECT AVG(rating) FROM reviews WHERE artisan_id = u.id), 0) AS avg_rating,
@@ -529,7 +555,25 @@ def index():
         """).fetchall()
     finally:
         conn.close()
-    return render_template("index.html", techniciens=techniciens, metiers=metiers, artisans=artisans)
+    return render_template("home.html", user=user, artisans=artisans)
+
+
+@app.route("/categories")
+def categories():
+    conn = get_db_connection()
+    try:
+        categories = conn.execute(
+            "SELECT name, diagnostic_price FROM service_categories ORDER BY name").fetchall()
+        counts = {}
+        for c in categories:
+            counts[c["name"]] = conn.execute(
+                "SELECT COUNT(*) AS n FROM users"
+                " WHERE role = 'artisan' AND is_verified = 1 AND is_active = 1"
+                " AND (profession = ? OR skills LIKE ?)",
+                (c["name"], f"%{c['name']}%")).fetchone()["n"]
+    finally:
+        conn.close()
+    return render_template("categories.html", categories=categories, counts=counts)
 
 
 @app.route("/contact")
