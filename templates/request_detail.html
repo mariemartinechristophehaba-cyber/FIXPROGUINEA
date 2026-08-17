@@ -31,11 +31,11 @@
 
   <div class="fx-stepper">
     <div class="fx-step done">
-      <div class="fx-step-dot">✓</div>
+      <div class="fx-step-dot"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
       <div class="fx-step-txt"><b>Demande envoyee</b><span>{{ (request_item.created_at|string)[:16] }}</span></div>
     </div>
     <div class="fx-step {{ 'done' if request_item.status in ('accepted','assigned','quote_proposed','quote_accepted','in_progress','completed') }}">
-      <div class="fx-step-dot">{% if request_item.status in ('accepted','assigned','quote_proposed','quote_accepted','in_progress','completed') %}✓{% endif %}</div>
+      <div class="fx-step-dot">{% if request_item.status in ('accepted','assigned','quote_proposed','quote_accepted','in_progress','completed') %}<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>{% endif %}</div>
       <div class="fx-step-txt"><b>Acceptee par {{ (artisan.full_name or 'le technicien').split(' ')[0] }}</b><span>{{ (request_item.updated_at|string)[:16] if request_item.status in ('accepted','assigned','quote_proposed','quote_accepted','in_progress','completed') else '—' }}</span></div>
     </div>
     <div class="fx-step {{ 'active' if request_item.status in ('assigned','in_progress','quote_accepted') else ('done' if request_item.status == 'completed' else '') }}">

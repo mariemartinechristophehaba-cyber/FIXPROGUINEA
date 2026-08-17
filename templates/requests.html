@@ -30,7 +30,7 @@
       </div>
       <div class="fx-hist-foot">
         {% if item.client_rating %}
-        <span class="fx-stars">{{ '★' * item.client_rating }}{{ '☆' * (5-item.client_rating) }} votre avis</span>
+        <span class="fx-stars">Note {{ item.client_rating }}/5</span>
         {% else %}
         <span style="font-size:11px;color:var(--slate-light);">Avis non laissé</span>
         {% endif %}

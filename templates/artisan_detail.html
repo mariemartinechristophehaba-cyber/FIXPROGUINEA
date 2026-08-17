@@ -25,7 +25,7 @@
       </div>
     </div>
     <div class="fx-p-stats">
-      <div class="fx-p-stat"><b>★ {{ "%.1f"|format(review_stats.avg_rating|float) }}</b><span>{{ review_stats.count }} avis</span></div>
+      <div class="fx-p-stat"><b><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle;margin-right:2px;"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.2-5.4-2.9-5.4 2.9 1-6.2L3.2 9.5l6.1-.9z"/></svg> {{ "%.1f"|format(review_stats.avg_rating|float) }}</b><span>{{ review_stats.count }} avis</span></div>
       <div class="fx-p-stat"><b>{{ completed }}</b><span>interventions</span></div>
       <div class="fx-p-stat"><b>{{ "%.1f"|format(distance) if distance is not none else '—' }}</b><span>distance</span></div>
     </div>
@@ -33,7 +33,7 @@
 
   <div class="fx-p-body">
     <div class="fx-p-card">
-      <h4>🟢 Disponible maintenant</h4>
+      <h4><svg width="10" height="10" viewBox="0 0 24 24" fill="var(--green)" style="margin-right:6px;vertical-align:middle;"><circle cx="12" cy="12" r="12"/></svg>Disponible maintenant</h4>
       <p>Intervient généralement sous 30 à 45 minutes dans sa zone.</p>
     </div>
     <div class="fx-p-card">
@@ -55,7 +55,7 @@
       {% if reviews %}
       {% for review in reviews[:3] %}
       <div class="fx-review">
-        <div class="fx-review-head"><span>{{ review.client_name }}</span><span class="fx-stars">{{ '★' * review.rating }}{{ '☆' * (5-review.rating) }}</span></div>
+        <div class="fx-review-head"><span>{{ review.client_name }}</span><span class="fx-stars">Note {{ review.rating }}/5</span></div>
         <div class="fx-review-text">{{ review.comment or 'Aucun commentaire' }}</div>
       </div>
       {% endfor %}

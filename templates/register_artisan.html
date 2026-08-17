@@ -231,7 +231,7 @@
     el.innerHTML = '';
     steps.forEach((s,i)=>{
       const st = i+1 < current ? 'done' : (i+1 === current ? 'active' : 'pending');
-      const txt = i+1 < current ? '✓' : (i+1);
+      const txt = i+1 < current ? '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>' : (i+1);
       el.innerHTML += `<div class="tech-dot ${st}">${txt}</div>`;
       if (i < steps.length-1){
         const lt = i+1 < current ? 'done' : '';
