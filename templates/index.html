@@ -6,285 +6,277 @@
 {% block content %}
 <style>
   :root {
-    --m-ink: #0F1C3F;
-    --m-blue: #2563EB;
-    --m-blue-light: #EAF2FF;
-    --m-blue-soft: #DBEAFE;
-    --m-white: #FFFFFF;
-    --m-paper: #F7FAFF;
-    --m-slate: #64748B;
-    --m-slate-light: #94A3B8;
-    --m-line: #E2E8F0;
-    --m-radius: 24px;
-    --m-radius-sm: 16px;
-    --m-shadow: 0 10px 40px rgba(37, 99, 235, 0.08);
-    --m-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    --m-display: 'Space Grotesk', sans-serif;
+    --mp-blue: #0A5CFF;
+    --mp-blue-light: #EEF4FF;
+    --mp-ink: #0B132B;
+    --mp-slate: #6B7280;
+    --mp-paper: #F6F8FB;
+    --mp-white: #FFFFFF;
+    --mp-line: #E2E8F0;
+    --mp-radius: 20px;
+    --mp-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --mp-display: 'Space Grotesk', sans-serif;
   }
 
-  .m-app { font-family: var(--m-font); background: var(--m-paper); min-height: 100vh; padding-bottom: 32px; }
+  .mp-app {
+    font-family: var(--mp-font);
+    background: var(--mp-paper);
+    min-height: 100vh;
+    max-width: 430px;
+    margin: 0 auto;
+    padding-bottom: 24px;
+    box-shadow: 0 0 30px rgba(0,0,0,.05);
+  }
 
-  .m-status {
+  .mp-status {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 10px 20px 6px;
+    padding: 10px 20px 4px;
     font-size: 14px;
     font-weight: 600;
-    color: var(--m-ink);
+    color: var(--mp-ink);
   }
 
-  .m-status svg { height: 14px; }
-
-  .m-header {
+  .mp-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 8px 20px 0;
+    padding: 8px 20px 20px;
   }
 
-  .m-logo {
+  .mp-logo {
     display: flex;
     align-items: center;
     gap: 8px;
-    font-family: var(--m-display);
-    font-size: 22px;
+    font-family: var(--mp-display);
+    font-size: 20px;
     font-weight: 700;
-    color: var(--m-ink);
+    color: var(--mp-ink);
     text-decoration: none;
   }
 
-  .m-logo-mark {
-    width: 34px;
-    height: 34px;
-    background: var(--m-blue);
+  .mp-logo-mark {
+    width: 32px;
+    height: 32px;
+    background: var(--mp-blue);
     border-radius: 50% 50% 50% 4px;
     display: flex;
     align-items: center;
     justify-content: center;
     transform: rotate(-45deg);
   }
+  .mp-logo-mark svg { transform: rotate(45deg); }
 
-  .m-logo-mark svg { transform: rotate(45deg); }
-
-  .m-trust-pill {
+  .mp-trust {
     display: flex;
     align-items: center;
-    gap: 8px;
-    background: var(--m-white);
-    border: 1px solid var(--m-line);
-    border-radius: 20px;
-    padding: 6px 12px;
-    font-size: 11px;
-    color: var(--m-ink);
-    font-weight: 600;
-    box-shadow: 0 2px 8px rgba(0,0,0,.03);
+    gap: 6px;
+    font-size: 10px;
+    color: var(--mp-slate);
+    font-weight: 500;
   }
+  .mp-trust svg { color: var(--mp-blue); flex: 0 0 auto; }
 
-  .m-trust-pill span { color: var(--m-slate); font-weight: 500; }
+  .mp-hero { padding: 0 20px 18px; }
 
-  .m-hero {
-    padding: 28px 20px 0;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .m-hero-inner { position: relative; z-index: 1; }
-
-  .m-title { margin: 0 0 14px; }
-  .m-title h1 {
-    font-family: var(--m-display);
-    font-size: 38px;
+  .mp-hero-text h1 {
+    font-family: var(--mp-display);
+    font-size: 32px;
     font-weight: 800;
     line-height: 1.05;
-    color: var(--m-ink);
-    margin: 0;
+    color: var(--mp-ink);
+    margin: 0 0 12px;
     letter-spacing: -0.5px;
   }
-  .m-title .m-blue { color: var(--m-blue); }
 
-  .m-sub {
-    font-size: 15px;
+  .mp-hero-text .mp-blue { color: var(--mp-blue); }
+
+  .mp-hero-text p {
+    font-size: 14px;
     line-height: 1.55;
-    color: var(--m-slate);
-    margin: 0 0 24px;
-    max-width: 280px;
+    color: var(--mp-slate);
+    margin: 0 0 18px;
+    max-width: 260px;
   }
 
-  .m-hero-img {
+  .mp-hero-visual {
+    position: relative;
+    height: 320px;
+    border-radius: var(--mp-radius);
+    overflow: hidden;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    background: var(--mp-blue-light);
+  }
+
+  .mp-blob {
     position: absolute;
     right: -20px;
-    top: -20px;
+    top: 20px;
     width: 260px;
-    height: 360px;
-    z-index: 2;
-  }
-
-  .m-hero-img img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    object-position: center top;
-    border-radius: 120px 120px 24px 24px;
-    display: block;
-  }
-
-  .m-hero-blob {
-    position: absolute;
-    right: -10px;
-    top: 0;
-    width: 300px;
-    height: 360px;
-    background: linear-gradient(135deg, #EAF2FF 0%, #DBEAFE 100%);
+    height: 300px;
+    background: #DBEAFE;
     border-radius: 60% 40% 50% 50%;
     z-index: 1;
   }
 
-  .m-benefits { padding: 16px 20px 24px; max-width: 420px; }
-  .m-benefit {
+  .mp-hero-img {
+    position: relative;
+    z-index: 2;
+    height: 300px;
+    width: 240px;
+    object-fit: cover;
+    object-position: center 15%;
+    border-radius: 100px 100px 20px 20px;
+  }
+
+  .mp-benefits { padding: 0 20px 22px; display: flex; flex-direction: column; gap: 12px; }
+
+  .mp-benefit {
     display: flex;
     align-items: center;
     gap: 14px;
-    margin-bottom: 14px;
+    background: var(--mp-white);
+    border: 1px solid var(--mp-line);
+    border-radius: var(--mp-radius);
+    padding: 14px 16px;
+    box-shadow: 0 2px 10px rgba(0,0,0,.03);
+    min-height: 72px;
   }
-  .m-benefit:last-child { margin-bottom: 0; }
-  .m-benefit-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 14px;
-    border: 1px solid var(--m-line);
-    background: var(--m-white);
-    color: var(--m-blue);
+
+  .mp-benefit-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: var(--mp-blue-light);
+    color: var(--mp-blue);
     display: flex;
     align-items: center;
     justify-content: center;
     flex: 0 0 auto;
   }
-  .m-benefit h4 { font-size: 14px; font-weight: 700; color: var(--m-ink); margin: 0 0 4px; }
-  .m-benefit p { font-size: 12px; color: var(--m-slate); line-height: 1.4; margin: 0; }
 
-  .m-services-card {
-    background: var(--m-white);
-    border-radius: var(--m-radius);
-    margin: 0 20px 28px;
-    padding: 22px 16px;
-    box-shadow: var(--m-shadow);
-    border: 1px solid var(--m-line);
+  .mp-benefit h4 { font-size: 14px; font-weight: 700; color: var(--mp-ink); margin: 0 0 3px; }
+  .mp-benefit p { font-size: 12px; color: var(--mp-slate); line-height: 1.4; margin: 0; }
+
+  .mp-services-card {
+    background: var(--mp-white);
+    border-radius: var(--mp-radius);
+    margin: 0 20px 20px;
+    padding: 20px 14px;
+    box-shadow: 0 4px 20px rgba(0,0,0,.04);
   }
 
-  .m-services-title {
-    font-family: var(--m-display);
-    font-size: 18px;
+  .mp-services-title {
+    font-family: var(--mp-display);
+    font-size: 17px;
     font-weight: 700;
     text-align: center;
-    color: var(--m-ink);
-    margin: 0 0 22px;
+    color: var(--mp-ink);
+    margin: 0 0 18px;
   }
 
-  .m-services-grid {
+  .mp-services-grid {
     display: flex;
     justify-content: space-between;
-    gap: 10px;
+    gap: 8px;
   }
 
-  .m-service {
+  .mp-service {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     text-decoration: none;
-    color: var(--m-ink);
-    font-size: 11px;
+    color: var(--mp-ink);
+    font-size: 10px;
     text-align: center;
+    flex: 1;
   }
 
-  .m-service-icon {
-    width: 50px;
-    height: 50px;
-    border-radius: 14px;
-    border: 1px solid var(--m-line);
+  .mp-service-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    border: 1px solid var(--mp-line);
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--m-blue);
-    background: var(--m-white);
+    color: var(--mp-blue);
   }
 
-  .m-actions { padding: 0 20px; }
-  .m-btn {
+  .mp-actions { padding: 0 20px; display: flex; flex-direction: column; gap: 10px; }
+
+  .mp-btn {
     width: 100%;
-    height: 58px;
-    border-radius: var(--m-radius-sm);
-    font-size: 16px;
+    height: 54px;
+    border-radius: 14px;
+    font-size: 15px;
     font-weight: 700;
     text-decoration: none;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
-    margin-bottom: 14px;
-    cursor: pointer;
+    gap: 8px;
     border: none;
+    cursor: pointer;
   }
-  .m-btn-primary { background: var(--m-blue); color: var(--m-white); box-shadow: 0 8px 24px rgba(37, 99, 235, 0.25); }
-  .m-btn-outline { background: var(--m-white); color: var(--m-blue); border: 1.5px solid var(--m-blue); }
 
-  .m-footer-trust {
+  .mp-btn-primary { background: var(--mp-blue); color: var(--mp-white); }
+  .mp-btn-outline { background: var(--mp-white); color: var(--mp-blue); border: 1.5px solid var(--mp-blue); }
+
+  .mp-footer-trust {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    margin-top: 28px;
-    font-size: 12px;
-    color: var(--m-slate);
+    gap: 6px;
+    margin-top: 22px;
+    font-size: 11px;
+    color: var(--mp-slate);
     padding: 0 20px;
-  }
-
-  @media (min-width: 768px) {
-    .m-app { max-width: 414px; margin: 0 auto; box-shadow: 0 0 40px rgba(0,0,0,.08); }
+    text-align: center;
   }
 </style>
 
-<div class="m-app">
-  <div class="m-status">
+<div class="mp-app">
+  <div class="mp-status">
     <span>9:41</span>
-    <div style="display:flex;gap:6px;align-items:center;">
-      <svg width="18" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17 4h3v16h-3zM12 9h3v11h-3zM7 14h3v6H7zM2 18h3v2H2z"/></svg>
-      <svg width="18" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C7.6 2 3.9 4.7 2 8.5l1.5.9C5.1 6.1 8.3 4 12 4s6.9 2.1 8.5 5.4l1.5-.9C20.1 4.7 16.4 2 12 2zM5.6 11.4C7 9.4 9.3 8 12 8s5 1.4 6.4 3.4l1.5-.9C18.2 7.8 15.3 6 12 6s-6.2 1.8-7.9 4.5l1.5.9zm2.9 4.1c.9-1.3 2.4-2 4-2s3.1.7 4 2l1.5-.9c-1.3-1.9-3.4-3-5.5-3s-4.2 1.1-5.5 3l1.5.9zM12 18c.8 0 1.5.4 1.9 1.1l1.6-1c-.8-1.3-2.2-2.1-3.7-2.1-1.5 0-2.9.8-3.7 2.1l1.6 1c.4-.7 1.1-1.1 1.9-1.1z" opacity="0.3"/><circle cx="12" cy="17" r="2" fill="currentColor"/></svg>
-      <svg width="22" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="16" height="10" rx="2" fill="var(--m-ink)"/><path d="M20 10v4" stroke="var(--m-ink)"/></svg>
+    <div style="display:flex;gap:5px;align-items:center;">
+      <svg width="16" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M17 5h3v12h-3zM12 9h3v8h-3zM7 13h3v4H7zM2 16h3v1H2z"/></svg>
+      <svg width="16" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4C8 4 4.5 6.5 3 10l1.5.8C5.8 8.2 9 6 12 6s6.2 2.2 7.5 4.8L21 10c-1.5-3.5-5-6-9-6z"/><circle cx="12" cy="17" r="2" fill="currentColor"/></svg>
+      <svg width="22" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="14" height="9" rx="2" fill="var(--mp-ink)"/><path d="M19 9.5v5" stroke="var(--mp-ink)"/></svg>
     </div>
   </div>
 
-  <header class="m-header">
-    <a href="{{ url_for('index') }}" class="m-logo">
-      <div class="m-logo-mark">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 13 8 13s8-7.75 8-13a8 8 0 0 0-8-8z"/></svg>
+  <header class="mp-header">
+    <a href="{{ url_for('index') }}" class="mp-logo">
+      <div class="mp-logo-mark">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 13 8 13s8-7.75 8-13a8 8 0 0 0-8-8z"/></svg>
       </div>
       FixPro
     </a>
-    <div class="m-trust-pill">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--m-blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+    <div class="mp-trust">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
       <span>Service fiable<br>et sécurisé</span>
     </div>
   </header>
 
-  <section class="m-hero">
-    <div class="m-hero-blob"></div>
-    <div class="m-hero-img">
-      <img src="{{ url_for('static', filename='img/technician-hero.jpg') }}" alt="Technicien FixPro" onerror="this.src='https://images.unsplash.com/photo-1687422810663-c316494f725a?w=800&auto=format&fit=crop'" />
+  <section class="mp-hero">
+    <div class="mp-hero-text">
+      <h1>Vos pannes,<br><span class="mp-blue">nos solutions.</span></h1>
+      <p>Trouvez facilement des techniciens qualifiés pour tous vos besoins à domicile.</p>
     </div>
-    <div class="m-hero-inner">
-      <div class="m-title">
-        <h1>Vos pannes,</h1>
-        <h1 class="m-blue">nos solutions.</h1>
-      </div>
-      <p class="m-sub">Trouvez facilement des techniciens qualifiés pour tous vos besoins à domicile.</p>
+    <div class="mp-hero-visual">
+      <div class="mp-blob"></div>
+      <img src="{{ url_for('static', filename='img/technician-hero.jpg') }}" alt="Technicien FixPro" class="mp-hero-img" onerror="this.src='https://images.unsplash.com/photo-1687422810663-c316494f725a?w=800&auto=format&fit=crop'" />
     </div>
   </section>
 
-  <section class="m-benefits">
-    <div class="m-benefit">
-      <div class="m-benefit-icon">
+  <section class="mp-benefits">
+    <div class="mp-benefit">
+      <div class="mp-benefit-icon">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
       </div>
       <div>
@@ -292,8 +284,8 @@
         <p>Des professionnels vérifiés et notés par les clients.</p>
       </div>
     </div>
-    <div class="m-benefit">
-      <div class="m-benefit-icon">
+    <div class="mp-benefit">
+      <div class="mp-benefit-icon">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
       </div>
       <div>
@@ -301,8 +293,8 @@
         <p>Trouvez un technicien disponible près de chez vous.</p>
       </div>
     </div>
-    <div class="m-benefit">
-      <div class="m-benefit-icon">
+    <div class="mp-benefit">
+      <div class="mp-benefit-icon">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
       </div>
       <div>
@@ -312,42 +304,42 @@
     </div>
   </section>
 
-  <section class="m-services-card">
-    <h2 class="m-services-title">Services disponibles</h2>
-    <div class="m-services-grid">
-      <a href="{{ url_for('artisans_page', q='electricite') }}" class="m-service">
-        <div class="m-service-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+  <section class="mp-services-card">
+    <h2 class="mp-services-title">Services disponibles</h2>
+    <div class="mp-services-grid">
+      <a href="{{ url_for('artisans_page', q='electricite') }}" class="mp-service">
+        <div class="mp-service-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
         <span>Électricité</span>
       </a>
-      <a href="{{ url_for('artisans_page', q='plomberie') }}" class="m-service">
-        <div class="m-service-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a2 2 0 0 0 2-2h-4a2 2 0 0 0 2 2z"/><path d="M18 8a6 6 0 0 0-12 0c0 5-2 6-3 7h18c-1-1-3-2-3-7z"/><path d="M15.5 6.5a2.5 2.5 0 1 1-5 0"/></svg></div>
+      <a href="{{ url_for('artisans_page', q='plomberie') }}" class="mp-service">
+        <div class="mp-service-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a2 2 0 0 0 2-2h-4a2 2 0 0 0 2 2z"/><path d="M18 8a6 6 0 0 0-12 0c0 5-2 6-3 7h18c-1-1-3-2-3-7z"/><path d="M15.5 6.5a2.5 2.5 0 1 1-5 0"/></svg></div>
         <span>Plomberie</span>
       </a>
-      <a href="{{ url_for('artisans_page', q='climatisation') }}" class="m-service">
-        <div class="m-service-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="6" width="16" height="12" rx="2"/><path d="M6 10h12M6 14h12M9 6v12M15 6v12"/></svg></div>
+      <a href="{{ url_for('artisans_page', q='climatisation') }}" class="mp-service">
+        <div class="mp-service-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="6" width="16" height="12" rx="2"/><path d="M6 10h12M6 14h12M9 6v12M15 6v12"/></svg></div>
         <span>Climatisation</span>
       </a>
-      <a href="{{ url_for('artisans_page', q='refrigeration') }}" class="m-service">
-        <div class="m-service-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="7" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="17" cy="12" r="1.5" fill="currentColor"/><path d="M6 2v3M18 2v3"/></svg></div>
+      <a href="{{ url_for('artisans_page', q='refrigeration') }}" class="mp-service">
+        <div class="mp-service-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="7" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="17" cy="12" r="1.5" fill="currentColor"/><path d="M6 2v3M18 2v3"/></svg></div>
         <span>Électroménager</span>
       </a>
-      <a href="{{ url_for('artisans_page', q='peinture') }}" class="m-service">
-        <div class="m-service-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16M4 10h16M4 10V4h16v6M12 4v6M7 4v6M17 4v6"/></svg></div>
+      <a href="{{ url_for('artisans_page', q='peinture') }}" class="mp-service">
+        <div class="mp-service-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16M4 10h16M4 10V4h16v6M12 4v6M7 4v6M17 4v6"/></svg></div>
         <span>Peinture</span>
       </a>
     </div>
   </section>
 
-  <section class="m-actions">
-    <a href="{{ url_for('register') }}" class="m-btn m-btn-primary">
+  <section class="mp-actions">
+    <a href="{{ url_for('register') }}" class="mp-btn mp-btn-primary">
       Créer un compte
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
     </a>
-    <a href="{{ url_for('login') }}" class="m-btn m-btn-outline">Se connecter</a>
+    <a href="{{ url_for('login') }}" class="mp-btn mp-btn-outline">Se connecter</a>
   </section>
 
-  <div class="m-footer-trust">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--m-blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+  <div class="mp-footer-trust">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--mp-blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
     Des milliers de clients nous font déjà confiance
   </div>
 </div>
