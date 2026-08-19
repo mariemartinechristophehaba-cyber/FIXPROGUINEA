@@ -6,19 +6,19 @@
 {% block content %}
 <style>
   :root {
-    --c-ink: #0F1C3F;
-    --c-blue: #2563EB;
-    --c-blue-light: #EAF2FF;
+    --c-blue: #0A5CFF;
+    --c-ink: #0B132B;
+    --c-slate: #6B7280;
+    --c-paper: #F6F8FB;
     --c-white: #FFFFFF;
-    --c-paper: #F7FAFF;
-    --c-slate: #64748B;
+    --c-blue-light: #EEF4FF;
     --c-line: #E2E8F0;
-    --c-radius: 24px;
+    --c-radius: 22px;
     --c-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --c-display: 'Space Grotesk', sans-serif;
   }
 
-  .c-page { font-family: var(--c-font); background: var(--c-paper); min-height: 100vh; padding: 0 20px 32px; display: flex; flex-direction: column; justify-content: center; max-width: 414px; margin: 0 auto; }
+  .c-page { font-family: var(--c-font); background: var(--c-paper); min-height: 100vh; padding: 0 20px 32px; display: flex; flex-direction: column; justify-content: center; max-width: 430px; margin: 0 auto; }
 
   .c-top { text-align: center; padding: 40px 0 28px; }
   .c-top h1 { font-family: var(--c-display); font-size: 24px; font-weight: 700; color: var(--c-ink); margin: 0 0 8px; }
@@ -40,7 +40,7 @@
   .c-choice:hover, .c-choice:focus {
     border-color: var(--c-blue);
     background: var(--c-blue-light);
-    box-shadow: 0 8px 28px rgba(37, 99, 235, 0.10);
+    box-shadow: 0 8px 28px rgba(10, 92, 255, 0.10);
   }
 
   .c-icon {
@@ -48,7 +48,6 @@
     height: 64px;
     border-radius: 18px;
     background: var(--c-blue-light);
-    color: var(--c-blue);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -85,7 +84,7 @@
   <div class="c-choice-grid">
     <a href="{{ url_for('client_signup') }}" class="c-choice">
       <div class="c-icon">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
+        <img src="{{ url_for('static', filename='img/icon-user.svg') }}" width="28" height="28" alt="Client" />
       </div>
       <h3>Je cherche un technicien</h3>
       <p>Trouvez rapidement un professionnel qualifié près de chez vous.</p>
@@ -94,7 +93,7 @@
 
     <a href="{{ url_for('register_artisan') }}" class="c-choice">
       <div class="c-icon">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        <img src="{{ url_for('static', filename='img/icon-wrench.svg') }}" width="28" height="28" alt="Technicien" />
       </div>
       <h3>Je suis technicien</h3>
       <p>Proposez vos services et trouvez de nouveaux clients.</p>
