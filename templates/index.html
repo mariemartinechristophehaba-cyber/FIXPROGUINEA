@@ -1,344 +1,212 @@
 {% extends 'base.html' %}
-{% block title %}FixPro Guinée - Vos pannes, nos solutions{% endblock %}
+{% block title %}FixPro - Trouvez le bon professionnel{% endblock %}
 {% block header %}{% endblock %}
 {% block footer %}{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/fixpro.css', v='1') }}" />{% endblock %}
 
 {% block content %}
-<style>
-  :root {
-    --r-blue: #0A5CFF;
-    --r-ink: #0B132B;
-    --r-slate: #6B7280;
-    --r-paper: #F6F8FB;
-    --r-white: #FFFFFF;
-    --r-blue-light: #EEF4FF;
-    --r-line: #E2E8F0;
-    --r-radius: 22px;
-    --r-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    --r-display: 'Space Grotesk', sans-serif;
-  }
-
-  .r-app {
-    font-family: var(--r-font);
-    background: var(--r-paper);
-    min-height: 100vh;
-    padding-bottom: 28px;
-  }
-
-  .r-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px 20px 12px;
-  }
-
-  .r-logo {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-family: var(--r-display);
-    font-size: 20px;
-    font-weight: 700;
-    color: var(--r-ink);
-    text-decoration: none;
-  }
-
-  .r-logo-mark {
-    width: 32px;
-    height: 32px;
-    background: var(--r-blue);
-    border-radius: 50% 50% 50% 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transform: rotate(-45deg);
-  }
-  .r-logo-mark svg { transform: rotate(45deg); }
-
-  .r-trust {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 11px;
-    color: var(--r-ink);
-    font-weight: 600;
-  }
-  .r-trust svg { color: var(--r-blue); flex: 0 0 auto; }
-  .r-trust span { font-weight: 500; color: var(--r-slate); }
-
-  .r-hero {
-    padding: 8px 20px 18px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-  }
-
-  .r-hero-text {
-    flex: 0 0 58%;
-    max-width: 58%;
-  }
-
-  .r-hero h1 {
-    font-family: var(--r-display);
-    font-size: 26px;
-    font-weight: 800;
-    line-height: 1.08;
-    color: var(--r-ink);
-    margin: 0 0 10px;
-    letter-spacing: -0.6px;
-  }
-
-  .r-hero h1 span { color: var(--r-blue); }
-
-  .r-hero p {
-    font-size: 12px;
-    line-height: 1.45;
-    color: var(--r-slate);
-    margin: 0;
-  }
-
-  .r-hero-img-wrap {
-    position: relative;
-    flex: 0 0 40%;
-    width: 150px;
-    height: 200px;
-    z-index: 1;
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-  }
-
-  .r-blob {
-    position: absolute;
-    right: 0;
-    top: 0;
-    width: 150px;
-    height: 190px;
-    background: var(--r-blue-light);
-    border-radius: 50% 50% 45% 55%;
-    z-index: 1;
-  }
-
-  .r-dots {
-    position: absolute;
-    right: -8px;
-    top: 8px;
-    width: 60px;
-    height: 60px;
-    background-image: radial-gradient(#CBD5E1 1.5px, transparent 1.5px);
-    background-size: 8px 8px;
-    z-index: 0;
-  }
-
-  .r-hero-img {
-    position: relative;
-    z-index: 2;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    object-position: 50% 10%;
-    border-radius: 80px 80px 20px 20px;
-  }
-
-  .r-benefits {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-    padding: 0 20px 18px;
-  }
-
-  .r-benefit {
-    background: var(--r-white);
-    border-radius: var(--r-radius);
-    padding: 14px 8px;
-    text-align: center;
-    box-shadow: 0 2px 12px rgba(0,0,0,.04);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    min-height: 150px;
-  }
-
-  .r-benefit-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    background: var(--r-blue);
-    color: var(--r-white);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 10px;
-  }
-
-  .r-benefit h4 { font-size: 11px; font-weight: 700; color: var(--r-ink); margin: 0 0 6px; }
-  .r-benefit p { font-size: 9px; color: var(--r-slate); line-height: 1.4; margin: 0; }
-
-  .r-services-card {
-    background: var(--r-white);
-    border-radius: var(--r-radius);
-    margin: 0 20px 18px;
-    padding: 20px 0;
-    box-shadow: 0 2px 12px rgba(0,0,0,.04);
-  }
-
-  .r-services-title {
-    font-family: var(--r-display);
-    font-size: 16px;
-    font-weight: 700;
-    text-align: center;
-    color: var(--r-ink);
-    margin: 0 0 16px;
-  }
-
-  .r-services-grid {
-    display: flex;
-    justify-content: space-between;
-    align-items: stretch;
-  }
-
-  .r-service {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 5px;
-    text-decoration: none;
-    color: var(--r-ink);
-    font-size: 10px;
-    text-align: center;
-    padding: 0 6px;
-    border-right: 1px solid var(--r-line);
-  }
-
-  .r-service:last-child { border-right: none; }
-
-  .r-service-icon { color: var(--r-blue); }
-
-  .r-actions { padding: 0 20px; }
-
-  .r-btn {
-    width: 100%;
-    height: 52px;
-    border-radius: 14px;
-    font-size: 15px;
-    font-weight: 700;
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    margin-bottom: 10px;
-    border: none;
-  }
-
-  .r-btn-primary { background: var(--r-blue); color: var(--r-white); }
-  .r-btn-outline { background: var(--r-white); color: var(--r-blue); border: 1.5px solid var(--r-blue); }
-
-  .r-footer-trust {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    margin-top: 20px;
-    font-size: 11px;
-    color: var(--r-slate);
-    padding: 0 20px;
-  }
-
-  @media (min-width: 430px) {
-    .r-app { max-width: 430px; margin: 0 auto; box-shadow: 0 0 40px rgba(0,0,0,.08); }
-  }
-</style>
-
-<div class="r-app">
-  <header class="r-header">
-    <a href="{{ url_for('index') }}" class="r-logo">
-      <div class="r-logo-mark">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 13 8 13s8-7.75 8-13a8 8 0 0 0-8-8z"/></svg>
+<header class="f-header">
+  <div class="f-container f-header-inner">
+    <button class="f-menu-btn" aria-label="Menu">
+      <img src="{{ url_for('static', filename='img/icon-menu.svg') }}" width="24" height="24" alt="" />
+    </button>
+    <a href="{{ url_for('index') }}" class="f-logo">
+      <div class="f-logo-mark">
+        <img src="{{ url_for('static', filename='img/icon-wrench.svg') }}" width="22" height="22" alt="" />
       </div>
       FixPro
     </a>
-    <div class="r-trust">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
-      <span>Service fiable<br>et sécurisé</span>
-    </div>
-  </header>
-
-  <section class="r-hero">
-    <div class="r-hero-text">
-      <h1>Vos pannes,<br><span>nos solutions.</span></h1>
-      <p>Trouvez facilement des techniciens qualifiés pour tous vos besoins à domicile.</p>
-    </div>
-    <div class="r-hero-img-wrap">
-      <div class="r-dots"></div>
-      <div class="r-blob"></div>
-      <img src="{{ url_for('static', filename='img/technician-hero-v2.jpg') }}" alt="Technicien FixPro" class="r-hero-img" onerror="this.src='https://images.unsplash.com/photo-1687422810663-c316494f725a?w=800&auto=format&fit=crop'" />
-    </div>
-  </section>
-
-  <section class="r-benefits">
-    <div class="r-benefit">
-      <div class="r-benefit-icon">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
+    <nav class="f-nav-desktop">
+      <a href="{{ url_for('index') }}" class="active">Accueil</a>
+      <a href="{{ url_for('artisans_page') }}">Recherche</a>
+      <a href="{{ url_for('artisans_page') }}">Professionnels</a>
+      <a href="{{ url_for('requests_list') }}">Réservations</a>
+      <a href="{{ url_for('conversations') }}">Messages</a>
+      <a href="{{ url_for('reviews') }}">Avis</a>
+    </nav>
+    <div class="f-header-right">
+      <div class="f-header-loc">
+        <img src="{{ url_for('static', filename='img/icon-map-pin.svg') }}" width="16" height="16" alt="" />
+        Abidjan, Cocody
       </div>
-      <h4>Techniciens qualifiés</h4>
-      <p>Des professionnels vérifiés et notés par les clients.</p>
-    </div>
-    <div class="r-benefit">
-      <div class="r-benefit-icon">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-      </div>
-      <h4>Intervention rapide</h4>
-      <p>Trouvez un technicien disponible près de chez vous.</p>
-    </div>
-    <div class="r-benefit">
-      <div class="r-benefit-icon">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
-      </div>
-      <h4>Service sécurisé</h4>
-      <p>Paiement sécurisé et suivi de votre demande.</p>
-    </div>
-  </section>
-
-  <section class="r-services-card">
-    <h2 class="r-services-title">Services disponibles</h2>
-    <div class="r-services-grid">
-      <a href="{{ url_for('artisans_page', q='electricite') }}" class="r-service">
-        <div class="r-service-icon"><img src="{{ url_for('static', filename='img/icon-zap.svg') }}" width="26" height="26" alt="Électricité" /></div>
-        <span>Électricité</span>
+      <a href="{{ url_for('notifications') }}" class="f-notif">
+        <img src="{{ url_for('static', filename='img/icon-bell.svg') }}" width="22" height="22" alt="" />
+        <span class="f-badge">3</span>
       </a>
-      <a href="{{ url_for('artisans_page', q='plomberie') }}" class="r-service">
-        <div class="r-service-icon"><img src="{{ url_for('static', filename='img/icon-droplet.svg') }}" width="26" height="26" alt="Plomberie" /></div>
-        <span>Plomberie</span>
-      </a>
-      <a href="{{ url_for('artisans_page', q='climatisation') }}" class="r-service">
-        <div class="r-service-icon"><img src="{{ url_for('static', filename='img/icon-wind.svg') }}" width="26" height="26" alt="Climatisation" /></div>
-        <span>Climatisation</span>
-      </a>
-      <a href="{{ url_for('artisans_page', q='refrigeration') }}" class="r-service">
-        <div class="r-service-icon"><img src="{{ url_for('static', filename='img/icon-washing-machine.svg') }}" width="26" height="26" alt="Électroménager" /></div>
-        <span>Électroménager</span>
-      </a>
-      <a href="{{ url_for('artisans_page', q='peinture') }}" class="r-service">
-        <div class="r-service-icon"><img src="{{ url_for('static', filename='img/icon-paint-roller.svg') }}" width="26" height="26" alt="Peinture" /></div>
-        <span>Peinture</span>
+      <a href="{{ url_for('login') }}" class="f-avatar-link">
+        <img src="{{ url_for('static', filename='img/fixpro-avatar.png') }}" class="f-avatar-sm" alt="Profil" />
       </a>
     </div>
-  </section>
-
-  <section class="r-actions">
-    <a href="{{ url_for('register') }}" class="r-btn r-btn-primary">
-      Créer un compte
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-    </a>
-    <a href="{{ url_for('login') }}" class="r-btn r-btn-outline">Se connecter</a>
-  </section>
-
-  <div class="r-footer-trust">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--r-blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
-    Des milliers de clients nous font déjà confiance
   </div>
-</div>
+</header>
+
+<section class="f-hero">
+  <div class="f-hero-bg"></div>
+  <div class="f-hero-city"></div>
+  <div class="f-container f-hero-inner">
+    <div class="f-hero-text">
+      <h1>Trouvez rapidement<br><span>le bon professionnel</span><br>pour vos travaux</h1>
+      <div class="f-hero-badges">
+        <span><img src="{{ url_for('static', filename='img/icon-shield-check.svg') }}" width="18" height="18" alt="" /> Fiable</span>
+        <span><img src="{{ url_for('static', filename='img/icon-clock.svg') }}" width="18" height="18" alt="" /> Rapide</span>
+        <span><img src="{{ url_for('static', filename='img/icon-wrench.svg') }}" width="18" height="18" alt="" /> Professionnel</span>
+      </div>
+    </div>
+    <div class="f-hero-avatar-wrap">
+      <img src="{{ url_for('static', filename='img/fixpro-avatar.png') }}" alt="Technicien FixPro" class="f-hero-avatar" />
+    </div>
+  </div>
+</section>
+
+<section class="f-container">
+  <div class="f-search-card">
+    <h2>De quoi avez-vous besoin ?</h2>
+    <div class="f-cats">
+      <a href="{{ url_for('artisans_page', q='plomberie') }}" class="f-cat f-cat-plumber">
+        <div class="f-cat-icon"><img src="{{ url_for('static', filename='img/icon-droplet.svg') }}" width="28" height="28" alt="" /></div>
+        <h3>Plombier</h3>
+        <p>Tous vos travaux de plomberie</p>
+        <div class="f-cat-bar"></div>
+      </a>
+      <a href="{{ url_for('artisans_page', q='electricite') }}" class="f-cat f-cat-electrician">
+        <div class="f-cat-icon"><img src="{{ url_for('static', filename='img/icon-zap.svg') }}" width="28" height="28" alt="" /></div>
+        <h3>Électricien</h3>
+        <p>Installations et dépannages</p>
+        <div class="f-cat-bar"></div>
+      </a>
+      <a href="{{ url_for('artisans_page', q='refrigeration') }}" class="f-cat f-cat-frigo">
+        <div class="f-cat-icon"><img src="{{ url_for('static', filename='img/icon-snowflake.svg') }}" width="28" height="28" alt="" /></div>
+        <h3>Frigoriste</h3>
+        <p>Climatisation et froid</p>
+        <div class="f-cat-bar"></div>
+      </a>
+    </div>
+
+    <div class="f-loc">
+      <h3>Où se situe le problème ?</h3>
+      <form method="get" action="{{ url_for('artisans_page') }}" class="f-loc-input">
+        <img src="{{ url_for('static', filename='img/icon-map-pin.svg') }}" width="20" height="20" alt="" />
+        <input type="text" name="location" placeholder="Entrez votre localisation" />
+        <button type="button" class="f-loc-target" aria-label="Ma position">
+          <img src="{{ url_for('static', filename='img/icon-navigation.svg') }}" width="20" height="20" alt="" />
+        </button>
+      </form>
+    </div>
+
+    <a href="{{ url_for('artisans_page') }}" class="f-btn">
+      <img src="{{ url_for('static', filename='img/icon-search.svg') }}" width="18" height="18" alt="" />
+      Rechercher un professionnel
+    </a>
+  </div>
+</section>
+
+<section class="f-section f-container">
+  <div class="f-section-header">
+    <h2>Professionnels recommandés</h2>
+    <a href="{{ url_for('artisans_page') }}" class="f-link">Voir tout <img src="{{ url_for('static', filename='img/icon-chevron-right.svg') }}" width="14" height="14" alt="" /></a>
+  </div>
+  <div class="f-pros-grid">
+    <a href="{{ url_for('artisan_detail', artisan_id=1) }}" class="f-pro-card">
+      <div class="f-pro-avatar-wrap">
+        <img src="{{ url_for('static', filename='img/fixpro-avatar.png') }}" class="f-pro-avatar" alt="Mamadou S." />
+        <span class="f-pro-online"></span>
+      </div>
+      <div class="f-pro-info">
+        <h4>Mamadou S.</h4>
+        <p class="f-pro-job">Plombier</p>
+        <div class="f-pro-meta">
+          <span class="f-pro-rating"><img src="{{ url_for('static', filename='img/icon-star.svg') }}" alt="" /> 4.8</span>
+          <span>(128 avis)</span>
+        </div>
+        <div class="f-pro-meta"><img src="{{ url_for('static', filename='img/icon-map-pin.svg') }}" width="14" height="14" alt="" /> 2.5 km</div>
+        <span class="f-pro-btn">Voir le profil</span>
+      </div>
+    </a>
+    <a href="{{ url_for('artisan_detail', artisan_id=2) }}" class="f-pro-card">
+      <div class="f-pro-avatar-wrap">
+        <img src="{{ url_for('static', filename='img/fixpro-avatar.png') }}" class="f-pro-avatar" alt="Ibrahima K." />
+        <span class="f-pro-online"></span>
+      </div>
+      <div class="f-pro-info">
+        <h4>Ibrahima K.</h4>
+        <p class="f-pro-job">Électricien</p>
+        <div class="f-pro-meta">
+          <span class="f-pro-rating"><img src="{{ url_for('static', filename='img/icon-star.svg') }}" alt="" /> 4.7</span>
+          <span>(96 avis)</span>
+        </div>
+        <div class="f-pro-meta"><img src="{{ url_for('static', filename='img/icon-map-pin.svg') }}" width="14" height="14" alt="" /> 3.1 km</div>
+        <span class="f-pro-btn">Voir le profil</span>
+      </div>
+    </a>
+    <a href="{{ url_for('artisan_detail', artisan_id=3) }}" class="f-pro-card">
+      <div class="f-pro-avatar-wrap">
+        <img src="{{ url_for('static', filename='img/fixpro-avatar.png') }}" class="f-pro-avatar" alt="Ousmane D." />
+        <span class="f-pro-online"></span>
+      </div>
+      <div class="f-pro-info">
+        <h4>Ousmane D.</h4>
+        <p class="f-pro-job">Frigoriste</p>
+        <div class="f-pro-meta">
+          <span class="f-pro-rating"><img src="{{ url_for('static', filename='img/icon-star.svg') }}" alt="" /> 4.9</span>
+          <span>(74 avis)</span>
+        </div>
+        <div class="f-pro-meta"><img src="{{ url_for('static', filename='img/icon-map-pin.svg') }}" width="14" height="14" alt="" /> 2.8 km</div>
+        <span class="f-pro-btn">Voir le profil</span>
+      </div>
+    </a>
+  </div>
+</section>
+
+<section class="f-section f-container">
+  <div class="f-benefits">
+    <div class="f-benefit">
+      <img src="{{ url_for('static', filename='img/icon-shield-check.svg') }}" alt="" />
+      <h4>Professionnels vérifiés</h4>
+      <p>Tous nos professionnels sont rigoureusement vérifiés</p>
+    </div>
+    <div class="f-benefit">
+      <img src="{{ url_for('static', filename='img/icon-thumbs-up.svg') }}" alt="" />
+      <h4>Avis clients authentiques</h4>
+      <p>Des milliers d'avis pour vous aider à faire le bon choix</p>
+    </div>
+    <div class="f-benefit">
+      <img src="{{ url_for('static', filename='img/icon-clock.svg') }}" alt="" />
+      <h4>Intervention rapide</h4>
+      <p>Des professionnels disponibles près de chez vous</p>
+    </div>
+    <div class="f-benefit">
+      <img src="{{ url_for('static', filename='img/icon-lock.svg') }}" alt="" />
+      <h4>Paiement sécurisé</h4>
+      <p>Payez en toute sécurité après l'intervention</p>
+    </div>
+  </div>
+</section>
+
+<nav class="f-bottom-nav">
+  <a href="{{ url_for('index') }}" class="active">
+    <img src="{{ url_for('static', filename='img/icon-home.svg') }}" width="22" height="22" alt="" />
+    Accueil
+  </a>
+  <a href="{{ url_for('artisans_page') }}">
+    <img src="{{ url_for('static', filename='img/icon-search.svg') }}" width="22" height="22" alt="" />
+    Recherche
+  </a>
+  <a href="{{ url_for('requests_list') }}" class="f-main">
+    <img src="{{ url_for('static', filename='img/icon-calendar.svg') }}" width="24" height="24" alt="" />
+    Réservations
+  </a>
+  <a href="{{ url_for('conversations') }}">
+    <img src="{{ url_for('static', filename='img/icon-message-circle.svg') }}" width="22" height="22" alt="" />
+    Messages
+    <span class="f-notif">2</span>
+  </a>
+  <a href="{{ url_for('login') }}">
+    <img src="{{ url_for('static', filename='img/icon-user.svg') }}" width="22" height="22" alt="" />
+    Profil
+  </a>
+</nav>
+
+<style>
+  body { padding-bottom: 80px; }
+</style>
 {% endblock %}
