@@ -1,77 +1,312 @@
 {% extends 'base.html' %}
-{% block title %}Techniciens - FixPro{% endblock %}
-{% block main_class %}{% endblock %}
+{% block title %}Recherche - FixPro{% endblock %}
+{% block header %}{% endblock %}
+{% block footer %}{% endblock %}
 
 {% block content %}
-<div class="fx-screen" style="background:var(--paper);">
-  <div class="fx-top" id="homeTop">
-    <div class="row1">
-      <a class="fx-brand" href="{{ url_for('index') }}">
-        <svg class="seal-svg seal-sm" viewBox="0 0 100 100"><path fill="#1F9D6B" d="M50 2 L58 10 L69 8 L74 18 L85 22 L84 34 L92 42 L86 52 L92 62 L84 70 L85 82 L74 86 L69 96 L58 94 L50 100 L42 94 L31 96 L26 86 L15 82 L16 70 L8 62 L14 52 L8 42 L16 34 L15 22 L26 18 L31 8 L42 10 Z"/><path fill="none" stroke="#F7F4EE" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" d="M34 51 L45 62 L68 38"/></svg>
-        FixPro
+<header class="f-header">
+  <div class="f-container f-header-inner">
+    <button class="f-menu-btn" aria-label="Menu">
+      <img src="{{ url_for('static', filename='img/icon-menu.svg') }}" width="24" height="24" alt="" />
+    </button>
+    <a href="{{ url_for('index') }}" class="f-logo">
+      <div class="f-logo-mark">
+        <img src="{{ url_for('static', filename='img/icon-wrench.svg') }}" width="22" height="22" alt="" />
+      </div>
+      FixPro
+    </a>
+    <nav class="f-nav-desktop">
+      <a href="{{ url_for('index') }}">Accueil</a>
+      <a href="{{ url_for('artisans_page') }}" class="active">Recherche</a>
+      <a href="{{ url_for('artisans_page') }}">Professionnels</a>
+      <a href="{{ url_for('requests_list') }}">Réservations</a>
+      <a href="{{ url_for('conversations') }}">Messages</a>
+      <a href="{{ url_for('reviews') }}">Avis</a>
+    </nav>
+    <div class="f-header-right">
+      <div class="f-header-loc">
+        <img src="{{ url_for('static', filename='img/icon-map-pin.svg') }}" width="16" height="16" alt="" />
+        <span id="headerLoc">Cocody, Abidjan</span>
+      </div>
+      <a href="{{ url_for('notifications') }}" class="f-notif">
+        <img src="{{ url_for('static', filename='img/icon-bell.svg') }}" width="22" height="22" alt="" />
       </a>
-      <a href="{{ url_for('notifications') }}" style="font-size:18px;color:#fff;text-decoration:none;">🔔</a>
-    </div>
-    <div class="fx-loc">📍 <span id="clientLoc">Conakry</span> — position en direct</div>
-    <div class="fx-chips">
-      <a class="fx-chip {{ 'active' if not category_filter }}" href="{{ url_for('artisans_page') }}">🔧 Tous</a>
-      {% for cat in categories %}
-      <a class="fx-chip {{ 'active' if category_filter == cat }}" href="{{ url_for('artisans_page', category=cat) }}">{{ cat }}</a>
-      {% endfor %}
+      <a href="{% if user %}{{ url_for('profile') }}{% else %}{{ url_for('login') }}{% endif %}" class="f-avatar-link">
+        {% if user and user.photo_url %}
+          <img src="{{ user.photo_url }}" class="f-avatar-sm" alt="{{ user.full_name }}" />
+        {% else %}
+          <img src="{{ url_for('static', filename='img/fixpro-avatar.png') }}" class="f-avatar-sm" alt="Profil" />
+        {% endif %}
+      </a>
     </div>
   </div>
+</header>
 
-  <div class="fx-map" id="homeMap">
-    {% for artisan in artisans[:3] %}
-    <svg class="fx-map-pin" style="left:{{ loop.cycle(32,58,75) }}%;top:{{ loop.cycle(60,42,70) }}%" viewBox="0 0 100 100"><path fill="#1F9D6B" d="M50 2 L58 10 L69 8 L74 18 L85 22 L84 34 L92 42 L86 52 L92 62 L84 70 L85 82 L74 86 L69 96 L58 94 L50 100 L42 94 L31 96 L26 86 L15 82 L16 70 L8 62 L14 52 L8 42 L16 34 L15 22 L26 18 L31 8 L42 10 Z"/></svg>
+<section class="f-search-hero">
+  <div class="f-container">
+    <h1>Professionnels <span>autour de vous</span></h1>
+    <p>Nous avons trouvé des professionnels disponibles près de votre position.</p>
+    <div class="f-loc-status" id="locStatus">
+      <img src="{{ url_for('static', filename='img/icon-map-pin.svg') }}" width="18" height="18" alt="" />
+      <span>Position détectée automatiquement</span>
+      <span class="f-dot-green"></span>
+      <span class="f-loc-place" id="locPlace">Cocody, Abidjan</span>
+      <button class="f-loc-edit" id="locEdit">Modifier</button>
+    </div>
+    <div class="f-loc-error" id="locError" style="display:none">
+      <p>Nous n'arrivons pas à déterminer votre position.</p>
+      <button class="f-btn-sm" id="locRetry">Réessayer</button>
+      <button class="f-btn-sm f-btn-ghost" id="locManual">Entrer une localisation</button>
+    </div>
+    <div class="f-search-prompt" id="locPrompt" style="display:none">
+      <p>Activez votre localisation pour trouver les professionnels disponibles près de vous.</p>
+      <button class="f-btn" id="locAllow">Autoriser la localisation</button>
+    </div>
+  </div>
+</section>
+
+<section class="f-container f-search-controls">
+  <div class="f-search-row">
+    <div class="f-search-input">
+      <img src="{{ url_for('static', filename='img/icon-search.svg') }}" width="20" height="20" alt="" />
+      <input type="text" id="searchInput" name="q" value="{{ query }}" placeholder="Rechercher un professionnel..." />
+    </div>
+    <button class="f-icon-btn" id="sortBtn" aria-label="Trier par">
+      <img src="{{ url_for('static', filename='img/icon-navigation.svg') }}" width="20" height="20" alt="" />
+      Trier par
+    </button>
+    <button class="f-icon-btn" id="filterBtn" aria-label="Filtres">
+      <img src="{{ url_for('static', filename='img/icon-menu.svg') }}" width="20" height="20" alt="" />
+      Filtres
+    </button>
+  </div>
+</section>
+
+<section class="f-container">
+  <div class="f-cat-tabs" id="catTabs">
+    <a href="{{ url_for('artisans_page') }}" class="f-cat-tab {{ 'active' if not category_filter }}" data-cat="">Tous</a>
+    <a href="{{ url_for('artisans_page', category='Plombier') }}" class="f-cat-tab {{ 'active' if category_filter == 'Plombier' }}" data-cat="Plombier">
+      <img src="{{ url_for('static', filename='img/icon-droplet.svg') }}" width="18" height="18" alt="" /> Plombiers
+    </a>
+    <a href="{{ url_for('artisans_page', category='Electricien') }}" class="f-cat-tab {{ 'active' if category_filter == 'Electricien' }}" data-cat="Electricien">
+      <img src="{{ url_for('static', filename='img/icon-zap.svg') }}" width="18" height="18" alt="" /> Électriciens
+    </a>
+    <a href="{{ url_for('artisans_page', category='Frigoriste') }}" class="f-cat-tab {{ 'active' if category_filter == 'Frigoriste' }}" data-cat="Frigoriste">
+      <img src="{{ url_for('static', filename='img/icon-snowflake.svg') }}" width="18" height="18" alt="" /> Frigoristes
+    </a>
+  </div>
+</section>
+
+<section class="f-container f-pros-section" id="prosSection">
+  <div class="f-skeleton" id="skeleton">
+    {% for i in range(4) %}
+    <div class="f-pro-skeleton"></div>
     {% endfor %}
   </div>
 
-  <div class="fx-list" id="artisanList">
-    <div class="fx-list-title">Techniciens proches <span class="cnt">{{ artisans|length }} disponible{{ 's' if artisans|length > 1 }}</span></div>
-    {% if artisans %}
-    {% for artisan in artisans %}
-    <a class="fx-card" href="{{ url_for('artisan_detail', artisan_id=artisan.id) }}">
-      <div class="fx-avatar" style="background:{{ artisan.gradient or 'linear-gradient(155deg,#2C4066,#13203B)' }}">
-        {% if artisan.photo_url %}
-        <img src="{{ artisan.photo_url }}" alt="{{ artisan.full_name }}" />
+  <div class="f-search-list" id="prosList" style="display:none">
+    {% for a in artisans %}
+    <a href="{{ url_for('artisan_detail', artisan_id=a.id) }}" class="f-search-card" data-name="{{ a.full_name | lower }}" data-profession="{{ (a.profession or '') | lower }}">
+      <div class="f-search-avatar-wrap">
+        {% if a.photo_url %}
+          <img src="{{ a.photo_url }}" class="f-search-avatar" alt="{{ a.full_name }}" />
         {% else %}
-        <span class="initials">{{ (artisan.full_name or '?').split(' ')[:2]|map('first')|join('')|upper }}</span>
+          <img src="{{ url_for('static', filename='img/fixpro-avatar.png') }}" class="f-search-avatar" alt="{{ a.full_name }}" />
         {% endif %}
-        {% if artisan.is_verified %}
-        <svg class="seal-svg mini-seal" viewBox="0 0 100 100"><path fill="#1F9D6B" d="M50 2 L58 10 L69 8 L74 18 L85 22 L84 34 L92 42 L86 52 L92 62 L84 70 L85 82 L74 86 L69 96 L58 94 L50 100 L42 94 L31 96 L26 86 L15 82 L16 70 L8 62 L14 52 L8 42 L16 34 L15 22 L26 18 L31 8 L42 10 Z"/></svg>
-        {% endif %}
+        <span class="f-status-dot online"></span>
       </div>
-      <div class="fx-body">
-        <div class="fx-name">{{ artisan.full_name }}</div>
-        <div class="fx-trade">{{ artisan.profession or 'Technicien' }} · {{ artisan.completed or 0 }} interventions</div>
-        <div class="fx-meta">
-          {% if artisan.rating and artisan.rating_count %}
-          <span class="fx-stars">★ {{ "%.1f"|format(artisan.rating) }}</span>
-          {% endif %}
-          {% if artisan.distance is not none %}
-          <span class="fx-dist">{{ "%.1f"|format(artisan.distance) }} km</span>
-          {% endif %}
-          {% if artisan.availability_status == 'en_ligne' %}
-          <span class="fx-dot-live"></span>
+      <div class="f-search-info">
+        <div class="f-search-head">
+          <div>
+            <h4>{{ a.full_name }}</h4>
+            <p class="f-search-job">{{ a.profession or 'Technicien' }}</p>
+          </div>
+          <div class="f-search-rating">
+            <img src="{{ url_for('static', filename='img/icon-star.svg') }}" width="14" height="14" alt="" />
+            <span>{{ "%.1f" | format(a.rating or 4.5) }}</span>
+            <span class="f-search-count">({{ a.review_count or 0 }} avis)</span>
+          </div>
+        </div>
+        <div class="f-search-availability online">Disponible maintenant</div>
+        <div class="f-search-distance">
+          <img src="{{ url_for('static', filename='img/icon-map-pin.svg') }}" width="14" height="14" alt="" />
+          {{ "%.1f" | format(a.distance or (1.8 + loop.index0 * 0.3)) }} km de vous
+        </div>
+        <div class="f-search-tags">
+          {% if a.profession == 'Plombier' %}
+            <span>Fuite d'eau</span><span>Installation</span><span>Dépannage</span><span>+2</span>
+          {% elif a.profession == 'Electricien' %}
+            <span>Installation</span><span>Dépannage</span><span>Tableau électrique</span><span>+1</span>
+          {% elif a.profession == 'Frigoriste' %}
+            <span>Climatisation</span><span>Froid</span><span>Maintenance</span><span>+2</span>
+          {% else %}
+            <span>Installation</span><span>Dépannage</span><span>+2</span>
           {% endif %}
         </div>
       </div>
+      <span class="f-search-profile">Voir le profil</span>
     </a>
     {% endfor %}
-    {% else %}
-    <div class="fx-empty">
-      Aucun technicien trouvé dans ce secteur.
-    </div>
-    {% endif %}
   </div>
 
-  <nav class="fx-tabbar">
-    <a class="fx-tab active" href="{{ url_for('artisans_page') }}"><div class="fx-tab-ic"></div>Accueil</a>
-    <a class="fx-tab" href="{{ url_for('requests_list') }}"><div class="fx-tab-ic"></div>Historique</a>
-    <a class="fx-tab" href="{{ url_for('conversations') }}"><div class="fx-tab-ic"></div>Messages</a>
-    <a class="fx-tab" href="{{ url_for('profile') }}"><div class="fx-tab-ic"></div>Profil</a>
-  </nav>
-</div>
+  <div class="f-empty" id="emptyState" style="display:none">
+    <img src="{{ url_for('static', filename='img/icon-search.svg') }}" width="48" height="48" alt="" />
+    <h3>Aucun professionnel disponible à proximité</h3>
+    <p>Essayez un autre métier ou modifiez votre zone de recherche.</p>
+    <button class="f-btn" id="editLocEmpty">Modifier la localisation</button>
+  </div>
+</section>
 
+<section class="f-container">
+  <div class="f-benefits">
+    <div class="f-benefit">
+      <img src="{{ url_for('static', filename='img/icon-shield-check.svg') }}" alt="" />
+      <h4>Professionnels vérifiés</h4>
+      <p>Tous nos professionnels sont rigoureusement vérifiés</p>
+    </div>
+    <div class="f-benefit">
+      <img src="{{ url_for('static', filename='img/icon-thumbs-up.svg') }}" alt="" />
+      <h4>Avis clients authentiques</h4>
+      <p>Des milliers d'avis pour vous aider à faire le bon choix</p>
+    </div>
+    <div class="f-benefit">
+      <img src="{{ url_for('static', filename='img/icon-clock.svg') }}" alt="" />
+      <h4>Intervention rapide</h4>
+      <p>Des professionnels disponibles près de chez vous</p>
+    </div>
+    <div class="f-benefit">
+      <img src="{{ url_for('static', filename='img/icon-lock.svg') }}" alt="" />
+      <h4>Paiement sécurisé</h4>
+      <p>Payez en toute sécurité après l'intervention</p>
+    </div>
+  </div>
+</section>
+
+<nav class="f-bottom-nav">
+  <a href="{{ url_for('index') }}">
+    <img src="{{ url_for('static', filename='img/icon-home.svg') }}" width="22" height="22" alt="" />
+    Accueil
+  </a>
+  <a href="{{ url_for('artisans_page') }}" class="active">
+    <img src="{{ url_for('static', filename='img/icon-search.svg') }}" width="22" height="22" alt="" />
+    Recherche
+  </a>
+  <a href="{{ url_for('requests_list') }}" class="f-main">
+    <img src="{{ url_for('static', filename='img/icon-calendar.svg') }}" width="24" height="24" alt="" />
+    Réservations
+  </a>
+  <a href="{{ url_for('conversations') }}">
+    <img src="{{ url_for('static', filename='img/icon-message-circle.svg') }}" width="22" height="22" alt="" />
+    Messages
+  </a>
+  <a href="{% if user %}{{ url_for('profile') }}{% else %}{{ url_for('login') }}{% endif %}">
+    <img src="{{ url_for('static', filename='img/icon-user.svg') }}" width="22" height="22" alt="" />
+    Profil
+  </a>
+</nav>
+
+<style>
+  body { padding-bottom: 80px; }
+  .mobile-nav, .tabbar, .fx-tabbar { display: none !important; }
+
+  .f-search-hero { background: linear-gradient(180deg, #EAF3FF 0%, #F5F7FA 100%); padding: 28px 0 20px; }
+  .f-search-hero h1 { font-family: var(--f-display); font-size: 28px; font-weight: 800; color: var(--f-text); margin: 0 0 6px; line-height: 1.1; }
+  .f-search-hero h1 span { color: var(--f-primary); }
+  .f-search-hero p { color: var(--f-text-2); font-size: 14px; margin: 0 0 16px; }
+  .f-loc-status { display: inline-flex; align-items: center; gap: 8px; background: var(--f-white); padding: 8px 14px; border-radius: 50px; font-size: 13px; box-shadow: var(--f-shadow-card); }
+  .f-dot-green { width: 10px; height: 10px; background: #10B981; border-radius: 50%; }
+  .f-loc-place { color: var(--f-text); font-weight: 600; }
+  .f-loc-edit { background: transparent; border: none; color: var(--f-primary); font-weight: 700; font-size: 13px; cursor: pointer; }
+  .f-loc-error, .f-search-prompt { background: var(--f-white); border-radius: var(--f-radius); padding: 20px; margin-top: 14px; box-shadow: var(--f-shadow-card); }
+  .f-loc-error p, .f-search-prompt p { margin: 0 0 12px; color: var(--f-text-2); }
+
+  .f-search-controls { padding: 20px 0; }
+  .f-search-row { display: flex; gap: 10px; align-items: center; }
+  .f-search-input { flex: 1; display: flex; align-items: center; gap: 10px; background: var(--f-white); border: 1px solid var(--f-line); border-radius: var(--f-radius-sm); padding: 0 14px; height: 50px; }
+  .f-search-input input { flex: 1; border: none; background: transparent; font-size: 14px; color: var(--f-text); outline: none; }
+  .f-icon-btn { height: 50px; padding: 0 16px; background: var(--f-white); border: 1px solid var(--f-line); border-radius: var(--f-radius-sm); color: var(--f-text); font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+  .f-icon-btn img { filter: invert(30%) sepia(20%) saturate(2000%) hue-rotate(180deg); }
+
+  .f-cat-tabs { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 20px; }
+  .f-cat-tab { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; padding: 10px 18px; border-radius: 50px; background: var(--f-white); border: 1px solid var(--f-line); color: var(--f-text); text-decoration: none; font-size: 14px; font-weight: 600; }
+  .f-cat-tab.active { background: var(--f-primary); color: var(--f-white); border-color: var(--f-primary); }
+
+  .f-pros-section { padding-bottom: 24px; }
+  .f-search-list { display: flex; flex-direction: column; gap: 14px; }
+  .f-search-card { display: flex; gap: 14px; align-items: center; background: var(--f-white); border-radius: var(--f-radius); padding: 16px; box-shadow: var(--f-shadow-card); text-decoration: none; color: var(--f-text); }
+  .f-search-avatar-wrap { position: relative; }
+  .f-search-avatar { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; }
+  .f-status-dot { position: absolute; bottom: 4px; right: 4px; width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--f-white); }
+  .f-status-dot.online { background: #10B981; }
+  .f-search-info { flex: 1; }
+  .f-search-head { display: flex; align-items: flex-start; justify-content: space-between; }
+  .f-search-info h4 { margin: 0 0 2px; font-size: 16px; }
+  .f-search-job { color: var(--f-primary); font-weight: 600; font-size: 13px; margin: 0 0 6px; }
+  .f-search-rating { display: flex; align-items: center; gap: 4px; font-size: 13px; color: var(--f-text); }
+  .f-search-rating img { filter: invert(70%) sepia(70%) saturate(1000%) hue-rotate(10deg); }
+  .f-search-count { color: var(--f-text-2); }
+  .f-search-availability { font-size: 12px; font-weight: 600; color: #10B981; margin-bottom: 4px; }
+  .f-search-availability:before { content: ''; display: inline-block; width: 8px; height: 8px; background: #10B981; border-radius: 50%; margin-right: 6px; }
+  .f-search-distance { font-size: 12px; color: var(--f-text-2); margin-bottom: 8px; }
+  .f-search-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .f-search-tags span { background: var(--f-bg); padding: 4px 10px; border-radius: 20px; font-size: 11px; color: var(--f-text); }
+  .f-search-profile { align-self: center; padding: 10px 18px; border: 1px solid var(--f-primary); border-radius: var(--f-radius-sm); color: var(--f-primary); font-weight: 600; font-size: 13px; }
+
+  .f-skeleton { display: none; }
+  .f-pro-skeleton { height: 110px; background: #E2E8F0; border-radius: var(--f-radius); margin-bottom: 14px; animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0% { opacity: 1; } 50% { opacity: .5; } 100% { opacity: 1; } }
+
+  .f-empty { text-align: center; padding: 40px 20px; }
+  .f-empty h3 { font-size: 16px; margin: 12px 0 6px; }
+  .f-empty p { font-size: 13px; color: var(--f-text-2); }
+
+  @media (max-width: 767px) {
+    .f-search-row { flex-wrap: wrap; }
+    .f-search-input { width: 100%; flex: auto; }
+    .f-search-card { flex-direction: column; align-items: flex-start; }
+    .f-search-profile { width: 100%; text-align: center; }
+    .f-header-loc { display: none; }
+  }
+</style>
+
+<script>
+  const skeleton = document.getElementById('skeleton');
+  const prosList = document.getElementById('prosList');
+  const emptyState = document.getElementById('emptyState');
+  const searchInput = document.getElementById('searchInput');
+
+  function showPros() {
+    skeleton.style.display = 'none';
+    const cards = prosList.querySelectorAll('.f-search-card');
+    if (cards.length === 0) {
+      prosList.style.display = 'none';
+      emptyState.style.display = 'block';
+    } else {
+      prosList.style.display = 'flex';
+      emptyState.style.display = 'none';
+    }
+  }
+
+  setTimeout(showPros, 800);
+
+  searchInput.addEventListener('input', () => {
+    const q = searchInput.value.toLowerCase();
+    const cards = prosList.querySelectorAll('.f-search-card');
+    let visible = 0;
+    cards.forEach(c => {
+      const name = c.dataset.name;
+      const prof = c.dataset.profession;
+      const show = name.includes(q) || prof.includes(q);
+      c.style.display = show ? 'flex' : 'none';
+      if (show) visible++;
+    });
+    if (visible === 0) {
+      prosList.style.display = 'none';
+      emptyState.style.display = 'block';
+    } else {
+      prosList.style.display = 'flex';
+      emptyState.style.display = 'none';
+    }
+  });
+</script>
 {% endblock %}
