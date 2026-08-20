@@ -107,44 +107,56 @@
   <div class="f-search-list" id="prosList" style="display:none">
     {% for a in artisans %}
     <a href="{{ url_for('artisan_detail', artisan_id=a.id) }}" class="f-search-card" data-name="{{ a.full_name | lower }}" data-profession="{{ (a.profession or '') | lower }}">
-      <div class="f-search-avatar-wrap">
-        {% if a.photo_url %}
-          <img src="{{ a.photo_url }}" class="f-search-avatar" alt="{{ a.full_name }}" />
-        {% else %}
-          <img src="{{ url_for('static', filename='img/fixpro-avatar.png') }}" class="f-search-avatar" alt="{{ a.full_name }}" />
-        {% endif %}
-        <span class="f-status-dot online"></span>
-      </div>
-      <div class="f-search-info">
-        <div class="f-search-head">
-          <div>
-            <h4>{{ a.full_name }}</h4>
-            <p class="f-search-job">{{ a.profession or 'Technicien' }}</p>
-          </div>
-          <div class="f-search-rating">
-            <img src="{{ url_for('static', filename='img/icon-star.svg') }}" width="14" height="14" alt="" />
-            <span>{{ "%.1f" | format(a.rating or 4.5) }}</span>
-            <span class="f-search-count">({{ a.review_count or 0 }} avis)</span>
-          </div>
-        </div>
-        <div class="f-search-availability online">Disponible maintenant</div>
-        <div class="f-search-distance">
-          <img src="{{ url_for('static', filename='img/icon-map-pin.svg') }}" width="14" height="14" alt="" />
-          {{ "%.1f" | format(a.distance or (1.8 + loop.index0 * 0.3)) }} km de vous
-        </div>
-        <div class="f-search-tags">
-          {% if a.profession == 'Plombier' %}
-            <span>Fuite d'eau</span><span>Installation</span><span>Dépannage</span><span>+2</span>
-          {% elif a.profession == 'Electricien' %}
-            <span>Installation</span><span>Dépannage</span><span>Tableau électrique</span><span>+1</span>
-          {% elif a.profession == 'Frigoriste' %}
-            <span>Climatisation</span><span>Froid</span><span>Maintenance</span><span>+2</span>
+      <div class="f-search-main">
+        <div class="f-search-avatar-wrap">
+          {% if a.photo_url %}
+            <img src="{{ a.photo_url }}" class="f-search-avatar" alt="{{ a.full_name }}" />
           {% else %}
-            <span>Installation</span><span>Dépannage</span><span>+2</span>
+            <img src="{{ url_for('static', filename='img/fixpro-avatar.png') }}" class="f-search-avatar" alt="{{ a.full_name }}" />
           {% endif %}
+          <span class="f-status-dot online"></span>
+        </div>
+        <div class="f-search-info">
+          <div class="f-search-head">
+            <h4>{{ a.full_name }}</h4>
+            <div class="f-search-rating">
+              <img src="{{ url_for('static', filename='img/icon-star.svg') }}" width="14" height="14" alt="" />
+              {% if a.review_count and a.review_count > 0 %}
+                <span>{{ "%.1f" | format(a.rating or 4.5) }}</span>
+                <span class="f-search-count">({{ a.review_count }} avis)</span>
+              {% else %}
+                <span class="f-search-count">Nouveau</span>
+              {% endif %}
+            </div>
+          </div>
+          <p class="f-search-job">{{ a.profession or 'Technicien' }}</p>
+          <div class="f-search-availability online">Disponible maintenant</div>
+          <div class="f-search-distance">
+            <img src="{{ url_for('static', filename='img/icon-map-pin.svg') }}" width="14" height="14" alt="" />
+            {{ "%.1f" | format(a.distance or (1.8 + loop.index0 * 0.3)) }} km de vous
+          </div>
+          <div class="f-search-tags">
+            {% if a.profession in ['Plombier', 'Plomberie'] %}
+              <span>Fuite d'eau</span><span>Installation</span><span>Dépannage</span><span>+2</span>
+            {% elif a.profession in ['Electricien', 'Electricite', 'Électricien'] %}
+              <span>Installation</span><span>Dépannage</span><span>Tableau électrique</span><span>+1</span>
+            {% elif a.profession == 'Frigoriste' %}
+              <span>Climatisation</span><span>Froid</span><span>Maintenance</span><span>+2</span>
+            {% elif a.profession == 'Chauffagiste' %}
+              <span>Chauffage</span><span>Dépannage</span><span>Installation</span>
+            {% elif a.profession == 'Serrurier' %}
+              <span>Serrure</span><span>Ouverture</span><span>Installation</span>
+            {% elif a.profession == 'Menuisier' %}
+              <span>Menuiserie</span><span>Dépannage</span><span>Installation</span>
+            {% elif a.profession == 'Maconnerie' %}
+              <span>Maçonnerie</span><span>Rénovation</span><span>Dépannage</span>
+            {% else %}
+              <span>Installation</span><span>Dépannage</span><span>+2</span>
+            {% endif %}
+          </div>
         </div>
       </div>
-      <span class="f-search-profile">Profil</span>
+      <span class="f-search-profile">Voir le profil</span>
     </a>
     {% endfor %}
   </div>
@@ -233,15 +245,16 @@
 
   .f-pros-section { padding-bottom: 24px; }
   .f-search-list { display: flex; flex-direction: column; gap: 14px; }
-  .f-search-card { display: grid; grid-template-columns: 80px minmax(0,1fr) auto; gap: 14px; align-items: center; background: var(--f-white); border-radius: var(--f-radius); padding: 16px; box-shadow: var(--f-shadow-card); text-decoration: none; color: var(--f-text); }
-  .f-search-avatar-wrap { position: relative; }
+  .f-search-card { display: flex; flex-direction: column; gap: 14px; background: var(--f-white); border-radius: var(--f-radius); padding: 16px; box-shadow: var(--f-shadow-card); text-decoration: none; color: var(--f-text); }
+  .f-search-main { display: flex; gap: 14px; }
+  .f-search-avatar-wrap { position: relative; flex: 0 0 80px; }
   .f-search-avatar { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; }
   .f-status-dot { position: absolute; bottom: 4px; right: 4px; width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--f-white); }
   .f-status-dot.online { background: #10B981; }
   .f-search-info { flex: 1; min-width: 0; }
   .f-search-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
-  .f-search-info h4 { margin: 0 0 2px; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .f-search-job { color: var(--f-primary); font-weight: 600; font-size: 13px; margin: 0 0 6px; }
+  .f-search-info h4 { margin: 0; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .f-search-job { color: var(--f-primary); font-weight: 600; font-size: 13px; margin: 4px 0 6px; }
   .f-search-rating { display: flex; align-items: center; gap: 4px; font-size: 13px; color: var(--f-text); white-space: nowrap; }
   .f-search-rating img { filter: invert(70%) sepia(70%) saturate(1000%) hue-rotate(10deg); }
   .f-search-count { color: var(--f-text-2); }
@@ -250,7 +263,7 @@
   .f-search-distance { font-size: 12px; color: var(--f-text-2); margin-bottom: 8px; }
   .f-search-tags { display: flex; flex-wrap: wrap; gap: 6px; }
   .f-search-tags span { background: var(--f-bg); padding: 4px 10px; border-radius: 20px; font-size: 11px; color: var(--f-text); }
-  .f-search-profile { align-self: center; padding: 8px 12px; border: 1px solid var(--f-primary); border-radius: var(--f-radius-sm); color: var(--f-primary); font-weight: 600; font-size: 12px; white-space: nowrap; }
+  .f-search-profile { width: 100%; height: 42px; border-radius: var(--f-radius-sm); background: var(--f-primary); color: var(--f-white); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; text-decoration: none; }
 
   .f-skeleton { display: none; }
   .f-pro-skeleton { height: 110px; background: #E2E8F0; border-radius: var(--f-radius); margin-bottom: 14px; animation: pulse 1.5s infinite; }
@@ -267,8 +280,6 @@
   @media (max-width: 767px) {
     .f-search-row { flex-wrap: wrap; }
     .f-search-input { width: 100%; flex: auto; }
-    .f-search-card { flex-direction: column; align-items: flex-start; }
-    .f-search-profile { width: 100%; text-align: center; }
     .f-header-loc { display: none; }
   }
 </style>
