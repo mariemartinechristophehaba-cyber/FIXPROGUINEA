@@ -1,87 +1,383 @@
 {% extends 'base.html' %}
 {% block title %}{{ artisan.full_name }} - FixPro{% endblock %}
+{% block header %}{% endblock %}
+{% block footer %}{% endblock %}
 
 {% block content %}
-<div class="fx-screen">
-  <div class="fx-hero">
-    <div class="fx-back-row">
-      <a href="{{ url_for('artisans_page') }}">← Retour</a>
-      <span>⋯</span>
-    </div>
-    <div class="fx-p-wrap">
-      <div class="fx-p-avatar" style="background:{{ artisan.gradient or 'linear-gradient(155deg,#3A5580,#132038)' }}">
-        {% if artisan.photo_url %}
-        <img src="{{ artisan.photo_url }}" alt="{{ artisan.full_name }}" />
+<style>
+  .p-page { background: #F5F7FA; min-height: 100vh; padding-bottom: 80px; font-family: 'Inter', sans-serif; }
+  .mobile-nav, .tabbar, .fx-tabbar, .guest-appbar, .topbar { display: none !important; }
+
+  .p-header { background: #155EEF; color: #fff; padding: 12px 0; position: sticky; top: 0; z-index: 100; }
+  .p-header-inner { max-width: 1200px; margin: 0 auto; padding: 0 20px; display: flex; align-items: center; justify-content: space-between; }
+  .p-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; font-weight: 700; font-size: 20px; }
+  .p-logo-mark { width: 38px; height: 38px; background: rgba(255,255,255,.15); border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+  .p-nav { display: none; align-items: center; gap: 28px; }
+  .p-nav a { color: rgba(255,255,255,.85); text-decoration: none; font-size: 14px; font-weight: 500; }
+  .p-nav a.active { color: #fff; position: relative; }
+  .p-nav a.active::after { content: ''; position: absolute; bottom: -6px; left: 0; right: 0; height: 3px; background: #fff; border-radius: 2px; }
+  .p-header-right { display: flex; align-items: center; gap: 18px; }
+  .p-loc { display: none; align-items: center; gap: 6px; font-size: 13px; color: rgba(255,255,255,.9); }
+  .p-user { display: none; align-items: center; gap: 8px; color: #fff; text-decoration: none; font-size: 13px; }
+  .p-avatar-sm { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(255,255,255,.3); }
+  .p-mobile-bar { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+  .p-back { color: #fff; text-decoration: none; font-size: 13px; display: flex; align-items: center; gap: 6px; }
+  .p-top-actions { display: flex; gap: 14px; }
+  .p-top-actions a { color: #fff; text-decoration: none; }
+
+  .p-main { max-width: 1200px; margin: 0 auto; padding: 24px 20px; }
+  .p-back-link { display: inline-flex; align-items: center; gap: 6px; color: #667085; text-decoration: none; font-size: 14px; margin-bottom: 20px; }
+
+  .p-hero { background: #fff; border-radius: 20px; padding: 28px; box-shadow: 0 8px 24px rgba(16,42,67,.06); }
+  .p-hero-grid { display: grid; grid-template-columns: 200px 1fr 260px; gap: 28px; align-items: start; }
+  .p-avatar-wrap { position: relative; width: 180px; height: 180px; }
+  .p-avatar-wrap img { width: 100%; height: 100%; border-radius: 20px; object-fit: cover; }
+  .p-avail-pill { position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%); background: #10B981; color: #fff; padding: 6px 14px; border-radius: 50px; font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .p-avail-pill::before { content: ''; width: 8px; height: 8px; background: #fff; border-radius: 50%; }
+  .p-name-row { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+  .p-name { font-family: 'Space Grotesk', sans-serif; font-size: 32px; font-weight: 800; color: #102A43; margin: 0; }
+  .p-verified { width: 22px; height: 22px; background: #155EEF; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+  .p-job { color: #155EEF; font-size: 16px; font-weight: 700; margin: 0 0 6px; }
+  .p-meta { color: #667085; font-size: 13px; margin-bottom: 16px; }
+  .p-rating-row { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
+  .p-rating { display: flex; align-items: center; gap: 6px; font-size: 14px; color: #102A43; }
+  .p-rating .star { color: #F7B718; font-size: 16px; }
+  .p-rating strong { font-size: 18px; }
+  .p-rating span { color: #667085; }
+  .p-satisfy { display: flex; align-items: center; gap: 6px; color: #10B981; font-weight: 600; font-size: 14px; }
+  .p-stats { display: flex; gap: 24px; flex-wrap: wrap; }
+  .p-stat { display: flex; align-items: center; gap: 10px; color: #667085; font-size: 13px; }
+  .p-stat b { display: block; color: #102A43; font-size: 16px; font-weight: 700; }
+  .p-stat-icon { width: 38px; height: 38px; background: #F5F7FA; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+  .p-actions { display: flex; flex-direction: column; gap: 10px; }
+  .p-btn { height: 46px; border-radius: 10px; font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; cursor: pointer; }
+  .p-btn-primary { background: #155EEF; color: #fff; border: none; }
+  .p-btn-secondary { background: #fff; color: #155EEF; border: 1.5px solid #155EEF; }
+
+  .p-tabs { background: #fff; border-radius: 14px; padding: 6px; display: inline-flex; gap: 6px; margin: 24px 0; box-shadow: 0 4px 12px rgba(16,42,67,.05); }
+  .p-tab { padding: 10px 20px; border-radius: 10px; color: #667085; text-decoration: none; font-size: 14px; font-weight: 600; }
+  .p-tab.active { background: #155EEF; color: #fff; }
+
+  .p-grid { display: grid; grid-template-columns: 1fr 340px; gap: 24px; align-items: start; }
+  .p-card { background: #fff; border-radius: 20px; padding: 24px; margin-bottom: 20px; box-shadow: 0 8px 24px rgba(16,42,67,.06); }
+  .p-card h3 { font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700; color: #102A43; margin: 0 0 16px; }
+  .p-about { color: #667085; font-size: 14px; line-height: 1.6; margin-bottom: 16px; }
+  .p-checks { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .p-check { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #102A43; }
+  .p-check::before { content: '✓'; width: 20px; height: 20px; background: rgba(21,94,239,.1); color: #155EEF; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; flex: 0 0 20px; }
+
+  .p-services { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 14px; }
+  .p-service { background: #F5F7FA; border-radius: 16px; padding: 18px 10px; text-align: center; text-decoration: none; color: #102A43; font-size: 13px; font-weight: 600; }
+  .p-service-icon { width: 44px; height: 44px; background: #fff; border-radius: 12px; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; }
+  .p-service img { width: 24px; height: 24px; }
+
+  .p-reviews { display: grid; grid-template-columns: 120px 1fr; gap: 24px; }
+  .p-review-big { text-align: center; }
+  .p-review-big .score { font-size: 42px; font-weight: 800; color: #102A43; }
+  .p-review-big .stars { color: #F7B718; font-size: 18px; margin: 4px 0; }
+  .p-review-big .count { color: #667085; font-size: 13px; }
+  .p-bars { display: flex; flex-direction: column; gap: 6px; }
+  .p-bar { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #667085; }
+  .p-bar-track { flex: 1; height: 6px; background: #F5F7FA; border-radius: 3px; }
+  .p-bar-fill { height: 100%; background: #F7B718; border-radius: 3px; }
+  .p-review-list { margin-top: 20px; }
+  .p-review-item { border-bottom: 1px solid #F5F7FA; padding: 16px 0; }
+  .p-review-item:last-child { border-bottom: none; }
+  .p-review-head { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+  .p-review-avatar { width: 40px; height: 40px; border-radius: 50%; background: #F5F7FA; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #155EEF; font-size: 14px; }
+  .p-review-author { font-weight: 700; color: #102A43; font-size: 14px; }
+  .p-review-date { color: #667085; font-size: 12px; }
+  .p-review-stars { color: #F7B718; font-size: 13px; }
+  .p-review-text { color: #667085; font-size: 14px; margin: 0; }
+
+  .p-map { background: #F5F7FA; border-radius: 16px; height: 180px; display: flex; align-items: center; justify-content: center; color: #667085; margin-bottom: 12px; }
+  .p-zone-list { color: #667085; font-size: 13px; }
+
+  .p-info-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #F5F7FA; font-size: 14px; }
+  .p-info-row:last-child { border-bottom: none; }
+  .p-info-row span:first-child { color: #667085; }
+  .p-info-row span:last-child { color: #102A43; font-weight: 600; }
+
+  .p-bottom { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid #E2E8F0; padding: 8px 0 14px; display: flex; justify-content: space-around; z-index: 100; }
+  .p-bottom a { display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: #667085; font-size: 11px; font-weight: 500; }
+  .p-bottom a.active { color: #155EEF; }
+  .p-bottom-main { width: 52px; height: 52px; background: #155EEF; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-top: -22px; box-shadow: 0 6px 16px rgba(21,94,239,.35); }
+
+  @media (min-width: 768px) {
+    .p-nav, .p-user, .p-loc { display: flex; }
+    .p-mobile-bar { display: none; }
+    .p-bottom { display: none; }
+  }
+  @media (max-width: 767px) {
+    .p-hero-grid { grid-template-columns: 1fr; text-align: center; }
+    .p-avatar-wrap { margin: 0 auto; }
+    .p-name-row { justify-content: center; }
+    .p-rating-row { justify-content: center; }
+    .p-stats { justify-content: center; }
+    .p-actions { position: fixed; bottom: 70px; left: 0; right: 0; background: #fff; padding: 12px 16px; box-shadow: 0 -4px 16px rgba(16,42,67,.1); z-index: 90; }
+    .p-grid { grid-template-columns: 1fr; }
+    .p-reviews { grid-template-columns: 1fr; }
+    .p-checks { grid-template-columns: 1fr; }
+  }
+</style>
+
+<header class="p-header">
+  <div class="p-header-inner">
+    <a href="{{ url_for('index') }}" class="p-logo">
+      <div class="p-logo-mark">
+        <img src="{{ url_for('static', filename='img/icon-wrench.svg') }}" width="22" height="22" alt="" />
+      </div>
+      FixPro
+    </a>
+    <nav class="p-nav">
+      <a href="{{ url_for('index') }}">Accueil</a>
+      <a href="{{ url_for('artisans_page') }}">Recherche</a>
+      <a href="{{ url_for('artisans_page') }}" class="active">Professionnels</a>
+      <a href="{{ url_for('requests_list') }}">Réservations</a>
+      <a href="{{ url_for('conversations') }}">Messages</a>
+      <a href="{{ url_for('reviews') }}">Avis</a>
+    </nav>
+    <div class="p-header-right">
+      <div class="p-loc">
+        <img src="{{ url_for('static', filename='img/icon-map-pin.svg') }}" width="16" height="16" alt="" />
+        <span>Abidjan, Cocody</span>
+      </div>
+      <a href="{{ url_for('notifications') }}" class="r-notif" style="position:relative;">
+        <img src="{{ url_for('static', filename='img/icon-bell.svg') }}" width="22" height="22" alt="" />
+        <span style="position:absolute;top:-4px;right:-4px;width:16px;height:16px;background:#F7B718;color:#102A43;font-size:10px;font-weight:700;border-radius:50%;display:flex;align-items:center;justify-content:center;">2</span>
+      </a>
+      <a href="{% if user %}{{ url_for('profile') }}{% else %}{{ url_for('login') }}{% endif %}" class="p-user">
+        {% if user and user.photo_url %}
+          <img src="{{ user.photo_url }}" class="p-avatar-sm" alt="" />
         {% else %}
-        <span class="initials">{{ (artisan.full_name or '?').split(' ')[:2]|map('first')|join('')|upper }}</span>
+          <img src="{{ url_for('static', filename='img/fixpro-avatar.png') }}" class="p-avatar-sm" alt="" />
         {% endif %}
-        {% if artisan.is_verified %}
-        <svg class="seal-svg mini-seal" viewBox="0 0 100 100"><path fill="#1F9D6B" d="M50 2 L58 10 L69 8 L74 18 L85 22 L84 34 L92 42 L86 52 L92 62 L84 70 L85 82 L74 86 L69 96 L58 94 L50 100 L42 94 L31 96 L26 86 L15 82 L16 70 L8 62 L14 52 L8 42 L16 34 L15 22 L26 18 L31 8 L42 10 Z"/></svg>
+        <span>Bonjour {% if user %}{{ (user.full_name or 'Mamadou').split(' ')[0] }}{% else %}Mamadou{% endif %}</span>
+      </a>
+    </div>
+    <div class="p-mobile-bar">
+      <a href="{{ url_for('artisans_page') }}" class="p-back">&#8592; Retour</a>
+      <a href="{{ url_for('index') }}" class="p-logo" style="font-size:18px;">
+        <div class="p-logo-mark" style="width:32px;height:32px;">
+          <img src="{{ url_for('static', filename='img/icon-wrench.svg') }}" width="18" height="18" alt="" />
+        </div>
+        FixPro
+      </a>
+      <div class="p-top-actions">
+        <a href="#" aria-label="Enregistrer">&#9825;</a>
+        <a href="#" aria-label="Partager">&#8599;</a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="p-main">
+  <a href="{{ url_for('artisans_page') }}" class="p-back-link">&#8592; Retour à la recherche</a>
+
+  <section class="p-hero">
+    <div class="p-hero-grid">
+      <div class="p-avatar-wrap">
+        {% if artisan.photo_url %}
+          <img src="{{ artisan.photo_url }}" alt="{{ artisan.full_name }}" />
+        {% else %}
+          <img src="{{ url_for('static', filename='img/fixpro-avatar.png') }}" alt="{{ artisan.full_name }}" />
         {% endif %}
+        <span class="p-avail-pill">Disponible maintenant</span>
       </div>
-      <div>
-        <div class="fx-p-name">{{ artisan.full_name }}</div>
-        <div class="fx-p-trade">{{ artisan.profession or 'Technicien' }} · {{ artisan.quartier or artisan.city or 'Conakry' }}</div>
+      <div class="p-identity">
+        <div class="p-name-row">
+          <h1 class="p-name">{{ artisan.full_name }}</h1>
+          {% if artisan.is_verified %}
+          <span class="p-verified">&#10003;</span>
+          {% endif %}
+        </div>
+        <p class="p-job">{{ artisan.profession or 'Technicien' }}</p>
+        <p class="p-meta">7 ans d'expérience · Membre depuis {{ member_since }}</p>
+        <div class="p-rating-row">
+          <div class="p-rating">
+            <span class="star">&#9733;</span>
+            <strong>{{ "%.1f" | format(review_stats.avg_rating|float) }}</strong>
+            <span>({{ review_stats.count }} avis)</span>
+          </div>
+          <div class="p-satisfy">👍 {{ satisfaction_rate or '98' }}% de clients satisfaits</div>
+        </div>
+        <div class="p-stats">
+          <div class="p-stat">
+            <div class="p-stat-icon"><img src="{{ url_for('static', filename='img/icon-map-pin.svg') }}" width="18" height="18" alt="" /></div>
+            <div><b>{{ "%.1f" | format(distance or 1.8) }} km</b> de vous</div>
+          </div>
+          <div class="p-stat">
+            <div class="p-stat-icon"><img src="{{ url_for('static', filename='img/icon-clock.svg') }}" width="18" height="18" alt="" /></div>
+            <div><b>15 min</b> réponse moyenne</div>
+          </div>
+          <div class="p-stat">
+            <div class="p-stat-icon"><img src="{{ url_for('static', filename='img/icon-shield-check.svg') }}" width="18" height="18" alt="" /></div>
+            <div><b>{{ completed }}</b> interventions</div>
+          </div>
+          <div class="p-stat">
+            <div class="p-stat-icon"><img src="{{ url_for('static', filename='img/icon-calendar.svg') }}" width="18" height="18" alt="" /></div>
+            <div><b>Disponible</b> Aujourd'hui</div>
+          </div>
+        </div>
+      </div>
+      <div class="p-actions">
+        <a href="{{ url_for('demande', artisan_id=artisan.id) }}" class="p-btn p-btn-primary">Demander une intervention</a>
+        <a href="{{ url_for('conversations') }}" class="p-btn p-btn-secondary">Envoyer un message</a>
+        <a href="tel:{{ artisan.phone or '' }}" class="p-btn p-btn-secondary" onclick="alert('Appel: {{ artisan.phone or 'non renseigné' }}'); return false;">Appeler</a>
       </div>
     </div>
-    <div class="fx-p-stats">
-      <div class="fx-p-stat"><b>★ {{ "%.1f"|format(review_stats.avg_rating|float) }}</b><span>{{ review_stats.count }} avis</span></div>
-      <div class="fx-p-stat"><b>{{ completed }}</b><span>interventions</span></div>
-      <div class="fx-p-stat"><b>{{ "%.1f"|format(distance) if distance is not none else '—' }}</b><span>distance</span></div>
-    </div>
+  </section>
+
+  <div class="p-tabs">
+    <a href="#apercu" class="p-tab active" data-tab="apercu">Aperçu</a>
+    <a href="#services" class="p-tab" data-tab="services">Services</a>
+    <a href="#avis" class="p-tab" data-tab="avis">Avis ({{ review_stats.count }})</a>
+    <a href="#realisations" class="p-tab" data-tab="realisations">Réalisations</a>
+    <a href="#infos" class="p-tab" data-tab="infos">Infos</a>
   </div>
 
-  <div class="fx-p-body">
-    <div class="fx-p-card">
-      <h4>🟢 Disponible maintenant</h4>
-      <p>Intervient généralement sous 30 à 45 minutes dans sa zone.</p>
+  <div class="p-grid">
+    <div class="p-left">
+      <section class="p-card" id="apercu">
+        <h3>À propos</h3>
+        <p class="p-about">{{ artisan.bio or 'Professionnel expérimenté, disponible pour intervenir rapidement dans votre zone. Tarifs transparents et travail soigné.' }}</p>
+        <div class="p-checks">
+          <div class="p-check">Intervention rapide</div>
+          <div class="p-check">Devis gratuit</div>
+          <div class="p-check">Travail propre et garanti</div>
+          <div class="p-check">Garantie sur toutes les interventions</div>
+          <div class="p-check">Tarifs transparents</div>
+          <div class="p-check">Disponible 24h/24 et 7j/7</div>
+        </div>
+      </section>
+
+      <section class="p-card" id="services">
+        <h3>Services proposés</h3>
+        <div class="p-services">
+          {% set metier = artisan.profession | lower %}
+          {% if metier in ['plombier', 'plomberie'] %}
+            <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-droplet.svg') }}" alt="" /></div>Fuite d'eau</div>
+            <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-wrench.svg') }}" alt="" /></div>Débouchage canalisation</div>
+            <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-droplet.svg') }}" alt="" /></div>Installation sanitaire</div>
+            <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-wrench.svg') }}" alt="" /></div>Chauffe-eau</div>
+            <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-wrench.svg') }}" alt="" /></div>Réparation robinetterie</div>
+            <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-menu.svg') }}" alt="" /></div>Voir plus</div>
+          {% elif metier in ['électricien', 'electricien', 'electricite', 'électricité'] %}
+            <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-zap.svg') }}" alt="" /></div>Installation électrique</div>
+            <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-zap.svg') }}" alt="" /></div>Dépannage électrique</div>
+            <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-zap.svg') }}" alt="" /></div>Mise aux normes</div>
+            <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-zap.svg') }}" alt="" /></div>Tableau électrique</div>
+            <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-zap.svg') }}" alt="" /></div>Éclairage</div>
+            <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-menu.svg') }}" alt="" /></div>Voir plus</div>
+          {% elif metier == 'frigoriste' %}
+            <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-snowflake.svg') }}" alt="" /></div>Installation climatisation</div>
+            <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-snowflake.svg') }}" alt="" /></div>Dépannage climatisation</div>
+            <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-snowflake.svg') }}" alt="" /></div>Entretien climatisation</div>
+            <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-snowflake.svg') }}" alt="" /></div>Réfrigérateur</div>
+            <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-snowflake.svg') }}" alt="" /></div>Chambre froide</div>
+            <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-menu.svg') }}" alt="" /></div>Voir plus</div>
+          {% else %}
+            <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-wrench.svg') }}" alt="" /></div>Installation</div>
+            <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-wrench.svg') }}" alt="" /></div>Dépannage</div>
+            <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-wrench.svg') }}" alt="" /></div>Maintenance</div>
+            <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-wrench.svg') }}" alt="" /></div>Diagnostic</div>
+            <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-wrench.svg') }}" alt="" /></div>Réparation</div>
+            <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-menu.svg') }}" alt="" /></div>Voir plus</div>
+          {% endif %}
+        </div>
+      </section>
+
+      <section class="p-card" id="avis">
+        <h3>Avis clients</h3>
+        <div class="p-reviews">
+          <div class="p-review-big">
+            <div class="score">{{ "%.1f" | format(review_stats.avg_rating|float) }}</div>
+            <div class="stars">{{ '&#9733;' * (review_stats.avg_rating|int) }}{{ '&#9734;' * (5 - review_stats.avg_rating|int) }}</div>
+            <div class="count">({{ review_stats.count }} avis)</div>
+          </div>
+          <div class="p-bars">
+            {% for i in range(5,0,-1) %}
+            <div class="p-bar">
+              <span>{{ i }} ★</span>
+              <div class="p-bar-track"><div class="p-bar-fill" style="width: {{ (review_bars[i] if review_bars else (i * 19)) }}%;"></div></div>
+              <span>{{ review_bars_count[i] if review_bars_count else (i * 5) }}</span>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="p-review-list">
+          {% if reviews %}
+            {% for review in reviews[:3] %}
+            <div class="p-review-item">
+              <div class="p-review-head">
+                <div class="p-review-avatar">{{ review.client_name[:1] }}</div>
+                <div>
+                  <div class="p-review-author">{{ review.client_name }}</div>
+                  <div class="p-review-stars">{{ '&#9733;' * review.rating }}{{ '&#9734;' * (5 - review.rating) }}</div>
+                </div>
+                <span class="p-review-date" style="margin-left:auto;">Il y a 2 jours</span>
+              </div>
+              <p class="p-review-text">{{ review.comment or 'Très bon professionnel, je recommande.' }}</p>
+            </div>
+            {% endfor %}
+          {% else %}
+            <p style="color:#667085;font-size:14px;">Soyez le premier à laisser un avis.</p>
+          {% endif %}
+        </div>
+      </section>
     </div>
-    <div class="fx-p-card">
-      <h4>A propos</h4>
-      <p>{{ artisan.bio or 'Aucune presentation pour le moment.' }}</p>
-      <div class="fx-p-tags">
-        {% for skill in (artisan.skills or '').split(',') %}
-        {% if skill.strip() %}<span class="fx-p-tag">{{ skill.strip() }}</span>{% endif %}
-        {% endfor %}
-      </div>
-    </div>
-    <div class="fx-p-card">
-      <h4>Zone d'intervention</h4>
-      <div class="fx-p-zone"><div class="fx-p-radius"></div></div>
-      <p>{{ artisan.quartier or artisan.city or 'Conakry' }} et environs — adresse exacte partagée après confirmation.</p>
-    </div>
-    <div class="fx-p-card">
-      <h4>Avis après intervention</h4>
-      {% if reviews %}
-      {% for review in reviews[:3] %}
-      <div class="fx-review">
-        <div class="fx-review-head"><span>{{ review.client_name }}</span><span class="fx-stars">{{ '★' * review.rating }}{{ '☆' * (5-review.rating) }}</span></div>
-        <div class="fx-review-text">{{ review.comment or 'Aucun commentaire' }}</div>
-      </div>
-      {% endfor %}
-      {% else %}
-      <p>Soyez le premier à laisser un avis après une intervention.</p>
-      {% endif %}
-    </div>
+
+    <aside class="p-right">
+      <section class="p-card">
+        <h3>Zone d'intervention</h3>
+        <div class="p-map">
+          <img src="{{ url_for('static', filename='img/icon-map-pin.svg') }}" width="40" height="40" alt="" />
+        </div>
+        <p class="p-zone-list">{{ artisan.quartier or artisan.city or 'Cocody' }}, Riviera, Deux Plateaux, Angré, Palmeraie, Vallon</p>
+      </section>
+
+      <section class="p-card" id="infos">
+        <h3>Informations</h3>
+        <div class="p-info-row"><span>Disponibilité</span><span>24h/24 - 7j/7</span></div>
+        <div class="p-info-row"><span>Moyens de paiement</span><span>Espèces, Mobile Money</span></div>
+        <div class="p-info-row"><span>Langues parlées</span><span>Français</span></div>
+        <div class="p-info-row"><span>Véhicule</span><span>Oui</span></div>
+        <div class="p-info-row"><span>Assurance</span><span>Professionnelle</span></div>
+      </section>
+    </aside>
   </div>
+</main>
 
-  <div class="fx-dock" style="position:fixed;">
-    {% if user %}
-    <form class="profile-action-form" method="post" action="{{ url_for('ticket_new') }}" style="margin:0;flex:1;display:flex;">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-      <input type="hidden" name="artisan_id" value="{{ artisan.id }}" />
-      <button class="fx-dock-btn ghost" type="submit" style="width:100%;">Contacter FixPro</button>
-    </form>
-    {% else %}
-    <a class="fx-dock-btn ghost" href="{{ url_for('login') }}">Contacter FixPro</a>
-    {% endif %}
+<nav class="p-bottom">
+  <a href="{{ url_for('index') }}">
+    <img src="{{ url_for('static', filename='img/icon-home.svg') }}" width="22" height="22" alt="" />
+    Accueil
+  </a>
+  <a href="{{ url_for('artisans_page') }}">
+    <img src="{{ url_for('static', filename='img/icon-search.svg') }}" width="22" height="22" alt="" />
+    Recherche
+  </a>
+  <a href="{{ url_for('requests_list') }}" class="p-bottom-main">
+    <img src="{{ url_for('static', filename='img/icon-calendar.svg') }}" width="24" height="24" alt="" />
+  </a>
+  <a href="{{ url_for('conversations') }}">
+    <img src="{{ url_for('static', filename='img/icon-message-circle.svg') }}" width="22" height="22" alt="" />
+    Messages
+  </a>
+  <a href="{% if user %}{{ url_for('profile') }}{% else %}{{ url_for('login') }}{% endif %}">
+    <img src="{{ url_for('static', filename='img/icon-user.svg') }}" width="22" height="22" alt="" />
+    Profil
+  </a>
+</nav>
 
-    {% if user %}
-    <a class="fx-dock-btn primary" href="{{ url_for('demande', artisan_id=artisan.id) }}">Demander une intervention</a>
-    {% else %}
-    <a class="fx-dock-btn primary" href="{{ url_for('login', next=url_for('demande', artisan_id=artisan.id)) }}">Demander une intervention</a>
-    {% endif %}
-  </div>
-
-</div>
+<script>
+  const tabs = document.querySelectorAll('.p-tab');
+  tabs.forEach(t => {
+    t.addEventListener('click', e => {
+      e.preventDefault();
+      tabs.forEach(x => x.classList.remove('active'));
+      t.classList.add('active');
+    });
+  });
+</script>
 {% endblock %}

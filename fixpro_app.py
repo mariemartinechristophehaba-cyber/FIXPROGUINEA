@@ -2300,6 +2300,16 @@ def artisan_detail(artisan_id):
             " FROM reviews WHERE artisan_id = ?",
             (artisan_id,)).fetchone()
 
+        review_bars_raw = conn.execute(
+            "SELECT rating, COUNT(*) AS n FROM reviews WHERE artisan_id = ? GROUP BY rating",
+            (artisan_id,)).fetchall()
+        review_counts = {1:0,2:0,3:0,4:0,5:0}
+        for row in review_bars_raw:
+            review_counts[row["rating"]] = row["n"]
+        total = review_stats["count"] or 1
+        review_bars = {k: round(v / total * 100, 1) for k, v in review_counts.items()}
+        review_bars_count = review_counts
+
         # Interventions realisees (status completed)
         completed = conn.execute(
             "SELECT COUNT(*) AS n FROM requests"
@@ -2467,7 +2477,9 @@ def artisan_detail(artisan_id):
                            ticket_id=ticket_id,
                            verified_docs=verified_docs,
                            member_since=member_since,
-                           portfolio=portfolio)
+                           portfolio=portfolio,
+                           review_bars=review_bars,
+                           review_bars_count=review_bars_count)
 
 
 @app.route("/demande/<int:artisan_id>", methods=["GET", "POST"])
