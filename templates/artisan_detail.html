@@ -66,10 +66,12 @@
   .p-check { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #102A43; }
   .p-check::before { content: '✓'; width: 20px; height: 20px; background: rgba(21,94,239,.1); color: #155EEF; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; flex: 0 0 20px; }
 
-  .p-services { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 14px; }
-  .p-service { background: #F5F7FA; border-radius: 16px; padding: 18px 10px; text-align: center; text-decoration: none; color: #102A43; font-size: 13px; font-weight: 600; }
-  .p-service-icon { width: 44px; height: 44px; background: #fff; border-radius: 12px; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; }
+  .p-services { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 16px; }
+  .p-service { background: #F5F7FA; border-radius: 16px; padding: 20px 10px; text-align: center; text-decoration: none; color: #102A43; font-size: 13px; font-weight: 600; }
+  .p-service-icon { width: 50px; height: 50px; background: #fff; border-radius: 12px; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; }
   .p-service img { width: 24px; height: 24px; }
+  .hidden-service { display: none; }
+  .p-voir-plus { background: transparent; border: none; color: #155EEF; font-size: 14px; font-weight: 700; cursor: pointer; }
 
   .p-reviews { display: grid; grid-template-columns: 120px 1fr; gap: 24px; }
   .p-review-big { text-align: center; }
@@ -137,10 +139,10 @@
     .p-tab { flex: 0 0 auto; padding: 10px 16px; font-size: 13px; }
     .p-grid { grid-template-columns: 1fr; }
     .p-card { padding: 18px; width: 100%; box-sizing: border-box; }
-    .p-services { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
-    .p-service { padding: 14px 6px; font-size: 11px; word-break: break-word; }
-    .p-service-icon { width: 36px; height: 36px; }
-    .p-service img { width: 20px; height: 20px; }
+    .p-services { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .p-service { padding: 16px 8px; font-size: 12px; word-break: break-word; }
+    .p-service-icon { width: 44px; height: 44px; }
+    .p-service img { width: 22px; height: 22px; }
     .p-reviews { grid-template-columns: 1fr; }
     .p-checks { grid-template-columns: 1fr; }
     .p-review-head { flex-wrap: wrap; }
@@ -286,38 +288,63 @@
       </section>
 
       <section class="p-card" id="services">
-        <h3>Services proposés</h3>
-        <div class="p-services">
-          {% set metier = artisan.profession | lower %}
-          {% if metier in ['plombier', 'plomberie'] %}
-            <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-droplet.svg') }}" alt="" /></div>Fuite d'eau</div>
-            <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-wrench.svg') }}" alt="" /></div>Débouchage</div>
-            <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-droplet.svg') }}" alt="" /></div>Installation sanitaire</div>
-            <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-wrench.svg') }}" alt="" /></div>Chauffe-eau</div>
-            <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-wrench.svg') }}" alt="" /></div>Robinetterie</div>
-            <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-menu.svg') }}" alt="" /></div>Recherche de fuite</div>
-          {% elif metier in ['électricien', 'electricien', 'electricite', 'électricité'] %}
-            <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-zap.svg') }}" alt="" /></div>Installation électrique</div>
-            <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-zap.svg') }}" alt="" /></div>Dépannage électrique</div>
-            <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-zap.svg') }}" alt="" /></div>Mise aux normes</div>
-            <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-zap.svg') }}" alt="" /></div>Tableau électrique</div>
-            <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-zap.svg') }}" alt="" /></div>Éclairage</div>
-            <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-menu.svg') }}" alt="" /></div>Voir plus</div>
-          {% elif metier == 'frigoriste' %}
-            <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-snowflake.svg') }}" alt="" /></div>Installation climatisation</div>
-            <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-snowflake.svg') }}" alt="" /></div>Dépannage climatisation</div>
-            <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-snowflake.svg') }}" alt="" /></div>Entretien climatisation</div>
-            <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-snowflake.svg') }}" alt="" /></div>Réfrigérateur</div>
-            <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-snowflake.svg') }}" alt="" /></div>Chambre froide</div>
-            <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-menu.svg') }}" alt="" /></div>Voir plus</div>
-          {% else %}
-            <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-wrench.svg') }}" alt="" /></div>Installation</div>
-            <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-wrench.svg') }}" alt="" /></div>Dépannage</div>
-            <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-wrench.svg') }}" alt="" /></div>Maintenance</div>
-            <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-wrench.svg') }}" alt="" /></div>Diagnostic</div>
-            <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-wrench.svg') }}" alt="" /></div>Réparation</div>
-            <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-menu.svg') }}" alt="" /></div>Voir plus</div>
-          {% endif %}
+        {% set metier = artisan.profession | lower %}
+        {% if metier in ['plombier', 'plomberie'] %}
+          {% set services = [
+            {'name': "Fuite d'eau", 'icon': 'droplet'},
+            {'name': "Débouchage canalisation", 'icon': 'wrench'},
+            {'name': "Installation sanitaire", 'icon': 'wrench'},
+            {'name': "Chauffe-eau", 'icon': 'droplet'},
+            {'name': "Robinetterie", 'icon': 'wrench'},
+            {'name': "Recherche de fuite", 'icon': 'search'},
+            {'name': "Réparation fuite", 'icon': 'wrench'},
+            {'name': "Inspection caméra", 'icon': 'shield-check'}
+          ] %}
+        {% elif metier in ['électricien', 'electricien', 'electricite', 'électricité'] %}
+          {% set services = [
+            {'name': "Installation électrique", 'icon': 'zap'},
+            {'name': "Dépannage électrique", 'icon': 'zap'},
+            {'name': "Éclairage", 'icon': 'zap'},
+            {'name': "Mise aux normes", 'icon': 'shield-check'},
+            {'name': "Maintenance électrique", 'icon': 'wrench'},
+            {'name': "Diagnostic électrique", 'icon': 'search'},
+            {'name': "Tableau électrique", 'icon': 'menu'},
+            {'name': "Prises et interrupteurs", 'icon': 'zap'}
+          ] %}
+        {% elif metier == 'frigoriste' %}
+          {% set services = [
+            {'name': "Installation climatisation", 'icon': 'snowflake'},
+            {'name': "Dépannage climatisation", 'icon': 'snowflake'},
+            {'name': "Entretien climatisation", 'icon': 'snowflake'},
+            {'name': "Réfrigérateur", 'icon': 'snowflake'},
+            {'name': "Diagnostic froid", 'icon': 'search'},
+            {'name': "Maintenance frigorifique", 'icon': 'wrench'},
+            {'name': "Chambre froide", 'icon': 'snowflake'},
+            {'name': "Recharge climatisation", 'icon': 'snowflake'}
+          ] %}
+        {% else %}
+          {% set services = [
+            {'name': "Installation", 'icon': 'wrench'},
+            {'name': "Dépannage", 'icon': 'wrench'},
+            {'name': "Maintenance", 'icon': 'wrench'},
+            {'name': "Diagnostic", 'icon': 'search'},
+            {'name': "Réparation", 'icon': 'wrench'},
+            {'name': "Intervention", 'icon': 'shield-check'},
+            {'name': "Consultation", 'icon': 'message-circle'},
+            {'name': "Devis", 'icon': 'menu'}
+          ] %}
+        {% endif %}
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+          <h3 style="margin:0;">Services proposés</h3>
+          <button type="button" class="p-voir-plus" id="voirPlusBtn" style="background:transparent;border:none;color:#155EEF;font-size:14px;font-weight:700;cursor:pointer;">Voir plus</button>
+        </div>
+        <div class="p-services" id="servicesGrid">
+          {% for service in services %}
+          <div class="p-service {% if loop.index > 4 %}hidden-service{% endif %}">
+            <div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-' ~ service.icon ~ '.svg') }}" width="24" height="24" alt="" /></div>
+            {{ service.name }}
+          </div>
+          {% endfor %}
         </div>
       </section>
 
@@ -418,5 +445,13 @@
       t.classList.add('active');
     });
   });
+
+  const voirPlusBtn = document.getElementById('voirPlusBtn');
+  if (voirPlusBtn) {
+    voirPlusBtn.addEventListener('click', () => {
+      document.querySelectorAll('.hidden-service').forEach(el => el.classList.remove('hidden-service'));
+      voirPlusBtn.style.display = 'none';
+    });
+  }
 </script>
 {% endblock %}
