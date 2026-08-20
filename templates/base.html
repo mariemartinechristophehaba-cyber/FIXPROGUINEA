@@ -108,7 +108,7 @@
         </div>
       </header>
       {% elif not is_admin_route %}
-      {% if request.endpoint not in ('dashboard', 'index') %}
+      {% if request.endpoint not in ('dashboard', 'index', 'artisans_page') %}
       <header class="topbar">
         <h1 class="topbar-title">{% block page_title %}{% endblock %}</h1>
         <a class="btn btn-primary btn-sm" href="{{ url_for('request_new') }}">
