@@ -2289,10 +2289,10 @@ def artisan_detail(artisan_id):
         artisan = dict(artisan)
         artisan["gradient"] = _avatar_gradient(artisan["full_name"])
 
-        # Donnees de demonstration ciblees
-        name_lower = artisan["full_name"].lower()
+        # Donnees de demonstration ciblees par metier
+        profession_lower = (artisan.get("profession") or "").lower()
         demo_config = None
-        if "mamadou" in name_lower:
+        if profession_lower in ("plombier", "plomberie"):
             demo_config = {
                 "full_name": "Mamadou S.",
                 "profession": "Plombier",
@@ -2306,7 +2306,7 @@ def artisan_detail(artisan_id):
                 "interventions": 168,
                 "availability": "Disponible aujourd'hui"
             }
-        elif "ibrahim" in name_lower:
+        elif profession_lower in ("electricien", "électricien", "electricite", "électricité"):
             demo_config = {
                 "full_name": "Ibrahima K.",
                 "profession": "Electricien",
@@ -2320,7 +2320,7 @@ def artisan_detail(artisan_id):
                 "interventions": 124,
                 "availability": "Disponible aujourd'hui"
             }
-        elif "ousmane" in name_lower:
+        elif profession_lower == "frigoriste":
             demo_config = {
                 "full_name": "Ousmane D.",
                 "profession": "Frigoriste",
@@ -2388,12 +2388,15 @@ def artisan_detail(artisan_id):
             satisfaction_rate = demo_config["satisfaction_rate"]
             completed = demo_config["interventions"]
             distance = demo_config["distance_km"]
+            artisan["experience"] = demo_config["experience"]
+            artisan["response_time"] = demo_config["response_time"]
 
         # Interventions realisees (status completed)
-        completed = conn.execute(
-            "SELECT COUNT(*) AS n FROM requests"
-            " WHERE artisan_id = ? AND status = 'completed'",
-            (artisan_id,)).fetchone()["n"]
+        if not is_demo:
+            completed = conn.execute(
+                "SELECT COUNT(*) AS n FROM requests"
+                " WHERE artisan_id = ? AND status = 'completed'",
+                (artisan_id,)).fetchone()["n"]
 
         # Documents verifies du technicien
         documents = conn.execute(
