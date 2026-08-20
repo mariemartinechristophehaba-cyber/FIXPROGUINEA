@@ -120,8 +120,8 @@
           <div class="f-search-head">
             <h4>{{ a.full_name }}</h4>
             <div class="f-search-rating">
-              <img src="{{ url_for('static', filename='img/icon-star.svg') }}" width="14" height="14" alt="" />
               {% if a.review_count and a.review_count > 0 %}
+                <img src="{{ url_for('static', filename='img/icon-star.svg') }}" width="14" height="14" alt="" />
                 <span>{{ "%.1f" | format(a.rating or 4.5) }}</span>
                 <span class="f-search-count">({{ a.review_count }} avis)</span>
               {% else %}
@@ -263,7 +263,7 @@
   .f-search-distance { font-size: 12px; color: var(--f-text-2); margin-bottom: 8px; }
   .f-search-tags { display: flex; flex-wrap: wrap; gap: 6px; }
   .f-search-tags span { background: var(--f-bg); padding: 4px 10px; border-radius: 20px; font-size: 11px; color: var(--f-text); }
-  .f-search-profile { width: 100%; height: 42px; border-radius: var(--f-radius-sm); background: var(--f-primary); color: var(--f-white); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; text-decoration: none; }
+  .f-search-profile { width: 100%; height: 42px; border-radius: var(--f-radius-sm); background: var(--f-primary); color: var(--f-white); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; text-decoration: none; margin-top: auto; }
 
   .f-skeleton { display: none; }
   .f-pro-skeleton { height: 110px; background: #E2E8F0; border-radius: var(--f-radius); margin-bottom: 14px; animation: pulse 1.5s infinite; }
@@ -271,6 +271,7 @@
 
   @media (min-width: 768px) {
     .f-search-list { display: grid !important; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+    .f-search-card { height: 100%; }
   }
 
   .f-empty { text-align: center; padding: 40px 20px; }
