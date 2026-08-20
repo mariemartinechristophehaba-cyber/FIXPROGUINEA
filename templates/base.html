@@ -70,7 +70,7 @@
     {% endif %}
 
     <div class="app-wrap">
-      {% if not is_admin_route and not nav_user and request.endpoint not in ('dashboard', 'index') %}
+      {% if not is_admin_route and not nav_user and request.endpoint not in ('dashboard', 'index', 'artisans_page') %}
       <header class="appbar guest-appbar">
         <a class="brand" href="{{ url_for('index') }}" style="transition: opacity .15s;">
           <span class="brand-mark">
