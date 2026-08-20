@@ -68,8 +68,8 @@
 
   .p-services { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 16px; }
   .p-service { background: #F5F7FA; border-radius: 16px; padding: 20px 10px; text-align: center; text-decoration: none; color: #102A43; font-size: 13px; font-weight: 600; }
-  .p-service-icon { width: 50px; height: 50px; background: #fff; border-radius: 12px; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; }
-  .p-service img { width: 24px; height: 24px; }
+  .p-service-icon { width: 68px; height: 68px; background: #fff; border-radius: 16px; margin: 0 auto 12px; display: flex; align-items: center; justify-content: center; }
+  .p-service img { width: 48px; height: 48px; }
   .hidden-service { display: none; }
   .p-voir-plus { background: transparent; border: none; color: #155EEF; font-size: 14px; font-weight: 700; cursor: pointer; }
 
@@ -95,10 +95,20 @@
   .p-map { background: #F5F7FA; border-radius: 16px; height: 180px; display: flex; align-items: center; justify-content: center; color: #667085; margin-bottom: 12px; }
   .p-zone-list { color: #667085; font-size: 13px; }
 
+  .p-horaire-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #F5F7FA; font-size: 13px; }
+  .p-horaire-row:last-child { border-bottom: none; }
+  .p-horaire-row span:first-child { color: #667085; }
+  .p-horaire-row span:last-child { color: #102A43; font-weight: 600; }
   .p-info-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #F5F7FA; font-size: 14px; }
   .p-info-row:last-child { border-bottom: none; }
   .p-info-row span:first-child { color: #667085; }
   .p-info-row span:last-child { color: #102A43; font-weight: 600; }
+
+  .p-realisations { display: grid; grid-template-columns: 1fr; gap: 16px; }
+  .p-rea-item { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .p-rea-img { background: #F5F7FA; border-radius: 12px; height: 120px; display: flex; align-items: center; justify-content: center; color: #667085; font-size: 13px; font-weight: 600; }
+  .p-rea-before { border: 2px dashed #155EEF; }
+  .p-rea-after { border: 2px solid #10B981; }
 
   .p-bottom { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid #E2E8F0; padding: 8px 0 14px; display: flex; justify-content: space-around; z-index: 100; }
   .p-bottom a { display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: #667085; font-size: 11px; font-weight: 500; }
@@ -141,8 +151,8 @@
     .p-card { padding: 18px; width: 100%; box-sizing: border-box; }
     .p-services { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
     .p-service { padding: 16px 8px; font-size: 12px; word-break: break-word; }
-    .p-service-icon { width: 44px; height: 44px; }
-    .p-service img { width: 22px; height: 22px; }
+    .p-service-icon { width: 52px; height: 52px; }
+    .p-service img { width: 36px; height: 36px; }
     .p-reviews { grid-template-columns: 1fr; }
     .p-checks { grid-template-columns: 1fr; }
     .p-review-head { flex-wrap: wrap; }
@@ -291,47 +301,47 @@
         {% set metier = artisan.profession | lower %}
         {% if metier in ['plombier', 'plomberie'] %}
           {% set services = [
-            {'name': "Fuite d'eau", 'icon': 'droplet'},
-            {'name': "Débouchage canalisation", 'icon': 'wrench'},
-            {'name': "Installation sanitaire", 'icon': 'wrench'},
-            {'name': "Chauffe-eau", 'icon': 'droplet'},
-            {'name': "Robinetterie", 'icon': 'wrench'},
-            {'name': "Recherche de fuite", 'icon': 'search'},
-            {'name': "Réparation fuite", 'icon': 'wrench'},
-            {'name': "Inspection caméra", 'icon': 'shield-check'}
+            {'name': "Fuite d'eau", 'visual': 'services/plombier/fuite-eau.svg'},
+            {'name': "Débouchage canalisation", 'visual': 'services/plombier/debouchage.svg'},
+            {'name': "Installation sanitaire", 'visual': 'services/plombier/installation-sanitaire.svg'},
+            {'name': "Chauffe-eau", 'visual': 'services/plombier/chauffe-eau.svg'},
+            {'name': "Robinetterie", 'visual': 'services/plombier/robinetterie.svg'},
+            {'name': "Recherche de fuite", 'visual': 'services/plombier/recherche-de-fuite.svg'},
+            {'name': "Réparation fuite", 'visual': 'services/plombier/reparation-fuite.svg'},
+            {'name': "Inspection caméra", 'visual': 'services/plombier/inspection-camera.svg'}
           ] %}
         {% elif metier in ['électricien', 'electricien', 'electricite', 'électricité'] %}
           {% set services = [
-            {'name': "Installation électrique", 'icon': 'zap'},
-            {'name': "Dépannage électrique", 'icon': 'zap'},
-            {'name': "Éclairage", 'icon': 'zap'},
-            {'name': "Mise aux normes", 'icon': 'shield-check'},
-            {'name': "Maintenance électrique", 'icon': 'wrench'},
-            {'name': "Diagnostic électrique", 'icon': 'search'},
-            {'name': "Tableau électrique", 'icon': 'menu'},
-            {'name': "Prises et interrupteurs", 'icon': 'zap'}
+            {'name': "Installation électrique", 'visual': 'services/electricien/installation-electrique.svg'},
+            {'name': "Dépannage électrique", 'visual': 'services/electricien/depannage-electrique.svg'},
+            {'name': "Éclairage", 'visual': 'services/electricien/eclairage.svg'},
+            {'name': "Mise aux normes", 'visual': 'services/electricien/mise-aux-normes.svg'},
+            {'name': "Maintenance électrique", 'visual': 'services/electricien/maintenance-electrique.svg'},
+            {'name': "Diagnostic électrique", 'visual': 'services/electricien/diagnostic-electrique.svg'},
+            {'name': "Tableau électrique", 'visual': 'services/electricien/tableau-electrique.svg'},
+            {'name': "Prises et interrupteurs", 'visual': 'services/electricien/prises-interrupteurs.svg'}
           ] %}
         {% elif metier == 'frigoriste' %}
           {% set services = [
-            {'name': "Installation climatisation", 'icon': 'snowflake'},
-            {'name': "Dépannage climatisation", 'icon': 'snowflake'},
-            {'name': "Entretien climatisation", 'icon': 'snowflake'},
-            {'name': "Réfrigérateur", 'icon': 'snowflake'},
-            {'name': "Diagnostic froid", 'icon': 'search'},
-            {'name': "Maintenance frigorifique", 'icon': 'wrench'},
-            {'name': "Chambre froide", 'icon': 'snowflake'},
-            {'name': "Recharge climatisation", 'icon': 'snowflake'}
+            {'name': "Installation climatisation", 'visual': 'services/frigoriste/installation-climatisation.svg'},
+            {'name': "Dépannage climatisation", 'visual': 'services/frigoriste/depannage-climatisation.svg'},
+            {'name': "Entretien climatisation", 'visual': 'services/frigoriste/entretien-climatisation.svg'},
+            {'name': "Réfrigérateur", 'visual': 'services/frigoriste/refrigerateur.svg'},
+            {'name': "Diagnostic froid", 'visual': 'services/frigoriste/diagnostic-froid.svg'},
+            {'name': "Maintenance frigorifique", 'visual': 'services/frigoriste/maintenance-frigorifique.svg'},
+            {'name': "Chambre froide", 'visual': 'services/frigoriste/chambre-froide.svg'},
+            {'name': "Recharge climatisation", 'visual': 'services/frigoriste/recharge-climatisation.svg'}
           ] %}
         {% else %}
           {% set services = [
-            {'name': "Installation", 'icon': 'wrench'},
-            {'name': "Dépannage", 'icon': 'wrench'},
-            {'name': "Maintenance", 'icon': 'wrench'},
-            {'name': "Diagnostic", 'icon': 'search'},
-            {'name': "Réparation", 'icon': 'wrench'},
-            {'name': "Intervention", 'icon': 'shield-check'},
-            {'name': "Consultation", 'icon': 'message-circle'},
-            {'name': "Devis", 'icon': 'menu'}
+            {'name': "Installation", 'visual': 'services/plombier/installation-sanitaire.svg'},
+            {'name': "Dépannage", 'visual': 'services/electricien/depannage-electrique.svg'},
+            {'name': "Maintenance", 'visual': 'services/electricien/maintenance-electrique.svg'},
+            {'name': "Diagnostic", 'visual': 'services/plombier/recherche-de-fuite.svg'},
+            {'name': "Réparation", 'visual': 'services/plombier/reparation-fuite.svg'},
+            {'name': "Intervention", 'visual': 'services/electricien/mise-aux-normes.svg'},
+            {'name': "Consultation", 'visual': 'services/electricien/prises-interrupteurs.svg'},
+            {'name': "Devis", 'visual': 'services/frigoriste/recharge-climatisation.svg'}
           ] %}
         {% endif %}
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
@@ -341,10 +351,24 @@
         <div class="p-services" id="servicesGrid">
           {% for service in services %}
           <div class="p-service {% if loop.index > 4 %}hidden-service{% endif %}">
-            <div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-' ~ service.icon ~ '.svg') }}" width="24" height="24" alt="" /></div>
+            <div class="p-service-icon"><img src="{{ url_for('static', filename='img/' ~ service.visual) }}" width="48" height="48" alt="" /></div>
             {{ service.name }}
           </div>
           {% endfor %}
+        </div>
+      </section>
+
+      <section class="p-card" id="realisations-section">
+        <h3>Réalisations</h3>
+        <div class="p-realisations">
+          <div class="p-rea-item">
+            <div class="p-rea-img p-rea-before">Avant</div>
+            <div class="p-rea-img p-rea-after">Après</div>
+          </div>
+          <div class="p-rea-item">
+            <div class="p-rea-img p-rea-before">Avant</div>
+            <div class="p-rea-img p-rea-after">Après</div>
+          </div>
         </div>
       </section>
 
@@ -389,6 +413,7 @@
           </div>
           {% endfor %}
         </div>
+        <a href="#" class="p-voir-tout" style="display:block;text-align:center;color:#155EEF;font-size:14px;font-weight:700;text-decoration:none;margin-top:12px;">Voir tous les avis →</a>
         {% endif %}
       </section>
     </div>
@@ -400,6 +425,23 @@
           <img src="{{ url_for('static', filename='img/icon-map-pin.svg') }}" width="40" height="40" alt="" />
         </div>
         <p class="p-zone-list">{{ artisan.quartier or artisan.city or 'Cocody' }}, Riviera, Deux Plateaux, Angré, Palmeraie, Vallon</p>
+      </section>
+
+      <section class="p-card" id="horaires">
+        <h3>Disponibilité et horaires</h3>
+        <div class="p-now" style="display:flex;align-items:center;gap:8px;background:#ECFDF3;color:#10B981;padding:8px 12px;border-radius:8px;font-weight:700;font-size:14px;margin-bottom:12px;">
+          <span style="width:10px;height:10px;background:#10B981;border-radius:50%;"></span>
+          Disponible maintenant
+        </div>
+        <div class="p-horaire-row"><span>Aujourd'hui</span><span>08:00 — 20:00</span></div>
+        <div class="p-horaire-row"><span>Demain</span><span>08:00 — 20:00</span></div>
+        <div class="p-horaire-row"><span>Lundi</span><span>08:00 — 20:00</span></div>
+        <div class="p-horaire-row"><span>Mardi</span><span>08:00 — 20:00</span></div>
+        <div class="p-horaire-row"><span>Mercredi</span><span>08:00 — 20:00</span></div>
+        <div class="p-horaire-row"><span>Jeudi</span><span>08:00 — 20:00</span></div>
+        <div class="p-horaire-row"><span>Vendredi</span><span>08:00 — 20:00</span></div>
+        <div class="p-horaire-row"><span>Samedi</span><span>09:00 — 16:00</span></div>
+        <div class="p-horaire-row"><span>Dimanche</span><span>Fermé</span></div>
       </section>
 
       <section class="p-card" id="infos">
