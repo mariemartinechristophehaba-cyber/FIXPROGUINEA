@@ -188,18 +188,24 @@
         <div class="p-name-row">
           <h1 class="p-name">{{ artisan.full_name }}</h1>
           {% if artisan.is_verified %}
-          <span class="p-verified">&#10003;</span>
+          <span class="p-verified">✓</span>
           {% endif %}
         </div>
         <p class="p-job">{{ artisan.profession or 'Technicien' }}</p>
         <p class="p-meta">7 ans d'expérience · Membre depuis {{ member_since }}</p>
         <div class="p-rating-row">
+          {% if review_stats.count > 0 %}
           <div class="p-rating">
-            <span class="star">&#9733;</span>
+            <span class="star">★</span>
             <strong>{{ "%.1f" | format(review_stats.avg_rating|float) }}</strong>
             <span>({{ review_stats.count }} avis)</span>
           </div>
-          <div class="p-satisfy">👍 {{ satisfaction_rate or '98' }}% de clients satisfaits</div>
+          <div class="p-satisfy">👍 {{ satisfaction_rate }}% de clients satisfaits</div>
+          {% else %}
+          <div class="p-rating">
+            <span>Nouveau</span>
+          </div>
+          {% endif %}
         </div>
         <div class="p-stats">
           <div class="p-stat">
@@ -257,11 +263,11 @@
           {% set metier = artisan.profession | lower %}
           {% if metier in ['plombier', 'plomberie'] %}
             <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-droplet.svg') }}" alt="" /></div>Fuite d'eau</div>
-            <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-wrench.svg') }}" alt="" /></div>Débouchage canalisation</div>
+            <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-wrench.svg') }}" alt="" /></div>Débouchage</div>
             <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-droplet.svg') }}" alt="" /></div>Installation sanitaire</div>
             <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-wrench.svg') }}" alt="" /></div>Chauffe-eau</div>
-            <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-wrench.svg') }}" alt="" /></div>Réparation robinetterie</div>
-            <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-menu.svg') }}" alt="" /></div>Voir plus</div>
+            <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-wrench.svg') }}" alt="" /></div>Robinetterie</div>
+            <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-menu.svg') }}" alt="" /></div>Recherche de fuite</div>
           {% elif metier in ['électricien', 'electricien', 'electricite', 'électricité'] %}
             <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-zap.svg') }}" alt="" /></div>Installation électrique</div>
             <div class="p-service"><div class="p-service-icon"><img src="{{ url_for('static', filename='img/icon-zap.svg') }}" alt="" /></div>Dépannage électrique</div>
@@ -289,41 +295,46 @@
 
       <section class="p-card" id="avis">
         <h3>Avis clients</h3>
+        {% if review_stats.count == 0 %}
+        <div style="text-align:center; padding: 24px 0; color:#667085;">
+          <div style="font-size:42px; font-weight:800; color:#102A43;">0.0</div>
+          <div style="color:#F7B718; font-size:18px;">☆☆☆☆☆</div>
+          <div style="font-size:13px; margin: 6px 0 12px;">(0 avis)</div>
+          <p>Soyez le premier à laisser un avis.</p>
+        </div>
+        {% else %}
         <div class="p-reviews">
           <div class="p-review-big">
             <div class="score">{{ "%.1f" | format(review_stats.avg_rating|float) }}</div>
-            <div class="stars">{{ '&#9733;' * (review_stats.avg_rating|int) }}{{ '&#9734;' * (5 - review_stats.avg_rating|int) }}</div>
+            <div class="stars">{{ '★' * ((review_stats.avg_rating|float)|round(0, 'common')|int) }}{{ '☆' * (5 - (review_stats.avg_rating|float)|round(0, 'common')|int) }}</div>
             <div class="count">({{ review_stats.count }} avis)</div>
           </div>
           <div class="p-bars">
             {% for i in range(5,0,-1) %}
             <div class="p-bar">
               <span>{{ i }} ★</span>
-              <div class="p-bar-track"><div class="p-bar-fill" style="width: {{ (review_bars[i] if review_bars else (i * 19)) }}%;"></div></div>
-              <span>{{ review_bars_count[i] if review_bars_count else (i * 5) }}</span>
+              <div class="p-bar-track"><div class="p-bar-fill" style="width: {{ review_bars[i] }}%;"></div></div>
+              <span>{{ review_bars_count[i] }}</span>
             </div>
             {% endfor %}
           </div>
         </div>
         <div class="p-review-list">
-          {% if reviews %}
-            {% for review in reviews[:3] %}
-            <div class="p-review-item">
-              <div class="p-review-head">
-                <div class="p-review-avatar">{{ review.client_name[:1] }}</div>
-                <div>
-                  <div class="p-review-author">{{ review.client_name }}</div>
-                  <div class="p-review-stars">{{ '&#9733;' * review.rating }}{{ '&#9734;' * (5 - review.rating) }}</div>
-                </div>
-                <span class="p-review-date" style="margin-left:auto;">Il y a 2 jours</span>
+          {% for review in reviews[:3] %}
+          <div class="p-review-item">
+            <div class="p-review-head">
+              <div class="p-review-avatar">{{ review.client_name[:1] }}</div>
+              <div>
+                <div class="p-review-author">{{ review.client_name }}</div>
+                <div class="p-review-stars">{{ '★' * review.rating }}{{ '☆' * (5 - review.rating) }}</div>
               </div>
-              <p class="p-review-text">{{ review.comment or 'Très bon professionnel, je recommande.' }}</p>
+              <span class="p-review-date" style="margin-left:auto;">{{ review.created_at }}</span>
             </div>
-            {% endfor %}
-          {% else %}
-            <p style="color:#667085;font-size:14px;">Soyez le premier à laisser un avis.</p>
-          {% endif %}
+            <p class="p-review-text">{{ review.comment or 'Très bon professionnel, je recommande.' }}</p>
+          </div>
+          {% endfor %}
         </div>
+        {% endif %}
       </section>
     </div>
 

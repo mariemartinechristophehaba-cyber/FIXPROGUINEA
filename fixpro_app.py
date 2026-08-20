@@ -2289,6 +2289,54 @@ def artisan_detail(artisan_id):
         artisan = dict(artisan)
         artisan["gradient"] = _avatar_gradient(artisan["full_name"])
 
+        # Donnees de demonstration ciblees
+        name_lower = artisan["full_name"].lower()
+        demo_config = None
+        if "mamadou" in name_lower:
+            demo_config = {
+                "full_name": "Mamadou S.",
+                "profession": "Plombier",
+                "experience": "7 ans",
+                "member_since": "mars 2022",
+                "rating": 4.8,
+                "review_count": 128,
+                "satisfaction_rate": 98,
+                "distance_km": 1.8,
+                "response_time": "15 min",
+                "interventions": 168,
+                "availability": "Disponible aujourd'hui"
+            }
+        elif "ibrahim" in name_lower:
+            demo_config = {
+                "full_name": "Ibrahima K.",
+                "profession": "Electricien",
+                "experience": "6 ans",
+                "member_since": "avril 2021",
+                "rating": 4.7,
+                "review_count": 96,
+                "satisfaction_rate": 96,
+                "distance_km": 2.1,
+                "response_time": "20 min",
+                "interventions": 124,
+                "availability": "Disponible aujourd'hui"
+            }
+        elif "ousmane" in name_lower:
+            demo_config = {
+                "full_name": "Ousmane D.",
+                "profession": "Frigoriste",
+                "experience": "5 ans",
+                "member_since": "janvier 2023",
+                "rating": 4.9,
+                "review_count": 74,
+                "satisfaction_rate": 99,
+                "distance_km": 2.4,
+                "response_time": "12 min",
+                "interventions": 89,
+                "availability": "Disponible aujourd'hui"
+            }
+
+        is_demo = demo_config is not None
+
         # Avis
         reviews = conn.execute(
             "SELECT r.id, r.rating, r.comment, r.created_at, u.full_name AS client_name"
@@ -2309,6 +2357,37 @@ def artisan_detail(artisan_id):
         total = review_stats["count"] or 1
         review_bars = {k: round(v / total * 100, 1) for k, v in review_counts.items()}
         review_bars_count = review_counts
+
+        # Taux de satisfaction
+        if review_stats["count"]:
+            positive = conn.execute(
+                "SELECT COUNT(*) AS n FROM reviews WHERE artisan_id = ? AND rating >= 4",
+                (artisan_id,)).fetchone()["n"]
+            satisfaction_rate = round(positive / review_stats["count"] * 100)
+        else:
+            satisfaction_rate = 0
+
+        # Surcharge demo
+        if is_demo:
+            artisan["full_name"] = demo_config["full_name"]
+            artisan["profession"] = demo_config["profession"]
+            member_since = demo_config["member_since"]
+            review_stats = {
+                "avg_rating": demo_config["rating"],
+                "count": demo_config["review_count"]
+            }
+            reviews = [
+                {"id": 1, "rating": 5, "comment": "Intervention rapide et travail très propre. Je recommande.", "created_at": "Il y a 2 jours", "client_name": "Aïssata K."},
+                {"id": 2, "rating": 5, "comment": "Très professionnel et ponctuel. Le problème a été réglé rapidement.", "created_at": "Il y a 5 jours", "client_name": "Karim B."},
+                {"id": 3, "rating": 4, "comment": "Bon travail, à recommander.", "created_at": "Il y a 1 semaine", "client_name": "Fatou C."}
+            ]
+            review_counts = {5: 108, 4: 16, 3: 3, 2: 1, 1: 0}
+            total = demo_config["review_count"]
+            review_bars = {k: round(v / total * 100, 1) for k, v in review_counts.items()}
+            review_bars_count = review_counts
+            satisfaction_rate = demo_config["satisfaction_rate"]
+            completed = demo_config["interventions"]
+            distance = demo_config["distance_km"]
 
         # Interventions realisees (status completed)
         completed = conn.execute(
@@ -2452,8 +2531,9 @@ def artisan_detail(artisan_id):
                 return redirect(url_for("artisan_detail", artisan_id=artisan_id))
 
         # Date d'inscription lisible
-        member_since = (str(artisan["created_at"])[:7] if artisan["created_at"]
-                        else "Date inconnue")
+        if not is_demo:
+            member_since = (str(artisan["created_at"])[:7] if artisan["created_at"]
+                            else "Date inconnue")
 
         # Photos de realisations (table ignoree si non migree)
         try:
@@ -2479,7 +2559,9 @@ def artisan_detail(artisan_id):
                            member_since=member_since,
                            portfolio=portfolio,
                            review_bars=review_bars,
-                           review_bars_count=review_bars_count)
+                           review_bars_count=review_bars_count,
+                           satisfaction_rate=satisfaction_rate,
+                           is_demo=is_demo)
 
 
 @app.route("/demande/<int:artisan_id>", methods=["GET", "POST"])
