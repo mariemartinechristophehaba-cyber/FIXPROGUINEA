@@ -232,7 +232,8 @@
   .f-loc-error, .f-search-prompt { background: var(--f-white); border-radius: var(--f-radius); padding: 20px; margin-top: 14px; box-shadow: var(--f-shadow-card); }
   .f-loc-error p, .f-search-prompt p { margin: 0 0 12px; color: var(--f-text-2); }
 
-  .f-search-controls { padding: 20px 0; }
+  .f-search-controls { padding: 24px 0; }
+  .f-search-hero { padding-bottom: 24px; }
   .f-search-row { display: flex; gap: 10px; align-items: center; }
   .f-search-input { flex: 1; display: flex; align-items: center; gap: 10px; background: var(--f-white); border: 1px solid var(--f-line); border-radius: var(--f-radius-sm); padding: 0 14px; height: 50px; }
   .f-search-input input { flex: 1; border: none; background: transparent; font-size: 14px; color: var(--f-text); outline: none; }
@@ -245,8 +246,9 @@
 
   .f-pros-section { padding-bottom: 24px; }
   .f-search-list { display: flex; flex-direction: column; gap: 14px; }
+  .f-search-list { display: flex; flex-direction: column; gap: 20px; }
   .f-search-card { display: flex; flex-direction: column; gap: 14px; background: var(--f-white); border-radius: var(--f-radius); padding: 16px; box-shadow: var(--f-shadow-card); text-decoration: none; color: var(--f-text); }
-  .f-search-main { display: flex; gap: 14px; }
+  .f-search-main { display: flex; gap: 14px; flex: 1; }
   .f-search-avatar-wrap { position: relative; flex: 0 0 80px; }
   .f-search-avatar { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; }
   .f-status-dot { position: absolute; bottom: 4px; right: 4px; width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--f-white); }
@@ -270,7 +272,7 @@
   @keyframes pulse { 0% { opacity: 1; } 50% { opacity: .5; } 100% { opacity: 1; } }
 
   @media (min-width: 768px) {
-    .f-search-list { display: grid !important; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+    .f-search-list { display: grid !important; grid-template-columns: repeat(2, 1fr); gap: 28px; }
     .f-search-card { height: 100%; }
   }
 
