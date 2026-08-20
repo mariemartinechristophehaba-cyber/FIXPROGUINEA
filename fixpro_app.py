@@ -514,15 +514,6 @@ def calculate_distance(lat1, lon1, lat2, lon2):
 def index():
     conn = get_db_connection()
     try:
-        categories = conn.execute(
-            "SELECT name FROM service_categories ORDER BY name").fetchall()
-        counts = {}
-        for c in categories:
-            counts[c["name"]] = conn.execute(
-                "SELECT COUNT(*) AS n FROM users"
-                " WHERE role = 'artisan' AND is_verified = 1 AND is_active = 1"
-                " AND (profession = ? OR skills LIKE ?)",
-                (c["name"], f"%{c['name']}%")).fetchone()["n"]
         artisans = conn.execute("""
             SELECT u.id, u.full_name, u.profession, u.photo_url, u.is_verified,
                    u.city, u.zone_intervention, u.hourly_rate,
@@ -533,9 +524,16 @@ def index():
             ORDER BY avg_rating DESC, review_count DESC
             LIMIT 4
         """).fetchall()
+        user = get_current_user()
+        unread_count = 0
+        if user:
+            row = conn.execute(
+                "SELECT COUNT(*) AS n FROM notifications WHERE user_id = ? AND is_read = 0",
+                (user["id"],)).fetchone()
+            unread_count = row["n"]
     finally:
         conn.close()
-    return render_template("index.html", counts=counts, artisans=artisans)
+    return render_template("index.html", artisans=artisans, unread_count=unread_count)
 
 
 @app.route("/home")

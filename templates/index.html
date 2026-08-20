@@ -2,7 +2,6 @@
 {% block title %}FixPro - Trouvez le bon professionnel{% endblock %}
 {% block header %}{% endblock %}
 {% block footer %}{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/fixpro.css', v='1') }}" />{% endblock %}
 
 {% block content %}
 <header class="f-header">
@@ -27,14 +26,18 @@
     <div class="f-header-right">
       <div class="f-header-loc">
         <img src="{{ url_for('static', filename='img/icon-map-pin.svg') }}" width="16" height="16" alt="" />
-        Abidjan, Cocody
+        {% if nav_user and nav_user.city %}{{ nav_user.city }}{% else %}Abidjan, Cocody{% endif %}
       </div>
       <a href="{{ url_for('notifications') }}" class="f-notif">
         <img src="{{ url_for('static', filename='img/icon-bell.svg') }}" width="22" height="22" alt="" />
-        <span class="f-badge">3</span>
+        {% if unread_count %}<span class="f-badge">{{ unread_count }}</span>{% endif %}
       </a>
-      <a href="{{ url_for('login') }}" class="f-avatar-link">
-        <img src="{{ url_for('static', filename='img/fixpro-avatar.png') }}" class="f-avatar-sm" alt="Profil" />
+      <a href="{% if nav_user %}{{ url_for('profile') }}{% else %}{{ url_for('login') }}{% endif %}" class="f-avatar-link">
+        {% if nav_user and nav_user.photo_url %}
+          <img src="{{ nav_user.photo_url }}" class="f-avatar-sm" alt="{{ nav_user.full_name }}" />
+        {% else %}
+          <img src="{{ url_for('static', filename='img/fixpro-avatar.png') }}" class="f-avatar-sm" alt="Profil" />
+        {% endif %}
       </a>
     </div>
   </div>
@@ -59,22 +62,22 @@
 </section>
 
 <section class="f-container">
-  <div class="f-search-card">
+  <div class="f-search-card" id="searchCard">
     <h2>De quoi avez-vous besoin ?</h2>
     <div class="f-cats">
-      <a href="{{ url_for('artisans_page', q='plomberie') }}" class="f-cat f-cat-plumber">
+      <a href="{{ url_for('artisans_page', q='plomberie') }}" class="f-cat f-cat-plumber" data-cat="plomberie">
         <div class="f-cat-icon"><img src="{{ url_for('static', filename='img/icon-droplet.svg') }}" width="28" height="28" alt="" /></div>
         <h3>Plombier</h3>
         <p>Tous vos travaux de plomberie</p>
         <div class="f-cat-bar"></div>
       </a>
-      <a href="{{ url_for('artisans_page', q='electricite') }}" class="f-cat f-cat-electrician">
+      <a href="{{ url_for('artisans_page', q='electricite') }}" class="f-cat f-cat-electrician" data-cat="electricite">
         <div class="f-cat-icon"><img src="{{ url_for('static', filename='img/icon-zap.svg') }}" width="28" height="28" alt="" /></div>
         <h3>Électricien</h3>
         <p>Installations et dépannages</p>
         <div class="f-cat-bar"></div>
       </a>
-      <a href="{{ url_for('artisans_page', q='refrigeration') }}" class="f-cat f-cat-frigo">
+      <a href="{{ url_for('artisans_page', q='refrigeration') }}" class="f-cat f-cat-frigo" data-cat="refrigeration">
         <div class="f-cat-icon"><img src="{{ url_for('static', filename='img/icon-snowflake.svg') }}" width="28" height="28" alt="" /></div>
         <h3>Frigoriste</h3>
         <p>Climatisation et froid</p>
@@ -84,16 +87,16 @@
 
     <div class="f-loc">
       <h3>Où se situe le problème ?</h3>
-      <form method="get" action="{{ url_for('artisans_page') }}" class="f-loc-input">
+      <div class="f-loc-input">
         <img src="{{ url_for('static', filename='img/icon-map-pin.svg') }}" width="20" height="20" alt="" />
-        <input type="text" name="location" placeholder="Entrez votre localisation" />
-        <button type="button" class="f-loc-target" aria-label="Ma position">
+        <input type="text" name="location" id="locInput" placeholder="Entrez votre localisation" />
+        <button type="button" class="f-loc-target" id="locTarget" aria-label="Ma position">
           <img src="{{ url_for('static', filename='img/icon-navigation.svg') }}" width="20" height="20" alt="" />
         </button>
-      </form>
+      </div>
     </div>
 
-    <a href="{{ url_for('artisans_page') }}" class="f-btn">
+    <a href="{{ url_for('artisans_page') }}" class="f-btn" id="searchBtn">
       <img src="{{ url_for('static', filename='img/icon-search.svg') }}" width="18" height="18" alt="" />
       Rechercher un professionnel
     </a>
@@ -106,54 +109,28 @@
     <a href="{{ url_for('artisans_page') }}" class="f-link">Voir tout <img src="{{ url_for('static', filename='img/icon-chevron-right.svg') }}" width="14" height="14" alt="" /></a>
   </div>
   <div class="f-pros-grid">
-    <a href="{{ url_for('artisan_detail', artisan_id=1) }}" class="f-pro-card">
+    {% for a in artisans %}
+    <a href="{{ url_for('artisan_detail', artisan_id=a.id) }}" class="f-pro-card">
       <div class="f-pro-avatar-wrap">
-        <img src="{{ url_for('static', filename='img/fixpro-avatar.png') }}" class="f-pro-avatar" alt="Mamadou S." />
+        {% if a.photo_url %}
+          <img src="{{ a.photo_url }}" class="f-pro-avatar" alt="{{ a.full_name }}" />
+        {% else %}
+          <img src="{{ url_for('static', filename='img/fixpro-avatar.png') }}" class="f-pro-avatar" alt="{{ a.full_name }}" />
+        {% endif %}
         <span class="f-pro-online"></span>
       </div>
       <div class="f-pro-info">
-        <h4>Mamadou S.</h4>
-        <p class="f-pro-job">Plombier</p>
+        <h4>{{ a.full_name }}</h4>
+        <p class="f-pro-job">{{ a.profession or 'Technicien' }}</p>
         <div class="f-pro-meta">
-          <span class="f-pro-rating"><img src="{{ url_for('static', filename='img/icon-star.svg') }}" alt="" /> 4.8</span>
-          <span>(128 avis)</span>
+          <span class="f-pro-rating"><img src="{{ url_for('static', filename='img/icon-star.svg') }}" alt="" /> {{ "%.1f" | format(a.avg_rating) }}</span>
+          <span>({{ a.review_count }} avis)</span>
         </div>
-        <div class="f-pro-meta"><img src="{{ url_for('static', filename='img/icon-map-pin.svg') }}" width="14" height="14" alt="" /> 2.5 km</div>
+        <div class="f-pro-meta"><img src="{{ url_for('static', filename='img/icon-map-pin.svg') }}" width="14" height="14" alt="" /> {{ a.distance or '2.5' }} km</div>
         <span class="f-pro-btn">Voir le profil</span>
       </div>
     </a>
-    <a href="{{ url_for('artisan_detail', artisan_id=2) }}" class="f-pro-card">
-      <div class="f-pro-avatar-wrap">
-        <img src="{{ url_for('static', filename='img/fixpro-avatar.png') }}" class="f-pro-avatar" alt="Ibrahima K." />
-        <span class="f-pro-online"></span>
-      </div>
-      <div class="f-pro-info">
-        <h4>Ibrahima K.</h4>
-        <p class="f-pro-job">Électricien</p>
-        <div class="f-pro-meta">
-          <span class="f-pro-rating"><img src="{{ url_for('static', filename='img/icon-star.svg') }}" alt="" /> 4.7</span>
-          <span>(96 avis)</span>
-        </div>
-        <div class="f-pro-meta"><img src="{{ url_for('static', filename='img/icon-map-pin.svg') }}" width="14" height="14" alt="" /> 3.1 km</div>
-        <span class="f-pro-btn">Voir le profil</span>
-      </div>
-    </a>
-    <a href="{{ url_for('artisan_detail', artisan_id=3) }}" class="f-pro-card">
-      <div class="f-pro-avatar-wrap">
-        <img src="{{ url_for('static', filename='img/fixpro-avatar.png') }}" class="f-pro-avatar" alt="Ousmane D." />
-        <span class="f-pro-online"></span>
-      </div>
-      <div class="f-pro-info">
-        <h4>Ousmane D.</h4>
-        <p class="f-pro-job">Frigoriste</p>
-        <div class="f-pro-meta">
-          <span class="f-pro-rating"><img src="{{ url_for('static', filename='img/icon-star.svg') }}" alt="" /> 4.9</span>
-          <span>(74 avis)</span>
-        </div>
-        <div class="f-pro-meta"><img src="{{ url_for('static', filename='img/icon-map-pin.svg') }}" width="14" height="14" alt="" /> 2.8 km</div>
-        <span class="f-pro-btn">Voir le profil</span>
-      </div>
-    </a>
+    {% endfor %}
   </div>
 </section>
 
@@ -198,9 +175,9 @@
   <a href="{{ url_for('conversations') }}">
     <img src="{{ url_for('static', filename='img/icon-message-circle.svg') }}" width="22" height="22" alt="" />
     Messages
-    <span class="f-notif">2</span>
+    <span class="f-notif">{{ unread_count or 0 }}</span>
   </a>
-  <a href="{{ url_for('login') }}">
+  <a href="{% if nav_user %}{{ url_for('profile') }}{% else %}{{ url_for('login') }}{% endif %}">
     <img src="{{ url_for('static', filename='img/icon-user.svg') }}" width="22" height="22" alt="" />
     Profil
   </a>
@@ -210,4 +187,41 @@
   body { padding-bottom: 80px; }
   .mobile-nav { display: none !important; }
 </style>
+
+<script>
+  const cards = document.querySelectorAll('.f-cat');
+  const locInput = document.getElementById('locInput');
+  const locTarget = document.getElementById('locTarget');
+  const searchBtn = document.getElementById('searchBtn');
+  let selectedCat = '';
+
+  cards.forEach(c => {
+    c.addEventListener('click', e => {
+      e.preventDefault();
+      cards.forEach(x => x.classList.remove('active'));
+      c.classList.add('active');
+      selectedCat = c.dataset.cat;
+      const href = c.getAttribute('href');
+      const loc = encodeURIComponent(locInput.value || '');
+      searchBtn.href = loc ? `${href}&location=${loc}` : href;
+    });
+  });
+
+  searchBtn.addEventListener('click', e => {
+    if (!selectedCat) {
+      const loc = encodeURIComponent(locInput.value || '');
+      searchBtn.href = loc ? `/artisans?location=${loc}` : '/artisans';
+    }
+  });
+
+  locTarget.addEventListener('click', () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(pos => {
+        locInput.value = `${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`;
+      }, () => alert('Géolocalisation impossible.'));
+    } else {
+      alert('Géolocalisation non supportée.');
+    }
+  });
+</script>
 {% endblock %}
