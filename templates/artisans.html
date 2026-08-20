@@ -191,9 +191,9 @@
     <img src="{{ url_for('static', filename='img/icon-search.svg') }}" width="22" height="22" alt="" />
     Recherche
   </a>
-  <a href="{{ url_for('requests_list') }}" class="f-main">
+  <a href="{{ url_for('requests_list') }}" class="f-main" aria-label="Réservations">
     <img src="{{ url_for('static', filename='img/icon-calendar.svg') }}" width="24" height="24" alt="" />
-    Réservations
+    <span class="f-main-text">Réservations</span>
   </a>
   <a href="{{ url_for('conversations') }}">
     <img src="{{ url_for('static', filename='img/icon-message-circle.svg') }}" width="22" height="22" alt="" />
@@ -250,7 +250,7 @@
   .f-search-distance { font-size: 12px; color: var(--f-text-2); margin-bottom: 8px; }
   .f-search-tags { display: flex; flex-wrap: wrap; gap: 6px; }
   .f-search-tags span { background: var(--f-bg); padding: 4px 10px; border-radius: 20px; font-size: 11px; color: var(--f-text); }
-  .f-search-profile { align-self: center; padding: 10px 18px; border: 1px solid var(--f-primary); border-radius: var(--f-radius-sm); color: var(--f-primary); font-weight: 600; font-size: 13px; white-space: nowrap; }
+  .f-search-profile { align-self: center; padding: 8px 12px; border: 1px solid var(--f-primary); border-radius: var(--f-radius-sm); color: var(--f-primary); font-weight: 600; font-size: 12px; white-space: nowrap; }
 
   .f-skeleton { display: none; }
   .f-pro-skeleton { height: 110px; background: #E2E8F0; border-radius: var(--f-radius); margin-bottom: 14px; animation: pulse 1.5s infinite; }
