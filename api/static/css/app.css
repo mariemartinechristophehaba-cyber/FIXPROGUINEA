@@ -2218,8 +2218,7 @@ body.no-tabbar .site-footer { padding-bottom: 26px; }
 .admin-log-time { color: var(--faint); font-size: 0.75rem; }
 
 @media (max-width: 1024px) {
-  .admin-kpi-grid.four-cols { grid-template-columns: repeat(2, 1fr); }
-  .admin-kpi-grid.two-cols { grid-template-columns: 1fr; }
+  .admin-kpi-grid { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
 }
 
 @media (max-width: 768px) {
