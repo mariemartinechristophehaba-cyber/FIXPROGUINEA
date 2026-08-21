@@ -236,7 +236,10 @@ def login_required(view_func):
                 session.permanent = True
             else:
                 flash("Veuillez vous connecter pour accéder à cette page.", "error")
-                return redirect(url_for("login"))
+                next_login = (url_for("admin_login")
+                              if request.endpoint and request.endpoint.startswith("admin")
+                              else url_for("login"))
+                return redirect(next_login)
         return view_func(*args, **kwargs)
 
     return wrapper
