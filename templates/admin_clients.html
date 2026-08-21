@@ -36,9 +36,13 @@
         <tr>
           <td>
             <div class="admin-user-cell">
+              {% if client.photo_url %}
+              <img src="{{ client.photo_url }}" alt="{{ client.full_name }}" class="admin-avatar" style="object-fit: cover;">
+              {% else %}
               <span class="admin-avatar" style="background: var(--brand-soft); color: var(--brand);">
                 {{ (client.full_name or '?')[0]|upper }}
               </span>
+              {% endif %}
               <div>
                 <div class="admin-user-name">{{ client.full_name }}</div>
               </div>

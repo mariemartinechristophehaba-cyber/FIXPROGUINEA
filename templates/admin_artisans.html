@@ -63,9 +63,13 @@
           <td class="cell-index">{{ loop.index }}</td>
           <td>
             <div class="admin-user-cell compact">
+              {% if artisan.photo_url %}
+              <img src="{{ artisan.photo_url }}" alt="{{ artisan.full_name }}" class="admin-avatar small" style="object-fit: cover;">
+              {% else %}
               <span class="admin-avatar small" style="background: {{ default_avatar_gradient }}; color: #fff;">
                 {{ (artisan.full_name or '?')[0]|upper }}
               </span>
+              {% endif %}
               <div>
                 <div class="admin-user-name"><a href="{{ url_for('admin_artisan_detail', artisan_id=artisan.id) }}">{{ artisan.full_name }}</a></div>
               </div>
