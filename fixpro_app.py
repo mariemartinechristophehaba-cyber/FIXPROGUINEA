@@ -2567,6 +2567,41 @@ def artisan_detail(artisan_id):
                            is_demo=is_demo)
 
 
+def _services_for_profession(profession):
+    """Retourne la liste des services associes a un metier."""
+    profession = (profession or "").lower()
+    if profession in ("plombier", "plomberie"):
+        return ["Fuite d'eau", "Débouchage canalisation", "Installation sanitaire",
+                "Chauffe-eau", "Robinetterie", "Recherche de fuite",
+                "Réparation fuite", "Inspection caméra"]
+    if profession in ("electricien", "électricien", "electricite", "électricité"):
+        return ["Installation électrique", "Dépannage électrique", "Éclairage",
+                "Mise aux normes", "Maintenance électrique", "Diagnostic électrique",
+                "Tableau électrique", "Prises et interrupteurs"]
+    if profession == "frigoriste":
+        return ["Installation climatisation", "Dépannage climatisation", "Entretien climatisation",
+                "Réfrigérateur", "Diagnostic froid", "Maintenance frigorifique",
+                "Chambre froide", "Recharge climatisation"]
+    if profession in ("chauffagiste", "chauffage"):
+        return ["Installation chauffage", "Dépannage chauffage", "Entretien chaudière",
+                "Réparation chaudière", "Chauffe-eau", "Diagnostic chauffage"]
+    return ["Installation", "Dépannage", "Maintenance", "Diagnostic", "Réparation"]
+
+
+def _generate_intervention_reference(conn):
+    """Genere une reference unique FP-AAAA-XXXXXX."""
+    year = datetime.now().year
+    count = conn.execute(
+        "SELECT COUNT(*) AS n FROM requests WHERE reference LIKE ?",
+        (f"FP-{year}-%",)).fetchone()["n"] + 1
+    while True:
+        ref = f"FP-{year}-{count:06d}"
+        if not conn.execute("SELECT 1 FROM requests WHERE reference = ?",
+                            (ref,)).fetchone():
+            return ref
+        count += 1
+
+
 @app.route("/demande/<int:artisan_id>", methods=["GET", "POST"])
 @login_required
 def demande(artisan_id):
@@ -2585,33 +2620,55 @@ def demande(artisan_id):
             flash("Technicien introuvable.", "error")
             return redirect(url_for("artisans_page"))
 
+        services = _services_for_profession(artisan.get("profession") or "Autre")
+
         if request.method == "POST":
             title = (request.form.get("title") or "").strip()
             description = (request.form.get("description") or "").strip()
+            service = (request.form.get("service") or "").strip()
             address = (request.form.get("address") or "").strip()
+            requested_date = (request.form.get("requested_date") or "").strip()
+            requested_time = (request.form.get("requested_time") or "").strip()
             urgency = (request.form.get("urgency") or "cette_semaine").strip()
             if urgency not in ("urgent", "cette_semaine", "pas_presse"):
                 urgency = "cette_semaine"
+            estimated_price = _to_float(request.form.get("estimated_price"), 0)
             phone_contact = (user.get("phone") or "").strip()
+            latitude = float(user.get("latitude") or 0)
+            longitude = float(user.get("longitude") or 0)
 
             if not title or not description:
                 flash("Veuillez remplir le titre et la description.", "error")
                 return redirect(url_for("demande", artisan_id=artisan_id))
 
+            commission_rate = app.config.get("FIXPRO_COMMISSION_RATE", 0.10)
+            commission_amount = estimated_price * commission_rate
+            professional_amount = estimated_price - commission_amount
+            reference = _generate_intervention_reference(conn)
+
             result = conn.execute(
                 "INSERT INTO requests"
-                " (client_id, artisan_id, title, description, category, address,"
-                " status, urgency, phone_contact, created_at, updated_at)"
-                " VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?, datetime('now'), datetime('now'))",
-                (user["id"], artisan_id, title, description,
-                 artisan["profession"] or "Autre", address, urgency, phone_contact))
+                " (client_id, artisan_id, reference, title, description, service, category, address,"
+                " latitude, longitude, requested_date, requested_time, status, urgency, phone_contact,"
+                " estimated_price, commission_rate, commission_amount, professional_amount, payment_status,"
+                " created_at, updated_at)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'REQUESTED', ?, ?, ?, ?, ?, ?, ?, 'PENDING', datetime('now'), datetime('now'))",
+                (user["id"], artisan_id, reference, title, description, service,
+                 artisan["profession"] or "Autre", address, latitude, longitude,
+                 requested_date, requested_time, urgency, phone_contact,
+                 estimated_price, commission_rate, commission_amount, professional_amount))
+            request_id = result.lastrowid
+            conn.execute(
+                "INSERT INTO intervention_history (request_id, status, actor, note, created_at)"
+                " VALUES (?, ?, ?, ?, datetime('now'))",
+                (request_id, "REQUESTED", user["full_name"], "Demande creee par le client"))
             conn.commit()
-            flash("Demande creee. Le technicien en sera informe.", "success")
-            return redirect(url_for("request_detail", request_id=result.lastrowid))
+            flash(f"Demande {reference} creee. FixPro l'analyse et revient vers vous.", "success")
+            return redirect(url_for("request_detail", request_id=request_id))
     finally:
         conn.close()
 
-    return render_template("request_form.html", artisan=artisan, user=user)
+    return render_template("request_form.html", artisan=artisan, user=user, services=services)
 
 
 @app.route("/artisans/<int:artisan_id>/location", methods=["POST"])

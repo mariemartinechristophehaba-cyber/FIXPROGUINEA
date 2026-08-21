@@ -2,60 +2,132 @@
 {% block title %}Demander une intervention - FixPro{% endblock %}
 
 {% block content %}
-<div class="fx-screen">
-  <div class="fx-form-top" style="padding:16px 18px 22px;position:sticky;top:0;z-index:5;">
-    <a href="{{ url_for('artisan_detail', artisan_id=artisan.id) }}" style="color:#DCE3F0;text-decoration:none;font-size:12px;">← Retour au profil</a>
-    <h3 style="margin-top:12px;">Demander une intervention</h3>
+<style>
+  .r-page { background:#F5F7FA; min-height:100vh; padding-bottom:80px; font-family:'Inter',sans-serif; }
+  .r-form { max-width:640px; margin:0 auto; padding:24px 16px; }
+  .r-top { background:#155EEF; color:#fff; padding:16px; border-radius:0 0 20px 20px; margin-bottom:20px; }
+  .r-top a { color:rgba(255,255,255,.85); text-decoration:none; font-size:13px; }
+  .r-top h3 { margin:8px 0 4px; font-size:24px; }
+  .r-top p { margin:0; font-size:14px; opacity:.9; }
+  .r-card { background:#fff; border-radius:16px; padding:20px; margin-bottom:16px; box-shadow:0 4px 12px rgba(16,42,67,.06); }
+  .r-label { color:#667085; font-size:13px; margin-bottom:6px; font-weight:600; }
+  .r-input { width:100%; border:1.5px solid #E2E8F0; border-radius:10px; height:48px; padding:0 14px; font-size:14px; color:#102A43; box-sizing:border-box; }
+  .r-textarea { width:100%; border:1.5px solid #E2E8F0; border-radius:10px; min-height:120px; padding:12px 14px; font-size:14px; color:#102A43; box-sizing:border-box; resize:vertical; }
+  .r-select { width:100%; border:1.5px solid #E2E8F0; border-radius:10px; height:48px; padding:0 14px; font-size:14px; color:#102A43; box-sizing:border-box; background:#fff; }
+  .r-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .r-urg { display:flex; gap:10px; flex-wrap:wrap; }
+  .r-urg label { flex:1; min-width:100px; text-align:center; padding:12px; border:1.5px solid #E2E8F0; border-radius:10px; font-size:14px; cursor:pointer; color:#667085; }
+  .r-urg input { display:none; }
+  .r-urg input:checked + span { color:#155EEF; border-color:#155EEF; background:#EAF3FF; }
+  .r-photo { border:2px dashed #CBD5E1; border-radius:12px; padding:16px; text-align:center; color:#667085; font-size:13px; cursor:pointer; }
+  .r-photo img { max-width:100%; border-radius:8px; margin-top:8px; }
+  .r-submit { width:100%; height:50px; background:#155EEF; color:#fff; border:none; border-radius:10px; font-size:16px; font-weight:700; margin-top:8px; }
+  .r-summary { background:#EAF3FF; border-radius:12px; padding:16px; margin-bottom:16px; }
+  .r-summary strong { color:#155EEF; }
+  @media (max-width:767px) {
+    .r-row { grid-template-columns:1fr; }
+    .r-form { padding:0; }
+    .r-card { border-radius:0; margin:0; box-shadow:none; border-bottom:1px solid #E2E8F0; }
+  }
+</style>
+
+<div class="r-page">
+  <div class="r-top">
+    <a href="{{ url_for('artisan_detail', artisan_id=artisan.id) }}">← Retour au profil</a>
+    <h3>Demander une intervention</h3>
     <p>{{ artisan.full_name }} · {{ artisan.profession or 'Technicien' }}</p>
   </div>
 
-  <form method="post" class="fx-form-body" style="padding-bottom:120px;" enctype="multipart/form-data">
+  <form class="r-form" method="post" enctype="multipart/form-data">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
     <input type="hidden" name="artisan_id" value="{{ artisan.id }}" />
 
-    <div class="fx-fg">
-      <div class="fx-fl">📍 Votre position</div>
-      <input class="fx-fb filled" type="text" name="address" value="{{ user.quartier or user.city or '' }}" required />
-    </div>
-
-    <div class="fx-fg">
-      <div class="fx-fl">Décrivez le problème</div>
-      <textarea class="fx-fb" name="description" required minlength="10" placeholder="Expliquez le probleme en detail."></textarea>
-    </div>
-
-    <div class="fx-fg">
-      <div class="fx-fl">Type d'intervention</div>
-      <input class="fx-fb" type="text" name="title" required placeholder="Ex: Fuite d'eau sous l'evier" />
-    </div>
-
-    <div class="fx-fg">
-      <div class="fx-fl">Urgence</div>
-      <div class="fx-urg-row">
-        <label class="fx-urg active"><input type="radio" name="urgency" value="normal" checked />Normal</label>
-        <label class="fx-urg"><input type="radio" name="urgency" value="urgent" />Urgent</label>
+    <div class="r-card">
+      <div class="r-summary">
+        Référence générée automatiquement par <strong>FixPro</strong>. Vous serez informé dès validation.
       </div>
-    </div>
 
-    <div class="fx-fg">
-      <div class="fx-fl">Photo (optionnel)</div>
-      <div class="fx-photo-box" id="photoBox">📷 Ajouter une photo</div>
-      <input type="file" name="photo" id="photoInput" accept="image/*" style="display:none;" />
-      <input type="hidden" name="photo_url" id="photoUrl" value="" />
-    </div>
+      <div class="r-label">Service concerné</div>
+      <select class="r-select" name="service" required>
+        <option value="" disabled selected>Choisir un service</option>
+        {% for s in services %}
+        <option value="{{ s }}">{{ s }}</option>
+        {% endfor %}
+      </select>
 
-    <button class="fx-dock-btn primary" type="submit" style="width:100%;margin-top:8px;">Confirmer la demande</button>
+      <div style="margin-top:16px;">
+        <div class="r-label">Type d'intervention</div>
+        <input class="r-input" type="text" name="title" required placeholder="Ex: Fuite d'eau sous l'évier" />
+      </div>
+
+      <div style="margin-top:16px;">
+        <div class="r-label">Description du problème</div>
+        <textarea class="r-textarea" name="description" required minlength="10" placeholder="Expliquez le problème en détail."></textarea>
+      </div>
+
+      <div style="margin-top:16px;">
+        <div class="r-label">Adresse / Quartier</div>
+        <input class="r-input" type="text" name="address" value="{{ user.quartier or user.city or '' }}" required />
+      </div>
+
+      <div class="r-row" style="margin-top:16px;">
+        <div>
+          <div class="r-label">Date souhaitée</div>
+          <input class="r-input" type="date" name="requested_date" />
+        </div>
+        <div>
+          <div class="r-label">Heure souhaitée</div>
+          <input class="r-input" type="time" name="requested_time" />
+        </div>
+      </div>
+
+      <div style="margin-top:16px;">
+        <div class="r-label">Budget prévisionnel (FCFA)</div>
+        <input class="r-input" type="number" name="estimated_price" min="0" step="1000" placeholder="Ex: 50000" />
+      </div>
+
+      <div style="margin-top:16px;">
+        <div class="r-label">Urgence</div>
+        <div class="r-urg">
+          <label>
+            <input type="radio" name="urgency" value="pas_presse" checked />
+            <span>Normal</span>
+          </label>
+          <label>
+            <input type="radio" name="urgency" value="cette_semaine" />
+            <span>Cette semaine</span>
+          </label>
+          <label>
+            <input type="radio" name="urgency" value="urgent" />
+            <span>Urgent</span>
+          </label>
+        </div>
+      </div>
+
+      <div style="margin-top:16px;">
+        <div class="r-label">Photo (optionnel)</div>
+        <div class="r-photo" id="photoBox">Ajouter une photo</div>
+        <input type="file" name="photo" id="photoInput" accept="image/*" style="display:none;" />
+        <input type="hidden" name="photo_url" id="photoUrl" value="" />
+      </div>
+
+      <button class="r-submit" type="submit">Confirmer la demande</button>
+    </div>
   </form>
 </div>
 
 <script>
-  document.getElementById('photoBox').addEventListener('click', () => document.getElementById('photoInput').click());
-  document.getElementById('photoInput').addEventListener('change', function(e){
+  const photoBox = document.getElementById('photoBox');
+  const photoInput = document.getElementById('photoInput');
+  const photoUrl = document.getElementById('photoUrl');
+  photoBox.addEventListener('click', () => photoInput.click());
+  photoInput.addEventListener('change', function(e){
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
     reader.onload = function(ev){
-      document.getElementById('photoUrl').value = ev.target.result;
-      document.getElementById('photoBox').innerHTML = '✓ ' + file.name;
+      photoUrl.value = ev.target.result;
+      photoBox.innerHTML = '<img src="' + ev.target.result + '" style="max-width:100%;border-radius:8px;" /><br/>' + file.name;
     };
     reader.readAsDataURL(file);
   });

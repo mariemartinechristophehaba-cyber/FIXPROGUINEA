@@ -23,7 +23,7 @@ import db
 from config import BASE_DIR, get_config
 from fixpro_app import _geocode_zone, _is_valid_coordinate
 
-TABLES = ("users", "service_categories", "requests", "messages", "payments")
+TABLES = ("users", "service_categories", "requests", "messages", "payments", "intervention_photos", "intervention_history", "settings")
 
 
 def _connect(config):
@@ -246,9 +246,77 @@ def cmd_geocode_artisans(config):
     return 0
 
 
+def cmd_upgrade_db(config):
+    """Applique les migrations incrementelles sans detruire les donnees."""
+    conn = _connect(config)
+    try:
+        cols = conn.table_columns("requests")
+        if "reference" not in cols:
+            conn.execute("ALTER TABLE requests ADD COLUMN reference TEXT")
+            conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_requests_reference ON requests(reference)")
+            conn.execute("ALTER TABLE requests ADD COLUMN service TEXT")
+            conn.execute("ALTER TABLE requests ADD COLUMN requested_date TEXT")
+            conn.execute("ALTER TABLE requests ADD COLUMN requested_time TEXT")
+            conn.execute("ALTER TABLE requests ADD COLUMN estimated_price REAL DEFAULT 0")
+            conn.execute("ALTER TABLE requests ADD COLUMN final_price REAL DEFAULT 0")
+            conn.execute("ALTER TABLE requests ADD COLUMN commission_rate REAL DEFAULT 10")
+            conn.execute("ALTER TABLE requests ADD COLUMN commission_amount REAL DEFAULT 0")
+            conn.execute("ALTER TABLE requests ADD COLUMN professional_amount REAL DEFAULT 0")
+            conn.execute("ALTER TABLE requests ADD COLUMN payment_status TEXT DEFAULT 'pending'")
+            conn.execute("ALTER TABLE requests ADD COLUMN completed_at TEXT")
+            conn.execute("ALTER TABLE requests ADD COLUMN latitude REAL DEFAULT 0")
+            conn.execute("ALTER TABLE requests ADD COLUMN longitude REAL DEFAULT 0")
+            conn.commit()
+            print("Colonnes d'intervention ajoutees a 'requests'.")
+        else:
+            print("Colonnes d'intervention deja presentes.")
+
+        tables = [t for t in TABLES if t not in ("users", "service_categories", "requests", "messages", "payments")]
+        for table in tables:
+            if _table_exists(conn, table):
+                print(f"Table {table} deja presente.")
+                continue
+            if table == "intervention_photos":
+                conn.execute("""
+                    CREATE TABLE IF NOT EXISTS intervention_photos (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        request_id INTEGER NOT NULL REFERENCES requests(id) ON DELETE CASCADE,
+                        photo_url TEXT NOT NULL,
+                        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+                    )
+                """)
+            elif table == "intervention_history":
+                conn.execute("""
+                    CREATE TABLE IF NOT EXISTS intervention_history (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        request_id INTEGER NOT NULL REFERENCES requests(id) ON DELETE CASCADE,
+                        status TEXT NOT NULL,
+                        actor TEXT,
+                        note TEXT,
+                        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+                    )
+                """)
+            elif table == "settings":
+                conn.execute("""
+                    CREATE TABLE IF NOT EXISTS settings (
+                        key TEXT PRIMARY KEY,
+                        value TEXT NOT NULL
+                    )
+                """)
+                conn.execute("INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)",
+                             ("FIXPRO_COMMISSION_RATE", "0.10"))
+            conn.commit()
+            print(f"Table {table} creee.")
+    finally:
+        conn.close()
+    print("Migration terminee.")
+    return 0
+
+
 COMMANDS = {
     "init-db": cmd_init_db,
     "check": cmd_check,
+    "upgrade-db": cmd_upgrade_db,
     "inspect": cmd_inspect,
     "secret": cmd_secret,
     "create-admin": cmd_create_admin,
