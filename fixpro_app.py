@@ -1239,38 +1239,44 @@ def admin_artisans():
             action = request.form.get("action")
             reason = (request.form.get("reason") or "").strip()
 
-            if action == "verify":
+            def _set_status(status, is_active):
                 conn.execute(
-                    "UPDATE users SET is_verified = 1 WHERE id = ? AND role = 'artisan'",
-                    (artisan_id,))
+                    "UPDATE users SET account_status = ?, is_active = ? WHERE id = ? AND role = 'artisan'",
+                    (status, 1 if is_active else 0, artisan_id))
+                conn.commit()
+
+            if action == "verify":
+                _set_status("ACTIVE", 1)
+                conn.execute("UPDATE users SET is_verified = 1 WHERE id = ?", (artisan_id,))
                 conn.commit()
                 log_admin_action(user["id"], user["email"], "verify", "user", artisan_id,
                                  reason or "Validation du profil artisan")
                 flash("Technicien valide.", "success")
             elif action == "reject":
-                conn.execute(
-                    "DELETE FROM users WHERE id = ? AND role = 'artisan' AND is_verified = 0",
-                    (artisan_id,))
-                conn.commit()
+                _set_status("DELETED", 0)
                 log_admin_action(user["id"], user["email"], "reject", "user", artisan_id,
                                  reason or "Refus de l'inscription")
                 flash("Inscription refusee.", "success")
+            elif action == "active":
+                _set_status("ACTIVE", 1)
+                log_admin_action(user["id"], user["email"], "active", "user", artisan_id,
+                                 reason or "Compte reactive")
+                flash("Technicien actif.", "success")
+            elif action == "pause":
+                _set_status("PAUSED", 1)
+                log_admin_action(user["id"], user["email"], "pause", "user", artisan_id,
+                                 reason or "Compte mis en pause")
+                flash("Technicien mis en pause.", "success")
             elif action == "suspend":
-                conn.execute(
-                    "UPDATE users SET is_active = 0 WHERE id = ? AND role = 'artisan'",
-                    (artisan_id,))
-                conn.commit()
+                _set_status("SUSPENDED", 0)
                 log_admin_action(user["id"], user["email"], "suspend", "user", artisan_id,
                                  reason or "Suspension du compte")
                 flash("Technicien suspendu.", "success")
-            elif action == "restore":
-                conn.execute(
-                    "UPDATE users SET is_active = 1 WHERE id = ? AND role = 'artisan'",
-                    (artisan_id,))
-                conn.commit()
-                log_admin_action(user["id"], user["email"], "restore", "user", artisan_id,
-                                 reason or "Reactivation du compte")
-                flash("Technicien reactive.", "success")
+            elif action == "delete":
+                _set_status("DELETED", 0)
+                log_admin_action(user["id"], user["email"], "delete", "user", artisan_id,
+                                 reason or "Compte supprime")
+                flash("Technicien supprime.", "success")
             return redirect(url_for("admin_artisans"))
 
         q = request.args.get("q", "").strip()
@@ -1286,10 +1292,9 @@ def admin_artisans():
             params.extend([like, like, like])
         if status_filter == "pending":
             where_parts.append("u.is_verified = 0")
-        elif status_filter == "active":
-            where_parts.append("u.is_verified = 1 AND u.is_active = 1")
-        elif status_filter == "suspended":
-            where_parts.append("u.is_active = 0")
+        elif status_filter:
+            where_parts.append("u.account_status = ?")
+            params.append(status_filter.upper())
         if city_filter:
             where_parts.append("u.city = ?")
             params.append(city_filter)
@@ -2304,7 +2309,7 @@ def artisans_page():
         "SELECT id, full_name AS nom, profession AS metier, city,"
         " hourly_rate, latitude, longitude, photo_url, is_verified,"
         " availability_status"
-        " FROM users WHERE role = 'artisan'")
+        " FROM users WHERE role = 'artisan' AND is_active = 1 AND account_status != 'DELETED'")
     params = []
 
     if query:

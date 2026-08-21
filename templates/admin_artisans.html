@@ -16,8 +16,10 @@
     <select name="status" onchange="this.form.submit()">
       <option value="" {% if not status_filter %}selected{% endif %}>Tous les statuts</option>
       <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>En attente</option>
-      <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Actif</option>
-      <option value="suspended" {% if status_filter == 'suspended' %}selected{% endif %}>Suspendu</option>
+      <option value="ACTIVE" {% if status_filter == 'ACTIVE' %}selected{% endif %}>Actif</option>
+      <option value="PAUSED" {% if status_filter == 'PAUSED' %}selected{% endif %}>En pause</option>
+      <option value="SUSPENDED" {% if status_filter == 'SUSPENDED' %}selected{% endif %}>Suspendu</option>
+      <option value="DELETED" {% if status_filter == 'DELETED' %}selected{% endif %}>Supprime</option>
     </select>
     <select name="city" onchange="this.form.submit()">
       <option value="" {% if not city_filter %}selected{% endif %}>Toutes les villes</option>
@@ -65,7 +67,7 @@
                 {{ (artisan.full_name or '?')[0]|upper }}
               </span>
               <div>
-                <div class="admin-user-name">{{ artisan.full_name }}</div>
+                <div class="admin-user-name"><a href="{{ url_for('admin_artisan_detail', artisan_id=artisan.id) }}">{{ artisan.full_name }}</a></div>
               </div>
             </div>
           </td>
@@ -86,10 +88,16 @@
           <td>
             {% if artisan.is_verified == 0 %}
               <span class="badge pending">En attente</span>
-            {% elif artisan.is_active == 0 %}
-              <span class="badge failed">Suspendu</span>
-            {% else %}
+            {% elif artisan.account_status == 'ACTIVE' %}
               <span class="badge success">Actif</span>
+            {% elif artisan.account_status == 'PAUSED' %}
+              <span class="badge amber">Pause</span>
+            {% elif artisan.account_status == 'SUSPENDED' %}
+              <span class="badge failed">Suspendu</span>
+            {% elif artisan.account_status == 'DELETED' %}
+              <span class="badge muted">Supprime</span>
+            {% else %}
+              <span class="badge pending">Inconnu</span>
             {% endif %}
           </td>
           <td>{{ artisan.completed or 0 }}</td>
@@ -114,10 +122,17 @@
               <form method="post" class="admin-inline-form">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                 <input type="hidden" name="artisan_id" value="{{ artisan.id }}" />
-                {% if artisan.is_active %}
-                <button class="btn btn-danger btn-sm" type="submit" name="action" value="suspend" onclick="return confirm('Bloquer ce technicien ?')">Bloquer</button>
-                {% else %}
-                <button class="btn btn-success btn-sm" type="submit" name="action" value="restore" onclick="return confirm('Debloquer ce technicien ?')">Debloquer</button>
+                {% if artisan.account_status != 'ACTIVE' %}
+                <button class="btn btn-success btn-sm" type="submit" name="action" value="active" onclick="return confirm('Reactiver ce technicien ?')">Reactiver</button>
+                {% endif %}
+                {% if artisan.account_status != 'PAUSED' %}
+                <button class="btn btn-soft btn-sm" type="submit" name="action" value="pause" onclick="return confirm('Mettre ce technicien en pause ?')">Pause</button>
+                {% endif %}
+                {% if artisan.account_status != 'SUSPENDED' %}
+                <button class="btn btn-danger btn-sm" type="submit" name="action" value="suspend" onclick="return confirm('Suspendre ce technicien ?')">Suspendre</button>
+                {% endif %}
+                {% if artisan.account_status != 'DELETED' %}
+                <button class="btn btn-danger btn-sm" type="submit" name="action" value="delete" onclick="return confirm('Supprimer ce compte ? Les donnees historiques sont conservees.')">Supprimer</button>
                 {% endif %}
               </form>
               {% endif %}

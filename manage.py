@@ -251,6 +251,14 @@ def cmd_upgrade_db(config):
     conn = _connect(config)
     try:
         cols = conn.table_columns("requests")
+        user_cols = conn.table_columns("users")
+        if "account_status" not in user_cols:
+            conn.execute("ALTER TABLE users ADD COLUMN account_status TEXT DEFAULT 'ACTIVE'")
+            conn.execute("UPDATE users SET account_status = 'SUSPENDED' WHERE is_active = 0")
+            conn.execute("UPDATE users SET account_status = 'ACTIVE' WHERE is_active = 1")
+            conn.commit()
+            print("Colonne account_status ajoutee a 'users'.")
+
         if "reference" not in cols:
             conn.execute("ALTER TABLE requests ADD COLUMN reference TEXT")
             conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_requests_reference ON requests(reference)")

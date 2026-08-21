@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS users (
     zone_intervention TEXT,
     years_experience  INTEGER DEFAULT 0,
     availability_status TEXT DEFAULT 'hors_ligne',
+    account_status    TEXT DEFAULT 'ACTIVE',
     estimated_delay TEXT,
     created_at      TEXT DEFAULT CURRENT_TIMESTAMP
 );
@@ -60,7 +61,20 @@ CREATE TABLE IF NOT EXISTS requests (
     quote_status       TEXT DEFAULT 'none',
     quote_proposed_at  TEXT,
     quote_approved_at  TEXT,
-    status             TEXT DEFAULT 'pending',
+    reference          TEXT UNIQUE,
+    service            TEXT,
+    requested_date     TEXT,
+    requested_time     TEXT,
+    latitude           REAL DEFAULT 0,
+    longitude          REAL DEFAULT 0,
+    estimated_price    REAL DEFAULT 0,
+    final_price        REAL DEFAULT 0,
+    commission_rate    REAL DEFAULT 10,
+    commission_amount  REAL DEFAULT 0,
+    professional_amount REAL DEFAULT 0,
+    payment_status     TEXT DEFAULT 'PENDING',
+    completed_at       TEXT,
+    status             TEXT DEFAULT 'REQUESTED',
     urgency            TEXT DEFAULT 'cette_semaine',
     phone_contact      TEXT,
     created_at         TEXT DEFAULT CURRENT_TIMESTAMP,
@@ -153,6 +167,22 @@ CREATE TABLE IF NOT EXISTS admin_logs (
     target_id       INTEGER,
     details         TEXT,
     created_at      TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS intervention_photos (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    request_id   INTEGER NOT NULL REFERENCES requests(id) ON DELETE CASCADE,
+    photo_url    TEXT NOT NULL,
+    created_at   TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS intervention_history (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    request_id  INTEGER NOT NULL REFERENCES requests(id) ON DELETE CASCADE,
+    status      TEXT NOT NULL,
+    actor       TEXT,
+    note        TEXT,
+    created_at  TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_admin_logs_created_at        ON admin_logs(created_at DESC);
