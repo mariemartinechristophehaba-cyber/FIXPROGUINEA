@@ -1,221 +1,267 @@
 {% extends 'admin_base.html' %}
-{% set pending_artisans = stats.pending_artisans %}
-{% set open_requests = stats.open_requests %}
-{% set open_tickets = stats.open_tickets %}
-{% block title %}Tableau de bord - FixPro Admin{% endblock %}
-{% block admin_title %}Vue d'ensemble{% endblock %}
+{% set title = 'Tableau de bord - FixPro Admin' %}
+{% set admin_title = 'Tableau de bord' %}
 
 {% block admin_content %}
-{% if stats.open_tickets > 0 %}
-<div class="admin-alert">
+<div class="page-head">
   <div>
-    <strong>{{ stats.open_tickets }} signalement{{ 's' if stats.open_tickets > 1 }} en attente</strong>
-    <span class="small muted"> Examiner rapidement les tickets ouverts.</span>
+    <h1 class="page-title">Bonjour, {{ user.full_name or 'Administrateur' }}</h1>
+    <p class="page-subtitle">Voici un apercu de l'activite de FixPro aujourd'hui.</p>
   </div>
-  <a class="btn btn-danger" href="{{ url_for('admin_tickets') }}">Examiner</a>
+  <input type="date" class="date-picker" value="{{ today }}" />
 </div>
-{% endif %}
 
-<section class="admin-kpi-section">
-  <h2 class="admin-section-title-large">Aujourd'hui</h2>
-  <div class="admin-kpi-grid two-cols">
-    <div class="admin-kpi large">
-      <div class="admin-kpi-icon green">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
-      </div>
-      <div class="admin-kpi-body">
-        <div class="admin-kpi-label">Revenus du jour</div>
-        <div class="admin-kpi-value">{{ "{:,}".format(stats.today_revenue|int).replace(",", " ") }} GNF</div>
-        <div class="admin-kpi-sub">Commission FixPro</div>
-      </div>
+<section class="card-grid">
+  <div class="kpi-card">
+    <div class="kpi-icon blue">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
     </div>
+    <div>
+      <div class="kpi-label">Total clients</div>
+      <div class="kpi-value">{{ stats.clients_total }}</div>
+      <div class="kpi-sub positive">+{{ stats.clients_month }} ce mois</div>
+    </div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon green">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    </div>
+    <div>
+      <div class="kpi-label">Total techniciens</div>
+      <div class="kpi-value">{{ stats.artisans_total }}</div>
+      <div class="kpi-sub">{{ stats.artisans_available }} disponibles</div>
+    </div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon purple">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg>
+    </div>
+    <div>
+      <div class="kpi-label">Interventions en cours</div>
+      <div class="kpi-value">{{ stats.interventions_in_progress }}</div>
+      <div class="kpi-sub">en ce moment</div>
+    </div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon orange">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+    </div>
+    <div>
+      <div class="kpi-label">Commission FixPro</div>
+      <div class="kpi-value">{{ "{:,}".format(stats.commission_total|int).replace(",", " ") }}</div>
+      <div class="kpi-sub">GNF</div>
+    </div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon blue">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg>
+    </div>
+    <div>
+      <div class="kpi-label">Nouvelles demandes</div>
+      <div class="kpi-value">{{ stats.new_requests }}</div>
+      <div class="kpi-sub positive">aujourd'hui</div>
+    </div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon green">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+    </div>
+    <div>
+      <div class="kpi-label">Interventions terminees</div>
+      <div class="kpi-value">{{ stats.interventions_completed }}</div>
+      <div class="kpi-sub">depuis le debut</div>
+    </div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon red">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </div>
+    <div>
+      <div class="kpi-label">Interventions annulees</div>
+      <div class="kpi-value">{{ stats.interventions_cancelled }}</div>
+      <div class="kpi-sub negative">-</div>
+    </div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon orange">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+    </div>
+    <div>
+      <div class="kpi-label">Paiements</div>
+      <div class="kpi-value">{{ "{:,}".format(stats.completed_total|int).replace(",", " ") }}</div>
+      <div class="kpi-sub">GNF</div>
+    </div>
+  </div>
+</section>
 
-    <div class="admin-kpi large">
-      <div class="admin-kpi-icon blue">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-      </div>
-      <div class="admin-kpi-body">
-        <div class="admin-kpi-label">Nouveaux inscrits</div>
-        <div class="admin-kpi-value">{{ stats.today_signups }}</div>
-        <div class="admin-kpi-sub">
-          {% for row in stats.today_signups_breakdown %}
-            {{ row.n }} {{ 'clients' if row.role == 'client' else 'techniciens' }}{{ ',' if not loop.last }}
-          {% else %}
-            Aucun aujourd'hui
-          {% endfor %}
+<div class="dashboard-grid">
+  <div class="panel">
+    <div class="panel-header">
+      <h3 class="panel-title">Activite recente</h3>
+      <a class="panel-link" href="{{ url_for('admin_activity') }}">Voir tout</a>
+    </div>
+    <div class="activity-list">
+      {% for a in recent_activities %}
+      <div class="activity-item">
+        <div class="activity-icon" style="background: {{ a.color }};">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg>
+        </div>
+        <div class="activity-body">
+          <div class="activity-title">{{ a.title }}</div>
+          <div class="activity-meta">{{ a.time }} — {{ a.meta }}{% if a.reference %} — <span class="ref-link">{{ a.reference }}</span>{% endif %}</div>
         </div>
       </div>
+      {% else %}
+      <p class="muted">Aucune activite recente.</p>
+      {% endfor %}
     </div>
   </div>
-</section>
 
-<section class="admin-kpi-section">
-  <h2 class="admin-section-title-large">Panorama</h2>
-  <div class="admin-kpi-grid four-cols">
-    <div class="admin-kpi">
-      <div class="admin-kpi-icon blue">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-      </div>
-      <div class="admin-kpi-body">
-        <div class="admin-kpi-label">Clients inscrits</div>
-        <div class="admin-kpi-value">{{ stats.clients_total }}</div>
-        <div class="admin-kpi-sub">+{{ stats.clients_month }} ce mois</div>
-      </div>
+  <div class="panel">
+    <div class="panel-header">
+      <h3 class="panel-title">Interventions recentes</h3>
+      <a class="panel-link" href="{{ url_for('admin_requests') }}">Voir tout</a>
     </div>
-
-    <div class="admin-kpi">
-      <div class="admin-kpi-icon green">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-      </div>
-      <div class="admin-kpi-body">
-        <div class="admin-kpi-label">Techniciens actifs</div>
-        <div class="admin-kpi-value">{{ stats.artisans_total }}</div>
-        <div class="admin-kpi-sub">+{{ stats.artisans_month }} ce mois</div>
-      </div>
-    </div>
-
-    <div class="admin-kpi">
-      <div class="admin-kpi-icon amber">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
-      </div>
-      <div class="admin-kpi-body">
-        <div class="admin-kpi-label">Commission totale</div>
-        <div class="admin-kpi-value sm">{{ "{:,}".format(stats.commission_total|int).replace(",", " ") }} GNF</div>
-        <div class="admin-kpi-sub">sur {{ "{:,}".format(stats.completed_total|int).replace(",", " ") }} GNF payes</div>
-      </div>
-    </div>
-
-    <div class="admin-kpi">
-      <div class="admin-kpi-icon purple">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg>
-      </div>
-      <div class="admin-kpi-body">
-        <div class="admin-kpi-label">Demandes en cours</div>
-        <div class="admin-kpi-value">{{ stats.open_requests }}</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<div class="admin-sections">
-  <div class="admin-card">
-    <h3>Techniciens en attente</h3>
-    {% if pending_artisans_list %}
     <div class="admin-table-wrap">
-      <table class="admin-table admin-table-large">
+      <table class="admin-table">
         <thead>
           <tr>
-            <th>Nom</th>
-            <th>Metier</th>
-            <th>Ville / Quartier</th>
-            <th>Telephone</th>
-            <th>Documents</th>
-            <th>Actions</th>
+            <th>N° Intervention</th>
+            <th>Client</th>
+            <th>Technicien</th>
+            <th>Service</th>
+            <th>Statut</th>
+            <th>Montant</th>
+            <th>Commission</th>
           </tr>
         </thead>
         <tbody>
-          {% for artisan in pending_artisans_list %}
+          {% for r in recent_requests %}
           <tr>
-            <td>{{ artisan.full_name }}</td>
-            <td>{{ artisan.profession or '—' }}</td>
-            <td>{{ artisan.city or '—' }} {{ artisan.quartier or '' }}</td>
-            <td>{{ artisan.phone }}</td>
+            <td><a class="ref-link" href="{{ url_for('admin_request_detail', request_id=r.id) }}">{{ r.reference or 'FP-' + (r.id|string) }}</a></td>
+            <td>{{ r.client_name or '—' }}</td>
+            <td>{{ r.artisan_name or '—' }}</td>
+            <td>{{ r.service or r.category or '—' }}</td>
             <td>
-              {% if artisan.doc_count and artisan.doc_count > 0 %}
-              <span class="badge success">{{ artisan.doc_count }} ok</span>
-              {% else %}
-              <span class="badge failed">0</span>
-              {% endif %}
+              {% set label = (r.status or 'NOUVELLE').upper() %}
+              {% if label in ['REQUESTED','NOUVELLE'] %}<span class="badge badge-info">Nouvelle</span>
+              {% elif label in ['ACCEPTED','ACCEPTEE','ASSIGNED'] %}<span class="badge badge-success">Acceptee</span>
+              {% elif label in ['IN_PROGRESS','EN COURS','ON_THE_WAY'] %}<span class="badge badge-pending">En cours</span>
+              {% elif label in ['COMPLETED','TERMINEE'] %}<span class="badge badge-success">Terminee</span>
+              {% elif label in ['CANCELLED','ANNULEE'] %}<span class="badge badge-danger">Annulee</span>
+              {% else %}<span class="badge badge-info">{{ r.status }}</span>{% endif %}
             </td>
-            <td>
-              <form method="post" action="{{ url_for('admin_artisans') }}" class="admin-inline-form" style="display: inline;">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                <input type="hidden" name="artisan_id" value="{{ artisan.id }}" />
-                <button class="btn btn-success btn-sm" type="submit" name="action" value="verify" onclick="return confirm('Accepter ce technicien ?')">Accepter</button>
-                <button class="btn btn-danger btn-sm" type="submit" name="action" value="reject" onclick="return confirm('Refuser ce technicien ?')">Refuser</button>
-              </form>
-            </td>
+            <td class="amount">{{ "{:,}".format((r.final_price or r.estimated_price or 0)|int).replace(",", " ") }} GNF</td>
+            <td>{{ "{:,}".format((r.commission_amount or 0)|int).replace(",", " ") }} GNF</td>
           </tr>
+          {% else %}
+          <tr><td colspan="7" class="muted" style="text-align:center;padding:24px;">Aucune intervention recente.</td></tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
-    {% if stats.pending_artisans > 5 %}
-    <a class="btn btn-soft btn-sm" href="{{ url_for('admin_artisans', status='pending') }}" style="margin-top: 12px;">Voir les {{ stats.pending_artisans }} inscriptions</a>
-    {% endif %}
-    {% else %}
-    <p class="muted">Aucun technicien en attente de validation.</p>
-    {% endif %}
+  </div>
+</div>
+
+<div class="chart-grid">
+  <div class="chart-card">
+    <div class="panel-header">
+      <h3 class="panel-title">Interventions (30 derniers jours)</h3>
+      <select class="date-picker" style="width:auto;padding:6px 10px;">
+        <option>30 jours</option>
+        <option>7 jours</option>
+        <option>90 jours</option>
+      </select>
+    </div>
+    <div class="chart-wrap">
+      <canvas id="interventionChart"></canvas>
+    </div>
   </div>
 
-  <div class="admin-card">
-    <h3>Activite recente</h3>
-    {% if recent_logs %}
-    <div class="admin-logs">
-      {% for log in recent_logs %}
-      <div class="admin-log">
-        <span class="admin-log-admin">{{ log.admin_name or log.admin_email or 'Systeme' }}</span>
-        <span class="admin-log-action">{{ log.action }}</span>
-        <span class="admin-log-time">{{ (log.created_at|string)[:16] }}</span>
+  <div class="chart-card">
+    <div class="panel-header">
+      <h3 class="panel-title">Repartition par service</h3>
+    </div>
+    <div class="chart-wrap" style="position:relative;">
+      <canvas id="serviceChart"></canvas>
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <div class="panel-header">
+      <h3 class="panel-title">Apercu financier</h3>
+    </div>
+    <div class="activity-list" style="gap:20px;">
+      <div class="activity-item">
+        <div class="activity-icon" style="background: var(--blue);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+        <div class="activity-body">
+          <div class="activity-title">Chiffre d'affaires</div>
+          <div class="kpi-value" style="font-size:1.1rem;">{{ "{:,}".format(financial.revenue|int).replace(",", " ") }} GNF</div>
+        </div>
       </div>
-      {% endfor %}
+      <div class="activity-item">
+        <div class="activity-icon" style="background: var(--orange);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+        <div class="activity-body">
+          <div class="activity-title">Total commissions</div>
+          <div class="kpi-value" style="font-size:1.1rem;">{{ "{:,}".format(financial.commission|int).replace(",", " ") }} GNF</div>
+        </div>
+      </div>
+      <div class="activity-item">
+        <div class="activity-icon" style="background: var(--green);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+        <div class="activity-body">
+          <div class="activity-title">Montant verse aux techniciens</div>
+          <div class="kpi-value" style="font-size:1.1rem;">{{ "{:,}".format(financial.paid_to_artisans|int).replace(",", " ") }} GNF</div>
+        </div>
+      </div>
     </div>
-    {% else %}
-    <p class="muted">Aucune action enregistree.</p>
-    {% endif %}
-  </div>
-
-  <div class="admin-card">
-    <h3>Interventions recentes</h3>
-    {% if recent_requests %}
-    <div class="admin-logs">
-      {% for r in recent_requests %}
-      <a class="admin-log" href="{{ url_for('admin_request_detail', request_id=r.id) }}" style="text-decoration:none;color:inherit;">
-        <span class="admin-log-admin">{{ r.reference or 'FP-' + (r.id|string) }}</span>
-        <span class="admin-log-action">{{ r.status }}</span>
-        <span>{{ r.client_name or '—' }}</span>
-        <span class="admin-log-time">{{ (r.created_at|string)[:16] }}</span>
-      </a>
-      {% endfor %}
-    </div>
-    {% else %}
-    <p class="muted">Aucune intervention recente.</p>
-    {% endif %}
   </div>
 </div>
+{% endblock %}
 
-<div class="admin-card" style="margin-top: 24px;">
-  <h3>Transactions recentes</h3>
-  {% if recent_payments %}
-  <div class="admin-table-wrap">
-    <table class="admin-table">
-      <thead>
-        <tr>
-          <th>Montant</th>
-          <th>Client</th>
-          <th>Technicien</th>
-          <th>Methode</th>
-          <th>Date</th>
-          <th>Statut</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for p in recent_payments %}
-        <tr>
-          <td class="admin-amount">{{ "{:,}".format(p.amount|int).replace(",", " ") }} GNF</td>
-          <td>{{ p.client_name }}</td>
-          <td>{{ p.artisan_name or '—' }}</td>
-          <td>{{ payment_method_label(p.method) }}</td>
-          <td>{{ (p.created_at|string)[:16] }}</td>
-          <td><span class="badge {% if p.status == 'completed' %}success{% elif p.status == 'pending' %}pending{% else %}failed{% endif %}">{{ p.status }}</span></td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-  {% else %}
-  <p class="muted">Aucune transaction pour le moment.</p>
-  {% endif %}
-</div>
+{% block scripts %}
+<script>
+  const interventionCtx = document.getElementById('interventionChart').getContext('2d');
+  new Chart(interventionCtx, {
+    type: 'line',
+    data: {
+      labels: {{ chart_labels|tojson }},
+      datasets: [{
+        label: 'Interventions',
+        data: {{ chart_values|tojson }},
+        borderColor: '#2563eb',
+        backgroundColor: 'rgba(37,99,235,0.1)',
+        tension: 0.4,
+        fill: true,
+        pointRadius: 3,
+        pointBackgroundColor: '#2563eb'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
 
+  const serviceCtx = document.getElementById('serviceChart').getContext('2d');
+  new Chart(serviceCtx, {
+    type: 'doughnut',
+    data: {
+      labels: {{ service_labels|tojson }},
+      datasets: [{
+        data: {{ service_values|tojson }},
+        backgroundColor: ['#2563eb','#10b981','#f59e0b','#8b5cf6','#ef4444','#64748b']
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { position: 'right' } }
+    }
+  });
+</script>
 {% endblock %}
