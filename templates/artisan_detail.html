@@ -73,15 +73,15 @@
   .hidden-service { display: none; }
   .p-voir-plus { background: transparent; border: none; color: #155EEF; font-size: 14px; font-weight: 700; cursor: pointer; }
 
-  .p-reviews { display: grid; grid-template-columns: 120px 1fr; gap: 24px; }
-  .p-review-big { text-align: center; }
+  .p-reviews { display: grid; grid-template-columns: 120px 1fr; gap: 24px; min-width: 0; }
+  .p-review-big { text-align: center; min-width: 0; }
   .p-review-big .score { font-size: 42px; font-weight: 800; color: #102A43; }
   .p-review-big .stars { color: #F7B718; font-size: 18px; margin: 4px 0; }
   .p-review-big .count { color: #667085; font-size: 13px; }
-  .p-bars { display: flex; flex-direction: column; gap: 6px; }
-  .p-bar { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #667085; }
-  .p-bar-track { flex: 1; height: 6px; background: #F5F7FA; border-radius: 3px; }
-  .p-bar-fill { height: 100%; background: #F7B718; border-radius: 3px; }
+  .p-bars { display: flex; flex-direction: column; gap: 6px; width: 100%; min-width: 0; box-sizing: border-box; }
+  .p-bar { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #667085; min-width: 0; }
+  .p-bar-track { flex: 1; height: 6px; background: #F5F7FA; border-radius: 3px; min-width: 0; overflow: hidden; }
+  .p-bar-fill { height: 100%; background: #F7B718; border-radius: 3px; max-width: 100%; }
   .p-review-list { margin-top: 20px; }
   .p-review-item { border-bottom: 1px solid #F5F7FA; padding: 16px 0; }
   .p-review-item:last-child { border-bottom: none; }
