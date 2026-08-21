@@ -1034,42 +1034,31 @@ def _finalize_artisan_registration_json(wizard):
 
 @app.route("/admin/login", methods=["GET", "POST"])
 def admin_login():
-    """Ecran d'accueil admin : redirige si deja connecte."""
+    """Ecran de connexion dedie a l'administration."""
     if session.get("user_id"):
         user = get_current_user()
         if user and user["role"] == "admin":
-            return redirect(app.config.get("ADMIN_DASHBOARD_URL", url_for("admin_dashboard")))
+            return redirect(url_for("admin_dashboard"))
 
-    fallback_enabled = bool(app.config.get("ADMIN_PASSWORD"))
-    if request.method == "POST" and fallback_enabled:
-        admin_password = request.form.get("admin_password", "").strip()
-        if admin_password == app.config.get("ADMIN_PASSWORD"):
-            conn = get_db_connection()
-            try:
-                admin = conn.execute(
-                    "SELECT id FROM users WHERE role = 'admin' LIMIT 1").fetchone()
-                if not admin:
-                    conn.execute(
-                        "INSERT INTO users (email, phone, password_hash, role,"
-                        " full_name, is_verified, is_active)"
-                        " VALUES (?, ?, ?, 'admin', ?, 1, 1)",
-                        ("admin@fixpro.local", "+224000000000",
-                         generate_password_hash("unused"), "Administrateur"))
-                    conn.commit()
-                    admin = conn.execute(
-                        "SELECT id FROM users WHERE role = 'admin' LIMIT 1").fetchone()
-                session["user_id"] = admin["id"]
-                session.permanent = True
-                flash("Bienvenue dans l'administration FixPro.", "success")
-                return redirect(app.config.get("ADMIN_DASHBOARD_URL", url_for("admin_dashboard")))
-            finally:
-                conn.close()
-        else:
-            flash("Mot de passe incorrect.", "error")
+    if request.method == "POST":
+        email = (request.form.get("email") or "").strip().lower()
+        password = request.form.get("password") or ""
+        conn = get_db_connection()
+        try:
+            admin = conn.execute(
+                "SELECT * FROM users WHERE email = ? AND role = 'admin'",
+                (email,)).fetchone()
+        finally:
+            conn.close()
+        if admin and check_password_hash(admin["password_hash"], password):
+            session.clear()
+            session["user_id"] = admin["id"]
+            session.permanent = True
+            flash("Bienvenue dans l'administration FixPro.", "success")
+            return redirect(url_for("admin_dashboard"))
+        flash("Email ou mot de passe incorrect.", "error")
 
-    return render_template("admin_login.html",
-                           google_configured=bool(_get_google_client()),
-                           fallback_enabled=fallback_enabled)
+    return render_template("admin_login.html")
 
 
 @app.route("/admin/login/google")
