@@ -1,0 +1,94 @@
+{% extends 'admin_base.html' %}
+{% block title %}Intervention {{ req.reference or req.id }} - FixPro Admin{% endblock %}
+{% block admin_title %}Dossier intervention{% endblock %}
+
+{% block admin_content %}
+<div class="admin-card">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+    <div>
+      <h2 style="margin:0 0 4px;">{{ req.reference or 'FP-' + (req.id|string) }}</h2>
+      <span class="badge {% if req.status == 'COMPLETED' %}success{% elif req.status == 'CANCELLED' %}failed{% else %}pending{% endif %}">{{ req.status }}</span>
+    </div>
+    <a class="btn btn-soft" href="{{ url_for('admin_requests') }}">← Retour aux interventions</a>
+  </div>
+</div>
+
+<div class="admin-sections" style="margin-top:20px;">
+  <div class="admin-card">
+    <h3>Client</h3>
+    <p><strong>{{ req.client_name or '—' }}</strong></p>
+    <p>Téléphone : {{ req.client_phone or '—' }}</p>
+    <p>Localisation : {{ req.client_quartier or '' }} {{ req.client_city or '—' }}</p>
+  </div>
+
+  <div class="admin-card">
+    <h3>Professionnel</h3>
+    <p><strong>{{ req.artisan_name or 'Non assigné' }}</strong></p>
+    <p>Métier : {{ req.artisan_profession or '—' }}</p>
+    <p>Téléphone : {{ req.artisan_phone or '—' }}</p>
+  </div>
+
+  <div class="admin-card">
+    <h3>Intervention</h3>
+    <p><strong>{{ req.title or '—' }}</strong></p>
+    <p>Service : {{ req.service or '—' }}</p>
+    <p>{{ req.description or '—' }}</p>
+    <p>Adresse : {{ req.address or '—' }}</p>
+    <p>Date souhaitée : {{ req.requested_date or '—' }} {{ req.requested_time or '' }}</p>
+    <p>Urgence : {{ req.urgency or '—' }}</p>
+  </div>
+
+  <div class="admin-card">
+    <h3>Finances</h3>
+    <p>Prix estimé : {{ "{:,}".format((req.estimated_price or 0)|int).replace(",", " ") }} FCFA</p>
+    <p>Prix final : {{ "{:,}".format((req.final_price or 0)|int).replace(",", " ") }} FCFA</p>
+    <p>Commission FixPro ({{ (req.commission_rate * 100) if req.commission_rate else 10 }} %) : {{ "{:,}".format((req.commission_amount or 0)|int).replace(",", " ") }} FCFA</p>
+    <p>Montant professionnel : {{ "{:,}".format((req.professional_amount or 0)|int).replace(",", " ") }} FCFA</p>
+    <p>Paiement : {{ req.payment_status or 'PENDING' }}</p>
+  </div>
+</div>
+
+<div class="admin-card" style="margin-top:20px;">
+  <h3>Historique</h3>
+  {% if history %}
+  <div class="admin-logs">
+    {% for h in history %}
+    <div class="admin-log">
+      <span class="admin-log-action">{{ h.status }}</span>
+      <span>{{ h.note or '' }}</span>
+      <span class="admin-log-time">{{ (h.created_at|string)[:16] }}</span>
+      <span>{{ h.actor or 'Système' }}</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="muted">Aucun événement enregistré.</p>
+  {% endif %}
+</div>
+
+<div class="admin-card" style="margin-top:20px;">
+  <h3>Paiements</h3>
+  {% if payments %}
+  <div class="admin-table-wrap">
+    <table class="admin-table">
+      <thead>
+        <tr><th>Montant</th><th>Commission</th><th>Méthode</th><th>Statut</th><th>Date</th></tr>
+      </thead>
+      <tbody>
+        {% for p in payments %}
+        <tr>
+          <td>{{ "{:,}".format((p.amount or 0)|int).replace(",", " ") }} FCFA</td>
+          <td>{{ "{:,}".format((p.commission_amount or 0)|int).replace(",", " ") }} FCFA</td>
+          <td>{{ payment_method_label(p.method) }}</td>
+          <td>{{ p.status }}</td>
+          <td>{{ (p.created_at|string)[:16] }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="muted">Aucun paiement enregistré.</p>
+  {% endif %}
+</div>
+{% endblock %}

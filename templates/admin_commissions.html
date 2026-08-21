@@ -1,0 +1,49 @@
+{% extends 'admin_base.html' %}
+{% block title %}Commissions - FixPro Admin{% endblock %}
+{% block admin_title %}Commissions FixPro{% endblock %}
+
+{% block admin_content %}
+<section class="admin-kpi-section">
+  <div class="admin-kpi-grid four-cols">
+    <div class="admin-kpi">
+      <div class="admin-kpi-label">Total commissions</div>
+      <div class="admin-kpi-value">{{ "{:,}".format(total|int).replace(",", " ") }} FCFA</div>
+    </div>
+    <div class="admin-kpi">
+      <div class="admin-kpi-label">Aujourd'hui</div>
+      <div class="admin-kpi-value">{{ "{:,}".format(today|int).replace(",", " ") }} FCFA</div>
+    </div>
+    <div class="admin-kpi">
+      <div class="admin-kpi-label">Cette semaine</div>
+      <div class="admin-kpi-value">{{ "{:,}".format(week|int).replace(",", " ") }} FCFA</div>
+    </div>
+    <div class="admin-kpi">
+      <div class="admin-kpi-label">Ce mois</div>
+      <div class="admin-kpi-value">{{ "{:,}".format(month|int).replace(",", " ") }} FCFA</div>
+    </div>
+  </div>
+</section>
+
+<div class="admin-card" style="margin-top:20px;">
+  <h3>Commissions par intervention</h3>
+  <div class="admin-table-wrap">
+    <table class="admin-table">
+      <thead>
+        <tr><th>Référence</th><th>Professionnel</th><th>Montant</th><th>Commission</th><th>Date</th><th>Statut</th></tr>
+      </thead>
+      <tbody>
+        {% for c in commissions %}
+        <tr>
+          <td>{{ c.reference or c.id }}</td>
+          <td>{{ c.artisan_name or '—' }}</td>
+          <td>{{ "{:,}".format((c.amount or 0)|int).replace(",", " ") }} FCFA</td>
+          <td>{{ "{:,}".format((c.commission_amount or 0)|int).replace(",", " ") }} FCFA</td>
+          <td>{{ (c.created_at|string)[:16] }}</td>
+          <td><span class="badge success">{{ c.status }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

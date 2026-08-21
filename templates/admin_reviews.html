@@ -1,0 +1,27 @@
+{% extends 'admin_base.html' %}
+{% block title %}Avis - FixPro Admin{% endblock %}
+{% block admin_title %}Avis clients{% endblock %}
+
+{% block admin_content %}
+<div class="admin-card">
+  <div class="admin-table-wrap">
+    <table class="admin-table">
+      <thead>
+        <tr><th>Client</th><th>Professionnel</th><th>Note</th><th>Commentaire</th><th>Intervention</th><th>Date</th></tr>
+      </thead>
+      <tbody>
+        {% for review in reviews %}
+        <tr>
+          <td>{{ review.client_name }}</td>
+          <td>{{ review.artisan_name }}</td>
+          <td>{{ review.rating }} / 5</td>
+          <td>{{ review.comment or '—' }}</td>
+          <td>{{ review.reference or '—' }}</td>
+          <td>{{ (review.created_at|string)[:16] }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

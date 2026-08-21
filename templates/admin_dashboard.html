@@ -164,6 +164,24 @@
     <p class="muted">Aucune action enregistree.</p>
     {% endif %}
   </div>
+
+  <div class="admin-card">
+    <h3>Interventions recentes</h3>
+    {% if recent_requests %}
+    <div class="admin-logs">
+      {% for r in recent_requests %}
+      <a class="admin-log" href="{{ url_for('admin_request_detail', request_id=r.id) }}" style="text-decoration:none;color:inherit;">
+        <span class="admin-log-admin">{{ r.reference or 'FP-' + (r.id|string) }}</span>
+        <span class="admin-log-action">{{ r.status }}</span>
+        <span>{{ r.client_name or '—' }}</span>
+        <span class="admin-log-time">{{ (r.created_at|string)[:16] }}</span>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="muted">Aucune intervention recente.</p>
+    {% endif %}
+  </div>
 </div>
 
 <div class="admin-card" style="margin-top: 24px;">

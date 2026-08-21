@@ -1136,17 +1136,93 @@ def admin_google_callback():
 
 
 @app.route("/admin")
+@login_required
+@admin_required
 def admin_root():
-    """Redirige vers le tableau de bord Next.js."""
-    return redirect(app.config.get("ADMIN_DASHBOARD_URL", "http://localhost:3000/admin"))
+    """Racine admin redirige vers le tableau de bord Flask."""
+    return redirect(url_for("admin_dashboard"))
 
 
 @app.route("/admin/dashboard")
 @login_required
 @admin_required
 def admin_dashboard():
-    """Tableau de bord admin : redirige vers le dashboard Next.js."""
-    return redirect(app.config.get("ADMIN_DASHBOARD_URL", "http://localhost:3000/admin"))
+    """Tableau de bord admin : statistiques et activite recente."""
+    user = get_current_user()
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    month = datetime.now(timezone.utc).strftime("%Y-%m")
+    conn = get_db_connection()
+    try:
+        stats = {
+            "clients_total": conn.execute("SELECT COUNT(*) AS n FROM users WHERE role = 'client'").fetchone()["n"],
+            "artisans_total": conn.execute("SELECT COUNT(*) AS n FROM users WHERE role = 'artisan' AND is_active = 1").fetchone()["n"],
+            "artisans_available": conn.execute(
+                "SELECT COUNT(*) AS n FROM users WHERE role = 'artisan' AND is_active = 1 AND availability_status = 'disponible'").fetchone()["n"],
+            "interventions_in_progress": conn.execute(
+                "SELECT COUNT(*) AS n FROM requests WHERE status IN ('IN_PROGRESS', 'ON_THE_WAY', 'ASSIGNED')").fetchone()["n"],
+            "interventions_completed": conn.execute(
+                "SELECT COUNT(*) AS n FROM requests WHERE status = 'COMPLETED'").fetchone()["n"],
+            "open_tickets": conn.execute(
+                "SELECT COUNT(*) AS n FROM admin_tickets WHERE status = 'open'").fetchone()["n"],
+            "open_requests": conn.execute(
+                "SELECT COUNT(*) AS n FROM requests WHERE status NOT IN ('COMPLETED', 'CANCELLED')").fetchone()["n"],
+            "today_revenue": conn.execute(
+                "SELECT COALESCE(SUM(amount), 0) AS s FROM payments WHERE status = 'completed' AND created_at LIKE ?",
+                (today + "%",)).fetchone()["s"],
+            "commission_total": conn.execute(
+                "SELECT COALESCE(SUM(commission_amount), 0) AS s FROM payments WHERE status = 'completed'").fetchone()["s"],
+            "pending_artisans": conn.execute(
+                "SELECT COUNT(*) AS n FROM users WHERE role = 'artisan' AND is_verified = 0").fetchone()["n"],
+            "completed_total": conn.execute(
+                "SELECT COALESCE(SUM(amount), 0) AS s FROM payments WHERE status = 'completed'").fetchone()["s"],
+            "clients_month": conn.execute(
+                "SELECT COUNT(*) AS n FROM users WHERE role = 'client' AND created_at LIKE ?",
+                (month + "%",)).fetchone()["n"],
+            "artisans_month": conn.execute(
+                "SELECT COUNT(*) AS n FROM users WHERE role = 'artisan' AND created_at LIKE ?",
+                (month + "%",)).fetchone()["n"],
+            "today_signups": conn.execute(
+                "SELECT COUNT(*) AS n FROM users WHERE created_at LIKE ?",
+                (today + "%",)).fetchone()["n"],
+        }
+
+        today_signups_breakdown = conn.execute(
+            "SELECT role, COUNT(*) AS n FROM users WHERE created_at LIKE ? GROUP BY role",
+            (today + "%",)).fetchall()
+
+        pending_artisans_list = conn.execute(
+            "SELECT u.*,"
+            " (SELECT COUNT(*) FROM technician_documents WHERE technician_id = u.id) AS doc_count"
+            " FROM users u WHERE u.role = 'artisan' AND u.is_verified = 0"
+            " ORDER BY u.created_at DESC LIMIT 5").fetchall()
+
+        recent_logs = conn.execute(
+            "SELECT * FROM admin_logs ORDER BY created_at DESC LIMIT 10").fetchall()
+
+        recent_payments = conn.execute(
+            "SELECT p.*, u.full_name AS client_name, a.full_name AS artisan_name"
+            " FROM payments p"
+            " JOIN requests r ON r.id = p.request_id"
+            " JOIN users u ON u.id = r.client_id"
+            " LEFT JOIN users a ON a.id = r.artisan_id"
+            " ORDER BY p.created_at DESC LIMIT 6").fetchall()
+
+        recent_requests = conn.execute(
+            "SELECT r.*, c.full_name AS client_name, a.full_name AS artisan_name"
+            " FROM requests r"
+            " LEFT JOIN users c ON c.id = r.client_id"
+            " LEFT JOIN users a ON a.id = r.artisan_id"
+            " ORDER BY r.created_at DESC LIMIT 5").fetchall()
+
+    finally:
+        conn.close()
+
+    return render_template("admin_dashboard.html", user=user, stats=stats,
+                           today_signups_breakdown=today_signups_breakdown,
+                           pending_artisans_list=pending_artisans_list,
+                           recent_logs=recent_logs, recent_payments=recent_payments,
+                           recent_requests=recent_requests,
+                           payment_method_label=payment_method_label)
 
 
 @app.route("/admin/artisans", methods=["GET", "POST"])
@@ -1391,6 +1467,44 @@ def admin_requests():
         conn.close()
     return render_template("admin_requests.html", user=user, requests=requests_list,
                            status_filter=status_filter, q=q)
+
+
+@app.route("/admin/requests/<int:request_id>")
+@login_required
+@admin_required
+def admin_request_detail(request_id):
+    """Dossier complet d'une intervention."""
+    user = get_current_user()
+    conn = get_db_connection()
+    try:
+        req = conn.execute(
+            "SELECT r.*, c.full_name AS client_name, c.phone AS client_phone, c.city AS client_city, c.quartier AS client_quartier,"
+            " a.full_name AS artisan_name, a.phone AS artisan_phone, a.profession AS artisan_profession"
+            " FROM requests r"
+            " LEFT JOIN users c ON c.id = r.client_id"
+            " LEFT JOIN users a ON a.id = r.artisan_id"
+            " WHERE r.id = ?", (request_id,)).fetchone()
+        if not req:
+            flash("Intervention introuvable.", "error")
+            return redirect(url_for("admin_requests"))
+
+        history = conn.execute(
+            "SELECT * FROM intervention_history WHERE request_id = ? ORDER BY created_at DESC",
+            (request_id,)).fetchall()
+
+        photos = conn.execute(
+            "SELECT photo_url FROM intervention_photos WHERE request_id = ?",
+            (request_id,)).fetchall()
+
+        payments = conn.execute(
+            "SELECT * FROM payments WHERE request_id = ?",
+            (request_id,)).fetchall()
+
+    finally:
+        conn.close()
+    return render_template("admin_request_detail.html", user=user, req=req,
+                           history=history, photos=photos, payments=payments,
+                           payment_method_label=payment_method_label)
 
 
 @app.route("/admin/tickets", methods=["GET", "POST"])
@@ -3457,6 +3571,77 @@ def _load_settings():
                     pass
     finally:
         conn.close()
+
+
+@app.route("/admin/commissions")
+@login_required
+@admin_required
+def admin_commissions():
+    """Suivi des commissions FixPro."""
+    user = get_current_user()
+    rate = app.config.get("FIXPRO_COMMISSION_RATE", 0.10)
+    conn = get_db_connection()
+    try:
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        month = datetime.now(timezone.utc).strftime("%Y-%m")
+        total = conn.execute("SELECT COALESCE(SUM(commission_amount), 0) AS s FROM payments WHERE status = 'completed'").fetchone()["s"]
+        today_sum = conn.execute(
+            "SELECT COALESCE(SUM(commission_amount), 0) AS s FROM payments WHERE status = 'completed' AND created_at LIKE ?",
+            (today + "%",)).fetchone()["s"]
+        week_sum = conn.execute(
+            "SELECT COALESCE(SUM(commission_amount), 0) AS s FROM payments WHERE status = 'completed' AND created_at >= ?",
+            ((datetime.now(timezone.utc) - timedelta(days=7)).strftime("%Y-%m-%d %H:%M:%S"),)).fetchone()["s"]
+        month_sum = conn.execute(
+            "SELECT COALESCE(SUM(commission_amount), 0) AS s FROM payments WHERE status = 'completed' AND created_at LIKE ?",
+            (month + "%",)).fetchone()["s"]
+        commissions = conn.execute(
+            "SELECT p.*, u.full_name AS client_name, a.full_name AS artisan_name, r.reference"
+            " FROM payments p"
+            " JOIN requests r ON r.id = p.request_id"
+            " JOIN users u ON u.id = r.client_id"
+            " LEFT JOIN users a ON a.id = r.artisan_id"
+            " WHERE p.status = 'completed'"
+            " ORDER BY p.created_at DESC").fetchall()
+    finally:
+        conn.close()
+    return render_template("admin_commissions.html", user=user, rate=rate,
+                           total=total, today=today_sum, week=week_sum, month=month_sum,
+                           commissions=commissions)
+
+
+@app.route("/admin/avis")
+@login_required
+@admin_required
+def admin_reviews():
+    """Gestion des avis clients."""
+    user = get_current_user()
+    conn = get_db_connection()
+    try:
+        reviews = conn.execute(
+            "SELECT r.*, c.full_name AS client_name, a.full_name AS artisan_name, req.reference"
+            " FROM reviews r"
+            " JOIN users c ON c.id = r.client_id"
+            " JOIN users a ON a.id = r.artisan_id"
+            " LEFT JOIN requests req ON req.id = r.request_id"
+            " ORDER BY r.created_at DESC").fetchall()
+    finally:
+        conn.close()
+    return render_template("admin_reviews.html", user=user, reviews=reviews)
+
+
+@app.route("/admin/activite")
+@login_required
+@admin_required
+def admin_activity():
+    """Journal d'activite des administrateurs."""
+    user = get_current_user()
+    conn = get_db_connection()
+    try:
+        logs = conn.execute(
+            "SELECT * FROM admin_logs ORDER BY created_at DESC").fetchall()
+    finally:
+        conn.close()
+    return render_template("admin_activity.html", user=user, logs=logs)
 
 
 @app.route("/admin/settings", methods=["GET", "POST"])
