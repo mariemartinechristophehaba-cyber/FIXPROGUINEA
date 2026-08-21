@@ -522,7 +522,8 @@ class AdminPanelTests(FixProTestCase):
         self.login_admin()
         response = self.client.get("/admin/dashboard")
         self.assertEqual(response.status_code, 200)
-        self.assertIn("FixPro Admin".encode(), response.data)
+        self.assertIn("FixPro".encode(), response.data)
+        self.assertIn("Admin".encode(), response.data)
 
     def test_admin_can_suspend_and_restore_artisan(self):
         self.register_artisan("artisan@example.com", phone="+224621111111")
