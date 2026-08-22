@@ -31,10 +31,21 @@
   .card-link { font-size: 0.8rem; color: var(--blue); font-weight: 600; }
   .table-wrap { overflow-x: auto; width: 100%; -webkit-overflow-scrolling: touch; }
   .table { width: 100%; border-collapse: collapse; min-width: 100%; }
-  .table-wide { min-width: 880px; }
-  .table-inter { min-width: 720px; }
+  .table-wide { min-width: 900px; }
+  .table-inter { min-width: 750px; }
   .table th { text-align: left; font-size: 0.65rem; color: var(--muted); padding: 8px 6px; border-bottom: 1px solid #e2e8f0; text-transform: uppercase; letter-spacing: 0.03em; }
   .table td { padding: 10px 6px; border-bottom: 1px solid #f1f5f9; font-size: 0.8rem; white-space: nowrap; }
+  .table-inter th:nth-child(1), .table-inter td:nth-child(1) { min-width: 80px; }
+  .table-inter th:nth-child(2), .table-inter td:nth-child(2) { min-width: 120px; }
+  .table-inter th:nth-child(3), .table-inter td:nth-child(3) { min-width: 140px; }
+  .table-inter th:nth-child(4), .table-inter td:nth-child(4) { min-width: 200px; }
+  .table-inter th:nth-child(5), .table-inter td:nth-child(5) { min-width: 100px; }
+  .table-wide th:nth-child(1), .table-wide td:nth-child(1) { min-width: 150px; }
+  .table-wide th:nth-child(2), .table-wide td:nth-child(2) { min-width: 180px; }
+  .table-wide th:nth-child(3), .table-wide td:nth-child(3) { min-width: 100px; }
+  .table-wide th:nth-child(4), .table-wide td:nth-child(4) { min-width: 130px; }
+  .table-wide th:nth-child(5), .table-wide td:nth-child(5) { min-width: 100px; }
+  .table-wide th:nth-child(6), .table-wide td:nth-child(6) { min-width: 130px; }
   .avatar { width: 28px; height: 28px; border-radius: 50%; background: #e2e8f0; display: inline-grid; place-items: center; font-size: 0.7rem; font-weight: 700; margin-right: 6px; color: #475569; }
   .tag { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; }
   .tag-attente { background: #dbeafe; color: #1d4ed8; }
@@ -60,20 +71,20 @@
   .fin-body { flex: 1; min-width: 0; }
   .fin-label { font-size: 0.78rem; color: var(--muted); margin-bottom: 1px; }
   .fin-value { font-size: 1rem; font-weight: 800; }
-  .tech-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f1f5f9; flex-wrap: nowrap; }
+  .tech-row { display: grid; grid-template-columns: 44px minmax(120px, 1fr) auto auto; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f1f5f9; }
   .tech-row:last-child { border-bottom: none; }
-  .tech-avatar { width: 38px; height: 38px; border-radius: 50%; background: #e2e8f0; display: grid; place-items: center; font-weight: 700; overflow: hidden; flex-shrink: 0; }
+  .tech-avatar { width: 38px; height: 38px; border-radius: 50%; background: #e2e8f0; display: grid; place-items: center; font-weight: 700; overflow: hidden; }
   .tech-avatar img { width: 100%; height: 100%; object-fit: cover; }
-  .tech-body { flex: 1 1 120px; min-width: 0; }
+  .tech-body { min-width: 0; }
   .tech-name { font-weight: 700; font-size: 0.82rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .tech-meta { font-size: 0.72rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .tech-status { display: flex; align-items: center; gap: 4px; font-size: 0.7rem; color: var(--green); white-space: nowrap; }
-  .tech-status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
-  .tech-right { text-align: right; flex-shrink: 0; }
+  .tech-status svg { flex-shrink: 0; }
+  .tech-right { text-align: right; min-width: 90px; }
   .tech-km { font-size: 0.7rem; color: var(--muted); white-space: nowrap; }
   .tech-note { display: flex; align-items: center; justify-content: flex-end; gap: 3px; color: var(--orange); font-size: 0.72rem; white-space: nowrap; }
   .tech-note svg { width: 12px; height: 12px; flex-shrink: 0; }
-  .tech-btn { display: inline-flex; align-items: center; gap: 4px; padding: 5px 10px; border-radius: 8px; font-size: 0.7rem; font-weight: 600; background: #dbeafe; color: #1d4ed8; flex-shrink: 0; white-space: nowrap; }
+  .tech-btn { display: inline-flex; align-items: center; gap: 4px; padding: 5px 10px; border-radius: 8px; font-size: 0.7rem; font-weight: 600; background: #dbeafe; color: #1d4ed8; white-space: nowrap; }
   .empty { color: var(--muted); font-size: 0.85rem; text-align: center; padding: 20px; }
   .icon-16 { width: 16px; height: 16px; }
   @media (max-width: 1200px) { .row-2 { grid-template-columns: 1fr; } .row-3 { grid-template-columns: 1fr; } }
