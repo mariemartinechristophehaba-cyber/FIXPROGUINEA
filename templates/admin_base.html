@@ -21,7 +21,7 @@
         --green: #10b981;
         --orange: #f59e0b;
         --red: #ef4444;
-        --purple: #7c3aed;
+        --purple: #8b5cf6;
         --text: #1e293b;
         --muted: #64748b;
       }
@@ -31,29 +31,29 @@
       .admin-app { display: flex; min-height: 100vh; }
       .sidebar { width: 260px; background: var(--navy); color: var(--text-light); position: fixed; inset: 0 auto 0 0; display: flex; flex-direction: column; z-index: 100; }
       .sidebar-header { display: flex; align-items: center; gap: 10px; padding: 20px 24px; border-bottom: 1px solid rgba(255,255,255,0.05); }
-      .menu-btn { background: none; border: none; cursor: pointer; margin-right: 4px; }
-      .menu-btn span { display: block; width: 20px; height: 2px; background: var(--white); margin: 4px 0; border-radius: 1px; }
       .logo-mark { width: 34px; height: 34px; background: var(--blue); border-radius: 8px; display: grid; place-items: center; color: #fff; }
       .logo-mark svg { width: 20px; height: 20px; }
       .logo-text { color: var(--white); font-weight: 800; font-size: 1.1rem; line-height: 1; }
       .logo-text small { display: block; font-size: 0.55rem; letter-spacing: 0.18em; color: var(--orange); font-weight: 700; }
       .nav { flex: 1; padding: 16px 12px; overflow-y: auto; }
-      .nav a { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 8px; font-size: 0.88rem; color: var(--text-light); margin-bottom: 3px; transition: .15s; }
+      .nav a { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 8px; font-size: 0.88rem; color: var(--text-light); margin-bottom: 3px; transition: .15s; position: relative; }
       .nav a:hover, .nav a.active { background: rgba(255,255,255,0.06); color: var(--white); }
       .nav a.active { background: var(--navy-active); }
       .nav a svg { width: 20px; height: 20px; }
-      .nav a .badge { margin-left: auto; background: var(--blue); color: #fff; font-size: 0.65rem; padding: 2px 7px; border-radius: 10px; font-weight: 700; }
-      .nav-group { margin-bottom: 18px; }
+      .nav a .badge { margin-left: auto; background: var(--red); color: #fff; font-size: 0.65rem; padding: 2px 7px; border-radius: 10px; font-weight: 700; }
+      .nav-sep { height: 1px; background: rgba(255,255,255,0.06); margin: 12px 14px; }
+      .nav-label { padding: 8px 14px 4px; font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; }
       .user { padding: 16px; border-top: 1px solid rgba(255,255,255,0.05); }
-      .user-card { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
-      .user-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--blue); color: #fff; display: grid; place-items: center; font-weight: 700; }
-      .user-name { color: var(--white); font-size: 0.9rem; font-weight: 600; }
-      .user-status { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--text-light); }
-      .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
-      .logout { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 10px; background: rgba(239,68,68,0.12); color: var(--red); border-radius: 8px; font-size: 0.85rem; font-weight: 600; }
-      .logout:hover { background: rgba(239,68,68,0.2); }
+      .help { display: flex; align-items: center; gap: 10px; padding: 12px 14px; margin: 0 12px 12px; background: rgba(255,255,255,0.04); border-radius: 8px; font-size: 0.85rem; color: var(--text-light); }
+      .help-icon { width: 32px; height: 32px; background: rgba(255,255,255,0.08); border-radius: 50%; display: grid; place-items: center; }
+      .logout { display: flex; align-items: center; gap: 10px; padding: 10px 14px; color: var(--red); border-radius: 8px; font-size: 0.88rem; font-weight: 600; }
+      .logout:hover { background: rgba(239,68,68,0.1); }
       .main { flex: 1; margin-left: 260px; min-width: 0; display: flex; flex-direction: column; }
       .topbar { height: 70px; background: var(--card); display: flex; align-items: center; justify-content: space-between; padding: 0 28px; position: sticky; top: 0; z-index: 50; }
+      .topbar-left { display: flex; align-items: center; gap: 16px; }
+      .menu-btn { display: none; background: none; border: none; cursor: pointer; }
+      .menu-btn span { display: block; width: 22px; height: 2px; background: var(--text); margin: 5px 0; }
+      .search { width: 260px; padding: 10px 14px 10px 40px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 0.9rem; background: #f8fafc url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="%2394a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>') no-repeat 14px center; }
       .topbar-right { display: flex; align-items: center; gap: 22px; }
       .notif { position: relative; background: none; border: none; cursor: pointer; }
       .notif svg { width: 22px; height: 22px; color: var(--muted); }
@@ -65,16 +65,19 @@
       .profile-role { font-size: 0.75rem; color: var(--muted); }
       .chevron { color: var(--muted); }
       .content { padding: 28px; flex: 1; overflow-y: auto; }
+      .flash { padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 0.85rem; }
+      .flash.success { background: #d1fae5; color: #047857; }
+      .flash.error { background: #fee2e2; color: #b91c1c; }
       @media (max-width: 1024px) {
         .sidebar { transform: translateX(-100%); transition: .2s; }
         .sidebar.open { transform: translateX(0); }
         .main { margin-left: 0; }
+        .menu-btn { display: block; }
+        .search { display: none; }
+        .content { padding: 16px; }
       }
       .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 90; }
       .overlay.show { display: block; }
-      .flash { padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 0.85rem; }
-      .flash.success { background: #d1fae5; color: #047857; }
-      .flash.error { background: #fee2e2; color: #b91c1c; }
     </style>
     {% block extra_head %}{% endblock %}
   </head>
@@ -83,7 +86,6 @@
     <div class="admin-app">
       <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
-          <button class="menu-btn" type="button" onclick="toggleMenu()" aria-label="Menu"><span></span><span></span><span></span></button>
           <div class="logo-mark">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
               <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
@@ -94,19 +96,25 @@
 
         <nav class="nav">
           <a class="{{ 'active' if request.endpoint == 'admin_dashboard' }}" href="{{ url_for('admin_dashboard') }}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/></svg>
             Tableau de bord
           </a>
           <a class="{{ 'active' if request.endpoint == 'admin_requests' }}" href="{{ url_for('admin_requests') }}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M12 13h-2"/><path d="M12 17h-2"/></svg>
+            Demandes
+            <span class="badge">{{ admin_stats.pending_requests if admin_stats else 0 }}</span>
+          </a>
+          <a class="{{ 'active' if request.endpoint == 'admin_requests' }}" href="{{ url_for('admin_requests') }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
             Interventions
+            <span class="badge">{{ admin_stats.open_requests if admin_stats else 0 }}</span>
           </a>
           <a class="{{ 'active' if request.endpoint == 'admin_artisans' }}" href="{{ url_for('admin_artisans') }}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
             Techniciens
           </a>
           <a class="{{ 'active' if request.endpoint == 'admin_clients' }}" href="{{ url_for('admin_clients') }}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
             Clients
           </a>
           <a class="{{ 'active' if request.endpoint == 'admin_payments' }}" href="{{ url_for('admin_payments') }}">
@@ -114,41 +122,55 @@
             Paiements
           </a>
           <a class="{{ 'active' if request.endpoint == 'admin_commissions' }}" href="{{ url_for('admin_commissions') }}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
             Commissions
           </a>
           <a class="{{ 'active' if request.endpoint == 'admin_reviews' }}" href="{{ url_for('admin_reviews') }}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-            Avis
+            Avis clients
+          </a>
+          <a class="{{ 'active' if request.endpoint == 'admin_tickets' }}" href="{{ url_for('admin_tickets') }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            Litiges
           </a>
           <a class="{{ 'active' if request.endpoint == 'admin_activity' }}" href="{{ url_for('admin_activity') }}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
-            Activite
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 9V3h-4"/><path d="M14 3v6"/><path d="M14 12h4"/><path d="M14 12v6h4"/></svg>
+            Rapports
           </a>
           <a class="{{ 'active' if request.endpoint == 'admin_settings' }}" href="{{ url_for('admin_settings') }}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06-.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06-.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
             Parametres
           </a>
-        </nav>
+          <a class="{{ 'active' if request.endpoint == 'admin_activity' }}" href="{{ url_for('admin_activity') }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+            Notifications
+          </a>
 
-        <div class="user">
-          <div class="user-card">
-            <div class="user-avatar">{{ (user.full_name or 'A')[0]|upper }}</div>
-            <div>
-              <div class="user-name">{{ user.full_name or 'Administrateur' }}</div>
-              <div class="user-status"><span class="dot"></span> En ligne</div>
+          <div class="nav-sep"></div>
+
+          <div class="help">
+            <div class="help-icon">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            </div>
+            <div style="line-height:1.2;">
+              <div style="color:#fff;font-size:0.85rem;">Besoin d'aide ?</div>
+              <div style="font-size:0.72rem;">Contactez le support</div>
             </div>
           </div>
+
           <a class="logout" href="{{ url_for('admin_logout') }}">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>
             Deconnexion
           </a>
-        </div>
+        </nav>
       </aside>
 
       <main class="main">
         <header class="topbar">
-          <div></div>
+          <div class="topbar-left">
+            <button class="menu-btn" type="button" onclick="toggleMenu()" aria-label="Menu"><span></span><span></span><span></span></button>
+            <input class="search" type="text" placeholder="Rechercher..." />
+          </div>
           <div class="topbar-right">
             <button class="notif" aria-label="Notifications">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
@@ -157,14 +179,13 @@
             <div class="profile">
               <div class="profile-avatar">{{ (user.full_name or 'A')[0]|upper }}</div>
               <div class="profile-text">
-                <div class="profile-name">{{ user.full_name or 'Administrateur' }}</div>
+                <div class="profile-name">Administrateur FixPro</div>
                 <div class="profile-role">Super Admin</div>
               </div>
               <svg class="chevron" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
             </div>
           </div>
         </header>
-
         <div class="content">
           {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}

@@ -365,6 +365,32 @@
       <section class="p-card" id="realisations-section">
         <h3>Réalisations</h3>
         <div class="p-realisations">
+          {% if artisan.profession == 'Frigoriste' %}
+          <div class="p-rea-item">
+            <div class="p-rea-photo">
+              <span class="p-rea-label p-rea-before">Avant</span>
+              <img src="{{ url_for('static', filename='img/portfolio/frigoriste/climatisation avant.png') }}" alt="Climatisation avant" />
+            </div>
+            <div class="p-rea-photo">
+              <span class="p-rea-label p-rea-after">Après</span>
+              <img src="{{ url_for('static', filename='img/portfolio/frigoriste/climatisation apres.png') }}" alt="Climatisation après" />
+            </div>
+          </div>
+          <div class="p-rea-titre">Installation climatisation</div>
+          <div class="p-rea-desc">Ancien climatiseur remplace par un apparel neuf, propre et performant.</div>
+          <div class="p-rea-item">
+            <div class="p-rea-photo">
+              <span class="p-rea-label p-rea-before">Avant</span>
+              <img src="{{ url_for('static', filename='img/portfolio/frigoriste/pot avant.png') }}" alt="Pot avant" />
+            </div>
+            <div class="p-rea-photo">
+              <span class="p-rea-label p-rea-after">Après</span>
+              <img src="{{ url_for('static', filename='img/portfolio/frigoriste/pot apres.png') }}" alt="Pot après" />
+            </div>
+          </div>
+          <div class="p-rea-titre">Intervention sanitaire</div>
+          <div class="p-rea-desc">Réparation et remise en etat d'un element sanitaire encrasse.</div>
+          {% else %}
           <div class="p-rea-item">
             <div class="p-rea-photo">
               <span class="p-rea-label p-rea-before">Avant</span>
@@ -377,18 +403,7 @@
           </div>
           <div class="p-rea-titre">Rénovation salle de bain</div>
           <div class="p-rea-desc">Remplacement sanitaire et robinetterie</div>
-          <div class="p-rea-item">
-            <div class="p-rea-photo">
-              <span class="p-rea-label p-rea-before">Avant</span>
-              <img src="{{ url_for('static', filename='img/technician-hero-v2.jpg') }}" alt="Avant" />
-            </div>
-            <div class="p-rea-photo">
-              <span class="p-rea-label p-rea-after">Après</span>
-              <img src="{{ url_for('static', filename='img/technician-hero.jpg') }}" alt="Après" />
-            </div>
-          </div>
-          <div class="p-rea-titre">Installation climatisation</div>
-          <div class="p-rea-desc">Climatiseur mural 12 000 BTU</div>
+          {% endif %}
         </div>
         <a href="#" class="p-voir-tout" style="display:block;text-align:center;color:#155EEF;font-size:14px;font-weight:700;text-decoration:none;margin-top:16px;">Voir plus de réalisations →</a>
       </section>

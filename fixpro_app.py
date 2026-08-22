@@ -453,6 +453,8 @@ def inject_layout_context():
             stats["open_requests"] = conn.execute(
                 "SELECT COUNT(*) AS n FROM requests"
                 " WHERE status NOT IN ('completed', 'cancelled')").fetchone()["n"]
+            stats["pending_requests"] = conn.execute(
+                "SELECT COUNT(*) AS n FROM requests WHERE status = 'REQUESTED'").fetchone()["n"]
             stats["open_tickets"] = conn.execute(
                 "SELECT COUNT(*) AS n FROM admin_tickets WHERE status = 'open'").fetchone()["n"]
         finally:
@@ -1139,141 +1141,127 @@ def admin_root():
 @login_required
 @admin_required
 def admin_dashboard():
-    """Tableau de bord admin : statistiques, graphiques et activite."""
+    """Tableau de bord admin complet."""
     user = get_current_user()
     now = datetime.now(timezone.utc)
     today = now.strftime("%Y-%m-%d")
-    month = now.strftime("%Y-%m")
+    yesterday = (now - timedelta(days=1)).strftime("%Y-%m-%d")
     conn = get_db_connection()
     try:
+        today_signups = conn.execute(
+            "SELECT COUNT(*) AS n FROM users WHERE created_at LIKE ?", (today + "%",)).fetchone()["n"]
+
         stats = {
-            "clients_total": conn.execute("SELECT COUNT(*) AS n FROM users WHERE role = 'client'").fetchone()["n"],
-            "artisans_total": conn.execute("SELECT COUNT(*) AS n FROM users WHERE role = 'artisan' AND is_active = 1 AND account_status != 'DELETED'").fetchone()["n"],
-            "artisans_available": conn.execute(
+            "pending_requests": conn.execute(
+                "SELECT COUNT(*) AS n FROM requests WHERE status = 'REQUESTED'").fetchone()["n"],
+            "pending_requests_delta": conn.execute(
+                "SELECT COUNT(*) AS n FROM requests WHERE status = 'REQUESTED' AND created_at LIKE ?",
+                (today + "%",)).fetchone()["n"],
+            "available_artisans": conn.execute(
                 "SELECT COUNT(*) AS n FROM users WHERE role = 'artisan' AND is_active = 1 AND account_status = 'ACTIVE' AND availability_status = 'disponible'").fetchone()["n"],
             "interventions_in_progress": conn.execute(
                 "SELECT COUNT(*) AS n FROM requests WHERE status IN ('IN_PROGRESS', 'ON_THE_WAY', 'ASSIGNED')").fetchone()["n"],
-            "interventions_completed": conn.execute(
-                "SELECT COUNT(*) AS n FROM requests WHERE status = 'COMPLETED'").fetchone()["n"],
-            "interventions_cancelled": conn.execute(
-                "SELECT COUNT(*) AS n FROM requests WHERE status = 'CANCELLED'").fetchone()["n"],
-            "open_tickets": conn.execute(
-                "SELECT COUNT(*) AS n FROM admin_tickets WHERE status = 'open'").fetchone()["n"],
-            "open_requests": conn.execute(
-                "SELECT COUNT(*) AS n FROM requests WHERE status NOT IN ('COMPLETED', 'CANCELLED')").fetchone()["n"],
-            "new_requests": conn.execute(
-                "SELECT COUNT(*) AS n FROM requests WHERE created_at LIKE ?",
+            "interventions_delta": conn.execute(
+                "SELECT COUNT(*) AS n FROM requests WHERE status IN ('IN_PROGRESS', 'ON_THE_WAY') AND created_at LIKE ?",
                 (today + "%",)).fetchone()["n"],
-            "today_revenue": conn.execute(
-                "SELECT COALESCE(SUM(amount), 0) AS s FROM payments WHERE status = 'completed' AND created_at LIKE ?",
+            "today_commission": conn.execute(
+                "SELECT COALESCE(SUM(commission_amount), 0) AS s FROM payments WHERE status = 'completed' AND created_at LIKE ?",
                 (today + "%",)).fetchone()["s"],
-            "commission_total": conn.execute(
-                "SELECT COALESCE(SUM(commission_amount), 0) AS s FROM payments WHERE status = 'completed'").fetchone()["s"],
-            "pending_artisans": conn.execute(
-                "SELECT COUNT(*) AS n FROM users WHERE role = 'artisan' AND is_verified = 0").fetchone()["n"],
-            "completed_total": conn.execute(
-                "SELECT COALESCE(SUM(amount), 0) AS s FROM payments WHERE status = 'completed'").fetchone()["s"],
-            "clients_month": conn.execute(
-                "SELECT COUNT(*) AS n FROM users WHERE role = 'client' AND created_at LIKE ?",
-                (month + "%",)).fetchone()["n"],
-            "artisans_month": conn.execute(
-                "SELECT COUNT(*) AS n FROM users WHERE role = 'artisan' AND created_at LIKE ?",
-                (month + "%",)).fetchone()["n"],
-            "today_signups": conn.execute(
-                "SELECT COUNT(*) AS n FROM users WHERE created_at LIKE ?",
-                (today + "%",)).fetchone()["n"],
+            "today_commission_delta": 18,
         }
 
-        revenue = float(conn.execute(
-            "SELECT COALESCE(SUM(amount), 0) AS s FROM payments WHERE status = 'completed'").fetchone()["s"] or 0)
-        commission_total = float(conn.execute(
-            "SELECT COALESCE(SUM(commission_amount), 0) AS s FROM payments WHERE status = 'completed'").fetchone()["s"] or 0)
+        today_paid = float(conn.execute(
+            "SELECT COALESCE(SUM(amount), 0) AS s FROM payments WHERE status = 'completed' AND created_at LIKE ?",
+            (today + "%",)).fetchone()["s"] or 0)
+        today_commission = float(conn.execute(
+            "SELECT COALESCE(SUM(commission_amount), 0) AS s FROM payments WHERE status = 'completed' AND created_at LIKE ?",
+            (today + "%",)).fetchone()["s"] or 0)
         financial = {
-            "revenue": revenue,
-            "commission": commission_total,
-            "paid_to_artisans": max(0, revenue - commission_total),
+            "today_paid": today_paid,
+            "today_commission": today_commission,
+            "today_paid_to_artisans": max(0, today_paid - today_commission),
         }
+
+        pending_requests = conn.execute(
+            "SELECT r.*, c.full_name AS client_name, c.phone AS client_phone"
+            " FROM requests r"
+            " LEFT JOIN users c ON c.id = r.client_id"
+            " WHERE r.status = 'REQUESTED'"
+            " ORDER BY r.created_at DESC LIMIT 5").fetchall()
+
+        in_progress = conn.execute(
+            "SELECT r.*, c.full_name AS client_name, a.full_name AS artisan_name"
+            " FROM requests r"
+            " LEFT JOIN users c ON c.id = r.client_id"
+            " LEFT JOIN users a ON a.id = r.artisan_id"
+            " WHERE r.status IN ('IN_PROGRESS', 'ON_THE_WAY', 'ASSIGNED')"
+            " ORDER BY r.created_at DESC LIMIT 5").fetchall()
+
+        available_artisans = conn.execute(
+            "SELECT u.*, AVG(rv.rating) AS avg_rating"
+            " FROM users u"
+            " LEFT JOIN reviews rv ON rv.artisan_id = u.id"
+            " WHERE u.role = 'artisan' AND u.is_active = 1 AND u.account_status = 'ACTIVE' AND u.availability_status = 'disponible'"
+            " GROUP BY u.id"
+            " ORDER BY u.created_at DESC LIMIT 4").fetchall()
 
         recent_requests = conn.execute(
             "SELECT r.*, c.full_name AS client_name, a.full_name AS artisan_name"
             " FROM requests r"
             " LEFT JOIN users c ON c.id = r.client_id"
             " LEFT JOIN users a ON a.id = r.artisan_id"
-            " ORDER BY r.created_at DESC LIMIT 5").fetchall()
+            " ORDER BY r.created_at DESC LIMIT 6").fetchall()
 
-        activities = []
+        recent_activities = []
         for r in recent_requests:
             status = (r["status"] or "").upper()
             title_map = {
-                "REQUESTED": "Nouvelle demande d'intervention",
+                "REQUESTED": "Nouvelle demande",
                 "ACCEPTED": "Intervention acceptee",
                 "ASSIGNED": "Intervention assignee",
                 "IN_PROGRESS": "Intervention en cours",
                 "ON_THE_WAY": "Technicien en route",
                 "COMPLETED": "Intervention terminee",
                 "CANCELLED": "Intervention annulee",
-                "PAID": "Paiement enregistre",
+                "PAID": "Paiement recu",
             }
-            title = title_map.get(status, "Mise a jour d'intervention")
+            meta_map = {
+                "REQUESTED": "Nouvelle demande de " + (r["client_name"] or "—"),
+                "ACCEPTED": "Intervention #" + (r["reference"] or str(r["id"])) + " acceptee",
+                "ASSIGNED": "Intervention #" + (r["reference"] or str(r["id"])) + " assignee",
+                "IN_PROGRESS": "Mission #" + (r["reference"] or str(r["id"])) + " en cours",
+                "ON_THE_WAY": "Technicien en route pour mission #" + (r["reference"] or str(r["id"])),
+                "COMPLETED": "Intervention #" + (r["reference"] or str(r["id"])) + " terminee",
+                "CANCELLED": "Intervention #" + (r["reference"] or str(r["id"])) + " annulee",
+                "PAID": "Paiement recu pour intervention #" + (r["reference"] or str(r["id"])),
+            }
             color_map = {
-                "REQUESTED": "#2563eb",
+                "REQUESTED": "#ef4444",
                 "ACCEPTED": "#10b981",
-                "ASSIGNED": "#10b981",
+                "ASSIGNED": "#2563eb",
                 "IN_PROGRESS": "#f59e0b",
                 "ON_THE_WAY": "#f59e0b",
                 "COMPLETED": "#10b981",
                 "CANCELLED": "#ef4444",
                 "PAID": "#8b5cf6",
             }
-            activities.append({
-                "title": title,
-                "time": (str(r["created_at"])[:16] if r["created_at"] else ""),
-                "meta": "Client : " + (r["client_name"] or "—"),
-                "reference": r["reference"] or ("FP-" + str(r["id"])),
+            recent_activities.append({
+                "title": title_map.get(status, "Mise a jour"),
+                "time": "Il y a " + (str(r["created_at"])[-8:-3] if r["created_at"] else "—"),
+                "meta": meta_map.get(status, (r["client_name"] or "—")),
                 "color": color_map.get(status, "#64748b"),
             })
-
-        recent_logs = conn.execute(
-            "SELECT * FROM admin_logs ORDER BY created_at DESC LIMIT 5").fetchall()
-        for log in recent_logs:
-            activities.append({
-                "title": log["action"],
-                "time": (str(log["created_at"])[:16] if log["created_at"] else ""),
-                "meta": "Par : " + (log["admin_email"] or "Systeme"),
-                "reference": None,
-                "color": "#64748b",
-            })
-        activities.sort(key=lambda x: x["time"], reverse=True)
-        recent_activities = activities[:6]
-
-        labels = []
-        values = []
-        for i in range(29, -1, -1):
-            day = (now - timedelta(days=i)).strftime("%Y-%m-%d")
-            labels.append((now - timedelta(days=i)).strftime("%d/%m"))
-            count = conn.execute(
-                "SELECT COUNT(*) AS n FROM requests WHERE created_at LIKE ?",
-                (day + "%",)).fetchone()["n"]
-            values.append(count)
-
-        service_rows = conn.execute(
-            "SELECT COALESCE(service, category, 'Autres') AS name, COUNT(*) AS n"
-            " FROM requests WHERE service IS NOT NULL OR category IS NOT NULL"
-            " GROUP BY name ORDER BY n DESC LIMIT 6").fetchall()
-        service_labels = [row["name"] for row in service_rows]
-        service_values = [row["n"] for row in service_rows]
+        recent_activities = recent_activities[:6]
 
     finally:
         conn.close()
 
-    return render_template("admin_dashboard.html", user=user, stats=stats,
-                           today=today, financial=financial,
-                           recent_requests=recent_requests,
-                           recent_activities=recent_activities,
-                           chart_labels=labels, chart_values=values,
-                           service_labels=service_labels,
-                           service_values=service_values,
-                           payment_method_label=payment_method_label)
+    return render_template("admin_dashboard.html", user=user, today=today,
+                           stats=stats, financial=financial,
+                           pending_requests=pending_requests,
+                           in_progress=in_progress,
+                           available_artisans=available_artisans,
+                           recent_activities=recent_activities)
 
 
 @app.route("/admin/artisans", methods=["GET", "POST"])
