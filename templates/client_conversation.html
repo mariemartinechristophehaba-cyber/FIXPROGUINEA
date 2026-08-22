@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}{{ conversation.subject or 'Conversation' }} - FixPro{% endblock %}
+{% block content %}
+<style>
+  .conv { max-width: 800px; margin: 0 auto; padding: 24px 16px 110px; }
+  .conv-header { background: #fff; border-radius: 14px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+  .conv-title { font-weight: 700; }
+  .conv-status { font-size: 12px; color: #64748b; }
+  .bubble { max-width: 80%; padding: 12px 14px; border-radius: 14px; margin-bottom: 12px; font-size: 14px; line-height: 1.4; }
+  .bubble-client { background: #e0e7ff; margin-left: auto; }
+  .bubble-admin { background: #f1f5f9; }
+  .bubble-role { font-size: 11px; color: #64748b; margin-bottom: 4px; }
+  .conv-form { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid #e2e8f0; padding: 12px 16px; display: flex; gap: 10px; }
+  .conv-form input { flex: 1; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; }
+  .conv-form button { padding: 0 20px; background: #155eef; color: #fff; border: none; border-radius: 10px; font-weight: 700; }
+</style>
+<div class="conv">
+  <div class="conv-header">
+    <div class="conv-title">{{ conversation.subject or 'Conversation avec FixPro' }}</div>
+    <div class="conv-status">Statut : {{ conversation.status }}</div>
+    <a href="{{ url_for('client_messages') }}" style="font-size:13px;color:#155eef;">Retour aux messages</a>
+  </div>
+  {% for m in messages %}
+  <div class="bubble {{ 'bubble-client' if m.sender_role == 'client' else 'bubble-admin' }}">
+    <div class="bubble-role">{{ m.sender_name }} - {{ m.sender_role }}</div>
+    {{ m.content }}
+    <div style="font-size:11px;color:#94a3b8;text-align:right;margin-top:4px;">{{ m.created_at }}</div>
+  </div>
+  {% endfor %}
+</div>
+<form class="conv-form" method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+  <input type="text" name="content" placeholder="Ecrire un message..." required />
+  <button type="submit">Envoyer</button>
+</form>
+{% endblock %}

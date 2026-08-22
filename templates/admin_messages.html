@@ -1,0 +1,34 @@
+{% extends 'admin_base.html' %}
+{% block title %}Messagerie - FixPro Admin{% endblock %}
+
+{% block admin_content %}
+<style>
+  .amsg-list { display: grid; gap: 12px; }
+  .amsg-card { display: block; background: #fff; border-radius: 14px; padding: 16px; text-decoration: none; color: inherit; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+  .amsg-client { font-weight: 700; margin-bottom: 4px; }
+  .amsg-preview { color: #64748b; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .amsg-meta { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 12px; color: #64748b; }
+  .amsg-unread { background: #ef4444; color: #fff; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 700; }
+</style>
+<div class="dash-head">
+  <div class="dash-title">Messagerie</div>
+  <div class="dash-subtitle">Conversations clients</div>
+</div>
+<div class="amsg-list">
+  {% for c in conversations %}
+  <a class="amsg-card" href="{{ url_for('admin_conversation', conversation_id=c.id) }}">
+    <div class="amsg-client">{{ c.client_name }} — {{ c.subject or 'Sans sujet' }}</div>
+    <div class="amsg-preview">{{ c.last_message or 'Aucun message' }}</div>
+    <div class="amsg-meta">
+      <span>{{ c.updated_at }}</span>
+      <span>
+        {% if c.unread %}<span class="amsg-unread">{{ c.unread }} non lu(s)</span>{% endif %}
+        <span class="tag" style="margin-left:6px;">{{ c.status }}</span>
+      </span>
+    </div>
+  </a>
+  {% else %}
+  <p class="empty">Aucune conversation.</p>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends 'admin_base.html' %}
+{% block title %}Conversation - FixPro Admin{% endblock %}
+
+{% block admin_content %}
+<style>
+  .aconv { max-width: 900px; margin: 0 auto; }
+  .aconv-head { background: #fff; border-radius: 14px; padding: 16px; margin-bottom: 16px; }
+  .aconv-messages { background: #fff; border-radius: 14px; padding: 16px; margin-bottom: 16px; min-height: 200px; }
+  .abubble { max-width: 75%; padding: 12px 14px; border-radius: 14px; margin-bottom: 12px; font-size: 14px; line-height: 1.4; }
+  .abubble-client { background: #f1f5f9; }
+  .abubble-admin { background: #dbeafe; margin-left: auto; }
+  .abubble-role { font-size: 11px; color: #64748b; margin-bottom: 4px; }
+  .aconv-form { background: #fff; border-radius: 14px; padding: 16px; }
+  .aconv-form textarea { width: 100%; min-height: 90px; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; margin-bottom: 10px; }
+  .aconv-form button { padding: 10px 18px; background: #155eef; color: #fff; border: none; border-radius: 10px; font-weight: 700; }
+</style>
+<div class="aconv">
+  <div class="aconv-head">
+    <div style="font-weight:700;">{{ conversation.client_name }}</div>
+    <div style="font-size:13px;color:#64748b;">{{ conversation.subject or 'Sans sujet' }} — {{ conversation.status }}</div>
+    <a href="{{ url_for('admin_messages') }}" style="font-size:13px;color:#155eef;">Retour a la messagerie</a>
+  </div>
+  <div class="aconv-messages">
+    {% for m in messages %}
+    <div class="abubble {{ 'abubble-client' if m.sender_role == 'client' else 'abubble-admin' }}">
+      <div class="abubble-role">{{ m.sender_name }} ({{ m.sender_role }})</div>
+      {{ m.content }}
+      <div style="font-size:11px;color:#94a3b8;text-align:right;margin-top:4px;">{{ m.created_at }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  <form class="aconv-form" method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+    <textarea name="content" placeholder="Repondre au client..." required></textarea>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button type="submit" name="action" value="close" style="background:#ef4444;">Clore</button>
+      <button type="submit" name="action" value="reply">Envoyer</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

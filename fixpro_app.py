@@ -448,7 +448,7 @@ def inject_layout_context():
     stats = {}
     if connected and connected.get("role") == "admin":
         if ADMIN_DEMO:
-            stats = {"pending_artisans": 1, "open_requests": 4, "pending_requests": 6, "open_tickets": 2}
+            stats = {"pending_artisans": 1, "open_requests": 4, "pending_requests": 6, "open_tickets": 2, "open_messages": 3}
         else:
             conn = get_db_connection()
             try:
@@ -461,6 +461,10 @@ def inject_layout_context():
                     "SELECT COUNT(*) AS n FROM requests WHERE status = 'REQUESTED'").fetchone()["n"]
                 stats["open_tickets"] = conn.execute(
                     "SELECT COUNT(*) AS n FROM admin_tickets WHERE status = 'open'").fetchone()["n"]
+                stats["open_messages"] = conn.execute(
+                    "SELECT COUNT(*) AS n FROM conversations c"
+                    " JOIN conversation_messages m ON m.conversation_id = c.id"
+                    " WHERE c.status = 'open' AND m.sender_role = 'client' AND m.is_read = 0").fetchone()["n"]
             finally:
                 conn.close()
 
@@ -4000,6 +4004,182 @@ csrf.exempt(api_admin_techniciens)
 csrf.exempt(api_admin_demandes)
 csrf.exempt(api_admin_verify_artisan)
 csrf.exempt(api_admin_reject_artisan)
+
+
+# ---------------------------------------------------------------------------
+# Messagerie client <-> administration
+# ---------------------------------------------------------------------------
+
+@app.route("/messages")
+@login_required
+def client_messages():
+    """Liste des conversations du client connecte."""
+    user = get_current_user()
+    conn = get_db_connection()
+    try:
+        conversations = conn.execute(
+            "SELECT c.id, c.subject, c.status, c.created_at, c.updated_at,"
+            " (SELECT content FROM conversation_messages WHERE conversation_id = c.id"
+            " ORDER BY created_at DESC LIMIT 1) AS last_message,"
+            " (SELECT COUNT(*) FROM conversation_messages WHERE conversation_id = c.id"
+            " AND sender_role = 'admin' AND is_read = 0) AS unread"
+            " FROM conversations c WHERE c.client_id = ?"
+            " ORDER BY c.updated_at DESC",
+            (user["id"],)).fetchall()
+    finally:
+        conn.close()
+    return render_template("client_messages.html", conversations=conversations, user=user)
+
+
+@app.route("/messages/new", methods=["GET", "POST"])
+@login_required
+def client_message_new():
+    """Nouvelle conversation client."""
+    user = get_current_user()
+    if user["role"] != "client":
+        flash("Cet espace est reserve aux clients.", "error")
+        return redirect(url_for("index"))
+    if request.method == "POST":
+        subject = (request.form.get("subject") or "").strip()
+        content = (request.form.get("content") or "").strip()
+        if not content:
+            flash("Le message ne peut pas etre vide.", "error")
+            return redirect(url_for("client_message_new"))
+        conn = get_db_connection()
+        try:
+            cur = conn.execute(
+                "INSERT INTO conversations (client_id, subject) VALUES (?, ?)",
+                (user["id"], subject))
+            conv_id = cur.lastrowid
+            conn.execute(
+                "INSERT INTO conversation_messages"
+                " (conversation_id, sender_id, sender_role, content) VALUES (?, ?, ?, ?)",
+                (conv_id, user["id"], "client", content))
+            conn.commit()
+            flash("Votre message a ete envoye a FixPro.", "success")
+        finally:
+            conn.close()
+        return redirect(url_for("client_conversation", conversation_id=conv_id))
+    return render_template("client_message_new.html", user=user)
+
+
+@app.route("/messages/<int:conversation_id>", methods=["GET", "POST"])
+@login_required
+def client_conversation(conversation_id):
+    """Conversation client."""
+    user = get_current_user()
+    conn = get_db_connection()
+    try:
+        conv = conn.execute(
+            "SELECT * FROM conversations WHERE id = ?", (conversation_id,)).fetchone()
+        if not conv or conv["client_id"] != user["id"]:
+            flash("Conversation introuvable.", "error")
+            return redirect(url_for("client_messages"))
+        if request.method == "POST":
+            content = (request.form.get("content") or "").strip()
+            if not content:
+                flash("Le message ne peut pas etre vide.", "error")
+            else:
+                conn.execute(
+                    "INSERT INTO conversation_messages"
+                    " (conversation_id, sender_id, sender_role, content) VALUES (?, ?, ?, ?)",
+                    (conversation_id, user["id"], "client", content))
+                conn.execute(
+                    "UPDATE conversations SET updated_at = ? WHERE id = ?",
+                    (datetime.now(timezone.utc).isoformat(), conversation_id))
+                conn.commit()
+        messages = conn.execute(
+            "SELECT m.*, u.full_name AS sender_name"
+            " FROM conversation_messages m"
+            " JOIN users u ON u.id = m.sender_id"
+            " WHERE m.conversation_id = ? ORDER BY m.created_at ASC",
+            (conversation_id,)).fetchall()
+        conn.execute(
+            "UPDATE conversation_messages SET is_read = 1"
+            " WHERE conversation_id = ? AND sender_role = 'admin'",
+            (conversation_id,))
+        conn.commit()
+    finally:
+        conn.close()
+    return render_template("client_conversation.html", conversation=conv, messages=messages, user=user)
+
+
+@app.route("/admin/messages")
+@login_required
+@admin_required
+def admin_messages():
+    """Liste des conversations cote admin."""
+    conn = get_db_connection()
+    try:
+        conversations = conn.execute(
+            "SELECT c.id, c.subject, c.status, c.created_at, c.updated_at,"
+            " u.full_name AS client_name,"
+            " (SELECT content FROM conversation_messages WHERE conversation_id = c.id"
+            " ORDER BY created_at DESC LIMIT 1) AS last_message,"
+            " (SELECT COUNT(*) FROM conversation_messages WHERE conversation_id = c.id"
+            " AND sender_role = 'client' AND is_read = 0) AS unread"
+            " FROM conversations c"
+            " JOIN users u ON u.id = c.client_id"
+            " ORDER BY c.updated_at DESC").fetchall()
+    finally:
+        conn.close()
+    return render_template("admin_messages.html", conversations=conversations)
+
+
+@app.route("/admin/messages/<int:conversation_id>", methods=["GET", "POST"])
+@login_required
+@admin_required
+def admin_conversation(conversation_id):
+    """Conversation admin avec reponse."""
+    conn = get_db_connection()
+    try:
+        conv = conn.execute(
+            "SELECT c.*, u.full_name AS client_name"
+            " FROM conversations c"
+            " JOIN users u ON u.id = c.client_id"
+            " WHERE c.id = ?", (conversation_id,)).fetchone()
+        if not conv:
+            flash("Conversation introuvable.", "error")
+            return redirect(url_for("admin_messages"))
+        if request.method == "POST":
+            action = request.form.get("action")
+            if action == "close":
+                conn.execute(
+                    "UPDATE conversations SET status = 'resolved', updated_at = ? WHERE id = ?",
+                    (datetime.now(timezone.utc).isoformat(), conversation_id))
+                conn.commit()
+            else:
+                content = (request.form.get("content") or "").strip()
+                if not content:
+                    flash("Le message ne peut pas etre vide.", "error")
+                else:
+                    user = get_current_user()
+                    conn.execute(
+                        "INSERT INTO conversation_messages"
+                        " (conversation_id, sender_id, sender_role, content) VALUES (?, ?, ?, ?)",
+                        (conversation_id, user["id"], "admin", content))
+                    conn.execute(
+                        "UPDATE conversations SET updated_at = ? WHERE id = ?",
+                        (datetime.now(timezone.utc).isoformat(), conversation_id))
+                    conn.execute(
+                        "INSERT INTO notifications (user_id, title, body) VALUES (?, ?, ?)",
+                        (conv["client_id"], "Nouvelle reponse FixPro", "L'administrateur a repondu a votre message."))
+                    conn.commit()
+                    flash("Reponse envoyee.", "success")
+        messages = conn.execute(
+            "SELECT m.*, u.full_name AS sender_name"
+            " FROM conversation_messages m"
+            " JOIN users u ON u.id = m.sender_id"
+            " WHERE m.conversation_id = ? ORDER BY m.created_at ASC",
+            (conversation_id,)).fetchall()
+        conn.execute(
+            "UPDATE conversation_messages SET is_read = 1"
+            " WHERE conversation_id = ? AND sender_role = 'client'",
+            (conversation_id,))
+        conn.commit()
+    finally:
+        conn.close()
+    return render_template("admin_conversation.html", conversation=conv, messages=messages)
 
 
 if __name__ == "__main__":

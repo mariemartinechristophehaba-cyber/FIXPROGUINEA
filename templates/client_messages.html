@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block title %}Mes messages - FixPro{% endblock %}
+{% block content %}
+<style>
+  .msg-list { max-width: 800px; margin: 0 auto; padding: 24px 16px 90px; }
+  .msg-card { display: block; background: #fff; border-radius: 14px; padding: 16px; margin-bottom: 12px; text-decoration: none; color: inherit; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+  .msg-subject { font-weight: 700; margin-bottom: 4px; }
+  .msg-preview { color: #64748b; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .msg-meta { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 12px; color: #64748b; }
+  .msg-unread { background: #ef4444; color: #fff; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 700; }
+  .msg-new { display: block; width: max-content; margin: 0 auto 18px; background: #155eef; color: #fff; padding: 10px 20px; border-radius: 10px; text-decoration: none; font-weight: 600; }
+</style>
+<div class="msg-list">
+  <a class="msg-new" href="{{ url_for('client_message_new') }}">Nouveau message</a>
+  {% for c in conversations %}
+  <a class="msg-card" href="{{ url_for('client_conversation', conversation_id=c.id) }}">
+    <div class="msg-subject">{{ c.subject or 'Conversation avec FixPro' }}</div>
+    <div class="msg-preview">{{ c.last_message or 'Aucun message' }}</div>
+    <div class="msg-meta">
+      <span>{{ c.updated_at }}</span>
+      {% if c.unread %}<span class="msg-unread">{{ c.unread }}</span>{% endif %}
+    </div>
+  </a>
+  {% else %}
+  <p style="text-align:center;color:#64748b;">Aucune conversation. Envoyez un message a FixPro.</p>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -286,3 +286,31 @@ INSERT OR IGNORE INTO services (category_id, name) VALUES
     ((SELECT id FROM service_categories WHERE name = 'Serrurier'), 'Reparation de serrure'),
     ((SELECT id FROM service_categories WHERE name = 'Serrurier'), 'Installation de verrous'),
     ((SELECT id FROM service_categories WHERE name = 'Serrurier'), 'Depannage serrurerie');
+
+
+-- Conversations et messages client <-> admin
+CREATE TABLE IF NOT EXISTS conversations (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    client_id       INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    request_id      INTEGER REFERENCES requests(id) ON DELETE SET NULL,
+    subject         TEXT,
+    status          TEXT DEFAULT 'open',
+    created_at      TEXT DEFAULT CURRENT_TIMESTAMP,
+    updated_at      TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_conversations_client ON conversations(client_id);
+CREATE INDEX IF NOT EXISTS idx_conversations_status ON conversations(status);
+
+CREATE TABLE IF NOT EXISTS conversation_messages (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    conversation_id INTEGER NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+    sender_id       INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    sender_role     TEXT NOT NULL,
+    content         TEXT NOT NULL,
+    is_read         INTEGER DEFAULT 0,
+    created_at      TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_conversation_messages_conv ON conversation_messages(conversation_id);
+CREATE INDEX IF NOT EXISTS idx_conversation_messages_unread ON conversation_messages(conversation_id, is_read);

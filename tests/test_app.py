@@ -380,6 +380,24 @@ class MessagingTests(FixProTestCase):
         self.assertFalse(fixpro_app.is_prohibited_message(
             "Bonjour, quand pouvez-vous passer pour la fuite ?"))
 
+    def test_client_conversation_persists(self):
+        self.register_client(phone="+224610000000")
+        self.login("+224610000000")
+        r = self.client.post("/messages/new", data={
+            "subject": "Probleme clim",
+            "content": "Mon climatiseur ne refroidit plus."
+        }, follow_redirects=True)
+        self.assertEqual(r.status_code, 200)
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conv = conn.execute("SELECT * FROM conversations WHERE client_id = 1").fetchone()
+            self.assertIsNotNone(conv)
+            msg = conn.execute("SELECT * FROM conversation_messages WHERE conversation_id = ?", (conv["id"],)).fetchone()
+            self.assertEqual(msg["content"], "Mon climatiseur ne refroidit plus.")
+            self.assertEqual(msg["sender_role"], "client")
+        finally:
+            conn.close()
+
 
 class GeolocationTests(FixProTestCase):
     """Geolocalisation temps reel des techniciens."""

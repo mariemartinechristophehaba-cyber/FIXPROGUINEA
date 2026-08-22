@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block title %}Nouveau message - FixPro{% endblock %}
+{% block content %}
+<style>
+  .msg-form { max-width: 600px; margin: 0 auto; padding: 24px 16px 90px; }
+  .msg-form label { display: block; font-weight: 600; margin: 12px 0 6px; }
+  .msg-form input, .msg-form textarea { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 14px; }
+  .msg-form textarea { min-height: 140px; }
+  .msg-form button { width: 100%; margin-top: 16px; padding: 12px; background: #155eef; color: #fff; border: none; border-radius: 10px; font-weight: 700; }
+</style>
+<form class="msg-form" method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+  <h1 style="font-size:1.3rem;margin-bottom:8px;">Contacter FixPro</h1>
+  <p style="color:#64748b;font-size:13px;margin-bottom:16px;">Decrivez votre besoin. Un administrateur vous repondra.</p>
+  <label for="subject">Sujet (optionnel)</label>
+  <input id="subject" type="text" name="subject" placeholder="Ex: Probleme de climatiseur" />
+  <label for="content">Message</label>
+  <textarea id="content" name="content" required placeholder="Bonjour, j'ai besoin d'un..."></textarea>
+  <button type="submit">Envoyer</button>
+</form>
+{% endblock %}
