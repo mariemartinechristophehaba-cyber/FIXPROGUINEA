@@ -30,6 +30,7 @@ from flask_cors import CORS
 from flask_wtf.csrf import CSRFProtect
 from werkzeug.security import check_password_hash, generate_password_hash
 
+import ai_service
 import db
 import storage
 from config import get_config, setup_logging
@@ -236,10 +237,10 @@ def login_required(view_func):
                 session["user_id"] = dev_user["id"]
                 session.permanent = True
             else:
-                flash("Veuillez vous connecter pour accéder à cette page.", "error")
+                flash("Veuillez vous connecter pour acceder a cette page.", "error")
                 next_login = (url_for("admin_login")
                               if request.endpoint and request.endpoint.startswith("admin")
-                              else url_for("login"))
+                              else url_for("login", next=request.url))
                 return redirect(next_login)
         return view_func(*args, **kwargs)
 
@@ -2922,6 +2923,17 @@ def _generate_intervention_reference(conn):
         count += 1
 
 
+def _generate_fixpro_reference(conn):
+    """Genere une reference unique FIX-XXXXXX."""
+    count = conn.execute("SELECT COUNT(*) AS n FROM requests").fetchone()["n"] + 1
+    while True:
+        ref = f"FIX-{count:06d}"
+        if not conn.execute("SELECT 1 FROM requests WHERE reference = ?",
+                            (ref,)).fetchone():
+            return ref
+        count += 1
+
+
 @app.route("/demande/<int:artisan_id>", methods=["GET", "POST"])
 @login_required
 def demande(artisan_id):
@@ -4086,11 +4098,42 @@ def client_conversation(conversation_id):
             else:
                 conn.execute(
                     "INSERT INTO conversation_messages"
-                    " (conversation_id, sender_id, sender_role, content) VALUES (?, ?, ?, ?)",
+                    " (conversation_id, sender_id, sender_role, content)"
+                    " VALUES (?, ?, ?, ?)",
                     (conversation_id, user["id"], "client", content))
-                conn.execute(
-                    "UPDATE conversations SET updated_at = ? WHERE id = ?",
-                    (datetime.now(timezone.utc).isoformat(), conversation_id))
+
+                if conv["status"] != "admin_active":
+                    # Récupère l'historique pour l'analyse
+                    history = [m["content"] for m in conn.execute(
+                        "SELECT content FROM conversation_messages"
+                        " WHERE conversation_id = ? ORDER BY created_at ASC",
+                        (conversation_id,)).fetchall()]
+                    analysis = ai_service.analyze_message(content, history=history)
+
+                    fixpro_user = conn.execute(
+                        "SELECT id FROM users WHERE role = 'admin' LIMIT 1").fetchone()
+                    ai_sender = fixpro_user["id"] if fixpro_user else user["id"]
+
+                    conn.execute(
+                        "INSERT INTO conversation_messages"
+                        " (conversation_id, sender_id, sender_role, content)"
+                        " VALUES (?, ?, ?, ?)",
+                        (conversation_id, ai_sender, "ai", analysis["response"]))
+
+                    conn.execute(
+                        "UPDATE conversations SET"
+                        " updated_at = ?, status = 'ai_active', ai_category = ?,"
+                        " urgency = ?, needs_human = ?, needs_technician = ?"
+                        " WHERE id = ?",
+                        (datetime.now(timezone.utc).isoformat(),
+                         analysis["category"], analysis["urgency"],
+                         1 if analysis["needs_human"] else 0,
+                         1 if analysis["needs_technician"] else 0,
+                         conversation_id))
+                else:
+                    conn.execute(
+                        "UPDATE conversations SET updated_at = ? WHERE id = ?",
+                        (datetime.now(timezone.utc).isoformat(), conversation_id))
                 conn.commit()
         messages = conn.execute(
             "SELECT m.*, u.full_name AS sender_name"
@@ -4195,9 +4238,40 @@ def admin_conversation(conversation_id):
             return redirect(url_for("admin_messages"))
         if request.method == "POST":
             action = request.form.get("action")
-            if action == "close":
+            user = get_current_user()
+            if action == "takeover":
                 conn.execute(
-                    "UPDATE conversations SET status = 'resolved', updated_at = ? WHERE id = ?",
+                    "UPDATE conversations SET status = 'admin_active', updated_at = ? WHERE id = ?",
+                    (datetime.now(timezone.utc).isoformat(), conversation_id))
+                conn.execute(
+                    "INSERT INTO conversation_messages"
+                    " (conversation_id, sender_id, sender_role, content) VALUES (?, ?, ?, ?)",
+                    (conversation_id, user["id"], "admin", "Conversation prise en charge par un administrateur."))
+                conn.commit()
+                flash("Conversation prise en main.", "success")
+            elif action == "create_intervention":
+                artisan_id = request.form.get("artisan_id")
+                artisan_id = int(artisan_id) if artisan_id else conv.get("artisan_id")
+                client_id = conv["client_id"]
+                client = conn.execute("SELECT * FROM users WHERE id = ?", (client_id,)).fetchone()
+                ref = _generate_fixpro_reference(conn)
+                title = (request.form.get("title") or conv.get("subject") or "Demande FixPro").strip()
+                description = request.form.get("description") or "Demande issue de la conversation FixPro."
+                category = request.form.get("category") or conv.get("ai_category") or "Autre"
+                address = request.form.get("address") or (client["quartier"] if client else "Conakry")
+                req_id = _insert_id(
+                    conn,
+                    "INSERT INTO requests (client_id, artisan_id, reference, title, description, category, address, status, quote_amount, budget, created_at, updated_at)"
+                    " VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', 0, 0, datetime('now'), datetime('now'))",
+                    (client_id, artisan_id, ref, title, description, category, address))
+                conn.execute(
+                    "UPDATE conversations SET status = 'converted_to_intervention', request_id = ?, updated_at = ? WHERE id = ?",
+                    (req_id, datetime.now(timezone.utc).isoformat(), conversation_id))
+                conn.commit()
+                flash(f"Intervention {ref} creee.", "success")
+            elif action == "close":
+                conn.execute(
+                    "UPDATE conversations SET status = 'closed', updated_at = ? WHERE id = ?",
                     (datetime.now(timezone.utc).isoformat(), conversation_id))
                 conn.commit()
             else:
@@ -4205,7 +4279,6 @@ def admin_conversation(conversation_id):
                 if not content:
                     flash("Le message ne peut pas etre vide.", "error")
                 else:
-                    user = get_current_user()
                     conn.execute(
                         "INSERT INTO conversation_messages"
                         " (conversation_id, sender_id, sender_role, content) VALUES (?, ?, ?, ?)",

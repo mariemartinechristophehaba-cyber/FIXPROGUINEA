@@ -18,6 +18,7 @@
   <div class="aconv-head">
     <div style="font-weight:700;">{{ conversation.client_name }}</div>
     <div style="font-size:13px;color:#64748b;">{{ conversation.subject or 'Sans sujet' }} — {{ conversation.status }}</div>
+    <div style="font-size:13px;color:#64748b;">Domaine : {{ conversation.ai_category or 'Non identifie' }} | Urgence : {{ conversation.urgency or 'normal' }}</div>
     <a href="{{ url_for('admin_messages') }}" style="font-size:13px;color:#155eef;">Retour a la messagerie</a>
   </div>
   <div class="aconv-messages">
@@ -29,13 +30,26 @@
     </div>
     {% endfor %}
   </div>
-  <form class="aconv-form" method="post">
+  <form class="aconv-form" method="post" style="margin-bottom:12px;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-    <textarea name="content" placeholder="Repondre au client..." required></textarea>
-    <div style="display:flex;gap:10px;justify-content:flex-end;">
+    <textarea name="content" placeholder="Repondre au client..."></textarea>
+    <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;">
       <button type="submit" name="action" value="close" style="background:#ef4444;">Clore</button>
+      {% if conversation.status != 'admin_active' %}
+      <button type="submit" name="action" value="takeover" style="background:#f59e0b;">Prendre la conversation en main</button>
+      {% endif %}
       <button type="submit" name="action" value="reply">Envoyer</button>
     </div>
+  </form>
+  <form class="aconv-form" method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+    <input type="hidden" name="action" value="create_intervention" />
+    <div style="font-weight:700;margin-bottom:8px;">Creer une intervention</div>
+    <input type="text" name="title" placeholder="Titre de l'intervention" style="width:100%;padding:10px;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:8px;" />
+    <input type="text" name="category" placeholder="Domaine" value="{{ conversation.ai_category or '' }}" style="width:100%;padding:10px;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:8px;" />
+    <input type="text" name="address" placeholder="Adresse" style="width:100%;padding:10px;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:8px;" />
+    <textarea name="description" placeholder="Description du probleme..." style="width:100%;min-height:60px;padding:10px;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:8px;"></textarea>
+    <button type="submit" style="background:#10b981;">Creer l'intervention FIX-XXXXXX</button>
   </form>
 </div>
 {% endblock %}
