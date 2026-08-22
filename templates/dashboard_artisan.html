@@ -32,6 +32,27 @@
       </div>
     </div>
 
+    <div class="fx-list-title" style="margin-top:18px;">Mon domaine professionnel</div>
+    <div style="background:var(--paper-2);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:18px;">
+      <div style="font-size:14px;font-weight:700;color:var(--ink);">{{ user.profession or 'Non defini' }}</div>
+    </div>
+
+    <div class="fx-list-title">Mes services</div>
+    <form method="post" action="{{ url_for('update_artisan_services') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      <div style="background:var(--paper-2);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:10px;">
+        {% for s in services_disponibles %}
+        <label style="display:flex;align-items:center;gap:8px;padding:6px 0;font-size:13px;">
+          <input type="checkbox" name="services" value="{{ s.id }}" {% if s.id in artisan_services_ids %}checked{% endif %} />
+          {{ s.name }}
+        </label>
+        {% else %}
+        <div class="fx-empty" style="padding:0;">Aucun service disponible pour ce domaine.</div>
+        {% endfor %}
+      </div>
+      <button type="submit" class="fx-btn" style="width:100%;">Enregistrer mes services</button>
+    </form>
+
     <div class="fx-list-title">Demandes</div>
     {% if demandes %}
     {% for d in demandes %}

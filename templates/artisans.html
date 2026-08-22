@@ -178,16 +178,12 @@
       </button>
     </div>
     <div class="r-cats">
-      <a href="{{ url_for('artisans_page') }}" class="r-cat active">Tous</a>
-      <a href="{{ url_for('artisans_page', category='Plombier') }}" class="r-cat">
-        <img src="{{ url_for('static', filename='img/icon-droplet.svg') }}" alt="" style="filter: invert(38%) sepia(95%) saturate(4658%) hue-rotate(215deg) brightness(99%) contrast(101%);" /> Plombiers
+      <a href="{{ url_for('artisans_page') }}" class="r-cat {% if not category_filter %}active{% endif %}">Tous</a>
+      {% for c in categories %}
+      <a href="{{ url_for('artisans_page', category=c.name) }}" class="r-cat {% if category_filter == c.name %}active{% endif %}">
+        {{ c.name }}s
       </a>
-      <a href="{{ url_for('artisans_page', category='Electricien') }}" class="r-cat">
-        <img src="{{ url_for('static', filename='img/icon-zap.svg') }}" alt="" style="filter: invert(72%) sepia(69%) saturate(1239%) hue-rotate(7deg) brightness(105%) contrast(98%);" /> Électriciens
-      </a>
-      <a href="{{ url_for('artisans_page', category='Frigoriste') }}" class="r-cat">
-        <img src="{{ url_for('static', filename='img/icon-snowflake.svg') }}" alt="" style="filter: invert(65%) sepia(63%) saturate(2275%) hue-rotate(162deg) brightness(96%) contrast(93%);" /> Frigoristes
-      </a>
+      {% endfor %}
     </div>
   </div>
 </div>

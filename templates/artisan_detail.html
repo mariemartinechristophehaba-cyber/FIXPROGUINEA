@@ -302,62 +302,20 @@
       </section>
 
       <section class="p-card" id="services">
-        {% set metier = artisan.profession | lower %}
-        {% if metier in ['plombier', 'plomberie'] %}
-          {% set services = [
-            {'name': "Fuite d'eau", 'visual': 'services/plombier/fuite-eau.svg'},
-            {'name': "Débouchage canalisation", 'visual': 'services/plombier/debouchage.svg'},
-            {'name': "Installation sanitaire", 'visual': 'services/plombier/installation-sanitaire.svg'},
-            {'name': "Chauffe-eau", 'visual': 'services/plombier/chauffe-eau.svg'},
-            {'name': "Robinetterie", 'visual': 'services/plombier/robinetterie.svg'},
-            {'name': "Recherche de fuite", 'visual': 'services/plombier/recherche-de-fuite.svg'},
-            {'name': "Réparation fuite", 'visual': 'services/plombier/reparation-fuite.svg'},
-            {'name': "Inspection caméra", 'visual': 'services/plombier/inspection-camera.svg'}
-          ] %}
-        {% elif metier in ['électricien', 'electricien', 'electricite', 'électricité'] %}
-          {% set services = [
-            {'name': "Installation électrique", 'visual': 'services/electricien/installation-electrique.svg'},
-            {'name': "Dépannage électrique", 'visual': 'services/electricien/depannage-electrique.svg'},
-            {'name': "Éclairage", 'visual': 'services/electricien/eclairage.svg'},
-            {'name': "Mise aux normes", 'visual': 'services/electricien/mise-aux-normes.svg'},
-            {'name': "Maintenance électrique", 'visual': 'services/electricien/maintenance-electrique.svg'},
-            {'name': "Diagnostic électrique", 'visual': 'services/electricien/diagnostic-electrique.svg'},
-            {'name': "Tableau électrique", 'visual': 'services/electricien/tableau-electrique.svg'},
-            {'name': "Prises et interrupteurs", 'visual': 'services/electricien/prises-interrupteurs.svg'}
-          ] %}
-        {% elif metier == 'frigoriste' %}
-          {% set services = [
-            {'name': "Installation climatisation", 'visual': 'services/frigoriste/installation-climatisation.svg'},
-            {'name': "Dépannage climatisation", 'visual': 'services/frigoriste/depannage-climatisation.svg'},
-            {'name': "Entretien climatisation", 'visual': 'services/frigoriste/entretien-climatisation.svg'},
-            {'name': "Réfrigérateur", 'visual': 'services/frigoriste/refrigerateur.svg'},
-            {'name': "Diagnostic froid", 'visual': 'services/frigoriste/diagnostic-froid.svg'},
-            {'name': "Maintenance frigorifique", 'visual': 'services/frigoriste/maintenance-frigorifique.svg'},
-            {'name': "Chambre froide", 'visual': 'services/frigoriste/chambre-froide.svg'},
-            {'name': "Recharge climatisation", 'visual': 'services/frigoriste/recharge-climatisation.svg'}
-          ] %}
-        {% else %}
-          {% set services = [
-            {'name': "Installation", 'visual': 'services/plombier/installation-sanitaire.svg'},
-            {'name': "Dépannage", 'visual': 'services/electricien/depannage-electrique.svg'},
-            {'name': "Maintenance", 'visual': 'services/electricien/maintenance-electrique.svg'},
-            {'name': "Diagnostic", 'visual': 'services/plombier/recherche-de-fuite.svg'},
-            {'name': "Réparation", 'visual': 'services/plombier/reparation-fuite.svg'},
-            {'name': "Intervention", 'visual': 'services/electricien/mise-aux-normes.svg'},
-            {'name': "Consultation", 'visual': 'services/electricien/prises-interrupteurs.svg'},
-            {'name': "Devis", 'visual': 'services/frigoriste/recharge-climatisation.svg'}
-          ] %}
-        {% endif %}
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-          <h3 style="margin:0;">Services proposés</h3>
+          <h3 style="margin:0;">Services proposes</h3>
+          {% if artisan_services|length > 4 %}
           <button type="button" class="p-voir-plus" id="voirPlusBtn" style="background:transparent;border:none;color:#155EEF;font-size:14px;font-weight:700;cursor:pointer;">Voir plus</button>
+          {% endif %}
         </div>
         <div class="p-services" id="servicesGrid">
-          {% for service in services %}
+          {% for service in artisan_services %}
           <div class="p-service {% if loop.index > 4 %}hidden-service{% endif %}">
-            <div class="p-service-icon"><img src="{{ url_for('static', filename='img/' ~ service.visual) }}" width="48" height="48" alt="" /></div>
+            <div class="p-service-icon"><img src="{{ url_for('static', filename='img/services/frigoriste/refrigerateur.svg') }}" width="48" height="48" alt="" /></div>
             {{ service.name }}
           </div>
+          {% else %}
+          <div style="grid-column:1/-1;color:#667085;font-size:13px;">Aucun service enregistre.</div>
           {% endfor %}
         </div>
       </section>

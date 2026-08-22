@@ -249,3 +249,64 @@ CREATE TABLE IF NOT EXISTS intervention_history (
     note        TEXT,
     created_at  TEXT DEFAULT CURRENT_TIMESTAMP
 );
+
+
+-- Services lies a un domaine professionnel
+CREATE TABLE IF NOT EXISTS services (
+    id              SERIAL PRIMARY KEY,
+    category_id     INTEGER NOT NULL REFERENCES service_categories(id) ON DELETE CASCADE,
+    name            TEXT NOT NULL,
+    is_active       INTEGER DEFAULT 1,
+    created_at      TEXT DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(category_id, name)
+);
+
+CREATE INDEX IF NOT EXISTS idx_services_category ON services(category_id);
+
+-- Association techniciens <-> services
+CREATE TABLE IF NOT EXISTS artisan_services (
+    artisan_id      INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    service_id      INTEGER NOT NULL REFERENCES services(id) ON DELETE CASCADE,
+    PRIMARY KEY (artisan_id, service_id)
+);
+
+INSERT INTO services (category_id, name)
+SELECT c.id, s.name
+FROM service_categories c
+CROSS JOIN LATERAL (VALUES
+    ('Plombier', 'Reparation de fuite d''eau'),
+    ('Plombier', 'Reparation de robinet'),
+    ('Plombier', 'Installation sanitaire'),
+    ('Plombier', 'Debouchage'),
+    ('Plombier', 'Reparation WC'),
+    ('Plombier', 'Installation de tuyauterie'),
+    ('Électricien', 'Depannage electrique'),
+    ('Électricien', 'Installation electrique'),
+    ('Électricien', 'Installation d''eclairage'),
+    ('Électricien', 'Reparation de tableau electrique'),
+    ('Électricien', 'Installation de prises'),
+    ('Électricien', 'Diagnostic electrique'),
+    ('Frigoriste', 'Installation de climatisation'),
+    ('Frigoriste', 'Entretien de climatisation'),
+    ('Frigoriste', 'Depannage de climatisation'),
+    ('Frigoriste', 'Reparation de refrigerateur'),
+    ('Frigoriste', 'Reparation de congelateur'),
+    ('Frigoriste', 'Maintenance systeme frigorifique'),
+    ('Menuisier', 'Reparation de porte'),
+    ('Menuisier', 'Installation de porte'),
+    ('Menuisier', 'Reparation de fenetre'),
+    ('Menuisier', 'Fabrication de meuble'),
+    ('Menuisier', 'Installation de placard'),
+    ('Menuisier', 'Travaux de menuiserie'),
+    ('Chauffagiste', 'Reparation de chaudiere'),
+    ('Chauffagiste', 'Entretien de chaudiere'),
+    ('Chauffagiste', 'Installation de chauffage'),
+    ('Chauffagiste', 'Depannage chauffage'),
+    ('Serrurier', 'Ouverture de porte'),
+    ('Serrurier', 'Changement de serrure'),
+    ('Serrurier', 'Reparation de serrure'),
+    ('Serrurier', 'Installation de verrous'),
+    ('Serrurier', 'Depannage serrurerie')
+) AS s(category_name, name)
+WHERE c.name = s.category_name
+ON CONFLICT (category_id, name) DO NOTHING;

@@ -80,21 +80,26 @@
 
           <div class="fa-fg">
             <label class="fa-fl" for="profession">Métier</label>
-            <select id="profession" class="fa-fb-select" name="profession" required>
+            <select id="profession" class="fa-fb-select" name="profession" required onchange="filterServices()">
               <option value="" disabled selected>Choisir un métier</option>
-              <option>Électricité</option>
-              <option>Plomberie</option>
-              <option>Climatisation</option>
-              <option>Réfrigération</option>
-              <option>Menuiserie</option>
-              <option>Peinture</option>
-              <option>Maçonnerie</option>
-              <option>Autres</option>
+              {% for c in categories %}
+              <option value="{{ c.name }}">{{ c.name }}</option>
+              {% endfor %}
             </select>
           </div>
           <div class="fa-fg">
             <label class="fa-fl" for="specialite">Spécialité</label>
-            <input id="specialite" class="fa-fb" type="text" name="specialite" placeholder="Ex: Installation électrique" />
+            <input id="specialite" class="fa-fb" type="text" name="specialite" placeholder="Ex: Installation electrique" />
+          </div>
+          <div class="fa-fg" id="servicesBox" style="display:none;">
+            <span class="fa-fl">Services proposes</span>
+            <div id="servicesList" class="fa-radio-group" style="margin-top:6px;">
+              {% for s in all_services %}
+              <label class="fa-radio service-item" data-cat="{% for c in categories %}{% if c.id == s.category_id %}{{ c.name }}{% endif %}{% endfor %}">
+                <input type="checkbox" name="services" value="{{ s.id }}" /> {{ s.name }}
+              </label>
+              {% endfor %}
+            </div>
           </div>
           <div class="fa-fg">
             <label class="fa-fl" for="experience">Années d'expérience</label>
@@ -208,6 +213,15 @@
     }
     document.getElementById('pbar').style.width = (n*25) + '%';
   }
+
+  function filterServices(){
+    const cat = document.getElementById('profession').value;
+    const items = document.querySelectorAll('.service-item');
+    let any = false;
+    items.forEach(el => { const show = el.dataset.cat === cat; el.style.display = show ? 'flex' : 'none'; if (show) any = true; });
+    document.getElementById('servicesBox').style.display = any ? 'block' : 'none';
+  }
+  filterServices();
 
   function validateArtisan(){
     const pwd = document.getElementById('password').value;

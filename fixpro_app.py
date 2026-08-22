@@ -746,11 +746,12 @@ def register():
 @limiter.limit("10 per hour", methods=["POST"])
 def register_artisan():
     """Formulaire d'inscription technicien sur une seule page."""
-    categories = []
     conn = get_db_connection()
     try:
         categories = conn.execute(
-            "SELECT name FROM service_categories ORDER BY name").fetchall()
+            "SELECT id, name FROM service_categories ORDER BY name").fetchall()
+        all_services = conn.execute(
+            "SELECT id, category_id, name FROM services WHERE is_active = 1 ORDER BY name").fetchall()
     finally:
         conn.close()
 
@@ -828,6 +829,14 @@ def register_artisan():
                     "INSERT INTO artisan_portfolio (artisan_id, photo_url, caption)"
                     " VALUES (?, ?, ?)",
                     (artisan_id, p_url, f"Realisation {i+1}"))
+
+            services_ids = request.form.getlist("services")
+            try:
+                _save_artisan_services(conn, artisan_id, services_ids)
+            except ValueError as exc:
+                conn.rollback()
+                flash(f"Services invalides : {exc}", "error")
+                return redirect(url_for("register_artisan"))
             conn.commit()
         finally:
             conn.close()
@@ -835,7 +844,7 @@ def register_artisan():
         flash("Votre demande d'inscription a bien été reçue. L'équipe FixPro va vérifier vos informations.", "success")
         return redirect(url_for("artisan_pending"))
 
-    return render_template("register_artisan.html", categories=categories)
+    return render_template("register_artisan.html", categories=categories, all_services=all_services)
 
 
 def _send_admin_notification(subject, body):
@@ -2248,6 +2257,9 @@ def artisan_dashboard():
             " WHERE r.artisan_id = ? ORDER BY r.created_at DESC LIMIT 5",
             (user["id"],)).fetchall()
 
+        services_disponibles = _services_for_category(conn, user["profession"] or "")
+        artisan_services_ids = _artisan_service_ids(conn, user["id"])
+
     finally:
         conn.close()
 
@@ -2255,7 +2267,30 @@ def artisan_dashboard():
                            stats={"nouvelles": nouvelles, "assignees": assignees,
                                   "terminees": terminees, "revenus": revenus,
                                   "note_avg": note["avg"], "note_count": note["cnt"]},
-                           demandes=demandes, avis=avis)
+                           demandes=demandes, avis=avis,
+                           services_disponibles=services_disponibles,
+                           artisan_services_ids=artisan_services_ids)
+
+
+@app.route("/dashboard/technicien/services", methods=["POST"])
+@login_required
+def update_artisan_services():
+    """Mise a jour des services du technicien connecte."""
+    user = get_current_user()
+    if user["role"] != "artisan":
+        flash("Cet espace est reserve aux techniciens.", "error")
+        return redirect(url_for("dashboard"))
+    services_ids = request.form.getlist("services")
+    conn = get_db_connection()
+    try:
+        _save_artisan_services(conn, user["id"], services_ids)
+        conn.commit()
+        flash("Services mis a jour.", "success")
+    except ValueError as exc:
+        flash(f"Erreur : {exc}", "error")
+    finally:
+        conn.close()
+    return redirect(url_for("artisan_dashboard"))
 
 
 @app.route("/payments")
@@ -2358,6 +2393,46 @@ def _haversine(lat1, lon1, lat2, lon2):
     return 2 * R * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
 
+def _services_for_category(conn, category_name):
+    """Liste les services actifs d'un domaine professionnel."""
+    return conn.execute(
+        "SELECT s.id, s.name"
+        " FROM services s JOIN service_categories c ON c.id = s.category_id"
+        " WHERE c.name = ? AND s.is_active = 1"
+        " ORDER BY s.name",
+        (category_name,)).fetchall()
+
+
+def _artisan_service_ids(conn, artisan_id):
+    """Identifiants des services associes a un artisan."""
+    rows = conn.execute(
+        "SELECT service_id FROM artisan_services WHERE artisan_id = ?",
+        (artisan_id,)).fetchall()
+    return {r["service_id"] for r in rows}
+
+
+def _save_artisan_services(conn, artisan_id, service_ids):
+    """Remplace les services d'un artisan apres validation du domaine."""
+    service_ids = [int(s) for s in (service_ids or []) if s]
+    if not service_ids:
+        conn.execute("DELETE FROM artisan_services WHERE artisan_id = ?", (artisan_id,))
+        return
+    artisan = conn.execute(
+        "SELECT profession FROM users WHERE id = ? AND role = 'artisan'",
+        (artisan_id,)).fetchone()
+    if not artisan or not artisan["profession"]:
+        raise ValueError("Domaine professionnel non defini.")
+    allowed = {r["id"] for r in _services_for_category(conn, artisan["profession"])}
+    invalid = [s for s in service_ids if s not in allowed]
+    if invalid:
+        raise ValueError("Certains services n'appartiennent pas au domaine du technicien.")
+    conn.execute("DELETE FROM artisan_services WHERE artisan_id = ?", (artisan_id,))
+    for sid in service_ids:
+        conn.execute(
+            "INSERT INTO artisan_services (artisan_id, service_id) VALUES (?, ?)",
+            (artisan_id, sid))
+
+
 def _enrich_artisan(row, client_lat, client_lon):
     artisan = dict(row)
     artisan["full_name"] = artisan.get("nom") or artisan.get("full_name", "")
@@ -2449,8 +2524,8 @@ def artisans_page():
                 " AND artisan_id IS NOT NULL AND status != 'pending'"
                 " ORDER BY updated_at DESC", (user["id"],)).fetchall()
             active_requests = {r["artisan_id"]: r["id"] for r in rows_req}
-        categories = [c["profession"] for c in conn.execute(
-            "SELECT DISTINCT profession FROM users WHERE role = 'artisan' AND profession IS NOT NULL AND profession != '' ORDER BY profession").fetchall()]
+        categories = conn.execute(
+            "SELECT id, name FROM service_categories ORDER BY name").fetchall()
     finally:
         conn.close()
 
@@ -2562,6 +2637,15 @@ def artisan_detail(artisan_id):
             }
 
         is_demo = demo_config is not None
+
+        # Services reels du technicien
+        artisan_services = conn.execute(
+            "SELECT s.name"
+            " FROM services s"
+            " JOIN artisan_services a ON a.service_id = s.id"
+            " WHERE a.artisan_id = ? AND s.is_active = 1"
+            " ORDER BY s.name",
+            (artisan_id,)).fetchall()
 
         # Avis
         reviews = conn.execute(
@@ -2790,7 +2874,8 @@ def artisan_detail(artisan_id):
                            review_bars=review_bars,
                            review_bars_count=review_bars_count,
                            satisfaction_rate=satisfaction_rate,
-                           is_demo=is_demo)
+                           is_demo=is_demo,
+                           artisan_services=artisan_services)
 
 
 def _services_for_profession(profession):

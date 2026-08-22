@@ -227,3 +227,62 @@ CREATE TABLE IF NOT EXISTS notifications (
 
 CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_read ON notifications(user_id, is_read);
+
+-- Services lies a un domaine professionnel
+CREATE TABLE IF NOT EXISTS services (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    category_id     INTEGER NOT NULL REFERENCES service_categories(id) ON DELETE CASCADE,
+    name            TEXT NOT NULL,
+    is_active       INTEGER DEFAULT 1,
+    created_at      TEXT DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(category_id, name)
+);
+
+CREATE INDEX IF NOT EXISTS idx_services_category ON services(category_id);
+
+-- Association techniciens <-> services
+CREATE TABLE IF NOT EXISTS artisan_services (
+    artisan_id      INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    service_id      INTEGER NOT NULL REFERENCES services(id) ON DELETE CASCADE,
+    PRIMARY KEY (artisan_id, service_id)
+);
+
+-- Seed services par domaine
+INSERT OR IGNORE INTO service_categories (name, diagnostic_price) VALUES
+    ('Peintre',    40000),
+    ('Autre',      30000);
+
+INSERT OR IGNORE INTO services (category_id, name) VALUES
+    ((SELECT id FROM service_categories WHERE name = 'Plombier'), 'Reparation de fuite d''eau'),
+    ((SELECT id FROM service_categories WHERE name = 'Plombier'), 'Reparation de robinet'),
+    ((SELECT id FROM service_categories WHERE name = 'Plombier'), 'Installation sanitaire'),
+    ((SELECT id FROM service_categories WHERE name = 'Plombier'), 'Debouchage'),
+    ((SELECT id FROM service_categories WHERE name = 'Plombier'), 'Reparation WC'),
+    ((SELECT id FROM service_categories WHERE name = 'Plombier'), 'Installation de tuyauterie'),
+    ((SELECT id FROM service_categories WHERE name = 'Électricien'), 'Depannage electrique'),
+    ((SELECT id FROM service_categories WHERE name = 'Électricien'), 'Installation electrique'),
+    ((SELECT id FROM service_categories WHERE name = 'Électricien'), 'Installation d''eclairage'),
+    ((SELECT id FROM service_categories WHERE name = 'Électricien'), 'Reparation de tableau electrique'),
+    ((SELECT id FROM service_categories WHERE name = 'Électricien'), 'Installation de prises'),
+    ((SELECT id FROM service_categories WHERE name = 'Électricien'), 'Diagnostic electrique'),
+    ((SELECT id FROM service_categories WHERE name = 'Frigoriste'), 'Installation de climatisation'),
+    ((SELECT id FROM service_categories WHERE name = 'Frigoriste'), 'Entretien de climatisation'),
+    ((SELECT id FROM service_categories WHERE name = 'Frigoriste'), 'Depannage de climatisation'),
+    ((SELECT id FROM service_categories WHERE name = 'Frigoriste'), 'Reparation de refrigerateur'),
+    ((SELECT id FROM service_categories WHERE name = 'Frigoriste'), 'Reparation de congelateur'),
+    ((SELECT id FROM service_categories WHERE name = 'Frigoriste'), 'Maintenance systeme frigorifique'),
+    ((SELECT id FROM service_categories WHERE name = 'Menuisier'), 'Reparation de porte'),
+    ((SELECT id FROM service_categories WHERE name = 'Menuisier'), 'Installation de porte'),
+    ((SELECT id FROM service_categories WHERE name = 'Menuisier'), 'Reparation de fenetre'),
+    ((SELECT id FROM service_categories WHERE name = 'Menuisier'), 'Fabrication de meuble'),
+    ((SELECT id FROM service_categories WHERE name = 'Menuisier'), 'Installation de placard'),
+    ((SELECT id FROM service_categories WHERE name = 'Menuisier'), 'Travaux de menuiserie'),
+    ((SELECT id FROM service_categories WHERE name = 'Chauffagiste'), 'Reparation de chaudiere'),
+    ((SELECT id FROM service_categories WHERE name = 'Chauffagiste'), 'Entretien de chaudiere'),
+    ((SELECT id FROM service_categories WHERE name = 'Chauffagiste'), 'Installation de chauffage'),
+    ((SELECT id FROM service_categories WHERE name = 'Chauffagiste'), 'Depannage chauffage'),
+    ((SELECT id FROM service_categories WHERE name = 'Serrurier'), 'Ouverture de porte'),
+    ((SELECT id FROM service_categories WHERE name = 'Serrurier'), 'Changement de serrure'),
+    ((SELECT id FROM service_categories WHERE name = 'Serrurier'), 'Reparation de serrure'),
+    ((SELECT id FROM service_categories WHERE name = 'Serrurier'), 'Installation de verrous'),
+    ((SELECT id FROM service_categories WHERE name = 'Serrurier'), 'Depannage serrurerie');
