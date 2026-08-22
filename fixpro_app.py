@@ -447,19 +447,22 @@ def inject_layout_context():
 
     stats = {}
     if connected and connected.get("role") == "admin":
-        conn = get_db_connection()
-        try:
-            stats["pending_artisans"] = conn.execute(
-                "SELECT COUNT(*) AS n FROM users WHERE role = 'artisan' AND is_verified = 0").fetchone()["n"]
-            stats["open_requests"] = conn.execute(
-                "SELECT COUNT(*) AS n FROM requests"
-                " WHERE status NOT IN ('completed', 'cancelled')").fetchone()["n"]
-            stats["pending_requests"] = conn.execute(
-                "SELECT COUNT(*) AS n FROM requests WHERE status = 'REQUESTED'").fetchone()["n"]
-            stats["open_tickets"] = conn.execute(
-                "SELECT COUNT(*) AS n FROM admin_tickets WHERE status = 'open'").fetchone()["n"]
-        finally:
-            conn.close()
+        if ADMIN_DEMO:
+            stats = {"pending_artisans": 1, "open_requests": 4, "pending_requests": 6, "open_tickets": 2}
+        else:
+            conn = get_db_connection()
+            try:
+                stats["pending_artisans"] = conn.execute(
+                    "SELECT COUNT(*) AS n FROM users WHERE role = 'artisan' AND is_verified = 0").fetchone()["n"]
+                stats["open_requests"] = conn.execute(
+                    "SELECT COUNT(*) AS n FROM requests"
+                    " WHERE status NOT IN ('completed', 'cancelled')").fetchone()["n"]
+                stats["pending_requests"] = conn.execute(
+                    "SELECT COUNT(*) AS n FROM requests WHERE status = 'REQUESTED'").fetchone()["n"]
+                stats["open_tickets"] = conn.execute(
+                    "SELECT COUNT(*) AS n FROM admin_tickets WHERE status = 'open'").fetchone()["n"]
+            finally:
+                conn.close()
 
     return {"nav_user": connected, "admin_stats": stats}
 
