@@ -29,8 +29,10 @@
   .card-title { display: flex; align-items: center; gap: 8px; font-size: 0.98rem; font-weight: 700; margin: 0; }
   .card-badge { background: #fee2e2; color: #b91c1c; font-size: 0.65rem; padding: 2px 7px; border-radius: 20px; font-weight: 700; }
   .card-link { font-size: 0.8rem; color: var(--blue); font-weight: 600; }
-  .table-wrap { overflow-x: auto; }
-  .table { width: 100%; border-collapse: collapse; }
+  .table-wrap { overflow-x: auto; width: 100%; -webkit-overflow-scrolling: touch; }
+  .table { width: 100%; border-collapse: collapse; min-width: 100%; }
+  .table-wide { min-width: 880px; }
+  .table-inter { min-width: 720px; }
   .table th { text-align: left; font-size: 0.65rem; color: var(--muted); padding: 8px 6px; border-bottom: 1px solid #e2e8f0; text-transform: uppercase; letter-spacing: 0.03em; }
   .table td { padding: 10px 6px; border-bottom: 1px solid #f1f5f9; font-size: 0.8rem; white-space: nowrap; }
   .avatar { width: 28px; height: 28px; border-radius: 50%; background: #e2e8f0; display: inline-grid; place-items: center; font-size: 0.7rem; font-weight: 700; margin-right: 6px; color: #475569; }
@@ -48,7 +50,7 @@
   .act-icon { width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; flex-shrink: 0; color: #fff; }
   .act-icon svg { width: 16px; height: 16px; }
   .act-body { flex: 1; min-width: 0; }
-  .act-title { font-size: 0.82rem; font-weight: 600; margin-bottom: 1px; }
+  .act-title { font-size: 0.82rem; font-weight: 600; margin-bottom: 1px; word-break: break-word; }
   .act-meta { font-size: 0.72rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .act-time { font-size: 0.7rem; color: var(--muted); min-width: 55px; text-align: right; }
   .fin-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f1f5f9; }
@@ -58,20 +60,20 @@
   .fin-body { flex: 1; min-width: 0; }
   .fin-label { font-size: 0.78rem; color: var(--muted); margin-bottom: 1px; }
   .fin-value { font-size: 1rem; font-weight: 800; }
-  .tech-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f1f5f9; }
+  .tech-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f1f5f9; flex-wrap: nowrap; }
   .tech-row:last-child { border-bottom: none; }
-  .tech-avatar { width: 38px; height: 38px; border-radius: 50%; background: #e2e8f0; display: grid; place-items: center; font-weight: 700; overflow: hidden; }
+  .tech-avatar { width: 38px; height: 38px; border-radius: 50%; background: #e2e8f0; display: grid; place-items: center; font-weight: 700; overflow: hidden; flex-shrink: 0; }
   .tech-avatar img { width: 100%; height: 100%; object-fit: cover; }
-  .tech-body { flex: 1; min-width: 0; }
-  .tech-name { font-weight: 700; font-size: 0.82rem; }
-  .tech-meta { font-size: 0.72rem; color: var(--muted); }
-  .tech-status { display: flex; align-items: center; gap: 4px; font-size: 0.7rem; color: var(--green); }
-  .tech-status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
-  .tech-note { display: flex; align-items: center; gap: 3px; color: var(--orange); font-size: 0.78rem; }
-  .tech-note svg { width: 12px; height: 12px; }
-  .tech-right { text-align: right; }
-  .tech-km { font-size: 0.7rem; color: var(--muted); }
-  .tech-btn { display: inline-flex; align-items: center; gap: 4px; padding: 5px 10px; border-radius: 8px; font-size: 0.7rem; font-weight: 600; background: #dbeafe; color: #1d4ed8; }
+  .tech-body { flex: 1 1 120px; min-width: 0; }
+  .tech-name { font-weight: 700; font-size: 0.82rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tech-meta { font-size: 0.72rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tech-status { display: flex; align-items: center; gap: 4px; font-size: 0.7rem; color: var(--green); white-space: nowrap; }
+  .tech-status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
+  .tech-right { text-align: right; flex-shrink: 0; }
+  .tech-km { font-size: 0.7rem; color: var(--muted); white-space: nowrap; }
+  .tech-note { display: flex; align-items: center; justify-content: flex-end; gap: 3px; color: var(--orange); font-size: 0.72rem; white-space: nowrap; }
+  .tech-note svg { width: 12px; height: 12px; flex-shrink: 0; }
+  .tech-btn { display: inline-flex; align-items: center; gap: 4px; padding: 5px 10px; border-radius: 8px; font-size: 0.7rem; font-weight: 600; background: #dbeafe; color: #1d4ed8; flex-shrink: 0; white-space: nowrap; }
   .empty { color: var(--muted); font-size: 0.85rem; text-align: center; padding: 20px; }
   .icon-16 { width: 16px; height: 16px; }
   @media (max-width: 1200px) { .row-2 { grid-template-columns: 1fr; } .row-3 { grid-template-columns: 1fr; } }
@@ -137,7 +139,7 @@
       <a class="card-link" href="{{ url_for('admin_requests') }}">Voir toutes les demandes</a>
     </div>
     <div class="table-wrap">
-      <table class="table">
+      <table class="table table-wide">
         <thead>
           <tr>
             <th>Client</th>
@@ -215,7 +217,7 @@
       <a class="card-link" href="{{ url_for('admin_requests') }}">Voir toutes</a>
     </div>
     <div class="table-wrap">
-      <table class="table">
+      <table class="table table-inter">
         <thead>
           <tr>
             <th><svg class="icon-16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg> N°</th>
