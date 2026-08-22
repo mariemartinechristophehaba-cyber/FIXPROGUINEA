@@ -316,12 +316,33 @@ ON CONFLICT (category_id, name) DO NOTHING;
 CREATE TABLE IF NOT EXISTS conversations (
     id              SERIAL PRIMARY KEY,
     client_id       INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    artisan_id      INTEGER REFERENCES users(id) ON DELETE SET NULL,
     request_id      INTEGER REFERENCES requests(id) ON DELETE SET NULL,
     subject         TEXT,
     status          TEXT DEFAULT 'open',
+    ai_active       INTEGER DEFAULT 1,
+    ai_category     TEXT,
+    urgency         TEXT,
+    needs_human     INTEGER DEFAULT 0,
+    needs_technician INTEGER DEFAULT 0,
     created_at      TEXT DEFAULT CURRENT_TIMESTAMP,
     updated_at      TEXT DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Migrations idempotentes pour les conversations
+ALTER TABLE conversations ADD COLUMN IF NOT EXISTS artisan_id INTEGER REFERENCES users(id) ON DELETE SET NULL;
+ALTER TABLE conversations ADD COLUMN IF NOT EXISTS ai_active INTEGER DEFAULT 1;
+ALTER TABLE conversations ADD COLUMN IF NOT EXISTS ai_category TEXT;
+ALTER TABLE conversations ADD COLUMN IF NOT EXISTS urgency TEXT;
+ALTER TABLE conversations ADD COLUMN IF NOT EXISTS needs_human INTEGER DEFAULT 0;
+ALTER TABLE conversations ADD COLUMN IF NOT EXISTS needs_technician INTEGER DEFAULT 0;
+
+-- Migrations idempotentes pour les conversations
+ALTER TABLE conversations ADD COLUMN IF NOT EXISTS ai_active INTEGER DEFAULT 1;
+ALTER TABLE conversations ADD COLUMN IF NOT EXISTS ai_category TEXT;
+ALTER TABLE conversations ADD COLUMN IF NOT EXISTS urgency TEXT;
+ALTER TABLE conversations ADD COLUMN IF NOT EXISTS needs_human INTEGER DEFAULT 0;
+ALTER TABLE conversations ADD COLUMN IF NOT EXISTS needs_technician INTEGER DEFAULT 0;
 
 CREATE INDEX IF NOT EXISTS idx_conversations_client ON conversations(client_id);
 CREATE INDEX IF NOT EXISTS idx_conversations_status ON conversations(status);

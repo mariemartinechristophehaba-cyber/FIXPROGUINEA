@@ -292,9 +292,15 @@ INSERT OR IGNORE INTO services (category_id, name) VALUES
 CREATE TABLE IF NOT EXISTS conversations (
     id              INTEGER PRIMARY KEY AUTOINCREMENT,
     client_id       INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    artisan_id      INTEGER REFERENCES users(id) ON DELETE SET NULL,
     request_id      INTEGER REFERENCES requests(id) ON DELETE SET NULL,
     subject         TEXT,
     status          TEXT DEFAULT 'open',
+    ai_active       INTEGER DEFAULT 1,
+    ai_category     TEXT,
+    urgency         TEXT,
+    needs_human     INTEGER DEFAULT 0,
+    needs_technician INTEGER DEFAULT 0,
     created_at      TEXT DEFAULT CURRENT_TIMESTAMP,
     updated_at      TEXT DEFAULT CURRENT_TIMESTAMP
 );

@@ -16,9 +16,19 @@
 </style>
 <div class="conv">
   <div class="conv-header">
+    <a href="{{ url_for('client_messages') }}" style="font-size:13px;color:#155eef;display:block;margin-bottom:8px;">← Retour aux messages</a>
+    {% if artisan %}
+    <div style="display:flex;align-items:center;gap:12px;">
+      <img src="{{ artisan.photo_url or url_for('static', filename='img/fixpro-avatar.png') }}" alt="" style="width:48px;height:48px;border-radius:50%;object-fit:cover;" />
+      <div>
+        <div class="conv-title">{{ artisan.full_name }}</div>
+        <div class="conv-status">{{ artisan.profession or 'Technicien' }}</div>
+      </div>
+    </div>
+    {% else %}
     <div class="conv-title">{{ conversation.subject or 'Conversation avec FixPro' }}</div>
     <div class="conv-status">Statut : {{ conversation.status }}</div>
-    <a href="{{ url_for('client_messages') }}" style="font-size:13px;color:#155eef;">Retour aux messages</a>
+    {% endif %}
   </div>
   {% for m in messages %}
   <div class="bubble {{ 'bubble-client' if m.sender_role == 'client' else 'bubble-admin' }}">

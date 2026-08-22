@@ -272,7 +272,7 @@
       </div>
       <div class="p-actions">
         <a href="{{ url_for('demande', artisan_id=artisan.id) }}" class="p-btn p-btn-primary">Demander une intervention</a>
-        <a href="{{ url_for('conversations') }}" class="p-btn p-btn-secondary">Envoyer un message</a>
+        <a href="{{ url_for('client_message_artisan', artisan_id=artisan.id) }}" class="p-btn p-btn-secondary">Envoyer un message</a>
         <a href="tel:{{ artisan.phone or '' }}" class="p-btn p-btn-secondary" onclick="alert('Appel: {{ artisan.phone or 'non renseigné' }}'); return false;">Appeler</a>
       </div>
     </div>

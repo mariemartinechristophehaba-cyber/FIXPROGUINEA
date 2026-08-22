@@ -2775,39 +2775,38 @@ def artisan_detail(artisan_id):
                 if not content:
                     return redirect(url_for("artisan_detail", artisan_id=artisan_id))
 
-                # Cree le ticket s'il n'existe pas encore
-                if not ticket_id:
-                    ticket_id = _insert_id(
+                conv = conn.execute(
+                    "SELECT id FROM conversations WHERE client_id = ? AND artisan_id = ?",
+                    (user["id"], artisan_id)).fetchone()
+                if not conv:
+                    conv_id = _insert_id(
                         conn,
-                        "INSERT INTO admin_tickets (client_id, artisan_id, subject, message, status)"
-                        " VALUES (?, ?, ?, ?, 'open')",
-                        (user["id"], artisan_id,
-                         f"Concerne {artisan['full_name']}",
-                         f"Conversation demarree pour {artisan['full_name']}."))
-
-                    # Message d'accueil de FixPro
-                    fixpro = conn.execute(
-                        "SELECT id FROM users WHERE role = 'admin' LIMIT 1").fetchone()
-                    sender_id = fixpro["id"] if fixpro else user["id"]
-                    conn.execute(
-                        "INSERT INTO admin_messages (ticket_id, sender_id, content)"
+                        "INSERT INTO conversations (client_id, artisan_id, subject)"
                         " VALUES (?, ?, ?)",
-                        (ticket_id, sender_id,
-                         f"Bienvenue sur FixPro. Comment puis-je vous aider avec {artisan['full_name']} ?"))
+                        (user["id"], artisan_id, artisan["full_name"]))
+                    conn.execute(
+                        "INSERT INTO conversation_messages"
+                        " (conversation_id, sender_id, sender_role, content)"
+                        " VALUES (?, ?, ?, ?)",
+                        (conv_id, user["id"], "client",
+                         f"Conversation demarree pour {artisan['full_name']}."))
                     conn.commit()
+                else:
+                    conv_id = conv["id"]
 
                 conn.execute(
-                    "INSERT INTO admin_messages (ticket_id, sender_id, content)"
-                    " VALUES (?, ?, ?)",
-                    (ticket_id, user["id"], content))
+                    "INSERT INTO conversation_messages"
+                    " (conversation_id, sender_id, sender_role, content)"
+                    " VALUES (?, ?, ?, ?)",
+                    (conv_id, user["id"], "client", content))
                 conn.execute(
-                    "UPDATE admin_tickets SET updated_at = CURRENT_TIMESTAMP WHERE id = ?",
-                    (ticket_id,))
+                    "UPDATE conversations SET updated_at = ? WHERE id = ?",
+                    (datetime.now(timezone.utc).isoformat(), conv_id))
                 conn.commit()
 
                 if request.headers.get("X-Requested-With") == "XMLHttpRequest":
                     return jsonify({"ok": True})
-                return redirect(url_for("artisan_detail", artisan_id=artisan_id))
+                return redirect(url_for("client_conversation", conversation_id=conv_id))
 
             if action == "request":
                 title = (request.form.get("title") or "").strip()
@@ -4104,9 +4103,57 @@ def client_conversation(conversation_id):
             " WHERE conversation_id = ? AND sender_role = 'admin'",
             (conversation_id,))
         conn.commit()
+        artisan = None
+        if conv.get("artisan_id"):
+            artisan = conn.execute(
+                "SELECT id, full_name, profession, photo_url FROM users WHERE id = ?",
+                (conv["artisan_id"],)).fetchone()
     finally:
         conn.close()
-    return render_template("client_conversation.html", conversation=conv, messages=messages, user=user)
+    return render_template("client_conversation.html", conversation=conv, messages=messages, user=user, artisan=artisan)
+
+
+@app.route("/messages/artisan/<int:artisan_id>", methods=["GET"])
+@login_required
+def client_message_artisan(artisan_id):
+    """Ouvre ou cree une conversation avec un technicien."""
+    user = get_current_user()
+    if user["role"] != "client":
+        flash("Cet espace est reserve aux clients.", "error")
+        return redirect(url_for("artisans_page"))
+    conn = get_db_connection()
+    try:
+        artisan = conn.execute(
+            "SELECT full_name FROM users WHERE id = ? AND role = 'artisan'",
+            (artisan_id,)).fetchone()
+        if not artisan:
+            flash("Technicien introuvable.", "error")
+            return redirect(url_for("artisans_page"))
+
+        conv = conn.execute(
+            "SELECT id FROM conversations WHERE client_id = ? AND artisan_id = ?",
+            (user["id"], artisan_id)).fetchone()
+        if not conv:
+            conv_id = _insert_id(
+                conn,
+                "INSERT INTO conversations (client_id, artisan_id, subject)"
+                " VALUES (?, ?, ?)",
+                (user["id"], artisan_id, artisan["full_name"]))
+            conn.execute(
+                "INSERT INTO conversation_messages"
+                " (conversation_id, sender_id, sender_role, content)"
+                " VALUES (?, ?, ?, ?)",
+                (conv_id, user["id"], "client",
+                 f"Conversation demarree avec {artisan['full_name']}."))
+            conn.execute(
+                "UPDATE conversations SET updated_at = ? WHERE id = ?",
+                (datetime.now(timezone.utc).isoformat(), conv_id))
+            conn.commit()
+        else:
+            conv_id = conv["id"]
+    finally:
+        conn.close()
+    return redirect(url_for("client_conversation", conversation_id=conv_id))
 
 
 @app.route("/admin/messages")
