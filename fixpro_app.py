@@ -4047,10 +4047,14 @@ def client_message_new():
             return redirect(url_for("client_message_new"))
         conn = get_db_connection()
         try:
-            cur = conn.execute(
-                "INSERT INTO conversations (client_id, subject) VALUES (?, ?)",
-                (user["id"], subject))
-            conv_id = cur.lastrowid
+            if conn.is_postgres:
+                conv_id = conn.execute(
+                    "INSERT INTO conversations (client_id, subject) VALUES (?, ?) RETURNING id",
+                    (user["id"], subject)).fetchone()["id"]
+            else:
+                conv_id = conn.execute(
+                    "INSERT INTO conversations (client_id, subject) VALUES (?, ?)",
+                    (user["id"], subject)).lastrowid
             conn.execute(
                 "INSERT INTO conversation_messages"
                 " (conversation_id, sender_id, sender_role, content) VALUES (?, ?, ?, ?)",
