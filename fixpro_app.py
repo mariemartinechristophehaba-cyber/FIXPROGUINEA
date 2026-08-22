@@ -1243,11 +1243,22 @@ def admin_dashboard():
                 "CANCELLED": "#ef4444",
                 "PAID": "#8b5cf6",
             }
+            icon_map = {
+                "REQUESTED": "file_plus",
+                "ACCEPTED": "user_check",
+                "ASSIGNED": "user_check",
+                "IN_PROGRESS": "clock",
+                "ON_THE_WAY": "clock",
+                "COMPLETED": "check_circle",
+                "CANCELLED": "x_circle",
+                "PAID": "credit_card",
+            }
             recent_activities.append({
                 "title": title_map.get(status, "Mise a jour"),
                 "time": "Il y a " + (str(r["created_at"])[-8:-3] if r["created_at"] else "—"),
                 "meta": meta_map.get(status, (r["client_name"] or "—")),
                 "color": color_map.get(status, "#64748b"),
+                "icon": icon_map.get(status, "clock"),
             })
         recent_activities = recent_activities[:6]
 
