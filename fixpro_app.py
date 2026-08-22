@@ -1059,7 +1059,6 @@ def admin_login():
             session.clear()
             session["user_id"] = admin["id"]
             session.permanent = True
-            flash("Bienvenue dans l'administration FixPro.", "success")
             return redirect(url_for("admin_dashboard"))
         flash("Email ou mot de passe incorrect.", "error")
 
@@ -1123,7 +1122,6 @@ def admin_google_callback():
         session.clear()
         session["user_id"] = user["id"]
         session.permanent = True
-        flash("Bienvenue dans l'administration FixPro.", "success")
     finally:
         conn.close()
     return redirect(url_for("admin_dashboard"))
