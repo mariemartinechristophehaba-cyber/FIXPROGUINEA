@@ -184,7 +184,7 @@
     <div class="p-header-right">
       <div class="p-loc">
         <img src="{{ url_for('static', filename='img/icon-map-pin.svg') }}" width="16" height="16" alt="" />
-        <span>Abidjan, Cocody</span>
+        <span>Conakry, Kaloum</span>
       </div>
       <a href="{{ url_for('notifications') }}" class="r-notif" style="position:relative;">
         <img src="{{ url_for('static', filename='img/icon-bell.svg') }}" width="22" height="22" alt="" />
@@ -254,7 +254,7 @@
         <div class="p-stats">
           <div class="p-stat">
             <div class="p-stat-icon"><img src="{{ url_for('static', filename='img/icon-map-pin.svg') }}" width="18" height="18" alt="" /></div>
-            <div><b>{{ "%.1f" | format(distance or 1.8) }} km</b> de vous</div>
+            <div>{% if distance is not none %}<b>{{ "%.1f" | format(distance) }} km</b> de vous{% else %}<b>—</b> distance non renseignee{% endif %}</div>
           </div>
           <div class="p-stat">
             <div class="p-stat-icon"><img src="{{ url_for('static', filename='img/icon-clock.svg') }}" width="18" height="18" alt="" /></div>
@@ -460,7 +460,7 @@
         <div class="p-map">
           <img src="{{ url_for('static', filename='img/icon-map-pin.svg') }}" width="40" height="40" alt="" />
         </div>
-        <p class="p-zone-list">{{ artisan.quartier or artisan.city or 'Cocody' }}, Riviera, Deux Plateaux, Angré, Palmeraie, Vallon</p>
+        <p class="p-zone-list">{{ artisan.quartier or artisan.city or 'Kaloum' }}, Ratoma, Dixinn, Matam, Matoto, Lambanyi</p>
       </section>
 
       <section class="p-card" id="horaires">
