@@ -126,7 +126,7 @@
           <span class="f-pro-rating"><img src="{{ url_for('static', filename='img/icon-star.svg') }}" alt="" /> {{ "%.1f" | format(a.avg_rating) }}</span>
           <span>({{ a.review_count }} avis)</span>
         </div>
-        <div class="f-pro-meta"><img src="{{ url_for('static', filename='img/icon-map-pin.svg') }}" width="14" height="14" alt="" /> {% if a.distance is not none %}{{ "%.1f"|format(a.distance) }}{% else %}{{ "%.1f"|format(1.5 + loop.index0 * 0.4) }}{% endif %} km</div>
+        <div class="f-pro-meta"><img src="{{ url_for('static', filename='img/icon-map-pin.svg') }}" width="14" height="14" alt="" /> {% if a.distance is defined and a.distance is not none %}{{ "%.1f"|format(a.distance) }}{% else %}{{ "%.1f"|format(1.5 + loop.index0 * 0.4) }}{% endif %} km</div>
         <span class="f-pro-btn">Voir le profil</span>
       </div>
     </a>
