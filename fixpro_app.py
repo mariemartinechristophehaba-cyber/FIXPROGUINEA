@@ -1785,14 +1785,13 @@ def ticket_new():
         if existing:
             return redirect(url_for("ticket_detail", ticket_id=existing["id"]))
 
-        result = conn.execute(
+        ticket_id = _insert_id(
+            conn,
             "INSERT INTO admin_tickets (client_id, artisan_id, subject, message, status)"
             " VALUES (?, ?, ?, ?, 'open')",
             (user["id"], artisan_id,
              f"Concerne {artisan['full_name']}",
              f"Conversation demarree pour le technicien {artisan['full_name']} ({artisan['profession']})."))
-        conn.commit()
-        ticket_id = result.lastrowid
 
         # Message d'accueil de FixPro
         fixpro = conn.execute(
@@ -2369,6 +2368,13 @@ def profile():
     return render_template("profile.html", user=user)
 
 
+def _insert_id(conn, sql, params):
+    """Insere une ligne et retourne son id, compatible SQLite et PostgreSQL."""
+    if conn.is_postgres:
+        return conn.execute(sql + " RETURNING id", params).fetchone()["id"]
+    return conn.execute(sql, params).lastrowid
+
+
 def _to_float(value, default=0.0):
     try:
         return float(value)
@@ -2771,14 +2777,13 @@ def artisan_detail(artisan_id):
 
                 # Cree le ticket s'il n'existe pas encore
                 if not ticket_id:
-                    result = conn.execute(
+                    ticket_id = _insert_id(
+                        conn,
                         "INSERT INTO admin_tickets (client_id, artisan_id, subject, message, status)"
                         " VALUES (?, ?, ?, ?, 'open')",
                         (user["id"], artisan_id,
                          f"Concerne {artisan['full_name']}",
                          f"Conversation demarree pour {artisan['full_name']}."))
-                    conn.commit()
-                    ticket_id = result.lastrowid
 
                     # Message d'accueil de FixPro
                     fixpro = conn.execute(
@@ -2819,15 +2824,16 @@ def artisan_detail(artisan_id):
                 full_desc = description
                 if date_time:
                     full_desc += f"\n\nDate/heure souhaitée : {date_time}"
-                result = conn.execute(
+                request_id = _insert_id(
+                    conn,
                     "INSERT INTO requests"
                     " (client_id, artisan_id, title, description, category, address, status, urgency, phone_contact, created_at, updated_at)"
                     " VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?, datetime('now'), datetime('now'))",
                     (user["id"], artisan_id, title, full_desc,
                      artisan["profession"] or "Autre", address, urgency, phone_contact))
                 conn.commit()
-                flash("Demande d'intervention créée. Le technicien en sera informé.", "success")
-                return redirect(url_for("request_detail", request_id=result.lastrowid))
+                flash("Demande d'intervention creee. Le technicien en sera informe.", "success")
+                return redirect(url_for("request_detail", request_id=request_id))
 
             if action == "review" and can_review:
                 rating = request.form.get("rating")
@@ -2961,7 +2967,8 @@ def demande(artisan_id):
             professional_amount = estimated_price - commission_amount
             reference = _generate_intervention_reference(conn)
 
-            result = conn.execute(
+            request_id = _insert_id(
+                conn,
                 "INSERT INTO requests"
                 " (client_id, artisan_id, reference, title, description, service, category, address,"
                 " latitude, longitude, requested_date, requested_time, status, urgency, phone_contact,"
@@ -2972,7 +2979,6 @@ def demande(artisan_id):
                  artisan["profession"] or "Autre", address, latitude, longitude,
                  requested_date, requested_time, urgency, phone_contact,
                  estimated_price, commission_rate, commission_amount, professional_amount))
-            request_id = result.lastrowid
             conn.execute(
                 "INSERT INTO intervention_history (request_id, status, actor, note, created_at)"
                 " VALUES (?, ?, ?, ?, datetime('now'))",
@@ -3221,7 +3227,8 @@ def request_new():
             status = "pending" if not best else "assigned"
             artisan_id = best["id"] if best else None
 
-            cursor = conn.execute(
+            new_request_id = _insert_id(
+                conn,
                 "INSERT INTO requests (client_id, artisan_id, title, description, category,"
                 " address, photo_url, diagnostic_price, budget, status)"
                 " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
@@ -3230,9 +3237,7 @@ def request_new():
                  request.form.get("photo_url", "").strip(),
                  float(category_row["diagnostic_price"]) if category_row else 0,
                  _to_float(request.form.get("budget")),
-                 status),
-            )
-            new_request_id = cursor.lastrowid
+                 status))
             conn.commit()
 
             request_address = request.form.get("address", "").strip()
@@ -4047,14 +4052,10 @@ def client_message_new():
             return redirect(url_for("client_message_new"))
         conn = get_db_connection()
         try:
-            if conn.is_postgres:
-                conv_id = conn.execute(
-                    "INSERT INTO conversations (client_id, subject) VALUES (?, ?) RETURNING id",
-                    (user["id"], subject)).fetchone()["id"]
-            else:
-                conv_id = conn.execute(
-                    "INSERT INTO conversations (client_id, subject) VALUES (?, ?)",
-                    (user["id"], subject)).lastrowid
+            conv_id = _insert_id(
+                conn,
+                "INSERT INTO conversations (client_id, subject) VALUES (?, ?)",
+                (user["id"], subject))
             conn.execute(
                 "INSERT INTO conversation_messages"
                 " (conversation_id, sender_id, sender_role, content) VALUES (?, ?, ?, ?)",
