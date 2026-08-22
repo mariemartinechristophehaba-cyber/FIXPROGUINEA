@@ -35,6 +35,7 @@ import storage
 from config import get_config, setup_logging
 
 config = get_config()
+ADMIN_DEMO = True  # Mettre False pour afficher les vraies donnees du dashboard
 app = Flask(__name__, static_folder="api/static", static_url_path="/static")
 app.config.from_object(config)
 
@@ -1135,12 +1136,67 @@ def admin_root():
     return redirect(url_for("admin_dashboard"))
 
 
+def _mock_admin_dashboard_data():
+    """Donnees fictives pour visualiser le dashboard admin."""
+    return {
+        "stats": {
+            "pending_requests": 6,
+            "pending_requests_delta": 2,
+            "available_artisans": 8,
+            "interventions_in_progress": 4,
+            "interventions_delta": 1,
+            "today_commission": 25000,
+            "today_commission_delta": 12,
+        },
+        "financial": {
+            "today_paid": 250000,
+            "today_commission": 25000,
+            "today_paid_to_artisans": 225000,
+        },
+        "pending_requests": [
+            {"id": 1048, "reference": "#1048", "client_name": "Mamadou Diallo", "client_phone": "623 45 67 89", "service": "Depannage climatisation", "category": "Climatisation", "city": "Cocody", "quartier": "Riviera 3", "requested_date": "Aujourd'hui", "requested_time": "14:00"},
+            {"id": 1049, "reference": "#1049", "client_name": "Fatou Camara", "client_phone": "628 11 22 33", "service": "Plomberie", "category": "Plomberie", "city": "Riviera", "quartier": "Riviera 2", "requested_date": "Aujourd'hui", "requested_time": "15:30"},
+            {"id": 1050, "reference": "#1050", "client_name": "Ibrahima Sylla", "client_phone": "620 98 76 54", "service": "Electricite", "category": "Electricite", "city": "Angre", "quartier": "7eme tranche", "requested_date": "Aujourd'hui", "requested_time": "17:00"},
+            {"id": 1051, "reference": "#1051", "client_name": "Aissatou Diallo", "client_phone": "621 33 22 11", "service": "Climatisation", "category": "Climatisation", "city": "Marcory", "quartier": "Kipe Centre", "requested_date": "Demain", "requested_time": "09:00"},
+            {"id": 1052, "reference": "#1052", "client_name": "Mariam Conde", "client_phone": "622 77 88 99", "service": "Plomberie", "category": "Plomberie", "city": "Plateau", "quartier": "Centre", "requested_date": "Demain", "requested_time": "10:30"},
+            {"id": 1053, "reference": "#1053", "client_name": "Karim Bah", "client_phone": "625 55 44 33", "service": "Electricite", "category": "Electricite", "city": "Deux-Plateaux", "quartier": "Centre", "requested_date": "Demain", "requested_time": "14:00"},
+        ],
+        "in_progress": [
+            {"id": 1039, "reference": "#1039", "client_name": "Aissata K.", "artisan_name": "Ousmane Sylla", "service": "Depannage climatisation", "status_label": "En cours"},
+            {"id": 1040, "reference": "#1040", "client_name": "Karim B.", "artisan_name": "Fatoumata Camara", "service": "Installation electrique", "status_label": "Diagnostic"},
+            {"id": 1041, "reference": "#1041", "client_name": "Mariam C.", "artisan_name": "Ibrahim Sory", "service": "Reparation plomberie", "status_label": "En cours"},
+            {"id": 1042, "reference": "#1042", "client_name": "Mamadou D.", "artisan_name": "Kadiatou Barry", "service": "Entretien climatisation", "status_label": "En cours"},
+        ],
+        "available_artisans": [
+            {"id": 1, "full_name": "Ousmane Sylla", "profession": "Frigoriste", "avg_rating": 4.9, "interventions": 89, "distance": "1,8"},
+            {"id": 2, "full_name": "Kadiatou Barry", "profession": "Frigoriste", "avg_rating": 4.8, "interventions": 64, "distance": "2,4"},
+            {"id": 3, "full_name": "Fatoumata Camara", "profession": "Electricienne", "avg_rating": 4.7, "interventions": 52, "distance": "2,7"},
+            {"id": 4, "full_name": "Ibrahim Sory", "profession": "Plombier", "avg_rating": 4.9, "interventions": 71, "distance": "3,0"},
+            {"id": 5, "full_name": "Lamine Camara", "profession": "Serrurier", "avg_rating": 4.8, "interventions": 43, "distance": "3,6"},
+            {"id": 6, "full_name": "Mamadou Diallo", "profession": "Chauffagiste", "avg_rating": 4.6, "interventions": 38, "distance": "3,9"},
+        ],
+        "recent_activities": [
+            {"title": "Nouvelle demande", "meta": "Mamadou Diallo a envoye une demande de depannage climatisation.", "time": "Il y a 5 min", "color": "#ef4444", "icon": "file_plus"},
+            {"title": "Intervention acceptee", "meta": "Ousmane Sylla a accepte l'intervention #1039.", "time": "Il y a 12 min", "color": "#10b981", "icon": "user_check"},
+            {"title": "Paiement recu", "meta": "Paiement de 50 000 GNF recu pour l'intervention #1038.", "time": "Il y a 20 min", "color": "#8b5cf6", "icon": "credit_card"},
+            {"title": "Intervention terminee", "meta": "Ibrahim Sory a termine l'intervention #1037.", "time": "Il y a 35 min", "color": "#10b981", "icon": "check_circle"},
+            {"title": "Avis laisse", "meta": "Aissata K. a laisse un avis 5 etoiles.", "time": "Il y a 1 h", "color": "#f59e0b", "icon": "star"},
+            {"title": "Intervention en cours", "meta": "Mission #1036 en cours d'intervention.", "time": "Il y a 1 h 30", "color": "#f59e0b", "icon": "clock"},
+        ],
+    }
+
+
 @app.route("/admin/dashboard")
 @login_required
 @admin_required
 def admin_dashboard():
     """Tableau de bord admin complet."""
     user = get_current_user()
+    if ADMIN_DEMO:
+        data = _mock_admin_dashboard_data()
+        data["today"] = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        data["user"] = user
+        return render_template("admin_dashboard.html", **data)
     now = datetime.now(timezone.utc)
     today = now.strftime("%Y-%m-%d")
     yesterday = (now - timedelta(days=1)).strftime("%Y-%m-%d")

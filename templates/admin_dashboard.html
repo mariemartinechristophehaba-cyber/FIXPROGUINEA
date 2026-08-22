@@ -232,7 +232,10 @@
             <td>{{ r.client_name or '—' }}</td>
             <td>{{ r.artisan_name or '—' }}</td>
             <td>{{ r.service or r.category or '—' }}</td>
-            <td><span class="tag tag-encours"><svg class="icon-16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg> En cours</span></td>
+            <td>
+            {% if (r.status_label or 'En cours') == 'Diagnostic' %}<span class="tag tag-diagnostic"><svg class="icon-16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg> Diagnostic</span>
+            {% else %}<span class="tag tag-encours"><svg class="icon-16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg> En cours</span>{% endif %}
+          </td>
           </tr>
           {% else %}
           <tr><td colspan="5" class="empty">Aucune intervention en cours.</td></tr>
@@ -258,8 +261,8 @@
         <div class="tech-status"><svg class="icon-16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg> Disponible</div>
       </div>
       <div class="tech-right">
-        <div class="tech-km"><svg class="icon-16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> 1.8 km</div>
-        <div class="tech-note"><svg viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> {{ "%.1f"|format(t.avg_rating or 0) }}</div>
+        <div class="tech-km"><svg class="icon-16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> {{ t.distance or '1,8' }} km</div>
+        <div class="tech-note"><svg viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> {{ "%.1f"|format(t.avg_rating or 0) }} <span style="color:var(--muted);margin-left:2px;">| {{ t.interventions or 0 }} missions</span></div>
       </div>
       <a class="tech-btn" href="{{ url_for('admin_artisans') }}"><svg class="icon-16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg> Voir profil</a>
     </div>
