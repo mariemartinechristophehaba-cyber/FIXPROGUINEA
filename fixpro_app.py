@@ -4123,7 +4123,7 @@ def admin_messages():
             " ORDER BY c.updated_at DESC").fetchall()
     finally:
         conn.close()
-    return render_template("admin_messages.html", conversations=conversations)
+    return render_template("admin_messages.html", conversations=conversations, user=get_current_user())
 
 
 @app.route("/admin/messages/<int:conversation_id>", methods=["GET", "POST"])
@@ -4179,7 +4179,7 @@ def admin_conversation(conversation_id):
         conn.commit()
     finally:
         conn.close()
-    return render_template("admin_conversation.html", conversation=conv, messages=messages)
+    return render_template("admin_conversation.html", conversation=conv, messages=messages, user=get_current_user())
 
 
 if __name__ == "__main__":

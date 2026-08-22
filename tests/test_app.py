@@ -366,7 +366,24 @@ class RequestWorkflowTests(FixProTestCase):
 
 
 class MessagingTests(FixProTestCase):
-    """La messagerie doit empecher les echanges hors plateforme."""
+    """La messagerie client <-> admin."""
+
+    def setUp(self):
+        super().setUp()
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute(
+                "INSERT INTO users (email, phone, password_hash, role, full_name,"
+                " is_verified, is_active) VALUES (?, ?, ?, 'admin', ?, 1, 1)",
+                ("admin@fixpro.local", "+224000000000",
+                 fixpro_app.generate_password_hash("adminpass"), "Administrateur"))
+            conn.commit()
+        finally:
+            conn.close()
+
+    def _login_admin(self):
+        with self.client.session_transaction() as sess:
+            sess["user_id"] = 1
 
     def test_phone_number_is_blocked(self):
         self.assertTrue(fixpro_app.is_prohibited_message(
@@ -390,13 +407,57 @@ class MessagingTests(FixProTestCase):
         self.assertEqual(r.status_code, 200)
         conn = db.connect(sqlite_path=self.db_path)
         try:
-            conv = conn.execute("SELECT * FROM conversations WHERE client_id = 1").fetchone()
+            conv = conn.execute("SELECT * FROM conversations WHERE client_id = 2").fetchone()
             self.assertIsNotNone(conv)
             msg = conn.execute("SELECT * FROM conversation_messages WHERE conversation_id = ?", (conv["id"],)).fetchone()
             self.assertEqual(msg["content"], "Mon climatiseur ne refroidit plus.")
             self.assertEqual(msg["sender_role"], "client")
         finally:
             conn.close()
+
+    def test_admin_can_reply_and_client_reads(self):
+        self.register_client(phone="+224610000000")
+        self.login("+224610000000")
+        r = self.client.post("/messages/new", data={
+            "subject": "Probleme",
+            "content": "Bonjour, j'ai besoin d'aide."
+        }, follow_redirects=True)
+        conv_id = int(r.request.path.split("/")[-1])
+
+        self.client.get("/logout")
+        self._login_admin()
+        r = self.client.post(f"/admin/messages/{conv_id}", data={
+            "content": "Bonjour, nous vous repondrons rapidement."
+        }, follow_redirects=True)
+        self.assertEqual(r.status_code, 200)
+
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            msgs = conn.execute(
+                "SELECT * FROM conversation_messages WHERE conversation_id = ? ORDER BY id",
+                (conv_id,)).fetchall()
+            self.assertEqual(len(msgs), 2)
+            self.assertEqual(msgs[1]["sender_role"], "admin")
+            self.assertEqual(msgs[1]["content"], "Bonjour, nous vous repondrons rapidement.")
+            notif = conn.execute(
+                "SELECT * FROM notifications WHERE user_id = 2").fetchone()
+            self.assertIsNotNone(notif)
+        finally:
+            conn.close()
+
+    def test_other_client_cannot_read_conversation(self):
+        self.register_client(phone="+224610000000")
+        self.login("+224610000000")
+        r = self.client.post("/messages/new", data={
+            "content": "Message prive"
+        }, follow_redirects=True)
+        conv_id = int(r.request.path.split("/")[-1])
+
+        self.client.get("/logout")
+        self.register_client(phone="+224610000001")
+        self.login("+224610000001")
+        r = self.client.get(f"/messages/{conv_id}")
+        self.assertEqual(r.status_code, 302)
 
 
 class GeolocationTests(FixProTestCase):
