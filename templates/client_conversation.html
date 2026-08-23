@@ -13,8 +13,10 @@
   .m-avatar svg { width: 22px; height: 22px; }
   .m-info { flex: 1; }
   .m-name { font-weight: 700; font-size: 15px; color: var(--m-ink); display: flex; align-items: center; gap: 5px; }
-  .m-status { font-size: 12px; color: var(--m-ink-2); }
-  .m-body { flex: 1; overflow-y: auto; padding: 14px; -webkit-overflow-scrolling: touch; }
+  .m-status { font-size: 12px; color: var(--m-ink-2); display: flex; align-items: center; gap: 4px; }
+  .m-dot { width: 8px; height: 8px; border-radius: 50%; background: #10b981; box-shadow: 0 0 0 2px #fff; animation: m-pulse 2s infinite; }
+  @keyframes m-pulse { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,.4); } 70% { box-shadow: 0 0 0 6px rgba(16,185,129,0); } 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); } }
+  .m-body { flex: 1; overflow-y: auto; padding: 14px; -webkit-overflow-scrolling: touch; padding-bottom: 80px; }
   .m-empty { text-align: center; color: var(--m-ink-2); padding: 40px 20px; }
   .m-empty h2 { font-size: 18px; font-weight: 700; color: var(--m-ink); margin: 0 0 6px; }
   .m-empty p { font-size: 14px; margin: 0 0 18px; }
@@ -27,10 +29,11 @@
   .m-client .m-bubble { background: var(--m-primary); color: #fff; border-bottom-right-radius: 4px; }
   .m-time { font-size: 10px; color: var(--m-ink-2); margin-top: 3px; text-align: right; }
   .m-client .m-time { color: rgba(255,255,255,.8); }
-  .m-footer { background: var(--m-white); border-top: 1px solid var(--m-line); padding: 10px 12px; display: flex; align-items: center; gap: 8px; }
+  .m-footer { position: fixed; bottom: 0; left: 0; right: 0; background: var(--m-white); border-top: 1px solid var(--m-line); padding: 10px 12px; display: flex; align-items: center; gap: 8px; z-index: 101; }
   .m-input { flex: 1; border: 1px solid var(--m-line); border-radius: 22px; padding: 11px 14px; font-size: 15px; outline: none; min-height: 44px; max-height: 120px; resize: none; }
-  .m-send { width: 44px; height: 44px; border: none; border-radius: 50%; background: var(--m-primary); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 18px; }
-  .m-send:disabled { opacity: .5; }
+  .m-send { width: 44px; height: 44px; border: none; border-radius: 50%; background: var(--m-primary); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 18px; transition: transform .1s; }
+  .m-send:disabled { opacity: .4; }
+  .m-send:active { transform: scale(.95); }
   .typing { display: flex; gap: 4px; padding: 10px 13px; }
   .typing span { width: 7px; height: 7px; border-radius: 50%; background: var(--m-ink-2); animation: m-bounce 1.4s infinite; }
   .typing span:nth-child(2) { animation-delay: 0.2s; }
@@ -40,13 +43,13 @@
 </style>
 <div class="m-wrap">
   <div class="m-header">
-    <a href="{{ url_for('client_messages') }}" class="m-back">←</a>
+    <a href="{% if artisan %}{{ url_for('artisan_detail', artisan_id=artisan.id) }}{% else %}{{ url_for('client_messages') }}{% endif %}" class="m-back" aria-label="Retour">←</a>
     <div class="m-avatar">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
     </div>
     <div class="m-info">
       <div class="m-name">FixPro <span style="color:#10b981;font-size:16px;">✓</span></div>
-      <div class="m-status">Assistance FixPro • En ligne</div>
+      <div class="m-status"><span class="m-dot"></span> Assistance FixPro • En ligne</div>
     </div>
   </div>
   <div class="m-body" id="m-body">
@@ -75,7 +78,7 @@
   <form class="m-footer" method="post" onsubmit="return handleSend();">
     <input type="hidden" name="csrf_token" id="m-csrf" value="{{ csrf_token() }}" />
     <textarea class="m-input" id="m-content" name="content" placeholder="Écrire un message..." required rows="1" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px';"></textarea>
-    <button type="submit" class="m-send" id="m-send" aria-label="Envoyer">→</button>
+    <button type="submit" class="m-send" id="m-send" aria-label="Envoyer" disabled>→</button>
   </form>
 </div>
 <script>
@@ -84,6 +87,7 @@
   const ta = document.getElementById('m-content');
   const btn = document.getElementById('m-send');
   const csrf = document.getElementById('m-csrf');
+  let sending = false;
 
   function scrollBottom() {
     if (!b) return;
@@ -93,10 +97,8 @@
 
   function formatTime(ts) {
     if (!ts) return '';
-    try {
-      const d = new Date(ts);
-      return d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-    } catch (e) { return ts; }
+    try { return new Date(ts).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }); }
+    catch (e) { return ts; }
   }
 
   function appendMessage(role, content, time, id, pending) {
@@ -108,17 +110,46 @@
     div.innerHTML = '<div class="m-bubble">' + content.replace(/\n/g, '<br>') + '<div class="m-time">' + t + '</div></div>';
     b.appendChild(div);
     scrollBottom();
+    return div;
   }
+
+  function setTyping(show) {
+    let typing = b.querySelector('.m-typing');
+    if (show) {
+      if (typing) return;
+      typing = document.createElement('div');
+      typing.className = 'm-msg m-fixpro m-typing';
+      typing.innerHTML = '<div class="m-bubble"><div class="typing"><span></span><span></span><span></span></div><div class="m-time">FixPro écrit...</div></div>';
+      b.appendChild(typing);
+      scrollBottom();
+    } else if (typing) {
+      typing.remove();
+    }
+  }
+
+  function updateBtn() {
+    btn.disabled = sending || !ta.value.trim();
+    btn.innerHTML = sending ? '...' : '→';
+  }
+
+  ta.addEventListener('input', updateBtn);
+  ta.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      form.dispatchEvent(new Event('submit'));
+    }
+  });
 
   async function handleSend(ev) {
     ev.preventDefault();
     const content = ta.value.trim();
-    if (!content) return false;
-    btn.disabled = true;
-    btn.innerHTML = '...';
+    if (!content || sending) return false;
+    sending = true;
+    updateBtn();
     appendMessage('client', content, 'maintenant', null, true);
     ta.value = '';
     ta.style.height = 'auto';
+    setTyping(true);
     try {
       const fd = new FormData();
       fd.append('content', content);
@@ -138,16 +169,22 @@
             appendMessage(m.sender_role, m.content, m.created_at, m.id);
           }
         });
+      } else {
+        throw new Error(data.error || 'Réponse invalide');
       }
     } catch (e) {
       console.error(e);
+      alert('Une erreur est survenue. Veuillez réessayer.');
     } finally {
-      btn.disabled = false;
-      btn.innerHTML = '→';
+      sending = false;
+      setTyping(false);
+      updateBtn();
       ta.focus();
     }
     return false;
   }
+
   if (form) form.addEventListener('submit', handleSend);
+  updateBtn();
 </script>
 {% endblock %}
