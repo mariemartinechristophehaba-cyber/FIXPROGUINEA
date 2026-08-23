@@ -103,6 +103,20 @@ _ARTISAN_GEOCODE = {
     "taouyah": (9.6100, -13.6000),
 }
 
+
+def _nearest_zone(lat, lon):
+    """Retourne le quartier connu le plus proche d'une position GPS."""
+    if not _is_valid_coordinate(lat, lon):
+        return None
+    best_name, best_d = None, float("inf")
+    for name, (zlat, zlon) in _ARTISAN_GEOCODE.items():
+        d = math.hypot(lat - zlat, lon - zlon)
+        if d < best_d:
+            best_d = d
+            best_name = name
+    return best_name.capitalize() if best_name else None
+
+
 oauth = OAuth(app)
 
 
@@ -570,7 +584,40 @@ def index():
                 unread_count = 0
     finally:
         conn.close()
-    return render_template("index.html", artisans=artisans, unread_count=unread_count)
+    return render_template("index.html", artisans=artisans, unread_count=unread_count,
+                           loc_permission=session.get("loc_permission", "prompt"),
+                           client_zone=session.get("client_zone"))
+
+
+@app.route("/api/location", methods=["POST"])
+def set_location():
+    """Enregistre la position GPS du client en session."""
+    try:
+        data = request.get_json(force=True, silent=True) or {}
+        lat = _to_float(data.get("lat"))
+        lon = _to_float(data.get("lon"))
+        accuracy = _to_float(data.get("accuracy"), 0.0)
+        if lat == 0.0 or lon == 0.0:
+            return jsonify({"ok": False, "error": "Coordonnees invalides"}), 400
+        session["client_lat"] = lat
+        session["client_lon"] = lon
+        session["client_loc_accuracy"] = accuracy
+        session["client_loc_at"] = datetime.now(timezone.utc).isoformat()
+        session["loc_permission"] = "granted"
+        zone = _nearest_zone(lat, lon)
+        if zone:
+            session["client_zone"] = zone
+        return jsonify({"ok": True, "zone": zone})
+    except Exception as e:
+        logger.warning("Erreur enregistrement position: %s", e)
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+@app.route("/api/location/denied", methods=["POST"])
+def set_location_denied():
+    """Marque la permission GPS comme refusee."""
+    session["loc_permission"] = "denied"
+    return jsonify({"ok": True})
 
 
 @app.route("/home")
@@ -2563,10 +2610,16 @@ def artisans_page():
     finally:
         conn.close()
 
+    if not client_lat and not client_lon:
+        client_lat = _to_float(session.get("client_lat"))
+        client_lon = _to_float(session.get("client_lon"))
     if request.args.get("lat") and request.args.get("lon"):
         client_lat = _to_float(request.args.get("lat"))
         client_lon = _to_float(request.args.get("lon"))
-        artisans = [_enrich_artisan({**a, "latitude": a.get("latitude"), "longitude": a.get("longitude")}, client_lat, client_lon) for a in artisans]
+    if client_lat or client_lon:
+        artisans = sorted(
+            [_enrich_artisan(a, client_lat, client_lon) for a in artisans],
+            key=lambda a: a.get("distance", 999))
 
     return render_template("artisans.html", artisans=artisans, user=user,
                            active_requests=active_requests, categories=categories,
@@ -4257,6 +4310,8 @@ def client_conversation(conversation_id):
 
                 if conv["status"] != "admin_active":
                     collected = _get_collected_from_messages(conn, conversation_id)
+                    if not collected.get("location") and session.get("client_zone"):
+                        collected["location"] = session["client_zone"]
                     analysis = ai_service.analyze_message(content, collected=collected)
 
                     fixpro_user = conn.execute(

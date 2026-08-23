@@ -4,6 +4,19 @@
 {% block footer %}{% endblock %}
 
 {% block content %}
+<input type="hidden" id="locCsrf" value="{{ csrf_token() }}" />
+<div id="locOverlay" class="f-loc-overlay" style="{% if loc_permission != 'prompt' and loc_permission != 'denied' %}display:none;{% endif %}">
+  <div class="f-loc-card">
+    <svg class="f-loc-pin" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#155eef" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+    <h2 id="locTitle">Activer ma localisation</h2>
+    <p id="locDesc">Pour vous proposer les professionnels disponibles près de vous, FixPro a besoin d'accéder à votre position.</p>
+    <button class="f-btn" id="locAllow" type="button">Autoriser ma position</button>
+    <div id="locDenied" style="display:none;">
+      <p>Localisation non autorisée. Pour trouver automatiquement les professionnels disponibles près de vous, autorisez la localisation dans les paramètres de votre appareil.</p>
+      <button class="f-btn f-btn-secondary" id="locRetry" type="button">Réessayer</button>
+    </div>
+  </div>
+</div>
 <header class="f-header">
   <div class="f-container f-header-inner">
     <button class="f-menu-btn" aria-label="Menu">
@@ -26,7 +39,7 @@
     <div class="f-header-right">
       <div class="f-header-loc">
         <img src="{{ url_for('static', filename='img/icon-map-pin.svg') }}" width="16" height="16" alt="" />
-        {% if nav_user and nav_user.city %}{{ nav_user.city }}{% else %}Conakry, Kaloum{% endif %}
+        {% if client_zone %}{{ client_zone }}{% elif nav_user and nav_user.city %}{{ nav_user.city }}{% else %}Conakry, Kaloum{% endif %}
       </div>
       <a href="{{ url_for('notifications') }}" class="f-notif">
         <img src="{{ url_for('static', filename='img/icon-bell.svg') }}" width="22" height="22" alt="" />
@@ -89,7 +102,7 @@
       <h3>Où se situe le problème ?</h3>
       <div class="f-loc-input">
         <img src="{{ url_for('static', filename='img/icon-map-pin.svg') }}" width="20" height="20" alt="" />
-        <input type="text" name="location" id="locInput" placeholder="Entrez votre localisation" />
+        <input type="text" name="location" id="locInput" value="{{ client_zone or '' }}" placeholder="Entrez votre localisation" />
         <button type="button" class="f-loc-target" id="locTarget" aria-label="Ma position">
           <img src="{{ url_for('static', filename='img/icon-navigation.svg') }}" width="20" height="20" alt="" />
         </button>
@@ -186,6 +199,23 @@
 <style>
   body { padding-bottom: 80px; }
   .mobile-nav { display: none !important; }
+  .f-loc-overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(255,255,255,0.96); z-index: 1000;
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  .f-loc-card {
+    max-width: 360px; width: 100%;
+    background: #fff; border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.12);
+    padding: 32px; text-align: center;
+  }
+  .f-loc-pin { margin: 0 auto 16px; display: block; }
+  .f-loc-card h2 { font-size: 1.35rem; margin: 0 0 12px; color: #0f172a; }
+  .f-loc-card p { color: #475569; font-size: 0.95rem; line-height: 1.5; margin: 0 0 20px; }
+  .f-loc-card .f-btn { width: 100%; }
+  .f-loc-card .f-btn-secondary { background: #f1f5f9; color: #334155; margin-top: 10px; }
 </style>
 
 <script>
@@ -193,7 +223,71 @@
   const locInput = document.getElementById('locInput');
   const locTarget = document.getElementById('locTarget');
   const searchBtn = document.getElementById('searchBtn');
+  const locOverlay = document.getElementById('locOverlay');
+  const locAllow = document.getElementById('locAllow');
+  const locTitle = document.getElementById('locTitle');
+  const locDesc = document.getElementById('locDesc');
+  const locDenied = document.getElementById('locDenied');
+  const locRetry = document.getElementById('locRetry');
+  const locCsrf = document.getElementById('locCsrf');
   let selectedCat = '';
+
+  function csrfHeader() {
+    return { 'X-CSRFToken': locCsrf ? locCsrf.value : '', 'Content-Type': 'application/json' };
+  }
+
+  function sendPosition(lat, lon, accuracy) {
+    fetch('/api/location', {
+      method: 'POST',
+      headers: csrfHeader(),
+      body: JSON.stringify({ lat, lon, accuracy })
+    }).then(r => r.json()).then(data => {
+      if (data.ok && data.zone) {
+        locInput.value = data.zone;
+      }
+      if (locOverlay) locOverlay.style.display = 'none';
+    }).catch(err => console.error(err));
+  }
+
+  function showDenied() {
+    if (!locOverlay) return;
+    locTitle.textContent = 'Localisation non autorisée';
+    locDesc.style.display = 'none';
+    locAllow.style.display = 'none';
+    locDenied.style.display = 'block';
+  }
+
+  function requestLocation() {
+    if (!navigator.geolocation) {
+      showDenied();
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      pos => sendPosition(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy || 0),
+      err => {
+        fetch('/api/location/denied', { method: 'POST', headers: csrfHeader() });
+        showDenied();
+      }
+    );
+  }
+
+  function startLocationFlow() {
+    if (navigator.permissions && navigator.permissions.query) {
+      navigator.permissions.query({ name: 'geolocation' }).then(r => {
+        if (r.state === 'granted') {
+          requestLocation();
+        } else if (r.state === 'denied') {
+          showDenied();
+        }
+        // si prompt, on attend le clic
+      }).catch(() => {});
+    }
+  }
+
+  if (locAllow) locAllow.addEventListener('click', requestLocation);
+  if (locRetry) locRetry.addEventListener('click', requestLocation);
+
+  startLocationFlow();
 
   cards.forEach(c => {
     c.addEventListener('click', e => {
@@ -214,14 +308,6 @@
     }
   });
 
-  locTarget.addEventListener('click', () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(pos => {
-        locInput.value = `${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`;
-      }, () => alert('Géolocalisation impossible.'));
-    } else {
-      alert('Géolocalisation non supportée.');
-    }
-  });
+  if (locTarget) locTarget.addEventListener('click', requestLocation);
 </script>
 {% endblock %}
