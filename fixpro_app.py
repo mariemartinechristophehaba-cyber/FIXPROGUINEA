@@ -11,6 +11,7 @@ d'ecrire les requetes une seule fois pour les deux moteurs.
 import base64
 import csv
 import io
+import json
 import math
 import re
 import secrets
@@ -2924,10 +2925,10 @@ def _generate_intervention_reference(conn):
 
 
 def _generate_fixpro_reference(conn):
-    """Genere une reference unique FIX-XXXXXX."""
+    """Genere une reference unique FXP-XXXXXX."""
     count = conn.execute("SELECT COUNT(*) AS n FROM requests").fetchone()["n"] + 1
     while True:
-        ref = f"FIX-{count:06d}"
+        ref = f"FXP-{count:06d}"
         if not conn.execute("SELECT 1 FROM requests WHERE reference = ?",
                             (ref,)).fetchone():
             return ref
@@ -4079,6 +4080,58 @@ def client_message_new():
     return render_template("client_message_new.html", user=user)
 
 
+def _select_best_technician(conn, category, location):
+    """Selectionne le meilleur technicien selon le domaine et la localisation."""
+    if not category:
+        return None
+    lat, lon = _geocode_zone(location or "Conakry")
+    rows = conn.execute(
+        "SELECT id, full_name, profession, latitude, longitude, is_active, is_verified"
+        " FROM users WHERE role = 'artisan' AND LOWER(profession) = ? AND is_active = 1",
+        (category.lower(),)).fetchall()
+    if not rows:
+        rows = conn.execute(
+            "SELECT id, full_name, profession, latitude, longitude, is_active, is_verified"
+            " FROM users WHERE role = 'artisan' AND is_active = 1").fetchall()
+
+    def dist(a):
+        if _is_valid_coordinate(a["latitude"], a["longitude"]) and _is_valid_coordinate(lat, lon):
+            return math.hypot(a["latitude"] - lat, a["longitude"] - lon)
+        return 999
+
+    rows = sorted(rows, key=lambda a: (dist(a), -a["is_verified"], a["full_name"]))
+    return rows[0] if rows else None
+
+
+def _create_intervention_from_chat(conn, conversation_id, client_id, analysis, artisan_id, sender_id):
+    """Cree une intervention a partir d'une conversation."""
+    ref = _generate_fixpro_reference(conn)
+    info = analysis["collected_info"]
+    title = (info.get("problem_detail") or info.get("category") or "Demande FixPro").strip()
+    description = info.get("last_description") or title
+    category = analysis["category"] or "Autre"
+    address = info.get("location") or "Conakry"
+    urgency = analysis["urgency"] or "normal"
+    now = datetime.now(timezone.utc).isoformat()
+    req_id = _insert_id(
+        conn,
+        "INSERT INTO requests (client_id, artisan_id, reference, title, description, category, address, status, urgency, quote_amount, budget, created_at, updated_at)"
+        " VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, 0, 0, ?, ?)",
+        (client_id, artisan_id, ref, title, description, category, address, urgency, now, now))
+    conn.execute(
+        "INSERT INTO intervention_history (request_id, status, actor, note, created_at)"
+        " VALUES (?, ?, ?, ?, ?)",
+        (req_id, "pending", "Assistant FixPro", "Intervention creee depuis la conversation", now))
+    conn.execute(
+        "UPDATE conversations SET request_id = ?, status = 'converted_to_intervention' WHERE id = ?",
+        (req_id, conversation_id))
+    conn.execute(
+        "INSERT INTO conversation_messages"
+        " (conversation_id, sender_id, sender_role, content) VALUES (?, ?, ?, ?)",
+        (conversation_id, sender_id, "ai", f"Intervention {ref} creee et attribuee."))
+    return req_id
+
+
 @app.route("/messages/<int:conversation_id>", methods=["GET", "POST"])
 @login_required
 def client_conversation(conversation_id):
@@ -4103,12 +4156,13 @@ def client_conversation(conversation_id):
                     (conversation_id, user["id"], "client", content))
 
                 if conv["status"] != "admin_active":
-                    # Récupère l'historique pour l'analyse
-                    history = [m["content"] for m in conn.execute(
-                        "SELECT content FROM conversation_messages"
-                        " WHERE conversation_id = ? ORDER BY created_at ASC",
-                        (conversation_id,)).fetchall()]
-                    analysis = ai_service.analyze_message(content, history=history)
+                    collected = {}
+                    if conv.get("collected_info"):
+                        try:
+                            collected = json.loads(conv["collected_info"])
+                        except Exception:
+                            collected = {}
+                    analysis = ai_service.analyze_message(content, collected=collected)
 
                     fixpro_user = conn.execute(
                         "SELECT id FROM users WHERE role = 'admin' LIMIT 1").fetchone()
@@ -4120,15 +4174,44 @@ def client_conversation(conversation_id):
                         " VALUES (?, ?, ?, ?)",
                         (conversation_id, ai_sender, "ai", analysis["response"]))
 
+                    extra_messages = []
+                    status = "ai_active"
+                    if analysis["ready"]:
+                        artisan = _select_best_technician(
+                            conn, analysis["category"], analysis["collected_info"].get("location"))
+                        if artisan:
+                            req_id = _create_intervention_from_chat(
+                                conn, conversation_id, user["id"],
+                                analysis, artisan["id"], fixpro_user["id"] if fixpro_user else user["id"])
+                            extra_messages.append(
+                                (conversation_id, ai_sender, "ai",
+                                 f"C'est bon. J'ai cree l'intervention #FXP-{req_id:06d}. "
+                                 f"Le technicien {artisan['full_name']} ({artisan['profession']}) "
+                                 "sera informe de votre demande."))
+                            status = "converted_to_intervention"
+                        else:
+                            extra_messages.append(
+                                (conversation_id, ai_sender, "ai",
+                                 "J'ai bien enregistre votre demande. Je n'ai pas trouve de professionnel disponible immediatement. "
+                                 "Notre equipe suivra votre dossier."))
+                            status = "pending_assignment"
+
+                    for m in extra_messages:
+                        conn.execute(
+                            "INSERT INTO conversation_messages"
+                            " (conversation_id, sender_id, sender_role, content)"
+                            " VALUES (?, ?, ?, ?)", m)
+
                     conn.execute(
                         "UPDATE conversations SET"
-                        " updated_at = ?, status = 'ai_active', ai_category = ?,"
-                        " urgency = ?, needs_human = ?, needs_technician = ?"
+                        " updated_at = ?, status = ?, ai_category = ?,"
+                        " urgency = ?, needs_human = ?, needs_technician = ?, collected_info = ?"
                         " WHERE id = ?",
                         (datetime.now(timezone.utc).isoformat(),
-                         analysis["category"], analysis["urgency"],
+                         status, analysis["category"], analysis["urgency"],
                          1 if analysis["needs_human"] else 0,
                          1 if analysis["needs_technician"] else 0,
+                         json.dumps(analysis["collected_info"], ensure_ascii=False),
                          conversation_id))
                 else:
                     conn.execute(

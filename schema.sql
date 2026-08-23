@@ -336,6 +336,7 @@ ALTER TABLE conversations ADD COLUMN IF NOT EXISTS ai_category TEXT;
 ALTER TABLE conversations ADD COLUMN IF NOT EXISTS urgency TEXT;
 ALTER TABLE conversations ADD COLUMN IF NOT EXISTS needs_human INTEGER DEFAULT 0;
 ALTER TABLE conversations ADD COLUMN IF NOT EXISTS needs_technician INTEGER DEFAULT 0;
+ALTER TABLE conversations ADD COLUMN IF NOT EXISTS collected_info JSONB DEFAULT '{}';
 
 -- Migrations idempotentes pour les conversations
 ALTER TABLE conversations ADD COLUMN IF NOT EXISTS ai_active INTEGER DEFAULT 1;
@@ -343,6 +344,7 @@ ALTER TABLE conversations ADD COLUMN IF NOT EXISTS ai_category TEXT;
 ALTER TABLE conversations ADD COLUMN IF NOT EXISTS urgency TEXT;
 ALTER TABLE conversations ADD COLUMN IF NOT EXISTS needs_human INTEGER DEFAULT 0;
 ALTER TABLE conversations ADD COLUMN IF NOT EXISTS needs_technician INTEGER DEFAULT 0;
+ALTER TABLE conversations ADD COLUMN IF NOT EXISTS collected_info JSONB DEFAULT '{}';
 
 CREATE INDEX IF NOT EXISTS idx_conversations_client ON conversations(client_id);
 CREATE INDEX IF NOT EXISTS idx_conversations_status ON conversations(status);

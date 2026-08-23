@@ -301,6 +301,7 @@ CREATE TABLE IF NOT EXISTS conversations (
     urgency         TEXT,
     needs_human     INTEGER DEFAULT 0,
     needs_technician INTEGER DEFAULT 0,
+    collected_info   TEXT DEFAULT '{}',
     created_at      TEXT DEFAULT CURRENT_TIMESTAMP,
     updated_at      TEXT DEFAULT CURRENT_TIMESTAMP
 );

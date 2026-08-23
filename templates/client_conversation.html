@@ -1,41 +1,75 @@
 {% extends 'base.html' %}
-{% block title %}{{ conversation.subject or 'Conversation' }} - FixPro{% endblock %}
+{% block title %}{{ conversation.subject or 'Assistant FixPro' }} - FixPro{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/fixpro-auth.css', v='1') }}" />{% endblock %}
+{% block header %}{% endblock %}
+{% block footer %}{% endblock %}
 {% block content %}
 <style>
-  .conv { max-width: 800px; margin: 0 auto; padding: 24px 16px 110px; }
-  .conv-header { background: #fff; border-radius: 14px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
-  .conv-title { font-weight: 700; }
-  .conv-status { font-size: 12px; color: #64748b; }
-  .bubble { max-width: 80%; padding: 12px 14px; border-radius: 14px; margin-bottom: 12px; font-size: 14px; line-height: 1.4; }
-  .bubble-client { background: #e0e7ff; margin-left: auto; }
-  .bubble-admin { background: #f1f5f9; }
-  .bubble-role { font-size: 11px; color: #64748b; margin-bottom: 4px; }
-  .conv-form { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid #e2e8f0; padding: 12px 16px; display: flex; gap: 10px; }
-  .conv-form input { flex: 1; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; }
-  .conv-form button { padding: 0 20px; background: #155eef; color: #fff; border: none; border-radius: 10px; font-weight: 700; }
+  :root { --chat-primary: #155eef; --chat-primary-dark: #1146b8; --chat-bg: #f5f7fa; --chat-white: #fff; --chat-text: #102a43; --chat-text-2: #64748b; --chat-line: #e2e8f0; }
+  .chat-wrap { position: fixed; inset: 0; background: var(--chat-bg); display: flex; flex-direction: column; z-index: 100; }
+  .chat-header { background: var(--chat-white); border-bottom: 1px solid var(--chat-line); padding: 12px 16px; display: flex; align-items: center; gap: 12px; }
+  .chat-back { color: var(--chat-text); text-decoration: none; font-size: 20px; display: flex; }
+  .chat-avatar { width: 44px; height: 44px; border-radius: 50%; background: var(--chat-primary); display: flex; align-items: center; justify-content: center; color: #fff; }
+  .chat-avatar svg { width: 24px; height: 24px; }
+  .chat-info { flex: 1; }
+  .chat-name { font-weight: 700; font-size: 16px; color: var(--chat-text); display: flex; align-items: center; gap: 6px; }
+  .chat-status { font-size: 13px; color: var(--chat-text-2); }
+  .chat-secure { background: var(--chat-white); border-bottom: 1px solid var(--chat-line); padding: 8px 16px; display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--chat-text-2); }
+  .chat-body { flex: 1; overflow-y: auto; padding: 16px; }
+  .chat-date { text-align: center; font-size: 12px; color: var(--chat-text-2); margin: 12px 0; }
+  .msg { display: flex; margin-bottom: 14px; }
+  .msg-fixpro { justify-content: flex-start; }
+  .msg-client { justify-content: flex-end; }
+  .msg-inner { max-width: 80%; padding: 12px 14px; border-radius: 18px; font-size: 14px; line-height: 1.45; }
+  .msg-fixpro .msg-inner { background: var(--chat-white); color: var(--chat-text); border-bottom-left-radius: 4px; box-shadow: 0 2px 6px rgba(0,0,0,0.04); }
+  .msg-client .msg-inner { background: var(--chat-primary); color: #fff; border-bottom-right-radius: 4px; }
+  .msg-time { font-size: 11px; color: var(--chat-text-2); margin-top: 4px; text-align: right; }
+  .msg-client .msg-time { color: rgba(255,255,255,0.8); }
+  .chat-footer { background: var(--chat-white); border-top: 1px solid var(--chat-line); padding: 12px 16px; display: flex; align-items: center; gap: 10px; }
+  .chat-input { flex: 1; border: 1px solid var(--chat-line); border-radius: 24px; padding: 12px 16px; font-size: 14px; outline: none; }
+  .chat-send { width: 44px; height: 44px; border: none; border-radius: 50%; background: var(--chat-primary); color: #fff; display: flex; align-items: center; justify-content: center; }
+  .typing { display: flex; gap: 4px; padding: 10px 14px; }
+  .typing span { width: 8px; height: 8px; border-radius: 50%; background: var(--chat-text-2); animation: bounce 1.4s infinite; }
+  .typing span:nth-child(2) { animation-delay: 0.2s; }
+  .typing span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce { 0%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-6px); } }
+  .quick-replies { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+  .quick-replies button { border: 1px solid var(--chat-primary); background: #fff; color: var(--chat-primary); border-radius: 18px; padding: 6px 12px; font-size: 13px; cursor: pointer; }
 </style>
-<div class="conv">
-  <div class="conv-header">
-    <a href="{{ url_for('client_messages') }}" style="font-size:13px;color:#155eef;display:block;margin-bottom:8px;">← Retour aux messages</a>
-    <div style="display:flex;align-items:center;gap:12px;">
-      <img src="{{ url_for('static', filename='img/fixpro-avatar.png') }}" alt="" style="width:48px;height:48px;border-radius:50%;object-fit:cover;" />
-      <div>
-        <div class="conv-title">Assistant FixPro</div>
-        <div class="conv-status">Support FixPro {% if artisan %}— {{ artisan.full_name }} ({{ artisan.profession or 'Technicien' }}){% endif %}</div>
-      </div>
+<div class="chat-wrap">
+  <div class="chat-header">
+    <a href="{{ url_for('client_messages') }}" class="chat-back">←</a>
+    <div class="chat-avatar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+    </div>
+    <div class="chat-info">
+      <div class="chat-name">Assistant FixPro <span style="color:#10b981;font-size:18px;">✓</span></div>
+      <div class="chat-status">Assistant IA • En ligne</div>
     </div>
   </div>
-  {% for m in messages %}
-  <div class="bubble {{ 'bubble-client' if m.sender_role == 'client' else 'bubble-admin' }}">
-    <div class="bubble-role">{% if m.sender_role == 'client' %}{{ m.sender_name }}{% elif m.sender_role == 'ai' %}Assistant FixPro{% else %}FixPro{% endif %}</div>
-    {{ m.content }}
-    <div style="font-size:11px;color:#94a3b8;text-align:right;margin-top:4px;">{{ m.created_at }}</div>
+  <div class="chat-secure">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#155eef" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    Vos echanges sont securises. Nous ne partageons jamais vos informations personnelles.
+    {% if artisan %} • {{ artisan.full_name }} ({{ artisan.profession or 'Technicien' }}){% endif %}
   </div>
-  {% endfor %}
+  <div class="chat-body" id="chat-body">
+    {% for m in messages %}
+    <div class="msg {{ 'msg-client' if m.sender_role == 'client' else 'msg-fixpro' }}">
+      <div class="msg-inner">
+        {{ m.content }}
+        <div class="msg-time">{{ m.created_at }}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  <form class="chat-footer" method="post" onsubmit="this.querySelector('button').disabled = true; this.querySelector('button').innerHTML = '...';">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+    <input class="chat-input" type="text" name="content" placeholder="Ecrivez votre message..." required autocomplete="off" />
+    <button type="submit" class="chat-send">→</button>
+  </form>
 </div>
-<form class="conv-form" method="post">
-  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-  <input type="text" name="content" placeholder="Ecrire un message..." required />
-  <button type="submit">Envoyer</button>
-</form>
+<script>
+  const b = document.getElementById('chat-body');
+  if (b) b.scrollTop = b.scrollHeight;
+</script>
 {% endblock %}
