@@ -4489,8 +4489,21 @@ def admin_conversation(conversation_id):
     return render_template("admin_conversation.html", conversation=conv, messages=messages, user=get_current_user())
 
 
-_load_settings()
-_migrate_db()
+_settings_loaded = False
+
+
+@app.before_request
+def _ensure_settings_and_migrations():
+    """Charge les settings et migrations une seule fois au premier appel."""
+    global _settings_loaded
+    if _settings_loaded:
+        return
+    _settings_loaded = True
+    try:
+        _load_settings()
+        _migrate_db()
+    except Exception as e:
+        logger.warning("Parametres ou migrations indisponibles: %s", e)
 
 
 if __name__ == "__main__":
