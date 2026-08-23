@@ -3792,6 +3792,24 @@ def _load_settings():
         conn.close()
 
 
+def _migrate_db():
+    """Applique les migrations legeres au demarrage."""
+    try:
+        conn = get_db_connection()
+        try:
+            if db.is_postgres_url(app.config.get("DATABASE_URL")):
+                conn.execute(
+                    "ALTER TABLE conversations ADD COLUMN IF NOT EXISTS collected_info JSONB DEFAULT '{}'"
+                )
+                conn.commit()
+        except Exception as e:
+            logger.warning("Migration conversations impossible: %s", e)
+        finally:
+            conn.close()
+    except Exception as e:
+        logger.warning("Connexion DB indisponible pour migration: %s", e)
+
+
 @app.route("/admin/commissions")
 @login_required
 @admin_required
@@ -4438,8 +4456,11 @@ def admin_conversation(conversation_id):
     return render_template("admin_conversation.html", conversation=conv, messages=messages, user=get_current_user())
 
 
+_load_settings()
+_migrate_db()
+
+
 if __name__ == "__main__":
-    _load_settings()
     logger.info("Démarrage de FixPro (environnement: %s)",
                 app.config.get("FLASK_ENV"))
     app.run(host=app.config["HOST"], port=app.config["PORT"],
