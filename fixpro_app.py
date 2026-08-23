@@ -428,15 +428,18 @@ def get_payment_provider():
 
 def create_notification(user_id, title, body, notif_type="info", data=None):
     """Cree une notification in-app pour un utilisateur."""
-    conn = get_db_connection()
     try:
-        conn.execute(
-            "INSERT INTO notifications (user_id, title, body, type, data)"
-            " VALUES (?, ?, ?, ?, ?)",
-            (user_id, title, body, notif_type, data or ""))
-        conn.commit()
-    finally:
-        conn.close()
+        conn = get_db_connection()
+        try:
+            conn.execute(
+                "INSERT INTO notifications (user_id, title, body, type, data)"
+                " VALUES (?, ?, ?, ?, ?)",
+                (user_id, title, body, notif_type, data or ""))
+            conn.commit()
+        finally:
+            conn.close()
+    except Exception:
+        logger.warning("Notification non creee : user_id=%s", user_id)
 
 
 @app.context_processor
@@ -542,10 +545,13 @@ def index():
         user = get_current_user()
         unread_count = 0
         if user:
-            row = conn.execute(
-                "SELECT COUNT(*) AS n FROM notifications WHERE user_id = ? AND is_read = 0",
-                (user["id"],)).fetchone()
-            unread_count = row["n"]
+            try:
+                row = conn.execute(
+                    "SELECT COUNT(*) AS n FROM notifications WHERE user_id = ? AND is_read = 0",
+                    (user["id"],)).fetchone()
+                unread_count = row["n"]
+            except Exception:
+                unread_count = 0
     finally:
         conn.close()
     return render_template("index.html", artisans=artisans, unread_count=unread_count)
@@ -3126,14 +3132,18 @@ def notifications():
     user = get_current_user()
     conn = get_db_connection()
     try:
-        rows = conn.execute(
-            "SELECT * FROM notifications"
-            " WHERE user_id = ? ORDER BY created_at DESC LIMIT 50",
-            (user["id"],)).fetchall()
-        unread = conn.execute(
-            "SELECT COUNT(*) AS n FROM notifications"
-            " WHERE user_id = ? AND is_read = 0",
-            (user["id"],)).fetchone()["n"]
+        try:
+            rows = conn.execute(
+                "SELECT * FROM notifications"
+                " WHERE user_id = ? ORDER BY created_at DESC LIMIT 50",
+                (user["id"],)).fetchall()
+            unread = conn.execute(
+                "SELECT COUNT(*) AS n FROM notifications"
+                " WHERE user_id = ? AND is_read = 0",
+                (user["id"],)).fetchone()["n"]
+        except Exception:
+            rows = []
+            unread = 0
     finally:
         conn.close()
     return render_template("notifications.html", user=user, notifications=rows, unread=unread)
@@ -4467,9 +4477,12 @@ def admin_conversation(conversation_id):
                     conn.execute(
                         "UPDATE conversations SET updated_at = ? WHERE id = ?",
                         (datetime.now(timezone.utc).isoformat(), conversation_id))
-                    conn.execute(
-                        "INSERT INTO notifications (user_id, title, body) VALUES (?, ?, ?)",
-                        (conv["client_id"], "Nouvelle reponse FixPro", "L'administrateur a repondu a votre message."))
+                    try:
+                        conn.execute(
+                            "INSERT INTO notifications (user_id, title, body) VALUES (?, ?, ?)",
+                            (conv["client_id"], "Nouvelle reponse FixPro", "L'administrateur a repondu a votre message."))
+                    except Exception:
+                        logger.warning("Notification admin non creee")
                     conn.commit()
                     flash("Reponse envoyee.", "success")
         messages = conn.execute(
