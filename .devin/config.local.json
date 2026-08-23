@@ -33,7 +33,9 @@
       "Exec(Set-ExecutionPolicy)",
       "Exec(cmd)",
       "Exec(curl)",
-      "Exec(Invoke-WebRequest)"
+      "Exec(Invoke-WebRequest)",
+      "Exec(ls)",
+      "Exec((Invoke-RestMethod)"
     ]
   }
 }
