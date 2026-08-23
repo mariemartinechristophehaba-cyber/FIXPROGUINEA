@@ -2925,10 +2925,11 @@ def _generate_intervention_reference(conn):
 
 
 def _generate_fixpro_reference(conn):
-    """Genere une reference unique FXP-XXXXXX."""
+    """Genere une reference unique FP-YYYY-XXXXXX."""
+    year = datetime.now(timezone.utc).year
     count = conn.execute("SELECT COUNT(*) AS n FROM requests").fetchone()["n"] + 1
     while True:
-        ref = f"FXP-{count:06d}"
+        ref = f"FP-{year}-{count:06d}"
         if not conn.execute("SELECT 1 FROM requests WHERE reference = ?",
                             (ref,)).fetchone():
             return ref
@@ -4290,15 +4291,6 @@ def client_message_artisan(artisan_id):
                 "INSERT INTO conversations (client_id, artisan_id, subject, status)"
                 " VALUES (?, ?, ?, ?)",
                 (user["id"], artisan_id, artisan["full_name"], 'ai_active'))
-            conn.execute(
-                "INSERT INTO conversation_messages"
-                " (conversation_id, sender_id, sender_role, content)"
-                " VALUES (?, ?, ?, ?)",
-                (conv_id, user["id"], "ai",
-                 "Bonjour \n\n"
-                 "Je suis l'Assistant FixPro.\n\n"
-                 "Je peux vous aider a trouver le bon professionnel pour votre probleme.\n\n"
-                 "Expliquez-moi simplement ce qui vous arrive."))
             conn.execute(
                 "UPDATE conversations SET updated_at = ? WHERE id = ?",
                 (datetime.now(timezone.utc).isoformat(), conv_id))
