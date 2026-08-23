@@ -80,18 +80,25 @@
 </div>
 <script>
   const b = document.getElementById('m-body');
-  if (b) b.scrollTop = b.scrollHeight;
   const form = document.querySelector('.m-footer');
   const ta = document.getElementById('m-content');
   const btn = document.getElementById('m-send');
   const csrf = document.getElementById('m-csrf');
 
-  function appendMessage(role, content, time) {
+  function scrollBottom() {
+    if (!b) return;
+    requestAnimationFrame(() => { b.scrollTop = b.scrollHeight; });
+  }
+  if (b) scrollBottom();
+
+  function appendMessage(role, content, time, id, pending) {
     const div = document.createElement('div');
     div.className = 'm-msg ' + (role === 'client' ? 'm-client' : 'm-fixpro');
+    if (id) div.dataset.msgId = id;
+    if (pending) div.dataset.pending = '1';
     div.innerHTML = '<div class="m-bubble">' + content.replace(/\n/g, '<br>') + '<div class="m-time">' + time + '</div></div>';
     b.appendChild(div);
-    b.scrollTop = b.scrollHeight;
+    scrollBottom();
   }
 
   async function handleSend(ev) {
@@ -100,7 +107,7 @@
     if (!content) return false;
     btn.disabled = true;
     btn.innerHTML = '...';
-    appendMessage('client', content, 'maintenant');
+    appendMessage('client', content, 'maintenant', null, true);
     ta.value = '';
     ta.style.height = 'auto';
     try {
@@ -115,10 +122,11 @@
       if (!r.ok) throw new Error('Erreur serveur');
       const data = await r.json();
       if (data.ok && data.messages) {
-        const lastIds = new Set(Array.from(b.querySelectorAll('.m-msg')).map(el => el.dataset.msgId).filter(Boolean));
+        b.querySelectorAll('.m-msg[data-pending="1"]').forEach(el => el.remove());
+        const existingIds = new Set(Array.from(b.querySelectorAll('.m-msg[data-msg-id]')).map(el => el.dataset.msgId));
         data.messages.forEach(m => {
-          if (!lastIds.has(String(m.id))) {
-            appendMessage(m.sender_role, m.content, m.created_at);
+          if (!existingIds.has(String(m.id))) {
+            appendMessage(m.sender_role, m.content, m.created_at, m.id);
           }
         });
       }
