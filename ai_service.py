@@ -1,195 +1,170 @@
-"""Service assistant FixPro.
+"""Assistant conversationnel FixPro.
 
-Version rule-basee evolutive sans dependance a une API payante.
+Logique rule-basee avec un ton humain et professionnel.
 """
 
 import json
-import re
 
 _DOMAINS = {
-    "plomberie": ["fuite", "robinet", "evier", "lavabo", "toilettes", "wc", "canalisation", "chasse d eau", "tuyauterie", "sanitaire"],
-    "electricite": ["panne electrique", "prise", "interrupteur", "tableau electrique", "disjoncteur", "cablage", "installation electrique", "eclairage", "courant"],
-    "climatisation": ["climatiseur", "climatisation", "froid", "ac", "appareil qui ne refroidit", "refrigerateur", "congelateur"],
-    "menuiserie": ["porte", "fenetre", "meuble", "placard", "menuiserie"],
-    "maconnerie": ["mur", "dalle", "chape", "beton", "brique"],
-    "peinture": ["peinture", "peindre", "tapisserie"],
+    "electricite": ["electricite", "electrique", "cablage", "tableau", "disjoncteur", "prise", "interrupteur", "panne de courant", "court-circuit", "eclairage"],
+    "plomberie": ["plomberie", "plombier", "fuite", "robinet", "evier", "lavabo", "douche", "wc", "toilettes", "tuyau", "canalisation", "sanitaire"],
+    "climatisation": ["climatisation", "climatiseur", "clim", "refrigeration", "frigo", "froid", "ventilation"],
+    "menuiserie": ["menuiserie", "menuisier", "porte", "fenetre", "meuble", "placard", "charpente"],
+    "peinture": ["peinture", "peintre", "peindre", "tapisserie", "enduit"],
+    "maconnerie": ["maconnerie", "macon", "mur", "dalle", "chape", "beton", "brique"],
+    "nettoyage": ["nettoyage", "menage", "nettoyer", "propre"],
 }
 
-_URGENT = ["urgent", "urgence", "maintenant", "immediatement", "tres rapidement", "panne importante", "fuite importante", "danger", "inondation", "etincelles", "court-circuit"]
+_ZONES = ["kaloum", "dixinn", "matam", "coleah", "bambeto", "cameroun", "miniere", "hamdallaye", "kobayah", "matoto", "ratoma", "lambanyi"]
 
-_GREETINGS = ["bonjour", "salut", "hello", "hey", "coucou"]
+_URGENT = ["urgent", "urgence", "tres vite", "rapidement", "immediat", "immediatement", "grave", "inondation", "danger", "panne totale"]
 
-_FAQ = {
-    "vous faites quoi": "FixPro vous aide a trouver des professionnels verifiees pour la plomberie, l'electricite, la climatisation et d'autres services techniques.",
-    "comment ca marche": "Decrivez votre besoin, je pose les questions necessaires, puis je trouve et j'attribue le meilleur professionnel disponible.",
-    "prix": "Le prix vous sera confirme par le professionnel selectionne. FixPro ne donne pas de devis automatique.",
-    "combien ca coute": "Le cout depend du type d'intervention. Le technicien vous proposera un devis apres diagnostic.",
-    "disponibilite": "Je vais rechercher les professionnels disponibles pour votre zone et votre creneau.",
-}
+_MODERATE = ["modere", "moyen", "assez", "beaucoup", "important"]
+
+_LOW = ["petit", "peu", "goutte", "leger", "normal", "pas urgent", "non urgent"]
+
+
+def _normalize(text):
+    return (text or "").lower().replace("'", " ").replace("-", " ")
 
 
 def _detect_domain(text):
-    text = text.lower()
-    scores = {k: sum(1 for w in v if w in text) for k, v in _DOMAINS.items()}
-    best = max(scores, key=scores.get)
-    return best if scores[best] > 0 else None
+    text = _normalize(text)
+    best, best_score = None, 0
+    for domain, words in _DOMAINS.items():
+        score = sum(1 for w in words if w in text)
+        if score > best_score:
+            best_score = score
+            best = domain
+    return best
 
 
 def _detect_urgency(text):
-    text = text.lower()
-    return any(u in text for u in _URGENT)
-
-
-def _is_greeting(text):
-    text = text.lower().strip("!?:.,")
-    return any(text == g for g in _GREETINGS) or text in _GREETINGS
-
-
-def _faq_response(text):
-    text = text.lower()
-    for key, value in _FAQ.items():
-        if key in text:
-            return value
+    text = _normalize(text)
+    if any(u in text for u in _URGENT):
+        return "urgent"
+    if any(m in text for m in _MODERATE):
+        return "modere"
+    if any(l in text for l in _LOW):
+        return "normal"
     return None
 
 
 def _extract_location(text):
-    text = text.lower()
-    zones = ["kaloum", "dixinn", "matam", "coleah", "bambeto", "cameroun", "miniere", "hamdallaye", "kobayah"]
-    for z in zones:
+    text = _normalize(text)
+    for z in _ZONES:
         if z in text:
-            return z
+            return z.capitalize()
     if "conakry" in text:
         return "Conakry"
     return None
 
 
-def _extract_date_time(text):
-    # tres simple : aujourd hui, demain, cette semaine
-    text = text.lower()
-    if "demain" in text:
-        return "demain"
-    if "aujourd hui" in text:
-        return "aujourd hui"
-    if "cette semaine" in text:
-        return "cette semaine"
+def _extract_availability(text):
+    text = _normalize(text)
+    for kw in ["aujourd hui", "maintenant", "tout de suite", "immediatement"]:
+        if kw in text:
+            return "aujourd'hui"
+    for kw in ["demain"]:
+        if kw in text:
+            return "demain"
+    for kw in ["cette semaine", "semaine prochaine"]:
+        if kw in text:
+            return "cette semaine"
     return None
 
 
-def _update_collected(collected, content, category, urgency):
+def _update_collected(collected, content):
     info = dict(collected) if collected else {}
-    if category:
-        info["category"] = category
-    if urgency:
-        info["urgency"] = urgency
-    loc = _extract_location(content)
-    if loc:
-        info["location"] = loc
-    dt = _extract_date_time(content)
-    if dt:
-        info["availability"] = dt
-    if content:
-        info["last_description"] = content
     if "history" not in info:
         info["history"] = []
     info["history"].append(content)
     if len(info["history"]) > 8:
         info["history"] = info["history"][-8:]
+
+    dom = _detect_domain(content)
+    if dom:
+        info["category"] = dom
+
+    prob = content.strip()
+    if len(prob) > 5:
+        info["problem_detail"] = prob
+
+    loc = _extract_location(content)
+    if loc:
+        info["location"] = loc
+
+    urg = _detect_urgency(content)
+    if urg:
+        info["urgency"] = urg
+
+    av = _extract_availability(content)
+    if av:
+        info["availability"] = av
+
     return info
 
 
-def _build_welcome():
-    return ("Bonjour et bienvenue chez FixPro.\n\n"
-            "Decrivez-nous votre probleme et nous allons vous aider.")
-
-
-def _build_next_question(info, category, urgency):
+def _has_missing(info):
     missing = []
-    if not category:
-        return "Decrivez-moi votre probleme. Par exemple : j'ai une fuite sous mon evier, mon climatiseur ne refroidit plus, etc."
-    if not info.get("problem_detail"):
-        return f"D'accord, il s'agit d'une demande en {category}. Pouvez-vous preciser l'origine du probleme ?"
+    if not info.get("category"):
+        missing.append("category")
     if not info.get("location"):
-        return f"Dans quel quartier ou zone de Conakry vous trouvez-vous ?"
+        missing.append("location")
     if not info.get("urgency"):
-        return ("L'intervention est-elle urgente ? "
-                "Repondez par : urgente, moderee, ou quelques gouttes / non urgente.")
+        missing.append("urgency")
     if not info.get("availability"):
-        return "Quand souhaiteriez-vous etre pris en charge ?"
-    return ("Merci pour ces informations. Je vais maintenant rechercher le professionnel "
-            "le plus adapte et disponible pour votre intervention.")
+        missing.append("availability")
+    return missing
 
 
-def _determine_urgency_word(text, label=None):
-    text = text.lower()
-    if label and label in ("urgent", "urgente"):
-        return "urgent"
-    if "import" in text or "beaucoup" in text or "inonde" in text:
-        return "urgent"
-    if "moder" in text:
-        return "moderate"
-    if "goutte" in text or "peu" in text:
-        return "low"
-    return None
+def _build_response(info, last_message):
+    last = (last_message or "").strip().lower()
+
+    if not last or last in ("bonjour", "salut", "hello", "coucou", "bonsoir"):
+        return ("Bonjour et bienvenue chez FixPro.\n\n"
+                "Je suis l'assistant qui vous accompagne. Décrivez-moi simplement votre problème, "
+                "et je m'occupe de trouver la bonne solution pour vous.")
+
+    missing = _has_missing(info)
+
+    if "category" in missing:
+        if info.get("problem_detail"):
+            return ("Merci pour ces précisions.\n\n"
+                    "Pour m'orienter au mieux, pouvez-vous me confirmer le type de service dont vous avez besoin ? "
+                    "Plomberie, électricité, climatisation, menuiserie, peinture... ?")
+        return ("Je vais vous aider.\n\n"
+                "De quel type de problème s'agit-il ? Plomberie, électricité, climatisation, menuiserie... ?")
+
+    if "location" in missing:
+        return (f"D'accord, il s'agit d'une demande en {info['category']}.\n\n"
+                "Dans quel quartier de Conakry vous trouvez-vous ?")
+
+    if "urgency" in missing:
+        return ("Merci.\n\n"
+                "L'intervention est-elle urgente, assez rapide, ou peut-elle attendre un peu ?")
+
+    if "availability" in missing:
+        return ("Parfait.\n\n"
+                "Quand seriez-vous disponible pour recevoir le professionnel ? Aujourd'hui, demain ou plus tard ?")
+
+    return ("Merci pour toutes ces informations.\n\n"
+            f"J'ai bien compris : {info['problem_detail']}.\n"
+            f"Je recherche maintenant le meilleur {info['category']} disponible près de {info['location']}. "
+            "Je reviens vers vous dans quelques instants.")
 
 
-def analyze_message(content, collected=None, context=None):
-    """Analyse un message et retourne la reponse, le domaine et l'etat collecte."""
-    collected = collected or {}
-    content = content.strip()
+def analyze_message(content, collected=None):
+    collected = _update_collected(collected or {}, content)
+    response = _build_response(collected, content)
 
-    if _is_greeting(content) and not collected:
-        return {
-            "response": _build_welcome(),
-            "category": None,
-            "urgency": None,
-            "collected_info": collected,
-            "ready": False,
-            "needs_human": False,
-            "needs_technician": False,
-        }
-
-    faq = _faq_response(content)
-    if faq:
-        return {
-            "response": faq,
-            "category": collected.get("category"),
-            "urgency": collected.get("urgency"),
-            "collected_info": collected,
-            "ready": False,
-            "needs_human": False,
-            "needs_technician": False,
-        }
-
-    category = _detect_domain(content) or collected.get("category")
-    urgency = _determine_urgency_word(content) or collected.get("urgency")
-    if not urgency and _detect_urgency(content):
-        urgency = "urgent"
-
-    # quick replies detection : user may choose "Importante" etc.
-    if content in ("Importante", "Moderee", "Quelques gouttes"):
-        urgency_map = {"Importante": "urgent", "Moderee": "moderate", "Quelques gouttes": "low"}
-        urgency = urgency_map.get(content)
-
-    info = _update_collected(collected, content, category, urgency)
-    info["category"] = category
-    info["urgency"] = urgency
-
-    # Mark problem detail after category known
-    if category and not info.get("problem_detail"):
-        if len(content) > 10:
-            info["problem_detail"] = content
-
-    ready = (category is not None and info.get("location") is not None
-             and urgency is not None and info.get("availability") is not None)
-
-    response = _build_next_question(info, category, urgency)
+    ready = all(k not in _has_missing(collected) for k in ["category", "location", "urgency", "availability"])
 
     return {
         "response": response,
-        "category": category,
-        "urgency": urgency,
-        "collected_info": info,
+        "category": collected.get("category"),
+        "urgency": collected.get("urgency"),
+        "collected_info": collected,
         "ready": ready,
         "needs_human": False,
         "needs_technician": ready,
