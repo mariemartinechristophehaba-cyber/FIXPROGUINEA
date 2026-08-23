@@ -4117,19 +4117,30 @@ def _create_intervention_from_chat(conn, conversation_id, client_id, analysis, a
     req_id = _insert_id(
         conn,
         "INSERT INTO requests (client_id, artisan_id, reference, title, description, category, address, status, urgency, quote_amount, budget, created_at, updated_at)"
-        " VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, 0, 0, ?, ?)",
+        " VALUES (?, ?, ?, ?, ?, ?, ?, 'Nouvelle demande', ?, 0, 0, ?, ?)",
         (client_id, artisan_id, ref, title, description, category, address, urgency, now, now))
     conn.execute(
         "INSERT INTO intervention_history (request_id, status, actor, note, created_at)"
         " VALUES (?, ?, ?, ?, ?)",
-        (req_id, "pending", "Assistant FixPro", "Intervention creee depuis la conversation", now))
+        (req_id, "Nouvelle demande", "Assistant FixPro", "Demande creee depuis la conversation FixPro", now))
+    conn.execute(
+        "INSERT INTO intervention_history (request_id, status, actor, note, created_at)"
+        " VALUES (?, ?, ?, ?, ?)",
+        (req_id, "Technicien recherché", "Assistant FixPro", "Recherche du meilleur technicien disponible", now))
+    conn.execute(
+        "INSERT INTO intervention_history (request_id, status, actor, note, created_at)"
+        " VALUES (?, ?, ?, ?, ?)",
+        (req_id, "Technicien attribué", "Assistant FixPro", f"Technicien attribué pour l'intervention {ref}", now))
     conn.execute(
         "UPDATE conversations SET request_id = ?, status = 'converted_to_intervention' WHERE id = ?",
         (req_id, conversation_id))
     conn.execute(
         "INSERT INTO conversation_messages"
         " (conversation_id, sender_id, sender_role, content) VALUES (?, ?, ?, ?)",
-        (conversation_id, sender_id, "ai", f"Intervention {ref} creee et attribuee."))
+        (conversation_id, sender_id, "ai",
+         f"Votre intervention {ref} a ete creee. "
+         f"Notre equipe l'a transmise au technicien selectionne. "
+         "Vous serez tenu informe de son evolution."))
     return req_id
 
 
