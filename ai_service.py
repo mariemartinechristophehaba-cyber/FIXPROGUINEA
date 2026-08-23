@@ -4,10 +4,12 @@ Logique rule-basee avec un ton humain et professionnel.
 """
 
 _DOMAINS = {
+    "plomberie": ["plomberie", "plombier", "fuite", "robinet", "evier", "lavabo", "douche", "wc", "toilettes", "tuyau", "canalisation", "sanitaire", "eau"],
     "electricite": ["electricite", "electrique", "cablage", "tableau", "disjoncteur", "prise", "interrupteur", "panne de courant", "court-circuit", "eclairage"],
-    "plomberie": ["plomberie", "plombier", "fuite", "robinet", "evier", "lavabo", "douche", "wc", "toilettes", "tuyau", "canalisation", "sanitaire"],
-    "climatisation": ["climatisation", "climatiseur", "clim", "air", "conditionneur", "ventilation"],
+    "climatisation": ["climatisation", "climatiseur", "clim", "conditionneur", "ventilation"],
     "refrigeration": ["refrigeration", "frigo", "refrigerateur", "congelateur", "froid"],
+    "serrurerie": ["serrurerie", "serrurier", "serrure", "cle", "cylindre", "ouverture de porte", "verrou", "bloquee"],
+    "chauffagiste": ["chauffage", "chauffagiste", "chaudiere", "radiateur", "calefaction"],
     "menuiserie": ["menuiserie", "menuisier", "porte", "fenetre", "meuble", "placard", "charpente"],
     "peinture": ["peinture", "peintre", "peindre", "tapisserie", "enduit"],
     "maconnerie": ["maconnerie", "macon", "mur", "dalle", "chape", "beton", "brique"],
@@ -148,9 +150,9 @@ def _build_response(info, last_message):
         if info.get("problem_detail"):
             return ("Merci pour ces précisions.\n\n"
                     "Pour m'orienter au mieux, pouvez-vous me confirmer le type de service dont vous avez besoin ? "
-                    "Plomberie, électricité, climatisation, menuiserie, peinture... ?")
+                    "Plomberie, electricite, climatisation, refrigeration, serrurerie, chauffage, menuiserie, peinture... ?")
         return ("Je vais vous aider.\n\n"
-                "De quel type de problème s'agit-il ? Plomberie, électricité, climatisation, menuiserie... ?")
+                "De quel type de problème s'agit-il ? Plomberie, electricite, climatisation, serrurerie, chauffage, menuiserie... ?")
 
     if "location" in missing:
         return (f"D'accord, il s'agit d'une demande en {info['category']}.\n\n"

@@ -4179,10 +4179,12 @@ def client_message_new():
 
 
 _CATEGORY_PROFESSION = {
-    "electricite": "electricien",
     "plomberie": "plombier",
+    "electricite": "electricien",
     "climatisation": "frigoriste",
     "refrigeration": "frigoriste",
+    "serrurerie": "serrurier",
+    "chauffagiste": "chauffagiste",
     "menuiserie": "menuisier",
     "peinture": "peintre",
     "maconnerie": "macon",
@@ -4190,20 +4192,27 @@ _CATEGORY_PROFESSION = {
 }
 
 
-def _select_best_technician(conn, category, location):
-    """Selectionne le meilleur technicien selon le domaine et la localisation."""
+def _domain_to_profession(category):
+    """Convertit le domaine detecte par l'IA en profession reelle."""
     if not category:
         return None
-    profession = _CATEGORY_PROFESSION.get(category.lower(), category).lower()
+    return _CATEGORY_PROFESSION.get(category.lower(), category).lower()
+
+
+def _select_best_technician(conn, category, location):
+    """Selectionne le meilleur technicien du domaine demande, sans jamais melanger."""
+    if not category:
+        return None
+    profession = _domain_to_profession(category)
+    if not profession:
+        return None
     lat, lon = _geocode_zone("Conakry", location or "Conakry")
     rows = conn.execute(
         "SELECT id, full_name, profession, latitude, longitude, is_active, is_verified"
-        " FROM users WHERE role = 'artisan' AND LOWER(profession) = ? AND is_active = 1",
+        " FROM users WHERE role = 'artisan'"
+        " AND LOWER(REPLACE(REPLACE(profession, 'é', 'e'), 'É', 'E')) = ? AND is_active = 1"
+        " ORDER BY is_verified DESC, full_name",
         (profession,)).fetchall()
-    if not rows:
-        rows = conn.execute(
-            "SELECT id, full_name, profession, latitude, longitude, is_active, is_verified"
-            " FROM users WHERE role = 'artisan' AND is_active = 1").fetchall()
 
     def dist(a):
         if _is_valid_coordinate(a["latitude"], a["longitude"]) and _is_valid_coordinate(lat, lon):
@@ -4218,9 +4227,9 @@ def _create_intervention_from_chat(conn, conversation_id, client_id, analysis, a
     """Cree une intervention a partir d'une conversation."""
     ref = _generate_fixpro_reference(conn)
     info = analysis["collected_info"]
-    title = (info.get("problem_detail") or info.get("category") or "Demande FixPro").strip()
-    description = info.get("last_description") or title
-    category = analysis["category"] or "Autre"
+    title = (info.get("problem_detail") or _CATEGORY_PROFESSION.get(analysis.get("category"), analysis.get("category")) or "Demande FixPro").strip()
+    description = info.get("problem_detail") or title
+    category = _domain_to_profession(analysis["category"]) or "Autre"
     address = info.get("location") or "Conakry"
     urgency = analysis["urgency"] or "normal"
     now = datetime.now(timezone.utc).isoformat()
@@ -4363,7 +4372,7 @@ def client_conversation(conversation_id):
                         " urgency = ?, needs_human = ?, needs_technician = ?"
                         " WHERE id = ?",
                         (datetime.now(timezone.utc).isoformat(),
-                         status, analysis["category"], analysis["urgency"],
+                         status, _domain_to_profession(analysis["category"]) or analysis["category"], analysis["urgency"],
                          1 if analysis["needs_human"] else 0,
                          1 if analysis["needs_technician"] else 0,
                          conversation_id))

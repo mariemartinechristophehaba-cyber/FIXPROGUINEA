@@ -758,5 +758,62 @@ class ConfigurationTests(unittest.TestCase):
             importlib.reload(config)
 
 
+class DomainTests(FixProTestCase):
+    """Verifie que l'IA et l'attribution respectent strictement les domaines."""
+
+    def _insert_artisan(self, full_name, profession, lat, lon, verified=True, active=True):
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            suffix = f"{abs(hash(full_name)) % 1000000:06d}"
+            uid = fixpro_app._insert_id(conn, "INSERT INTO users (full_name, phone, email, password_hash, role, profession, city, latitude, longitude, is_verified, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                             (full_name, f"+22462{suffix}", f"{full_name.replace(' ', '')}@t.com", fixpro_app.generate_password_hash("FixPro2026!"), "artisan", profession, "Conakry", lat, lon, 1 if verified else 0, 1 if active else 0))
+            conn.commit()
+            return uid
+        finally:
+            conn.close()
+
+    def test_ai_detects_climatisation_not_plumber(self):
+        r = fixpro_app.ai_service.analyze_message("Mon climatiseur ne refroidit plus", collected={})
+        self.assertEqual(r["category"], "climatisation")
+        self.assertNotEqual(r["category"], "plomberie")
+
+    def test_ai_detects_refrigeration_for_fridge(self):
+        r = fixpro_app.ai_service.analyze_message("J'ai une panne sur mon frigo", collected={})
+        self.assertEqual(r["category"], "refrigeration")
+
+    def test_ai_detects_serrurerie_for_lock(self):
+        r = fixpro_app.ai_service.analyze_message("Ma serrure est bloquee", collected={})
+        self.assertEqual(r["category"], "serrurerie")
+
+    def test_ai_detects_electricity_for_socket(self):
+        r = fixpro_app.ai_service.analyze_message("Ma prise ne fonctionne plus", collected={})
+        self.assertEqual(r["category"], "electricite")
+
+    def test_ai_detects_plumber_for_leak(self):
+        r = fixpro_app.ai_service.analyze_message("J'ai une fuite sous mon evier", collected={})
+        self.assertEqual(r["category"], "plomberie")
+
+    def test_technician_selection_never_changes_domain(self):
+        self._insert_artisan("Plombier Proche", "Plombier", 9.5077, -13.7114)
+        self._insert_artisan("Electricien Loin", "Électricien", 9.5077, -13.7114)
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            artisan = fixpro_app._select_best_technician(conn, "electricite", "Kaloum")
+            self.assertIsNotNone(artisan)
+            self.assertNotIn("plomb", artisan["profession"].lower())
+            self.assertIn("electric", artisan["profession"].lower().replace("é", "e"))
+        finally:
+            conn.close()
+
+    def test_no_cross_domain_when_target_unavailable(self):
+        self._insert_artisan("Plombier Seul", "Plombier", 9.5077, -13.7114)
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            artisan = fixpro_app._select_best_technician(conn, "serrurerie", "Kaloum")
+            self.assertIsNone(artisan)
+        finally:
+            conn.close()
+
+
 if __name__ == "__main__":
     unittest.main()
