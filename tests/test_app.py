@@ -513,9 +513,10 @@ class MessagingTests(FixProTestCase):
             msgs = conn.execute(
                 "SELECT * FROM conversation_messages WHERE conversation_id = ? ORDER BY id",
                 (conv_id,)).fetchall()
-            self.assertEqual(len(msgs), 2)
+            self.assertEqual(len(msgs), 3)
             self.assertEqual(msgs[0]["sender_role"], "client")
             self.assertEqual(msgs[0]["content"], "Mon climatiseur ne refroidit plus.")
+            self.assertEqual(msgs[2]["sender_role"], "system")
         finally:
             conn.close()
 

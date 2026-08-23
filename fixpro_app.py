@@ -4162,6 +4162,37 @@ def _create_intervention_from_chat(conn, conversation_id, client_id, analysis, a
     return req_id
 
 
+def _get_collected_from_messages(conn, conversation_id):
+    """Recupere l'etat collecte depuis un message systeme."""
+    row = conn.execute(
+        "SELECT content FROM conversation_messages"
+        " WHERE conversation_id = ? AND sender_role = 'system'"
+        " ORDER BY id DESC LIMIT 1",
+        (conversation_id,)).fetchone()
+    if not row or not row["content"]:
+        return {}
+    try:
+        return json.loads(row["content"])
+    except Exception:
+        return {}
+
+
+def _save_collected_in_messages(conn, conversation_id, sender_id, collected):
+    """Stocke l'etat collecte dans un message systeme pour eviter la colonne collected_info."""
+    if collected is None:
+        collected = {}
+    payload = json.dumps(collected, ensure_ascii=False)
+    conn.execute(
+        "DELETE FROM conversation_messages"
+        " WHERE conversation_id = ? AND sender_role = 'system'",
+        (conversation_id,))
+    conn.execute(
+        "INSERT INTO conversation_messages"
+        " (conversation_id, sender_id, sender_role, content)"
+        " VALUES (?, ?, ?, ?)",
+        (conversation_id, sender_id, "system", payload))
+
+
 @app.route("/messages/<int:conversation_id>", methods=["GET", "POST"])
 @login_required
 def client_conversation(conversation_id):
@@ -4186,12 +4217,7 @@ def client_conversation(conversation_id):
                     (conversation_id, user["id"], "client", content))
 
                 if conv["status"] != "admin_active":
-                    collected = {}
-                    if conv.get("collected_info"):
-                        try:
-                            collected = json.loads(conv["collected_info"])
-                        except Exception:
-                            collected = {}
+                    collected = _get_collected_from_messages(conn, conversation_id)
                     analysis = ai_service.analyze_message(content, collected=collected)
 
                     fixpro_user = conn.execute(
@@ -4213,9 +4239,12 @@ def client_conversation(conversation_id):
                             req_id = _create_intervention_from_chat(
                                 conn, conversation_id, user["id"],
                                 analysis, artisan["id"], fixpro_user["id"] if fixpro_user else user["id"])
+                            ref_row = conn.execute(
+                                "SELECT reference FROM requests WHERE id = ?", (req_id,)).fetchone()
+                            ref = ref_row["reference"] if ref_row else f"FP-{datetime.now(timezone.utc).year}-{req_id:06d}"
                             extra_messages.append(
                                 (conversation_id, ai_sender, "ai",
-                                 f"C'est bon. J'ai cree l'intervention #FXP-{req_id:06d}. "
+                                 f"C'est bon. J'ai cree l'intervention {ref}. "
                                  f"Le technicien {artisan['full_name']} ({artisan['profession']}) "
                                  "sera informe de votre demande."))
                             status = "converted_to_intervention"
@@ -4232,16 +4261,17 @@ def client_conversation(conversation_id):
                             " (conversation_id, sender_id, sender_role, content)"
                             " VALUES (?, ?, ?, ?)", m)
 
+                    _save_collected_in_messages(conn, conversation_id, user["id"], analysis["collected_info"])
+
                     conn.execute(
                         "UPDATE conversations SET"
                         " updated_at = ?, status = ?, ai_category = ?,"
-                        " urgency = ?, needs_human = ?, needs_technician = ?, collected_info = ?"
+                        " urgency = ?, needs_human = ?, needs_technician = ?"
                         " WHERE id = ?",
                         (datetime.now(timezone.utc).isoformat(),
                          status, analysis["category"], analysis["urgency"],
                          1 if analysis["needs_human"] else 0,
                          1 if analysis["needs_technician"] else 0,
-                         json.dumps(analysis["collected_info"], ensure_ascii=False),
                          conversation_id))
                 else:
                     conn.execute(
@@ -4253,8 +4283,9 @@ def client_conversation(conversation_id):
                         "SELECT m.*, u.full_name AS sender_name"
                         " FROM conversation_messages m"
                         " JOIN users u ON u.id = m.sender_id"
-                        " WHERE m.conversation_id = ? AND m.id >= (SELECT MAX(id) - 3 FROM conversation_messages WHERE conversation_id = ?)"
-                        " ORDER BY m.created_at ASC",
+                        " WHERE m.conversation_id = ? AND m.sender_role != 'system'"
+                        " AND m.id >= (SELECT COALESCE(MAX(id), 0) - 4 FROM conversation_messages WHERE conversation_id = ? AND sender_role != 'system')"
+                        " ORDER BY m.id ASC",
                         (conversation_id, conversation_id)).fetchall()
                     return jsonify({
                         "ok": True,
@@ -4269,7 +4300,8 @@ def client_conversation(conversation_id):
             "SELECT m.*, u.full_name AS sender_name"
             " FROM conversation_messages m"
             " JOIN users u ON u.id = m.sender_id"
-            " WHERE m.conversation_id = ? ORDER BY m.created_at ASC",
+            " WHERE m.conversation_id = ? AND m.sender_role != 'system'"
+            " ORDER BY m.created_at ASC",
             (conversation_id,)).fetchall()
         conn.execute(
             "UPDATE conversation_messages SET is_read = 1"
@@ -4444,7 +4476,8 @@ def admin_conversation(conversation_id):
             "SELECT m.*, u.full_name AS sender_name"
             " FROM conversation_messages m"
             " JOIN users u ON u.id = m.sender_id"
-            " WHERE m.conversation_id = ? ORDER BY m.created_at ASC",
+            " WHERE m.conversation_id = ? AND m.sender_role != 'system'"
+            " ORDER BY m.created_at ASC",
             (conversation_id,)).fetchall()
         conn.execute(
             "UPDATE conversation_messages SET is_read = 1"
