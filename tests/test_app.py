@@ -459,6 +459,49 @@ class MessagingTests(FixProTestCase):
         r = self.client.get(f"/messages/{conv_id}")
         self.assertEqual(r.status_code, 302)
 
+    def test_guest_can_message_artisan(self):
+        self.register_artisan("artisan@example.com", phone="+224621111111")
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            artisan = conn.execute(
+                "SELECT id FROM users WHERE phone = ?", ("+224621111111",)).fetchone()
+        finally:
+            conn.close()
+        self.client.get("/logout")
+        r = self.client.post(f"/messages/artisan/{artisan['id']}", data={
+            "full_name": "Kadiatou B.",
+            "phone": "+224620000000"}, follow_redirects=True)
+        self.assertEqual(r.status_code, 200)
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conv = conn.execute(
+                "SELECT * FROM conversations WHERE artisan_id = ?",
+                (artisan["id"],)).fetchone()
+            self.assertIsNotNone(conv)
+            msgs = conn.execute(
+                "SELECT * FROM conversation_messages WHERE conversation_id = ?",
+                (conv["id"],)).fetchall()
+            self.assertEqual(len(msgs), 1)
+            self.assertEqual(msgs[0]["sender_role"], "ai")
+        finally:
+            conn.close()
+
+    def test_guest_phone_already_exists_redirects_login(self):
+        self.register_client(phone="+224610000000")
+        self.register_artisan("artisan@example.com", phone="+224621111111")
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            artisan = conn.execute(
+                "SELECT id FROM users WHERE phone = ?", ("+224621111111",)).fetchone()
+        finally:
+            conn.close()
+        self.client.get("/logout")
+        r = self.client.post(f"/messages/artisan/{artisan['id']}", data={
+            "full_name": "Client B.",
+            "phone": "+224610000000"})
+        self.assertEqual(r.status_code, 302)
+        self.assertIn("/login", r.location)
+
 
 class GeolocationTests(FixProTestCase):
     """Geolocalisation temps reel des techniciens."""

@@ -4281,15 +4281,18 @@ def client_message_artisan(artisan_id):
 
             conv_id = _insert_id(
                 conn,
-                "INSERT INTO conversations (client_id, artisan_id, subject)"
-                " VALUES (?, ?, ?)",
-                (new_user_id, artisan_id, artisan["full_name"]))
+                "INSERT INTO conversations (client_id, artisan_id, subject, status)"
+                " VALUES (?, ?, ?, ?)",
+                (new_user_id, artisan_id, artisan["full_name"], 'ai_active'))
             conn.execute(
                 "INSERT INTO conversation_messages"
                 " (conversation_id, sender_id, sender_role, content)"
                 " VALUES (?, ?, ?, ?)",
-                (conv_id, new_user_id, "client",
-                 f"Conversation demarree avec {artisan['full_name']}."))
+                (conv_id, new_user_id, "ai",
+                 "Bonjour \n\n"
+                 "Je suis l'Assistant FixPro.\n\n"
+                 "Je peux vous aider a trouver le bon professionnel pour votre probleme.\n\n"
+                 "Expliquez-moi simplement ce qui vous arrive."))
             conn.execute(
                 "UPDATE conversations SET updated_at = ? WHERE id = ?",
                 (datetime.now(timezone.utc).isoformat(), conv_id))
@@ -4307,15 +4310,18 @@ def client_message_artisan(artisan_id):
             if not conv:
                 conv_id = _insert_id(
                     conn,
-                    "INSERT INTO conversations (client_id, artisan_id, subject)"
-                    " VALUES (?, ?, ?)",
-                    (user["id"], artisan_id, artisan["full_name"]))
+                    "INSERT INTO conversations (client_id, artisan_id, subject, status)"
+                    " VALUES (?, ?, ?, ?)",
+                    (user["id"], artisan_id, artisan["full_name"], 'ai_active'))
                 conn.execute(
                     "INSERT INTO conversation_messages"
                     " (conversation_id, sender_id, sender_role, content)"
                     " VALUES (?, ?, ?, ?)",
-                    (conv_id, user["id"], "client",
-                     f"Conversation demarree avec {artisan['full_name']}."))
+                    (conv_id, user["id"], "ai",
+                     "Bonjour \n\n"
+                     "Je suis l'Assistant FixPro.\n\n"
+                     "Je peux vous aider a trouver le bon professionnel pour votre probleme.\n\n"
+                     "Expliquez-moi simplement ce qui vous arrive."))
                 conn.execute(
                     "UPDATE conversations SET updated_at = ? WHERE id = ?",
                     (datetime.now(timezone.utc).isoformat(), conv_id))
