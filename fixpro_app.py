@@ -4239,47 +4239,94 @@ def client_conversation(conversation_id):
     return render_template("client_conversation.html", conversation=conv, messages=messages, user=user, artisan=artisan)
 
 
-@app.route("/messages/artisan/<int:artisan_id>", methods=["GET"])
-@login_required
+@app.route("/messages/artisan/<int:artisan_id>", methods=["GET", "POST"])
+@limiter.limit("20 per hour", methods=["POST"])
 def client_message_artisan(artisan_id):
-    """Ouvre ou cree une conversation avec un technicien."""
+    """Ouvre ou cree une conversation avec un technicien, sans inscription longue."""
     user = get_current_user()
-    if user["role"] != "client":
-        flash("Cet espace est reserve aux clients.", "error")
-        return redirect(url_for("artisans_page"))
     conn = get_db_connection()
     try:
         artisan = conn.execute(
-            "SELECT full_name FROM users WHERE id = ? AND role = 'artisan'",
+            "SELECT id, full_name, profession FROM users WHERE id = ? AND role = 'artisan'",
             (artisan_id,)).fetchone()
         if not artisan:
             flash("Technicien introuvable.", "error")
             return redirect(url_for("artisans_page"))
 
-        conv = conn.execute(
-            "SELECT id FROM conversations WHERE client_id = ? AND artisan_id = ?",
-            (user["id"], artisan_id)).fetchone()
-        if not conv:
+        if user and user["role"] != "client":
+            flash("Cet espace est reserve aux clients.", "error")
+            return redirect(url_for("artisans_page"))
+
+        if request.method == "POST":
+            full_name = request.form.get("full_name", "").strip()
+            phone = _phone_with_prefix(request.form.get("phone", "").strip())
+            if not full_name or not phone:
+                flash("Veuillez renseigner votre nom et votre numero de telephone.", "error")
+                return redirect(url_for("client_message_artisan", artisan_id=artisan_id))
+
+            existing = conn.execute(
+                "SELECT * FROM users WHERE phone = ?", (phone,)).fetchone()
+            if existing:
+                flash("Ce numero existe deja. Connectez-vous pour continuer.", "info")
+                return redirect(url_for("login", next=url_for(
+                    "client_message_artisan", artisan_id=artisan_id)))
+
+            temp_password = secrets.token_urlsafe(16)
+            new_user_id = _insert_id(
+                conn,
+                "INSERT INTO users (email, phone, password_hash, role, full_name, city)"
+                " VALUES (?, ?, ?, ?, ?, ?)",
+                (None, phone, generate_password_hash(temp_password), "client",
+                 full_name, "Conakry"))
+
             conv_id = _insert_id(
                 conn,
                 "INSERT INTO conversations (client_id, artisan_id, subject)"
                 " VALUES (?, ?, ?)",
-                (user["id"], artisan_id, artisan["full_name"]))
+                (new_user_id, artisan_id, artisan["full_name"]))
             conn.execute(
                 "INSERT INTO conversation_messages"
                 " (conversation_id, sender_id, sender_role, content)"
                 " VALUES (?, ?, ?, ?)",
-                (conv_id, user["id"], "client",
+                (conv_id, new_user_id, "client",
                  f"Conversation demarree avec {artisan['full_name']}."))
             conn.execute(
                 "UPDATE conversations SET updated_at = ? WHERE id = ?",
                 (datetime.now(timezone.utc).isoformat(), conv_id))
             conn.commit()
-        else:
-            conv_id = conv["id"]
+
+            session.clear()
+            session["user_id"] = new_user_id
+            session.permanent = True
+            return redirect(url_for("client_conversation", conversation_id=conv_id))
+
+        if user:
+            conv = conn.execute(
+                "SELECT id FROM conversations WHERE client_id = ? AND artisan_id = ?",
+                (user["id"], artisan_id)).fetchone()
+            if not conv:
+                conv_id = _insert_id(
+                    conn,
+                    "INSERT INTO conversations (client_id, artisan_id, subject)"
+                    " VALUES (?, ?, ?)",
+                    (user["id"], artisan_id, artisan["full_name"]))
+                conn.execute(
+                    "INSERT INTO conversation_messages"
+                    " (conversation_id, sender_id, sender_role, content)"
+                    " VALUES (?, ?, ?, ?)",
+                    (conv_id, user["id"], "client",
+                     f"Conversation demarree avec {artisan['full_name']}."))
+                conn.execute(
+                    "UPDATE conversations SET updated_at = ? WHERE id = ?",
+                    (datetime.now(timezone.utc).isoformat(), conv_id))
+                conn.commit()
+            else:
+                conv_id = conv["id"]
+            return redirect(url_for("client_conversation", conversation_id=conv_id))
     finally:
         conn.close()
-    return redirect(url_for("client_conversation", conversation_id=conv_id))
+
+    return render_template("guest_message_start.html", artisan=artisan)
 
 
 @app.route("/admin/messages")
