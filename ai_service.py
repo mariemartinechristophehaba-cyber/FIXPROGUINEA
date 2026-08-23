@@ -99,10 +99,8 @@ def _update_collected(collected, content, category, urgency):
 
 
 def _build_welcome():
-    return ("Bonjour \n\n"
-            "Je suis l'Assistant FixPro.\n\n"
-            "Je peux vous aider a trouver le bon professionnel pour votre probleme.\n\n"
-            "Expliquez-moi simplement ce qui vous arrive.")
+    return ("Bonjour et bienvenue chez FixPro.\n\n"
+            "Decrivez-nous votre probleme et nous allons vous aider.")
 
 
 def _build_next_question(info, category, urgency):
