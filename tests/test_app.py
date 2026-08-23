@@ -468,9 +468,7 @@ class MessagingTests(FixProTestCase):
         finally:
             conn.close()
         self.client.get("/logout")
-        r = self.client.post(f"/messages/artisan/{artisan['id']}", data={
-            "full_name": "Kadiatou B.",
-            "phone": "+224620000000"}, follow_redirects=True)
+        r = self.client.get(f"/messages/artisan/{artisan['id']}", follow_redirects=True)
         self.assertEqual(r.status_code, 200)
         conn = db.connect(sqlite_path=self.db_path)
         try:
@@ -483,11 +481,15 @@ class MessagingTests(FixProTestCase):
                 (conv["id"],)).fetchall()
             self.assertEqual(len(msgs), 1)
             self.assertEqual(msgs[0]["sender_role"], "ai")
+            user = conn.execute(
+                "SELECT role, full_name FROM users WHERE id = ?",
+                (conv["client_id"],)).fetchone()
+            self.assertEqual(user["role"], "client")
+            self.assertEqual(user["full_name"], "Visiteur")
         finally:
             conn.close()
 
-    def test_guest_phone_already_exists_redirects_login(self):
-        self.register_client(phone="+224610000000")
+    def test_guest_conversation_persists_after_refresh(self):
         self.register_artisan("artisan@example.com", phone="+224621111111")
         conn = db.connect(sqlite_path=self.db_path)
         try:
@@ -496,11 +498,27 @@ class MessagingTests(FixProTestCase):
         finally:
             conn.close()
         self.client.get("/logout")
-        r = self.client.post(f"/messages/artisan/{artisan['id']}", data={
-            "full_name": "Client B.",
-            "phone": "+224610000000"})
-        self.assertEqual(r.status_code, 302)
-        self.assertIn("/login", r.location)
+        r1 = self.client.get(f"/messages/artisan/{artisan['id']}", follow_redirects=True)
+        self.assertEqual(r1.status_code, 200)
+        conv_id = int(r1.request.path.split("/")[-1])
+
+        r2 = self.client.get(f"/messages/{conv_id}")
+        self.assertEqual(r2.status_code, 200)
+
+        r3 = self.client.post(f"/messages/{conv_id}", data={
+            "content": "Mon climatiseur ne refroidit plus."}, follow_redirects=True)
+        self.assertEqual(r3.status_code, 200)
+
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            msgs = conn.execute(
+                "SELECT * FROM conversation_messages WHERE conversation_id = ? ORDER BY id",
+                (conv_id,)).fetchall()
+            self.assertEqual(len(msgs), 3)
+            self.assertEqual(msgs[1]["sender_role"], "client")
+            self.assertEqual(msgs[1]["content"], "Mon climatiseur ne refroidit plus.")
+        finally:
+            conn.close()
 
 
 class GeolocationTests(FixProTestCase):

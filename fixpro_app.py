@@ -4239,11 +4239,31 @@ def client_conversation(conversation_id):
     return render_template("client_conversation.html", conversation=conv, messages=messages, user=user, artisan=artisan)
 
 
-@app.route("/messages/artisan/<int:artisan_id>", methods=["GET", "POST"])
-@limiter.limit("20 per hour", methods=["POST"])
+def _get_or_create_guest_user(conn):
+    """Cree ou recupere un utilisateur visiteur anonyme."""
+    guest_id = session.get("guest_user_id")
+    if guest_id:
+        user = conn.execute("SELECT * FROM users WHERE id = ?", (guest_id,)).fetchone()
+        if user:
+            session["user_id"] = user["id"]
+            return user
+    guest_phone = f"guest-{secrets.token_hex(8)}"
+    user_id = _insert_id(
+        conn,
+        "INSERT INTO users (email, phone, password_hash, role, full_name, city)"
+        " VALUES (?, ?, ?, ?, ?, ?)",
+        (None, guest_phone, generate_password_hash(secrets.token_urlsafe(16)),
+         "client", "Visiteur", "Conakry"))
+    user = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+    session["guest_user_id"] = user_id
+    session["user_id"] = user_id
+    session.permanent = True
+    return user
+
+
+@app.route("/messages/artisan/<int:artisan_id>", methods=["GET"])
 def client_message_artisan(artisan_id):
-    """Ouvre ou cree une conversation avec un technicien, sans inscription longue."""
-    user = get_current_user()
+    """Ouvre directement la messagerie FixPro sans inscription."""
     conn = get_db_connection()
     try:
         artisan = conn.execute(
@@ -4253,42 +4273,28 @@ def client_message_artisan(artisan_id):
             flash("Technicien introuvable.", "error")
             return redirect(url_for("artisans_page"))
 
-        if user and user["role"] != "client":
+        user = get_current_user()
+        if not user:
+            user = _get_or_create_guest_user(conn)
+
+        if user["role"] != "client":
             flash("Cet espace est reserve aux clients.", "error")
             return redirect(url_for("artisans_page"))
 
-        if request.method == "POST":
-            full_name = request.form.get("full_name", "").strip()
-            phone = _phone_with_prefix(request.form.get("phone", "").strip())
-            if not full_name or not phone:
-                flash("Veuillez renseigner votre nom et votre numero de telephone.", "error")
-                return redirect(url_for("client_message_artisan", artisan_id=artisan_id))
-
-            existing = conn.execute(
-                "SELECT * FROM users WHERE phone = ?", (phone,)).fetchone()
-            if existing:
-                flash("Ce numero existe deja. Connectez-vous pour continuer.", "info")
-                return redirect(url_for("login", next=url_for(
-                    "client_message_artisan", artisan_id=artisan_id)))
-
-            temp_password = secrets.token_urlsafe(16)
-            new_user_id = _insert_id(
-                conn,
-                "INSERT INTO users (email, phone, password_hash, role, full_name, city)"
-                " VALUES (?, ?, ?, ?, ?, ?)",
-                (None, phone, generate_password_hash(temp_password), "client",
-                 full_name, "Conakry"))
-
+        conv = conn.execute(
+            "SELECT id FROM conversations WHERE client_id = ? AND artisan_id = ?",
+            (user["id"], artisan_id)).fetchone()
+        if not conv:
             conv_id = _insert_id(
                 conn,
                 "INSERT INTO conversations (client_id, artisan_id, subject, status)"
                 " VALUES (?, ?, ?, ?)",
-                (new_user_id, artisan_id, artisan["full_name"], 'ai_active'))
+                (user["id"], artisan_id, artisan["full_name"], 'ai_active'))
             conn.execute(
                 "INSERT INTO conversation_messages"
                 " (conversation_id, sender_id, sender_role, content)"
                 " VALUES (?, ?, ?, ?)",
-                (conv_id, new_user_id, "ai",
+                (conv_id, user["id"], "ai",
                  "Bonjour \n\n"
                  "Je suis l'Assistant FixPro.\n\n"
                  "Je peux vous aider a trouver le bon professionnel pour votre probleme.\n\n"
@@ -4297,42 +4303,11 @@ def client_message_artisan(artisan_id):
                 "UPDATE conversations SET updated_at = ? WHERE id = ?",
                 (datetime.now(timezone.utc).isoformat(), conv_id))
             conn.commit()
-
-            session.clear()
-            session["user_id"] = new_user_id
-            session.permanent = True
-            return redirect(url_for("client_conversation", conversation_id=conv_id))
-
-        if user:
-            conv = conn.execute(
-                "SELECT id FROM conversations WHERE client_id = ? AND artisan_id = ?",
-                (user["id"], artisan_id)).fetchone()
-            if not conv:
-                conv_id = _insert_id(
-                    conn,
-                    "INSERT INTO conversations (client_id, artisan_id, subject, status)"
-                    " VALUES (?, ?, ?, ?)",
-                    (user["id"], artisan_id, artisan["full_name"], 'ai_active'))
-                conn.execute(
-                    "INSERT INTO conversation_messages"
-                    " (conversation_id, sender_id, sender_role, content)"
-                    " VALUES (?, ?, ?, ?)",
-                    (conv_id, user["id"], "ai",
-                     "Bonjour \n\n"
-                     "Je suis l'Assistant FixPro.\n\n"
-                     "Je peux vous aider a trouver le bon professionnel pour votre probleme.\n\n"
-                     "Expliquez-moi simplement ce qui vous arrive."))
-                conn.execute(
-                    "UPDATE conversations SET updated_at = ? WHERE id = ?",
-                    (datetime.now(timezone.utc).isoformat(), conv_id))
-                conn.commit()
-            else:
-                conv_id = conv["id"]
-            return redirect(url_for("client_conversation", conversation_id=conv_id))
+        else:
+            conv_id = conv["id"]
     finally:
         conn.close()
-
-    return render_template("guest_message_start.html", artisan=artisan)
+    return redirect(url_for("client_conversation", conversation_id=conv_id))
 
 
 @app.route("/admin/messages")
