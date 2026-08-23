@@ -4230,6 +4230,23 @@ def client_conversation(conversation_id):
                         "UPDATE conversations SET updated_at = ? WHERE id = ?",
                         (datetime.now(timezone.utc).isoformat(), conversation_id))
                 conn.commit()
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    latest = conn.execute(
+                        "SELECT m.*, u.full_name AS sender_name"
+                        " FROM conversation_messages m"
+                        " JOIN users u ON u.id = m.sender_id"
+                        " WHERE m.conversation_id = ? AND m.id >= (SELECT MAX(id) - 3 FROM conversation_messages WHERE conversation_id = ?)"
+                        " ORDER BY m.created_at ASC",
+                        (conversation_id, conversation_id)).fetchall()
+                    return jsonify({
+                        "ok": True,
+                        "messages": [
+                            {"id": m["id"], "content": m["content"], "sender_role": m["sender_role"], "created_at": m["created_at"], "sender_name": m["sender_name"]}
+                            for m in latest
+                        ],
+                        "status": status,
+                        "ready": analysis.get("ready", False),
+                    })
         messages = conn.execute(
             "SELECT m.*, u.full_name AS sender_name"
             " FROM conversation_messages m"
