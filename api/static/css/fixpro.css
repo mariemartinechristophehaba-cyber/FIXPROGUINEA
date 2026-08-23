@@ -356,8 +356,80 @@ body {
   gap: 24px;
 }
 
+.tabbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--f-white);
+  border-top: 1px solid var(--f-line);
+  padding: 8px 0 14px;
+  display: flex;
+  justify-content: space-around;
+  z-index: 100;
+}
+
+.tabbar .tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-decoration: none;
+  color: var(--f-text-2);
+  font-size: 11px;
+  font-weight: 500;
+  position: relative;
+}
+
+.tabbar .tab.active {
+  color: var(--f-primary);
+}
+
+.tabbar .tab svg {
+  width: 22px;
+  height: 22px;
+}
+
+.tab-badge {
+  position: absolute;
+  top: -2px;
+  right: 2px;
+  min-width: 16px;
+  height: 16px;
+  background: var(--f-accent);
+  color: var(--f-text);
+  font-size: 9px;
+  font-weight: 700;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+}
+
+.mobile-nav {
+  display: none;
+}
+
+.mobile-nav.open {
+  display: flex;
+  flex-direction: column;
+  padding: 12px 20px;
+  gap: 10px;
+  background: var(--f-white);
+  border-bottom: 1px solid var(--f-line);
+}
+
+.mobile-nav a {
+  color: var(--f-text);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+}
+
 @media (min-width: 768px) {
   .appbar-nav { display: flex; }
+  .mobile-nav { display: none; }
 }
 
 .f-section { padding: 40px 0; }
