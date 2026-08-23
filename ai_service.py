@@ -3,12 +3,11 @@
 Logique rule-basee avec un ton humain et professionnel.
 """
 
-import json
-
 _DOMAINS = {
     "electricite": ["electricite", "electrique", "cablage", "tableau", "disjoncteur", "prise", "interrupteur", "panne de courant", "court-circuit", "eclairage"],
     "plomberie": ["plomberie", "plombier", "fuite", "robinet", "evier", "lavabo", "douche", "wc", "toilettes", "tuyau", "canalisation", "sanitaire"],
-    "climatisation": ["climatisation", "climatiseur", "clim", "refrigeration", "frigo", "froid", "ventilation"],
+    "climatisation": ["climatisation", "climatiseur", "clim", "air", "conditionneur", "ventilation"],
+    "refrigeration": ["refrigeration", "frigo", "refrigerateur", "congelateur", "froid"],
     "menuiserie": ["menuiserie", "menuisier", "porte", "fenetre", "meuble", "placard", "charpente"],
     "peinture": ["peinture", "peintre", "peindre", "tapisserie", "enduit"],
     "maconnerie": ["maconnerie", "macon", "mur", "dalle", "chape", "beton", "brique"],
@@ -25,7 +24,16 @@ _LOW = ["petit", "peu", "goutte", "leger", "normal", "pas urgent", "non urgent"]
 
 
 def _normalize(text):
-    return (text or "").lower().replace("'", " ").replace("-", " ")
+    text = (text or "").lower()
+    for c in "'’-":
+        text = text.replace(c, " ")
+    return text
+
+
+def _is_greeting(text):
+    words = text.split()
+    greetings = ("bonjour", "salut", "hello", "coucou", "bonsoir", "bonne", "bonne", "soir", "matin")
+    return not text or any(g in words for g in greetings) or len(words) <= 2
 
 
 def _detect_domain(text):
@@ -86,10 +94,6 @@ def _update_collected(collected, content):
     if dom:
         info["category"] = dom
 
-    prob = content.strip()
-    if len(prob) > 5:
-        info["problem_detail"] = prob
-
     loc = _extract_location(content)
     if loc:
         info["location"] = loc
@@ -101,6 +105,15 @@ def _update_collected(collected, content):
     av = _extract_availability(content)
     if av:
         info["availability"] = av
+
+    # Conserve la vraie description du probleme, pas une reponse courte
+    prob = content.strip()
+    words = prob.split()
+    has_keyword = bool(dom or loc or urg or av)
+    if len(prob) > 5 and len(words) >= 3 and not _is_greeting(prob) and not has_keyword:
+        info["problem_detail"] = prob
+    elif not info.get("problem_detail") and len(prob) > 5 and not _is_greeting(prob):
+        info["problem_detail"] = prob
 
     return info
 
@@ -121,7 +134,7 @@ def _has_missing(info):
 def _build_response(info, last_message):
     last = (last_message or "").strip().lower()
     words = last.split()
-    greetings = ("bonjour", "salut", "hello", "coucou", "bonsoir", "bonne")
+    greetings = ("bonjour", "salut", "hello", "coucou", "bonsoir", "bonne", "soir", "matin")
     is_greeting = not last or any(g in words for g in greetings) or len(words) <= 2
 
     if is_greeting and not info.get("category"):
@@ -151,9 +164,10 @@ def _build_response(info, last_message):
         return ("Parfait.\n\n"
                 "Quand seriez-vous disponible pour recevoir le professionnel ? Aujourd'hui, demain ou plus tard ?")
 
+    detail = info.get("problem_detail") or "votre demande"
     return ("Merci pour toutes ces informations.\n\n"
-            f"J'ai bien compris : {info['problem_detail']}.\n"
-            f"Je recherche maintenant le meilleur {info['category']} disponible près de {info['location']}. "
+            f"J'ai bien compris : {detail}.\n"
+            f"Je recherche maintenant le meilleur professionnel en {info['category']} disponible près de {info['location']}. "
             "Je reviens vers vous dans quelques instants.")
 
 
@@ -161,7 +175,8 @@ def analyze_message(content, collected=None):
     collected = _update_collected(collected or {}, content)
     response = _build_response(collected, content)
 
-    ready = all(k not in _has_missing(collected) for k in ["category", "location", "urgency", "availability"])
+    missing = _has_missing(collected)
+    ready = all(k not in missing for k in ["category", "location", "urgency", "availability"])
 
     return {
         "response": response,

@@ -55,7 +55,7 @@
       <div class="m-msg {{ 'm-client' if m.sender_role == 'client' else 'm-fixpro' }}">
         <div class="m-bubble">
           {{ m.content }}
-          <div class="m-time">{{ m.created_at }}</div>
+          <div class="m-time">{{ m.created_at | dt_hm }}</div>
         </div>
       </div>
       {% endfor %}
@@ -91,12 +91,21 @@
   }
   if (b) scrollBottom();
 
+  function formatTime(ts) {
+    if (!ts) return '';
+    try {
+      const d = new Date(ts);
+      return d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    } catch (e) { return ts; }
+  }
+
   function appendMessage(role, content, time, id, pending) {
     const div = document.createElement('div');
     div.className = 'm-msg ' + (role === 'client' ? 'm-client' : 'm-fixpro');
     if (id) div.dataset.msgId = id;
     if (pending) div.dataset.pending = '1';
-    div.innerHTML = '<div class="m-bubble">' + content.replace(/\n/g, '<br>') + '<div class="m-time">' + time + '</div></div>';
+    const t = pending ? time : formatTime(time);
+    div.innerHTML = '<div class="m-bubble">' + content.replace(/\n/g, '<br>') + '<div class="m-time">' + t + '</div></div>';
     b.appendChild(div);
     scrollBottom();
   }

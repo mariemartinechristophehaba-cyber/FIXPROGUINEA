@@ -57,6 +57,22 @@ if app.config.get("FLASK_ENV", "development") != "development":
     _cors_origins = [_admin_dashboard]
 CORS(app, resources={r"/api/admin/*": {"origins": _cors_origins}})
 
+
+@app.template_filter('dt_hm')
+def _format_dt_hm(value):
+    """Affiche l'heure HH:MM d'un timestamp ISO."""
+    if not value:
+        return ''
+    if hasattr(value, 'strftime'):
+        return value.strftime('%H:%M')
+    s = str(value)
+    if 'T' in s:
+        return s[11:16]
+    if len(s) >= 16:
+        return s[11:16]
+    return s
+
+
 limiter = Limiter(
     app=app,
     key_func=get_remote_address,
@@ -4109,15 +4125,28 @@ def client_message_new():
     return render_template("client_message_new.html", user=user)
 
 
+_CATEGORY_PROFESSION = {
+    "electricite": "electricien",
+    "plomberie": "plombier",
+    "climatisation": "frigoriste",
+    "refrigeration": "frigoriste",
+    "menuiserie": "menuisier",
+    "peinture": "peintre",
+    "maconnerie": "macon",
+    "nettoyage": "nettoyage",
+}
+
+
 def _select_best_technician(conn, category, location):
     """Selectionne le meilleur technicien selon le domaine et la localisation."""
     if not category:
         return None
-    lat, lon = _geocode_zone(location or "Conakry")
+    profession = _CATEGORY_PROFESSION.get(category.lower(), category).lower()
+    lat, lon = _geocode_zone("Conakry", location or "Conakry")
     rows = conn.execute(
         "SELECT id, full_name, profession, latitude, longitude, is_active, is_verified"
         " FROM users WHERE role = 'artisan' AND LOWER(profession) = ? AND is_active = 1",
-        (category.lower(),)).fetchall()
+        (profession,)).fetchall()
     if not rows:
         rows = conn.execute(
             "SELECT id, full_name, profession, latitude, longitude, is_active, is_verified"
