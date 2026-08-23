@@ -20,7 +20,7 @@
       <a href="{{ url_for('artisans_page') }}">Recherche</a>
       <a href="{{ url_for('artisans_page') }}">Professionnels</a>
       <a href="{{ url_for('requests_list') }}">Réservations</a>
-      <a href="{{ url_for('conversations') }}">Messages</a>
+      <a href="{{ url_for('client_messages') }}">Messages</a>
       <a href="{{ url_for('reviews') }}">Avis</a>
     </nav>
     <div class="f-header-right">
@@ -172,7 +172,7 @@
     <img src="{{ url_for('static', filename='img/icon-calendar.svg') }}" width="24" height="24" alt="" />
     <span class="f-main-text">Résa</span>
   </a>
-  <a href="{{ url_for('conversations') }}">
+  <a href="{{ url_for('client_messages') }}">
     <img src="{{ url_for('static', filename='img/icon-message-circle.svg') }}" width="22" height="22" alt="" />
     Messages
     <span class="f-notif">{{ unread_count or 0 }}</span>

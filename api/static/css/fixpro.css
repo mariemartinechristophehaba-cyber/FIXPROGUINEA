@@ -301,6 +301,65 @@ body {
 
 .f-btn:hover { background: var(--f-primary-dark); }
 
+.appbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  background: var(--f-primary);
+  color: var(--f-white);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.guest-appbar {
+  background: var(--f-white);
+  color: var(--f-text);
+  box-shadow: 0 1px 4px rgba(0,0,0,.05);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: inherit;
+  font-family: var(--f-display);
+  font-weight: 700;
+  font-size: 20px;
+}
+
+.brand-mark {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: rgba(255,255,255,.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.guest-appbar .brand-mark {
+  background: var(--f-primary);
+  color: var(--f-white);
+}
+
+.brand-mark svg {
+  width: 24px;
+  height: 24px;
+}
+
+.appbar-nav {
+  display: none;
+  align-items: center;
+  gap: 24px;
+}
+
+@media (min-width: 768px) {
+  .appbar-nav { display: flex; }
+}
+
 .f-section { padding: 40px 0; }
 
 .f-section-header {

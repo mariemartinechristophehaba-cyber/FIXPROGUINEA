@@ -178,7 +178,7 @@
       <a href="{{ url_for('artisans_page') }}">Recherche</a>
       <a href="{{ url_for('artisans_page') }}" class="active">Professionnels</a>
       <a href="{{ url_for('requests_list') }}">Réservations</a>
-      <a href="{{ url_for('conversations') }}">Messages</a>
+      <a href="{{ url_for('client_messages') }}">Messages</a>
       <a href="{{ url_for('reviews') }}">Avis</a>
     </nav>
     <div class="p-header-right">
@@ -462,7 +462,7 @@
   <a href="{{ url_for('requests_list') }}" class="p-bottom-main">
     <img src="{{ url_for('static', filename='img/icon-calendar.svg') }}" width="24" height="24" alt="" />
   </a>
-  <a href="{{ url_for('conversations') }}">
+  <a href="{{ url_for('client_messages') }}">
     <img src="{{ url_for('static', filename='img/icon-message-circle.svg') }}" width="22" height="22" alt="" />
     Messages
   </a>
@@ -475,8 +475,7 @@
 <script>
   const tabs = document.querySelectorAll('.p-tab');
   tabs.forEach(t => {
-    t.addEventListener('click', e => {
-      e.preventDefault();
+    t.addEventListener('click', () => {
       tabs.forEach(x => x.classList.remove('active'));
       t.classList.add('active');
     });
