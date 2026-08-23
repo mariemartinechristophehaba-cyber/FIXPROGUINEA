@@ -120,8 +120,11 @@ def _has_missing(info):
 
 def _build_response(info, last_message):
     last = (last_message or "").strip().lower()
+    words = last.split()
+    greetings = ("bonjour", "salut", "hello", "coucou", "bonsoir", "bonne")
+    is_greeting = not last or any(g in words for g in greetings) or len(words) <= 2
 
-    if not last or last in ("bonjour", "salut", "hello", "coucou", "bonsoir"):
+    if is_greeting and not info.get("category"):
         return ("Bonjour et bienvenue chez FixPro.\n\n"
                 "Je suis l'assistant qui vous accompagne. Décrivez-moi simplement votre problème, "
                 "et je m'occupe de trouver la bonne solution pour vous.")
