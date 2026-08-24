@@ -582,11 +582,16 @@ def index():
                 unread_count = row["n"]
             except Exception:
                 unread_count = 0
+        counts = {}
+        for row in conn.execute(
+            "SELECT profession, COUNT(*) AS n FROM users WHERE role = 'artisan' AND is_verified = 1 AND is_active = 1 GROUP BY profession").fetchall():
+            counts[row["profession"]] = row["n"]
     finally:
         conn.close()
     return render_template("index.html", artisans=artisans, unread_count=unread_count,
                            loc_permission=session.get("loc_permission", "prompt"),
-                           client_zone=session.get("client_zone"))
+                           client_zone=session.get("client_zone"),
+                           category_counts=counts)
 
 
 @app.route("/api/location", methods=["POST"])
@@ -645,11 +650,16 @@ def home():
                 unread_count = row["n"]
             except Exception:
                 unread_count = 0
+        counts = {}
+        for row in conn.execute(
+            "SELECT profession, COUNT(*) AS n FROM users WHERE role = 'artisan' AND is_verified = 1 AND is_active = 1 GROUP BY profession").fetchall():
+            counts[row["profession"]] = row["n"]
     finally:
         conn.close()
     return render_template("home.html", user=user, artisans=artisans, unread_count=unread_count,
                            loc_permission=session.get("loc_permission", "prompt"),
-                           client_zone=session.get("client_zone"))
+                           client_zone=session.get("client_zone"),
+                           category_counts=counts)
 
 
 @app.route("/categories")

@@ -2,11 +2,11 @@
 {% block title %}Accueil - FixPro Guinée{% endblock %}
 {% block header %}{% endblock %}
 {% block footer %}{% endblock %}
-{% block extra_head %}{% endblock %}
 
 {% block content %}
 <input type="hidden" id="locCsrf" value="{{ csrf_token() }}" />
-<div id="locOverlay" class="f-loc-overlay" style="{% if loc_permission != 'prompt' and loc_permission != 'denied' %}display:none;{% endif %}">
+{% set loc_state = loc_permission or 'prompt' %}
+<div id="locOverlay" class="f-loc-overlay" {% if loc_state == 'granted' %}style="display:none;"{% endif %}>
   <div class="f-loc-card">
     <svg class="f-loc-pin" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#155eef" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
     <h2 id="locTitle">Activer ma localisation</h2>
@@ -41,15 +41,15 @@
     <div class="f-header-right">
       <div class="f-header-loc">
         <img src="{{ url_for('static', filename='img/icon-map-pin.svg') }}" width="16" height="16" alt="" />
-        {% if client_zone %}{{ client_zone }}{% elif user and user.city %}{{ user.city }}{% else %}Conakry, Kaloum{% endif %}
+        {% if client_zone %}{{ client_zone }}{% elif nav_user and nav_user.city %}{{ nav_user.city }}{% else %}Conakry, Kaloum{% endif %}
       </div>
       <a href="{{ url_for('notifications') }}" class="f-notif" aria-label="Notifications">
         <img src="{{ url_for('static', filename='img/icon-bell.svg') }}" width="22" height="22" alt="" />
         {% if unread_count %}<span class="f-badge">{{ unread_count }}</span>{% endif %}
       </a>
-      <a href="{{ url_for('profile') }}" class="f-avatar-link" aria-label="Mon profil">
-        {% if user and user.photo_url %}
-          <img src="{{ user.photo_url }}" class="f-avatar-sm" alt="{{ user.full_name }}" />
+      <a href="{% if nav_user %}{{ url_for('profile') }}{% else %}{{ url_for('login') }}{% endif %}" class="f-avatar-link" aria-label="Mon profil">
+        {% if nav_user and nav_user.photo_url %}
+          <img src="{{ nav_user.photo_url }}" class="f-avatar-sm" alt="{{ nav_user.full_name }}" />
         {% else %}
           <img src="{{ url_for('static', filename='img/fixpro-avatar.png') }}" class="f-avatar-sm" alt="Profil" />
         {% endif %}
@@ -58,17 +58,26 @@
   </div>
 </header>
 
+{% set pro_labels = {
+  'Plomberie': 'Plombier',
+  'Electricite': 'Électricien',
+  'Frigoriste': 'Frigoriste',
+  'Menuiserie': 'Menuisier',
+  'Peinture': 'Peintre',
+  'Maçonnerie': 'Maçon'
+} %}
+
 <section class="f-container" style="padding-top: 24px;">
   <div class="f-search-card" id="searchCard">
     <h2>De quoi avez-vous besoin ?</h2>
     <div class="f-cats">
-      <a href="{{ url_for('artisans_page', category='Plombier') }}" class="f-cat f-cat-plumber" data-cat="Plombier">
+      <a href="{{ url_for('artisans_page', category='Plomberie') }}" class="f-cat f-cat-plumber" data-cat="Plomberie">
         <div class="f-cat-icon"><img src="{{ url_for('static', filename='img/icon-droplet.svg') }}" width="28" height="28" alt="" /></div>
         <h3>Plombier</h3>
         <p>Tous vos travaux de plomberie</p>
         <div class="f-cat-bar"></div>
       </a>
-      <a href="{{ url_for('artisans_page', category='Électricien') }}" class="f-cat f-cat-electrician" data-cat="Électricien">
+      <a href="{{ url_for('artisans_page', category='Electricite') }}" class="f-cat f-cat-electrician" data-cat="Electricite">
         <div class="f-cat-icon"><img src="{{ url_for('static', filename='img/icon-zap.svg') }}" width="28" height="28" alt="" /></div>
         <h3>Électricien</h3>
         <p>Installations et dépannages</p>
@@ -78,6 +87,18 @@
         <div class="f-cat-icon"><img src="{{ url_for('static', filename='img/icon-snowflake.svg') }}" width="28" height="28" alt="" /></div>
         <h3>Frigoriste</h3>
         <p>Climatisation et froid</p>
+        <div class="f-cat-bar"></div>
+      </a>
+      <a href="{{ url_for('artisans_page', category='Menuiserie') }}" class="f-cat f-cat-carpenter" data-cat="Menuiserie">
+        <div class="f-cat-icon"><img src="{{ url_for('static', filename='img/icon-wrench.svg') }}" width="28" height="28" alt="" /></div>
+        <h3>Menuisier</h3>
+        <p>Portes, fenêtres, mobilier</p>
+        <div class="f-cat-bar"></div>
+      </a>
+      <a href="{{ url_for('artisans_page', category='Peinture') }}" class="f-cat f-cat-painter" data-cat="Peinture">
+        <div class="f-cat-icon"><img src="{{ url_for('static', filename='img/icon-paint-roller.svg') }}" width="28" height="28" alt="" /></div>
+        <h3>Peintre</h3>
+        <p>Peinture intérieure et extérieure</p>
         <div class="f-cat-bar"></div>
       </a>
     </div>
@@ -106,6 +127,7 @@
     <a href="{{ url_for('artisans_page') }}" class="f-link">Voir tout <img src="{{ url_for('static', filename='img/icon-chevron-right.svg') }}" width="14" height="14" alt="" /></a>
   </div>
   <div class="f-pros-grid">
+    {% if artisans %}
     {% for a in artisans %}
     <a href="{{ url_for('artisan_detail', artisan_id=a.id) }}" class="f-pro-card">
       <div class="f-pro-avatar-wrap">
@@ -118,7 +140,7 @@
       </div>
       <div class="f-pro-info">
         <h4>{{ a.full_name }}</h4>
-        <p class="f-pro-job">{{ a.profession or 'Technicien' }}</p>
+        <p class="f-pro-job">{{ pro_labels.get(a.profession, a.profession) }}</p>
         <div class="f-pro-meta">
           <span class="f-pro-rating"><img src="{{ url_for('static', filename='img/icon-star.svg') }}" alt="" /> {{ "%.1f" | format(a.avg_rating) }}</span>
           <span>({{ a.review_count }} avis)</span>
@@ -128,6 +150,9 @@
       </div>
     </a>
     {% endfor %}
+    {% else %}
+    <p class="f-empty">Aucun professionnel recommandé pour le moment.</p>
+    {% endif %}
   </div>
 </section>
 
@@ -156,6 +181,71 @@
   </div>
 </section>
 
+<section class="f-section f-container f-popular">
+  <div class="f-section-header">
+    <h2>Catégories populaires</h2>
+    <a href="{{ url_for('artisans_page') }}" class="f-link">Voir tout <img src="{{ url_for('static', filename='img/icon-chevron-right.svg') }}" width="14" height="14" alt="" /></a>
+  </div>
+  {% set pop_cats = [
+    ('Plomberie', 'Plomberie', 'icon-droplet.svg'),
+    ('Electricite', 'Électricité', 'icon-zap.svg'),
+    ('Frigoriste', 'Frigoriste', 'icon-snowflake.svg'),
+    ('Menuiserie', 'Menuiserie', 'icon-wrench.svg'),
+    ('Peinture', 'Peinture', 'icon-paint-roller.svg'),
+    ('Maçonnerie', 'Maçonnerie', 'icon-washing-machine.svg')
+  ] %}
+  <div class="f-pop-grid">
+    {% for key, label, icon in pop_cats %}
+    {% set n = category_counts.get(key, 0) %}
+    <a href="{{ url_for('artisans_page', category=key) }}" class="f-pop-item">
+      <div class="f-pop-icon">
+        <img src="{{ url_for('static', filename='img/' ~ icon) }}" width="22" height="22" alt="" />
+      </div>
+      <div class="f-pop-text">
+        <h4>{{ label }}</h4>
+        <p>{{ n }} pro{{ 's' if n > 1 else '' }}</p>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="f-section f-container">
+  <div class="f-section-header">
+    <h2>Comment ça marche ?</h2>
+  </div>
+  <div class="f-steps">
+    <div class="f-step">
+      <div class="f-step-num">01</div>
+      <div>
+        <h4>Décrivez votre problème</h4>
+        <p>Choisissez le type de service et décrivez votre besoin</p>
+      </div>
+    </div>
+    <div class="f-step">
+      <div class="f-step-num">02</div>
+      <div>
+        <h4>Recevez des propositions</h4>
+        <p>Des professionnels qualifiés vous font des propositions</p>
+      </div>
+    </div>
+    <div class="f-step">
+      <div class="f-step-num">03</div>
+      <div>
+        <h4>Choisissez et réservez</h4>
+        <p>Sélectionnez le pro idéal et réservez en toute sécurité</p>
+      </div>
+    </div>
+    <div class="f-step">
+      <div class="f-step-num">04</div>
+      <div>
+        <h4>Intervention</h4>
+        <p>Le professionnel intervient et résout votre problème</p>
+      </div>
+    </div>
+  </div>
+</section>
+
 <nav class="f-bottom-nav">
   <a href="{{ url_for('home') }}" class="active">
     <img src="{{ url_for('static', filename='img/icon-home.svg') }}" width="22" height="22" alt="" />
@@ -167,14 +257,14 @@
   </a>
   <a href="{{ url_for('requests_list') }}" class="f-main" aria-label="Réservations">
     <img src="{{ url_for('static', filename='img/icon-calendar.svg') }}" width="24" height="24" alt="" />
-    <span class="f-main-text">Réso</span>
+    <span class="f-main-text">Réserver</span>
   </a>
   <a href="{{ url_for('client_messages') }}">
     <img src="{{ url_for('static', filename='img/icon-message-circle.svg') }}" width="22" height="22" alt="" />
     Messages
     {% if unread_count %}<span class="f-notif">{{ unread_count }}</span>{% endif %}
   </a>
-  <a href="{{ url_for('profile') }}">
+  <a href="{% if nav_user %}{{ url_for('profile') }}{% else %}{{ url_for('login') }}{% endif %}">
     <img src="{{ url_for('static', filename='img/icon-user.svg') }}" width="22" height="22" alt="" />
     Profil
   </a>
@@ -200,6 +290,7 @@
   .f-loc-card p { color: #475569; font-size: 0.95rem; line-height: 1.5; margin: 0 0 20px; }
   .f-loc-card .f-btn { width: 100%; }
   .f-loc-card .f-btn-secondary { background: #f1f5f9; color: #334155; margin-top: 10px; }
+  .f-empty { color: var(--f-text-2); text-align: center; padding: 20px 0; }
 </style>
 
 <script>
@@ -288,10 +379,19 @@
   });
 
   searchBtn.addEventListener('click', e => {
-    if (!selectedCat) {
-      const loc = encodeURIComponent(locInput.value || '');
-      searchBtn.href = loc ? `/artisans?location=${loc}` : '/artisans';
+    e.preventDefault();
+    const loc = encodeURIComponent(locInput.value || '');
+    let href = '/artisans';
+    if (selectedCat) {
+      const activeCard = document.querySelector('.f-cat.active');
+      if (activeCard) {
+        href = activeCard.getAttribute('href') || href;
+      }
     }
+    if (loc) {
+      href += (href.includes('?') ? '&' : '?') + `location=${loc}`;
+    }
+    window.location.href = href;
   });
 
   if (locTarget) locTarget.addEventListener('click', requestLocation);
