@@ -31,8 +31,8 @@
   .m-time { font-size: 10px; color: var(--m-ink-2); margin-top: 2px; text-align: right; display: flex; align-items: center; justify-content: flex-end; gap: 4px; }
   .m-client .m-time { color: rgba(255,255,255,.8); }
   .m-check { font-size: 9px; opacity: .8; }
-  .m-footer { position: fixed; bottom: 0; left: 0; right: 0; background: var(--m-white); border-top: 1px solid var(--m-line); padding: 10px 12px; display: flex; align-items: center; gap: 8px; z-index: 101; }
-  .m-input { flex: 1; border: 1px solid var(--m-line); border-radius: 22px; padding: 11px 14px; font-size: 15px; outline: none; min-height: 44px; max-height: 120px; resize: none; }
+  .m-footer { position: fixed; bottom: 0; left: 0; right: 0; background: var(--m-white); border-top: 1px solid var(--m-line); padding: 10px 12px; padding-bottom: calc(10px + env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 8px; z-index: 101; }
+  .m-input { flex: 1; border: 1px solid var(--m-line); border-radius: 22px; padding: 10px 14px; font-size: 15px; line-height: 1.4; outline: none; min-height: 40px; max-height: 120px; resize: none; box-sizing: border-box; overflow-y: hidden; }
   .m-send { width: 44px; height: 44px; border: none; border-radius: 50%; background: var(--m-primary); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 18px; transition: transform .1s; }
   .m-send:disabled { opacity: .4; }
   .m-send:active { transform: scale(.95); }
@@ -82,7 +82,7 @@
   </div>
   <form class="m-footer" method="post" onsubmit="return handleSend();">
     <input type="hidden" name="csrf_token" id="m-csrf" value="{{ csrf_token() }}" />
-    <textarea class="m-input" id="m-content" name="content" placeholder="Écrire un message..." required rows="1" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px';"></textarea>
+    <textarea class="m-input" id="m-content" name="content" placeholder="Écrire un message..." required rows="1" oninput="this.style.height='auto'; const m=120; const h=Math.min(this.scrollHeight, m); this.style.height=h+'px'; this.style.overflowY = this.scrollHeight > m ? 'auto' : 'hidden';"></textarea>
     <button type="submit" class="m-send" id="m-send" aria-label="Envoyer" disabled>→</button>
   </form>
 </div>
@@ -155,6 +155,8 @@
     appendMessage('client', content, 'maintenant', null, true);
     ta.value = '';
     ta.style.height = 'auto';
+    ta.style.overflowY = 'hidden';
+    ta.dispatchEvent(new Event('input'));
     setTyping(true);
     try {
       const fd = new FormData();
