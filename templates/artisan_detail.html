@@ -222,9 +222,9 @@
     <div class="p-hero-grid">
       <div class="p-avatar-wrap">
         {% if artisan.photo_url %}
-          <img src="{{ artisan.photo_url }}" alt="{{ artisan.full_name }}" loading="lazy" decoding="async" />
+          <img src="{{ artisan.photo_url }}" alt="{{ artisan.full_name }}" width="180" height="180" loading="lazy" decoding="async" />
         {% else %}
-          <img src="{{ url_for('static', filename='img/fixpro-avatar.png') }}" alt="{{ artisan.full_name }}" loading="lazy" decoding="async" />
+          <img src="{{ url_for('static', filename='img/fixpro-avatar.png') }}" alt="{{ artisan.full_name }}" width="180" height="180" loading="lazy" decoding="async" />
         {% endif %}
         <span class="p-avail-pill">Disponible maintenant</span>
       </div>
