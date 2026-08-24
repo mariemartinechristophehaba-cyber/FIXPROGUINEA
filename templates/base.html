@@ -154,14 +154,12 @@
       {% endif %}
     </div>
 
-    {% block support_fab %}
-    {% if nav_user and not is_admin_route and request.endpoint != 'index' and not chat_view %}
+    {% if nav_user and not is_admin_route and request.endpoint not in ('index', 'home') and not chat_view %}
     {% if nav_user %}
     <a class="support-fab" href="{{ url_for('client_tickets') }}" aria-label="Support">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
     </a>
     {% endif %}
-    {% endblock %}
 
     {% block tabbar %}
     <nav class="tabbar">
