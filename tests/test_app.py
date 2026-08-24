@@ -818,5 +818,62 @@ class DomainTests(FixProTestCase):
             conn.close()
 
 
+class LiaConversationTests(FixProTestCase):
+    """Tests du moteur conversationnel de Lia."""
+
+    def test_greeting_without_technical_question(self):
+        r = fixpro_app.ai_service.analyze_message("Bonjour", collected={})
+        self.assertIn("Bonjour", r["response"])
+        self.assertIsNone(r["category"])
+        self.assertFalse(r["ready"])
+
+    def test_small_talk_does_not_force_technician(self):
+        r = fixpro_app.ai_service.analyze_message("Ca va ?", collected={})
+        self.assertIn("va", r["response"].lower())
+        self.assertIsNone(r["category"])
+        self.assertFalse(r["ready"])
+
+    def test_personal_question_returns_identity(self):
+        r = fixpro_app.ai_service.analyze_message("Tu es mariee ?", collected={})
+        self.assertIn("Lia", r["response"])
+        self.assertIn("FixPro", r["response"])
+        self.assertFalse(r["ready"])
+
+    def test_emotion_recognition(self):
+        r = fixpro_app.ai_service.analyze_message("Je suis vraiment stresse", collected={})
+        self.assertIn("desole", r["response"].lower())
+
+    def test_technical_problem_starts_collection(self):
+        r = fixpro_app.ai_service.analyze_message("Ma climatisation ne marche plus", collected={})
+        self.assertEqual(r["category"], "climatisation")
+        self.assertIn("climatisation", r["response"].lower())
+        self.assertFalse(r["ready"])
+
+    def test_domain_preserved_across_messages(self):
+        c = {"category": "plomberie", "mode": "fixpro"}
+        r = fixpro_app.ai_service.analyze_message("Depuis hier", collected=c)
+        self.assertIn("plomberie", r["response"].lower())
+
+    def test_ready_when_all_info_collected(self):
+        c = {
+            "category": "electricite",
+            "location": "Kaloum",
+            "urgency": "urgent",
+            "availability": "aujourd'hui",
+            "mode": "fixpro",
+        }
+        r = fixpro_app.ai_service.analyze_message("Merci", collected=c)
+        self.assertTrue(r["ready"])
+
+    def test_general_question_answered_then_offers_fixpro(self):
+        r = fixpro_app.ai_service.analyze_message("C'est quoi Internet ?", collected={})
+        self.assertIn("Internet", r["response"])
+        self.assertTrue("FixPro" in r["response"] or "technicien" in r["response"].lower())
+
+    def test_greeting_in_english(self):
+        r = fixpro_app.ai_service.analyze_message("Hello", collected={})
+        self.assertIn("FixPro", r["response"])
+
+
 if __name__ == "__main__":
     unittest.main()
