@@ -88,7 +88,7 @@ _INTENT_KEYWORDS = {
     "request_technician": ["technicien", "artisan", "intervention", "besoin d un", "besoin d une", "reparer", "repare", "depanner", "urgence", "demande"],
     "price_question": ["prix", "tarif", "combien", "coute", "devis", "estimation", "montant"],
     "status_question": ["statut", "etat", "ou en est", "mission", "intervention", "numero", "reference", "demande"],
-    "confirmation": ["ok", "d'accord", "dac", "entendu", "bien recu", "parfait", "ca marche"],
+    "confirmation": ["ok", "d'accord", "dac", "entendu", "bien recu", "parfait", "ca marche", "oui", "yes", "c'est bon", "c est bon", "confirme", "valide"],
     "out_of_scope": [],
 }
 
@@ -476,6 +476,12 @@ def _update_collected(collected, content):
     lang = _detect_language(content)
     info["language"] = lang
 
+    old_category = info.get("category")
+    old_location = info.get("location")
+    old_urgency = info.get("urgency")
+    old_availability = info.get("availability")
+    old_problem = info.get("problem_detail")
+
     dom = _detect_domain(content)
     if dom:
         info["category"] = dom
@@ -492,6 +498,15 @@ def _update_collected(collected, content):
     av = _extract_availability(content)
     if av:
         info["availability"] = av
+
+    # Si une information change pendant une demande de confirmation,
+    # on revient a l'etape de resume pour reconfirmer.
+    if info.get("needs_confirmation"):
+        if (info.get("category") != old_category or
+            info.get("location") != old_location or
+            info.get("urgency") != old_urgency or
+            info.get("availability") != old_availability):
+            info["needs_confirmation"] = False
 
     intent, emotion = _detect_intent(content, info.get("history"))
     info["last_intent"] = intent
@@ -515,6 +530,9 @@ def _update_collected(collected, content):
         info["problem_detail"] = prob
     elif not info.get("problem_detail") and len(prob) > 5 and not _is_greeting(prob) and not _contains_any(prob, _INTENT_KEYWORDS["personal_ai"] + _INTENT_KEYWORDS["small_talk"] + _INTENT_KEYWORDS["farewell"]):
         info["problem_detail"] = prob
+
+    if info.get("needs_confirmation") and info.get("problem_detail") != old_problem:
+        info["needs_confirmation"] = False
 
     return info
 
@@ -563,15 +581,40 @@ def _build_technical_response(info, last_message, lang="fr"):
         return f"Parfait{name_part}.\n\nQuand seriez-vous disponible pour recevoir le professionnel ? Aujourd'hui, demain ou plus tard ?"
 
     detail = info.get("problem_detail") or "votre demande"
+    cat = info.get("category", "")
+    loc = info.get("location", "")
+    urg = info.get("urgency", "")
+    av = info.get("availability", "")
+
+    if not info.get("needs_confirmation"):
+        info["needs_confirmation"] = True
+        if lang == "en":
+            return (f"Thank you for all the details{name_part}.\n\n"
+                    f"Summary of your request:\n"
+                    f"Problem: {detail}\n"
+                    f"Trade: {cat}\n"
+                    f"Location: {loc}\n"
+                    f"Urgency: {urg}\n"
+                    f"Availability: {av}\n\n"
+                    "Is this correct? (Yes / No)")
+        return (f"Merci pour toutes ces informations{name_part}.\n\n"
+                f"Resume de votre demande :\n"
+                f"Probleme : {detail}\n"
+                f"Metier : {cat}\n"
+                f"Lieu : {loc}\n"
+                f"Urgence : {urg}\n"
+                f"Disponibilite : {av}\n\n"
+                "Est-ce correct ? (Oui / Non)")
+
+    if info.get("last_intent") == "confirmation":
+        if lang == "en":
+            return f"Perfect{name_part}. I am creating your FixPro request now."
+        return f"Parfait{name_part}. Je cree votre demande FixPro maintenant."
+
+    info["needs_confirmation"] = False
     if lang == "en":
-        return (f"Thank you for all the details{name_part}.\n\n"
-                f"I understand: {detail}.\n"
-                f"I am now looking for the best {info['category']} professional available near {info['location']}. "
-                "I'll get back to you shortly.")
-    return (f"Merci pour toutes ces informations{name_part}.\n\n"
-            f"J'ai bien compris : {detail}.\n"
-            f"Je recherche maintenant le meilleur professionnel en {info['category']} disponible pres de {info['location']}. "
-            "Je reviens vers vous dans quelques instants.")
+        return f"No problem{name_part}. What would you like to change?"
+    return f"Pas de souci{name_part}. Que souhaitez-vous modifier ?"
 
 
 def _build_response(info, last_message):
@@ -579,6 +622,10 @@ def _build_response(info, last_message):
     intent = info.get("last_intent")
     emotion = info.get("last_emotion")
     mode = info.get("mode", "chat")
+
+    # Si une demande technique est en attente de confirmation, on reste dans le flux technique.
+    if mode == "fixpro" and info.get("needs_confirmation") and not _has_missing(info):
+        return _build_technical_response(info, last_message, lang)
 
     # Si on est en mode technique et le dernier message est une vraie demande technique,
     # on garde le flux technique sauf si c'est une emotion marquante sans technique.
@@ -627,7 +674,11 @@ def analyze_message(content, collected=None):
     response = _build_response(collected, content)
 
     missing = _has_missing(collected)
-    ready = (collected.get("mode") == "fixpro" and all(k not in missing for k in ["category", "location", "urgency", "availability"]))
+    complete = (collected.get("mode") == "fixpro" and all(k not in missing for k in ["category", "location", "urgency", "availability"]))
+    ready = False
+    if complete and collected.get("needs_confirmation") and collected.get("last_intent") == "confirmation":
+        ready = True
+        collected["needs_confirmation"] = False
 
     return {
         "response": response,

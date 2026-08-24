@@ -904,8 +904,9 @@ class LiaConversationTests(FixProTestCase):
             "urgency": "urgent",
             "availability": "aujourd'hui",
             "mode": "fixpro",
+            "needs_confirmation": True,
         }
-        r = fixpro_app.ai_service.analyze_message("Merci", collected=c)
+        r = fixpro_app.ai_service.analyze_message("Oui", collected=c)
         self.assertTrue(r["ready"])
 
     def test_general_question_answered_then_offers_fixpro(self):
@@ -916,6 +917,63 @@ class LiaConversationTests(FixProTestCase):
     def test_greeting_in_english(self):
         r = fixpro_app.ai_service.analyze_message("Hello", collected={})
         self.assertIn("FixPro", r["response"])
+
+
+class InterventionTests(FixProTestCase):
+    """Creation et suivi des demandes d'intervention."""
+
+    def _create_client_and_artisan(self):
+        self.register_client(phone="+224620000000")
+        self.client.get("/logout")
+        self.register_artisan("artisan@example.com", phone="+224621111111")
+
+    def test_intervention_reference_unique(self):
+        self._create_client_and_artisan()
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            ref1 = fixpro_app._generate_fixpro_reference(conn)
+            req1 = fixpro_app._insert_id(conn,
+                "INSERT INTO requests (client_id, artisan_id, reference, title, description, category, address, status, urgency, quote_amount, budget, latitude, longitude, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, 'Nouvelle demande', ?, 0, 0, ?, ?, ?, ?)",
+                (1, 1, ref1, "Titre", "Desc", "plomberie", "Kaloum", "normal", 0.0, 0.0, "2026-01-01", "2026-01-01"))
+            ref2 = fixpro_app._generate_fixpro_reference(conn)
+            req2 = fixpro_app._insert_id(conn,
+                "INSERT INTO requests (client_id, artisan_id, reference, title, description, category, address, status, urgency, quote_amount, budget, latitude, longitude, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, 'Nouvelle demande', ?, 0, 0, ?, ?, ?, ?)",
+                (1, 1, ref2, "Titre 2", "Desc 2", "electricite", "Dixinn", "urgent", 0.0, 0.0, "2026-01-01", "2026-01-01"))
+            conn.commit()
+            self.assertNotEqual(ref1, ref2)
+            self.assertNotEqual(req1, req2)
+            self.assertRegex(ref1, r"^FP-\d{4}-\d{6}$")
+            self.assertRegex(ref2, r"^FP-\d{4}-\d{6}$")
+        finally:
+            conn.close()
+
+    def test_lia_asks_confirmation_before_intervention(self):
+        collected = {
+            "category": "climatisation",
+            "location": "Wanindara",
+            "urgency": "urgent",
+            "availability": "aujourd'hui",
+            "mode": "fixpro",
+            "problem_detail": "Ma clim ne refroidit plus",
+        }
+        r = fixpro_app.ai_service.analyze_message("", collected=collected)
+        self.assertFalse(r["ready"])
+        self.assertIn("Resume", r["response"])
+        self.assertIn("Est-ce correct", r["response"])
+
+    def test_lia_creates_after_client_confirms(self):
+        collected = {
+            "category": "climatisation",
+            "location": "Wanindara",
+            "urgency": "urgent",
+            "availability": "aujourd'hui",
+            "mode": "fixpro",
+            "needs_confirmation": True,
+            "problem_detail": "Ma clim ne refroidit plus",
+        }
+        r = fixpro_app.ai_service.analyze_message("Oui", collected=collected)
+        self.assertTrue(r["ready"])
+        self.assertIn("cree", r["response"].lower())
 
 
 if __name__ == "__main__":
