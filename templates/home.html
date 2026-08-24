@@ -59,48 +59,41 @@
 </header>
 
 {% set pro_labels = {
+  'Plombier': 'Plombier',
   'Plomberie': 'Plombier',
+  'Électricien': 'Électricien',
+  'Electricien': 'Électricien',
   'Electricite': 'Électricien',
   'Frigoriste': 'Frigoriste',
+  'Menuisier': 'Menuisier',
   'Menuiserie': 'Menuisier',
+  'Peintre': 'Peintre',
   'Peinture': 'Peintre',
+  'Maçon': 'Maçon',
   'Maçonnerie': 'Maçon'
+} %}
+{% set cat_meta = {
+  'Plomberie': {'icon': 'icon-droplet.svg', 'class': 'plumber', 'desc': 'Tous vos travaux de plomberie'},
+  'Électricité': {'icon': 'icon-zap.svg', 'class': 'electrician', 'desc': 'Installations et dépannages'},
+  'Frigoriste': {'icon': 'icon-snowflake.svg', 'class': 'frigo', 'desc': 'Climatisation et froid'},
+  'Menuiserie': {'icon': 'icon-wrench.svg', 'class': 'carpenter', 'desc': 'Portes, fenêtres, mobilier'},
+  'Peinture': {'icon': 'icon-paint-roller.svg', 'class': 'painter', 'desc': 'Peinture intérieure et extérieure'},
+  'Maçonnerie': {'icon': 'icon-washing-machine.svg', 'class': 'mason', 'desc': 'Travaux de bâtiment'}
 } %}
 
 <section class="f-container" style="padding-top: 24px;">
   <div class="f-search-card" id="searchCard">
     <h2>De quoi avez-vous besoin ?</h2>
     <div class="f-cats">
-      <a href="{{ url_for('artisans_page', category='Plomberie') }}" class="f-cat f-cat-plumber" data-cat="Plomberie">
-        <div class="f-cat-icon"><img src="{{ url_for('static', filename='img/icon-droplet.svg') }}" width="28" height="28" alt="" /></div>
-        <h3>Plombier</h3>
-        <p>Tous vos travaux de plomberie</p>
+      {% for p in popular[:5] %}
+      {% set meta = cat_meta.get(p.label, {'icon':'icon-wrench.svg','class':'','desc':''}) %}
+      <a href="{{ url_for('artisans_page', category=p.category) }}" class="f-cat f-cat-{{ meta.class }}" data-cat="{{ p.category }}">
+        <div class="f-cat-icon"><img src="{{ url_for('static', filename='img/' ~ meta.icon) }}" width="28" height="28" alt="" /></div>
+        <h3>{{ pro_labels.get(p.category, p.category) }}</h3>
+        <p>{{ meta.desc }}</p>
         <div class="f-cat-bar"></div>
       </a>
-      <a href="{{ url_for('artisans_page', category='Electricite') }}" class="f-cat f-cat-electrician" data-cat="Electricite">
-        <div class="f-cat-icon"><img src="{{ url_for('static', filename='img/icon-zap.svg') }}" width="28" height="28" alt="" /></div>
-        <h3>Électricien</h3>
-        <p>Installations et dépannages</p>
-        <div class="f-cat-bar"></div>
-      </a>
-      <a href="{{ url_for('artisans_page', category='Frigoriste') }}" class="f-cat f-cat-frigo" data-cat="Frigoriste">
-        <div class="f-cat-icon"><img src="{{ url_for('static', filename='img/icon-snowflake.svg') }}" width="28" height="28" alt="" /></div>
-        <h3>Frigoriste</h3>
-        <p>Climatisation et froid</p>
-        <div class="f-cat-bar"></div>
-      </a>
-      <a href="{{ url_for('artisans_page', category='Menuiserie') }}" class="f-cat f-cat-carpenter" data-cat="Menuiserie">
-        <div class="f-cat-icon"><img src="{{ url_for('static', filename='img/icon-wrench.svg') }}" width="28" height="28" alt="" /></div>
-        <h3>Menuisier</h3>
-        <p>Portes, fenêtres, mobilier</p>
-        <div class="f-cat-bar"></div>
-      </a>
-      <a href="{{ url_for('artisans_page', category='Peinture') }}" class="f-cat f-cat-painter" data-cat="Peinture">
-        <div class="f-cat-icon"><img src="{{ url_for('static', filename='img/icon-paint-roller.svg') }}" width="28" height="28" alt="" /></div>
-        <h3>Peintre</h3>
-        <p>Peinture intérieure et extérieure</p>
-        <div class="f-cat-bar"></div>
-      </a>
+      {% endfor %}
     </div>
 
     <div class="f-loc">
@@ -186,24 +179,16 @@
     <h2>Catégories populaires</h2>
     <a href="{{ url_for('artisans_page') }}" class="f-link">Voir tout <img src="{{ url_for('static', filename='img/icon-chevron-right.svg') }}" width="14" height="14" alt="" /></a>
   </div>
-  {% set pop_cats = [
-    ('Plomberie', 'Plomberie', 'icon-droplet.svg'),
-    ('Electricite', 'Électricité', 'icon-zap.svg'),
-    ('Frigoriste', 'Frigoriste', 'icon-snowflake.svg'),
-    ('Menuiserie', 'Menuiserie', 'icon-wrench.svg'),
-    ('Peinture', 'Peinture', 'icon-paint-roller.svg'),
-    ('Maçonnerie', 'Maçonnerie', 'icon-washing-machine.svg')
-  ] %}
   <div class="f-pop-grid">
-    {% for key, label, icon in pop_cats %}
-    {% set n = category_counts.get(key, 0) %}
-    <a href="{{ url_for('artisans_page', category=key) }}" class="f-pop-item">
+    {% for p in popular %}
+    {% set meta = cat_meta.get(p.label, {'icon':'icon-wrench.svg','class':''}) %}
+    <a href="{{ url_for('artisans_page', category=p.category) }}" class="f-pop-item">
       <div class="f-pop-icon">
-        <img src="{{ url_for('static', filename='img/' ~ icon) }}" width="22" height="22" alt="" />
+        <img src="{{ url_for('static', filename='img/' ~ meta.icon) }}" width="22" height="22" alt="" />
       </div>
       <div class="f-pop-text">
-        <h4>{{ label }}</h4>
-        <p>{{ n }} pro{{ 's' if n > 1 else '' }}</p>
+        <h4>{{ p.label }}</h4>
+        <p>{{ p.count }} pro{{ 's' if p.count > 1 else '' }}</p>
       </div>
     </a>
     {% endfor %}

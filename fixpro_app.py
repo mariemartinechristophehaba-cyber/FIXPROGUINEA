@@ -586,12 +586,26 @@ def index():
         for row in conn.execute(
             "SELECT profession, COUNT(*) AS n FROM users WHERE role = 'artisan' AND is_verified = 1 AND is_active = 1 GROUP BY profession").fetchall():
             counts[row["profession"]] = row["n"]
+        canonical = [
+            ("Plomberie", ["Plombier", "Plomberie"]),
+            ("Électricité", ["Électricien", "Electricien", "Electricite"]),
+            ("Frigoriste", ["Frigoriste"]),
+            ("Menuiserie", ["Menuisier", "Menuiserie"]),
+            ("Peinture", ["Peintre", "Peinture"]),
+            ("Maçonnerie", ["Maçon", "Maçonnerie"]),
+        ]
+        popular = []
+        for label, keys in canonical:
+            n = sum(counts.get(k, 0) for k in keys)
+            href_key = next((k for k in keys if counts.get(k, 0)), keys[0])
+            popular.append({"label": label, "count": n, "category": href_key})
     finally:
         conn.close()
     return render_template("index.html", artisans=artisans, unread_count=unread_count,
                            loc_permission=session.get("loc_permission", "prompt"),
                            client_zone=session.get("client_zone"),
-                           category_counts=counts)
+                           category_counts=counts,
+                           popular=popular)
 
 
 @app.route("/api/location", methods=["POST"])
@@ -654,12 +668,26 @@ def home():
         for row in conn.execute(
             "SELECT profession, COUNT(*) AS n FROM users WHERE role = 'artisan' AND is_verified = 1 AND is_active = 1 GROUP BY profession").fetchall():
             counts[row["profession"]] = row["n"]
+        canonical = [
+            ("Plomberie", ["Plombier", "Plomberie"]),
+            ("Électricité", ["Électricien", "Electricien", "Electricite"]),
+            ("Frigoriste", ["Frigoriste"]),
+            ("Menuiserie", ["Menuisier", "Menuiserie"]),
+            ("Peinture", ["Peintre", "Peinture"]),
+            ("Maçonnerie", ["Maçon", "Maçonnerie"]),
+        ]
+        popular = []
+        for label, keys in canonical:
+            n = sum(counts.get(k, 0) for k in keys)
+            href_key = next((k for k in keys if counts.get(k, 0)), keys[0])
+            popular.append({"label": label, "count": n, "category": href_key})
     finally:
         conn.close()
     return render_template("home.html", user=user, artisans=artisans, unread_count=unread_count,
                            loc_permission=session.get("loc_permission", "prompt"),
                            client_zone=session.get("client_zone"),
-                           category_counts=counts)
+                           category_counts=counts,
+                           popular=popular)
 
 
 @app.route("/categories")
