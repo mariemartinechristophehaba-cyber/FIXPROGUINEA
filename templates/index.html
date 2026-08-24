@@ -78,19 +78,19 @@
   <div class="f-search-card" id="searchCard">
     <h2>De quoi avez-vous besoin ?</h2>
     <div class="f-cats">
-      <a href="{{ url_for('artisans_page', q='plomberie') }}" class="f-cat f-cat-plumber" data-cat="plomberie">
+      <a href="{{ url_for('artisans_page', category='Plombier') }}" class="f-cat f-cat-plumber" data-cat="Plombier">
         <div class="f-cat-icon"><img src="{{ url_for('static', filename='img/icon-droplet.svg') }}" width="28" height="28" alt="" /></div>
         <h3>Plombier</h3>
         <p>Tous vos travaux de plomberie</p>
         <div class="f-cat-bar"></div>
       </a>
-      <a href="{{ url_for('artisans_page', q='electricite') }}" class="f-cat f-cat-electrician" data-cat="electricite">
+      <a href="{{ url_for('artisans_page', category='Électricien') }}" class="f-cat f-cat-electrician" data-cat="Électricien">
         <div class="f-cat-icon"><img src="{{ url_for('static', filename='img/icon-zap.svg') }}" width="28" height="28" alt="" /></div>
         <h3>Électricien</h3>
         <p>Installations et dépannages</p>
         <div class="f-cat-bar"></div>
       </a>
-      <a href="{{ url_for('artisans_page', q='refrigeration') }}" class="f-cat f-cat-frigo" data-cat="refrigeration">
+      <a href="{{ url_for('artisans_page', category='Frigoriste') }}" class="f-cat f-cat-frigo" data-cat="Frigoriste">
         <div class="f-cat-icon"><img src="{{ url_for('static', filename='img/icon-snowflake.svg') }}" width="28" height="28" alt="" /></div>
         <h3>Frigoriste</h3>
         <p>Climatisation et froid</p>
@@ -295,9 +295,12 @@
       cards.forEach(x => x.classList.remove('active'));
       c.classList.add('active');
       selectedCat = c.dataset.cat;
-      const href = c.getAttribute('href');
+      let href = c.getAttribute('href');
       const loc = encodeURIComponent(locInput.value || '');
-      searchBtn.href = loc ? `${href}&location=${loc}` : href;
+      if (loc) {
+        href += (href.includes('?') ? '&' : '?') + `location=${loc}`;
+      }
+      window.location.href = href;
     });
   });
 

@@ -151,8 +151,13 @@
 <section class="r-hero">
   <div class="r-hero-inner">
     <div class="r-hero-text">
-      <h1>Professionnels <span>autour de vous</span></h1>
-      <p>Nous avons trouvé des professionnels disponibles près de votre position.</p>
+      {% if category_filter %}
+        <h1>{{ category_filter }}s <span>disponibles</span></h1>
+        <p>Techniciens {{ category_filter }}s près de votre position.</p>
+      {% else %}
+        <h1>Professionnels <span>autour de vous</span></h1>
+        <p>Nous avons trouvé des professionnels disponibles près de votre position.</p>
+      {% endif %}
     </div>
     <div class="r-hero-avatar">
       <div class="r-hero-city"></div>
