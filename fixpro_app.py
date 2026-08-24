@@ -2635,10 +2635,10 @@ def artisans_page():
     if request.args.get("lat") and request.args.get("lon"):
         client_lat = _to_float(request.args.get("lat"))
         client_lon = _to_float(request.args.get("lon"))
-    if client_lat or client_lon:
+    if client_lat and client_lon:
         artisans = sorted(
             [_enrich_artisan(a, client_lat, client_lon) for a in artisans],
-            key=lambda a: a.get("distance", 999))
+            key=lambda a: a.get("distance") or 999)
 
     return render_template("artisans.html", artisans=artisans, user=user,
                            active_requests=active_requests, categories=categories,
