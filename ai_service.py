@@ -50,6 +50,9 @@ _INTENT_KEYWORDS = {
     "emotion": ["triste", "stress", "enerve", "enervee", "heureux", "content", "inquiet", "inquiete", "frustr", "frustre", "frustree", "joyeux", "malheureux"],
     "technical_problem": ["probleme", "panne", "fuite", "ne fonctionne", "ne marche", "cassé", "cassée", "bruit", "froid", "chaud", "clim", "evier", "robinet", "prise"],
     "request_technician": ["technicien", "artisan", "intervention", "besoin d un", "besoin d une", "reparer", "repare", "depanner", "urgence", "demande"],
+    "price_question": ["prix", "tarif", "combien", "coute", "devis", "estimation", "montant"],
+    "status_question": ["statut", "etat", "ou en est", "mission", "intervention", "numero", "reference", "demande"],
+    "confirmation": ["ok", "d'accord", "dac", "entendu", "bien recu", "parfait", "ca marche"],
     "out_of_scope": [],
 }
 
@@ -379,8 +382,8 @@ def _general_response(content, lang="fr"):
             return "Air conditioning is a system that cools indoor air. \U0001F60A If yours isn't working, I can help you find a technician."
         return "La climatisation est un systeme qui rafraichit l'air interieur. \U0001F60A Si la votre ne marche plus, je peux vous aider a trouver un technicien."
     if lang == "en":
-        return "Good question \U0001F60A I can answer general things, but my real strength is helping you find a verified technician with FixPro."
-    return "Bonne question \U0001F60A Je peux repondre a des choses generales, mais mon vrai travail est de vous aider avec FixPro."
+        return "Good question \U0001F60A I can answer general things, and I'm here if you need help with FixPro."
+    return "Bonne question \U0001F60A Je peux repondre a des choses generales, et je suis la si vous avez besoin d'aide avec FixPro."
 
 
 def _fixpro_question_response(content, lang="fr"):
@@ -404,8 +407,26 @@ def _fixpro_question_response(content, lang="fr"):
 
 def _out_of_scope_response(lang="fr"):
     if lang == "en":
-        return "I don't have an answer for everything, but I can help you with FixPro \U0001F60A Do you need a technician?"
-    return "Je ne peux pas repondre a tout, mais je peux vous aider avec FixPro \U0001F60A Vous avez besoin d'un technicien ?"
+        return "I don't have an answer for everything, but I'm here if you need help with FixPro \U0001F60A"
+    return "Je ne peux pas repondre a tout, mais je suis la si vous avez besoin d'aide avec FixPro \U0001F60A"
+
+
+def _confirmation_response(lang="fr"):
+    if lang == "en":
+        return "Perfect \U0001F44C Let me know if you need anything else."
+    return "Parfait \U0001F44C N'hesitez pas si vous avez besoin d'autre chose."
+
+
+def _price_question_response(lang="fr"):
+    if lang == "en":
+        return "The final price depends on the technician's diagnosis and estimate. FixPro shows you the estimate before you confirm. \U0001F60A"
+    return "Le prix final depend du diagnostic et du devis du technicien. FixPro vous montre l'estimation avant de confirmer. \U0001F60A"
+
+
+def _status_question_response(lang="fr"):
+    if lang == "en":
+        return "I don't have the live status of your request at the moment. I'll let you know as soon as I have an update."
+    return "Je n'ai pas encore le suivi en direct de votre demande. Je vous tiens informe des que j'ai une mise a jour."
 
 
 def _update_collected(collected, content):
@@ -526,7 +547,7 @@ def _build_response(info, last_message):
     # Si on est en mode technique et le dernier message est une vraie demande technique,
     # on garde le flux technique sauf si c'est une emotion marquante sans technique.
     if mode == "fixpro":
-        if intent not in ("greeting", "farewell", "thanks", "apology", "small_talk", "personal_ai", "general_question"):
+        if intent not in ("greeting", "farewell", "thanks", "apology", "small_talk", "personal_ai", "general_question", "price_question", "status_question", "confirmation"):
             if emotion and intent in ("emotion", "out_of_scope"):
                 pass
             else:
@@ -551,6 +572,12 @@ def _build_response(info, last_message):
         return _fixpro_question_response(last_message or "", lang)
     if intent == "general_question":
         return _general_response(last_message or "", lang)
+    if intent == "price_question":
+        return _price_question_response(lang)
+    if intent == "status_question":
+        return _status_question_response(lang)
+    if intent == "confirmation":
+        return _confirmation_response(lang)
 
     # Par defaut, si un domaine est connu, on reprend le flux technique
     if info.get("category"):

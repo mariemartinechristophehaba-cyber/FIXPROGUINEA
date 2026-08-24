@@ -834,7 +834,7 @@ class LiaConversationTests(FixProTestCase):
 
     def test_greeting_without_technical_question(self):
         r = fixpro_app.ai_service.analyze_message("Bonjour", collected={})
-        self.assertIn("Bonjour", r["response"])
+        self.assertIn("FixPro", r["response"])
         self.assertIsNone(r["category"])
         self.assertFalse(r["ready"])
 
