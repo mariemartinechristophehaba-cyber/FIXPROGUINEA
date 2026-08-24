@@ -485,6 +485,9 @@ class MessagingTests(FixProTestCase):
                 (conv["client_id"],)).fetchone()
             self.assertEqual(user["role"], "client")
             self.assertEqual(user["full_name"], "Visiteur")
+            # Verifie que le bouton retour pointe vers le profil du technicien.
+            html = r.data.decode('utf-8', 'replace')
+            self.assertIn(f'/technicien/{artisan["id"]}', html)
         finally:
             conn.close()
 
