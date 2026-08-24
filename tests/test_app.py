@@ -668,6 +668,29 @@ class AdminPanelTests(FixProTestCase):
         self.assertIn("FixPro".encode(), response.data)
         self.assertIn("Admin".encode(), response.data)
 
+    def test_admin_dashboard_shows_real_counts(self):
+        self.register_artisan("artisan@example.com", phone="+224621111111")
+        self.login_admin()
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute(
+                "UPDATE users SET availability_status = ? WHERE role = ?",
+                ("en_ligne", "artisan"))
+            ref = fixpro_app._generate_fixpro_reference(conn)
+            conn.execute(
+                "INSERT INTO requests (client_id, artisan_id, reference, title, description, category, address, status, urgency, quote_amount, budget, latitude, longitude, created_at, updated_at)"
+                " VALUES (1, 1, ?, 'Titre', 'Desc', 'plomberie', 'Kaloum', 'REQUESTED', 'normal', 0, 0, 0, 0, datetime('now'), datetime('now'))",
+                (ref,))
+            conn.commit()
+        finally:
+            conn.close()
+
+        response = self.client.get("/admin/dashboard")
+        self.assertEqual(response.status_code, 200)
+        html = response.data.decode()
+        self.assertIn("Nouvelle demande", html)
+        self.assertIn("Disponible", html)
+
     def test_admin_can_suspend_and_restore_artisan(self):
         self.register_artisan("artisan@example.com", phone="+224621111111")
         self.login_admin()
@@ -933,11 +956,11 @@ class InterventionTests(FixProTestCase):
         try:
             ref1 = fixpro_app._generate_fixpro_reference(conn)
             req1 = fixpro_app._insert_id(conn,
-                "INSERT INTO requests (client_id, artisan_id, reference, title, description, category, address, status, urgency, quote_amount, budget, latitude, longitude, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, 'Nouvelle demande', ?, 0, 0, ?, ?, ?, ?)",
+                "INSERT INTO requests (client_id, artisan_id, reference, title, description, category, address, status, urgency, quote_amount, budget, latitude, longitude, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, 'REQUESTED', ?, 0, 0, ?, ?, ?, ?)",
                 (1, 1, ref1, "Titre", "Desc", "plomberie", "Kaloum", "normal", 0.0, 0.0, "2026-01-01", "2026-01-01"))
             ref2 = fixpro_app._generate_fixpro_reference(conn)
             req2 = fixpro_app._insert_id(conn,
-                "INSERT INTO requests (client_id, artisan_id, reference, title, description, category, address, status, urgency, quote_amount, budget, latitude, longitude, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, 'Nouvelle demande', ?, 0, 0, ?, ?, ?, ?)",
+                "INSERT INTO requests (client_id, artisan_id, reference, title, description, category, address, status, urgency, quote_amount, budget, latitude, longitude, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, 'REQUESTED', ?, 0, 0, ?, ?, ?, ?)",
                 (1, 1, ref2, "Titre 2", "Desc 2", "electricite", "Dixinn", "urgent", 0.0, 0.0, "2026-01-01", "2026-01-01"))
             conn.commit()
             self.assertNotEqual(ref1, ref2)

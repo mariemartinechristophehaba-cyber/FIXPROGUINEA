@@ -37,7 +37,7 @@ import storage
 from config import get_config, setup_logging
 
 config = get_config()
-ADMIN_DEMO = True  # Mettre False pour afficher les vraies donnees du dashboard
+ADMIN_DEMO = False
 app = Flask(__name__, static_folder="api/static", static_url_path="/static")
 app.config.from_object(config)
 
@@ -491,9 +491,9 @@ def inject_layout_context():
                     "SELECT COUNT(*) AS n FROM users WHERE role = 'artisan' AND is_verified = 0").fetchone()["n"]
                 stats["open_requests"] = conn.execute(
                     "SELECT COUNT(*) AS n FROM requests"
-                    " WHERE status NOT IN ('completed', 'cancelled')").fetchone()["n"]
+                    " WHERE LOWER(status) NOT IN ('completed', 'cancelled')").fetchone()["n"]
                 stats["pending_requests"] = conn.execute(
-                    "SELECT COUNT(*) AS n FROM requests WHERE status = 'REQUESTED'").fetchone()["n"]
+                    "SELECT COUNT(*) AS n FROM requests WHERE LOWER(status) IN ('requested', 'nouvelle demande', 'pending')").fetchone()["n"]
                 stats["open_tickets"] = conn.execute(
                     "SELECT COUNT(*) AS n FROM admin_tickets WHERE status = 'open'").fetchone()["n"]
                 stats["open_messages"] = conn.execute(
@@ -636,9 +636,20 @@ def home():
             ORDER BY avg_rating DESC, review_count DESC
             LIMIT 5
         """).fetchall()
+        unread_count = 0
+        if user:
+            try:
+                row = conn.execute(
+                    "SELECT COUNT(*) AS n FROM notifications WHERE user_id = ? AND is_read = 0",
+                    (user["id"],)).fetchone()
+                unread_count = row["n"]
+            except Exception:
+                unread_count = 0
     finally:
         conn.close()
-    return render_template("home.html", user=user, artisans=artisans)
+    return render_template("home.html", user=user, artisans=artisans, unread_count=unread_count,
+                           loc_permission=session.get("loc_permission", "prompt"),
+                           client_zone=session.get("client_zone"))
 
 
 @app.route("/categories")
@@ -1294,21 +1305,21 @@ def admin_dashboard():
 
         stats = {
             "pending_requests": conn.execute(
-                "SELECT COUNT(*) AS n FROM requests WHERE status = 'REQUESTED'").fetchone()["n"],
+                "SELECT COUNT(*) AS n FROM requests WHERE LOWER(status) IN ('requested', 'nouvelle demande', 'pending')").fetchone()["n"],
             "pending_requests_delta": conn.execute(
-                "SELECT COUNT(*) AS n FROM requests WHERE status = 'REQUESTED' AND created_at LIKE ?",
+                "SELECT COUNT(*) AS n FROM requests WHERE LOWER(status) IN ('requested', 'nouvelle demande', 'pending') AND created_at LIKE ?",
                 (today + "%",)).fetchone()["n"],
             "available_artisans": conn.execute(
-                "SELECT COUNT(*) AS n FROM users WHERE role = 'artisan' AND is_active = 1 AND account_status = 'ACTIVE' AND availability_status = 'disponible'").fetchone()["n"],
+                "SELECT COUNT(*) AS n FROM users WHERE role = 'artisan' AND is_active = 1 AND account_status = 'ACTIVE' AND availability_status = 'en_ligne'").fetchone()["n"],
             "interventions_in_progress": conn.execute(
-                "SELECT COUNT(*) AS n FROM requests WHERE status IN ('IN_PROGRESS', 'ON_THE_WAY', 'ASSIGNED')").fetchone()["n"],
+                "SELECT COUNT(*) AS n FROM requests WHERE LOWER(status) IN ('in_progress', 'on_the_way', 'assigned')").fetchone()["n"],
             "interventions_delta": conn.execute(
-                "SELECT COUNT(*) AS n FROM requests WHERE status IN ('IN_PROGRESS', 'ON_THE_WAY') AND created_at LIKE ?",
+                "SELECT COUNT(*) AS n FROM requests WHERE LOWER(status) IN ('in_progress', 'on_the_way') AND created_at LIKE ?",
                 (today + "%",)).fetchone()["n"],
             "today_commission": conn.execute(
                 "SELECT COALESCE(SUM(commission_amount), 0) AS s FROM payments WHERE status = 'completed' AND created_at LIKE ?",
                 (today + "%",)).fetchone()["s"],
-            "today_commission_delta": 18,
+            "today_commission_delta": 0,
         }
 
         today_paid = float(conn.execute(
@@ -1327,7 +1338,7 @@ def admin_dashboard():
             "SELECT r.*, c.full_name AS client_name, c.phone AS client_phone"
             " FROM requests r"
             " LEFT JOIN users c ON c.id = r.client_id"
-            " WHERE r.status = 'REQUESTED'"
+            " WHERE LOWER(r.status) IN ('requested', 'nouvelle demande', 'pending')"
             " ORDER BY r.created_at DESC LIMIT 5").fetchall()
 
         in_progress = conn.execute(
@@ -1335,14 +1346,14 @@ def admin_dashboard():
             " FROM requests r"
             " LEFT JOIN users c ON c.id = r.client_id"
             " LEFT JOIN users a ON a.id = r.artisan_id"
-            " WHERE r.status IN ('IN_PROGRESS', 'ON_THE_WAY', 'ASSIGNED')"
+            " WHERE LOWER(r.status) IN ('in_progress', 'on_the_way', 'assigned')"
             " ORDER BY r.created_at DESC LIMIT 5").fetchall()
 
         available_artisans = conn.execute(
             "SELECT u.*, AVG(rv.rating) AS avg_rating"
             " FROM users u"
             " LEFT JOIN reviews rv ON rv.artisan_id = u.id"
-            " WHERE u.role = 'artisan' AND u.is_active = 1 AND u.account_status = 'ACTIVE' AND u.availability_status = 'disponible'"
+            " WHERE u.role = 'artisan' AND u.is_active = 1 AND u.account_status = 'ACTIVE' AND u.availability_status = 'en_ligne'"
             " GROUP BY u.id"
             " ORDER BY u.created_at DESC LIMIT 4").fetchall()
 
@@ -1358,6 +1369,8 @@ def admin_dashboard():
             status = (r["status"] or "").upper()
             title_map = {
                 "REQUESTED": "Nouvelle demande",
+                "NOUVELLE DEMANDE": "Nouvelle demande",
+                "PENDING": "Nouvelle demande",
                 "ACCEPTED": "Intervention acceptee",
                 "ASSIGNED": "Intervention assignee",
                 "IN_PROGRESS": "Intervention en cours",
@@ -1368,6 +1381,8 @@ def admin_dashboard():
             }
             meta_map = {
                 "REQUESTED": "Nouvelle demande de " + (r["client_name"] or "—"),
+                "NOUVELLE DEMANDE": "Nouvelle demande de " + (r["client_name"] or "—"),
+                "PENDING": "Nouvelle demande de " + (r["client_name"] or "—"),
                 "ACCEPTED": "Intervention #" + (r["reference"] or str(r["id"])) + " acceptee",
                 "ASSIGNED": "Intervention #" + (r["reference"] or str(r["id"])) + " assignee",
                 "IN_PROGRESS": "Mission #" + (r["reference"] or str(r["id"])) + " en cours",
@@ -1378,6 +1393,8 @@ def admin_dashboard():
             }
             color_map = {
                 "REQUESTED": "#ef4444",
+                "NOUVELLE DEMANDE": "#ef4444",
+                "PENDING": "#ef4444",
                 "ACCEPTED": "#10b981",
                 "ASSIGNED": "#2563eb",
                 "IN_PROGRESS": "#f59e0b",
@@ -1388,6 +1405,8 @@ def admin_dashboard():
             }
             icon_map = {
                 "REQUESTED": "file_plus",
+                "NOUVELLE DEMANDE": "file_plus",
+                "PENDING": "file_plus",
                 "ACCEPTED": "user_check",
                 "ASSIGNED": "user_check",
                 "IN_PROGRESS": "clock",
@@ -4250,7 +4269,7 @@ def _create_intervention_from_chat(conn, conversation_id, client_id, analysis, a
     req_id = _insert_id(
         conn,
         "INSERT INTO requests (client_id, artisan_id, reference, title, description, category, address, status, urgency, quote_amount, budget, latitude, longitude, created_at, updated_at)"
-        " VALUES (?, ?, ?, ?, ?, ?, ?, 'Nouvelle demande', ?, 0, 0, ?, ?, ?, ?)",
+        " VALUES (?, ?, ?, ?, ?, ?, ?, 'REQUESTED', ?, 0, 0, ?, ?, ?, ?)",
         (client_id, artisan_id, ref, title, description, category, address, urgency, lat, lon, now, now))
     conn.execute(
         "INSERT INTO intervention_history (request_id, status, actor, note, created_at)"

@@ -2,125 +2,318 @@
 {% block title %}Accueil - FixPro Guinée{% endblock %}
 {% block header %}{% endblock %}
 {% block footer %}{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/fixpro-v3.css', v='2') }}" />{% endblock %}
+{% block tabbar %}{% endblock %}
+{% block support_fab %}{% endblock %}
+{% block extra_head %}{% endblock %}
 
 {% block content %}
-<div class="f3-app">
-  <header class="f3-header">
-    <button class="f3-icon-btn" id="f3MenuBtn" aria-label="Menu">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-    </button>
-    <a href="{{ url_for('home') }}" class="f3-logo">FixPro<span>+</span><small>Guinée</small></a>
-    <div class="f3-header-actions">
-      <a href="{{ url_for('notifications') }}" class="f3-icon-btn" aria-label="Notifications">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-      </a>
+<input type="hidden" id="locCsrf" value="{{ csrf_token() }}" />
+<div id="locOverlay" class="f-loc-overlay" style="{% if loc_permission != 'prompt' and loc_permission != 'denied' %}display:none;{% endif %}">
+  <div class="f-loc-card">
+    <svg class="f-loc-pin" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#155eef" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+    <h2 id="locTitle">Activer ma localisation</h2>
+    <p id="locDesc">Pour vous proposer les professionnels disponibles près de vous, FixPro a besoin d'accéder à votre position.</p>
+    <button class="f-btn" id="locAllow" type="button">Autoriser ma position</button>
+    <div id="locDenied" style="display:none;">
+      <p>Localisation non autorisée. Pour trouver automatiquement les professionnels disponibles près de vous, autorisez la localisation dans les paramètres de votre appareil.</p>
+      <button class="f-btn f-btn-secondary" id="locRetry" type="button">Réessayer</button>
     </div>
-  </header>
-
-  <section class="f3-hero">
-    <p class="f3-greeting">Bonjour Christopher</p>
-    <h1>Quel service recherchez-vous ?</h1>
-    <form action="{{ url_for('artisans_page') }}" method="get" class="f3-search">
-      <svg class="f3-search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-3.5-3.5"/></svg>
-      <input type="search" name="q" class="f3-search-input" placeholder="Ex: Plombier, Electricien..." />
-    </form>
-  </section>
-
-  <section class="f3-section" style="padding-bottom:10px;">
-    <div class="f3-categories">
-      <a href="{{ url_for('artisans_page', q='electricite') }}" class="f3-cat">
-        <div class="f3-cat-icon" style="background:#FEF3C7;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#B45309" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
-        <span>Électricité</span>
-      </a>
-      <a href="{{ url_for('artisans_page', q='plomberie') }}" class="f3-cat">
-        <div class="f3-cat-icon" style="background:#DBEAFE;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 9l-7 7-7-7"/></svg></div>
-        <span>Plomberie</span>
-      </a>
-      <a href="{{ url_for('artisans_page', q='climatisation') }}" class="f3-cat">
-        <div class="f3-cat-icon" style="background:#E0F2FE;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0369A1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M2 12h20M4.93 4.93l14.14 14.14M19.07 4.93 4.93 19.07"/></svg></div>
-        <span>Climatisation</span>
-      </a>
-      <a href="{{ url_for('artisans_page', q='refrigeration') }}" class="f3-cat">
-        <div class="f3-cat-icon" style="background:#ECFDF5;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#047857" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 6v12M18 6v12"/></svg></div>
-        <span>Réfrig.</span>
-      </a>
-      <a href="{{ url_for('artisans_page', q='menuiserie') }}" class="f3-cat">
-        <div class="f3-cat-icon" style="background:#FFEDD5;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C2410C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 22h20M2 6h20M2 10h20M2 18h20"/><path d="M6 2v8M18 2v8"/></svg></div>
-        <span>Menuiserie</span>
-      </a>
-      <a href="{{ url_for('artisans_page', q='peinture') }}" class="f3-cat">
-        <div class="f3-cat-icon" style="background:#FCE7F3;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#BE185D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 3l-5 5M15 7l-2 2 4 4 2-2M4 20h16"/></svg></div>
-        <span>Peinture</span>
-      </a>
-      <a href="{{ url_for('artisans_page', q='maconnerie') }}" class="f3-cat">
-        <div class="f3-cat-icon" style="background:#F3E8FF;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16M6 18v-8l6-6 6 6v8"/></svg></div>
-        <span>Maçonnerie</span>
-      </a>
-      <a href="{{ url_for('artisans_page') }}" class="f3-cat">
-        <div class="f3-cat-icon" style="background:#F3F4F6;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#374151" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg></div>
-        <span>Voir plus</span>
-      </a>
-    </div>
-  </section>
-
-  <section class="f3-section" style="padding-top:10px; padding-bottom:10px;">
-    <div class="f3-urgency">
-      <div class="f3-urgency-content">
-        <h3>Besoin d'aide rapidement ?</h3>
-        <p>Nos techniciens sont disponibles 24h/7j</p>
-        <a href="tel:+224620000000" class="f3-btn f3-btn-amber" style="margin-top:10px;">Appel d'urgence</a>
-      </div>
-      <img src="{{ url_for('static', filename='img/technician-urgency.jpg') }}" alt="Technicien" class="f3-urgency-img" onerror="this.style.display='none'" />
-    </div>
-  </section>
-
-  <section class="f3-section">
-    <div class="f3-section-title">
-      <h2>Techniciens populaires</h2>
-      <a href="{{ url_for('artisans_page') }}" class="f3-link">Voir tout</a>
-    </div>
-    <div class="f3-technician-list">
-      {% for artisan in artisans %}
-      <a href="{{ url_for('artisan_detail', artisan_id=artisan.id) }}" class="f3-tech-card">
-        <img src="{{ artisan.photo_url or url_for('static', filename='img/default-avatar.jpg') }}" alt="{{ artisan.full_name }}" class="f3-tech-avatar" onerror="this.src='{{ url_for('static', filename='img/default-avatar.jpg') }}'" />
-        <div class="f3-tech-info">
-          <h4 class="f3-tech-name">{{ artisan.full_name }}</h4>
-          <p class="f3-tech-trade">{{ artisan.profession }}</p>
-          <div class="f3-tech-meta">
-            {% if artisan.is_verified %}<span class="f3-badge f3-badge-green">Vérifié</span>{% endif %}
-            <span class="f3-rating">{{ "%.1f"|format(artisan.avg_rating or 0) }}</span>
-            <span>({{ artisan.review_count }} avis)</span>
-          </div>
-        </div>
-      </a>
-      {% else %}
-      <p style="color:var(--f3-slate); font-size:13px;">Aucun technicien disponible pour le moment.</p>
-      {% endfor %}
-    </div>
-  </section>
-
-  <nav class="f3-tabbar">
-    <a href="{{ url_for('home') }}" class="f3-tab active">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
-      <span>Accueil</span>
-    </a>
-    <a href="{{ url_for('artisans_page') }}" class="f3-tab">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-      <span>Rechercher</span>
-    </a>
-    <a href="{{ url_for('requests_list') }}" class="f3-tab">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-      <span>Bookings</span>
-    </a>
-    <a href="{{ url_for('client_messages') }}" class="f3-tab">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 21l1.9-5.1A8.4 8.4 0 0 1 4 11.5a8.5 8.5 0 0 1 8.5-8.5A8.5 8.5 0 0 1 21 11.5z"/></svg>
-      <span>Messages</span>
-    </a>
-    <a href="{{ url_for('profile') }}" class="f3-tab">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
-      <span>Profil</span>
-    </a>
-  </nav>
+  </div>
 </div>
+
+<header class="f-header">
+  <div class="f-container f-header-inner">
+    <button class="f-menu-btn" type="button" aria-label="Menu">
+      <img src="{{ url_for('static', filename='img/icon-menu.svg') }}" width="24" height="24" alt="" />
+    </button>
+    <a href="{{ url_for('home') }}" class="f-logo">
+      <div class="f-logo-mark">
+        <img src="{{ url_for('static', filename='img/icon-wrench.svg') }}" width="22" height="22" alt="" />
+      </div>
+      FixPro
+    </a>
+    <nav class="f-nav-desktop">
+      <a href="{{ url_for('home') }}" class="active">Accueil</a>
+      <a href="{{ url_for('artisans_page') }}">Recherche</a>
+      <a href="{{ url_for('artisans_page') }}">Professionnels</a>
+      <a href="{{ url_for('requests_list') }}">Réservations</a>
+      <a href="{{ url_for('client_messages') }}">Messages</a>
+      <a href="{{ url_for('reviews') }}">Avis</a>
+    </nav>
+    <div class="f-header-right">
+      <div class="f-header-loc">
+        <img src="{{ url_for('static', filename='img/icon-map-pin.svg') }}" width="16" height="16" alt="" />
+        {% if client_zone %}{{ client_zone }}{% elif user and user.city %}{{ user.city }}{% else %}Conakry, Kaloum{% endif %}
+      </div>
+      <a href="{{ url_for('notifications') }}" class="f-notif" aria-label="Notifications">
+        <img src="{{ url_for('static', filename='img/icon-bell.svg') }}" width="22" height="22" alt="" />
+        {% if unread_count %}<span class="f-badge">{{ unread_count }}</span>{% endif %}
+      </a>
+      <a href="{{ url_for('profile') }}" class="f-avatar-link" aria-label="Mon profil">
+        {% if user and user.photo_url %}
+          <img src="{{ user.photo_url }}" class="f-avatar-sm" alt="{{ user.full_name }}" />
+        {% else %}
+          <img src="{{ url_for('static', filename='img/fixpro-avatar.png') }}" class="f-avatar-sm" alt="Profil" />
+        {% endif %}
+      </a>
+    </div>
+  </div>
+</header>
+
+<section class="f-hero">
+  <div class="f-hero-bg"></div>
+  <div class="f-container f-hero-inner">
+    <div class="f-hero-text">
+      <h1>Trouvez rapidement<br><span>le bon professionnel</span><br>pour vos travaux</h1>
+      <p class="f-hero-lead">Des professionnels fiables près de chez vous, prêts à intervenir rapidement.</p>
+      <div class="f-hero-badges">
+        <span><img src="{{ url_for('static', filename='img/icon-shield-check.svg') }}" width="18" height="18" alt="" /> Fiable</span>
+        <span><img src="{{ url_for('static', filename='img/icon-clock.svg') }}" width="18" height="18" alt="" /> Rapide</span>
+        <span><img src="{{ url_for('static', filename='img/icon-wrench.svg') }}" width="18" height="18" alt="" /> Professionnel</span>
+      </div>
+    </div>
+    <div class="f-hero-avatar-wrap">
+      <img src="{{ url_for('static', filename='img/technician-hero.jpg') }}" alt="Professionnel FixPro" class="f-hero-avatar" onerror="this.src='{{ url_for('static', filename='img/fixpro-avatar.png') }}'" />
+    </div>
+  </div>
+</section>
+
+<section class="f-container">
+  <div class="f-search-card" id="searchCard">
+    <h2>De quoi avez-vous besoin ?</h2>
+    <div class="f-cats">
+      <a href="{{ url_for('artisans_page', category='Plombier') }}" class="f-cat f-cat-plumber" data-cat="Plombier">
+        <div class="f-cat-icon"><img src="{{ url_for('static', filename='img/icon-droplet.svg') }}" width="28" height="28" alt="" /></div>
+        <h3>Plombier</h3>
+        <p>Tous vos travaux de plomberie</p>
+        <div class="f-cat-bar"></div>
+      </a>
+      <a href="{{ url_for('artisans_page', category='Électricien') }}" class="f-cat f-cat-electrician" data-cat="Électricien">
+        <div class="f-cat-icon"><img src="{{ url_for('static', filename='img/icon-zap.svg') }}" width="28" height="28" alt="" /></div>
+        <h3>Électricien</h3>
+        <p>Installations et dépannages</p>
+        <div class="f-cat-bar"></div>
+      </a>
+      <a href="{{ url_for('artisans_page', category='Frigoriste') }}" class="f-cat f-cat-frigo" data-cat="Frigoriste">
+        <div class="f-cat-icon"><img src="{{ url_for('static', filename='img/icon-snowflake.svg') }}" width="28" height="28" alt="" /></div>
+        <h3>Frigoriste</h3>
+        <p>Climatisation et froid</p>
+        <div class="f-cat-bar"></div>
+      </a>
+    </div>
+
+    <div class="f-loc">
+      <h3>Où se situe le problème ?</h3>
+      <div class="f-loc-input">
+        <img src="{{ url_for('static', filename='img/icon-map-pin.svg') }}" width="20" height="20" alt="" />
+        <input type="text" name="location" id="locInput" value="{{ client_zone or '' }}" placeholder="Entrez votre localisation" />
+        <button type="button" class="f-loc-target" id="locTarget" aria-label="Ma position">
+          <img src="{{ url_for('static', filename='img/icon-navigation.svg') }}" width="20" height="20" alt="" />
+        </button>
+      </div>
+    </div>
+
+    <a href="{{ url_for('artisans_page') }}" class="f-btn" id="searchBtn">
+      <img src="{{ url_for('static', filename='img/icon-search.svg') }}" width="18" height="18" alt="" />
+      Rechercher un professionnel
+    </a>
+  </div>
+</section>
+
+<section class="f-section f-container">
+  <div class="f-section-header">
+    <h2>Professionnels recommandés</h2>
+    <a href="{{ url_for('artisans_page') }}" class="f-link">Voir tout <img src="{{ url_for('static', filename='img/icon-chevron-right.svg') }}" width="14" height="14" alt="" /></a>
+  </div>
+  <div class="f-pros-grid">
+    {% for a in artisans %}
+    <a href="{{ url_for('artisan_detail', artisan_id=a.id) }}" class="f-pro-card">
+      <div class="f-pro-avatar-wrap">
+        {% if a.photo_url %}
+          <img src="{{ a.photo_url }}" class="f-pro-avatar" alt="{{ a.full_name }}" />
+        {% else %}
+          <img src="{{ url_for('static', filename='img/fixpro-avatar.png') }}" class="f-pro-avatar" alt="{{ a.full_name }}" />
+        {% endif %}
+        <span class="f-pro-online"></span>
+      </div>
+      <div class="f-pro-info">
+        <h4>{{ a.full_name }}</h4>
+        <p class="f-pro-job">{{ a.profession or 'Technicien' }}</p>
+        <div class="f-pro-meta">
+          <span class="f-pro-rating"><img src="{{ url_for('static', filename='img/icon-star.svg') }}" alt="" /> {{ "%.1f" | format(a.avg_rating) }}</span>
+          <span>({{ a.review_count }} avis)</span>
+        </div>
+        <div class="f-pro-meta"><img src="{{ url_for('static', filename='img/icon-map-pin.svg') }}" width="14" height="14" alt="" /> {% if a.distance is defined and a.distance is not none %}{{ "%.1f"|format(a.distance) }}{% else %}{{ "%.1f"|format(1.5 + loop.index0 * 0.4) }}{% endif %} km</div>
+        <span class="f-pro-btn">Voir le profil</span>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="f-section f-container">
+  <div class="f-benefits">
+    <div class="f-benefit">
+      <img src="{{ url_for('static', filename='img/icon-shield-check.svg') }}" alt="" />
+      <h4>Professionnels vérifiés</h4>
+      <p>Tous nos professionnels sont rigoureusement vérifiés</p>
+    </div>
+    <div class="f-benefit">
+      <img src="{{ url_for('static', filename='img/icon-thumbs-up.svg') }}" alt="" />
+      <h4>Avis clients authentiques</h4>
+      <p>Des milliers d'avis pour vous aider à faire le bon choix</p>
+    </div>
+    <div class="f-benefit">
+      <img src="{{ url_for('static', filename='img/icon-clock.svg') }}" alt="" />
+      <h4>Intervention rapide</h4>
+      <p>Des professionnels disponibles près de chez vous</p>
+    </div>
+    <div class="f-benefit">
+      <img src="{{ url_for('static', filename='img/icon-lock.svg') }}" alt="" />
+      <h4>Paiement sécurisé</h4>
+      <p>Payez en toute sécurité après l'intervention</p>
+    </div>
+  </div>
+</section>
+
+<nav class="f-bottom-nav">
+  <a href="{{ url_for('home') }}" class="active">
+    <img src="{{ url_for('static', filename='img/icon-home.svg') }}" width="22" height="22" alt="" />
+    Accueil
+  </a>
+  <a href="{{ url_for('artisans_page') }}">
+    <img src="{{ url_for('static', filename='img/icon-search.svg') }}" width="22" height="22" alt="" />
+    Recherche
+  </a>
+  <a href="{{ url_for('requests_list') }}" class="f-main" aria-label="Réservations">
+    <img src="{{ url_for('static', filename='img/icon-calendar.svg') }}" width="24" height="24" alt="" />
+    <span class="f-main-text">Réso</span>
+  </a>
+  <a href="{{ url_for('client_messages') }}">
+    <img src="{{ url_for('static', filename='img/icon-message-circle.svg') }}" width="22" height="22" alt="" />
+    Messages
+    {% if unread_count %}<span class="f-notif">{{ unread_count }}</span>{% endif %}
+  </a>
+  <a href="{{ url_for('profile') }}">
+    <img src="{{ url_for('static', filename='img/icon-user.svg') }}" width="22" height="22" alt="" />
+    Profil
+  </a>
+</nav>
+
+<style>
+  body { padding-bottom: 80px; }
+  .mobile-nav { display: none !important; }
+  .f-loc-overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(255,255,255,0.96); z-index: 1000;
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  .f-loc-card {
+    max-width: 360px; width: 100%;
+    background: #fff; border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.12);
+    padding: 32px; text-align: center;
+  }
+  .f-loc-pin { margin: 0 auto 16px; display: block; }
+  .f-loc-card h2 { font-size: 1.35rem; margin: 0 0 12px; color: #0f172a; }
+  .f-loc-card p { color: #475569; font-size: 0.95rem; line-height: 1.5; margin: 0 0 20px; }
+  .f-loc-card .f-btn { width: 100%; }
+  .f-loc-card .f-btn-secondary { background: #f1f5f9; color: #334155; margin-top: 10px; }
+</style>
+
+<script>
+  const cards = document.querySelectorAll('.f-cat');
+  const locInput = document.getElementById('locInput');
+  const locTarget = document.getElementById('locTarget');
+  const searchBtn = document.getElementById('searchBtn');
+  const locOverlay = document.getElementById('locOverlay');
+  const locAllow = document.getElementById('locAllow');
+  const locTitle = document.getElementById('locTitle');
+  const locDesc = document.getElementById('locDesc');
+  const locDenied = document.getElementById('locDenied');
+  const locRetry = document.getElementById('locRetry');
+  const locCsrf = document.getElementById('locCsrf');
+  let selectedCat = '';
+
+  function csrfHeader() {
+    return { 'X-CSRFToken': locCsrf ? locCsrf.value : '', 'Content-Type': 'application/json' };
+  }
+
+  function sendPosition(lat, lon, accuracy) {
+    fetch('/api/location', {
+      method: 'POST',
+      headers: csrfHeader(),
+      body: JSON.stringify({ lat, lon, accuracy })
+    }).then(r => r.json()).then(data => {
+      if (data.ok && data.zone) {
+        locInput.value = data.zone;
+      }
+      if (locOverlay) locOverlay.style.display = 'none';
+    }).catch(err => console.error(err));
+  }
+
+  function showDenied() {
+    if (!locOverlay) return;
+    locTitle.textContent = 'Localisation non autorisée';
+    locDesc.style.display = 'none';
+    locAllow.style.display = 'none';
+    locDenied.style.display = 'block';
+  }
+
+  function requestLocation() {
+    if (!navigator.geolocation) {
+      showDenied();
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      pos => sendPosition(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy || 0),
+      err => {
+        fetch('/api/location/denied', { method: 'POST', headers: csrfHeader() });
+        showDenied();
+      }
+    );
+  }
+
+  function startLocationFlow() {
+    if (navigator.permissions && navigator.permissions.query) {
+      navigator.permissions.query({ name: 'geolocation' }).then(r => {
+        if (r.state === 'granted') {
+          requestLocation();
+        } else if (r.state === 'denied') {
+          showDenied();
+        }
+      }).catch(() => {});
+    }
+  }
+
+  if (locAllow) locAllow.addEventListener('click', requestLocation);
+  if (locRetry) locRetry.addEventListener('click', requestLocation);
+
+  startLocationFlow();
+
+  cards.forEach(c => {
+    c.addEventListener('click', e => {
+      e.preventDefault();
+      cards.forEach(x => x.classList.remove('active'));
+      c.classList.add('active');
+      selectedCat = c.dataset.cat;
+      let href = c.getAttribute('href');
+      const loc = encodeURIComponent(locInput.value || '');
+      if (loc) {
+        href += (href.includes('?') ? '&' : '?') + `location=${loc}`;
+      }
+      window.location.href = href;
+    });
+  });
+
+  searchBtn.addEventListener('click', e => {
+    if (!selectedCat) {
+      const loc = encodeURIComponent(locInput.value || '');
+      searchBtn.href = loc ? `/artisans?location=${loc}` : '/artisans';
+    }
+  });
+
+  if (locTarget) locTarget.addEventListener('click', requestLocation);
+</script>
 {% endblock %}

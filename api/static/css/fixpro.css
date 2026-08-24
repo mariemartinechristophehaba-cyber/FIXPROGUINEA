@@ -125,7 +125,7 @@ body {
 
 .f-hero {
   background: linear-gradient(180deg, #EAF3FF 0%, var(--f-bg) 100%);
-  padding: 32px 0 120px;
+  padding: 24px 0 80px;
   position: relative;
   overflow: hidden;
 }
@@ -158,48 +158,57 @@ body {
 
 .f-hero h1 {
   font-family: var(--f-display);
-  font-size: 34px;
+  font-size: 30px;
   font-weight: 800;
   line-height: 1.1;
   color: var(--f-text);
-  margin: 0 0 14px;
+  margin: 0 0 12px;
 }
 
 .f-hero h1 span { color: var(--f-primary); }
 
 .f-hero-badges {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 18px;
-  margin-top: 18px;
-  font-size: 14px;
+  gap: 14px;
+  margin-top: 14px;
+  font-size: 13px;
   color: var(--f-text);
   font-weight: 600;
 }
 
 .f-hero-badges span { display: flex; align-items: center; gap: 6px; }
 
+.f-hero-lead {
+  font-size: 15px;
+  color: var(--f-text-2);
+  margin: 0 0 16px;
+  line-height: 1.45;
+}
+
 .f-hero-avatar-wrap {
   position: relative;
   width: 100%;
-  max-width: 420px;
+  max-width: 280px;
   margin: 0 auto;
-  aspect-ratio: 1 / 1.05;
+  aspect-ratio: 1 / 1.1;
 }
 
 .f-hero-avatar {
   width: 100%;
   height: 100%;
-  object-fit: contain;
-  object-position: center bottom;
+  object-fit: cover;
+  object-position: center top;
+  border-radius: var(--f-radius);
 }
 
 .f-search-card {
   background: var(--f-white);
   border-radius: var(--f-radius);
   box-shadow: var(--f-shadow);
-  padding: 24px;
-  margin-top: -90px;
+  padding: 22px;
+  margin-top: -60px;
   position: relative;
   z-index: 2;
 }
@@ -212,15 +221,17 @@ body {
   color: var(--f-text);
 }
 
-.f-cats { display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 24px; }
+.f-cats { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 4px; margin-bottom: 20px; }
 
 .f-cat {
+  flex: 0 0 120px;
+  scroll-snap-align: start;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 8px;
-  padding: 20px 12px;
+  gap: 6px;
+  padding: 16px 8px;
   border-radius: var(--f-radius-sm);
   text-decoration: none;
   color: var(--f-text);
@@ -432,7 +443,7 @@ body {
   .mobile-nav { display: none; }
 }
 
-.f-section { padding: 40px 0; }
+.f-section { padding: 32px 0; }
 
 .f-section-header {
   display: flex;
@@ -508,10 +519,10 @@ body {
   background: var(--f-white);
   border-radius: var(--f-radius);
   box-shadow: var(--f-shadow-card);
-  padding: 24px 16px;
+  padding: 20px 14px;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 20px;
+  gap: 16px;
 }
 
 .f-benefit { text-align: center; }
@@ -556,16 +567,22 @@ body {
   .f-nav-desktop { display: flex; }
   .f-header-loc { display: flex; }
 
-  .f-hero { padding: 48px 0 160px; }
+  .f-hero { padding: 36px 0 110px; }
   .f-hero-inner { flex-direction: row; align-items: center; }
-  .f-hero h1 { font-size: 48px; }
+  .f-hero h1 { font-size: 44px; }
+  .f-hero-avatar-wrap { max-width: 360px; }
 
-  .f-cats { grid-template-columns: repeat(3, 1fr); }
+  .f-cats { display: grid; grid-template-columns: repeat(3, 1fr); }
+  .f-cat { flex: 1 1 auto; width: auto; }
 
-  .f-pros-grid { grid-template-columns: repeat(3, 1fr); }
+  .f-pros-grid { grid-template-columns: repeat(2, 1fr); }
   .f-pro-card { flex-direction: column; align-items: center; text-align: center; }
 
   .f-benefits { grid-template-columns: repeat(4, 1fr); }
 
-  .f-search-card { padding: 32px; }
+  .f-search-card { padding: 32px; margin-top: -80px; }
+}
+
+@media (min-width: 1024px) {
+  .f-pros-grid { grid-template-columns: repeat(4, 1fr); }
 }
