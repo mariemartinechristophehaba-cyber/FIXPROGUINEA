@@ -385,7 +385,7 @@ def match_artisans(conn, category, client_city, lat=None, lon=None, limit=5):
                COALESCE((SELECT COUNT(*) FROM reviews WHERE artisan_id = u.id), 0) AS review_count,
                COALESCE((SELECT COUNT(*) FROM requests WHERE artisan_id = u.id AND status = 'completed'), 0) AS completed
         FROM users u
-        WHERE u.role = 'artisan' AND u.is_verified = 1 AND u.is_active = 1
+        WHERE u.role = 'artisan' AND u.is_verified = TRUE AND u.is_active = TRUE
         AND (u.profession = ? OR ? = '')
     """
     rows = conn.execute(sql, (category, category)).fetchall()
@@ -488,7 +488,7 @@ def inject_layout_context():
             conn = get_db_connection()
             try:
                 stats["pending_artisans"] = conn.execute(
-                    "SELECT COUNT(*) AS n FROM users WHERE role = 'artisan' AND is_verified = 0").fetchone()["n"]
+                    "SELECT COUNT(*) AS n FROM users WHERE role = 'artisan' AND is_verified = FALSE").fetchone()["n"]
                 stats["open_requests"] = conn.execute(
                     "SELECT COUNT(*) AS n FROM requests"
                     " WHERE LOWER(status) NOT IN ('completed', 'cancelled')").fetchone()["n"]
@@ -499,7 +499,7 @@ def inject_layout_context():
                 stats["open_messages"] = conn.execute(
                     "SELECT COUNT(*) AS n FROM conversations c"
                     " JOIN conversation_messages m ON m.conversation_id = c.id"
-                    " WHERE c.status = 'open' AND m.sender_role = 'client' AND m.is_read = 0").fetchone()["n"]
+                    " WHERE c.status = 'open' AND m.sender_role = 'client' AND m.is_read = FALSE").fetchone()["n"]
             finally:
                 conn.close()
 
@@ -568,7 +568,7 @@ def index():
                    COALESCE((SELECT AVG(rating) FROM reviews WHERE artisan_id = u.id), 0) AS avg_rating,
                    COALESCE((SELECT COUNT(*) FROM reviews WHERE artisan_id = u.id), 0) AS review_count
             FROM users u
-            WHERE u.role = 'artisan' AND u.is_verified = 1 AND u.is_active = 1
+            WHERE u.role = 'artisan' AND u.is_verified = TRUE AND u.is_active = TRUE
             ORDER BY avg_rating DESC, review_count DESC
             LIMIT 4
         """).fetchall()
@@ -577,14 +577,14 @@ def index():
         if user:
             try:
                 row = conn.execute(
-                    "SELECT COUNT(*) AS n FROM notifications WHERE user_id = ? AND is_read = 0",
+                    "SELECT COUNT(*) AS n FROM notifications WHERE user_id = ? AND is_read = FALSE",
                     (user["id"],)).fetchone()
                 unread_count = row["n"]
             except Exception:
                 unread_count = 0
         counts = {}
         for row in conn.execute(
-            "SELECT profession, COUNT(*) AS n FROM users WHERE role = 'artisan' AND is_verified = 1 AND is_active = 1 GROUP BY profession").fetchall():
+            "SELECT profession, COUNT(*) AS n FROM users WHERE role = 'artisan' AND is_verified = 1 AND is_active = TRUE GROUP BY profession").fetchall():
             counts[row["profession"]] = row["n"]
         canonical = [
             ("Plomberie", ["Plombier", "Plomberie"]),
@@ -651,7 +651,7 @@ def home():
                    COALESCE((SELECT AVG(rating) FROM reviews WHERE artisan_id = u.id), 0) AS avg_rating,
                    COALESCE((SELECT COUNT(*) FROM reviews WHERE artisan_id = u.id), 0) AS review_count
             FROM users u
-            WHERE u.role = 'artisan' AND u.is_verified = 1 AND u.is_active = 1
+            WHERE u.role = 'artisan' AND u.is_verified = TRUE AND u.is_active = TRUE
             ORDER BY avg_rating DESC, review_count DESC
             LIMIT 5
         """).fetchall()
@@ -659,14 +659,14 @@ def home():
         if user:
             try:
                 row = conn.execute(
-                    "SELECT COUNT(*) AS n FROM notifications WHERE user_id = ? AND is_read = 0",
+                    "SELECT COUNT(*) AS n FROM notifications WHERE user_id = ? AND is_read = FALSE",
                     (user["id"],)).fetchone()
                 unread_count = row["n"]
             except Exception:
                 unread_count = 0
         counts = {}
         for row in conn.execute(
-            "SELECT profession, COUNT(*) AS n FROM users WHERE role = 'artisan' AND is_verified = 1 AND is_active = 1 GROUP BY profession").fetchall():
+            "SELECT profession, COUNT(*) AS n FROM users WHERE role = 'artisan' AND is_verified = 1 AND is_active = TRUE GROUP BY profession").fetchall():
             counts[row["profession"]] = row["n"]
         canonical = [
             ("Plomberie", ["Plombier", "Plomberie"]),
@@ -700,7 +700,7 @@ def categories():
         for c in categories:
             counts[c["name"]] = conn.execute(
                 "SELECT COUNT(*) AS n FROM users"
-                " WHERE role = 'artisan' AND is_verified = 1 AND is_active = 1"
+                " WHERE role = 'artisan' AND is_verified = 1 AND is_active = TRUE"
                 " AND (profession = ? OR skills LIKE ?)",
                 (c["name"], f"%{c['name']}%")).fetchone()["n"]
     finally:
@@ -875,7 +875,7 @@ def register_artisan():
         categories = conn.execute(
             "SELECT id, name FROM service_categories ORDER BY name").fetchall()
         all_services = conn.execute(
-            "SELECT id, category_id, name FROM services WHERE is_active = 1 ORDER BY name").fetchall()
+            "SELECT id, category_id, name FROM services WHERE is_active = TRUE ORDER BY name").fetchall()
     finally:
         conn.close()
 
@@ -1348,7 +1348,7 @@ def admin_dashboard():
                 "SELECT COUNT(*) AS n FROM requests WHERE LOWER(status) IN ('requested', 'nouvelle demande', 'pending') AND created_at LIKE ?",
                 (today + "%",)).fetchone()["n"],
             "available_artisans": conn.execute(
-                "SELECT COUNT(*) AS n FROM users WHERE role = 'artisan' AND is_active = 1 AND account_status = 'ACTIVE' AND availability_status = 'en_ligne'").fetchone()["n"],
+                "SELECT COUNT(*) AS n FROM users WHERE role = 'artisan' AND is_active = TRUE AND account_status = 'ACTIVE' AND availability_status = 'en_ligne'").fetchone()["n"],
             "interventions_in_progress": conn.execute(
                 "SELECT COUNT(*) AS n FROM requests WHERE LOWER(status) IN ('in_progress', 'on_the_way', 'assigned')").fetchone()["n"],
             "interventions_delta": conn.execute(
@@ -1391,7 +1391,7 @@ def admin_dashboard():
             "SELECT u.*, AVG(rv.rating) AS avg_rating"
             " FROM users u"
             " LEFT JOIN reviews rv ON rv.artisan_id = u.id"
-            " WHERE u.role = 'artisan' AND u.is_active = 1 AND u.account_status = 'ACTIVE' AND u.availability_status = 'en_ligne'"
+            " WHERE u.role = 'artisan' AND u.is_active = TRUE AND u.account_status = 'ACTIVE' AND u.availability_status = 'en_ligne'"
             " GROUP BY u.id"
             " ORDER BY u.created_at DESC LIMIT 4").fetchall()
 
@@ -1539,7 +1539,7 @@ def admin_artisans():
             like = f"%{q}%"
             params.extend([like, like, like])
         if status_filter == "pending":
-            where_parts.append("u.is_verified = 0")
+            where_parts.append("u.is_verified = FALSE")
         elif status_filter:
             where_parts.append("u.account_status = ?")
             params.append(status_filter.upper())
@@ -1643,14 +1643,14 @@ def admin_clients():
             action = request.form.get("action")
             if action == "suspend":
                 conn.execute(
-                    "UPDATE users SET is_active = 0 WHERE id = ? AND role = 'client'",
+                    "UPDATE users SET is_active = FALSE WHERE id = ? AND role = 'client'",
                     (client_id,))
                 conn.commit()
                 log_admin_action(user["id"], user["email"], "suspend_client", "user", client_id)
                 flash("Client suspendu.", "success")
             elif action == "restore":
                 conn.execute(
-                    "UPDATE users SET is_active = 1 WHERE id = ? AND role = 'client'",
+                    "UPDATE users SET is_active = TRUE WHERE id = ? AND role = 'client'",
                     (client_id,))
                 conn.commit()
                 log_admin_action(user["id"], user["email"], "restore_client", "user", client_id)
@@ -1667,9 +1667,9 @@ def admin_clients():
             like = f"%{q}%"
             params.extend([like, like, like])
         if status_filter == "active":
-            where_parts.append("u.is_active = 1")
+            where_parts.append("u.is_active = TRUE")
         elif status_filter == "suspended":
-            where_parts.append("u.is_active = 0")
+            where_parts.append("u.is_active = FALSE")
 
         where_clause = " WHERE " + " AND ".join(where_parts)
 
@@ -2290,7 +2290,7 @@ def dashboard():
                        COALESCE((SELECT AVG(rating) FROM reviews WHERE artisan_id = u.id), 0) AS avg_rating,
                        COALESCE((SELECT COUNT(*) FROM reviews WHERE artisan_id = u.id), 0) AS review_count
                 FROM users u
-                WHERE u.role = 'artisan' AND u.is_verified = 1
+                WHERE u.role = 'artisan' AND u.is_verified = TRUE
                 ORDER BY u.full_name
             """).fetchall()
         except Exception:
@@ -2536,7 +2536,7 @@ def _services_for_category(conn, category_name):
     return conn.execute(
         "SELECT s.id, s.name"
         " FROM services s JOIN service_categories c ON c.id = s.category_id"
-        " WHERE c.name = ? AND s.is_active = 1"
+        " WHERE c.name = ? AND s.is_active = TRUE"
         " ORDER BY s.name",
         (category_name,)).fetchall()
 
@@ -2629,7 +2629,7 @@ def artisans_page():
         "SELECT id, full_name AS nom, profession AS metier, city,"
         " hourly_rate, latitude, longitude, photo_url, is_verified,"
         " availability_status"
-        " FROM users WHERE role = 'artisan' AND is_active = 1 AND account_status != 'DELETED'")
+        " FROM users WHERE role = 'artisan' AND is_active = TRUE AND account_status != 'DELETED'")
     params = []
 
     if query:
@@ -2787,7 +2787,7 @@ def artisan_detail(artisan_id):
             "SELECT s.name"
             " FROM services s"
             " JOIN artisan_services a ON a.service_id = s.id"
-            " WHERE a.artisan_id = ? AND s.is_active = 1"
+            " WHERE a.artisan_id = ? AND s.is_active = TRUE"
             " ORDER BY s.name",
             (artisan_id,)).fetchall()
 
@@ -3265,7 +3265,7 @@ def notifications():
                 (user["id"],)).fetchall()
             unread = conn.execute(
                 "SELECT COUNT(*) AS n FROM notifications"
-                " WHERE user_id = ? AND is_read = 0",
+                " WHERE user_id = ? AND is_read = FALSE",
                 (user["id"],)).fetchone()["n"]
         except Exception:
             rows = []
@@ -3283,7 +3283,7 @@ def mark_notification_read(notif_id):
     try:
         notif = conn.execute("SELECT * FROM notifications WHERE id = ?", (notif_id,)).fetchone()
         if notif and (user["role"] == "admin" or notif["user_id"] == user["id"]):
-            conn.execute("UPDATE notifications SET is_read = 1 WHERE id = ?", (notif_id,))
+            conn.execute("UPDATE notifications SET is_read = TRUE WHERE id = ?", (notif_id,))
             conn.commit()
     finally:
         conn.close()
@@ -4091,7 +4091,7 @@ def api_admin_stats():
             "avis_moyen": conn.execute(
                 "SELECT COALESCE(AVG(rating), 0) AS avg FROM reviews").fetchone()["avg"],
             "pending_artisans": conn.execute(
-                "SELECT COUNT(*) AS n FROM users WHERE role = 'artisan' AND is_verified = 0").fetchone()["n"],
+                "SELECT COUNT(*) AS n FROM users WHERE role = 'artisan' AND is_verified = FALSE").fetchone()["n"],
             "open_requests": conn.execute(
                 "SELECT COUNT(*) AS n FROM requests WHERE status NOT IN ('completed', 'cancelled')").fetchone()["n"],
         }
@@ -4167,7 +4167,7 @@ def api_admin_reject_artisan(artisan_id):
         return auth
     conn = get_db_connection()
     try:
-        conn.execute("DELETE FROM users WHERE id = ? AND role = 'artisan' AND is_verified = 0", (artisan_id,))
+        conn.execute("DELETE FROM users WHERE id = ? AND role = 'artisan' AND is_verified = FALSE", (artisan_id,))
         conn.commit()
     finally:
         conn.close()
@@ -4197,7 +4197,7 @@ def client_messages():
             " (SELECT content FROM conversation_messages WHERE conversation_id = c.id"
             " ORDER BY created_at DESC LIMIT 1) AS last_message,"
             " (SELECT COUNT(*) FROM conversation_messages WHERE conversation_id = c.id"
-            " AND sender_role = 'admin' AND is_read = 0) AS unread"
+            " AND sender_role = 'admin' AND is_read = FALSE) AS unread"
             " FROM conversations c WHERE c.client_id = ?"
             " ORDER BY c.updated_at DESC",
             (user["id"],)).fetchall()
@@ -4279,7 +4279,7 @@ def _select_best_technician(conn, category, location, client_lat=None, client_lo
     rows = conn.execute(
         "SELECT id, full_name, profession, latitude, longitude, is_active, is_verified"
         " FROM users WHERE role = 'artisan'"
-        " AND LOWER(REPLACE(REPLACE(profession, 'é', 'e'), 'É', 'E')) = ? AND is_active = 1"
+        " AND LOWER(REPLACE(REPLACE(profession, 'é', 'e'), 'É', 'E')) = ? AND is_active = TRUE"
         " ORDER BY is_verified DESC, full_name",
         (profession,)).fetchall()
 
@@ -4482,7 +4482,7 @@ def client_conversation(conversation_id):
             " ORDER BY m.created_at ASC",
             (conversation_id,)).fetchall()
         conn.execute(
-            "UPDATE conversation_messages SET is_read = 1"
+            "UPDATE conversation_messages SET is_read = TRUE"
             " WHERE conversation_id = ? AND sender_role = 'admin'",
             (conversation_id,))
         conn.commit()
@@ -4571,7 +4571,7 @@ def admin_messages():
             " (SELECT content FROM conversation_messages WHERE conversation_id = c.id"
             " ORDER BY created_at DESC LIMIT 1) AS last_message,"
             " (SELECT COUNT(*) FROM conversation_messages WHERE conversation_id = c.id"
-            " AND sender_role = 'client' AND is_read = 0) AS unread"
+            " AND sender_role = 'client' AND is_read = FALSE) AS unread"
             " FROM conversations c"
             " JOIN users u ON u.id = c.client_id"
             " ORDER BY c.updated_at DESC").fetchall()
@@ -4661,7 +4661,7 @@ def admin_conversation(conversation_id):
             " ORDER BY m.created_at ASC",
             (conversation_id,)).fetchall()
         conn.execute(
-            "UPDATE conversation_messages SET is_read = 1"
+            "UPDATE conversation_messages SET is_read = TRUE"
             " WHERE conversation_id = ? AND sender_role = 'client'",
             (conversation_id,))
         conn.commit()
