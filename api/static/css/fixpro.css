@@ -586,3 +586,26 @@ body {
 @media (min-width: 1024px) {
   .f-pros-grid { grid-template-columns: repeat(4, 1fr); }
 }
+
+.sidebar {
+  display: none;
+  flex-direction: column;
+  width: 240px;
+  min-height: 100vh;
+  background: var(--f-white);
+  border-right: 1px solid var(--f-line);
+  padding: 20px;
+}
+
+.sidebar svg, .tabbar svg, .support-fab svg {
+  width: 24px;
+  height: 24px;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.sidebar-link, .tab { display: flex; align-items: center; gap: 10px; }
+
+@media (min-width: 1024px) {
+  .sidebar { display: flex; }
+}
