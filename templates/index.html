@@ -287,10 +287,19 @@
   });
 
   searchBtn.addEventListener('click', e => {
-    if (!selectedCat) {
-      const loc = encodeURIComponent(locInput.value || '');
-      searchBtn.href = loc ? `/artisans?location=${loc}` : '/artisans';
+    e.preventDefault();
+    const loc = encodeURIComponent(locInput.value || '');
+    let href = '/artisans';
+    if (selectedCat) {
+      const activeCard = document.querySelector('.f-cat.active');
+      if (activeCard) {
+        href = activeCard.getAttribute('href') || href;
+      }
     }
+    if (loc) {
+      href += (href.includes('?') ? '&' : '?') + `location=${loc}`;
+    }
+    window.location.href = href;
   });
 
   if (locTarget) locTarget.addEventListener('click', requestLocation);

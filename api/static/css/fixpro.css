@@ -221,7 +221,7 @@ body {
   color: var(--f-text);
 }
 
-.f-cats { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 4px; margin-bottom: 20px; }
+.f-cats { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 4px 0; margin-bottom: 20px; }
 
 .f-cat {
   flex: 0 0 120px;
