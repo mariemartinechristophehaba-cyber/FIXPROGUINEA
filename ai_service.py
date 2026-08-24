@@ -246,7 +246,7 @@ def _greeting_response(lang="fr"):
         return _pick_response([
             "Hello \U0001F60A Welcome to FixPro! How can I help you today?",
             "Hi there \U0001F60A I'm Lia, your FixPro assistant. How are you doing?",
-            "Hello \U0001F60A Nice to meet you. What can I do for you?",
+            "Hello \U0001F60A Nice to meet you at FixPro. What can I do for you?",
         ])
     return _pick_response([
         "Bonjour \U0001F60A Bienvenue chez FixPro ! Comment puis-je vous aider ?",
@@ -301,9 +301,9 @@ def _small_talk_response(lang="fr"):
             "Great \U0001F60A Ready to help. What's new with you?",
         ])
     return _pick_response([
-        "Je vais bien, merci \U0001F60A Et vous ?",
+        "Je vais bien, merci \U0001F60A Et vous, comment ca va ?",
         "Tres bien \U0001F60A Et de votre cote, tout va bien ?",
-        "Ca roule \U0001F602 Je suis prete a vous aider.",
+        "Ca roule \U0001F602 Et vous, ca va ?",
     ])
 
 

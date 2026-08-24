@@ -4202,14 +4202,23 @@ def _domain_to_profession(category):
     return _CATEGORY_PROFESSION.get(category.lower(), category).lower()
 
 
-def _select_best_technician(conn, category, location):
-    """Selectionne le meilleur technicien du domaine demande, sans jamais melanger."""
+def _select_best_technician(conn, category, location, client_lat=None, client_lon=None):
+    """Selectionne le meilleur technicien du domaine demande, sans jamais melanger.
+
+    Utilise d'abord la position GPS reelle du client si elle est disponible,
+    sinon la geolocalisation approximative du quartier indique.
+    """
     if not category:
         return None
     profession = _domain_to_profession(category)
     if not profession:
         return None
-    lat, lon = _geocode_zone("Conakry", location or "Conakry")
+
+    if _is_valid_coordinate(client_lat, client_lon):
+        lat, lon = client_lat, client_lon
+    else:
+        lat, lon = _geocode_zone("Conakry", location or "Conakry")
+
     rows = conn.execute(
         "SELECT id, full_name, profession, latitude, longitude, is_active, is_verified"
         " FROM users WHERE role = 'artisan'"
@@ -4219,14 +4228,14 @@ def _select_best_technician(conn, category, location):
 
     def dist(a):
         if _is_valid_coordinate(a["latitude"], a["longitude"]) and _is_valid_coordinate(lat, lon):
-            return math.hypot(a["latitude"] - lat, a["longitude"] - lon)
+            return calculate_distance(lat, lon, float(a["latitude"]), float(a["longitude"]))
         return 999
 
     rows = sorted(rows, key=lambda a: (dist(a), -a["is_verified"], a["full_name"]))
     return rows[0] if rows else None
 
 
-def _create_intervention_from_chat(conn, conversation_id, client_id, analysis, artisan_id, sender_id):
+def _create_intervention_from_chat(conn, conversation_id, client_id, analysis, artisan_id, sender_id, client_lat=None, client_lon=None):
     """Cree une intervention a partir d'une conversation."""
     ref = _generate_fixpro_reference(conn)
     info = analysis["collected_info"]
@@ -4235,12 +4244,14 @@ def _create_intervention_from_chat(conn, conversation_id, client_id, analysis, a
     category = _domain_to_profession(analysis["category"]) or "Autre"
     address = info.get("location") or "Conakry"
     urgency = analysis["urgency"] or "normal"
+    lat = float(client_lat) if _is_valid_coordinate(client_lat, client_lon) else 0.0
+    lon = float(client_lon) if _is_valid_coordinate(client_lat, client_lon) else 0.0
     now = datetime.now(timezone.utc).isoformat()
     req_id = _insert_id(
         conn,
-        "INSERT INTO requests (client_id, artisan_id, reference, title, description, category, address, status, urgency, quote_amount, budget, created_at, updated_at)"
-        " VALUES (?, ?, ?, ?, ?, ?, ?, 'Nouvelle demande', ?, 0, 0, ?, ?)",
-        (client_id, artisan_id, ref, title, description, category, address, urgency, now, now))
+        "INSERT INTO requests (client_id, artisan_id, reference, title, description, category, address, status, urgency, quote_amount, budget, latitude, longitude, created_at, updated_at)"
+        " VALUES (?, ?, ?, ?, ?, ?, ?, 'Nouvelle demande', ?, 0, 0, ?, ?, ?, ?)",
+        (client_id, artisan_id, ref, title, description, category, address, urgency, lat, lon, now, now))
     conn.execute(
         "INSERT INTO intervention_history (request_id, status, actor, note, created_at)"
         " VALUES (?, ?, ?, ?, ?)",
@@ -4339,12 +4350,16 @@ def client_conversation(conversation_id):
                     extra_messages = []
                     status = "ai_active"
                     if analysis["ready"]:
+                        client_lat = _to_float(user.get("latitude")) or _to_float(session.get("client_lat"))
+                        client_lon = _to_float(user.get("longitude")) or _to_float(session.get("client_lon"))
                         artisan = _select_best_technician(
-                            conn, analysis["category"], analysis["collected_info"].get("location"))
+                            conn, analysis["category"], analysis["collected_info"].get("location"),
+                            client_lat=client_lat, client_lon=client_lon)
                         if artisan:
                             req_id = _create_intervention_from_chat(
                                 conn, conversation_id, user["id"],
-                                analysis, artisan["id"], fixpro_user["id"] if fixpro_user else user["id"])
+                                analysis, artisan["id"], fixpro_user["id"] if fixpro_user else user["id"],
+                                client_lat=client_lat, client_lon=client_lon)
                             ref_row = conn.execute(
                                 "SELECT reference FROM requests WHERE id = ?", (req_id,)).fetchone()
                             ref = ref_row["reference"] if ref_row else f"FP-{datetime.now(timezone.utc).year}-{req_id:06d}"

@@ -817,6 +817,17 @@ class DomainTests(FixProTestCase):
         finally:
             conn.close()
 
+    def test_client_gps_preferred_for_distance(self):
+        self._insert_artisan("Plombier Proche", "Plombier", 9.5010, -13.7010)
+        self._insert_artisan("Plombier Loin", "Plombier", 9.5500, -13.7500)
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            artisan = fixpro_app._select_best_technician(conn, "plomberie", "Kaloum", client_lat=9.5012, client_lon=-13.7012)
+            self.assertIsNotNone(artisan)
+            self.assertEqual(artisan["full_name"], "Plombier Proche")
+        finally:
+            conn.close()
+
 
 class LiaConversationTests(FixProTestCase):
     """Tests du moteur conversationnel de Lia."""
