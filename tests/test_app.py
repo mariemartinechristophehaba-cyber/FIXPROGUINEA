@@ -828,6 +828,38 @@ class DomainTests(FixProTestCase):
         finally:
             conn.close()
 
+    def test_detects_plumber_for_leak_under_sink(self):
+        r = fixpro_app.ai_service.analyze_message("J'ai une fuite sous mon evier", collected={})
+        self.assertEqual(r["category"], "plomberie")
+
+    def test_detects_electrician_for_tripping_breaker(self):
+        r = fixpro_app.ai_service.analyze_message("Mon disjoncteur saute quand je branche mon climatiseur", collected={})
+        self.assertEqual(r["category"], "electricite")
+
+    def test_detects_refrigeration_for_fridge_not_cold(self):
+        r = fixpro_app.ai_service.analyze_message("Mon frigo ne fait plus de froid", collected={})
+        self.assertEqual(r["category"], "refrigeration")
+
+    def test_detects_air_conditioning_for_ac_not_cold(self):
+        r = fixpro_app.ai_service.analyze_message("Ma clim ne refroidit plus", collected={})
+        self.assertIn(r["category"], ("climatisation", "refrigeration"))
+
+    def test_detects_locksmith_for_broken_key(self):
+        r = fixpro_app.ai_service.analyze_message("Ma cle est bloquee dans la serrure", collected={})
+        self.assertEqual(r["category"], "serrurerie")
+
+    def test_detects_carpenter_for_wooden_door(self):
+        r = fixpro_app.ai_service.analyze_message("Ma porte en bois est cassee", collected={})
+        self.assertEqual(r["category"], "menuiserie")
+
+    def test_air_conditioning_not_plumber(self):
+        r = fixpro_app.ai_service.analyze_message("Mon climatiseur ne refroidit plus", collected={})
+        self.assertNotEqual(r["category"], "plomberie")
+
+    def test_leak_not_electrician(self):
+        r = fixpro_app.ai_service.analyze_message("Mon robinet fuit", collected={})
+        self.assertNotEqual(r["category"], "electricite")
+
 
 class LiaConversationTests(FixProTestCase):
     """Tests du moteur conversationnel de Lia."""

@@ -8,13 +8,49 @@ import random
 import re
 
 _DOMAINS = {
-    "plomberie": ["plomberie", "plombier", "plomb", "plom", "fuite", "robinet", "evier", "lavabo", "douche", "wc", "toilettes", "tuyau", "canalisation", "sanitaire", "eau"],
-    "electricite": ["electricite", "electrique", "electricien", "elec", "cablage", "tableau", "disjoncteur", "prise", "interrupteur", "panne de courant", "courant", "court-circuit", "eclairage", "cable"],
-    "climatisation": ["climatisation", "climatiseur", "clim", "conditionneur", "ventilation", "climatisateur"],
-    "refrigeration": ["refrigeration", "frigo", "refrigerateur", "congelateur", "froid", "conglateur", "congel"],
-    "serrurerie": ["serrurerie", "serrurier", "serrure", "cle", "cylindre", "ouverture de porte", "verrou", "bloquee", "portee", "serrur"],
-    "chauffagiste": ["chauffage", "chauffagiste", "chaudiere", "radiateur", "calefaction", "chauffe"],
-    "menuiserie": ["menuiserie", "menuisier", "porte", "fenetre", "meuble", "placard", "charpente", "bois"],
+    "plomberie": [
+        "plomberie", "plombier", "plomb", "plom", "fuite", "fuite d eau",
+        "robinet", "evier", "lavabo", "douche", "wc", "toilettes", "tuyau",
+        "canalisation", "canalisation bouchee", "sanitaire", "eau", "chasse d eau",
+        "pression d eau", "evacuation", "egout", "syphon", "chauffe eau",
+        "ballon d eau chaude", "fuite sous", "fuite dans", "wc bouche",
+    ],
+    "electricite": [
+        "electricite", "electrique", "electricien", "elec", "cablage",
+        "tableau", "disjoncteur", "disjoncte", "sauter", "saute",
+        "prise", "interrupteur", "panne de courant", "plus de courant",
+        "courant", "court-circuit", "eclairage", "lumiere", "ampoule",
+        "cable", "branchement", "installation electrique", "tableau electrique",
+        "terre", "prise electrique",
+    ],
+    "climatisation": [
+        "climatisation", "climatiseur", "clim", "conditionneur", "ventilation",
+        "climatisateur", "ne refroidit plus", "ne fait plus de froid",
+        "ne fait plus froid", "fait du bruit", "ne demarre plus",
+        "gaz", "compresseur", "split", "unite exterieure",
+    ],
+    "refrigeration": [
+        "refrigeration", "frigo", "refrigerateur", "congelateur", "froid",
+        "conglateur", "congel", "ne refroidit plus", "ne fait plus de froid",
+        "ne fait froid", "frigidaire", "refrigerateur", "congelation",
+    ],
+    "serrurerie": [
+        "serrurerie", "serrurier", "serrure", "cle", "cle cassee",
+        "cylindre", "ouverture de porte", "verrou", "bloquee", "bloque",
+        "portee", "serrur", "porte ne s ouvre plus", "ne tourne plus",
+        "perdu", "oublie", "clef", "serrure cassee", "changer serrure",
+        "installer serrure", "depanneur", "crochetage", "porte fermee",
+    ],
+    "chauffagiste": [
+        "chauffage", "chauffagiste", "chaudiere", "radiateur", "calefaction",
+        "chauffe", "chauffage ne marche plus", "radiateur froid", "chaudiere ne s allume pas",
+    ],
+    "menuiserie": [
+        "menuiserie", "menuisier", "porte en bois", "fenetre en bois",
+        "meuble", "armoire", "table", "chaise", "placard", "charpente",
+        "bois", "ebeniste", "casser en bois", "reparation de meuble",
+        "fabrication de meuble", "menuiserie", "vrak", "volige",
+    ],
     "peinture": ["peinture", "peintre", "peindre", "tapisserie", "enduit"],
     "maconnerie": ["maconnerie", "macon", "mur", "dalle", "chape", "beton", "brique"],
     "nettoyage": ["nettoyage", "menage", "nettoyer", "propre"],
