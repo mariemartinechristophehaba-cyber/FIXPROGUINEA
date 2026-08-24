@@ -208,7 +208,7 @@ body {
   border-radius: var(--f-radius);
   box-shadow: var(--f-shadow);
   padding: 22px;
-  margin-top: -60px;
+  margin-top: 0;
   position: relative;
   z-index: 2;
 }
@@ -580,7 +580,7 @@ body {
 
   .f-benefits { grid-template-columns: repeat(4, 1fr); }
 
-  .f-search-card { padding: 32px; margin-top: -80px; }
+  .f-search-card { padding: 32px; margin-top: 0; }
 }
 
 @media (min-width: 1024px) {
