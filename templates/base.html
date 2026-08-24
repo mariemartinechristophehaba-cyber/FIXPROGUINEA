@@ -23,7 +23,8 @@
 
     {% block header %}{% endblock %}
 
-    {% if nav_user and not is_admin_route and request.endpoint != 'dashboard' and request.endpoint != 'index' %}
+    {% block sidebar %}
+    {% if nav_user and not is_admin_route and request.endpoint not in ('index', 'dashboard', 'artisans_page') %}
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-top">
         <a class="brand" href="{{ url_for('index') }}">
@@ -69,6 +70,7 @@
       </div>
     </aside>
     {% endif %}
+    {% endblock %}
 
     <div class="app-wrap">
       {% if not is_admin_route and not nav_user and request.endpoint not in ('dashboard', 'index', 'artisans_page') %}
