@@ -3292,6 +3292,9 @@ def export_requests():
 @app.route("/requests/new", methods=["GET", "POST"])
 @login_required
 def request_new():
+    """Redirige vers la recherche en GET ; traite l'ancienne creation en POST."""
+    if request.method == "GET":
+        return redirect(url_for("artisans_page"))
     user = get_current_user()
     conn = get_db_connection()
     try:
