@@ -14,6 +14,8 @@ _DOMAINS = {
         "canalisation", "canalisation bouchee", "sanitaire", "eau", "chasse d eau",
         "pression d eau", "evacuation", "egout", "syphon", "chauffe eau",
         "ballon d eau chaude", "fuite sous", "fuite dans", "wc bouche",
+        "bouche", "bouché", "bouchee", "tuyauterie", "tuyaux", "trop plein", "mitigeur",
+        "flexible", "siphon", "jacuzzi", "baignoire", "cuvette", "reservoir",
     ],
     "electricite": [
         "electricite", "electrique", "electricien", "elec", "cablage",
@@ -21,7 +23,8 @@ _DOMAINS = {
         "prise", "interrupteur", "panne de courant", "plus de courant",
         "courant", "court-circuit", "eclairage", "lumiere", "ampoule",
         "cable", "branchement", "installation electrique", "tableau electrique",
-        "terre", "prise electrique",
+        "terre", "prise electrique", "compteur", "secteur", "ne s allume plus",
+        "ne marche plus", "rallonge", "multiprise", "transformateur", "ne fonctionne",
     ],
     "climatisation": [
         "climatisation", "climatiseur", "clim", "conditionneur", "ventilation",
@@ -32,7 +35,8 @@ _DOMAINS = {
     "refrigeration": [
         "refrigeration", "frigo", "refrigerateur", "congelateur", "froid",
         "conglateur", "congel", "ne refroidit plus", "ne fait plus de froid",
-        "ne fait froid", "frigidaire", "refrigerateur", "congelation",
+        "ne fait froid", "frigidaire", "congelation", "refrigerateur",
+        "chambre froide", "vitreuse", "vitrine refrigeree", "compresseur",
     ],
     "serrurerie": [
         "serrurerie", "serrurier", "serrure", "cle", "cle cassee",
@@ -46,10 +50,11 @@ _DOMAINS = {
         "chauffe", "chauffage ne marche plus", "radiateur froid", "chaudiere ne s allume pas",
     ],
     "menuiserie": [
-        "menuiserie", "menuisier", "porte en bois", "fenetre en bois",
-        "meuble", "armoire", "table", "chaise", "placard", "charpente",
-        "bois", "ebeniste", "casser en bois", "reparation de meuble",
-        "fabrication de meuble", "menuiserie", "vrak", "volige",
+        "menuiserie", "menuisier", "porte", "portes", "porte en bois", "fenetre", "fenetres",
+        "fenetre en bois", "gonds", "charniere", "charnieres", "meuble", "armoire", "table",
+        "chaise", "placard", "charpente", "bois", "ebeniste", "casser en bois",
+        "reparation de meuble", "fabrication de meuble", "vrak", "volige", "encadrement",
+        "passe plat", "plinthe", "lambourde", "parquet",
     ],
     "peinture": ["peinture", "peintre", "peindre", "tapisserie", "enduit"],
     "maconnerie": ["maconnerie", "macon", "mur", "dalle", "chape", "beton", "brique"],
@@ -89,6 +94,7 @@ _INTENT_KEYWORDS = {
     "price_question": ["prix", "tarif", "combien", "coute", "devis", "estimation", "montant"],
     "status_question": ["statut", "etat", "ou en est", "mission", "intervention", "numero", "reference", "demande"],
     "confirmation": ["ok", "d'accord", "dac", "entendu", "bien recu", "parfait", "ca marche", "oui", "yes", "c'est bon", "c est bon", "confirme", "valide"],
+    "correction": ["mauvaise", "pas la bonne", "pas bonne", "ce n est pas", "c est pas", "pas ca", "pas cela", "changer", "modifier", "corriger", "annuler", "recommencer", "reprendre"],
     "out_of_scope": [],
 }
 
@@ -208,6 +214,10 @@ def _detect_intent(content, history=None):
     dom = _detect_domain(content)
     if dom:
         scores["technical_problem"] += 4
+
+    # correction
+    if any(w in nt for w in ["mauvaise", "pas la bonne", "ce n est pas", "c est pas", "changer", "modifier", "corriger", "annuler", "recommencer"]):
+        scores["correction"] += 4
 
     # request technician explicitly
     if any(w in nt for w in ["veux un technicien", "besoin d un technicien", "appeler un professionnel", "intervention", "reparer", "depanner"]):
@@ -558,6 +568,11 @@ def _build_technical_response(info, last_message, lang="fr"):
 
     missing = _has_missing(info)
 
+    if info.get("last_intent") == "correction" and info.get("category"):
+        info["category"] = None
+        info["needs_confirmation"] = False
+        missing = _has_missing(info)
+
     if "category" in missing:
         if info.get("problem_detail"):
             if lang == "en":
@@ -663,6 +678,11 @@ def _build_response(info, last_message):
         return _status_question_response(lang)
     if intent == "confirmation":
         return _confirmation_response(lang)
+    if intent == "correction":
+        info["needs_confirmation"] = False
+        if lang == "en":
+            return "No problem. Tell me the right trade: plumbing, electricity, air conditioning, locksmith, carpentry..."
+        return "Pas de souci. Dites-moi simplement le bon metier : plomberie, electricite, climatisation, serrurerie, menuiserie..."
 
     # Par defaut, si un domaine est connu, on reprend le flux technique
     if info.get("category"):

@@ -972,6 +972,43 @@ class LiaConversationTests(FixProTestCase):
         r = fixpro_app.ai_service.analyze_message("Hello", collected={})
         self.assertIn("FixPro", r["response"])
 
+    def test_detects_menuiserie_for_broken_door(self):
+        """Ma porte est gatee doit etre classe en menuiserie, pas frigoriste."""
+        r = fixpro_app.ai_service.analyze_message("Ma porte est gatee", collected={})
+        self.assertEqual(r["category"], "menuiserie")
+        self.assertNotEqual(r["category"], "refrigeration")
+        self.assertFalse(r["ready"])
+        self.assertIn("menuiserie", r["response"].lower())
+
+    def test_no_creation_without_confirmation(self):
+        """Aucune intervention sans confirmation explicite."""
+        c = {
+            "category": "menuiserie",
+            "location": "Kaloum",
+            "urgency": "urgent",
+            "availability": "aujourd'hui",
+            "mode": "fixpro",
+            "needs_confirmation": False,
+            "problem_detail": "Ma porte est gatee",
+        }
+        r = fixpro_app.ai_service.analyze_message("ok", collected=c)
+        self.assertFalse(r["ready"])
+
+    def test_correction_resets_category(self):
+        """Le client peut corriger la categorie apres le resume."""
+        c = {
+            "category": "refrigeration",
+            "location": "Kaloum",
+            "urgency": "urgent",
+            "availability": "aujourd'hui",
+            "mode": "fixpro",
+            "needs_confirmation": True,
+            "problem_detail": "Ma porte est gatee",
+        }
+        r = fixpro_app.ai_service.analyze_message("mauvaise categorie", collected=c)
+        self.assertIsNone(r["collected_info"].get("category"))
+        self.assertFalse(r["ready"])
+
 
 class InterventionTests(FixProTestCase):
     """Creation et suivi des demandes d'intervention."""

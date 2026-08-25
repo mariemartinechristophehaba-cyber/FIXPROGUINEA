@@ -4641,7 +4641,8 @@ def client_conversation(conversation_id):
                                 (conversation_id, ai_sender, "ai",
                                  f"C'est bon. J'ai cree l'intervention {ref}. "
                                  f"Le technicien {artisan['full_name']} ({artisan['profession']}) "
-                                 "sera informe de votre demande."))
+                                 "sera informe de votre demande. "
+                                 "Si ce n'est pas la bonne categorie, repondez 'mauvaise categorie'."))
                             status = "converted_to_intervention"
                         else:
                             extra_messages.append(
