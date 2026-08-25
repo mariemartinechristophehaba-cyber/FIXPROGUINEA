@@ -18,7 +18,7 @@
 
 <div class="card card-pad-lg section">
   <h3 style="margin-bottom: 18px;">Informations personnelles</h3>
-  <form method="post">
+  <form method="post" action="{{ url_for('profile') }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
 
     <label class="field">

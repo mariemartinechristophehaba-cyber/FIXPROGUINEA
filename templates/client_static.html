@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }} - FixPro{% endblock %}
+{% block header %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block tabbar %}{% endblock %}
+
+{% block content %}
+<header class="f-header" style="position:relative;">
+  <div class="f-container f-header-inner" style="justify-content:flex-start; gap:12px;">
+    <a href="{{ url_for('profile') }}" class="f-menu-btn" style="background:transparent; border:none; padding:4px;" aria-label="Retour">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    </a>
+    <a href="{{ url_for('home') }}" class="f-logo" style="margin:0 auto; padding-left:44px;">
+      <div class="f-logo-mark">
+        <img src="{{ url_for('static', filename='img/icon-wrench.svg') }}" width="22" height="22" alt="" />
+      </div>
+      FixPro
+    </a>
+  </div>
+</header>
+
+<div class="f-container" style="padding-top: 24px; padding-bottom: 40px;">
+  <div class="f-card" style="padding: 22px;">
+    <h1 style="font-size: 1.4rem; margin: 0 0 18px; color: var(--f-text);">{{ title }}</h1>
+    <div style="font-size: 15px; line-height: 1.7; color: var(--f-text-2);">
+      {{ content | safe }}
+    </div>
+  </div>
+  <a href="{{ url_for('profile') }}" class="f-btn" style="width:100%; margin-top: 16px;">Retour au profil</a>
+</div>
+
+<style>
+  body { padding-bottom: 80px; }
+  .mobile-nav, .tabbar { display: none !important; }
+  .f-card { background: var(--f-white); border-radius: var(--f-radius); box-shadow: var(--f-shadow-card); padding: 18px; }
+  .f-btn { display: inline-flex; align-items: center; justify-content: center; height: 48px; padding: 0 24px; background: var(--f-primary); color: var(--f-white); border-radius: var(--f-radius-sm); font-weight: 600; text-decoration: none; }
+</style>
+{% endblock %}

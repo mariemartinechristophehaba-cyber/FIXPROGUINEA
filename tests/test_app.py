@@ -172,6 +172,51 @@ class ClientRegistrationTests(FixProTestCase):
             conn.close()
 
 
+class ClientProfileTests(FixProTestCase):
+    """Profil client et pages associees."""
+
+    def test_client_profile_renders_with_user_data(self):
+        self.register_client()
+        self.login("+224620000000")
+        response = self.client.get("/profile")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Aminata", response.data)
+        self.assertIn(b"Client FixPro", response.data)
+        self.assertIn(b"Se d", response.data)
+
+    def test_client_edit_profile_page_renders(self):
+        self.register_client()
+        self.login("+224620000000")
+        response = self.client.get("/profil/modifier")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Informations personnelles", response.data)
+
+    def test_client_can_update_full_name(self):
+        self.register_client()
+        self.login("+224620000000")
+        response = self.client.post("/profile", data={
+            "full_name": "Aminata Diallo",
+            "phone": "+224620000000",
+            "city": "Conakry",
+            "profession": "",
+            "hourly_rate": "0",
+            "latitude": "0",
+            "longitude": "0",
+            "bio": ""
+        }, follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Aminata Diallo", response.data)
+
+    def test_client_static_pages_renders(self):
+        self.register_client()
+        self.login("+224620000000")
+        for page in ("how-it-works", "about", "terms"):
+            response = self.client.get(f"/client-page/{page}")
+            self.assertEqual(response.status_code, 200)
+        response = self.client.get("/client-page/how-it-works")
+        self.assertIn(b"Comment fonctionne FixPro", response.data)
+
+
 class ArtisanRegistrationTests(FixProTestCase):
 
     def test_artisan_register_then_login_with_email_succeeds(self):

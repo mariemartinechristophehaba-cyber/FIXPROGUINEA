@@ -1,0 +1,319 @@
+{% extends 'base.html' %}
+{% block title %}Mon compte - FixPro{% endblock %}
+{% block header %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block tabbar %}{% endblock %}
+
+{% block content %}
+{% set status_labels = {
+  'requested': 'En attente',
+  'pending': 'En attente',
+  'assigned': 'Confirmée',
+  'in_progress': 'En intervention',
+  'on_the_way': 'En route',
+  'completed': 'Terminée',
+  'cancelled': 'Annulée'
+} %}
+
+<header class="f-header">
+  <div class="f-container f-header-inner">
+    <button class="f-menu-btn" type="button" aria-label="Menu">
+      <img src="{{ url_for('static', filename='img/icon-menu.svg') }}" width="24" height="24" alt="" />
+    </button>
+    <a href="{{ url_for('home') }}" class="f-logo">
+      <div class="f-logo-mark">
+        <img src="{{ url_for('static', filename='img/icon-wrench.svg') }}" width="22" height="22" alt="" />
+      </div>
+      FixPro
+    </a>
+    <nav class="f-nav-desktop">
+      <a href="{{ url_for('home') }}">Accueil</a>
+      <a href="{{ url_for('artisans_page') }}">Recherche</a>
+      <a href="{{ url_for('artisans_page') }}">Professionnels</a>
+      <a href="{{ url_for('requests_list') }}">Réservations</a>
+      <a href="{{ url_for('client_messages') }}">Messages</a>
+      <a href="{{ url_for('reviews') }}">Avis</a>
+    </nav>
+    <div class="f-header-right">
+      <div class="f-header-loc">
+        <img src="{{ url_for('static', filename='img/icon-map-pin.svg') }}" width="16" height="16" alt="" />
+        <span>{{ client_zone or 'Ma position' }}</span>
+      </div>
+      <a href="{{ url_for('notifications') }}" class="f-notif" aria-label="Notifications">
+        <img src="{{ url_for('static', filename='img/icon-bell.svg') }}" width="22" height="22" alt="" />
+        {% if unread_count %}<span class="f-badge">{{ unread_count }}</span>{% endif %}
+      </a>
+      <a href="{{ url_for('profile') }}" class="f-avatar-link" aria-label="Mon profil">
+        {% if nav_user and nav_user.photo_url %}
+          <img src="{{ nav_user.photo_url }}" class="f-avatar-sm" alt="{{ nav_user.full_name }}" />
+        {% else %}
+          <img src="{{ url_for('static', filename='img/fixpro-avatar.png') }}" class="f-avatar-sm" alt="Profil" />
+        {% endif %}
+      </a>
+    </div>
+  </div>
+</header>
+
+<div class="f-container" style="padding-top: 16px;">
+
+  <section class="f-card f-profile-hero">
+    <div class="f-profile-avatar">
+      {% if user.photo_url %}
+        <img src="{{ user.photo_url }}" alt="{{ user.full_name }}" />
+      {% else %}
+        <span>{{ (user.full_name or 'U')[0]|upper }}</span>
+      {% endif %}
+    </div>
+    <div class="f-profile-info">
+      <p class="f-profile-welcome">Bonjour {{ (user.full_name or 'Utilisateur').split(' ')[0] }}</p>
+      <h1>{{ user.full_name or 'Utilisateur' }}</h1>
+      <p class="f-profile-role">Client FixPro</p>
+    </div>
+    <a href="{{ url_for('edit_profile') }}" class="f-profile-edit">Modifier</a>
+  </section>
+
+  <section class="f-section">
+    <h2 class="f-section-title">Mon activité</h2>
+    <div class="f-card f-profile-list">
+      <a href="{{ url_for('requests_list') }}" class="f-profile-item">
+        <div class="f-profile-item-icon" style="background:#EEF4FF;">
+          <img src="{{ url_for('static', filename='img/icon-wrench.svg') }}" width="20" height="20" alt="" style="filter:brightness(0) saturate(100%) invert(22%) sepia(89%) saturate(4563%) hue-rotate(220deg) brightness(101%) contrast(101%);" />
+        </div>
+        <div class="f-profile-item-text">
+          <strong>Mes demandes</strong>
+          <span>{{ counts.demandes }} en cours</span>
+        </div>
+        <img src="{{ url_for('static', filename='img/icon-chevron-right.svg') }}" width="18" height="18" alt="" />
+      </a>
+      <a href="{{ url_for('requests_list') }}" class="f-profile-item">
+        <div class="f-profile-item-icon" style="background:#F0FDF4;">
+          <img src="{{ url_for('static', filename='img/icon-calendar.svg') }}" width="20" height="20" alt="" style="filter:brightness(0) saturate(100%) invert(42%) sepia(95%) saturate(1239%) hue-rotate(95deg) brightness(95%) contrast(101%);" />
+        </div>
+        <div class="f-profile-item-text">
+          <strong>Mes réservations</strong>
+          <span>{{ counts.reservations }} active{{ 's' if counts.reservations != 1 }}</span>
+        </div>
+        <img src="{{ url_for('static', filename='img/icon-chevron-right.svg') }}" width="18" height="18" alt="" />
+      </a>
+      <a href="{{ url_for('requests_list') }}" class="f-profile-item">
+        <div class="f-profile-item-icon" style="background:#FFFBEB;">
+          <img src="{{ url_for('static', filename='img/icon-clock.svg') }}" width="20" height="20" alt="" style="filter:brightness(0) saturate(100%) invert(60%) sepia(85%) saturate(1000%) hue-rotate(10deg) brightness(105%) contrast(101%);" />
+        </div>
+        <div class="f-profile-item-text">
+          <strong>Mes interventions</strong>
+          <span>{{ counts.interventions }} terminée{{ 's' if counts.interventions != 1 }}</span>
+        </div>
+        <img src="{{ url_for('static', filename='img/icon-chevron-right.svg') }}" width="18" height="18" alt="" />
+      </a>
+      <a href="{{ url_for('reviews') }}" class="f-profile-item" style="border-bottom:none;">
+        <div class="f-profile-item-icon" style="background:#FEF3C7;">
+          <img src="{{ url_for('static', filename='img/icon-star.svg') }}" width="20" height="20" alt="" style="filter:brightness(0) saturate(100%) invert(60%) sepia(90%) saturate(1000%) hue-rotate(10deg) brightness(105%) contrast(101%);" />
+        </div>
+        <div class="f-profile-item-text">
+          <strong>Mes avis</strong>
+          <span>{{ counts.avis }} laissé{{ 's' if counts.avis != 1 }}</span>
+        </div>
+        <img src="{{ url_for('static', filename='img/icon-chevron-right.svg') }}" width="18" height="18" alt="" />
+      </a>
+    </div>
+  </section>
+
+  {% if recent %}
+  <section class="f-section">
+    <h2 class="f-section-title">En ce moment</h2>
+    <div class="f-card f-recent-list">
+      {% for item in recent %}
+      <a href="{{ url_for('request_detail', request_id=item.id) }}" class="f-recent-item" style="border-bottom:1px solid var(--f-line); padding:14px 0;">
+        <div class="f-recent-meta">
+          <span class="f-recent-ref">{{ item.reference or 'FP-' ~ item.id }}</span>
+          <span class="f-recent-status" style="color: var(--f-primary);">{{ status_labels.get(item.status, item.status) }}</span>
+        </div>
+        <strong style="font-size:15px; color:var(--f-text);">{{ item.title or (item.category or 'Demande') }}</strong>
+        <p style="margin:4px 0 0; font-size:13px; color:var(--f-text-2);">
+          {% if item.artisan_name %}{{ item.artisan_name }}{% else %}En recherche de professionnel{% endif %}
+        </p>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <section class="f-section">
+    <h2 class="f-section-title">Mon compte</h2>
+    <div class="f-card f-profile-list">
+      <a href="{{ url_for('edit_profile') }}" class="f-profile-item">
+        <div class="f-profile-item-icon" style="background:#F1F5F9;">
+          <img src="{{ url_for('static', filename='img/icon-user.svg') }}" width="20" height="20" alt="" style="filter:grayscale(100%) opacity(0.7);" />
+        </div>
+        <div class="f-profile-item-text">
+          <strong>Informations personnelles</strong>
+          <span>Nom, téléphone, ville</span>
+        </div>
+        <img src="{{ url_for('static', filename='img/icon-chevron-right.svg') }}" width="18" height="18" alt="" />
+      </a>
+      <a href="{{ url_for('home') }}" class="f-profile-item">
+        <div class="f-profile-item-icon" style="background:#EEF4FF;">
+          <img src="{{ url_for('static', filename='img/icon-map-pin.svg') }}" width="20" height="20" alt="" style="filter:brightness(0) saturate(100%) invert(22%) sepia(89%) saturate(4563%) hue-rotate(220deg) brightness(101%) contrast(101%);" />
+        </div>
+        <div class="f-profile-item-text">
+          <strong>Ma localisation</strong>
+          <span>{{ client_zone or 'Actualiser ma position' }}</span>
+        </div>
+        <img src="{{ url_for('static', filename='img/icon-chevron-right.svg') }}" width="18" height="18" alt="" />
+      </a>
+      <a href="{{ url_for('notifications') }}" class="f-profile-item">
+        <div class="f-profile-item-icon" style="background:#FEF2F2;">
+          <img src="{{ url_for('static', filename='img/icon-bell.svg') }}" width="20" height="20" alt="" style="filter:brightness(0) saturate(100%) invert(26%) sepia(80%) saturate(6000%) hue-rotate(340deg) brightness(90%) contrast(101%);" />
+        </div>
+        <div class="f-profile-item-text">
+          <strong>Notifications</strong>
+          <span>{{ unread_count }} non lue{{ 's' if unread_count != 1 }}</span>
+        </div>
+        <img src="{{ url_for('static', filename='img/icon-chevron-right.svg') }}" width="18" height="18" alt="" />
+      </a>
+      <a href="{{ url_for('edit_profile') }}" class="f-profile-item" style="border-bottom:none;">
+        <div class="f-profile-item-icon" style="background:#F1F5F9;">
+          <img src="{{ url_for('static', filename='img/icon-lock.svg') }}" width="20" height="20" alt="" style="filter:grayscale(100%) opacity(0.7);" />
+        </div>
+        <div class="f-profile-item-text">
+          <strong>Sécurité</strong>
+          <span>Modifier mes informations</span>
+        </div>
+        <img src="{{ url_for('static', filename='img/icon-chevron-right.svg') }}" width="18" height="18" alt="" />
+      </a>
+    </div>
+  </section>
+
+  <section class="f-section">
+    <h2 class="f-section-title">Aide & FixPro</h2>
+    <div class="f-card f-profile-list">
+      <a href="{{ url_for('client_messages') }}" class="f-profile-item">
+        <div class="f-profile-item-icon" style="background:#EEF4FF;">
+          <img src="{{ url_for('static', filename='img/icon-message-circle.svg') }}" width="20" height="20" alt="" style="filter:brightness(0) saturate(100%) invert(22%) sepia(89%) saturate(4563%) hue-rotate(220deg) brightness(101%) contrast(101%);" />
+        </div>
+        <div class="f-profile-item-text">
+          <strong>Aide & assistance</strong>
+          <span>Discuter avec l'assistance FixPro</span>
+        </div>
+        <img src="{{ url_for('static', filename='img/icon-chevron-right.svg') }}" width="18" height="18" alt="" />
+      </a>
+      <a href="{{ url_for('client_static', page='how-it-works') }}" class="f-profile-item">
+        <div class="f-profile-item-icon" style="background:#F0FDF4;">
+          <img src="{{ url_for('static', filename='img/icon-thumbs-up.svg') }}" width="20" height="20" alt="" style="filter:brightness(0) saturate(100%) invert(42%) sepia(95%) saturate(1239%) hue-rotate(95deg) brightness(95%) contrast(101%);" />
+        </div>
+        <div class="f-profile-item-text">
+          <strong>Comment fonctionne FixPro ?</strong>
+          <span>Les étapes en quelques mots</span>
+        </div>
+        <img src="{{ url_for('static', filename='img/icon-chevron-right.svg') }}" width="18" height="18" alt="" />
+      </a>
+      <a href="{{ url_for('client_static', page='about') }}" class="f-profile-item">
+        <div class="f-profile-item-icon" style="background:#FFFBEB;">
+          <img src="{{ url_for('static', filename='img/icon-shield-check.svg') }}" width="20" height="20" alt="" style="filter:brightness(0) saturate(100%) invert(60%) sepia(85%) saturate(1000%) hue-rotate(10deg) brightness(105%) contrast(101%);" />
+        </div>
+        <div class="f-profile-item-text">
+          <strong>À propos de FixPro</strong>
+          <span>La plateforme de mise en relation</span>
+        </div>
+        <img src="{{ url_for('static', filename='img/icon-chevron-right.svg') }}" width="18" height="18" alt="" />
+      </a>
+      <a href="{{ url_for('client_static', page='terms') }}" class="f-profile-item" style="border-bottom:none;">
+        <div class="f-profile-item-icon" style="background:#F1F5F9;">
+          <img src="{{ url_for('static', filename='img/icon-wind.svg') }}" width="20" height="20" alt="" style="filter:grayscale(100%) opacity(0.7);" />
+        </div>
+        <div class="f-profile-item-text">
+          <strong>Conditions & confidentialité</strong>
+          <span>Conditions d'utilisation</span>
+        </div>
+        <img src="{{ url_for('static', filename='img/icon-chevron-right.svg') }}" width="18" height="18" alt="" />
+      </a>
+    </div>
+  </section>
+
+  <section class="f-section">
+    <a href="{{ url_for('logout') }}" class="f-btn f-btn-danger" id="logoutBtn" style="width:100%;">Se déconnecter</a>
+  </section>
+
+</div>
+
+<nav class="f-bottom-nav">
+  <a href="{{ url_for('home') }}">
+    <img src="{{ url_for('static', filename='img/icon-home.svg') }}" width="22" height="22" alt="" />
+    Accueil
+  </a>
+  <a href="{{ url_for('artisans_page') }}">
+    <img src="{{ url_for('static', filename='img/icon-search.svg') }}" width="22" height="22" alt="" />
+    Recherche
+  </a>
+  <a href="{{ url_for('requests_list') }}" class="f-main" aria-label="Réservations">
+    <img src="{{ url_for('static', filename='img/icon-calendar.svg') }}" width="24" height="24" alt="" />
+    <span class="f-main-text">Réserver</span>
+  </a>
+  <a href="{{ url_for('client_messages') }}">
+    <img src="{{ url_for('static', filename='img/icon-message-circle.svg') }}" width="22" height="22" alt="" />
+    Messages
+    {% if unread_count %}<span class="f-notif">{{ unread_count }}</span>{% endif %}
+  </a>
+  <a href="{{ url_for('profile') }}" class="active">
+    <img src="{{ url_for('static', filename='img/icon-user.svg') }}" width="22" height="22" alt="" />
+    Profil
+  </a>
+</nav>
+
+<div id="logoutModal" class="f-loc-overlay" style="display:none;">
+  <div class="f-loc-card">
+    <h2>Se déconnecter</h2>
+    <p>Voulez-vous vraiment vous déconnecter de votre compte FixPro ?</p>
+    <a href="{{ url_for('logout') }}" class="f-btn">Se déconnecter</a>
+    <button class="f-btn f-btn-secondary" id="logoutCancel" type="button" style="margin-top:10px;">Annuler</button>
+  </div>
+</div>
+
+<style>
+  body { padding-bottom: 80px; }
+  .mobile-nav, .tabbar { display: none !important; }
+  .f-card { background: var(--f-white); border-radius: var(--f-radius); box-shadow: var(--f-shadow-card); padding: 18px; margin-bottom: 16px; }
+  .f-section-title { font-size: 16px; font-weight: 700; color: var(--f-text); margin: 0 0 12px; }
+  .f-profile-hero { display: flex; align-items: center; gap: 16px; padding: 20px; }
+  .f-profile-avatar { width: 72px; height: 72px; border-radius: 50%; overflow: hidden; background: #EEF4FF; display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 700; color: var(--f-primary); flex-shrink: 0; }
+  .f-profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .f-profile-info { flex: 1; min-width: 0; }
+  .f-profile-welcome { margin: 0 0 2px; font-size: 13px; color: var(--f-text-2); }
+  .f-profile-info h1 { margin: 0; font-size: 18px; color: var(--f-text); }
+  .f-profile-role { margin: 4px 0 0; font-size: 13px; color: var(--f-text-2); }
+  .f-profile-edit { font-size: 13px; color: var(--f-primary); font-weight: 600; padding: 6px 12px; border: 1px solid var(--f-primary); border-radius: var(--f-radius-sm); text-decoration: none; flex-shrink: 0; }
+  .f-profile-list { padding: 0 18px; }
+  .f-profile-item { display: flex; align-items: center; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--f-line); color: var(--f-text); text-decoration: none; }
+  .f-profile-item-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .f-profile-item-text { flex: 1; min-width: 0; }
+  .f-profile-item-text strong { display: block; font-size: 15px; font-weight: 600; }
+  .f-profile-item-text span { font-size: 13px; color: var(--f-text-2); }
+  .f-recent-item { display: block; color: var(--f-text); text-decoration: none; padding: 14px 0; border-bottom: 1px solid var(--f-line); }
+  .f-recent-item:last-child { border-bottom: none; }
+  .f-recent-meta { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; font-size: 12px; color: var(--f-text-2); }
+  .f-recent-status { color: var(--f-primary); font-weight: 600; }
+  .f-btn-danger { background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA; }
+  @media (min-width: 640px) {
+    .f-container { max-width: 720px; margin: 0 auto; }
+    .f-profile-hero { padding: 24px; }
+    .f-profile-avatar { width: 88px; height: 88px; font-size: 34px; }
+  }
+</style>
+
+<script>
+  const logoutBtn = document.getElementById('logoutBtn');
+  const logoutModal = document.getElementById('logoutModal');
+  const logoutCancel = document.getElementById('logoutCancel');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', e => {
+      e.preventDefault();
+      if (logoutModal) logoutModal.style.display = 'flex';
+    });
+  }
+  if (logoutCancel) {
+    logoutCancel.addEventListener('click', () => {
+      if (logoutModal) logoutModal.style.display = 'none';
+    });
+  }
+</script>
+{% endblock %}

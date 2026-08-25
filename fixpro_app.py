@@ -2681,7 +2681,98 @@ def profile():
             conn.close()
         return redirect(url_for("profile"))
 
-    return render_template("profile.html", user=user)
+    if user.get("role") == "artisan":
+        return render_template("profile.html", user=user)
+
+    conn = get_db_connection()
+    try:
+        # Demandes récentes
+        demandes = conn.execute(
+            "SELECT r.*, u.full_name AS artisan_name FROM requests r"
+            " LEFT JOIN users u ON u.id = r.artisan_id"
+            " WHERE r.client_id = ? AND LOWER(r.status) IN ('requested', 'pending')"
+            " ORDER BY r.updated_at DESC LIMIT 5",
+            (user["id"],)).fetchall()
+        reservations = conn.execute(
+            "SELECT r.*, u.full_name AS artisan_name FROM requests r"
+            " LEFT JOIN users u ON u.id = r.artisan_id"
+            " WHERE r.client_id = ? AND LOWER(r.status) IN ('assigned', 'in_progress', 'on_the_way')"
+            " ORDER BY r.updated_at DESC LIMIT 5",
+            (user["id"],)).fetchall()
+        interventions = conn.execute(
+            "SELECT r.*, u.full_name AS artisan_name FROM requests r"
+            " LEFT JOIN users u ON u.id = r.artisan_id"
+            " WHERE r.client_id = ? AND LOWER(r.status) = 'completed'"
+            " ORDER BY r.updated_at DESC LIMIT 5",
+            (user["id"],)).fetchall()
+        avis = conn.execute(
+            "SELECT r.id, r.rating, r.comment, r.created_at, u.full_name AS artisan_name"
+            " FROM reviews r LEFT JOIN users u ON u.id = r.artisan_id"
+            " WHERE r.client_id = ? ORDER BY r.created_at DESC LIMIT 5",
+            (user["id"],)).fetchall()
+        unread_count = 0
+        try:
+            row = conn.execute(
+                "SELECT COUNT(*) AS n FROM notifications WHERE user_id = ? AND is_read = 0",
+                (user["id"],)).fetchone()
+            unread_count = row["n"]
+        except Exception:
+            unread_count = 0
+    finally:
+        conn.close()
+
+    recent = list(demandes) + list(reservations) + list(interventions)
+    recent.sort(key=lambda r: r["updated_at"] or r["created_at"], reverse=True)
+    recent = recent[:3]
+
+    counts = {
+        "demandes": len(demandes),
+        "reservations": len(reservations),
+        "interventions": len(interventions),
+        "avis": len(avis),
+    }
+
+    client_zone = session.get("client_zone") or user.get("city") or user.get("quartier")
+    return render_template("client_profile.html", user=user,
+                           demandes=demandes, reservations=reservations,
+                           interventions=interventions, avis=avis, recent=recent,
+                           counts=counts, client_zone=client_zone,
+                           unread_count=unread_count)
+
+
+@app.route("/profil/modifier", methods=["GET"])
+@login_required
+def edit_profile():
+    """Page de modification du profil client."""
+    return render_template("profile.html", user=get_current_user())
+
+
+@app.route("/client-page/<page>")
+@login_required
+def client_static(page):
+    """Pages statiques du compte client."""
+    pages = {
+        "how-it-works": (
+            "Comment fonctionne FixPro ?",
+            "<ol><li>Décrivez votre problème.</li>"
+            "<li>FixPro recherche les professionnels adaptés.</li>"
+            "<li>Les professionnels proches et disponibles sont privilégiés.</li>"
+            "<li>FixPro organise l'intervention.</li>"
+            "<li>Le client suit l'évolution de l'intervention.</li>"
+            "<li>L'intervention est terminée.</li>"
+            "<li>Le client peut laisser un avis.</li></ol>"
+        ),
+        "about": (
+            "À propos de FixPro",
+            "<p>FixPro est une plateforme qui met en relation des clients avec des professionnels qualifiés pour leurs besoins d'intervention.</p>"
+        ),
+        "terms": (
+            "Conditions & confidentialité",
+            "<p>Les conditions d'utilisation et la politique de confidentialité de FixPro seront prochainement disponibles ici.</p>"
+        ),
+    }
+    title, content = pages.get(page, ("FixPro", "<p>Page en cours de construction.</p>"))
+    return render_template("client_static.html", page=page, title=title, content=content)
 
 
 def _insert_id(conn, sql, params):
