@@ -129,7 +129,7 @@
         {% else %}
           <img src="{{ url_for('static', filename='img/fixpro-avatar.png') }}" class="f-pro-avatar" alt="{{ a.full_name }}" />
         {% endif %}
-        <span class="f-pro-online"></span>
+        {% if a.availability_status == 'en_ligne' %}<span class="f-pro-online"></span>{% endif %}
       </div>
       <div class="f-pro-info">
         <h4>{{ a.full_name }}</h4>

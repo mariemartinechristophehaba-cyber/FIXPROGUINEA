@@ -564,6 +564,7 @@ def index():
     try:
         artisans = conn.execute("""
             SELECT u.id, u.full_name, u.profession, u.photo_url, u.is_verified,
+                   u.availability_status,
                    u.city, u.zone_intervention, u.hourly_rate,
                    COALESCE((SELECT AVG(rating) FROM reviews WHERE artisan_id = u.id), 0) AS avg_rating,
                    COALESCE((SELECT COUNT(*) FROM reviews WHERE artisan_id = u.id), 0) AS review_count
@@ -649,6 +650,7 @@ def home():
     try:
         artisans = conn.execute("""
             SELECT u.id, u.full_name, u.profession, u.photo_url, u.is_verified,
+                   u.availability_status,
                    COALESCE((SELECT AVG(rating) FROM reviews WHERE artisan_id = u.id), 0) AS avg_rating,
                    COALESCE((SELECT COUNT(*) FROM reviews WHERE artisan_id = u.id), 0) AS review_count
             FROM users u
