@@ -3,6 +3,10 @@
 {% block header %}{% endblock %}
 {% block footer %}{% endblock %}
 
+{% block extra_head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+{% endblock %}
+
 {% block content %}
 <style>
   .p-page { background: #F5F7FA; min-height: 100vh; padding-bottom: 80px; font-family: 'Inter', sans-serif; }
@@ -92,8 +96,15 @@
   .p-review-stars { color: #F7B718; font-size: 13px; }
   .p-review-text { color: #667085; font-size: 14px; margin: 0; }
 
-  .p-map { background: #F5F7FA; border-radius: 16px; height: 180px; display: flex; align-items: center; justify-content: center; color: #667085; margin-bottom: 12px; }
+  .p-map { background: #F5F7FA; border-radius: 16px; height: 240px; overflow: hidden; position: relative; margin-bottom: 12px; }
+  #p-map { width: 100%; height: 100%; min-height: 240px; }
+  .p-map-empty { display: flex; align-items: center; justify-content: center; height: 100%; color: #667085; font-size: 14px; text-align: center; padding: 20px; }
+  .f-map-marker { position: relative; width: 28px; height: 28px; }
+  .f-marker-dot { width: 14px; height: 14px; background: #155EEF; border: 3px solid #fff; border-radius: 50%; box-shadow: 0 2px 6px rgba(0,0,0,.25); }
+  .f-map-zone { background: rgba(21,94,239,.08); border: 1.5px solid #155EEF; }
   .p-zone-list { color: #667085; font-size: 13px; }
+  .p-zone-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+  .p-zone-tag { background: #F5F7FA; border: 1px solid #E2E8F0; border-radius: 50px; padding: 6px 12px; font-size: 12px; color: #102A43; font-weight: 500; }
 
   .p-horaire-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #F5F7FA; font-size: 13px; }
   .p-horaire-row:last-child { border-bottom: none; }
@@ -226,7 +237,11 @@
         {% else %}
           <img src="{{ url_for('static', filename='img/fixpro-avatar.png') }}" alt="{{ artisan.full_name }}" width="180" height="180" loading="lazy" decoding="async" />
         {% endif %}
-        <span class="p-avail-pill">Disponible maintenant</span>
+        <span class="p-avail-pill" style="
+          {% if artisan.availability_status == 'en_ligne' %}background:#10B981;{% elif artisan.availability_status == 'occupe' %}background:#F97316;{% else %}background:#9CA3AF;{% endif %}
+        ">
+          {% if artisan.availability_status == 'en_ligne' %}Disponible maintenant{% elif artisan.availability_status == 'occupe' %}Intervention en cours{% else %}Hors ligne{% endif %}
+        </span>
       </div>
       <div class="p-identity">
         <div class="p-name-row">
@@ -415,17 +430,28 @@
     <aside class="p-right">
       <section class="p-card">
         <h3>Zone d'intervention</h3>
-        <div class="p-map">
-          <img src="{{ url_for('static', filename='img/icon-map-pin.svg') }}" width="40" height="40" alt="" />
+        <div id="p-map" class="p-map" data-position="{{ (artisan_position or None)|tojson }}" data-zone="{{ (zone_center or None)|tojson }}">
+          <div class="p-map-empty" id="p-map-empty">Chargement de la localisation...</div>
         </div>
-        <p class="p-zone-list">{{ artisan.quartier or artisan.city or 'Kaloum' }}, Ratoma, Dixinn, Matam, Matoto, Lambanyi</p>
+        {% if zones %}
+        <div class="p-zone-tags">
+          {% for z in zones %}
+          <span class="p-zone-tag">{{ z }}</span>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="p-zone-list">Zone d'intervention non renseignée.</p>
+        {% endif %}
       </section>
 
       <section class="p-card" id="horaires">
         <h3>Disponibilité et horaires</h3>
-        <div class="p-now" style="display:flex;align-items:center;gap:8px;background:#ECFDF3;color:#10B981;padding:8px 12px;border-radius:8px;font-weight:700;font-size:14px;margin-bottom:12px;">
-          <span style="width:10px;height:10px;background:#10B981;border-radius:50%;"></span>
-          Disponible maintenant
+        <div class="p-now" style="display:flex;align-items:center;gap:8px;
+          {% if artisan.availability_status == 'en_ligne' %}background:#ECFDF3;color:#10B981;{% elif artisan.availability_status == 'occupe' %}background:#FFF7ED;color:#F97316;{% else %}background:#F3F4F6;color:#6B7280;{% endif %}
+          padding:8px 12px;border-radius:8px;font-weight:700;font-size:14px;margin-bottom:12px;">
+          <span style="width:10px;height:10px;border-radius:50%;
+            {% if artisan.availability_status == 'en_ligne' %}background:#10B981;{% elif artisan.availability_status == 'occupe' %}background:#F97316;{% else %}background:#9CA3AF;{% endif %}"></span>
+          {% if artisan.availability_status == 'en_ligne' %}Disponible maintenant{% elif artisan.availability_status == 'occupe' %}Intervention en cours{% else %}Hors ligne{% endif %}
         </div>
         <div class="p-horaire-row"><span>Aujourd'hui</span><span>08:00 — 20:00</span></div>
         <div class="p-horaire-row"><span>Demain</span><span>08:00 — 20:00</span></div>
@@ -472,6 +498,10 @@
   </a>
 </nav>
 
+{% endblock %}
+
+{% block scripts %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
   const tabs = document.querySelectorAll('.p-tab');
   tabs.forEach(t => {
@@ -488,5 +518,37 @@
       voirPlusBtn.style.display = 'none';
     });
   }
+
+  (function() {
+    const mapEl = document.getElementById('p-map');
+    const emptyEl = document.getElementById('p-map-empty');
+    if (!mapEl) return;
+    const pos = {{ (artisan_position or None)|tojson }};
+    const zone = {{ (zone_center or None)|tojson }};
+    let center = null;
+    let zoom = 13;
+    if (pos) {
+      center = [pos[0], pos[1]];
+      zoom = 14;
+    } else if (zone) {
+      center = [zone[0], zone[1]];
+      zoom = 13;
+    }
+    if (!center) {
+      if (emptyEl) emptyEl.textContent = 'Position indisponible';
+      return;
+    }
+    if (emptyEl) emptyEl.style.display = 'none';
+    const map = L.map('p-map').setView(center, zoom);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributeurs',
+      maxZoom: 19
+    }).addTo(map);
+    if (pos) {
+      const marker = L.divIcon({ className: 'f-map-marker', html: '<div class="f-marker-dot"></div>', iconSize: [20, 20], iconAnchor: [10, 10] });
+      L.marker([pos[0], pos[1]], { icon: marker }).addTo(map).bindPopup('{{ artisan.full_name }}');
+      L.circle([pos[0], pos[1]], { radius: 1500, color: '#155EEF', fillColor: '#155EEF', fillOpacity: 0.08, weight: 1.5 }).addTo(map);
+    }
+  })();
 </script>
 {% endblock %}

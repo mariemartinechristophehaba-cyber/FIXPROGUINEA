@@ -1,6 +1,10 @@
 {% extends 'base.html' %}
 {% block title %}Tableau de bord - Technicien{% endblock %}
 
+{% block extra_head %}
+<meta name="csrf-token" content="{{ csrf_token() }}" />
+{% endblock %}
+
 {% block content %}
 <div class="fx-screen" style="background:var(--paper);">
   <div class="fx-top" style="padding:14px 16px 18px;">
@@ -53,6 +57,22 @@
       <button type="submit" class="fx-btn" style="width:100%;">Enregistrer mes services</button>
     </form>
 
+    <div class="fx-list-title" style="margin-top:18px;">Mon statut</div>
+    <div style="background:var(--paper-2);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:18px;">
+      <div id="status-display" style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:10px;">
+        {% if user.availability_status == 'en_ligne' %}Disponible maintenant{% elif user.availability_status == 'occupe' %}Intervention en cours{% else %}Hors ligne{% endif %}
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button type="button" class="status-btn" data-status="en_ligne" style="flex:1;min-width:80px;height:40px;border:none;border-radius:8px;background:#10B981;color:#fff;font-weight:600;font-size:13px;cursor:pointer;">En ligne</button>
+        <button type="button" class="status-btn" data-status="occupe" style="flex:1;min-width:80px;height:40px;border:none;border-radius:8px;background:#F97316;color:#fff;font-weight:600;font-size:13px;cursor:pointer;">Occupé</button>
+        <button type="button" class="status-btn" data-status="hors_ligne" style="flex:1;min-width:80px;height:40px;border:none;border-radius:8px;background:#9CA3AF;color:#fff;font-weight:600;font-size:13px;cursor:pointer;">Hors ligne</button>
+      </div>
+      <div id="loc-box" style="display:none;margin-top:12px;">
+        <div id="loc-text" style="font-size:12px;color:var(--slate);margin-bottom:8px;">Localisation en attente...</div>
+        <button type="button" id="toggle-loc" style="width:100%;height:40px;border:1.5px solid #155EEF;border-radius:8px;background:#fff;color:#155EEF;font-weight:700;font-size:13px;cursor:pointer;">Désactiver le suivi</button>
+      </div>
+    </div>
+
     <div class="fx-list-title">Demandes</div>
     {% if demandes %}
     {% for d in demandes %}
@@ -92,4 +112,90 @@
     <a class="tabbar-link" href="{{ url_for('profile') }}">Profil</a>
   </nav>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  (function() {
+    const csrf = document.querySelector('meta[name="csrf-token"]')?.content;
+    const statusDisplay = document.getElementById('status-display');
+    const locBox = document.getElementById('loc-box');
+    const locText = document.getElementById('loc-text');
+    const toggleLoc = document.getElementById('toggle-loc');
+    let watchId = null;
+    let lastPos = null;
+    let lastSent = 0;
+
+    function post(url, data) {
+      const body = new FormData();
+      for (const [k, v] of Object.entries(data)) body.append(k, v);
+      if (csrf) body.append('csrf_token', csrf);
+      return fetch(url, { method: 'POST', body }).then(r => r.json());
+    }
+
+    function setStatusLabel(status) {
+      const labels = { en_ligne: 'Disponible maintenant', occupe: 'Intervention en cours', hors_ligne: 'Hors ligne' };
+      if (statusDisplay) statusDisplay.textContent = labels[status] || status;
+    }
+
+    function sendPosition(lat, lon) {
+      const now = Date.now();
+      if (lastPos) {
+        const d = Math.hypot(lat - lastPos.lat, lon - lastPos.lon);
+        if (d < 0.001 && now - lastSent < 30000) return;
+      }
+      post('/api/technicien/position', { lat: lat.toFixed(6), lon: lon.toFixed(6) }).then(r => {
+        if (r.ok) {
+          lastPos = { lat, lon };
+          lastSent = now;
+          if (locText) locText.textContent = 'Position actualisée.';
+        } else if (locText) {
+          locText.textContent = 'Position ignorée : statut non en ligne.';
+        }
+      }).catch(e => { if (locText) locText.textContent = 'Erreur d\'envoi de position.'; });
+    }
+
+    function startTracking() {
+      if (!navigator.geolocation) {
+        if (locText) locText.textContent = 'Géolocalisation non supportée.';
+        return;
+      }
+      if (locBox) locBox.style.display = 'block';
+      if (locText) locText.textContent = 'Recherche de position...';
+      watchId = navigator.geolocation.watchPosition(
+        (p) => sendPosition(p.coords.latitude, p.coords.longitude),
+        (e) => { if (locText) locText.textContent = 'Position non disponible.'; },
+        { enableHighAccuracy: false, maximumAge: 30000, timeout: 10000 }
+      );
+      if (toggleLoc) toggleLoc.textContent = 'Désactiver le suivi';
+    }
+
+    function stopTracking() {
+      if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+      watchId = null;
+      if (locBox) locBox.style.display = 'none';
+    }
+
+    document.querySelectorAll('.status-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const status = btn.dataset.status;
+        post('/api/technicien/status', { status }).then(r => {
+          if (r.ok) {
+            setStatusLabel(status);
+            if (status === 'en_ligne' && watchId === null) startTracking();
+            if (status !== 'en_ligne') stopTracking();
+          }
+        });
+      });
+    });
+
+    if (toggleLoc) {
+      toggleLoc.addEventListener('click', () => {
+        if (watchId !== null) stopTracking(); else startTracking();
+      });
+    }
+
+    {% if user and user.availability_status == 'en_ligne' %}startTracking();{% endif %}
+  })();
+</script>
 {% endblock %}

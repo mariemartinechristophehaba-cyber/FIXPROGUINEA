@@ -117,6 +117,29 @@ def _nearest_zone(lat, lon):
     return best_name.capitalize() if best_name else None
 
 
+def _zone_coordinate(zone_name):
+    """Retourne les coordonnees (lat, lon) d'un quartier connu par son nom."""
+    if not zone_name:
+        return None
+    key = zone_name.strip().lower()
+    return _ARTISAN_GEOCODE.get(key)
+
+
+def _split_zones(zones_str):
+    """Decoupe une liste de zones en noms propres uniques."""
+    if not zones_str:
+        return []
+    raw = re.split(r"[,;/]", str(zones_str))
+    seen = set()
+    zones = []
+    for z in raw:
+        z = z.strip()
+        if z and z.lower() not in seen:
+            seen.add(z.lower())
+            zones.append(z)
+    return zones
+
+
 oauth = OAuth(app)
 
 
@@ -3003,6 +3026,37 @@ def artisan_detail(artisan_id):
                 (artisan_id,)).fetchall()
         except Exception:
             portfolio = []
+
+        # Position temps reel et zones d'intervention
+        artisan_position = None
+        if artisan.get("availability_status") == "en_ligne":
+            loc = conn.execute(
+                "SELECT latitude, longitude, updated_at FROM technician_locations"
+                " WHERE technician_id = ? ORDER BY updated_at DESC LIMIT 1",
+                (artisan_id,)).fetchone()
+            if loc:
+                try:
+                    updated = datetime.fromisoformat(
+                        str(loc["updated_at"]).replace("Z", "+00:00"))
+                    if updated.tzinfo is None:
+                        updated = updated.replace(tzinfo=timezone.utc)
+                    if (datetime.now(timezone.utc) - updated).total_seconds() <= 180:
+                        artisan_position = (
+                            float(loc["latitude"]),
+                            float(loc["longitude"]),
+                            loc["updated_at"])
+                except (TypeError, ValueError):
+                    pass
+
+        zones = _split_zones(
+            artisan.get("zone_intervention")
+            or artisan.get("quartier")
+            or artisan.get("city"))
+        zone_center = None
+        for z in zones:
+            zone_center = _zone_coordinate(z)
+            if zone_center:
+                break
     finally:
         conn.close()
 
@@ -3022,7 +3076,10 @@ def artisan_detail(artisan_id):
                            review_bars_count=review_bars_count,
                            satisfaction_rate=satisfaction_rate,
                            is_demo=is_demo,
-                           artisan_services=artisan_services)
+                           artisan_services=artisan_services,
+                           artisan_position=artisan_position,
+                           zone_center=zone_center,
+                           zones=zones)
 
 
 def _services_for_profession(profession):
