@@ -136,6 +136,11 @@ class Connection:
         self._raw.rollback()
 
     def close(self):
+        if self.is_postgres:
+            try:
+                self._raw.rollback()
+            except Exception:
+                pass
         self._raw.close()
 
     def __enter__(self):
