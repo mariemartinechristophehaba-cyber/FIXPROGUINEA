@@ -142,7 +142,7 @@
         {% else %}
           <img src="{{ url_for('static', filename='img/fixpro-avatar.png') }}" class="r-avatar-sm" alt="" />
         {% endif %}
-        <span>Bonjour {% if user %}{{ (user.full_name or 'Mamadou').split(' ')[0] }}{% else %}Mamadou{% endif %}</span>
+        <span>Bonjour {% if user %}{{ (user.full_name or 'Utilisateur').split(' ')[0] }}{% else %}Utilisateur{% endif %}</span>
         <span>&#9662;</span>
       </a>
     </div>
