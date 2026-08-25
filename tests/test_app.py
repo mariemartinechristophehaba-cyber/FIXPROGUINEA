@@ -611,6 +611,37 @@ class GeolocationTests(FixProTestCase):
         response = self.client.get("/api/technicien/1/position")
         self.assertEqual(response.status_code, 404)
 
+    def test_client_location_outside_conakry_no_wanindara(self):
+        """Une position au Ghana ne doit plus retomber sur Wanindara."""
+        response = self.client.post("/api/location", json={
+            "lat": 5.6, "lon": -0.18, "accuracy": 1000})
+        self.assertEqual(response.status_code, 200)
+        data = response.get_json()
+        self.assertEqual(data["ok"], True)
+        self.assertIsNotNone(data["zone"])
+        self.assertNotIn("wanindara", data["zone"].lower())
+        self.assertNotIn("conakry", data["zone"].lower())
+
+    def test_client_location_conakry_returns_zone(self):
+        """Une position a Kaloum retourne bien le quartier Kaloum."""
+        response = self.client.post("/api/location", json={
+            "lat": 9.5077, "lon": -13.7114, "accuracy": 100})
+        self.assertEqual(response.status_code, 200)
+        data = response.get_json()
+        self.assertEqual(data["zone"], "Kaloum")
+
+    def test_client_manual_zone_updates_session(self):
+        """La localisation manuelle persiste en session."""
+        response = self.client.post("/api/location/zone", json={"zone": "Kaloum"})
+        self.assertEqual(response.status_code, 200)
+        data = response.get_json()
+        self.assertEqual(data["ok"], True)
+        self.assertIsNotNone(data["zone"])
+        with self.client.session_transaction() as sess:
+            self.assertIsNotNone(sess.get("client_zone"))
+            self.assertIsNotNone(sess.get("client_lat"))
+            self.assertIsNotNone(sess.get("client_lon"))
+
 
 class AdminPanelTests(FixProTestCase):
     """Panneau administrateur : acces, actions et logs."""

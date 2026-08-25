@@ -129,7 +129,7 @@
     <div class="r-header-right">
       <div class="r-loc">
         <img src="{{ url_for('static', filename='img/icon-map-pin.svg') }}" width="16" height="16" alt="" />
-        <span>Conakry, Kaloum</span>
+        <span>{{ client_zone or 'Ma position' }}</span>
         <span>&#9662;</span>
       </div>
       <a href="{{ url_for('notifications') }}" class="r-notif">
@@ -213,14 +213,14 @@
         </div>
         <div class="r-pro-distance">
           <img src="{{ url_for('static', filename='img/icon-map-pin.svg') }}" width="14" height="14" alt="" />
-          {{ "%.1f" | format(a.distance or (1.8 + loop.index0 * 0.3)) }} km
+          {% if a.distance is not none %}{{ "%.1f" | format(a.distance) }} km{% else %}Distance non disponible{% endif %}
         </div>
       </div>
       <div class="r-pro-row" style="margin-top: 6px;">
         <div class="r-pro-rating">
           <span class="star">&#9733;</span>
           {% if a.review_count and a.review_count > 0 %}
-            <strong>{{ "%.1f" | format(a.rating or 4.5) }}</strong>
+            <strong>{{ "%.1f" | format(a.rating) }}</strong>
             <span>({{ a.review_count }} avis)</span>
           {% else %}
             <strong>Nouveau</strong>

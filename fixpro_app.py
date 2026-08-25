@@ -14,6 +14,8 @@ import io
 import json
 import math
 import re
+import urllib.parse
+import urllib.request
 import secrets
 import smtplib
 from datetime import datetime, timedelta, timezone
@@ -96,7 +98,6 @@ _ARTISAN_GEOCODE = {
     "encoville": (9.6500, -13.5500),
     "kaporo": (9.6678, -13.5569),
     "sonfonia": (9.6400, -13.5100),
-    "wanindara": (9.6700, -13.4900),
     "yimbaya": (9.6400, -13.5000),
     "mambeto": (9.6400, -13.5300),
     "kagbaneh": (9.6300, -13.5400),
@@ -104,17 +105,22 @@ _ARTISAN_GEOCODE = {
 }
 
 
-def _nearest_zone(lat, lon):
-    """Retourne le quartier connu le plus proche d'une position GPS."""
+def _nearest_zone(lat, lon, max_km=15.0):
+    """Retourne le quartier connu le plus proche d'une position GPS.
+
+    Si aucun quartier connu n'est dans le rayon (15 km par defaut),
+    la position est hors de Conakry : on ne retombe pas sur un quartier
+    fixe de Conakry.
+    """
     if not _is_valid_coordinate(lat, lon):
         return None
     best_name, best_d = None, float("inf")
     for name, (zlat, zlon) in _ARTISAN_GEOCODE.items():
-        d = math.hypot(lat - zlat, lon - zlon)
+        d = _haversine(lat, lon, zlat, zlon)
         if d < best_d:
             best_d = d
             best_name = name
-    return best_name.capitalize() if best_name else None
+    return best_name.capitalize() if (best_name and best_d <= max_km) else None
 
 
 def _zone_coordinate(zone_name):
@@ -123,6 +129,74 @@ def _zone_coordinate(zone_name):
         return None
     key = zone_name.strip().lower()
     return _ARTISAN_GEOCODE.get(key)
+
+
+def _nominatim_request(url):
+    """Appelle Nominatim avec un User-Agent identifiable."""
+    req = urllib.request.Request(
+        url,
+        headers={
+            "User-Agent": "FixPro/1.0 (contact@fixproguinea.vercel.app)",
+            "Accept-Language": "fr",
+        },
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=6) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+    except Exception as e:
+        logger.warning("Erreur Nominatim : %s", e)
+        return None
+
+
+def _extract_place_name(data):
+    """Extrait un libelle lisible (ville, quartier) depuis une reponse Nominatim."""
+    if not data or not isinstance(data, dict):
+        return None
+    addr = data.get("address") or {}
+    city = addr.get("city") or addr.get("town") or addr.get("village") or addr.get("suburb") or addr.get("hamlet") or addr.get("county")
+    country = addr.get("country")
+    if city and country:
+        return f"{city}, {country}"
+    return city or data.get("display_name")
+
+
+def _reverse_geocode(lat, lon):
+    """Retourne le nom d'un lieu a partir de coordonnees GPS."""
+    if not _is_valid_coordinate(lat, lon):
+        return None
+    params = urllib.parse.urlencode({
+        "lat": lat,
+        "lon": lon,
+        "format": "json",
+        "addressdetails": 1,
+        "accept-language": "fr",
+        "zoom": 18,
+    })
+    data = _nominatim_request(f"https://nominatim.openstreetmap.org/reverse?{params}")
+    return _extract_place_name(data)
+
+
+def _geocode_query(query):
+    """Geocode un nom de lieu. Retourne (lat, lon, nom) ou (None, None, None)."""
+    if not query or not query.strip():
+        return None, None, None
+    params = urllib.parse.urlencode({
+        "q": query.strip(),
+        "format": "json",
+        "addressdetails": 1,
+        "limit": 1,
+        "accept-language": "fr",
+    })
+    data = _nominatim_request(f"https://nominatim.openstreetmap.org/search?{params}")
+    if not data or not isinstance(data, list) or not data:
+        return None, None, None
+    result = data[0]
+    try:
+        lat = float(result.get("lat"))
+        lon = float(result.get("lon"))
+    except (TypeError, ValueError):
+        return None, None, None
+    return lat, lon, _extract_place_name(result)
 
 
 def _split_zones(zones_str):
@@ -602,7 +676,8 @@ def index():
         artisans = conn.execute("""
             SELECT u.id, u.full_name, u.profession, u.photo_url, u.is_verified,
                    u.availability_status,
-                   u.city, u.zone_intervention, u.hourly_rate,
+                   u.city, u.zone_intervention, u.quartier,
+                   u.latitude, u.longitude, u.hourly_rate,
                    COALESCE(AVG(r.rating), 0) AS avg_rating,
                    COUNT(DISTINCT r.id) AS review_count
             FROM users u
@@ -610,7 +685,6 @@ def index():
             WHERE u.role = 'artisan' AND u.is_verified = 1 AND u.is_active = 1
             GROUP BY u.id
             ORDER BY avg_rating DESC, review_count DESC
-            LIMIT 4
         """).fetchall()
         user = get_current_user()
         unread_count = 0
@@ -640,6 +714,20 @@ def index():
             n = sum(counts.get(k, 0) for k in keys)
             href_key = next((k for k in keys if counts.get(k, 0)), keys[0])
             popular.append({"label": label, "count": n, "category": href_key})
+
+        artisans = [dict(a) for a in artisans]
+        client_lat = _to_float(user.get("latitude")) if user else None
+        client_lon = _to_float(user.get("longitude")) if user else None
+        if client_lat is None or client_lon is None:
+            client_lat = _to_float(session.get("client_lat"))
+            client_lon = _to_float(session.get("client_lon"))
+        if client_lat is not None and client_lon is not None:
+            for a in artisans:
+                a_lat = _to_float(a.get("latitude"))
+                a_lon = _to_float(a.get("longitude"))
+                a["distance"] = _haversine(client_lat, client_lon, a_lat, a_lon) if (a_lat is not None and a_lon is not None) else None
+            artisans.sort(key=lambda a: a.get("distance") if a.get("distance") is not None else 999)
+        artisans = artisans[:4]
     finally:
         conn.close()
     return render_template("index.html", artisans=artisans, unread_count=unread_count,
@@ -665,11 +753,42 @@ def set_location():
         session["client_loc_at"] = datetime.now(timezone.utc).isoformat()
         session["loc_permission"] = "granted"
         zone = _nearest_zone(lat, lon)
-        if zone:
-            session["client_zone"] = zone
-        return jsonify({"ok": True, "zone": zone})
+        if not zone:
+            zone = _reverse_geocode(lat, lon) or "Ma position"
+        session["client_zone"] = zone
+        return jsonify({"ok": True, "zone": zone, "lat": lat, "lon": lon, "accuracy": accuracy})
     except Exception as e:
         logger.warning("Erreur enregistrement position: %s", e)
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+@app.route("/api/location/zone", methods=["POST"])
+def set_location_zone():
+    """Enregistre une localisation manuelle saisie par l'utilisateur."""
+    try:
+        data = request.get_json(force=True, silent=True) or {}
+        zone = (data.get("zone") or "").strip()
+        if not zone:
+            return jsonify({"ok": False, "error": "Zone vide"}), 400
+        session["loc_permission"] = "manual"
+        coords = _zone_coordinate(zone)
+        if not coords:
+            lat, lon, place = _geocode_query(zone)
+            if place:
+                coords = (lat, lon)
+                zone = place
+            elif lat is not None and lon is not None:
+                coords = (lat, lon)
+        session["client_zone"] = zone
+        if coords:
+            session["client_lat"] = coords[0]
+            session["client_lon"] = coords[1]
+        else:
+            session.pop("client_lat", None)
+            session.pop("client_lon", None)
+        return jsonify({"ok": True, "zone": zone, "lat": session.get("client_lat"), "lon": session.get("client_lon")})
+    except Exception as e:
+        logger.warning("Erreur enregistrement zone manuelle: %s", e)
         return jsonify({"ok": False, "error": str(e)}), 500
 
 
@@ -690,6 +809,8 @@ def home():
         artisans = conn.execute("""
             SELECT u.id, u.full_name, u.profession, u.photo_url, u.is_verified,
                    u.availability_status,
+                   u.city, u.zone_intervention, u.quartier,
+                   u.latitude, u.longitude, u.hourly_rate,
                    COALESCE(AVG(r.rating), 0) AS avg_rating,
                    COUNT(DISTINCT r.id) AS review_count
             FROM users u
@@ -697,7 +818,6 @@ def home():
             WHERE u.role = 'artisan' AND u.is_verified = 1 AND u.is_active = 1
             GROUP BY u.id
             ORDER BY avg_rating DESC, review_count DESC
-            LIMIT 5
         """).fetchall()
         unread_count = 0
         if user:
@@ -726,6 +846,20 @@ def home():
             n = sum(counts.get(k, 0) for k in keys)
             href_key = next((k for k in keys if counts.get(k, 0)), keys[0])
             popular.append({"label": label, "count": n, "category": href_key})
+
+        artisans = [dict(a) for a in artisans]
+        client_lat = _to_float(user.get("latitude")) if user else None
+        client_lon = _to_float(user.get("longitude")) if user else None
+        if client_lat is None or client_lon is None:
+            client_lat = _to_float(session.get("client_lat"))
+            client_lon = _to_float(session.get("client_lon"))
+        if client_lat is not None and client_lon is not None:
+            for a in artisans:
+                a_lat = _to_float(a.get("latitude"))
+                a_lon = _to_float(a.get("longitude"))
+                a["distance"] = _haversine(client_lat, client_lon, a_lat, a_lon) if (a_lat is not None and a_lon is not None) else None
+            artisans.sort(key=lambda a: a.get("distance") if a.get("distance") is not None else 999)
+        artisans = artisans[:4]
     finally:
         conn.close()
     return render_template("home.html", user=user, artisans=artisans, unread_count=unread_count,
@@ -2683,7 +2817,7 @@ def artisans_page():
     user = get_current_user()
     query = request.args.get("q", "").strip()
     category = request.args.get("category", "").strip()
-    zone = request.args.get("zone", "").strip()
+    zone = request.args.get("location", request.args.get("zone", "")).strip()
 
     sql = (
         "SELECT u.id, u.full_name AS nom, u.profession AS metier, u.city,"
@@ -2746,9 +2880,11 @@ def artisans_page():
             a["distance"] = _haversine(client_lat, client_lon, a_lat, a_lon) if a_lat else None
         artisans = sorted(artisans, key=lambda a: a.get("distance") or 999)
 
+    client_zone = session.get("client_zone") or (user.get("city") if user else None)
     return render_template("artisans.html", artisans=artisans, user=user,
                            active_requests=active_requests, categories=categories,
                            category_filter=category,
+                           client_zone=client_zone,
                            query=query, zone=zone)
 
 
@@ -2802,53 +2938,7 @@ def artisan_detail(artisan_id):
         artisan = dict(artisan)
         artisan["gradient"] = _avatar_gradient(artisan["full_name"])
 
-        # Donnees de demonstration ciblees par metier
-        profession_lower = (artisan.get("profession") or "").lower()
-        demo_config = None
-        if profession_lower in ("plombier", "plomberie"):
-            demo_config = {
-                "full_name": "Mamadou S.",
-                "profession": "Plombier",
-                "experience": "7 ans",
-                "member_since": "mars 2022",
-                "rating": 4.8,
-                "review_count": 128,
-                "satisfaction_rate": 98,
-                "distance_km": 1.8,
-                "response_time": "15 min",
-                "interventions": 168,
-                "availability": "Disponible aujourd'hui"
-            }
-        elif profession_lower in ("electricien", "électricien", "electricite", "électricité"):
-            demo_config = {
-                "full_name": "Ibrahima K.",
-                "profession": "Electricien",
-                "experience": "6 ans",
-                "member_since": "avril 2021",
-                "rating": 4.7,
-                "review_count": 96,
-                "satisfaction_rate": 96,
-                "distance_km": 2.1,
-                "response_time": "20 min",
-                "interventions": 124,
-                "availability": "Disponible aujourd'hui"
-            }
-        elif profession_lower == "frigoriste":
-            demo_config = {
-                "full_name": "Ousmane D.",
-                "profession": "Frigoriste",
-                "experience": "5 ans",
-                "member_since": "janvier 2023",
-                "rating": 4.9,
-                "review_count": 74,
-                "satisfaction_rate": 99,
-                "distance_km": 2.4,
-                "response_time": "12 min",
-                "interventions": 89,
-                "availability": "Disponible aujourd'hui"
-            }
-
-        is_demo = demo_config is not None
+        is_demo = False
 
         # Services reels du technicien
         artisan_services = conn.execute(
@@ -2928,15 +3018,38 @@ def artisan_detail(artisan_id):
             (artisan_id,)).fetchall()
         verified_docs = {d["document_type"]: d["status"] for d in documents}
 
-        # Distance approximative
+        # Distance approximative (position temps reel si disponible, sinon profil)
         distance = None
-        client_lat = float(user["latitude"]) if user and user.get("latitude") else session.get("client_lat")
-        client_lon = float(user["longitude"]) if user and user.get("longitude") else session.get("client_lon")
+        client_lat = _to_float(user.get("latitude")) if user else _to_float(session.get("client_lat"))
+        client_lon = _to_float(user.get("longitude")) if user else _to_float(session.get("client_lon"))
+
+        artisan_position = None
+        if artisan.get("availability_status") == "en_ligne":
+            loc = conn.execute(
+                "SELECT latitude, longitude, updated_at FROM technician_locations"
+                " WHERE technician_id = ? ORDER BY updated_at DESC LIMIT 1",
+                (artisan_id,)).fetchone()
+            if loc:
+                try:
+                    updated = datetime.fromisoformat(
+                        str(loc["updated_at"]).replace("Z", "+00:00"))
+                    if updated.tzinfo is None:
+                        updated = updated.replace(tzinfo=timezone.utc)
+                    if (datetime.now(timezone.utc) - updated).total_seconds() <= 180:
+                        artisan_position = (
+                            float(loc["latitude"]),
+                            float(loc["longitude"]),
+                            loc["updated_at"])
+                except (TypeError, ValueError):
+                    pass
+
+        artisan_lat = _to_float(artisan.get("latitude"))
+        artisan_lon = _to_float(artisan.get("longitude"))
+        if artisan_position:
+            artisan_lat, artisan_lon = artisan_position[0], artisan_position[1]
         if (_is_valid_coordinate(client_lat, client_lon)
-                and _is_valid_coordinate(artisan["latitude"], artisan["longitude"])):
-            distance = calculate_distance(
-                client_lat, client_lon,
-                float(artisan["latitude"]), float(artisan["longitude"]))
+                and _is_valid_coordinate(artisan_lat, artisan_lon)):
+            distance = _haversine(client_lat, client_lon, artisan_lat, artisan_lon)
 
         # Conversation client - FixPro pour ce technicien
         chat_messages = []
@@ -3068,27 +3181,7 @@ def artisan_detail(artisan_id):
         except Exception:
             portfolio = []
 
-        # Position temps reel et zones d'intervention
-        artisan_position = None
-        if artisan.get("availability_status") == "en_ligne":
-            loc = conn.execute(
-                "SELECT latitude, longitude, updated_at FROM technician_locations"
-                " WHERE technician_id = ? ORDER BY updated_at DESC LIMIT 1",
-                (artisan_id,)).fetchone()
-            if loc:
-                try:
-                    updated = datetime.fromisoformat(
-                        str(loc["updated_at"]).replace("Z", "+00:00"))
-                    if updated.tzinfo is None:
-                        updated = updated.replace(tzinfo=timezone.utc)
-                    if (datetime.now(timezone.utc) - updated).total_seconds() <= 180:
-                        artisan_position = (
-                            float(loc["latitude"]),
-                            float(loc["longitude"]),
-                            loc["updated_at"])
-                except (TypeError, ValueError):
-                    pass
-
+        # Zones d'intervention
         zones = _split_zones(
             artisan.get("zone_intervention")
             or artisan.get("quartier")
@@ -3101,8 +3194,10 @@ def artisan_detail(artisan_id):
     finally:
         conn.close()
 
+    client_zone = session.get("client_zone") or (user.get("city") if user else None)
     return render_template("artisan_detail.html",
                            user=user,
+                           client_zone=client_zone,
                            artisan=artisan,
                            reviews=reviews,
                            review_stats=review_stats,

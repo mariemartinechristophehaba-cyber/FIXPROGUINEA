@@ -6,15 +6,18 @@
 {% block content %}
 <input type="hidden" id="locCsrf" value="{{ csrf_token() }}" />
 {% set loc_state = loc_permission or 'prompt' %}
-<div id="locOverlay" class="f-loc-overlay" {% if loc_state == 'granted' %}style="display:none;"{% endif %}>
+<div id="locOverlay" class="f-loc-overlay" {% if loc_state in ('granted', 'manual') %}style="display:none;"{% endif %}>
   <div class="f-loc-card">
     <svg class="f-loc-pin" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#155eef" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
     <h2 id="locTitle">Activer ma localisation</h2>
     <p id="locDesc">Pour vous proposer les professionnels disponibles près de vous, FixPro a besoin d'accéder à votre position.</p>
     <button class="f-btn" id="locAllow" type="button">Autoriser ma position</button>
+    <button class="f-btn f-btn-secondary" id="locManual" type="button" style="margin-top:10px;">Choisir manuellement</button>
     <div id="locDenied" style="display:none;">
-      <p>Localisation non autorisée. Pour trouver automatiquement les professionnels disponibles près de vous, autorisez la localisation dans les paramètres de votre appareil.</p>
-      <button class="f-btn f-btn-secondary" id="locRetry" type="button">Réessayer</button>
+      <p>Localisation non autorisée. Vous pouvez entrer votre ville ou quartier manuellement.</p>
+      <input type="text" id="locManualInput" class="f-loc-manual" placeholder="Ex: Accra, Kaloum, Dixinn..." value="{{ client_zone or '' }}" />
+      <button class="f-btn f-btn-secondary" id="locManualSearch" type="button" style="margin-top:8px;">Utiliser cette localisation</button>
+      <button class="f-btn f-btn-secondary" id="locRetry" type="button" style="margin-top:8px;">Réessayer le GPS</button>
     </div>
   </div>
 </div>
@@ -39,9 +42,9 @@
       <a href="{{ url_for('reviews') }}">Avis</a>
     </nav>
     <div class="f-header-right">
-      <div class="f-header-loc">
+      <div class="f-header-loc" id="headerLoc">
         <img src="{{ url_for('static', filename='img/icon-map-pin.svg') }}" width="16" height="16" alt="" />
-        {% if client_zone %}{{ client_zone }}{% elif nav_user and nav_user.city %}{{ nav_user.city }}{% else %}Conakry, Kaloum{% endif %}
+        <span id="headerLocText">{% if client_zone %}{{ client_zone }}{% elif loc_permission == 'granted' %}Ma position{% elif nav_user and nav_user.city %}{{ nav_user.city }}{% else %}Choisir ma localisation{% endif %}</span>
       </div>
       <a href="{{ url_for('notifications') }}" class="f-notif" aria-label="Notifications">
         <img src="{{ url_for('static', filename='img/icon-bell.svg') }}" width="22" height="22" alt="" />
@@ -289,11 +292,20 @@
   const locDesc = document.getElementById('locDesc');
   const locDenied = document.getElementById('locDenied');
   const locRetry = document.getElementById('locRetry');
+  const locManual = document.getElementById('locManual');
+  const locManualInput = document.getElementById('locManualInput');
+  const locManualSearch = document.getElementById('locManualSearch');
+  const headerLocText = document.getElementById('headerLocText');
   const locCsrf = document.getElementById('locCsrf');
   let selectedCat = '';
 
   function csrfHeader() {
     return { 'X-CSRFToken': locCsrf ? locCsrf.value : '', 'Content-Type': 'application/json' };
+  }
+
+  function updateLocationDisplay(zone) {
+    if (locInput) locInput.value = zone;
+    if (headerLocText) headerLocText.textContent = zone;
   }
 
   function sendPosition(lat, lon, accuracy) {
@@ -303,10 +315,33 @@
       body: JSON.stringify({ lat, lon, accuracy })
     }).then(r => r.json()).then(data => {
       if (data.ok && data.zone) {
-        locInput.value = data.zone;
+        updateLocationDisplay(data.zone);
       }
       if (locOverlay) locOverlay.style.display = 'none';
     }).catch(err => console.error(err));
+  }
+
+  function saveManualZone(zone) {
+    return fetch('/api/location/zone', {
+      method: 'POST',
+      headers: csrfHeader(),
+      body: JSON.stringify({ zone: zone })
+    }).then(r => r.json()).then(data => {
+      if (data.ok && data.zone) {
+        updateLocationDisplay(data.zone);
+      }
+      return data;
+    }).catch(err => console.error(err));
+  }
+
+  function showManual() {
+    if (!locOverlay) return;
+    locTitle.textContent = 'Choisir une localisation';
+    locDesc.style.display = 'none';
+    locAllow.style.display = 'none';
+    if (locManual) locManual.style.display = 'none';
+    locDenied.style.display = 'block';
+    if (locManualInput) locManualInput.focus();
   }
 
   function showDenied() {
@@ -314,6 +349,7 @@
     locTitle.textContent = 'Localisation non autorisée';
     locDesc.style.display = 'none';
     locAllow.style.display = 'none';
+    if (locManual) locManual.style.display = 'none';
     locDenied.style.display = 'block';
   }
 
@@ -345,6 +381,17 @@
 
   if (locAllow) locAllow.addEventListener('click', requestLocation);
   if (locRetry) locRetry.addEventListener('click', requestLocation);
+  if (locManual) locManual.addEventListener('click', showManual);
+  if (locManualSearch) locManualSearch.addEventListener('click', () => {
+    const raw = (locManualInput ? locManualInput.value : locInput ? locInput.value : '').trim();
+    if (!raw) return;
+    saveManualZone(raw).then(() => {
+      if (locOverlay) locOverlay.style.display = 'none';
+    });
+  });
+  if (locManualInput) locManualInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && locManualSearch) locManualSearch.click();
+  });
 
   startLocationFlow();
 
@@ -355,17 +402,26 @@
       c.classList.add('active');
       selectedCat = c.dataset.cat;
       let href = c.getAttribute('href');
-      const loc = encodeURIComponent(locInput.value || '');
-      if (loc) {
-        href += (href.includes('?') ? '&' : '?') + `location=${loc}`;
+      const raw = (locInput.value || '').trim();
+      const zone = encodeURIComponent(raw);
+      function navigate() {
+        if (raw) {
+          href += (href.includes('?') ? '&' : '?') + `zone=${zone}`;
+        }
+        window.location.href = href;
       }
-      window.location.href = href;
+      if (raw) {
+        saveManualZone(raw).finally(navigate);
+      } else {
+        navigate();
+      }
     });
   });
 
   searchBtn.addEventListener('click', e => {
     e.preventDefault();
-    const loc = encodeURIComponent(locInput.value || '');
+    const raw = (locInput.value || '').trim();
+    const zone = encodeURIComponent(raw);
     let href = '/artisans';
     if (selectedCat) {
       const activeCard = document.querySelector('.f-cat.active');
@@ -373,12 +429,23 @@
         href = activeCard.getAttribute('href') || href;
       }
     }
-    if (loc) {
-      href += (href.includes('?') ? '&' : '?') + `location=${loc}`;
+    function navigate() {
+      if (raw) {
+        href += (href.includes('?') ? '&' : '?') + `zone=${zone}`;
+      }
+      window.location.href = href;
     }
-    window.location.href = href;
+    if (raw) {
+      saveManualZone(raw).finally(navigate);
+    } else {
+      navigate();
+    }
   });
 
   if (locTarget) locTarget.addEventListener('click', requestLocation);
+  if (locInput) locInput.addEventListener('change', () => {
+    const raw = (locInput.value || '').trim();
+    if (raw) saveManualZone(raw);
+  });
 </script>
 {% endblock %}
