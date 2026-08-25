@@ -721,11 +721,11 @@ def index():
         if client_lat is None or client_lon is None:
             client_lat = _to_float(session.get("client_lat"))
             client_lon = _to_float(session.get("client_lon"))
-        if client_lat is not None and client_lon is not None:
+        if _is_valid_coordinate(client_lat, client_lon):
             for a in artisans:
                 a_lat = _to_float(a.get("latitude"))
                 a_lon = _to_float(a.get("longitude"))
-                a["distance"] = _haversine(client_lat, client_lon, a_lat, a_lon) if (a_lat is not None and a_lon is not None) else None
+                a["distance"] = _haversine(client_lat, client_lon, a_lat, a_lon) if _is_valid_coordinate(a_lat, a_lon) else None
             artisans.sort(key=lambda a: a.get("distance") if a.get("distance") is not None else 999)
         artisans = artisans[:4]
     finally:
@@ -853,11 +853,11 @@ def home():
         if client_lat is None or client_lon is None:
             client_lat = _to_float(session.get("client_lat"))
             client_lon = _to_float(session.get("client_lon"))
-        if client_lat is not None and client_lon is not None:
+        if _is_valid_coordinate(client_lat, client_lon):
             for a in artisans:
                 a_lat = _to_float(a.get("latitude"))
                 a_lon = _to_float(a.get("longitude"))
-                a["distance"] = _haversine(client_lat, client_lon, a_lat, a_lon) if (a_lat is not None and a_lon is not None) else None
+                a["distance"] = _haversine(client_lat, client_lon, a_lat, a_lon) if _is_valid_coordinate(a_lat, a_lon) else None
             artisans.sort(key=lambda a: a.get("distance") if a.get("distance") is not None else 999)
         artisans = artisans[:4]
     finally:
@@ -2766,7 +2766,10 @@ def _enrich_artisan(row, client_lat, client_lon):
     artisan["gradient"] = _avatar_gradient(artisan["full_name"])
     artisan_lat = _to_float(artisan.get("latitude"))
     artisan_lon = _to_float(artisan.get("longitude"))
-    artisan["distance"] = _haversine(client_lat, client_lon, artisan_lat, artisan_lon) if client_lat and artisan_lat else None
+    if _is_valid_coordinate(client_lat, client_lon) and _is_valid_coordinate(artisan_lat, artisan_lon):
+        artisan["distance"] = _haversine(client_lat, client_lon, artisan_lat, artisan_lon)
+    else:
+        artisan["distance"] = None
     completed = artisan.get("completed")
     review_count = artisan.get("review_count")
     avg_rating = artisan.get("avg_rating")
@@ -2843,8 +2846,9 @@ def artisans_page():
         params.append(f"%{category}%")
 
     if zone:
-        sql += " AND city LIKE ?"
-        params.append(f"%{zone}%")
+        sql += " AND (u.city LIKE ? OR u.quartier LIKE ? OR u.zone_intervention LIKE ?)"
+        like = f"%{zone}%"
+        params.extend([like, like, like])
 
     sql += " GROUP BY u.id ORDER BY u.full_name"
 
@@ -2873,11 +2877,11 @@ def artisans_page():
     if request.args.get("lat") and request.args.get("lon"):
         client_lat = _to_float(request.args.get("lat"))
         client_lon = _to_float(request.args.get("lon"))
-    if client_lat and client_lon:
+    if _is_valid_coordinate(client_lat, client_lon):
         for a in artisans:
             a_lat = _to_float(a.get("latitude"))
             a_lon = _to_float(a.get("longitude"))
-            a["distance"] = _haversine(client_lat, client_lon, a_lat, a_lon) if a_lat else None
+            a["distance"] = _haversine(client_lat, client_lon, a_lat, a_lon) if _is_valid_coordinate(a_lat, a_lon) else None
         artisans = sorted(artisans, key=lambda a: a.get("distance") or 999)
 
     client_zone = session.get("client_zone") or (user.get("city") if user else None)
