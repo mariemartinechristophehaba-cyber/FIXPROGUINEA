@@ -23,7 +23,7 @@ from functools import wraps
 from authlib.integrations.flask_client import OAuth
 from abc import ABC, abstractmethod
 from email_validator import EmailNotValidError, validate_email
-from flask import (Flask, flash, jsonify, redirect, render_template, request,
+from flask import (Flask, flash, g, jsonify, redirect, render_template, request,
                    session, url_for)
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -154,19 +154,25 @@ def check_artisan_verification():
     public_endpoints = {
         "artisan_pending", "logout", "static", "login", "register",
         "client_signup", "google_signup", "google_callback",
-        "complete_profile", "health", "index", "contact",
+        "complete_profile", "health", "health-db", "index", "contact",
     }
     if request.endpoint in public_endpoints or request.endpoint is None:
         return None
+    if getattr(g, "_artisan_verification_done", False):
+        return g._artisan_verification_result
     conn = get_db_connection()
     try:
         user = conn.execute(
             "SELECT role, is_verified FROM users WHERE id = ?", (user_id,)).fetchone()
         if user and user["role"] == "artisan" and not user["is_verified"]:
-            return redirect(url_for("artisan_pending"))
+            result = redirect(url_for("artisan_pending"))
+        else:
+            result = None
     finally:
         conn.close()
-    return None
+    g._artisan_verification_done = True
+    g._artisan_verification_result = result
+    return result
 
 
 def _get_google_client():
@@ -327,6 +333,8 @@ def log_admin_action(admin_id, admin_email, action, target_type=None, target_id=
 
 
 def get_current_user():
+    if hasattr(g, "_current_user"):
+        return g._current_user
     user_id = session.get("user_id")
     if not user_id:
         if app.config.get("BYPASS_AUTH"):
@@ -334,12 +342,15 @@ def get_current_user():
             dev_user = _ensure_dev_user(role)
             session["user_id"] = dev_user["id"]
             session.permanent = True
+            g._current_user = dev_user
             return dev_user
+        g._current_user = None
         return None
     conn = get_db_connection()
     try:
-        return conn.execute(
+        g._current_user = conn.execute(
             "SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+        return g._current_user
     finally:
         conn.close()
 
@@ -404,12 +415,15 @@ def match_artisans(conn, category, client_city, lat=None, lon=None, limit=5):
     sql = """
         SELECT u.id, u.full_name, u.profession, u.city, u.quartier, u.latitude, u.longitude,
                u.is_verified, u.is_active, u.availability_status, u.hourly_rate,
-               COALESCE((SELECT AVG(rating) FROM reviews WHERE artisan_id = u.id), 0) AS avg_rating,
-               COALESCE((SELECT COUNT(*) FROM reviews WHERE artisan_id = u.id), 0) AS review_count,
-               COALESCE((SELECT COUNT(*) FROM requests WHERE artisan_id = u.id AND status = 'completed'), 0) AS completed
+               COALESCE(AVG(r.rating), 0) AS avg_rating,
+               COUNT(DISTINCT r.id) AS review_count,
+               COUNT(DISTINCT req_completed.id) AS completed
         FROM users u
+        LEFT JOIN reviews r ON r.artisan_id = u.id
+        LEFT JOIN requests req_completed ON req_completed.artisan_id = u.id AND req_completed.status = 'completed'
         WHERE u.role = 'artisan' AND u.is_verified = 1 AND u.is_active = 1
         AND (u.profession = ? OR ? = '')
+        GROUP BY u.id
     """
     rows = conn.execute(sql, (category, category)).fetchall()
     artisans = [dict(r) for r in rows]
@@ -510,19 +524,19 @@ def inject_layout_context():
         else:
             conn = get_db_connection()
             try:
-                stats["pending_artisans"] = conn.execute(
-                    "SELECT COUNT(*) AS n FROM users WHERE role = 'artisan' AND is_verified = 0").fetchone()["n"]
-                stats["open_requests"] = conn.execute(
-                    "SELECT COUNT(*) AS n FROM requests"
-                    " WHERE LOWER(status) NOT IN ('completed', 'cancelled')").fetchone()["n"]
-                stats["pending_requests"] = conn.execute(
-                    "SELECT COUNT(*) AS n FROM requests WHERE LOWER(status) IN ('requested', 'nouvelle demande', 'pending')").fetchone()["n"]
-                stats["open_tickets"] = conn.execute(
-                    "SELECT COUNT(*) AS n FROM admin_tickets WHERE status = 'open'").fetchone()["n"]
-                stats["open_messages"] = conn.execute(
-                    "SELECT COUNT(*) AS n FROM conversations c"
+                rows = conn.execute(
+                    "SELECT 'pending_artisans' AS key, COUNT(*) AS n FROM users WHERE role = 'artisan' AND is_verified = 0"
+                    " UNION ALL"
+                    " SELECT 'open_requests', COUNT(*) FROM requests WHERE LOWER(status) NOT IN ('completed', 'cancelled')"
+                    " UNION ALL"
+                    " SELECT 'pending_requests', COUNT(*) FROM requests WHERE LOWER(status) IN ('requested', 'nouvelle demande', 'pending')"
+                    " UNION ALL"
+                    " SELECT 'open_tickets', COUNT(*) FROM admin_tickets WHERE status = 'open'"
+                    " UNION ALL"
+                    " SELECT 'open_messages', COUNT(*) FROM conversations c"
                     " JOIN conversation_messages m ON m.conversation_id = c.id"
-                    " WHERE c.status = 'open' AND m.sender_role = 'client' AND m.is_read = 0").fetchone()["n"]
+                    " WHERE c.status = 'open' AND m.sender_role = 'client' AND m.is_read = 0").fetchall()
+                stats = {r["key"]: r["n"] for r in rows}
             finally:
                 conn.close()
 
@@ -589,10 +603,12 @@ def index():
             SELECT u.id, u.full_name, u.profession, u.photo_url, u.is_verified,
                    u.availability_status,
                    u.city, u.zone_intervention, u.hourly_rate,
-                   COALESCE((SELECT AVG(rating) FROM reviews WHERE artisan_id = u.id), 0) AS avg_rating,
-                   COALESCE((SELECT COUNT(*) FROM reviews WHERE artisan_id = u.id), 0) AS review_count
+                   COALESCE(AVG(r.rating), 0) AS avg_rating,
+                   COUNT(DISTINCT r.id) AS review_count
             FROM users u
+            LEFT JOIN reviews r ON r.artisan_id = u.id
             WHERE u.role = 'artisan' AND u.is_verified = 1 AND u.is_active = 1
+            GROUP BY u.id
             ORDER BY avg_rating DESC, review_count DESC
             LIMIT 4
         """).fetchall()
@@ -674,10 +690,12 @@ def home():
         artisans = conn.execute("""
             SELECT u.id, u.full_name, u.profession, u.photo_url, u.is_verified,
                    u.availability_status,
-                   COALESCE((SELECT AVG(rating) FROM reviews WHERE artisan_id = u.id), 0) AS avg_rating,
-                   COALESCE((SELECT COUNT(*) FROM reviews WHERE artisan_id = u.id), 0) AS review_count
+                   COALESCE(AVG(r.rating), 0) AS avg_rating,
+                   COUNT(DISTINCT r.id) AS review_count
             FROM users u
+            LEFT JOIN reviews r ON r.artisan_id = u.id
             WHERE u.role = 'artisan' AND u.is_verified = 1 AND u.is_active = 1
+            GROUP BY u.id
             ORDER BY avg_rating DESC, review_count DESC
             LIMIT 5
         """).fetchall()
@@ -723,13 +741,13 @@ def categories():
     try:
         categories = conn.execute(
             "SELECT name, diagnostic_price FROM service_categories ORDER BY name").fetchall()
-        counts = {}
-        for c in categories:
-            counts[c["name"]] = conn.execute(
-                "SELECT COUNT(*) AS n FROM users"
-                " WHERE role = 'artisan' AND is_verified = 1 AND is_active = 1"
-                " AND (profession = ? OR skills LIKE ?)",
-                (c["name"], f"%{c['name']}%")).fetchone()["n"]
+        rows = conn.execute(
+            "SELECT sc.name,"
+            " (SELECT COUNT(*) FROM users u"
+            " WHERE u.role = 'artisan' AND u.is_verified = 1 AND u.is_active = 1"
+            " AND (u.profession = sc.name OR u.skills LIKE '%' || sc.name || '%')) AS n"
+            " FROM service_categories sc ORDER BY sc.name").fetchall()
+        counts = {r["name"]: r["n"] for r in rows}
     finally:
         conn.close()
     return render_template("categories.html", categories=categories, counts=counts)
@@ -1580,11 +1598,16 @@ def admin_artisans():
         where_clause = " WHERE " + " AND ".join(where_parts)
         artisans = conn.execute(
             "SELECT u.*,"
-            " (SELECT COUNT(*) FROM requests WHERE artisan_id = u.id AND status = 'completed') AS completed,"
-            " (SELECT COALESCE(AVG(rating), 0) FROM reviews WHERE artisan_id = u.id) AS avg_rating,"
-            " (SELECT COUNT(*) FROM technician_documents WHERE technician_id = u.id) AS doc_count"
+            " COUNT(DISTINCT req_completed.id) AS completed,"
+            " COALESCE(AVG(r.rating), 0) AS avg_rating,"
+            " COUNT(DISTINCT r.id) AS review_count,"
+            " COUNT(DISTINCT d.id) AS doc_count"
             " FROM users u"
+            " LEFT JOIN requests req_completed ON req_completed.artisan_id = u.id AND req_completed.status = 'completed'"
+            " LEFT JOIN reviews r ON r.artisan_id = u.id"
+            " LEFT JOIN technician_documents d ON d.technician_id = u.id"
             + where_clause +
+            " GROUP BY u.id"
             " ORDER BY u.is_verified ASC, u.is_active DESC, u.created_at DESC",
             tuple(params)).fetchall()
 
@@ -1702,9 +1725,11 @@ def admin_clients():
 
         clients = conn.execute(
             "SELECT u.*,"
-            " (SELECT COUNT(*) FROM requests WHERE client_id = u.id) AS request_count"
+            " COUNT(DISTINCT r.id) AS request_count"
             " FROM users u"
+            " LEFT JOIN requests r ON r.client_id = u.id"
             + where_clause +
+            " GROUP BY u.id"
             " ORDER BY u.created_at DESC", tuple(params)).fetchall()
     finally:
         conn.close()
@@ -2314,10 +2339,12 @@ def dashboard():
                 SELECT u.id, u.full_name, u.profession, u.city, u.quartier,
                        u.hourly_rate, u.is_verified, u.photo_url,
                        u.availability_status, u.estimated_delay,
-                       COALESCE((SELECT AVG(rating) FROM reviews WHERE artisan_id = u.id), 0) AS avg_rating,
-                       COALESCE((SELECT COUNT(*) FROM reviews WHERE artisan_id = u.id), 0) AS review_count
+                       COALESCE(AVG(r.rating), 0) AS avg_rating,
+                       COUNT(DISTINCT r.id) AS review_count
                 FROM users u
+                LEFT JOIN reviews r ON r.artisan_id = u.id
                 WHERE u.role = 'artisan' AND u.is_verified = 1
+                GROUP BY u.id
                 ORDER BY u.full_name
             """).fetchall()
         except Exception:
@@ -2606,8 +2633,14 @@ def _enrich_artisan(row, client_lat, client_lon):
     artisan_lat = _to_float(artisan.get("latitude"))
     artisan_lon = _to_float(artisan.get("longitude"))
     artisan["distance"] = _haversine(client_lat, client_lon, artisan_lat, artisan_lon) if client_lat and artisan_lat else None
-    artisan["completed"] = _completed_count(artisan["id"])
-    artisan["rating"] = _artisan_rating(artisan["id"])
+    completed = artisan.get("completed")
+    review_count = artisan.get("review_count")
+    avg_rating = artisan.get("avg_rating")
+    artisan["completed"] = completed if completed is not None else _completed_count(artisan["id"])
+    if avg_rating is not None and review_count:
+        artisan["rating"] = round(avg_rating, 1)
+    else:
+        artisan["rating"] = _artisan_rating(artisan["id"]) if review_count is None else None
     return artisan
 
 
@@ -2653,10 +2686,16 @@ def artisans_page():
     zone = request.args.get("zone", "").strip()
 
     sql = (
-        "SELECT id, full_name AS nom, profession AS metier, city,"
-        " hourly_rate, latitude, longitude, photo_url, is_verified,"
-        " availability_status"
-        " FROM users WHERE role = 'artisan' AND is_active = 1 AND account_status != 'DELETED'")
+        "SELECT u.id, u.full_name AS nom, u.profession AS metier, u.city,"
+        " u.hourly_rate, u.latitude, u.longitude, u.photo_url, u.is_verified,"
+        " u.availability_status,"
+        " COALESCE(AVG(r.rating), 0) AS avg_rating,"
+        " COUNT(DISTINCT r.id) AS review_count,"
+        " COUNT(DISTINCT req_completed.id) AS completed"
+        " FROM users u"
+        " LEFT JOIN reviews r ON r.artisan_id = u.id"
+        " LEFT JOIN requests req_completed ON req_completed.artisan_id = u.id AND req_completed.status = 'completed'"
+        " WHERE u.role = 'artisan' AND u.is_active = 1 AND u.account_status != 'DELETED'")
     params = []
 
     if query:
@@ -2673,7 +2712,7 @@ def artisans_page():
         sql += " AND city LIKE ?"
         params.append(f"%{zone}%")
 
-    sql += " ORDER BY full_name"
+    sql += " GROUP BY u.id ORDER BY u.full_name"
 
     client_lat = _to_float(user.get("latitude")) if user else None
     client_lon = _to_float(user.get("longitude")) if user else None
@@ -2701,9 +2740,11 @@ def artisans_page():
         client_lat = _to_float(request.args.get("lat"))
         client_lon = _to_float(request.args.get("lon"))
     if client_lat and client_lon:
-        artisans = sorted(
-            [_enrich_artisan(a, client_lat, client_lon) for a in artisans],
-            key=lambda a: a.get("distance") or 999)
+        for a in artisans:
+            a_lat = _to_float(a.get("latitude"))
+            a_lon = _to_float(a.get("longitude"))
+            a["distance"] = _haversine(client_lat, client_lon, a_lat, a_lon) if a_lat else None
+        artisans = sorted(artisans, key=lambda a: a.get("distance") or 999)
 
     return render_template("artisans.html", artisans=artisans, user=user,
                            active_requests=active_requests, categories=categories,
@@ -3275,12 +3316,14 @@ def admin_tickets_list():
     try:
         tickets = conn.execute(
             "SELECT t.*, c.full_name AS client_name,"
-            " (SELECT content FROM admin_messages WHERE ticket_id = t.id"
-            " ORDER BY created_at DESC LIMIT 1) AS last_message,"
-            " (SELECT created_at FROM admin_messages WHERE ticket_id = t.id"
-            " ORDER BY created_at DESC LIMIT 1) AS last_message_at"
+            " last.content AS last_message, last.created_at AS last_message_at"
             " FROM admin_tickets t"
             " JOIN users c ON c.id = t.client_id"
+            " LEFT JOIN ("
+            "   SELECT m.ticket_id, m.content, m.created_at"
+            "   FROM admin_messages m"
+            "   WHERE m.id IN (SELECT MAX(id) FROM admin_messages GROUP BY ticket_id)"
+            " ) last ON last.ticket_id = t.id"
             " ORDER BY t.updated_at DESC").fetchall()
     finally:
         conn.close()
@@ -3363,16 +3406,18 @@ def requests_list():
     try:
         if user["role"] == "artisan":
             rows = conn.execute(
-                "SELECT r.*, u.full_name AS artisan_name,"
-                " (SELECT rating FROM reviews WHERE reviews.request_id = r.id AND reviews.client_id = ? LIMIT 1) AS client_rating"
-                " FROM requests r LEFT JOIN users u ON u.id = r.client_id"
+                "SELECT r.*, u.full_name AS artisan_name, rev.rating AS client_rating"
+                " FROM requests r"
+                " LEFT JOIN users u ON u.id = r.client_id"
+                " LEFT JOIN reviews rev ON rev.request_id = r.id AND rev.client_id = ?"
                 " WHERE r.artisan_id = ? OR r.status = 'pending'"
                 " ORDER BY r.created_at DESC", (user["id"], user["id"])).fetchall()
         else:
             rows = conn.execute(
-                "SELECT r.*, u.full_name AS artisan_name,"
-                " (SELECT rating FROM reviews WHERE reviews.request_id = r.id AND reviews.client_id = ? LIMIT 1) AS client_rating"
-                " FROM requests r LEFT JOIN users u ON u.id = r.artisan_id"
+                "SELECT r.*, u.full_name AS artisan_name, rev.rating AS client_rating"
+                " FROM requests r"
+                " LEFT JOIN users u ON u.id = r.artisan_id"
+                " LEFT JOIN reviews rev ON rev.request_id = r.id AND rev.client_id = ?"
                 " WHERE r.client_id = ?"
                 " ORDER BY r.created_at DESC", (user["id"], user["id"])).fetchall()
     finally:
@@ -4172,10 +4217,16 @@ def api_admin_techniciens():
     try:
         rows = conn.execute(
             "SELECT u.*,"
-            " (SELECT COUNT(*) FROM technician_documents WHERE technician_id = u.id) AS doc_count,"
-            " (SELECT COUNT(*) FROM requests WHERE artisan_id = u.id AND status = 'completed') AS completed,"
-            " (SELECT COALESCE(AVG(rating), 0) FROM reviews WHERE artisan_id = u.id) AS avg_rating"
-            " FROM users u WHERE u.role = 'artisan'"
+            " COUNT(DISTINCT d.id) AS doc_count,"
+            " COUNT(DISTINCT req_completed.id) AS completed,"
+            " COALESCE(AVG(r.rating), 0) AS avg_rating,"
+            " COUNT(DISTINCT r.id) AS review_count"
+            " FROM users u"
+            " LEFT JOIN technician_documents d ON d.technician_id = u.id"
+            " LEFT JOIN requests req_completed ON req_completed.artisan_id = u.id AND req_completed.status = 'completed'"
+            " LEFT JOIN reviews r ON r.artisan_id = u.id"
+            " WHERE u.role = 'artisan'"
+            " GROUP BY u.id"
             " ORDER BY u.is_verified ASC, u.is_active DESC, u.created_at DESC").fetchall()
         return jsonify([dict(r) for r in rows])
     finally:
@@ -4257,9 +4308,15 @@ def client_messages():
             "SELECT c.id, c.subject, c.status, c.created_at, c.updated_at,"
             " (SELECT content FROM conversation_messages WHERE conversation_id = c.id"
             " ORDER BY created_at DESC LIMIT 1) AS last_message,"
-            " (SELECT COUNT(*) FROM conversation_messages WHERE conversation_id = c.id"
-            " AND sender_role = 'admin' AND is_read = 0) AS unread"
-            " FROM conversations c WHERE c.client_id = ?"
+            " COALESCE(unread.n, 0) AS unread"
+            " FROM conversations c"
+            " LEFT JOIN ("
+            "   SELECT conversation_id, COUNT(*) AS n"
+            "   FROM conversation_messages"
+            "   WHERE sender_role = 'admin' AND is_read = 0"
+            "   GROUP BY conversation_id"
+            " ) unread ON unread.conversation_id = c.id"
+            " WHERE c.client_id = ?"
             " ORDER BY c.updated_at DESC",
             (user["id"],)).fetchall()
     finally:
@@ -4631,10 +4688,15 @@ def admin_messages():
             " u.full_name AS client_name,"
             " (SELECT content FROM conversation_messages WHERE conversation_id = c.id"
             " ORDER BY created_at DESC LIMIT 1) AS last_message,"
-            " (SELECT COUNT(*) FROM conversation_messages WHERE conversation_id = c.id"
-            " AND sender_role = 'client' AND is_read = 0) AS unread"
+            " COALESCE(unread.n, 0) AS unread"
             " FROM conversations c"
             " JOIN users u ON u.id = c.client_id"
+            " LEFT JOIN ("
+            "   SELECT conversation_id, COUNT(*) AS n"
+            "   FROM conversation_messages"
+            "   WHERE sender_role = 'client' AND is_read = 0"
+            "   GROUP BY conversation_id"
+            " ) unread ON unread.conversation_id = c.id"
             " ORDER BY c.updated_at DESC").fetchall()
     finally:
         conn.close()

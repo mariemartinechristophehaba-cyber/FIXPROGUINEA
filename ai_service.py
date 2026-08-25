@@ -106,13 +106,15 @@ _FIXPRO_INFO = {
 }
 
 
+_NORMALIZE_PUNCT = str.maketrans("'-.,;:!?", " " * 8)
+_NORMALIZE_ACCENTS = str.maketrans("éèêàùçôî", "eeeaucoi")
+
+
 def _normalize(text):
     text = (text or "").lower()
-    for c in "'’-,;:!?.":
-        text = text.replace(c, " ")
-    # remplace les accents simples
-    for a, b in [("é", "e"), ("è", "e"), ("ê", "e"), ("à", "a"), ("ù", "u"), ("ç", "c"), ("ô", "o"), ("î", "i")]:
-        text = text.replace(a, b)
+    text = text.replace("’", "'")
+    text = text.translate(_NORMALIZE_PUNCT)
+    text = text.translate(_NORMALIZE_ACCENTS)
     return re.sub(r"\s+", " ", text).strip()
 
 

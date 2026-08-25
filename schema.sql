@@ -195,6 +195,11 @@ CREATE INDEX IF NOT EXISTS idx_requests_artisan_id  ON requests(artisan_id);
 CREATE INDEX IF NOT EXISTS idx_requests_status      ON requests(status);
 CREATE INDEX IF NOT EXISTS idx_messages_request_id  ON messages(request_id);
 CREATE INDEX IF NOT EXISTS idx_payments_request_id  ON payments(request_id);
+CREATE INDEX IF NOT EXISTS idx_reviews_artisan_id   ON reviews(artisan_id);
+CREATE INDEX IF NOT EXISTS idx_users_role_verified_active ON users(role, is_verified, is_active);
+CREATE INDEX IF NOT EXISTS idx_users_profession     ON users(profession);
+CREATE INDEX IF NOT EXISTS idx_users_city           ON users(city);
+CREATE INDEX IF NOT EXISTS idx_requests_status_artisan ON requests(status, artisan_id);
 
 CREATE TABLE IF NOT EXISTS artisan_portfolio (
     id              SERIAL PRIMARY KEY,
