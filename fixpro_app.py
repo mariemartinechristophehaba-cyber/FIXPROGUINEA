@@ -581,6 +581,7 @@ def index():
                     (user["id"],)).fetchone()
                 unread_count = row["n"]
             except Exception:
+                conn.rollback()
                 unread_count = 0
         counts = {}
         for row in conn.execute(
@@ -663,6 +664,7 @@ def home():
                     (user["id"],)).fetchone()
                 unread_count = row["n"]
             except Exception:
+                conn.rollback()
                 unread_count = 0
         counts = {}
         for row in conn.execute(
