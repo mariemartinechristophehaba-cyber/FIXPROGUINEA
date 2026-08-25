@@ -216,6 +216,30 @@ class ClientProfileTests(FixProTestCase):
         response = self.client.get("/client-page/how-it-works")
         self.assertIn(b"Comment fonctionne FixPro", response.data)
 
+    def test_client_security_page_renders(self):
+        self.register_client()
+        self.login("+224620000000")
+        response = self.client.get("/profil/securite")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Mot de passe", response.data)
+
+    def test_client_can_change_password(self):
+        self.register_client()
+        self.login("+224620000000")
+        response = self.client.post("/profil/securite", data={
+            "current_password": "FixPro2026!",
+            "new_password": "Nouveau2027!",
+            "confirm_password": "Nouveau2027!",
+        }, follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"mis a jour", response.data)
+
+    def test_client_aide_opens_new_conversation(self):
+        self.register_client()
+        self.login("+224620000000")
+        response = self.client.get("/messages/new")
+        self.assertEqual(response.status_code, 200)
+
 
 class ArtisanRegistrationTests(FixProTestCase):
 

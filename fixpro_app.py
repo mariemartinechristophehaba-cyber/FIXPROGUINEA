@@ -2723,7 +2723,7 @@ def profile():
 
     recent = list(demandes) + list(reservations) + list(interventions)
     recent.sort(key=lambda r: r["updated_at"] or r["created_at"], reverse=True)
-    recent = recent[:3]
+    recent = recent[:1]
 
     counts = {
         "demandes": len(demandes),
@@ -2773,6 +2773,40 @@ def client_static(page):
     }
     title, content = pages.get(page, ("FixPro", "<p>Page en cours de construction.</p>"))
     return render_template("client_static.html", page=page, title=title, content=content)
+
+
+@app.route("/profil/securite", methods=["GET", "POST"])
+@login_required
+def client_security():
+    """Gestion de la securite du compte client."""
+    user = get_current_user()
+    if request.method == "POST":
+        current = request.form.get("current_password", "")
+        new = request.form.get("new_password", "")
+        confirm = request.form.get("confirm_password", "")
+        if new != confirm:
+            flash("Les nouveaux mots de passe ne correspondent pas.", "error")
+            return redirect(url_for("client_security"))
+        pwd_error = _validate_password_strength(new)
+        if pwd_error:
+            flash(pwd_error, "error")
+            return redirect(url_for("client_security"))
+        conn = get_db_connection()
+        try:
+            row = conn.execute(
+                "SELECT password_hash FROM users WHERE id = ?", (user["id"],)).fetchone()
+            if not row or not check_password_hash(row["password_hash"], current):
+                flash("Mot de passe actuel incorrect.", "error")
+                return redirect(url_for("client_security"))
+            conn.execute(
+                "UPDATE users SET password_hash = ? WHERE id = ?",
+                (generate_password_hash(new), user["id"]))
+            conn.commit()
+            flash("Mot de passe mis a jour.", "success")
+        finally:
+            conn.close()
+        return redirect(url_for("client_security"))
+    return render_template("client_security.html", user=user)
 
 
 def _insert_id(conn, sql, params):

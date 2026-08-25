@@ -171,13 +171,13 @@
         </div>
         <img src="{{ url_for('static', filename='img/icon-chevron-right.svg') }}" width="18" height="18" alt="" />
       </a>
-      <a href="{{ url_for('edit_profile') }}" class="f-profile-item" style="border-bottom:none;">
+      <a href="{{ url_for('client_security') }}" class="f-profile-item" style="border-bottom:none;">
         <div class="f-profile-item-icon" style="background:#F1F5F9;">
           <img src="{{ url_for('static', filename='img/icon-lock.svg') }}" width="20" height="20" alt="" style="filter:grayscale(100%) opacity(0.7);" />
         </div>
         <div class="f-profile-item-text">
           <strong>Sécurité</strong>
-          <span>Modifier mes informations</span>
+          <span>Modifier mon mot de passe</span>
         </div>
         <img src="{{ url_for('static', filename='img/icon-chevron-right.svg') }}" width="18" height="18" alt="" />
       </a>
@@ -187,7 +187,7 @@
   <section class="f-section">
     <h2 class="f-section-title">Aide & FixPro</h2>
     <div class="f-card f-profile-list">
-      <a href="{{ url_for('client_messages') }}" class="f-profile-item">
+      <a href="{{ url_for('client_message_new') }}" class="f-profile-item">
         <div class="f-profile-item-icon" style="background:#EEF4FF;">
           <img src="{{ url_for('static', filename='img/icon-message-circle.svg') }}" width="20" height="20" alt="" style="filter:brightness(0) saturate(100%) invert(22%) sepia(89%) saturate(4563%) hue-rotate(220deg) brightness(101%) contrast(101%);" />
         </div>
