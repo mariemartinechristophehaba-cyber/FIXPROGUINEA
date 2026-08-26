@@ -4587,6 +4587,24 @@ def api_admin_paiements():
         conn.close()
 
 
+@app.route("/api/admin/parametres")
+@limiter.limit("100 per hour")
+def api_admin_parametres():
+    """Configuration affichable du panel admin."""
+    auth = _require_api_key()
+    if auth:
+        return auth
+    return jsonify({
+        "commission_rate": app.config.get("FIXPRO_COMMISSION_RATE", 0.10),
+        "admin_dashboard_url": app.config.get("ADMIN_DASHBOARD_URL", ""),
+        "log_level": app.config.get("LOG_LEVEL", "INFO"),
+        "environment": app.config.get("FLASK_ENV", "development"),
+        "database_url": "configure" if app.config.get("DATABASE_URL") else "sqlite",
+        "smtp_host": app.config.get("SMTP_HOST", ""),
+        "admin_email": app.config.get("ADMIN_EMAIL", ""),
+    })
+
+
 @app.route("/api/admin/dashboard")
 @limiter.limit("100 per hour")
 def api_admin_dashboard():
