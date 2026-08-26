@@ -1,72 +1,179 @@
-{% extends 'base.html' %}
-{% block title %}Lia - Assistante FixPro{% endblock %}
-{% block content %}
-<style>
-  .lia-chat { max-width: 640px; margin: 0 auto; padding: 24px 16px 100px; display: flex; flex-direction: column; gap: 12px; }
-  .lia-header { text-align: center; }
-  .lia-header h1 { font-size: 1.35rem; margin: 0 0 4px; }
-  .lia-header p { color: #64748b; font-size: 13px; margin: 0; }
-  .lia-messages { display: flex; flex-direction: column; gap: 10px; min-height: 300px; background: #f8fafc; border-radius: 12px; padding: 16px; overflow-y: auto; }
-  .lia-msg { max-width: 80%; padding: 10px 14px; border-radius: 14px; font-size: 14px; line-height: 1.45; }
-  .lia-user { align-self: flex-end; background: #155eef; color: #fff; border-bottom-right-radius: 4px; }
-  .lia-bot { align-self: flex-start; background: #fff; border: 1px solid #e2e8f0; border-bottom-left-radius: 4px; }
-  .lia-input { display: flex; gap: 8px; position: fixed; bottom: 70px; left: 50%; transform: translateX(-50%); width: 100%; max-width: 640px; padding: 0 16px; }
-  .lia-input input { flex: 1; padding: 12px 14px; border: 1px solid #e2e8f0; border-radius: 999px; font-size: 14px; }
-  .lia-input button { padding: 12px 18px; background: #155eef; color: #fff; border: none; border-radius: 999px; font-weight: 700; }
-  .lia-typing { font-size: 12px; color: #64748b; align-self: flex-start; }
-</style>
-<div class="lia-chat">
-  <div class="lia-header">
-    <h1>Discuter avec Lia</h1>
-    <p>L'assistante FixPro repond a vos questions.</p>
-  </div>
-  <div class="lia-messages" id="liaMessages">
-    <div class="lia-msg lia-bot">Bonjour, je suis Lia, votre assistante FixPro. Que puis-je faire pour vous ?</div>
-  </div>
-  <div id="liaTyping" class="lia-typing" style="display:none;">Lia ecrit...</div>
-</div>
-<form class="lia-input" id="liaForm" onsubmit="return false;">
-  <input type="text" id="liaInput" placeholder="Ecrivez votre message..." autocomplete="off" required />
-  <button type="submit" id="liaSend">Envoyer</button>
-</form>
-<script>
-  const liaForm = document.getElementById('liaForm');
-  const liaInput = document.getElementById('liaInput');
-  const liaMessages = document.getElementById('liaMessages');
-  const liaTyping = document.getElementById('liaTyping');
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#155EEF" />
+  <title>Lia - Assistante FixPro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; }
+    body { font-family: 'Inter', sans-serif; background: #F1F5F9; color: #0F172A; -webkit-font-smoothing: antialiased; }
+    a { text-decoration: none; color: inherit; }
 
-  function addMessage(text, isUser) {
-    const div = document.createElement('div');
-    div.className = 'lia-msg ' + (isUser ? 'lia-user' : 'lia-bot');
-    div.textContent = text;
-    liaMessages.appendChild(div);
-    liaMessages.scrollTop = liaMessages.scrollHeight;
-  }
-
-  async function sendMessage() {
-    const text = liaInput.value.trim();
-    if (!text) return;
-    addMessage(text, true);
-    liaInput.value = '';
-    liaTyping.style.display = 'block';
-    try {
-      const res = await fetch('/api/lia/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text })
-      });
-      const data = await res.json();
-      addMessage(data.reply || 'Desole, une erreur est survenue.', false);
-    } catch (e) {
-      addMessage('Desole, le service est indisponible.', false);
-    } finally {
-      liaTyping.style.display = 'none';
+    .l-wrap { max-width: 480px; margin: 0 auto; height: 100vh; display: flex; flex-direction: column; background: #F1F5F9; }
+    .l-header {
+      background: #155EEF; color: #fff; padding: 16px; display: flex; align-items: center; gap: 12px; z-index: 10;
     }
-  }
+    .l-back { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,.15); }
+    .l-back svg { width: 20px; height: 20px; }
+    .l-avatar { width: 40px; height: 40px; border-radius: 50%; background: #fff; display: flex; align-items: center; justify-content: center; color: #155EEF; border: 2px solid rgba(255,255,255,.3); }
+    .l-avatar svg { width: 22px; height: 22px; }
+    .l-info { flex: 1; }
+    .l-name { margin: 0; font-size: 15px; font-weight: 700; }
+    .l-status { font-size: 12px; opacity: .85; display: flex; align-items: center; gap: 4px; }
+    .l-dot { width: 8px; height: 8px; border-radius: 50%; background: #22C55E; animation: l-pulse 2s infinite; }
+    @keyframes l-pulse { 0% { box-shadow: 0 0 0 0 rgba(34,197,94,.4); } 70% { box-shadow: 0 0 0 5px rgba(34,197,94,0); } 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); } }
 
-  liaForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    sendMessage();
-  });
-</script>
-{% endblock %}
+    .l-body { flex: 1; overflow-y: auto; padding: 14px 16px 90px; display: flex; flex-direction: column; gap: 10px; }
+    .l-empty { text-align: center; padding: 30px 10px; }
+    .l-empty h2 { font-size: 18px; color: #0F172A; margin: 0 0 6px; }
+    .l-empty p { font-size: 14px; color: #64748B; margin: 0; }
+    .l-msg { display: flex; }
+    .l-user { justify-content: flex-end; }
+    .l-bot { justify-content: flex-start; }
+    .l-bubble { max-width: 82%; width: fit-content; padding: 10px 13px; border-radius: 18px; font-size: 15px; line-height: 1.4; white-space: pre-wrap; }
+    .l-bot .l-bubble { background: #fff; color: #0F172A; border-bottom-left-radius: 4px; box-shadow: 0 1px 4px rgba(0,0,0,.04); }
+    .l-user .l-bubble { background: #155EEF; color: #fff; border-bottom-right-radius: 4px; }
+    .l-time { font-size: 10px; color: #94A3B8; margin-top: 3px; text-align: right; }
+    .l-user .l-time { color: rgba(255,255,255,.75); }
+    .l-typing { display: flex; gap: 4px; padding: 10px 13px; }
+    .l-typing span { width: 7px; height: 7px; border-radius: 50%; background: #94A3B8; animation: l-bounce 1.4s infinite; }
+    .l-typing span:nth-child(2) { animation-delay: .2s; }
+    .l-typing span:nth-child(3) { animation-delay: .4s; }
+    @keyframes l-bounce { 0%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-5px); } }
+
+    .l-footer { position: fixed; bottom: 64px; left: 0; right: 0; z-index: 20; max-width: 480px; margin: 0 auto; background: #fff; border-top: 1px solid #E2E8F0; padding: 10px 12px; display: flex; align-items: center; gap: 8px; }
+    .l-input { flex: 1; border: 1px solid #E2E8F0; border-radius: 22px; padding: 10px 14px; font-size: 15px; outline: none; min-height: 44px; max-height: 120px; resize: none; font-family: 'Inter', sans-serif; }
+    .l-send { width: 44px; height: 44px; border: none; border-radius: 50%; background: #155EEF; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 18px; transition: transform .1s; }
+    .l-send:disabled { opacity: .5; }
+    .l-send:active { transform: scale(.95); }
+
+    .l-nav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 30; max-width: 480px; margin: 0 auto; background: #fff; border-top: 1px solid #E2E8F0; display: flex; justify-content: space-around; align-items: center; padding: 8px 0 calc(8px + env(safe-area-inset-bottom)); }
+    .l-nav a { display: flex; flex-direction: column; align-items: center; gap: 3px; color: #94A3B8; font-size: 11px; padding: 4px 8px; }
+    .l-nav a.active { color: #155EEF; }
+    .l-nav a svg { width: 22px; height: 22px; }
+    .l-nav .l-plus { position: relative; top: -18px; width: 50px; height: 50px; border-radius: 50%; background: #155EEF; color: #fff; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(21,94,239,.35); }
+    .l-nav .l-plus svg { width: 26px; height: 26px; }
+  </style>
+</head>
+<body>
+  <div class="l-wrap">
+    <header class="l-header">
+      <a href="{{ url_for('home') }}" class="l-back" aria-label="Retour">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      </a>
+      <div class="l-avatar">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 21l1.9-5.1A8.4 8.4 0 0 1 4 11.5a8.5 8.5 0 0 1 8.5-8.5A8.5 8.5 0 0 1 21 11.5z"/></svg>
+      </div>
+      <div class="l-info">
+        <h1 class="l-name">Lia</h1>
+        <p class="l-status"><span class="l-dot"></span> Assistante FixPro en ligne</p>
+      </div>
+    </header>
+
+    <main class="l-body" id="l-body">
+      <div class="l-empty" id="l-empty">
+        <h2>Assistance FixPro</h2>
+        <p>Posez-moi vos questions, je vous guide.</p>
+      </div>
+    </main>
+
+    <form class="l-footer" id="l-form" onsubmit="return false;">
+      <textarea class="l-input" id="l-input" placeholder="Écrivez votre message..." required rows="1" oninput="this.style.height='auto'; this.style.height=Math.min(this.scrollHeight,120)+'px';"></textarea>
+      <button class="l-send" id="l-send" type="submit" aria-label="Envoyer">→</button>
+    </form>
+
+    <nav class="l-nav">
+      <a href="{{ url_for('home') }}">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
+        Accueil
+      </a>
+      <a href="{{ url_for('artisans_page') }}">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        Recherche
+      </a>
+      <a class="l-plus" href="{{ url_for('requests_list') if nav_user else url_for('artisans_page') }}" aria-label="Reserver">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+      </a>
+      <a href="{{ url_for('client_messages') }}" class="active">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 21l1.9-5.1A8.4 8.4 0 0 1 4 11.5a8.5 8.5 0 0 1 8.5-8.5A8.5 8.5 0 0 1 21 11.5z"/></svg>
+        Messages
+      </a>
+      <a href="{% if nav_user %}{{ url_for('profile') }}{% else %}{{ url_for('login') }}{% endif %}">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
+        Profil
+      </a>
+    </nav>
+  </div>
+
+  <script>
+    const b = document.getElementById('l-body');
+    const form = document.getElementById('l-form');
+    const ta = document.getElementById('l-input');
+    const btn = document.getElementById('l-send');
+    const empty = document.getElementById('l-empty');
+
+    function scrollBottom() { if (b) b.scrollTop = b.scrollHeight; }
+
+    function time() {
+      return new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function append(role, text, when) {
+      if (empty) empty.style.display = 'none';
+      const row = document.createElement('div');
+      row.className = 'l-msg ' + (role === 'user' ? 'l-user' : 'l-bot');
+      row.innerHTML = '<div class="l-bubble">' + text.replace(/\n/g, '<br>') + '<div class="l-time">' + (when || time()) + '</div></div>';
+      b.appendChild(row);
+      scrollBottom();
+    }
+
+    function setTyping(show) {
+      let t = b.querySelector('.l-typing');
+      if (show) {
+        if (t) return;
+        t = document.createElement('div');
+        t.className = 'l-msg l-bot l-typing';
+        t.innerHTML = '<div class="l-bubble"><div class="l-typing"><span></span><span></span><span></span></div><div class="l-time">Lia écrit...</div></div>';
+        b.appendChild(t);
+        scrollBottom();
+      } else if (t) {
+        t.remove();
+      }
+    }
+
+    function updateBtn() { btn.disabled = !ta.value.trim(); }
+    ta.addEventListener('input', updateBtn);
+    ta.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); form.dispatchEvent(new Event('submit')); } });
+
+    async function send() {
+      const text = ta.value.trim();
+      if (!text) return;
+      append('user', text);
+      ta.value = '';
+      ta.style.height = 'auto';
+      updateBtn();
+      setTyping(true);
+      try {
+        const r = await fetch('/api/lia/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: text }) });
+        const data = await r.json();
+        append('bot', data.reply || 'Désolé, je n\'ai pas compris.');
+      } catch (e) {
+        append('bot', 'Désolé, une erreur est survenue. Veuillez réessayer.');
+      } finally {
+        setTyping(false);
+        ta.focus();
+      }
+    }
+
+    form.addEventListener('submit', (e) => { e.preventDefault(); send(); });
+
+    append('bot', 'Bonjour, je suis Lia, votre assistante FixPro. Que puis-je faire pour vous ?');
+    updateBtn();
+  </script>
+</body>
+</html>
