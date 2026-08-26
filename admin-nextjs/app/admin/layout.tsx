@@ -6,7 +6,7 @@ import Sidebar from '@/components/Sidebar';
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
-  if (pathname === '/admin/dashboard' || pathname === '/admin/interventions' || pathname === '/admin/techniciens') {
+  if (pathname === '/admin/dashboard' || pathname === '/admin/interventions' || pathname === '/admin/techniciens' || pathname === '/admin/clients') {
     return <>{children}</>;
   }
 

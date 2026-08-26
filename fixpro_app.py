@@ -4473,6 +4473,30 @@ def api_admin_techniciens():
         conn.close()
 
 
+@app.route("/api/admin/clients")
+@limiter.limit("100 per hour")
+def api_admin_clients():
+    """Liste des clients pour le dashboard admin."""
+    auth = _require_api_key()
+    if auth:
+        return auth
+    conn = get_db_connection()
+    try:
+        rows = conn.execute(
+            "SELECT u.id, u.full_name, u.phone, u.email,"
+            " u.created_at, u.latitude, u.longitude,"
+            " COUNT(DISTINCT r.id) AS request_count,"
+            " MAX(r.created_at) AS last_request"
+            " FROM users u"
+            " LEFT JOIN requests r ON r.client_id = u.id"
+            " WHERE u.role = 'client'"
+            " GROUP BY u.id"
+            " ORDER BY u.created_at DESC").fetchall()
+        return jsonify([dict(r) for r in rows])
+    finally:
+        conn.close()
+
+
 @app.route("/api/admin/demandes")
 @limiter.limit("100 per hour")
 def api_admin_demandes():
