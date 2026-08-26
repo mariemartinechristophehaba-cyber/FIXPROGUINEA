@@ -11,6 +11,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
 import { api } from '@/lib/api';
+import { useRouter, usePathname } from 'next/navigation';
 
 const C = {
   bg: '#F4F5F8',
@@ -71,13 +72,13 @@ const TECHNICIANS = [
 ];
 
 const NAV = [
-  { label: 'Tableau de bord', icon: LayoutDashboard, active: true },
-  { label: 'Interventions', icon: Wrench },
-  { label: 'Techniciens', icon: Users },
-  { label: 'Clients', icon: UserRound },
-  { label: 'Catégories', icon: Grid3x3 },
-  { label: 'Paiements', icon: Wallet },
-  { label: 'Paramètres', icon: Settings },
+  { label: 'Tableau de bord', icon: LayoutDashboard, href: '/admin/dashboard' },
+  { label: 'Interventions', icon: Wrench, href: '/admin/interventions' },
+  { label: 'Techniciens', icon: Users, href: '/admin/techniciens' },
+  { label: 'Clients', icon: UserRound, href: '/admin/clients' },
+  { label: 'Categories', icon: Grid3x3, href: '/admin/categories' },
+  { label: 'Paiements', icon: Wallet, href: '/admin/paiements' },
+  { label: 'Parametres', icon: Settings, href: '/admin/parametres' },
 ];
 
 function Initials({ name, size = 34, bg = C.brand }) {
@@ -153,6 +154,8 @@ function KpiCard({ label, value, delta, positive, sub }) {
 }
 
 export default function FixProAdminDashboard() {
+  const router = useRouter();
+  const pathname = usePathname();
   const [navOpen, setNavOpen] = useState(false);
   const [data, setData] = useState<any>(null);
 
@@ -164,7 +167,7 @@ export default function FixProAdminDashboard() {
 
   return (
     <div className='fx-body w-full min-h-[720px] flex' style={{ background: C.bg, color: C.ink }}>
-      <style>{FONT_STYLE}</style>
+      <style dangerouslySetInnerHTML={{ __html: FONT_STYLE }} />
 
       <aside
         className={`fixed lg:static z-20 h-full lg:h-auto transition-transform duration-200 ${
@@ -186,20 +189,24 @@ export default function FixProAdminDashboard() {
         </div>
 
         <nav className='px-3 mt-3 flex flex-col gap-0.5'>
-          {NAV.map(({ label, icon: Icon, active }) => (
-            <button
-              key={label}
-              className='flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors'
-              style={{
-                background: active ? 'rgba(255,255,255,0.1)' : 'transparent',
-                color: active ? '#fff' : 'rgba(255,255,255,0.62)',
-              }}
-            >
-              <Icon size={17} />
-              <span className='fx-body text-[13.5px]'>{label}</span>
-              {active && <ChevronRight size={14} className='ml-auto' />}
-            </button>
-          ))}
+          {NAV.map(({ label, icon: Icon, href }) => {
+            const active = pathname === href || pathname.startsWith(href + '/');
+            return (
+              <button
+                key={label}
+                onClick={() => router.push(href)}
+                className='flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors'
+                style={{
+                  background: active ? 'rgba(255,255,255,0.1)' : 'transparent',
+                  color: active ? '#fff' : 'rgba(255,255,255,0.62)',
+                }}
+              >
+                <Icon size={17} />
+                <span className='fx-body text-[13.5px]'>{label}</span>
+                {active && <ChevronRight size={14} className='ml-auto' />}
+              </button>
+            );
+          })}
         </nav>
 
         <div

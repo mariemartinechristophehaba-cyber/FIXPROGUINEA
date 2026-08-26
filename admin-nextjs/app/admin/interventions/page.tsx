@@ -8,6 +8,7 @@ import {
   ChevronLeft, ChevronDown, Clock, Phone, MessageSquare,
 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { useRouter, usePathname } from 'next/navigation';
 
 // ---- Design tokens (v2 — contraste et profondeur renforces) --------------
 const C = {
@@ -210,16 +211,18 @@ function StatusTicket({ index, mismatch }) {
 }
 
 const NAV = [
-  { label: 'Tableau de bord', icon: LayoutDashboard },
-  { label: 'Interventions', icon: Wrench, active: true },
-  { label: 'Techniciens', icon: Users },
-  { label: 'Clients', icon: UserRound },
-  { label: 'Categories', icon: Grid3x3 },
-  { label: 'Paiements', icon: Wallet },
-  { label: 'Parametres', icon: Settings },
+  { label: 'Tableau de bord', icon: LayoutDashboard, href: '/admin/dashboard' },
+  { label: 'Interventions', icon: Wrench, href: '/admin/interventions' },
+  { label: 'Techniciens', icon: Users, href: '/admin/techniciens' },
+  { label: 'Clients', icon: UserRound, href: '/admin/clients' },
+  { label: 'Categories', icon: Grid3x3, href: '/admin/categories' },
+  { label: 'Paiements', icon: Wallet, href: '/admin/paiements' },
+  { label: 'Parametres', icon: Settings, href: '/admin/parametres' },
 ];
 
 export default function FixProInterventionsPage() {
+  const router = useRouter();
+  const pathname = usePathname();
   const [navOpen, setNavOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState('Tous');
   const [interventions, setInterventions] = useState(INTERVENTIONS);
@@ -242,7 +245,7 @@ export default function FixProInterventionsPage() {
 
   return (
     <div className='fx-body w-full min-h-[760px] flex' style={{ background: C.bg, color: C.ink }}>
-      <style>{FONT_STYLE}</style>
+      <style dangerouslySetInnerHTML={{ __html: FONT_STYLE }} />
 
       <aside
         className={`fixed lg:static z-20 h-full lg:h-auto transition-transform duration-200 ${navOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
@@ -256,22 +259,26 @@ export default function FixProInterventionsPage() {
           <button className='ml-auto lg:hidden text-white' onClick={() => setNavOpen(false)}><X size={18} /></button>
         </div>
         <nav className='px-3 mt-3 flex flex-col gap-0.5'>
-          {NAV.map(({ label, icon: Icon, active }) => (
-            <button
-              key={label}
-              className='fx-navlink flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors'
-              style={{
-                background: active ? C.brandLight : 'transparent',
-                color: active ? '#fff' : 'rgba(255,255,255,0.68)',
-                boxShadow: active ? '0 2px 6px rgba(44,76,176,0.4)' : 'none',
-                fontWeight: active ? 600 : 500,
-              }}
-            >
-              <Icon size={16} strokeWidth={active ? 2.4 : 2} />
-              <span className='fx-body text-[13px]'>{label}</span>
-              {active && <ChevronRight size={13} className='ml-auto' />}
-            </button>
-          ))}
+          {NAV.map(({ label, icon: Icon, href }) => {
+            const active = pathname === href || pathname.startsWith(href + '/');
+            return (
+              <button
+                key={label}
+                onClick={() => router.push(href)}
+                className='fx-navlink flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors'
+                style={{
+                  background: active ? C.brandLight : 'transparent',
+                  color: active ? '#fff' : 'rgba(255,255,255,0.68)',
+                  boxShadow: active ? '0 2px 6px rgba(44,76,176,0.4)' : 'none',
+                  fontWeight: active ? 600 : 500,
+                }}
+              >
+                <Icon size={16} strokeWidth={active ? 2.4 : 2} />
+                <span className='fx-body text-[13px]'>{label}</span>
+                {active && <ChevronRight size={13} className='ml-auto' />}
+              </button>
+            );
+          })}
         </nav>
       </aside>
       {navOpen && <div className='fixed inset-0 bg-black/40 z-10 lg:hidden' onClick={() => setNavOpen(false)} />}
