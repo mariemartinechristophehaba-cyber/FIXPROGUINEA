@@ -4283,11 +4283,41 @@ def _migrate_db():
     try:
         conn = get_db_connection()
         try:
-            if db.is_postgres_url(app.config.get("DATABASE_URL")):
+            is_pg = db.is_postgres_url(app.config.get("DATABASE_URL"))
+            if is_pg:
                 conn.execute(
                     "ALTER TABLE conversations ADD COLUMN IF NOT EXISTS collected_info JSONB DEFAULT '{}'"
                 )
-                conn.commit()
+                conn.execute(
+                    "CREATE TABLE IF NOT EXISTS lia_logs ("
+                    " id SERIAL PRIMARY KEY,"
+                    " session_id TEXT,"
+                    " client_id INTEGER,"
+                    " client_name TEXT,"
+                    " message TEXT NOT NULL,"
+                    " reply TEXT,"
+                    " status TEXT DEFAULT 'open',"
+                    " admin_id INTEGER,"
+                    " created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,"
+                    " updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
+                    ")")
+            else:
+                conn.execute(
+                    "ALTER TABLE conversations ADD COLUMN IF NOT EXISTS collected_info TEXT DEFAULT '{}'")
+                conn.execute(
+                    "CREATE TABLE IF NOT EXISTS lia_logs ("
+                    " id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                    " session_id TEXT,"
+                    " client_id INTEGER,"
+                    " client_name TEXT,"
+                    " message TEXT NOT NULL,"
+                    " reply TEXT,"
+                    " status TEXT DEFAULT 'open',"
+                    " admin_id INTEGER,"
+                    " created_at TEXT DEFAULT CURRENT_TIMESTAMP,"
+                    " updated_at TEXT DEFAULT CURRENT_TIMESTAMP"
+                    ")")
+            conn.commit()
         except Exception as e:
             logger.warning("Migration conversations impossible: %s", e)
         finally:
@@ -4625,6 +4655,79 @@ def api_admin_paiements():
         conn.close()
 
 
+@app.route("/api/admin/lia-logs")
+@limiter.limit("100 per hour")
+def api_admin_lia_logs():
+    """Historique des conversations avec Lia pour le dashboard admin."""
+    auth = _require_api_key()
+    if auth:
+        return auth
+    status = request.args.get("status", "all")
+    search = request.args.get("q", "").strip().lower()
+    conn = get_db_connection()
+    try:
+        where = "1=1"
+        params = []
+        if status in ("open", "handling", "closed"):
+            where += " AND status = ?"
+            params.append(status)
+        rows = conn.execute(
+            "SELECT id, session_id, client_id, client_name, message, reply, status, created_at"
+            " FROM lia_logs WHERE " + where + " ORDER BY created_at DESC", params).fetchall()
+        result = []
+        for r in rows:
+            d = dict(r)
+            if search and not (
+                search in (d.get("client_name") or "").lower()
+                or search in (d.get("message") or "").lower()
+                or search in (d.get("reply") or "").lower()):
+                continue
+            result.append(d)
+        return jsonify(result)
+    finally:
+        conn.close()
+
+
+@app.route("/api/admin/lia-logs/<int:log_id>/take", methods=["POST"])
+@limiter.limit("100 per hour")
+def api_admin_take_lia_log(log_id):
+    """Marque une conversation Lia comme prise en main."""
+    auth = _require_api_key()
+    if auth:
+        return auth
+    conn = get_db_connection()
+    try:
+        conn.execute(
+            "UPDATE lia_logs SET status = 'handling', updated_at = ? WHERE id = ?",
+            (datetime.now(timezone.utc).isoformat(), log_id))
+        conn.commit()
+        return jsonify({"ok": True})
+    finally:
+        conn.close()
+
+
+@app.route("/api/admin/lia-logs/<int:log_id>/close", methods=["POST"])
+@limiter.limit("100 per hour")
+def api_admin_close_lia_log(log_id):
+    """Ferme une conversation Lia."""
+    auth = _require_api_key()
+    if auth:
+        return auth
+    conn = get_db_connection()
+    try:
+        conn.execute(
+            "UPDATE lia_logs SET status = 'closed', updated_at = ? WHERE id = ?",
+            (datetime.now(timezone.utc).isoformat(), log_id))
+        conn.commit()
+        return jsonify({"ok": True})
+    finally:
+        conn.close()
+
+csrf.exempt(api_admin_lia_logs)
+csrf.exempt(api_admin_take_lia_log)
+csrf.exempt(api_admin_close_lia_log)
+
+
 @app.route("/api/admin/parametres")
 @limiter.limit("100 per hour")
 def api_admin_parametres():
@@ -4912,6 +5015,8 @@ def client_message_new():
 @app.route("/lia", methods=["GET"])
 def lia():
     """Page publique de discussion avec l'assistante FixPro."""
+    if not session.get("lia_session"):
+        session["lia_session"] = secrets.token_urlsafe(16)
     return render_template("lia.html", nav_user=get_current_user())
 
 
@@ -4923,7 +5028,23 @@ def api_lia_chat():
     message = data.get("message", "").strip()
     if not message:
         return jsonify({"error": "Message vide."}), 400
-    return jsonify({"reply": build_assistant_reply(message)})
+    reply = build_assistant_reply(message)
+    user = get_current_user()
+    conn = get_db_connection()
+    try:
+        conn.execute(
+            "INSERT INTO lia_logs (session_id, client_id, client_name, message, reply)"
+            " VALUES (?, ?, ?, ?, ?)",
+            (session.get("lia_session") or "anonymous",
+             user["id"] if user else None,
+             (user["full_name"] if user else session.get("lia_name")) or "Visiteur",
+             message, reply))
+        conn.commit()
+    except Exception as e:
+        logger.warning("Enregistrement Lia impossible: %s", e)
+    finally:
+        conn.close()
+    return jsonify({"reply": reply})
 
 csrf.exempt(api_lia_chat)
 
