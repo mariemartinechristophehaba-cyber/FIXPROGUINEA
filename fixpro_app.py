@@ -337,7 +337,7 @@ def add_security_headers(response):
 def _ensure_dev_user(role="client"):
     """Cree ou recupere un compte de test pour le developpement."""
     email = f"dev.{role}@fixpro.local"
-    phone = f"+224999{role[:1].upper()}0000"
+    phone = f"+224999{role[:3].upper()}000"
     full_name = f"Utilisateur Test {role.title()}"
 
     conn = get_db_connection()

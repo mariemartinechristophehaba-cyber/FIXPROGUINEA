@@ -118,6 +118,17 @@
     .t-occupe .t-available { color: #F97316; }
     .t-hors .t-dot { background: #9CA3AF; }
     .t-hors .t-available { color: #9CA3AF; }
+
+    .t-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .t-stat { background: #fff; border-radius: 16px; padding: 14px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,.04); }
+    .t-stat-num { font-size: 22px; font-weight: 700; color: #155EEF; }
+    .t-stat-label { font-size: 12px; color: #64748B; margin-top: 4px; }
+    .t-list { display: flex; flex-direction: column; gap: 10px; padding: 0 16px; margin-bottom: 14px; }
+    .t-mission-item { display: block; text-decoration: none; color: inherit; margin-bottom: 0; }
+    .t-mission-item .t-ref { margin: 0 0 6px; }
+    .t-mission-item .t-title { font-size: 15px; font-weight: 700; color: #0F172A; margin: 0 0 6px; }
+    .t-mission-item .t-meta { font-size: 12px; color: #64748B; }
+    .t-mission-item .t-tag { display: inline-block; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 20px; margin-top: 8px; }
   </style>
 </head>
 <body>
@@ -210,6 +221,68 @@
             Actualiser
           </button>
         </div>
+        {% endif %}
+      </div>
+
+      <h3 class="t-section">Aujourd'hui</h3>
+      <div class="t-card">
+        <div class="t-stats">
+          <div class="t-stat">
+            <div class="t-stat-num">{{ stats.a_venir or 0 }}</div>
+            <div class="t-stat-label">Aujourd'hui</div>
+          </div>
+          <div class="t-stat">
+            <div class="t-stat-num">{{ stats.assignees or 0 }}</div>
+            <div class="t-stat-label">Cette semaine</div>
+          </div>
+          <div class="t-stat">
+            <div class="t-stat-num">{{ stats.terminees or 0 }}</div>
+            <div class="t-stat-label">Terminees</div>
+          </div>
+          <div class="t-stat">
+            <div class="t-stat-num">{{ stats.note_avg or '0' }}</div>
+            <div class="t-stat-label">Avis</div>
+          </div>
+        </div>
+      </div>
+
+      <h3 class="t-section">Missions disponibles</h3>
+      <div class="t-list">
+        {% set shown = [] %}
+        {% for m in missions %}
+          {% if m.status in ('pending','REQUESTED') and (not active_mission or m.id != active_mission.id) %}
+            {% set _ = shown.append(1) %}
+            <a href="{{ url_for('artisan_mission', request_id=m.id) }}" class="t-card t-mission-item">
+              <p class="t-ref">{{ m.reference or '#' + m.id|string }}</p>
+              <div class="t-title">{{ m.title }}</div>
+              <div class="t-meta">{{ m.category }} - {{ m.address or 'Conakry' }}</div>
+              <span class="t-tag" style="background:{% if m.urgency == 'urgent' %}#FEE2E2;color:#B91C1C;{% else %}#F1F5F9;color:#475569;{% endif %}">{{ m.urgency|upper }}</span>
+            </a>
+          {% endif %}
+        {% endfor %}
+        {% if not shown %}
+          <div class="t-empty">
+            <strong>Aucune mission disponible</strong>
+            <p>Des missions correspondant a votre metier apparaitront ici.</p>
+          </div>
+        {% endif %}
+      </div>
+
+      <h3 class="t-section">Mes interventions</h3>
+      <div class="t-list">
+        {% if historique %}
+          {% for m in historique %}
+            <a href="{{ url_for('artisan_mission', request_id=m.id) }}" class="t-card t-mission-item">
+              <p class="t-ref">{{ m.reference or '#' + m.id|string }}</p>
+              <div class="t-title">{{ m.title }}</div>
+              <div class="t-meta">{{ m.status }} - {{ m.created_at[:10] if m.created_at else '' }}</div>
+            </a>
+          {% endfor %}
+        {% else %}
+          <div class="t-empty">
+            <strong>Aucune intervention terminee</strong>
+            <p>Votre historique s'affichera ici.</p>
+          </div>
         {% endif %}
       </div>
 

@@ -438,3 +438,9 @@ body {
 
   .f-search-card { padding: 32px; }
 }
+
+svg {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
