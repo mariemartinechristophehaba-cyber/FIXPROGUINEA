@@ -1105,7 +1105,7 @@ def register_artisan():
                 " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (phone, generate_password_hash(temp_password), "artisan",
                  full_name, profession, specialite, experience, bio, address,
-                 rayon, lat, lon, 0, 1, photo_url))
+                 rayon, lat, lon, 1, 1, photo_url))
             conn.commit()
 
             artisan = conn.execute(
@@ -1209,7 +1209,7 @@ def _finalize_artisan_registration(wizard):
              "artisan", full_name, wizard["civility"], wizard["profession"],
              wizard["skills"], wizard["city"], wizard["quartier"],
              wizard["zone_intervention"], wizard["mobility"],
-             wizard["years_experience"], wizard["bio"], 0, latitude, longitude, 0, 1))
+             wizard["years_experience"], wizard["bio"], 0, latitude, longitude, 1, 1))
         conn.commit()
 
         artisan = conn.execute(
@@ -1299,7 +1299,7 @@ def api_mobile_register():
     }
 
     _finalize_artisan_registration_json(wizard)
-    return jsonify({"ok": True, "message": "Inscription enregistree. Verification en cours."}), 201
+    return jsonify({"ok": True, "message": "Inscription confirmee."}), 201
 
 
 csrf.exempt(api_mobile_register)
@@ -1324,7 +1324,7 @@ def _finalize_artisan_registration_json(wizard):
              "artisan", full_name, wizard["civility"], wizard["profession"],
              wizard["skills"], wizard["city"], wizard["quartier"],
              wizard["zone_intervention"], wizard["mobility"],
-             wizard["years_experience"], wizard["bio"], 0, latitude, longitude, 0, 1))
+             wizard["years_experience"], wizard["bio"], 0, latitude, longitude, 1, 1))
         conn.commit()
 
         artisan = conn.execute(
