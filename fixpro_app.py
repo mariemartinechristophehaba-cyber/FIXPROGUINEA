@@ -5004,6 +5004,15 @@ def client_message_new():
                 "INSERT INTO conversation_messages"
                 " (conversation_id, sender_id, sender_role, content) VALUES (?, ?, ?, ?)",
                 (conv_id, user["id"], "client", content))
+            try:
+                conn.execute(
+                    "INSERT INTO lia_logs"
+                    " (session_id, client_id, client_name, message, reply, status)"
+                    " VALUES (?, ?, ?, ?, ?, ?)",
+                    (f"conv-{conv_id}", user["id"], user.get("full_name") or "Client",
+                     content, None, "open"))
+            except Exception as e:
+                logger.warning("Enregistrement message Lia impossible: %s", e)
             conn.commit()
             flash("Votre message a ete envoye a FixPro.", "success")
         finally:
@@ -5287,6 +5296,16 @@ def client_conversation(conversation_id):
                         " (conversation_id, sender_id, sender_role, content)"
                         " VALUES (?, ?, ?, ?)",
                         (conversation_id, ai_sender, "ai", analysis["response"]))
+
+                    try:
+                        conn.execute(
+                            "INSERT INTO lia_logs"
+                            " (session_id, client_id, client_name, message, reply, status)"
+                            " VALUES (?, ?, ?, ?, ?, ?)",
+                            (f"conv-{conversation_id}", user["id"], user.get("full_name") or "Client",
+                             content, analysis["response"], "open"))
+                    except Exception as e:
+                        logger.warning("Enregistrement conversation Lia impossible: %s", e)
 
                     extra_messages = []
                     status = "ai_active"
