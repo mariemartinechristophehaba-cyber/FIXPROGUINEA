@@ -1,28 +1,147 @@
-{% extends 'base.html' %}
-{% block title %}Mes messages - FixPro{% endblock %}
-{% block content %}
-<style>
-  .msg-list { max-width: 800px; margin: 0 auto; padding: 24px 16px 90px; }
-  .msg-card { display: block; background: #fff; border-radius: 14px; padding: 16px; margin-bottom: 12px; text-decoration: none; color: inherit; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
-  .msg-subject { font-weight: 700; margin-bottom: 4px; }
-  .msg-preview { color: #64748b; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .msg-meta { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 12px; color: #64748b; }
-  .msg-unread { background: #ef4444; color: #fff; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 700; }
-  .msg-new { display: block; width: max-content; margin: 0 auto 18px; background: #155eef; color: #fff; padding: 10px 20px; border-radius: 10px; text-decoration: none; font-weight: 600; }
-</style>
-<div class="msg-list">
-  <a class="msg-new" href="{{ url_for('client_message_new') }}">Nouveau message</a>
-  {% for c in conversations %}
-  <a class="msg-card" href="{{ url_for('client_conversation', conversation_id=c.id) }}">
-    <div class="msg-subject">{{ c.subject or 'Conversation avec FixPro' }}</div>
-    <div class="msg-preview">{{ c.last_message or 'Aucun message' }}</div>
-    <div class="msg-meta">
-      <span>{{ c.updated_at }}</span>
-      {% if c.unread %}<span class="msg-unread">{{ c.unread }}</span>{% endif %}
-    </div>
-  </a>
-  {% else %}
-  <p style="text-align:center;color:#64748b;">Aucune conversation. Envoyez un message a FixPro.</p>
-  {% endfor %}
-</div>
-{% endblock %}
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#155EEF" />
+  <title>Mes messages - FixPro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: #F1F5F9; color: #0F172A; -webkit-font-smoothing: antialiased; }
+    a { text-decoration: none; color: inherit; }
+
+    .m-wrap { max-width: 480px; margin: 0 auto; min-height: 100vh; background: #F1F5F9; padding-bottom: 88px; }
+
+    .m-header {
+      background: #155EEF; color: #fff; padding: 16px; position: sticky; top: 0; z-index: 10;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    .m-header a { color: #fff; }
+    .m-back, .m-new {
+      width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
+      background: rgba(255,255,255,.15);
+    }
+    .m-back svg, .m-new svg { width: 20px; height: 20px; }
+    .m-title { flex: 1; text-align: center; }
+    .m-title h1 { margin: 0; font-size: 17px; font-weight: 700; }
+    .m-title p { margin: 2px 0 0; font-size: 12px; opacity: .85; }
+
+    .m-main { padding: 14px 16px; }
+    .m-card {
+      background: #fff; border-radius: 20px; padding: 16px; margin-bottom: 12px;
+      box-shadow: 0 2px 12px rgba(0,0,0,.04); display: flex; align-items: center; gap: 14px;
+      transition: transform .08s;
+    }
+    .m-card:active { transform: scale(.99); }
+    .m-avatar {
+      width: 50px; height: 50px; border-radius: 50%; background: #F1F5F9;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .m-avatar svg { width: 24px; height: 24px; color: #155EEF; }
+    .m-body { flex: 1; min-width: 0; }
+    .m-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 4px; }
+    .m-subject { font-weight: 700; font-size: 15px; color: #0F172A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .m-time { font-size: 11px; color: #94A3B8; white-space: nowrap; }
+    .m-preview { font-size: 13px; color: #64748B; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .m-unread {
+      width: 20px; height: 20px; border-radius: 50%; background: #EF4444; color: #fff;
+      font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .m-status { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 10px; margin-top: 6px; display: inline-block; }
+    .m-status.open { background: #DBEAFE; color: #1E40AF; }
+    .m-status.closed { background: #F1F5F9; color: #64748B; }
+    .m-empty { text-align: center; padding: 40px 20px; }
+    .m-empty strong { display: block; font-size: 16px; color: #0F172A; margin-bottom: 6px; }
+    .m-empty p { margin: 0; font-size: 14px; color: #64748B; }
+
+    .m-cta {
+      display: block; width: calc(100% - 32px); margin: 0 16px 16px; background: #155EEF; color: #fff; text-align: center;
+      font-weight: 700; font-size: 15px; padding: 15px; border-radius: 16px;
+    }
+
+    .m-nav {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 50; max-width: 480px; margin: 0 auto;
+      background: #fff; border-top: 1px solid #E2E8F0; display: flex; justify-content: space-around; align-items: center;
+      padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
+    }
+    .m-nav a { display: flex; flex-direction: column; align-items: center; gap: 3px; color: #94A3B8; font-size: 11px; padding: 4px 8px; }
+    .m-nav a.active { color: #155EEF; }
+    .m-nav a svg { width: 22px; height: 22px; }
+    .m-nav .m-plus {
+      position: relative; top: -18px; width: 50px; height: 50px; border-radius: 50%; background: #155EEF; color: #fff;
+      display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(21,94,239,.35);
+    }
+    .m-nav .m-plus svg { width: 26px; height: 26px; }
+  </style>
+</head>
+<body>
+  <div class="m-wrap">
+    <header class="m-header">
+      <a href="{{ url_for('home') }}" class="m-back" aria-label="Retour">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      </a>
+      <div class="m-title">
+        <h1>Mes messages</h1>
+        <p>{{ conversations|length }} conversation{% if conversations|length > 1 %}s{% endif %}</p>
+      </div>
+      <a href="{{ url_for('client_message_new') }}" class="m-new" aria-label="Nouveau message">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+      </a>
+    </header>
+
+    <main class="m-main">
+      {% for c in conversations %}
+      <a class="m-card" href="{{ url_for('client_conversation', conversation_id=c.id) }}">
+        <div class="m-avatar">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 21l1.9-5.1A8.4 8.4 0 0 1 4 11.5a8.5 8.5 0 0 1 8.5-8.5A8.5 8.5 0 0 1 21 11.5z"/></svg>
+        </div>
+        <div class="m-body">
+          <div class="m-row">
+            <span class="m-subject">{{ c.subject or 'Assistance FixPro' }}</span>
+            <span class="m-time">{{ c.updated_at[:10] if c.updated_at else '' }}</span>
+          </div>
+          <p class="m-preview">{{ c.last_message or 'Aucun message' }}</p>
+          <span class="m-status {{ 'open' if c.status in ('open','active','admin_active') else 'closed' }}">
+            {{ 'En cours' if c.status in ('open','active','admin_active') else 'Terminee' }}
+          </span>
+        </div>
+        {% if c.unread %}<span class="m-unread">{{ c.unread }}</span>{% endif %}
+      </a>
+      {% else %}
+      <div class="m-empty">
+        <strong>Aucune conversation</strong>
+        <p>Commencez une discussion avec FixPro.</p>
+      </div>
+      {% endfor %}
+    </main>
+
+    <a class="m-cta" href="{{ url_for('client_message_new') }}">Nouvelle conversation</a>
+
+    <nav class="m-nav">
+      <a href="{{ url_for('home') }}">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
+        Accueil
+      </a>
+      <a href="{{ url_for('artisans_page') }}">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        Recherche
+      </a>
+      <a class="m-plus" href="{{ url_for('requests_list') if nav_user else url_for('artisans_page') }}" aria-label="Reserver">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+      </a>
+      <a href="{{ url_for('client_messages') }}" class="active">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 21l1.9-5.1A8.4 8.4 0 0 1 4 11.5a8.5 8.5 0 0 1 8.5-8.5A8.5 8.5 0 0 1 21 11.5z"/></svg>
+        Messages
+      </a>
+      <a href="{% if nav_user %}{{ url_for('profile') }}{% else %}{{ url_for('login') }}{% endif %}">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
+        Profil
+      </a>
+    </nav>
+  </div>
+</body>
+</html>
