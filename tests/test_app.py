@@ -887,12 +887,12 @@ class ConfigurationTests(unittest.TestCase):
 class DomainTests(FixProTestCase):
     """Verifie que l'IA et l'attribution respectent strictement les domaines."""
 
-    def _insert_artisan(self, full_name, profession, lat, lon, verified=True, active=True):
+    def _insert_artisan(self, full_name, profession, lat, lon, verified=True, active=True, availability="en_ligne", zone=None):
         conn = db.connect(sqlite_path=self.db_path)
         try:
             suffix = f"{abs(hash(full_name)) % 1000000:06d}"
-            uid = fixpro_app._insert_id(conn, "INSERT INTO users (full_name, phone, email, password_hash, role, profession, city, latitude, longitude, is_verified, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                             (full_name, f"+22462{suffix}", f"{full_name.replace(' ', '')}@t.com", fixpro_app.generate_password_hash("FixPro2026!"), "artisan", profession, "Conakry", lat, lon, 1 if verified else 0, 1 if active else 0))
+            uid = fixpro_app._insert_id(conn, "INSERT INTO users (full_name, phone, email, password_hash, role, profession, city, latitude, longitude, is_verified, is_active, account_status, availability_status, zone_intervention) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                             (full_name, f"+22462{suffix}", f"{full_name.replace(' ', '')}@t.com", fixpro_app.generate_password_hash("FixPro2026!"), "artisan", profession, "Conakry", lat, lon, 1 if verified else 0, 1 if active else 0, "ACTIVE", availability, zone or "Conakry"))
             conn.commit()
             return uid
         finally:
@@ -948,6 +948,66 @@ class DomainTests(FixProTestCase):
             artisan = fixpro_app._select_best_technician(conn, "plomberie", "Kaloum", client_lat=9.5012, client_lon=-13.7012)
             self.assertIsNotNone(artisan)
             self.assertEqual(artisan["full_name"], "Plombier Proche")
+        finally:
+            conn.close()
+
+    def test_busy_technician_not_selected(self):
+        plombier = self._insert_artisan("Plombier Disponible", "Plombier", 9.5010, -13.7010)
+        occupe = self._insert_artisan("Plombier Occupe", "Plombier", 9.5005, -13.7005)
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            client_id = fixpro_app._insert_id(conn, "INSERT INTO users (full_name, phone, password_hash, role, city) VALUES (?, ?, ?, ?, ?)",
+                                               ("Client Test", "+224620000001", fixpro_app.generate_password_hash("FixPro2026!"), "client", "Conakry"))
+            conn.execute(
+                "INSERT INTO requests (client_id, artisan_id, reference, title, description, category, address, status, urgency, quote_amount, budget, latitude, longitude, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (client_id, occupe, "FP-2026-999001", "Fuite", "Fuite", "Plomberie", "Kaloum", "in_progress", "urgent", 0, 0, 0, 0, "2026-01-01T00:00:00", "2026-01-01T00:00:00"))
+            conn.commit()
+            artisan = fixpro_app._select_best_technician(conn, "plomberie", "Kaloum", client_lat=9.5012, client_lon=-13.7012)
+            self.assertIsNotNone(artisan)
+            self.assertEqual(artisan["id"], plombier)
+        finally:
+            conn.close()
+
+    def test_offline_technician_not_selected(self):
+        self._insert_artisan("Plombier En Ligne", "Plombier", 9.5010, -13.7010)
+        self._insert_artisan("Plombier Hors Ligne", "Plombier", 9.5005, -13.7005, availability="hors_ligne")
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            artisan = fixpro_app._select_best_technician(conn, "plomberie", "Kaloum", client_lat=9.5012, client_lon=-13.7012)
+            self.assertIsNotNone(artisan)
+            self.assertEqual(artisan["full_name"], "Plombier En Ligne")
+        finally:
+            conn.close()
+
+    def test_attribution_creates_request_and_history(self):
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            client_id = fixpro_app._insert_id(conn, "INSERT INTO users (full_name, phone, password_hash, role, city) VALUES (?, ?, ?, ?, ?)",
+                                               ("Client Test", "+224620000002", fixpro_app.generate_password_hash("FixPro2026!"), "client", "Conakry"))
+            artisan_id = fixpro_app._insert_id(conn, "INSERT INTO users (full_name, phone, email, password_hash, role, profession, city, latitude, longitude, is_verified, is_active, account_status, availability_status, zone_intervention) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                                               ("Plombier Pro", "+22462999999", "pro@test.com", fixpro_app.generate_password_hash("FixPro2026!"), "artisan", "Plombier", "Conakry", 9.5010, -13.7010, 1, 1, "ACTIVE", "en_ligne", "Kaloum"))
+            artisan = conn.execute("SELECT * FROM users WHERE id = ?", (artisan_id,)).fetchone()
+            artisan = dict(artisan)
+            artisan["selection_reason"] = "test"
+            conv_id = fixpro_app._insert_id(conn, "INSERT INTO conversations (client_id, subject, status) VALUES (?, ?, ?)",
+                                             (client_id, "Demande", "ai_active"))
+            conn.commit()
+            analysis = {
+                "category": "plomberie",
+                "collected_info": {"problem_detail": "Fuite sous evier", "location": "Kaloum"},
+                "urgency": "urgent",
+            }
+            req_id = fixpro_app._create_intervention_from_chat(
+                conn, conv_id, client_id, analysis, artisan, client_id,
+                client_lat=9.5012, client_lon=-13.7012)
+            self.assertIsNotNone(req_id)
+            request = conn.execute("SELECT * FROM requests WHERE id = ?", (req_id,)).fetchone()
+            self.assertEqual(request["artisan_id"], artisan_id)
+            hist = conn.execute(
+                "SELECT status FROM intervention_history WHERE request_id = ? ORDER BY id",
+                (req_id,)).fetchall()
+            self.assertEqual(hist[0]["status"], "Nouvelle demande")
+            self.assertTrue(any("Technicien attribué" in h["status"] for h in hist))
         finally:
             conn.close()
 

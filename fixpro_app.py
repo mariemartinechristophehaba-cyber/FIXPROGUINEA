@@ -4602,10 +4602,11 @@ def _domain_to_profession(category):
 
 
 def _select_best_technician(conn, category, location, client_lat=None, client_lon=None):
-    """Selectionne le meilleur technicien du domaine demande, sans jamais melanger.
+    """Selectionne le meilleur technicien selon le metier, la disponibilite,
+    la zone d'intervention, la position et la reputation.
 
-    Utilise d'abord la position GPS reelle du client si elle est disponible,
-    sinon la geolocalisation approximative du quartier indique.
+    Renvoie un dictionnaire artisan avec les cles `selection_reason` et
+    `distance_km` pour la tracabilite, ou None si aucun candidat.
     """
     if not category:
         return None
@@ -4618,23 +4619,92 @@ def _select_best_technician(conn, category, location, client_lat=None, client_lo
     else:
         lat, lon = _geocode_zone("Conakry", location or "Conakry")
 
-    rows = conn.execute(
-        "SELECT id, full_name, profession, latitude, longitude, is_active, is_verified"
-        " FROM users WHERE role = 'artisan'"
-        " AND LOWER(REPLACE(REPLACE(profession, 'é', 'e'), 'É', 'E')) = ? AND is_active = 1"
-        " ORDER BY is_verified DESC, full_name",
-        (profession,)).fetchall()
+    sql = """
+        SELECT u.id, u.full_name, u.profession, u.latitude, u.longitude,
+               u.is_active, u.is_verified, u.availability_status,
+               u.zone_intervention, u.quartier, u.city, u.mobility, u.years_experience,
+               u.account_status,
+               COALESCE(rating_data.avg_rating, 0) AS avg_rating,
+               COALESCE(rating_data.review_count, 0) AS review_count,
+               COALESCE(completed_count.c, 0) AS completed_count
+        FROM users u
+        LEFT JOIN (
+            SELECT artisan_id, AVG(rating) AS avg_rating, COUNT(*) AS review_count
+            FROM reviews GROUP BY artisan_id
+        ) rating_data ON rating_data.artisan_id = u.id
+        LEFT JOIN (
+            SELECT artisan_id, COUNT(*) AS c
+            FROM requests WHERE LOWER(status) = 'completed' GROUP BY artisan_id
+        ) completed_count ON completed_count.artisan_id = u.id
+        WHERE u.role = 'artisan'
+          AND u.is_active = 1
+          AND (u.account_status = 'ACTIVE' OR u.account_status IS NULL)
+          AND LOWER(COALESCE(u.availability_status, 'hors_ligne')) NOT IN ('hors_ligne', 'en_intervention')
+          AND LOWER(REPLACE(REPLACE(u.profession, 'é', 'e'), 'É', 'E')) = ?
+    """
+    rows = conn.execute(sql, (profession,)).fetchall()
+
+    # Exclure les artisans occupes par une intervention en cours
+    busy_ids = {r["artisan_id"] for r in conn.execute(
+        "SELECT artisan_id FROM requests"
+        " WHERE LOWER(status) IN ('in_progress', 'on_the_way')"
+        " GROUP BY artisan_id HAVING COUNT(*) > 0").fetchall()}
+
+    location_norm = (location or "").lower()
+
+    def in_zone(a):
+        zones = " ".join([
+            (a.get("zone_intervention") or ""),
+            (a.get("quartier") or ""),
+            (a.get("city") or "")
+        ]).lower()
+        return bool(location_norm) and (location_norm in zones or (a.get("mobility") or "").lower() == 'toute_conakry')
 
     def dist(a):
-        if _is_valid_coordinate(a["latitude"], a["longitude"]) and _is_valid_coordinate(lat, lon):
-            return calculate_distance(lat, lon, float(a["latitude"]), float(a["longitude"]))
-        return 999
+        a_lat = a["latitude"]
+        a_lon = a["longitude"]
+        if _is_valid_coordinate(a_lat, a_lon) and _is_valid_coordinate(lat, lon):
+            return calculate_distance(lat, lon, float(a_lat), float(a_lon))
+        return 9999
 
-    rows = sorted(rows, key=lambda a: (dist(a), -a["is_verified"], a["full_name"]))
-    return rows[0] if rows else None
+    candidates = []
+    for a in rows:
+        if a["id"] in busy_ids:
+            continue
+        d = dist(a)
+        score = 0
+        if a["availability_status"] and a["availability_status"].lower() == 'en_ligne':
+            score += 40
+        if a["is_verified"]:
+            score += 30
+        if in_zone(a):
+            score += 25
+        score += float(a["avg_rating"] or 0) * 20
+        score += (a["completed_count"] or 0) * 2
+        score += (a["years_experience"] or 0)
+        score -= d * 2
+        artisans = dict(a)
+        artisans["distance_km"] = round(d, 1) if d != 9999 else None
+        artisans["selection_score"] = score
+        candidates.append(artisans)
+
+    if not candidates:
+        return None
+
+    candidates.sort(key=lambda a: (-a["selection_score"], a["distance_km"] or 9999, a["full_name"]))
+    best = candidates[0]
+    parts = [best["profession"]]
+    if best["distance_km"] is not None:
+        parts.append(f"a {best['distance_km']} km")
+    if best["is_verified"]:
+        parts.append("verifie")
+    if best["availability_status"]:
+        parts.append(best["availability_status"].replace("_", " "))
+    best["selection_reason"] = "; ".join(parts)
+    return best
 
 
-def _create_intervention_from_chat(conn, conversation_id, client_id, analysis, artisan_id, sender_id, client_lat=None, client_lon=None):
+def _create_intervention_from_chat(conn, conversation_id, client_id, analysis, artisan, sender_id, client_lat=None, client_lon=None):
     """Cree une intervention a partir d'une conversation."""
     ref = _generate_fixpro_reference(conn)
     info = analysis["collected_info"]
@@ -4646,6 +4716,8 @@ def _create_intervention_from_chat(conn, conversation_id, client_id, analysis, a
     lat = float(client_lat) if _is_valid_coordinate(client_lat, client_lon) else 0.0
     lon = float(client_lon) if _is_valid_coordinate(client_lat, client_lon) else 0.0
     now = datetime.now(timezone.utc).isoformat()
+    artisan_id = artisan["id"]
+    reason = artisan.get("selection_reason", "selection automatique")
     req_id = _insert_id(
         conn,
         "INSERT INTO requests (client_id, artisan_id, reference, title, description, category, address, status, urgency, quote_amount, budget, latitude, longitude, created_at, updated_at)"
@@ -4662,7 +4734,7 @@ def _create_intervention_from_chat(conn, conversation_id, client_id, analysis, a
     conn.execute(
         "INSERT INTO intervention_history (request_id, status, actor, note, created_at)"
         " VALUES (?, ?, ?, ?, ?)",
-        (req_id, "Technicien attribué", "Assistant FixPro", f"Technicien attribué pour l'intervention {ref}", now))
+        (req_id, "Technicien attribué", "Assistant FixPro", f"Technicien {artisan['full_name']} attribué — {reason}", now))
     conn.execute(
         "UPDATE conversations SET request_id = ?, status = 'converted_to_intervention' WHERE id = ?",
         (req_id, conversation_id))
@@ -4757,7 +4829,7 @@ def client_conversation(conversation_id):
                         if artisan:
                             req_id = _create_intervention_from_chat(
                                 conn, conversation_id, user["id"],
-                                analysis, artisan["id"], fixpro_user["id"] if fixpro_user else user["id"],
+                                analysis, artisan, fixpro_user["id"] if fixpro_user else user["id"],
                                 client_lat=client_lat, client_lon=client_lon)
                             ref_row = conn.execute(
                                 "SELECT reference FROM requests WHERE id = ?", (req_id,)).fetchone()
