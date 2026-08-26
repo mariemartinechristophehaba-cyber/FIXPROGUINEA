@@ -1,10 +1,10 @@
 // @ts-nocheck
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   LayoutDashboard, Wrench, Users, UserRound, Grid3x3, Wallet, Settings, MessageSquare,
-  Bell, Search, ChevronRight, Menu, X,
+  Bell, Search, ChevronRight, Menu, X, Send,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useRouter, usePathname } from 'next/navigation';
@@ -27,6 +27,9 @@ const C = {
   red: '#B3271D',
   redBg: '#FBE5E3',
   blueBg: '#E4EAFB',
+  clientBg: '#16265E',
+  aiBg: '#F4F5FA',
+  adminBg: '#E1F3EA',
 };
 
 const SHADOW_SM = '0 1px 2px rgba(10,14,31,0.04), 0 2px 8px -2px rgba(10,14,31,0.06)';
@@ -77,6 +80,20 @@ function statusColor(status) {
   return { bg: C.greenBg, color: C.green };
 }
 
+function roleLabel(role) {
+  if (role === 'client') return 'Client';
+  if (role === 'ai') return 'Lia';
+  if (role === 'admin') return 'Vous';
+  if (role === 'system') return 'Systeme';
+  return role;
+}
+
+function roleBubble(role) {
+  if (role === 'client') return { bg: C.clientBg, color: '#fff', align: 'start' };
+  if (role === 'admin') return { bg: C.adminBg, color: C.ink, align: 'end' };
+  return { bg: C.aiBg, color: C.ink, align: 'start' };
+}
+
 function Badge({ color, bg, children }) {
   return (
     <span className='fx-body font-semibold text-[11px] rounded-full px-2.5 py-1' style={{ background: bg, color, border: `1px solid ${color}33` }}>
@@ -93,6 +110,12 @@ export default function FixProLiaPage() {
   const [search, setSearch] = useState('');
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [msgLoading, setMsgLoading] = useState(false);
+  const [reply, setReply] = useState('');
+  const [sending, setSending] = useState(false);
+  const messagesEndRef = useRef(null);
 
   const load = () => {
     setLoading(true);
@@ -104,28 +127,80 @@ export default function FixProLiaPage() {
       .finally(() => setLoading(false));
   };
 
+  const loadMessages = (log) => {
+    if (!log) return;
+    setMsgLoading(true);
+    api.liaLogMessages(log.id)
+      .then((res) => setMessages(res.messages || []))
+      .catch(() => setMessages([]))
+      .finally(() => setMsgLoading(false));
+  };
+
   useEffect(() => {
     load();
   }, [filter, search]);
 
-  const handleTake = (id) => {
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages]);
+
+  const counts = useMemo(() => ({
+    total: logs.length,
+    open: logs.filter((l) => l.status === 'open').length,
+    handling: logs.filter((l) => l.status === 'handling').length,
+    closed: logs.filter((l) => l.status === 'closed').length,
+  }), [logs]);
+
+  const thread = useMemo(() => {
+    if (!selected) return [];
+    return logs
+      .filter((l) => l.session_id === selected.session_id)
+      .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+  }, [logs, selected]);
+
+  const handleTake = (id, e) => {
+    e.stopPropagation();
     api.takeLiaLog(id)
-      .then(load)
+      .then(() => {
+        load();
+        const log = logs.find((l) => l.id === id);
+        if (log) {
+          setSelected(log);
+          loadMessages(log);
+        }
+      })
       .catch(console.error);
   };
 
-  const handleClose = (id) => {
+  const handleClose = (id, e) => {
+    e.stopPropagation();
     api.closeLiaLog(id)
       .then(load)
       .catch(console.error);
   };
 
-  const counts = {
-    total: logs.length,
-    open: logs.filter((l) => l.status === 'open').length,
-    handling: logs.filter((l) => l.status === 'handling').length,
-    closed: logs.filter((l) => l.status === 'closed').length,
+  const handleSelect = (log) => {
+    setSelected(log);
+    loadMessages(log);
   };
+
+  const handleSend = (e) => {
+    e.preventDefault();
+    if (!reply.trim() || !selected) return;
+    setSending(true);
+    api.replyLiaLog(selected.id, reply.trim())
+      .then(() => {
+        setReply('');
+        load();
+        loadMessages(selected);
+      })
+      .catch(console.error)
+      .finally(() => setSending(false));
+  };
+
+  const isConv = selected && (selected.session_id || '').startsWith('conv-');
 
   return (
     <div className='fx-body w-full min-h-[760px] flex' style={{ background: C.bg, color: C.ink }}>
@@ -202,103 +277,220 @@ export default function FixProLiaPage() {
           </div>
         </div>
 
-        <div className='p-5 lg:p-8 flex flex-col gap-5 fx-scroll overflow-y-auto'>
-          <div className='grid grid-cols-2 md:grid-cols-4 gap-3'>
-            {[
-              { label: 'Total', value: counts.total },
-              { label: 'Ouverts', value: counts.open, color: C.amber },
-              { label: 'En cours', value: counts.handling, color: C.brandLight },
-              { label: 'Fermes', value: counts.closed, color: C.green },
-            ].map((k) => (
-              <div key={k.label} className='rounded-xl p-4' style={{ background: C.surface, border: `1px solid ${C.border}`, boxShadow: SHADOW_SM }}>
-                <p className='fx-body text-[12px]' style={{ color: C.inkMuted }}>{k.label}</p>
-                <p className='fx-display text-[18px] font-bold mt-0.5' style={{ color: k.color || C.ink }}>{k.value}</p>
-              </div>
-            ))}
-          </div>
+        <div className='p-5 lg:p-8 flex flex-col lg:flex-row gap-5 fx-scroll overflow-y-auto'>
+          <div className='flex-1 min-w-0 flex flex-col gap-5'>
+            <div className='grid grid-cols-2 md:grid-cols-4 gap-3'>
+              {[
+                { label: 'Total', value: counts.total },
+                { label: 'Ouverts', value: counts.open, color: C.amber },
+                { label: 'En cours', value: counts.handling, color: C.brandLight },
+                { label: 'Fermes', value: counts.closed, color: C.green },
+              ].map((k) => (
+                <div key={k.label} className='rounded-xl p-4' style={{ background: C.surface, border: `1px solid ${C.border}`, boxShadow: SHADOW_SM }}>
+                  <p className='fx-body text-[12px]' style={{ color: C.inkMuted }}>{k.label}</p>
+                  <p className='fx-display text-[18px] font-bold mt-0.5' style={{ color: k.color || C.ink }}>{k.value}</p>
+                </div>
+              ))}
+            </div>
 
-          <div className='flex flex-wrap gap-2 items-center'>
-            {FILTER_TABS.map((f) => (
-              <button
-                key={f}
-                onClick={() => setFilter(f)}
-                className='fx-body font-semibold text-[12.5px] rounded-full px-3.5 py-1.5 transition-colors'
-                style={{
-                  background: filter === f ? C.brand : C.surface,
-                  color: filter === f ? '#fff' : C.ink,
-                  border: `1px solid ${filter === f ? C.brand : C.border}`,
-                  boxShadow: filter === f ? SHADOW_SM : 'none',
-                }}
-              >
-                {f}
-              </button>
-            ))}
-          </div>
+            <div className='flex flex-wrap gap-2 items-center'>
+              {FILTER_TABS.map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setFilter(f)}
+                  className='fx-body font-semibold text-[12.5px] rounded-full px-3.5 py-1.5 transition-colors'
+                  style={{
+                    background: filter === f ? C.brand : C.surface,
+                    color: filter === f ? '#fff' : C.ink,
+                    border: `1px solid ${filter === f ? C.brand : C.border}`,
+                    boxShadow: filter === f ? SHADOW_SM : 'none',
+                  }}
+                >
+                  {f}
+                </button>
+              ))}
+            </div>
 
-          <div className='rounded-2xl overflow-hidden' style={{ background: C.surface, border: `1px solid ${C.border}`, boxShadow: SHADOW_MD }}>
-            <div className='fx-scroll overflow-x-auto'>
-              <table className='w-full'>
-                <thead>
-                  <tr className='text-left' style={{ borderBottom: `2px solid ${C.border}` }}>
-                    <th className='fx-body font-bold text-[10.5px] uppercase tracking-wider px-4 py-3' style={{ color: C.inkMuted }}>Client</th>
-                    <th className='fx-body font-bold text-[10.5px] uppercase tracking-wider px-4 py-3' style={{ color: C.inkMuted }}>Message</th>
-                    <th className='fx-body font-bold text-[10.5px] uppercase tracking-wider px-4 py-3' style={{ color: C.inkMuted }}>Reponse</th>
-                    <th className='fx-body font-bold text-[10.5px] uppercase tracking-wider px-4 py-3' style={{ color: C.inkMuted }}>Statut</th>
-                    <th className='fx-body font-bold text-[10.5px] uppercase tracking-wider px-4 py-3' style={{ color: C.inkMuted }}>Date</th>
-                    <th className='fx-body font-bold text-[10.5px] uppercase tracking-wider px-4 py-3' style={{ color: C.inkMuted }}></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {loading && (
-                    <tr>
-                      <td colSpan={6} className='px-4 py-8 text-center fx-body text-[13px]' style={{ color: C.inkMuted }}>Chargement...</td>
+            <div className='rounded-2xl overflow-hidden' style={{ background: C.surface, border: `1px solid ${C.border}`, boxShadow: SHADOW_MD }}>
+              <div className='fx-scroll overflow-x-auto'>
+                <table className='w-full'>
+                  <thead>
+                    <tr className='text-left' style={{ borderBottom: `2px solid ${C.border}` }}>
+                      <th className='fx-body font-bold text-[10.5px] uppercase tracking-wider px-4 py-3' style={{ color: C.inkMuted }}>Client</th>
+                      <th className='fx-body font-bold text-[10.5px] uppercase tracking-wider px-4 py-3' style={{ color: C.inkMuted }}>Message</th>
+                      <th className='fx-body font-bold text-[10.5px] uppercase tracking-wider px-4 py-3' style={{ color: C.inkMuted }}>Statut</th>
+                      <th className='fx-body font-bold text-[10.5px] uppercase tracking-wider px-4 py-3' style={{ color: C.inkMuted }}>Date</th>
+                      <th className='fx-body font-bold text-[10.5px] uppercase tracking-wider px-4 py-3' style={{ color: C.inkMuted }}></th>
                     </tr>
-                  )}
-                  {!loading && logs.map((l) => {
-                    const st = statusColor(l.status);
-                    return (
-                      <tr
-                        key={l.id}
-                        className='fx-row transition-colors'
-                        style={{ borderTop: `1px solid ${C.border}` }}
-                      >
-                        <td className='px-4 py-3.5 text-[13px] font-medium'>
-                          <div>{l.client_name || 'Visiteur'}</div>
-                          <div className='text-[10.5px] fx-mono' style={{ color: C.inkMuted }}>{l.session_id?.slice(-8) || '—'}</div>
-                        </td>
-                        <td className='px-4 py-3.5 fx-body text-[12.5px]' style={{ maxWidth: 240 }}>{l.message}</td>
-                        <td className='px-4 py-3.5 fx-body text-[12.5px]' style={{ color: C.inkMuted, maxWidth: 240 }}>{l.reply}</td>
-                        <td className='px-4 py-3.5'><Badge color={st.color} bg={st.bg}>{statusLabel(l.status)}</Badge></td>
-                        <td className='px-4 py-3.5 fx-mono font-medium text-[11.5px]' style={{ color: C.inkMuted }}>{formatDate(l.created_at)}</td>
-                        <td className='px-4 py-3.5'>
-                          <div className='flex gap-2'>
-                            {l.status !== 'handling' && (
-                              <button
-                                onClick={() => handleTake(l.id)}
-                                className='fx-body font-semibold text-[10.5px] rounded px-2 py-1'
-                                style={{ background: C.brand, color: '#fff' }}
-                              >
-                                Prendre
-                              </button>
-                            )}
-                            {l.status !== 'closed' && (
-                              <button
-                                onClick={() => handleClose(l.id)}
-                                className='fx-body font-semibold text-[10.5px] rounded px-2 py-1'
-                                style={{ background: C.green, color: '#fff' }}
-                              >
-                                Fermer
-                              </button>
-                            )}
-                          </div>
-                        </td>
+                  </thead>
+                  <tbody>
+                    {loading && (
+                      <tr>
+                        <td colSpan={5} className='px-4 py-8 text-center fx-body text-[13px]' style={{ color: C.inkMuted }}>Chargement...</td>
                       </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                    )}
+                    {!loading && logs.map((l) => {
+                      const st = statusColor(l.status);
+                      const active = selected && selected.id === l.id;
+                      return (
+                        <tr
+                          key={l.id}
+                          onClick={() => handleSelect(l)}
+                          className='fx-row transition-colors cursor-pointer'
+                          style={{
+                            borderTop: `1px solid ${C.border}`,
+                            background: active ? C.blueBg : 'transparent',
+                          }}
+                        >
+                          <td className='px-4 py-3.5 text-[13px] font-medium'>
+                            <div>{l.client_name || 'Visiteur'}</div>
+                            <div className='text-[10.5px] fx-mono' style={{ color: C.inkMuted }}>{l.session_id?.slice(-8) || '—'}</div>
+                          </td>
+                          <td className='px-4 py-3.5 fx-body text-[12.5px]' style={{ maxWidth: 260 }}>{l.message}</td>
+                          <td className='px-4 py-3.5'><Badge color={st.color} bg={st.bg}>{statusLabel(l.status)}</Badge></td>
+                          <td className='px-4 py-3.5 fx-mono font-medium text-[11.5px]' style={{ color: C.inkMuted }}>{formatDate(l.created_at)}</td>
+                          <td className='px-4 py-3.5'>
+                            <div className='flex gap-2' onClick={(e) => e.stopPropagation()}>
+                              {l.status !== 'handling' && (
+                                <button
+                                  onClick={(e) => handleTake(l.id, e)}
+                                  className='fx-body font-semibold text-[10.5px] rounded px-2 py-1'
+                                  style={{ background: C.brand, color: '#fff' }}
+                                >
+                                  Prendre
+                                </button>
+                              )}
+                              {l.status !== 'closed' && (
+                                <button
+                                  onClick={(e) => handleClose(l.id, e)}
+                                  className='fx-body font-semibold text-[10.5px] rounded px-2 py-1'
+                                  style={{ background: C.green, color: '#fff' }}
+                                >
+                                  Fermer
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
+
+          {selected && (
+            <div
+              className='w-full lg:w-[420px] flex flex-col rounded-2xl overflow-hidden fixed lg:static inset-0 lg:inset-auto z-30 lg:z-auto'
+              style={{ background: C.surface, border: `1px solid ${C.border}`, boxShadow: SHADOW_MD }}
+            >
+              <div
+                className='flex items-center justify-between px-4 py-3'
+                style={{ borderBottom: `1px solid ${C.border}`, background: C.surfaceAlt }}
+              >
+                <div>
+                  <p className='fx-body font-semibold text-[14px]'>{selected.client_name || 'Visiteur'}</p>
+                  <p className='fx-mono text-[10.5px]' style={{ color: C.inkMuted }}>{selected.session_id}</p>
+                </div>
+                <button onClick={() => setSelected(null)} className='p-1 rounded hover:bg-gray-200' style={{ color: C.inkMuted }}>
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className='flex-1 overflow-y-auto p-4 fx-scroll' style={{ maxHeight: 'calc(100vh - 260px)' }}>
+                {msgLoading && (
+                  <p className='text-center text-[12px]' style={{ color: C.inkMuted }}>Chargement...</p>
+                )}
+
+                {thread.map((t) => (
+                  <React.Fragment key={t.id}>
+                    <div className='mb-3' style={{ display: 'flex', justifyContent: 'flex-start' }}>
+                      <div
+                        className='rounded-2xl rounded-tl-sm px-3.5 py-2.5 max-w-[85%]'
+                        style={{ background: C.clientBg, color: '#fff', boxShadow: SHADOW_SM }}
+                      >
+                        <p className='fx-body text-[12.5px]'>{t.message}</p>
+                        <p className='text-[9px] mt-1 opacity-70 fx-mono'>{formatDate(t.created_at)}</p>
+                      </div>
+                    </div>
+                    {t.reply && (
+                      <div className='mb-3' style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                        <div
+                          className='rounded-2xl rounded-tr-sm px-3.5 py-2.5 max-w-[85%]'
+                          style={{ background: C.aiBg, color: C.ink, boxShadow: SHADOW_SM }}
+                        >
+                          <p className='fx-body text-[12.5px]'>{t.reply}</p>
+                          <p className='text-[9px] mt-1 fx-mono' style={{ color: C.inkMuted }}>{formatDate(t.created_at)} · Lia</p>
+                        </div>
+                      </div>
+                    )}
+                  </React.Fragment>
+                ))}
+
+                {messages.length > 0 && thread.length === 0 && (
+                  <>
+                    {messages.map((m, idx) => {
+                      const bubble = roleBubble(m.sender_role);
+                      return (
+                        <div key={idx} className='mb-3' style={{ display: 'flex', justifyContent: bubble.align }}>
+                          <div
+                            className='rounded-2xl px-3.5 py-2.5 max-w-[85%]'
+                            style={{
+                              background: bubble.bg,
+                              color: bubble.color,
+                              boxShadow: SHADOW_SM,
+                              borderRadius: m.sender_role === 'client' ? '16px 16px 16px 4px' : '16px 16px 4px 16px',
+                            }}
+                          >
+                            <p className='fx-body text-[12.5px]'>{m.content}</p>
+                            <p className='text-[9px] mt-1 fx-mono' style={{ color: m.sender_role === 'client' ? 'rgba(255,255,255,0.7)' : C.inkMuted }}>
+                              {formatDate(m.created_at)} · {roleLabel(m.sender_role)}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </>
+                )}
+
+                {messages.length === 0 && !msgLoading && !selected.reply && (
+                  <p className='text-center text-[12px] mt-8' style={{ color: C.inkMuted }}>Aucun message.</p>
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+
+              <div className='p-3' style={{ borderTop: `1px solid ${C.border}` }}>
+                {!isConv ? (
+                  <p className='fx-body text-[12px] text-center py-2' style={{ color: C.inkMuted }}>
+                    Cette conversation n'est pas liee a un client connecte.
+                  </p>
+                ) : (
+                  <form onSubmit={handleSend} className='flex gap-2'>
+                    <input
+                      value={reply}
+                      onChange={(e) => setReply(e.target.value)}
+                      placeholder='Ecrire votre reponse...'
+                      className='fx-body text-[13px] flex-1 px-3 py-2.5 rounded-lg outline-none'
+                      style={{ background: C.surfaceAlt, border: `1px solid ${C.border}` }}
+                    />
+                    <button
+                      type='submit'
+                      disabled={sending || !reply.trim()}
+                      className='flex items-center justify-center rounded-lg px-3'
+                      style={{
+                        background: C.brand,
+                        color: '#fff',
+                        opacity: sending || !reply.trim() ? 0.6 : 1,
+                      }}
+                    >
+                      <Send size={16} />
+                    </button>
+                  </form>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </main>
     </div>

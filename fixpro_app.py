@@ -4723,9 +4723,87 @@ def api_admin_close_lia_log(log_id):
     finally:
         conn.close()
 
+
+@app.route("/api/admin/lia-logs/<int:log_id>/messages")
+@limiter.limit("100 per hour")
+def api_admin_lia_log_messages(log_id):
+    """Retourne les messages complets d'une conversation Lia."""
+    auth = _require_api_key()
+    if auth:
+        return auth
+    conn = get_db_connection()
+    try:
+        log = conn.execute("SELECT session_id FROM lia_logs WHERE id = ?", (log_id,)).fetchone()
+        if not log:
+            return jsonify({"error": "Log introuvable."}), 404
+        session_id = log["session_id"] or ""
+        if not session_id.startswith("conv-"):
+            return jsonify({"messages": []})
+        try:
+            conversation_id = int(session_id.split("-", 1)[1])
+        except ValueError:
+            return jsonify({"messages": []})
+        rows = conn.execute(
+            "SELECT sender_role, content, created_at"
+            " FROM conversation_messages"
+            " WHERE conversation_id = ?"
+            " ORDER BY created_at ASC",
+            (conversation_id,)).fetchall()
+        return jsonify({"messages": [dict(r) for r in rows]})
+    finally:
+        conn.close()
+
+
+@app.route("/api/admin/lia-logs/<int:log_id>/reply", methods=["POST"])
+@limiter.limit("100 per hour")
+def api_admin_reply_lia_log(log_id):
+    """Repond a une conversation Lia en tant qu'administrateur."""
+    auth = _require_api_key()
+    if auth:
+        return auth
+    data = request.get_json(silent=True, force=True) or {}
+    content = (data.get("message") or "").strip()
+    if not content:
+        return jsonify({"error": "Message vide."}), 400
+    conn = get_db_connection()
+    try:
+        log = conn.execute("SELECT session_id FROM lia_logs WHERE id = ?", (log_id,)).fetchone()
+        if not log:
+            return jsonify({"error": "Log introuvable."}), 404
+        session_id = log["session_id"] or ""
+        if not session_id.startswith("conv-"):
+            return jsonify({"error": "Cette conversation n'est pas associee a un client."}), 400
+        try:
+            conversation_id = int(session_id.split("-", 1)[1])
+        except ValueError:
+            return jsonify({"error": "Conversation invalide."}), 400
+        conv = conn.execute("SELECT id FROM conversations WHERE id = ?", (conversation_id,)).fetchone()
+        if not conv:
+            return jsonify({"error": "Conversation introuvable."}), 404
+        fixpro_user = conn.execute(
+            "SELECT id FROM users WHERE role = 'admin' LIMIT 1").fetchone()
+        admin_id = fixpro_user["id"] if fixpro_user else 0
+        now = datetime.now(timezone.utc).isoformat()
+        conn.execute(
+            "INSERT INTO conversation_messages"
+            " (conversation_id, sender_id, sender_role, content) VALUES (?, ?, ?, ?)",
+            (conversation_id, admin_id, "admin", content))
+        conn.execute(
+            "UPDATE conversations SET status = 'admin_active', updated_at = ? WHERE id = ?",
+            (now, conversation_id))
+        conn.execute(
+            "UPDATE lia_logs SET status = 'handling', updated_at = ? WHERE session_id = ?",
+            (now, session_id))
+        conn.commit()
+        return jsonify({"ok": True})
+    finally:
+        conn.close()
+
 csrf.exempt(api_admin_lia_logs)
 csrf.exempt(api_admin_take_lia_log)
 csrf.exempt(api_admin_close_lia_log)
+csrf.exempt(api_admin_lia_log_messages)
+csrf.exempt(api_admin_reply_lia_log)
 
 
 @app.route("/api/admin/parametres")
