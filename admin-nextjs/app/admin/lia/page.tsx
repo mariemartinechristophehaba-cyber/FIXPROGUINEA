@@ -146,7 +146,23 @@ export default function FixProLiaPage() {
     }
   }, [messages]);
 
-  const counts = useMemo(() => ({
+  useEffect(() => {
+    const id = setInterval(() => {
+      const status = { 'Tous': 'all', 'Ouverts': 'open', 'En cours': 'handling', 'Fermes': 'closed' }[filter];
+      const q = search ? `&q=${encodeURIComponent(search)}` : '';
+      api.liaLogs(`status=${status}${q}`)
+        .then(setLogs)
+        .catch(console.error);
+      if (selected) {
+        api.liaLogMessages(selected.id)
+          .then((res) => setMessages(res.messages || []))
+          .catch(console.error);
+      }
+    }, 4000);
+    return () => clearInterval(id);
+  }, [filter, search, selected]);
+
+  const counts = useMemo(() => {
     total: logs.length,
     open: logs.filter((l) => l.status === 'open').length,
     handling: logs.filter((l) => l.status === 'handling').length,
