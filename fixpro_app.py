@@ -721,7 +721,8 @@ def index():
         if client_lat is None or client_lon is None:
             client_lat = _to_float(session.get("client_lat"))
             client_lon = _to_float(session.get("client_lon"))
-        if _is_valid_coordinate(client_lat, client_lon):
+        client_in_conakry = _is_valid_coordinate(client_lat, client_lon) and _nearest_zone(client_lat, client_lon, max_km=50.0) is not None
+        if client_in_conakry:
             for a in artisans:
                 a_lat = _to_float(a.get("latitude"))
                 a_lon = _to_float(a.get("longitude"))
@@ -853,7 +854,8 @@ def home():
         if client_lat is None or client_lon is None:
             client_lat = _to_float(session.get("client_lat"))
             client_lon = _to_float(session.get("client_lon"))
-        if _is_valid_coordinate(client_lat, client_lon):
+        client_in_conakry = _is_valid_coordinate(client_lat, client_lon) and _nearest_zone(client_lat, client_lon, max_km=50.0) is not None
+        if client_in_conakry:
             for a in artisans:
                 a_lat = _to_float(a.get("latitude"))
                 a_lon = _to_float(a.get("longitude"))
@@ -3013,7 +3015,8 @@ def artisans_page():
     if request.args.get("lat") and request.args.get("lon"):
         client_lat = _to_float(request.args.get("lat"))
         client_lon = _to_float(request.args.get("lon"))
-    if _is_valid_coordinate(client_lat, client_lon):
+    client_in_conakry = _is_valid_coordinate(client_lat, client_lon) and _nearest_zone(client_lat, client_lon, max_km=50.0) is not None
+    if client_in_conakry:
         for a in artisans:
             a_lat = _to_float(a.get("latitude"))
             a_lon = _to_float(a.get("longitude"))
