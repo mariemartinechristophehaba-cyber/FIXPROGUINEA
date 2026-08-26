@@ -4563,6 +4563,30 @@ def api_admin_demandes():
         conn.close()
 
 
+@app.route("/api/admin/paiements")
+@limiter.limit("100 per hour")
+def api_admin_paiements():
+    """Liste des paiements pour le dashboard admin."""
+    auth = _require_api_key()
+    if auth:
+        return auth
+    conn = get_db_connection()
+    try:
+        rows = conn.execute(
+            "SELECT p.*,"
+            " c.full_name AS client_name,"
+            " a.full_name AS artisan_name,"
+            " r.title AS request_title"
+            " FROM payments p"
+            " LEFT JOIN requests r ON r.id = p.request_id"
+            " LEFT JOIN users c ON c.id = r.client_id"
+            " LEFT JOIN users a ON a.id = r.artisan_id"
+            " ORDER BY p.created_at DESC").fetchall()
+        return jsonify([dict(r) for r in rows])
+    finally:
+        conn.close()
+
+
 @app.route("/api/admin/dashboard")
 @limiter.limit("100 per hour")
 def api_admin_dashboard():
