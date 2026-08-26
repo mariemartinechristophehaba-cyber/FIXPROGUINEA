@@ -5,7 +5,7 @@ import React, { useEffect, useState } from 'react';
 import {
   LayoutDashboard, Wrench, Users, UserRound, Grid3x3, Wallet, Settings,
   Search, Bell, Star, Check, X, MapPin, Phone, Mail, FileText,
-  ChevronRight, Menu, Filter, ChevronDown,
+  ChevronRight, Menu, Filter, ChevronDown, Plus,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useRouter, usePathname } from 'next/navigation';
@@ -126,6 +126,10 @@ export default function FixProTechniciensPage() {
   const [techniciens, setTechniciens] = useState(MOCK);
   const [selected, setSelected] = useState(MOCK[0]);
   const [loading, setLoading] = useState(true);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [formData, setFormData] = useState({ full_name: '', phone: '', email: '', profession: '', password: '' });
+  const [formError, setFormError] = useState('');
+  const [creating, setCreating] = useState(false);
 
   useEffect(() => {
     api.techniciens()
@@ -171,6 +175,31 @@ export default function FixProTechniciensPage() {
     api.rejectArtisan(selected.id)
       .then(() => setTechniciens(techniciens.map((t) => (t.id === selected.id ? { ...t, is_verified: 0 } : t))))
       .catch(console.error);
+  };
+
+  const handleCreate = (e) => {
+    e.preventDefault();
+    setCreating(true);
+    setFormError('');
+    api.createTechnicien(formData)
+      .then((newUser) => {
+        const mapped = {
+          ...newUser,
+          avg_rating: 0,
+          completed: 0,
+          doc_count: 0,
+          review_count: 0,
+        };
+        setTechniciens([mapped, ...techniciens]);
+        setSelected(mapped);
+        setModalOpen(false);
+        setFormData({ full_name: '', phone: '', email: '', profession: '', password: '' });
+        setCreating(false);
+      })
+      .catch((err) => {
+        setFormError(err.message || 'Erreur lors de la creation.');
+        setCreating(false);
+      });
   };
 
   const counts = {
@@ -243,6 +272,13 @@ export default function FixProTechniciensPage() {
             />
           </div>
           <div className='ml-auto flex items-center gap-4'>
+            <button
+              onClick={() => setModalOpen(true)}
+              className='fx-body font-semibold text-[12px] rounded-lg px-3 py-2 hidden md:flex items-center gap-1.5'
+              style={{ background: C.brand, color: '#fff', boxShadow: SHADOW_SM }}
+            >
+              <Plus size={14} /> Ajouter
+            </button>
             <button className='relative'>
               <Bell size={19} color={C.inkMuted} />
               <span
@@ -423,6 +459,72 @@ export default function FixProTechniciensPage() {
           </div>
         </div>
       </main>
+
+      {modalOpen && (
+        <div className='fixed inset-0 z-50 flex items-center justify-center p-4' style={{ background: 'rgba(10,14,31,0.5)' }} onClick={() => setModalOpen(false)}>
+          <div className='rounded-2xl p-6 w-full max-w-md' style={{ background: C.surface, boxShadow: SHADOW_MD }} onClick={(e) => e.stopPropagation()}>
+            <div className='flex items-center justify-between mb-4'>
+              <h2 className='fx-display font-bold text-[18px]'>Ajouter un technicien</h2>
+              <button onClick={() => setModalOpen(false)} className='text-gray-500'><X size={18} color={C.inkMuted} /></button>
+            </div>
+            {formError && (
+              <div className='rounded-lg p-3 mb-4' style={{ background: C.redBg, color: C.red }}>
+                <p className='fx-body text-[12px]'>{formError}</p>
+              </div>
+            )}
+            <form onSubmit={handleCreate} className='flex flex-col gap-3'>
+              <input
+                required
+                placeholder='Nom complet'
+                value={formData.full_name}
+                onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                className='fx-body text-[13px] rounded-lg px-3 py-2.5 w-full'
+                style={{ background: C.surfaceAlt, border: `1px solid ${C.border}` }}
+              />
+              <input
+                required
+                placeholder='Telephone'
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                className='fx-body text-[13px] rounded-lg px-3 py-2.5 w-full'
+                style={{ background: C.surfaceAlt, border: `1px solid ${C.border}` }}
+              />
+              <input
+                placeholder='Email (optionnel)'
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                className='fx-body text-[13px] rounded-lg px-3 py-2.5 w-full'
+                style={{ background: C.surfaceAlt, border: `1px solid ${C.border}` }}
+              />
+              <input
+                required
+                placeholder='Metier'
+                value={formData.profession}
+                onChange={(e) => setFormData({ ...formData, profession: e.target.value })}
+                className='fx-body text-[13px] rounded-lg px-3 py-2.5 w-full'
+                style={{ background: C.surfaceAlt, border: `1px solid ${C.border}` }}
+              />
+              <input
+                required
+                type='password'
+                placeholder='Mot de passe'
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                className='fx-body text-[13px] rounded-lg px-3 py-2.5 w-full'
+                style={{ background: C.surfaceAlt, border: `1px solid ${C.border}` }}
+              />
+              <button
+                type='submit'
+                disabled={creating}
+                className='fx-body font-semibold text-[13px] rounded-lg py-2.5 mt-2'
+                style={{ background: C.brand, color: '#fff', boxShadow: SHADOW_SM, opacity: creating ? 0.7 : 1 }}
+              >
+                {creating ? 'Creation...' : 'Creer le technicien'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

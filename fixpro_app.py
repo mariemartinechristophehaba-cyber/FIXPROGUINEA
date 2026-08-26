@@ -4473,6 +4473,43 @@ def api_admin_techniciens():
         conn.close()
 
 
+@app.route("/api/admin/techniciens", methods=["POST"])
+@limiter.limit("100 per hour")
+def api_admin_create_technicien():
+    """Creation d'un technicien depuis le dashboard admin."""
+    auth = _require_api_key()
+    if auth:
+        return auth
+    data = request.get_json(silent=True, force=True) or {}
+    full_name = data.get("full_name", "").strip()
+    phone = _phone_with_prefix(data.get("phone", "").strip())
+    email = data.get("email", "").strip() or None
+    profession = data.get("profession", "").strip()
+    password = data.get("password", "").strip()
+
+    if not full_name or not phone or not profession or not password:
+        return jsonify({"error": "Tous les champs sont obligatoires."}), 400
+
+    conn = get_db_connection()
+    try:
+        if conn.execute("SELECT id FROM users WHERE phone = ?", (phone,)).fetchone():
+            return jsonify({"error": "Ce numero de telephone est deja utilise."}), 409
+        conn.execute(
+            "INSERT INTO users (full_name, phone, email, password_hash, role, profession,"
+            " is_verified, is_active, availability_status)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (full_name, phone, email, generate_password_hash(password),
+             "artisan", profession, 1, 1, "hors_ligne"))
+        conn.commit()
+        user = conn.execute(
+            "SELECT u.*,"
+            " 0 AS doc_count, 0 AS completed, 0 AS avg_rating, 0 AS review_count"
+            " FROM users u WHERE u.phone = ?", (phone,)).fetchone()
+        return jsonify(dict(user))
+    finally:
+        conn.close()
+
+
 @app.route("/api/admin/clients")
 @limiter.limit("100 per hour")
 def api_admin_clients():
@@ -4798,7 +4835,12 @@ def api_admin_reject_artisan(artisan_id):
 
 csrf.exempt(api_admin_stats)
 csrf.exempt(api_admin_techniciens)
+csrf.exempt(api_admin_create_technicien)
 csrf.exempt(api_admin_demandes)
+csrf.exempt(api_admin_clients)
+csrf.exempt(api_admin_categories)
+csrf.exempt(api_admin_paiements)
+csrf.exempt(api_admin_parametres)
 csrf.exempt(api_admin_verify_artisan)
 csrf.exempt(api_admin_reject_artisan)
 

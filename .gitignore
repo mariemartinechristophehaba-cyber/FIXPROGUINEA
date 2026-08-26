@@ -26,6 +26,7 @@ downloads/
 eggs/
 .eggs/
 lib/
+!admin-nextjs/lib/
 lib64/
 parts/
 sdist/
