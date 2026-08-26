@@ -420,6 +420,7 @@ def get_current_user():
             session["user_id"] = dev_user["id"]
             session.permanent = True
             g._current_user = dev_user
+
             return dev_user
         g._current_user = None
         return None
@@ -1157,8 +1158,10 @@ def register_artisan():
         finally:
             conn.close()
 
-        flash("Votre demande d'inscription a bien été reçue. L'équipe FixPro va vérifier vos informations.", "success")
-        return redirect(url_for("artisan_pending"))
+        flash("Bienvenue dans FixPro.", "success")
+        session["user_id"] = artisan_id
+        session.permanent = True
+        return redirect(url_for("artisan_dashboard"))
 
     return render_template("register_artisan.html", categories=categories, all_services=all_services)
 
