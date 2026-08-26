@@ -5141,10 +5141,11 @@ csrf.exempt(api_admin_reject_artisan)
 # ---------------------------------------------------------------------------
 
 @app.route("/messages")
-@login_required
 def client_messages():
-    """Liste des conversations du client connecte."""
+    """Liste des conversations du client connecte. Les invites sont orientes vers Lia."""
     user = get_current_user()
+    if not user:
+        return redirect(url_for("lia"))
     conn = get_db_connection()
     try:
         conversations = conn.execute(
