@@ -4484,7 +4484,8 @@ def api_admin_demandes():
     try:
         rows = conn.execute(
             "SELECT r.*, c.full_name AS client_name, c.phone AS client_phone,"
-            " a.full_name AS artisan_name, a.phone AS artisan_phone"
+            " a.full_name AS artisan_name, a.phone AS artisan_phone, a.profession AS artisan_profession,"
+            " a.latitude AS artisan_lat, a.longitude AS artisan_lon"
             " FROM requests r"
             " LEFT JOIN users c ON c.id = r.client_id"
             " LEFT JOIN users a ON a.id = r.artisan_id"
