@@ -1,248 +1,322 @@
-{% extends 'base.html' %}
-{% block title %}Mon profil - FixPro{% endblock %}
-{% block main_class %}page page-mid{% endblock %}
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#155EEF" />
+  <title>Mon profil - FixPro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; }
+    body { font-family: 'Inter', sans-serif; background: #F1F5F9; color: #0F172A; -webkit-font-smoothing: antialiased; }
+    a { text-decoration: none; color: inherit; }
 
-{% block content %}
-<section class="profile-hero">
-  <span class="avatar avatar-lg">{{ (user.full_name or 'U')[0]|upper }}</span>
-  <div class="grow">
-    <h1 style="font-size: 1.35rem;">{{ user.full_name }}</h1>
-    <p class="small muted">{{ user.email or user.phone or '' }}</p>
-    <div class="filter-row" style="margin-top: 8px;">
-      <span class="chip">{{ 'Technicien' if user.role == 'artisan' else 'Client' }}</span>
-      {% if user.city %}<span class="chip">{{ user.city }}</span>{% endif %}
-      {% if user.is_verified %}<span class="badge success">Verifie</span>{% endif %}
-    </div>
-  </div>
-</section>
+    .p-wrap { position: relative; max-width: 480px; margin: 0 auto; min-height: 100vh; background: #F1F5F9; padding-bottom: 72px; }
 
-<div class="card card-pad-lg section">
-  <h3 style="margin-bottom: 18px;">Informations personnelles</h3>
-  <form method="post" action="{{ url_for('profile') }}">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+    .p-header { background: #155EEF; color: #fff; padding: 16px; display: flex; align-items: center; gap: 12px; }
+    .p-back { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,.15); }
+    .p-back svg { width: 20px; height: 20px; }
+    .p-title { flex: 1; text-align: center; font-size: 17px; font-weight: 700; }
+    .p-spacer { width: 40px; }
 
-    <label class="field">
-      <span>Nom complet</span>
-      <input type="text" name="full_name" value="{{ user.full_name }}" required />
-    </label>
+    .p-main { padding: 14px 16px; }
 
-    <div class="field-2">
-      <label class="field">
-        <span>Telephone</span>
-        <input type="text" name="phone" value="{{ user.phone or '' }}" />
-      </label>
-      <label class="field">
-        <span>Ville</span>
-        <input type="text" name="city" value="{{ user.city or '' }}" />
-      </label>
-    </div>
+    .p-hero { background: #fff; border-radius: 20px; padding: 18px; display: flex; align-items: center; gap: 14px; margin-bottom: 16px; box-shadow: 0 2px 12px rgba(0,0,0,.04); }
+    .p-avatar { width: 70px; height: 70px; border-radius: 50%; overflow: hidden; background: #EEF4FF; color: #155EEF; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 700; flex-shrink: 0; }
+    .p-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .p-info { flex: 1; min-width: 0; }
+    .p-name { margin: 0; font-size: 17px; font-weight: 700; color: #0F172A; }
+    .p-role { margin: 2px 0 0; font-size: 13px; color: #64748B; }
+    .p-status { margin: 6px 0 0; font-size: 12px; color: #15803D; display: flex; align-items: center; gap: 5px; }
+    .p-dot { width: 8px; height: 8px; border-radius: 50%; background: #22C55E; }
 
-    {% if user.role == 'artisan' %}
-    <div class="field-2">
-      <label class="field">
-        <span>Metier</span>
-        <input type="text" name="profession" value="{{ user.profession or '' }}" />
-      </label>
-      <label class="field">
-        <span>Tarif horaire (GNF)</span>
-        <input type="number" name="hourly_rate" value="{{ user.hourly_rate or 0 }}" min="0" step="5000" />
-      </label>
-    </div>
-    {% else %}
-    <input type="hidden" name="profession" value="{{ user.profession or '' }}" />
-    <input type="hidden" name="hourly_rate" value="{{ user.hourly_rate or 0 }}" />
-    {% endif %}
+    .p-section { margin-bottom: 16px; }
+    .p-section-title { font-size: 15px; font-weight: 700; color: #0F172A; margin: 0 0 12px; }
+    .p-card { background: #fff; border-radius: 20px; padding: 16px; box-shadow: 0 2px 12px rgba(0,0,0,.04); }
+    .p-field { margin-bottom: 14px; }
+    .p-field:last-child { margin-bottom: 0; }
+    .p-field label { display: block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 6px; }
+    .p-field input, .p-field textarea, .p-field select { width: 100%; padding: 12px 14px; border: 1px solid #E2E8F0; border-radius: 14px; font-size: 15px; font-family: 'Inter', sans-serif; outline: none; }
+    .p-field input:focus, .p-field textarea:focus { border-color: #155EEF; }
+    .p-field textarea { min-height: 90px; resize: vertical; }
+    .p-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .p-submit { width: 100%; padding: 15px; background: #155EEF; color: #fff; border: none; border-radius: 16px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 6px; }
 
-    <div class="field-2">
-      <label class="field">
-        <span>Latitude</span>
-        <input type="text" name="latitude" value="{{ user.latitude or 0 }}" />
-      </label>
-      <label class="field">
-        <span>Longitude</span>
-        <input type="text" name="longitude" value="{{ user.longitude or 0 }}" />
-      </label>
-    </div>
+    .p-status-chooser { display: flex; gap: 8px; }
+    .p-status-option { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px; border: 1px solid #E2E8F0; border-radius: 12px; background: #fff; cursor: pointer; font-size: 13px; font-weight: 600; }
+    .p-status-option input { position: absolute; opacity: 0; }
+    .p-status-option.active { border-color: #155EEF; background: #EEF4FF; color: #155EEF; }
+    .p-status-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .p-geo { margin-top: 12px; padding: 12px; border-radius: 12px; background: #F0FDF4; color: #166534; font-size: 13px; display: none; }
+    .p-geo.warn { background: #FEF3C7; color: #92400E; }
 
-    <label class="field">
-      <span>Presentation</span>
-      <textarea name="bio" placeholder="Presentez votre experience en quelques lignes.">{{ user.bio or '' }}</textarea>
-    </label>
+    .p-link { display: flex; align-items: center; gap: 12px; padding: 14px 0; border-bottom: 1px solid #F1F5F9; color: #0F172A; }
+    .p-link:last-child { border-bottom: none; }
+    .p-link-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .p-link-icon svg { width: 20px; height: 20px; }
+    .p-link-text { flex: 1; font-size: 15px; font-weight: 600; }
+    .p-link svg { width: 16px; height: 16px; color: #94A3B8; }
+    .p-logout { width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; height: 48px; border: 1px solid #FECACA; border-radius: 16px; background: #FEF2F2; color: #DC2626; font-size: 14px; font-weight: 600; cursor: pointer; }
 
-    <button class="btn btn-primary btn-block btn-lg" type="submit">Enregistrer les modifications</button>
-  </form>
-</div>
+    .p-nav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 30; max-width: 480px; margin: 0 auto; background: #fff; border-top: 1px solid #E2E8F0; display: flex; justify-content: space-around; align-items: center; padding: 8px 0 calc(8px + env(safe-area-inset-bottom)); }
+    .p-nav a { display: flex; flex-direction: column; align-items: center; gap: 3px; color: #94A3B8; font-size: 11px; padding: 4px 8px; }
+    .p-nav a.active { color: #155EEF; }
+    .p-nav a svg { width: 22px; height: 22px; }
+    .p-nav .p-plus { position: relative; top: -18px; width: 50px; height: 50px; border-radius: 50%; background: #155EEF; color: #fff; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(21,94,239,.35); }
+    .p-nav .p-plus svg { width: 26px; height: 26px; }
 
-{% if user.role == 'artisan' %}
-<div class="card card-pad-lg section" id="disponibilite">
-  <h3 style="margin-bottom: 8px;">Ma disponibilite</h3>
-  <p class="small muted" style="margin-bottom: 18px;">Passe en ligne pour partager votre position avec les clients proches.</p>
-
-  <form method="post" id="statusForm" action="{{ url_for('api_technicien_status') }}">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-    <div class="status-chooser">
-      <label class="status-option {% if (user.availability_status or 'hors_ligne') == 'en_ligne' %}active{% endif %}">
-        <input type="radio" name="status" value="en_ligne" {% if (user.availability_status or 'hors_ligne') == 'en_ligne' %}checked{% endif %} />
-        <span class="status-dot" style="background: #3ddc84;"></span>
-        <span class="status-label">En ligne</span>
-      </label>
-      <label class="status-option {% if user.availability_status == 'occupe' %}active{% endif %}">
-        <input type="radio" name="status" value="occupe" {% if user.availability_status == 'occupe' %}checked{% endif %} />
-        <span class="status-dot" style="background: #f7c873;"></span>
-        <span class="status-label">Occupe</span>
-      </label>
-      <label class="status-option {% if (user.availability_status or 'hors_ligne') == 'hors_ligne' %}active{% endif %}">
-        <input type="radio" name="status" value="hors_ligne" {% if (user.availability_status or 'hors_ligne') == 'hors_ligne' %}checked{% endif %} />
-        <span class="status-dot" style="background: #8A94A9;"></span>
-        <span class="status-label">Hors ligne</span>
-      </label>
-    </div>
-  </form>
-
-  <div class="geo-status" id="geoStatus" style="display: none;">
-    <div class="geo-status-line">
-      <span class="geo-dot" id="geoDot"></span>
-      <span class="geo-text" id="geoText">Position en attente...</span>
-    </div>
-  </div>
-
-  <p class="input-hint" id="geoHint" style="margin-top: 12px; display: none;">
-    Votre navigateur demandera l'autorisation d'acceder a votre position. Refuser ne bloque pas le changement de statut.
-  </p>
-</div>
-{% endif %}
-
-<div class="section">
-  <div class="list">
-    <a class="list-item" href="{{ url_for('payments') }}">
-      <span class="list-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
-      </span>
-      <div class="grow"><div class="list-item-title">Mes paiements</div></div>
-      <span class="chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m9 18 6-6-6-6"/></svg></span>
-    </a>
-    <a class="list-item" href="{{ url_for('reviews') }}">
-      <span class="list-icon amber">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.2-5.4-2.9-5.4 2.9 1-6.2L3.2 9.5l6.1-.9z"/></svg>
-      </span>
-      <div class="grow"><div class="list-item-title">Mes avis</div></div>
-      <span class="chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m9 18 6-6-6-6"/></svg></span>
-    </a>
-    <a class="list-item" href="{{ url_for('logout') }}">
-      <span class="list-icon" style="background: var(--red-soft); color: #FCA5A5;">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>
-      </span>
-      <div class="grow"><div class="list-item-title">Se deconnecter</div></div>
-      <span class="chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m9 18 6-6-6-6"/></svg></span>
-    </a>
-  </div>
-</div>
-{% endblock %}
-
-{% if user.role == 'artisan' %}
-{% block scripts %}
-<script>
-(function () {
-  const form = document.getElementById('statusForm');
-  const options = form.querySelectorAll('input[name="status"]');
-  const geoStatus = document.getElementById('geoStatus');
-  const geoDot = document.getElementById('geoDot');
-  const geoText = document.getElementById('geoText');
-  const geoHint = document.getElementById('geoHint');
-  let watchId = null;
-  let intervalId = null;
-
-  function setGeoMessage(ok, text) {
-    geoDot.style.background = ok ? '#3ddc84' : '#f7c873';
-    geoText.textContent = text;
-    geoStatus.style.display = 'block';
-  }
-
-  function sendPosition(lat, lon) {
-    const formData = new FormData();
-    formData.append('csrf_token', form.querySelector('input[name="csrf_token"]').value);
-    formData.append('lat', lat);
-    formData.append('lon', lon);
-    fetch('{{ url_for("api_technicien_position") }}', {
-      method: 'POST',
-      body: formData,
-    }).then(r => r.json()).then(data => {
-      if (data.ok) {
-        setGeoMessage(true, 'Position partagee (' + lat.toFixed(5) + ', ' + lon.toFixed(5) + ')');
-      } else {
-        setGeoMessage(false, data.reason || 'Partage non actif');
-      }
-    }).catch(() => {
-      setGeoMessage(false, 'Erreur d\'envoi de position');
-    });
-  }
-
-  function startSharing() {
-    if (!navigator.geolocation) {
-      setGeoMessage(false, 'Geolocalisation non supportee');
-      return;
+    @media (min-width: 768px) {
+      body { background: #E2E8F0; }
+      .p-wrap { max-width: 720px; min-height: calc(100vh - 40px); margin: 20px auto; border-radius: 24px; overflow: hidden; box-shadow: 0 24px 80px rgba(0,0,0,.12); padding-bottom: 72px; }
+      .p-nav { max-width: 720px; bottom: 20px; margin: 0 auto; left: 50%; transform: translateX(-50%); border-radius: 0 0 24px 24px; }
+      .p-header { border-radius: 24px 24px 0 0; }
     }
-    geoHint.style.display = 'block';
-    watchId = navigator.geolocation.watchPosition(
-      function (pos) {
-        const lat = pos.coords.latitude;
-        const lon = pos.coords.longitude;
-        sendPosition(lat, lon);
-      },
-      function () {
-        setGeoMessage(false, 'Position refusee ou indisponible');
-      },
-      { enableHighAccuracy: true, maximumAge: 15000, timeout: 10000 }
-    );
-  }
+  </style>
+</head>
+<body>
+  <div class="p-wrap">
+    <header class="p-header">
+      <a href="{{ url_for('home') }}" class="p-back" aria-label="Retour">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      </a>
+      <h1 class="p-title">Mon profil</h1>
+      <div class="p-spacer"></div>
+    </header>
 
-  function stopSharing() {
-    if (watchId !== null) {
-      navigator.geolocation.clearWatch(watchId);
-      watchId = null;
-    }
-    if (intervalId !== null) {
-      clearInterval(intervalId);
-      intervalId = null;
-    }
-    geoStatus.style.display = 'none';
-    geoHint.style.display = 'none';
-  }
+    <main class="p-main">
+      <section class="p-hero">
+        <div class="p-avatar">
+          {% if user.photo_url %}
+            <img src="{{ user.photo_url }}" alt="{{ user.full_name }}" />
+          {% else %}
+            <span>{{ (user.full_name or 'U')[0]|upper }}</span>
+          {% endif %}
+        </div>
+        <div class="p-info">
+          <p class="p-name">{{ user.full_name or 'Utilisateur' }}</p>
+          <p class="p-role">{{ 'Technicien' if user.role == 'artisan' else 'Client' }}{% if user.city %} · {{ user.city }}{% endif %}</p>
+          {% if user.is_verified %}
+            <p class="p-status"><span class="p-dot"></span>Compte vérifié</p>
+          {% endif %}
+        </div>
+      </section>
 
-  function updateStatus(status) {
-    const formData = new FormData(form);
-    formData.set('status', status);
-    fetch('{{ url_for("api_technicien_status") }}', {
-      method: 'POST',
-      body: formData,
-    }).then(r => r.json()).then(data => {
-      if (data.ok) {
-        form.querySelectorAll('.status-option').forEach(opt => {
-          const radio = opt.querySelector('input');
-          opt.classList.toggle('active', radio.value === status);
-          radio.checked = radio.value === status;
-        });
-        if (status === 'en_ligne') {
-          startSharing();
+      <section class="p-section">
+        <h2 class="p-section-title">Informations personnelles</h2>
+        <form class="p-card" method="post" action="{{ url_for('profile') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+          <div class="p-field">
+            <label for="full_name">Nom complet</label>
+            <input id="full_name" type="text" name="full_name" value="{{ user.full_name or '' }}" required />
+          </div>
+          <div class="p-row">
+            <div class="p-field">
+              <label for="phone">Téléphone</label>
+              <input id="phone" type="text" name="phone" value="{{ user.phone or '' }}" />
+            </div>
+            <div class="p-field">
+              <label for="city">Ville</label>
+              <input id="city" type="text" name="city" value="{{ user.city or '' }}" />
+            </div>
+          </div>
+          {% if user.role == 'artisan' %}
+          <div class="p-row">
+            <div class="p-field">
+              <label for="profession">Métier</label>
+              <input id="profession" type="text" name="profession" value="{{ user.profession or '' }}" />
+            </div>
+            <div class="p-field">
+              <label for="hourly_rate">Tarif horaire (GNF)</label>
+              <input id="hourly_rate" type="number" name="hourly_rate" value="{{ user.hourly_rate or 0 }}" min="0" step="5000" />
+            </div>
+          </div>
+          {% else %}
+            <input type="hidden" name="profession" value="{{ user.profession or '' }}" />
+            <input type="hidden" name="hourly_rate" value="{{ user.hourly_rate or 0 }}" />
+          {% endif %}
+          <div class="p-row">
+            <div class="p-field">
+              <label for="latitude">Latitude</label>
+              <input id="latitude" type="text" name="latitude" value="{{ user.latitude or 0 }}" />
+            </div>
+            <div class="p-field">
+              <label for="longitude">Longitude</label>
+              <input id="longitude" type="text" name="longitude" value="{{ user.longitude or 0 }}" />
+            </div>
+          </div>
+          <div class="p-field">
+            <label for="bio">Présentation</label>
+            <textarea id="bio" name="bio" placeholder="Présentez votre expérience en quelques lignes.">{{ user.bio or '' }}</textarea>
+          </div>
+          <button class="p-submit" type="submit">Enregistrer les modifications</button>
+        </form>
+      </section>
+
+      {% if user.role == 'artisan' %}
+      <section class="p-section">
+        <h2 class="p-section-title">Ma disponibilité</h2>
+        <div class="p-card">
+          <p style="font-size:13px;color:#64748B;margin:0 0 12px;">Passe en ligne pour partager votre position avec les clients proches.</p>
+          <form method="post" id="statusForm" action="{{ url_for('api_technicien_status') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <div class="p-status-chooser">
+              <label class="p-status-option {% if (user.availability_status or 'hors_ligne') == 'en_ligne' %}active{% endif %}">
+                <input type="radio" name="status" value="en_ligne" {% if (user.availability_status or 'hors_ligne') == 'en_ligne' %}checked{% endif %} />
+                <span class="p-status-dot" style="background:#22C55E;"></span> En ligne
+              </label>
+              <label class="p-status-option {% if user.availability_status == 'occupe' %}active{% endif %}">
+                <input type="radio" name="status" value="occupe" {% if user.availability_status == 'occupe' %}checked{% endif %} />
+                <span class="p-status-dot" style="background:#F59E0B;"></span> Occupé
+              </label>
+              <label class="p-status-option {% if (user.availability_status or 'hors_ligne') == 'hors_ligne' %}active{% endif %}">
+                <input type="radio" name="status" value="hors_ligne" {% if (user.availability_status or 'hors_ligne') == 'hors_ligne' %}checked{% endif %} />
+                <span class="p-status-dot" style="background:#94A3B8;"></span> Hors ligne
+              </label>
+            </div>
+          </form>
+          <div class="p-geo" id="geoStatus">Position en attente...</div>
+          <p style="font-size:12px;color:#64748B;margin:10px 0 0;">Votre navigateur demandera l'autorisation d'accéder à votre position. Refuser ne bloque pas le changement de statut.</p>
+        </div>
+      </section>
+      {% endif %}
+
+      <section class="p-section">
+        <h2 class="p-section-title">Paramètres</h2>
+        <div class="p-card">
+          <a href="{{ url_for('payments') }}" class="p-link">
+            <div class="p-link-icon" style="background:#EEF4FF; color:#155EEF;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+            </div>
+            <span class="p-link-text">Mes paiements</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+          </a>
+          <a href="{{ url_for('reviews') }}" class="p-link">
+            <div class="p-link-icon" style="background:#FFFBEB; color:#B45309;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.2-5.4-2.9-5.4 2.9 1-6.2L3.2 9.5l6.1-.9z"/></svg>
+            </div>
+            <span class="p-link-text">Mes avis</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+          </a>
+          <a href="{{ url_for('logout') }}" class="p-link" style="border-bottom:none; color:#DC2626;">
+            <div class="p-link-icon" style="background:#FEF2F2; color:#DC2626;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            </div>
+            <span class="p-link-text">Se déconnecter</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+          </a>
+        </div>
+      </section>
+    </main>
+
+    <nav class="p-nav">
+      <a href="{{ url_for('home') }}">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
+        Accueil
+      </a>
+      <a href="{{ url_for('artisans_page') }}">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        Recherche
+      </a>
+      <a class="p-plus" href="{{ url_for('requests_list') }}" aria-label="Reserver">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+      </a>
+      <a href="{{ url_for('client_messages') }}">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 21l1.9-5.1A8.4 8.4 0 0 1 4 11.5a8.5 8.5 0 0 1 8.5-8.5A8.5 8.5 0 0 1 21 11.5z"/></svg>
+        Messages
+      </a>
+      <a href="{{ url_for('profile') }}" class="active">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
+        Profil
+      </a>
+    </nav>
+  </div>
+
+  {% if user.role == 'artisan' %}
+  <script>
+  (function () {
+    const form = document.getElementById('statusForm');
+    const options = form.querySelectorAll('input[name="status"]');
+    const geoStatus = document.getElementById('geoStatus');
+    let watchId = null;
+
+    function setGeoMessage(ok, text) {
+      geoStatus.textContent = text;
+      geoStatus.className = 'p-geo' + (ok ? '' : ' warn');
+      geoStatus.style.display = 'block';
+    }
+
+    function sendPosition(lat, lon) {
+      const fd = new FormData();
+      fd.append('csrf_token', form.querySelector('input[name="csrf_token"]').value);
+      fd.append('lat', lat);
+      fd.append('lon', lon);
+      fetch('{{ url_for("api_technicien_position") }}', {
+        method: 'POST',
+        body: fd,
+      }).then(r => r.json()).then(data => {
+        if (data.ok) {
+          setGeoMessage(true, 'Position partagée (' + lat.toFixed(5) + ', ' + lon.toFixed(5) + ')');
         } else {
-          stopSharing();
+          setGeoMessage(false, data.reason || 'Partage non actif');
         }
+      }).catch(() => {
+        setGeoMessage(false, 'Erreur d\'envoi de position');
+      });
+    }
+
+    function startSharing() {
+      if (!navigator.geolocation) {
+        setGeoMessage(false, 'Géolocalisation non supportée');
+        return;
       }
-    });
-  }
+      watchId = navigator.geolocation.watchPosition(
+        function (pos) {
+          sendPosition(pos.coords.latitude, pos.coords.longitude);
+        },
+        function () {
+          setGeoMessage(false, 'Position refusée ou indisponible');
+        },
+        { enableHighAccuracy: true, maximumAge: 15000, timeout: 10000 }
+      );
+    }
 
-  options.forEach(radio => {
-    radio.addEventListener('change', function () {
-      if (radio.checked) updateStatus(radio.value);
-    });
-  });
+    function stopSharing() {
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+        watchId = null;
+      }
+      if (geoStatus) geoStatus.style.display = 'none';
+    }
 
-  // Si on arrive deja en ligne (rechargement), on relance le partage.
-  const current = form.querySelector('input[name="status"]:checked');
-  if (current && current.value === 'en_ligne') {
-    startSharing();
-  }
-})();
-</script>
-{% endblock %}
-{% endif %}
+    function updateStatus(status) {
+      const fd = new FormData(form);
+      fd.set('status', status);
+      fetch('{{ url_for("api_technicien_status") }}', {
+        method: 'POST',
+        body: fd,
+      }).then(r => r.json()).then(data => {
+        if (data.ok) {
+          options.forEach(radio => {
+            const label = radio.closest('.p-status-option');
+            label.classList.toggle('active', radio.value === status);
+            radio.checked = radio.value === status;
+          });
+          if (status === 'en_ligne') startSharing(); else stopSharing();
+        }
+      });
+    }
+
+    options.forEach(radio => {
+      radio.addEventListener('change', function () { if (radio.checked) updateStatus(radio.value); });
+    });
+
+    const current = form.querySelector('input[name="status"]:checked');
+    if (current && current.value === 'en_ligne') startSharing();
+  })();
+  </script>
+  {% endif %}
+</body>
+</html>
