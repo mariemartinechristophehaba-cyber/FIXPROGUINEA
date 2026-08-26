@@ -243,7 +243,7 @@
     <img src="{{ url_for('static', filename='img/icon-search.svg') }}" width="22" height="22" alt="" />
     Recherche
   </a>
-  <a href="{{ url_for('requests_list') }}" class="f-main" aria-label="Réservations">
+  <a href="{{ url_for('requests_list') if nav_user else url_for('artisans_page') }}" class="f-main" aria-label="Réservations">
     <img src="{{ url_for('static', filename='img/icon-calendar.svg') }}" width="24" height="24" alt="" />
     <span class="f-main-text">Réserver</span>
   </a>
