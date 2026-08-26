@@ -3,7 +3,7 @@
 
 import React, { useEffect, useState } from 'react';
 import {
-  LayoutDashboard, Wrench, Users, UserRound, Grid3x3, Wallet, Settings,
+  LayoutDashboard, Wrench, Users, UserRound, Grid3x3, Wallet, Settings, MessageSquare,
   Search, Bell, Star, Check, X, MapPin, Phone, Mail, FileText,
   ChevronRight, Menu, Filter, ChevronDown, Plus,
 } from 'lucide-react';
@@ -51,6 +51,7 @@ const NAV = [
   { label: 'Clients', icon: UserRound, href: '/admin/clients' },
   { label: 'Categories', icon: Grid3x3, href: '/admin/categories' },
   { label: 'Paiements', icon: Wallet, href: '/admin/paiements' },
+  { label: 'Conversations IA', icon: MessageSquare, href: '/admin/lia' },
   { label: 'Parametres', icon: Settings, href: '/admin/parametres' },
 ];
 
