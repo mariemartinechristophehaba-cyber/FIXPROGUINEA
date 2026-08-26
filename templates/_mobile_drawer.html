@@ -1,4 +1,4 @@
-{% set client_zone_label = session.get('client_zone') or 'Actualiser ma position' %}
+{% set client_zone_label = session.get('client_zone') or 'Actualiser' %}
 {% set notif_count = unread_count|default(0) %}
 {% set is_active = nav_user and nav_user.is_active and nav_user.account_status == 'ACTIVE' %}
 
@@ -38,11 +38,6 @@
         {% endif %}
       </div>
     </div>
-
-    <a href="{{ url_for('profile') }}" class="f-drawer-profile-link">
-      Voir mon profil
-      <img src="{{ url_for('static', filename='img/icon-chevron-right.svg') }}" width="16" height="16" alt="" />
-    </a>
   </header>
 
   <div class="f-drawer-body">
@@ -90,10 +85,6 @@
         <span>Ma localisation</span>
         <span class="f-drawer-meta">{{ client_zone_label }}</span>
       </a>
-      <span class="f-drawer-item f-drawer-disabled" title="A venir">
-        <img src="{{ url_for('static', filename='img/icon-wind.svg') }}" width="20" height="20" alt="" />
-        <span>Parametres</span>
-      </span>
       <a href="{{ url_for('client_security') }}" class="f-drawer-item {{ 'active' if request.endpoint == 'client_security' }}">
         <img src="{{ url_for('static', filename='img/icon-lock.svg') }}" width="20" height="20" alt="" />
         <span>Securite</span>
@@ -222,5 +213,86 @@
         window.location.href = logoutConfirm.getAttribute('href');
       });
     }
+
+    // Fermeture par swipe vers la gauche
+    let startX = 0, startY = 0, currentX = 0, isTracking = false, drawerWidth = 0, startTime = 0;
+
+    function onTouchStart(e) {
+      if (!drawer.classList.contains('open')) return;
+      const touch = e.touches[0];
+      startX = touch.clientX;
+      startY = touch.clientY;
+      currentX = 0;
+      isTracking = true;
+      drawerWidth = drawer.getBoundingClientRect().width;
+      startTime = Date.now();
+      drawer.style.transition = 'none';
+      if (overlay) overlay.style.transition = 'none';
+    }
+
+    function onTouchMove(e) {
+      if (!isTracking) return;
+      const touch = e.touches[0];
+      const dx = touch.clientX - startX;
+      const dy = touch.clientY - startY;
+
+      if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+
+      // Mouvement horizontal vers la gauche : on ferme
+      if (Math.abs(dx) > Math.abs(dy) && dx < 0) {
+        e.preventDefault();
+        currentX = Math.max(-drawerWidth, dx);
+        drawer.style.transform = 'translateX(' + currentX + 'px)';
+        if (overlay) overlay.style.opacity = String(1 - Math.abs(currentX) / drawerWidth);
+      } else if (Math.abs(dy) > Math.abs(dx)) {
+        // Scroll vertical : on laisse defiler
+        isTracking = false;
+        drawer.style.transition = '';
+        if (overlay) overlay.style.transition = '';
+      }
+    }
+
+    function onTouchEnd() {
+      if (!isTracking) return;
+      isTracking = false;
+      drawer.style.transition = '';
+      if (overlay) overlay.style.transition = '';
+
+      const threshold = drawerWidth * 0.28;
+      const fastSwipe = (Date.now() - startTime < 300) && (currentX < -60);
+
+      if (currentX < -threshold || fastSwipe) {
+        drawer.style.transform = 'translateX(-100%)';
+        if (overlay) overlay.style.opacity = '0';
+        setTimeout(function() {
+          closeDrawer(false);
+          drawer.style.transform = '';
+          if (overlay) overlay.style.opacity = '';
+        }, 260);
+      } else {
+        drawer.style.transform = 'translateX(0)';
+        if (overlay) overlay.style.opacity = '1';
+        setTimeout(function() {
+          drawer.style.transform = '';
+          if (overlay) overlay.style.opacity = '';
+        }, 260);
+      }
+    }
+
+    function onTouchCancel() {
+      if (!isTracking) return;
+      isTracking = false;
+      drawer.style.transition = '';
+      drawer.style.transform = '';
+      if (overlay) {
+        overlay.style.transition = '';
+        overlay.style.opacity = '';
+      }
+    }
+
+    drawer.addEventListener('touchstart', onTouchStart, {passive: true});
+    drawer.addEventListener('touchmove', onTouchMove, {passive: false});
+    drawer.addEventListener('touchend', onTouchEnd);
+    drawer.addEventListener('touchcancel', onTouchCancel);
   });
 </script>
