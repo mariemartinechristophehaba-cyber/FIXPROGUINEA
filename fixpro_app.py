@@ -4563,7 +4563,7 @@ def api_admin_dashboard():
         ]
 
         rows_req = conn.execute(
-            "SELECT r.reference, r.title, r.category, r.status, r.latitude, r.longitude,"
+            "SELECT r.id, r.reference, r.title, r.category, r.status, r.latitude, r.longitude,"
             " c.full_name AS client_name, a.full_name AS artisan_name, a.profession AS artisan_profession,"
             " a.latitude AS artisan_lat, a.longitude AS artisan_lon"
             " FROM requests r"
@@ -4581,15 +4581,15 @@ def api_admin_dashboard():
                 dist_label = f"{dist} km"
             else:
                 dist_label = "—"
-            cat_norm = _domain_to_profession(r["category"]) or ""
-            art_norm = (r["artisan_profession"] or "").lower()
-            mismatch = bool(cat_norm and art_norm and cat_norm != art_norm)
+            cat_prof = _domain_to_profession(r["category"]) or ""
+            art_prof = _domain_to_profession(r["artisan_profession"]) or ""
+            mismatch = bool(cat_prof and art_prof and cat_prof != art_prof)
             interventions.append({
-                "code": r["reference"],
+                "code": r["reference"] or f"FP-{r['id']:06d}",
                 "client": r["client_name"],
                 "pb": r["title"],
                 "cat": _label(r["category"]),
-                "tech": r["artisan_name"],
+                "tech": r["artisan_name"] or "Non assigne",
                 "techCat": r["artisan_profession"] or "",
                 "status": _status_index(r["status"]),
                 "dist": dist_label,

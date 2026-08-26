@@ -35,7 +35,9 @@
       "Exec(curl)",
       "Exec(Invoke-WebRequest)",
       "Exec(ls)",
-      "Exec((Invoke-RestMethod)"
+      "Exec((Invoke-RestMethod)",
+      "Exec(0)",
+      "Exec(curl.exe)"
     ]
   }
 }
