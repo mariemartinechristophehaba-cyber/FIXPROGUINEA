@@ -2718,6 +2718,17 @@ def profile():
             unread_count = row["n"]
         except Exception:
             unread_count = 0
+
+        messages_unread = 0
+        try:
+            row = conn.execute(
+                "SELECT COUNT(*) AS n FROM conversation_messages cm"
+                " JOIN conversations c ON c.id = cm.conversation_id"
+                " WHERE c.client_id = ? AND cm.sender_role = 'admin' AND cm.is_read = 0",
+                (user["id"],)).fetchone()
+            messages_unread = row["n"]
+        except Exception:
+            messages_unread = 0
     finally:
         conn.close()
 
@@ -2737,7 +2748,7 @@ def profile():
                            demandes=demandes, reservations=reservations,
                            interventions=interventions, avis=avis, recent=recent,
                            counts=counts, client_zone=client_zone,
-                           unread_count=unread_count)
+                           unread_count=unread_count, messages_unread=messages_unread)
 
 
 @app.route("/profil/modifier", methods=["GET"])

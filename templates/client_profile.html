@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}Mon compte - FixPro{% endblock %}
+{% block title %}Mon profil - FixPro{% endblock %}
 {% block header %}{% endblock %}
 {% block footer %}{% endblock %}
 {% block tabbar %}{% endblock %}
@@ -15,46 +15,17 @@
   'cancelled': 'Annulée'
 } %}
 
-<header class="f-header">
-  <div class="f-container f-header-inner">
-    <button class="f-menu-btn" type="button" aria-label="Menu">
-      <img src="{{ url_for('static', filename='img/icon-menu.svg') }}" width="24" height="24" alt="" />
-    </button>
-    <a href="{{ url_for('home') }}" class="f-logo">
-      <div class="f-logo-mark">
-        <img src="{{ url_for('static', filename='img/icon-wrench.svg') }}" width="22" height="22" alt="" />
-      </div>
-      FixPro
+<header class="f-header" style="position: sticky; top: 0;">
+  <div class="f-container f-header-inner" style="justify-content: space-between;">
+    <a href="{{ url_for('home') }}" class="f-menu-btn" style="background:transparent; border:none; padding:4px;" aria-label="Retour">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
     </a>
-    <nav class="f-nav-desktop">
-      <a href="{{ url_for('home') }}">Accueil</a>
-      <a href="{{ url_for('artisans_page') }}">Recherche</a>
-      <a href="{{ url_for('artisans_page') }}">Professionnels</a>
-      <a href="{{ url_for('requests_list') }}">Réservations</a>
-      <a href="{{ url_for('client_messages') }}">Messages</a>
-      <a href="{{ url_for('reviews') }}">Avis</a>
-    </nav>
-    <div class="f-header-right">
-      <div class="f-header-loc">
-        <img src="{{ url_for('static', filename='img/icon-map-pin.svg') }}" width="16" height="16" alt="" />
-        <span>{{ client_zone or 'Ma position' }}</span>
-      </div>
-      <a href="{{ url_for('notifications') }}" class="f-notif" aria-label="Notifications">
-        <img src="{{ url_for('static', filename='img/icon-bell.svg') }}" width="22" height="22" alt="" />
-        {% if unread_count %}<span class="f-badge">{{ unread_count }}</span>{% endif %}
-      </a>
-      <a href="{{ url_for('profile') }}" class="f-avatar-link" aria-label="Mon profil">
-        {% if nav_user and nav_user.photo_url %}
-          <img src="{{ nav_user.photo_url }}" class="f-avatar-sm" alt="{{ nav_user.full_name }}" />
-        {% else %}
-          <img src="{{ url_for('static', filename='img/fixpro-avatar.png') }}" class="f-avatar-sm" alt="Profil" />
-        {% endif %}
-      </a>
-    </div>
+    <span class="f-header-title" style="font-size: 17px; font-weight: 700;">Mon profil</span>
+    <div style="width:32px;"></div>
   </div>
 </header>
 
-<div class="f-container" style="padding-top: 16px;">
+<div class="f-container" style="padding: 14px 4px 100px;">
 
   <section class="f-card f-profile-hero">
     <div class="f-profile-avatar">
@@ -65,173 +36,158 @@
       {% endif %}
     </div>
     <div class="f-profile-info">
-      <p class="f-profile-welcome">Bonjour {{ (user.full_name or 'Utilisateur').split(' ')[0] }}</p>
       <h1>{{ user.full_name or 'Utilisateur' }}</h1>
       <p class="f-profile-role">Client FixPro</p>
+      <p class="f-profile-status">
+        <span class="f-status-dot"></span>
+        Compte actif
+      </p>
     </div>
-    <a href="{{ url_for('edit_profile') }}" class="f-profile-edit">Modifier</a>
+    <a href="{{ url_for('edit_profile') }}" class="f-profile-edit">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      Modifier
+    </a>
   </section>
 
-  <section class="f-section">
-    <h2 class="f-section-title">Mon activité</h2>
-    <div class="f-card f-profile-list">
-      <a href="{{ url_for('requests_list') }}" class="f-profile-item">
-        <div class="f-profile-item-icon" style="background:#EEF4FF;">
-          <img src="{{ url_for('static', filename='img/icon-wrench.svg') }}" width="20" height="20" alt="" style="filter:brightness(0) saturate(100%) invert(22%) sepia(89%) saturate(4563%) hue-rotate(220deg) brightness(101%) contrast(101%);" />
-        </div>
-        <div class="f-profile-item-text">
-          <strong>Mes demandes</strong>
-          <span>{{ counts.demandes }} en cours</span>
-        </div>
-        <img src="{{ url_for('static', filename='img/icon-chevron-right.svg') }}" width="18" height="18" alt="" />
-      </a>
-      <a href="{{ url_for('requests_list') }}" class="f-profile-item">
-        <div class="f-profile-item-icon" style="background:#F0FDF4;">
-          <img src="{{ url_for('static', filename='img/icon-calendar.svg') }}" width="20" height="20" alt="" style="filter:brightness(0) saturate(100%) invert(42%) sepia(95%) saturate(1239%) hue-rotate(95deg) brightness(95%) contrast(101%);" />
-        </div>
-        <div class="f-profile-item-text">
-          <strong>Mes réservations</strong>
-          <span>{{ counts.reservations }} active{{ 's' if counts.reservations != 1 }}</span>
-        </div>
-        <img src="{{ url_for('static', filename='img/icon-chevron-right.svg') }}" width="18" height="18" alt="" />
-      </a>
-      <a href="{{ url_for('requests_list') }}" class="f-profile-item">
-        <div class="f-profile-item-icon" style="background:#FFFBEB;">
-          <img src="{{ url_for('static', filename='img/icon-clock.svg') }}" width="20" height="20" alt="" style="filter:brightness(0) saturate(100%) invert(60%) sepia(85%) saturate(1000%) hue-rotate(10deg) brightness(105%) contrast(101%);" />
-        </div>
-        <div class="f-profile-item-text">
-          <strong>Mes interventions</strong>
-          <span>{{ counts.interventions }} terminée{{ 's' if counts.interventions != 1 }}</span>
-        </div>
-        <img src="{{ url_for('static', filename='img/icon-chevron-right.svg') }}" width="18" height="18" alt="" />
-      </a>
-      <a href="{{ url_for('reviews') }}" class="f-profile-item" style="border-bottom:none;">
-        <div class="f-profile-item-icon" style="background:#FEF3C7;">
-          <img src="{{ url_for('static', filename='img/icon-star.svg') }}" width="20" height="20" alt="" style="filter:brightness(0) saturate(100%) invert(60%) sepia(90%) saturate(1000%) hue-rotate(10deg) brightness(105%) contrast(101%);" />
-        </div>
-        <div class="f-profile-item-text">
-          <strong>Mes avis</strong>
-          <span>{{ counts.avis }} laissé{{ 's' if counts.avis != 1 }}</span>
-        </div>
-        <img src="{{ url_for('static', filename='img/icon-chevron-right.svg') }}" width="18" height="18" alt="" />
-      </a>
-    </div>
-  </section>
-
-  {% if recent %}
-  <section class="f-section">
-    <h2 class="f-section-title">En ce moment</h2>
-    <div class="f-card f-recent-list">
-      {% for item in recent %}
-      <a href="{{ url_for('request_detail', request_id=item.id) }}" class="f-recent-item" style="border-bottom:1px solid var(--f-line); padding:14px 0;">
-        <div class="f-recent-meta">
-          <span class="f-recent-ref">{{ item.reference or 'FP-' ~ item.id }}</span>
-          <span class="f-recent-status" style="color: var(--f-primary);">{{ status_labels.get(item.status, item.status) }}</span>
-        </div>
-        <strong style="font-size:15px; color:var(--f-text);">{{ item.title or (item.category or 'Demande') }}</strong>
-        <p style="margin:4px 0 0; font-size:13px; color:var(--f-text-2);">
-          {% if item.artisan_name %}{{ item.artisan_name }}{% else %}En recherche de professionnel{% endif %}
-        </p>
-      </a>
-      {% endfor %}
-    </div>
-  </section>
-  {% endif %}
-
-  <section class="f-section">
-    <h2 class="f-section-title">Mon compte</h2>
+  <section class="f-profile-section">
+    <h2 class="f-profile-section-title">Mon compte</h2>
     <div class="f-card f-profile-list">
       <a href="{{ url_for('edit_profile') }}" class="f-profile-item">
-        <div class="f-profile-item-icon" style="background:#F1F5F9;">
-          <img src="{{ url_for('static', filename='img/icon-user.svg') }}" width="20" height="20" alt="" style="filter:grayscale(100%) opacity(0.7);" />
+        <div class="f-profile-item-icon" style="background:#EEF4FF;">
+          <img src="{{ url_for('static', filename='img/icon-user.svg') }}" width="20" height="20" alt="" />
         </div>
         <div class="f-profile-item-text">
           <strong>Informations personnelles</strong>
-          <span>Nom, téléphone, ville</span>
+          <span>{{ (user.full_name or 'Nom') }}</span>
         </div>
-        <img src="{{ url_for('static', filename='img/icon-chevron-right.svg') }}" width="18" height="18" alt="" />
+        <img src="{{ url_for('static', filename='img/icon-chevron-right.svg') }}" width="16" height="16" alt="" />
       </a>
       <a href="{{ url_for('home') }}" class="f-profile-item">
-        <div class="f-profile-item-icon" style="background:#EEF4FF;">
-          <img src="{{ url_for('static', filename='img/icon-map-pin.svg') }}" width="20" height="20" alt="" style="filter:brightness(0) saturate(100%) invert(22%) sepia(89%) saturate(4563%) hue-rotate(220deg) brightness(101%) contrast(101%);" />
+        <div class="f-profile-item-icon" style="background:#F0FDF4;">
+          <img src="{{ url_for('static', filename='img/icon-map-pin.svg') }}" width="20" height="20" alt="" />
         </div>
         <div class="f-profile-item-text">
           <strong>Ma localisation</strong>
           <span>{{ client_zone or 'Actualiser ma position' }}</span>
         </div>
-        <img src="{{ url_for('static', filename='img/icon-chevron-right.svg') }}" width="18" height="18" alt="" />
+        <img src="{{ url_for('static', filename='img/icon-chevron-right.svg') }}" width="16" height="16" alt="" />
       </a>
-      <a href="{{ url_for('notifications') }}" class="f-profile-item">
+      <a href="{{ url_for('requests_list') }}" class="f-profile-item">
+        <div class="f-profile-item-icon" style="background:#FFFBEB;">
+          <img src="{{ url_for('static', filename='img/icon-calendar.svg') }}" width="20" height="20" alt="" />
+        </div>
+        <div class="f-profile-item-text">
+          <strong>Mes réservations</strong>
+          <span>{{ counts.reservations }} en cours</span>
+        </div>
+        <img src="{{ url_for('static', filename='img/icon-chevron-right.svg') }}" width="16" height="16" alt="" />
+      </a>
+      <a href="{{ url_for('requests_list') }}" class="f-profile-item" style="border-bottom:none;">
+        <div class="f-profile-item-icon" style="background:#FEF3C7;">
+          <img src="{{ url_for('static', filename='img/icon-wrench.svg') }}" width="20" height="20" alt="" />
+        </div>
+        <div class="f-profile-item-text">
+          <strong>Mes demandes / interventions</strong>
+          <span>{{ counts.demandes }} demande{{ 's' if counts.demandes != 1 }}</span>
+        </div>
+        <img src="{{ url_for('static', filename='img/icon-chevron-right.svg') }}" width="16" height="16" alt="" />
+      </a>
+    </div>
+  </section>
+
+  <section class="f-profile-section">
+    <h2 class="f-profile-section-title">Communication</h2>
+    <div class="f-card f-profile-list">
+      <a href="{{ url_for('client_messages') }}" class="f-profile-item">
+        <div class="f-profile-item-icon" style="background:#EEF4FF;">
+          <img src="{{ url_for('static', filename='img/icon-message-circle.svg') }}" width="20" height="20" alt="" />
+        </div>
+        <div class="f-profile-item-text">
+          <strong>Messages</strong>
+          <span>Assistance FixPro</span>
+        </div>
+        {% if messages_unread %}<span class="f-profile-badge">{{ messages_unread }}</span>{% else %}<img src="{{ url_for('static', filename='img/icon-chevron-right.svg') }}" width="16" height="16" alt="" />{% endif %}
+      </a>
+      <a href="{{ url_for('notifications') }}" class="f-profile-item" style="border-bottom:none;">
         <div class="f-profile-item-icon" style="background:#FEF2F2;">
-          <img src="{{ url_for('static', filename='img/icon-bell.svg') }}" width="20" height="20" alt="" style="filter:brightness(0) saturate(100%) invert(26%) sepia(80%) saturate(6000%) hue-rotate(340deg) brightness(90%) contrast(101%);" />
+          <img src="{{ url_for('static', filename='img/icon-bell.svg') }}" width="20" height="20" alt="" />
         </div>
         <div class="f-profile-item-text">
           <strong>Notifications</strong>
           <span>{{ unread_count }} non lue{{ 's' if unread_count != 1 }}</span>
         </div>
-        <img src="{{ url_for('static', filename='img/icon-chevron-right.svg') }}" width="18" height="18" alt="" />
+        {% if unread_count %}<span class="f-profile-badge">{{ unread_count }}</span>{% else %}<img src="{{ url_for('static', filename='img/icon-chevron-right.svg') }}" width="16" height="16" alt="" />{% endif %}
       </a>
-      <a href="{{ url_for('client_security') }}" class="f-profile-item" style="border-bottom:none;">
+    </div>
+  </section>
+
+  <section class="f-profile-section">
+    <h2 class="f-profile-section-title">Paramètres</h2>
+    <div class="f-card f-profile-list">
+      <a href="{{ url_for('client_security') }}" class="f-profile-item">
         <div class="f-profile-item-icon" style="background:#F1F5F9;">
-          <img src="{{ url_for('static', filename='img/icon-lock.svg') }}" width="20" height="20" alt="" style="filter:grayscale(100%) opacity(0.7);" />
+          <img src="{{ url_for('static', filename='img/icon-lock.svg') }}" width="20" height="20" alt="" />
         </div>
         <div class="f-profile-item-text">
           <strong>Sécurité</strong>
-          <span>Modifier mon mot de passe</span>
+          <span>Mot de passe</span>
         </div>
-        <img src="{{ url_for('static', filename='img/icon-chevron-right.svg') }}" width="18" height="18" alt="" />
+        <img src="{{ url_for('static', filename='img/icon-chevron-right.svg') }}" width="16" height="16" alt="" />
+      </a>
+      <a href="{{ url_for('client_static', page='how-it-works') }}" class="f-profile-item" style="border-bottom:none;">
+        <div class="f-profile-item-icon" style="background:#F0FDF4;">
+          <img src="{{ url_for('static', filename='img/icon-thumbs-up.svg') }}" width="20" height="20" alt="" />
+        </div>
+        <div class="f-profile-item-text">
+          <strong>Paramètres</strong>
+          <span>Préférences du compte</span>
+        </div>
+        <img src="{{ url_for('static', filename='img/icon-chevron-right.svg') }}" width="16" height="16" alt="" />
       </a>
     </div>
   </section>
 
-  <section class="f-section">
-    <h2 class="f-section-title">Aide & FixPro</h2>
+  <section class="f-profile-section">
+    <h2 class="f-profile-section-title">Aide & assistance</h2>
     <div class="f-card f-profile-list">
       <a href="{{ url_for('client_message_new') }}" class="f-profile-item">
-        <div class="f-profile-item-icon" style="background:#EEF4FF;">
-          <img src="{{ url_for('static', filename='img/icon-message-circle.svg') }}" width="20" height="20" alt="" style="filter:brightness(0) saturate(100%) invert(22%) sepia(89%) saturate(4563%) hue-rotate(220deg) brightness(101%) contrast(101%);" />
+        <div class="f-profile-item-icon" style="background:#EEF4FF; color: var(--f-primary);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
         </div>
         <div class="f-profile-item-text">
           <strong>Aide & assistance</strong>
-          <span>Discuter avec l'assistance FixPro</span>
+          <span>Discuter avec Lia</span>
         </div>
-        <img src="{{ url_for('static', filename='img/icon-chevron-right.svg') }}" width="18" height="18" alt="" />
-      </a>
-      <a href="{{ url_for('client_static', page='how-it-works') }}" class="f-profile-item">
-        <div class="f-profile-item-icon" style="background:#F0FDF4;">
-          <img src="{{ url_for('static', filename='img/icon-thumbs-up.svg') }}" width="20" height="20" alt="" style="filter:brightness(0) saturate(100%) invert(42%) sepia(95%) saturate(1239%) hue-rotate(95deg) brightness(95%) contrast(101%);" />
-        </div>
-        <div class="f-profile-item-text">
-          <strong>Comment fonctionne FixPro ?</strong>
-          <span>Les étapes en quelques mots</span>
-        </div>
-        <img src="{{ url_for('static', filename='img/icon-chevron-right.svg') }}" width="18" height="18" alt="" />
+        <img src="{{ url_for('static', filename='img/icon-chevron-right.svg') }}" width="16" height="16" alt="" />
       </a>
       <a href="{{ url_for('client_static', page='about') }}" class="f-profile-item">
         <div class="f-profile-item-icon" style="background:#FFFBEB;">
-          <img src="{{ url_for('static', filename='img/icon-shield-check.svg') }}" width="20" height="20" alt="" style="filter:brightness(0) saturate(100%) invert(60%) sepia(85%) saturate(1000%) hue-rotate(10deg) brightness(105%) contrast(101%);" />
+          <img src="{{ url_for('static', filename='img/icon-shield-check.svg') }}" width="20" height="20" alt="" />
         </div>
         <div class="f-profile-item-text">
           <strong>À propos de FixPro</strong>
-          <span>La plateforme de mise en relation</span>
+          <span>La plateforme</span>
         </div>
-        <img src="{{ url_for('static', filename='img/icon-chevron-right.svg') }}" width="18" height="18" alt="" />
+        <img src="{{ url_for('static', filename='img/icon-chevron-right.svg') }}" width="16" height="16" alt="" />
       </a>
       <a href="{{ url_for('client_static', page='terms') }}" class="f-profile-item" style="border-bottom:none;">
         <div class="f-profile-item-icon" style="background:#F1F5F9;">
-          <img src="{{ url_for('static', filename='img/icon-wind.svg') }}" width="20" height="20" alt="" style="filter:grayscale(100%) opacity(0.7);" />
+          <img src="{{ url_for('static', filename='img/icon-wind.svg') }}" width="20" height="20" alt="" />
         </div>
         <div class="f-profile-item-text">
           <strong>Conditions & confidentialité</strong>
-          <span>Conditions d'utilisation</span>
+          <span>Informations légales</span>
         </div>
-        <img src="{{ url_for('static', filename='img/icon-chevron-right.svg') }}" width="18" height="18" alt="" />
+        <img src="{{ url_for('static', filename='img/icon-chevron-right.svg') }}" width="16" height="16" alt="" />
       </a>
     </div>
   </section>
 
-  <section class="f-section">
-    <a href="{{ url_for('logout') }}" class="f-btn f-btn-danger" id="logoutBtn" style="width:100%;">Se déconnecter</a>
+  <section class="f-profile-section">
+    <button class="f-profile-logout" type="button" id="logoutBtn">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Se déconnecter
+    </button>
   </section>
 
 </div>
@@ -252,7 +208,7 @@
   <a href="{{ url_for('client_messages') }}">
     <img src="{{ url_for('static', filename='img/icon-message-circle.svg') }}" width="22" height="22" alt="" />
     Messages
-    {% if unread_count %}<span class="f-notif">{{ unread_count }}</span>{% endif %}
+    {% if messages_unread %}<span class="f-notif">{{ messages_unread }}</span>{% endif %}
   </a>
   <a href="{{ url_for('profile') }}" class="active">
     <img src="{{ url_for('static', filename='img/icon-user.svg') }}" width="22" height="22" alt="" />
@@ -263,7 +219,7 @@
 <div id="logoutModal" class="f-loc-overlay" style="display:none;">
   <div class="f-loc-card">
     <h2>Se déconnecter</h2>
-    <p>Voulez-vous vraiment vous déconnecter de votre compte FixPro ?</p>
+    <p>Voulez-vous vraiment vous déconnecter ?</p>
     <a href="{{ url_for('logout') }}" class="f-btn">Se déconnecter</a>
     <button class="f-btn f-btn-secondary" id="logoutCancel" type="button" style="margin-top:10px;">Annuler</button>
   </div>
@@ -274,31 +230,32 @@
   .mobile-nav, .tabbar, .guest-appbar, .topbar, .sidebar { display: none !important; }
   body .app-wrap { margin-left: 0 !important; }
   body .page { padding: 0 !important; }
-  .f-card { background: var(--f-white); border-radius: var(--f-radius); box-shadow: var(--f-shadow-card); padding: 18px; margin-bottom: 16px; }
-  .f-section-title { font-size: 16px; font-weight: 700; color: var(--f-text); margin: 0 0 12px; }
-  .f-profile-hero { display: flex; align-items: center; gap: 16px; padding: 20px; }
-  .f-profile-avatar { width: 72px; height: 72px; border-radius: 50%; overflow: hidden; background: #EEF4FF; display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 700; color: var(--f-primary); flex-shrink: 0; }
+
+  .f-card { background: var(--f-white); border-radius: var(--f-radius); box-shadow: var(--f-shadow-card); }
+  .f-profile-hero { display: flex; align-items: center; gap: 14px; padding: 18px; margin-bottom: 14px; }
+  .f-profile-avatar { width: 68px; height: 68px; border-radius: 50%; overflow: hidden; background: #EEF4FF; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 700; color: var(--f-primary); flex-shrink: 0; }
   .f-profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
   .f-profile-info { flex: 1; min-width: 0; }
-  .f-profile-welcome { margin: 0 0 2px; font-size: 13px; color: var(--f-text-2); }
-  .f-profile-info h1 { margin: 0; font-size: 18px; color: var(--f-text); }
-  .f-profile-role { margin: 4px 0 0; font-size: 13px; color: var(--f-text-2); }
-  .f-profile-edit { font-size: 13px; color: var(--f-primary); font-weight: 600; padding: 6px 12px; border: 1px solid var(--f-primary); border-radius: var(--f-radius-sm); text-decoration: none; flex-shrink: 0; }
-  .f-profile-list { padding: 0 18px; }
-  .f-profile-item { display: flex; align-items: center; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--f-line); color: var(--f-text); text-decoration: none; }
-  .f-profile-item-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .f-profile-info h1 { margin: 0; font-size: 17px; color: var(--f-text); line-height: 1.2; }
+  .f-profile-role { margin: 3px 0 0; font-size: 13px; color: var(--f-text-2); }
+  .f-profile-status { margin: 6px 0 0; font-size: 12px; color: var(--f-text-2); display: flex; align-items: center; gap: 6px; }
+  .f-status-dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; }
+  .f-profile-edit { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--f-primary); font-weight: 600; padding: 6px 12px; border: 1px solid var(--f-primary); border-radius: var(--f-radius-sm); text-decoration: none; flex-shrink: 0; }
+
+  .f-profile-section { margin-bottom: 14px; }
+  .f-profile-section-title { font-size: 12px; font-weight: 700; color: var(--f-text-2); margin: 0 4px 8px; text-transform: uppercase; letter-spacing: .03em; }
+  .f-profile-list { padding: 0 16px; }
+  .f-profile-item { display: flex; align-items: center; gap: 12px; padding: 13px 0; border-bottom: 1px solid var(--f-line); color: var(--f-text); text-decoration: none; }
+  .f-profile-item:last-child { border-bottom: none; }
+  .f-profile-item-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
   .f-profile-item-text { flex: 1; min-width: 0; }
-  .f-profile-item-text strong { display: block; font-size: 15px; font-weight: 600; }
-  .f-profile-item-text span { font-size: 13px; color: var(--f-text-2); }
-  .f-recent-item { display: block; color: var(--f-text); text-decoration: none; padding: 14px 0; border-bottom: 1px solid var(--f-line); }
-  .f-recent-item:last-child { border-bottom: none; }
-  .f-recent-meta { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; font-size: 12px; color: var(--f-text-2); }
-  .f-recent-status { color: var(--f-primary); font-weight: 600; }
-  .f-btn-danger { background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA; }
+  .f-profile-item-text strong { display: block; font-size: 14px; font-weight: 600; margin-bottom: 1px; }
+  .f-profile-item-text span { font-size: 12px; color: var(--f-text-2); }
+  .f-profile-badge { margin-left: auto; background: var(--f-accent); color: var(--f-text); font-size: 11px; font-weight: 700; min-width: 20px; height: 20px; border-radius: 10px; display: flex; align-items: center; justify-content: center; padding: 0 6px; }
+  .f-profile-logout { width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; height: 48px; border: 1px solid #fecaca; border-radius: var(--f-radius); background: #fef2f2; color: #dc2626; font-size: 14px; font-weight: 600; cursor: pointer; }
+
   @media (min-width: 640px) {
-    .f-container { max-width: 720px; margin: 0 auto; }
-    .f-profile-hero { padding: 24px; }
-    .f-profile-avatar { width: 88px; height: 88px; font-size: 34px; }
+    .f-container { max-width: 520px; margin: 0 auto; }
   }
 </style>
 
