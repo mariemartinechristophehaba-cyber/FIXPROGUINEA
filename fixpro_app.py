@@ -4497,6 +4497,50 @@ def api_admin_clients():
         conn.close()
 
 
+@app.route("/api/admin/categories")
+@limiter.limit("100 per hour")
+def api_admin_categories():
+    """Liste des categories/metiers avec statistiques admin."""
+    auth = _require_api_key()
+    if auth:
+        return auth
+    conn = get_db_connection()
+    try:
+        requests_by_cat = conn.execute(
+            "SELECT LOWER(category) AS name, COUNT(*) AS request_count,"
+            " COUNT(CASE WHEN status = 'completed' THEN 1 END) AS completed"
+            " FROM requests"
+            " WHERE category IS NOT NULL"
+            " GROUP BY LOWER(category)").fetchall()
+        artisans_by_prof = conn.execute(
+            "SELECT LOWER(profession) AS name, COUNT(*) AS artisan_count"
+            " FROM users"
+            " WHERE role = 'artisan' AND profession IS NOT NULL"
+            " GROUP BY LOWER(profession)").fetchall()
+        by_name = {}
+        for r in requests_by_cat:
+            by_name[r['name']] = {
+                'name': r['name'],
+                'request_count': r['request_count'],
+                'completed_count': r['completed'],
+            }
+        for a in artisans_by_prof:
+            name = a['name']
+            if name in by_name:
+                by_name[name]['artisan_count'] = a['artisan_count']
+            else:
+                by_name[name] = {
+                    'name': name,
+                    'request_count': 0,
+                    'completed_count': 0,
+                    'artisan_count': a['artisan_count'],
+                }
+        result = sorted(by_name.values(), key=lambda x: x['request_count'], reverse=True)
+        return jsonify(result)
+    finally:
+        conn.close()
+
+
 @app.route("/api/admin/demandes")
 @limiter.limit("100 per hour")
 def api_admin_demandes():
