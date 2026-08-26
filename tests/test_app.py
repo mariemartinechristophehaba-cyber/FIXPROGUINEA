@@ -1272,5 +1272,67 @@ class TechnicianDashboardTests(FixProTestCase):
             conn.close()
 
 
+
+class TechnicianAccessTests(FixProTestCase):
+    """Connexion, redirections et permissions du role technician."""
+
+    def test_client_is_redirected_to_client_home(self):
+        self.register_client()
+        response = self.login("+224620000000")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Rechercher", response.data)
+
+    def test_technician_is_redirected_to_dashboard(self):
+        self.register_artisan("t1@example.com", phone="+224621111111", name="T1 Diallo")
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute("UPDATE users SET role = 'technician' WHERE id = 2")
+            conn.commit()
+        finally:
+            conn.close()
+        response = self.login("t1@example.com")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"tableau de bord", response.data.lower())
+
+    def test_technician_route_alias_works(self):
+        self.register_artisan("t1@example.com", phone="+224621111111", name="T1 Diallo")
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute("UPDATE users SET role = 'technician' WHERE id = 2")
+            conn.commit()
+        finally:
+            conn.close()
+        self.login("t1@example.com")
+        response = self.client.get("/technician/dashboard", follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
+
+    def test_client_cannot_access_technician_dashboard(self):
+        self.register_client()
+        self.login("+224620000000")
+        response = self.client.get("/dashboard/technicien", follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
+
+    def test_technician_cannot_see_other_technician_mission(self):
+        self.register_client(phone="+224620000000")
+        self.client.get("/logout")
+        self.register_artisan("t1@example.com", phone="+224621111111", name="T1 Diallo")
+        self.client.get("/logout")
+        self.register_artisan("t2@example.com", phone="+224622222222", name="T2 Bah")
+
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute(
+                "INSERT INTO requests (client_id, artisan_id, reference, title, description, category, address, status, urgency, phone_contact, estimated_price, commission_rate, commission_amount, professional_amount, payment_status, created_at, updated_at)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (1, 2, "FP-000001", "Fuite", "desc", "Plombier", "Kaloum", "assigned", "urgent", "+2246000", 100000, 0.1, 10000, 90000, "PENDING", "2026-01-01", "2026-01-01"))
+            conn.commit()
+        finally:
+            conn.close()
+
+        self.login("t2@example.com")
+        response = self.client.get("/missions/1", follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
+
+
 if __name__ == "__main__":
     unittest.main()

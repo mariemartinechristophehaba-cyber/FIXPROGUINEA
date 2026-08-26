@@ -241,7 +241,7 @@ def check_artisan_verification():
     try:
         user = conn.execute(
             "SELECT role, is_verified FROM users WHERE id = ?", (user_id,)).fetchone()
-        if user and user["role"] == "artisan" and not user["is_verified"]:
+        if user and _is_technician(user) and not user["is_verified"]:
             result = redirect(url_for("artisan_pending"))
         else:
             result = None
@@ -637,7 +637,7 @@ def can_access_request(user, req):
         return True
     if user["id"] in (req["client_id"], req["artisan_id"]):
         return True
-    return user["role"] == "artisan" and req["status"] == "pending"
+    return _is_technician(user) and req["status"] == "pending"
 
 
 _PHONE_PATTERN = re.compile(r"(?:\d[\s\-\.\(\)]?){8,}")
@@ -999,7 +999,7 @@ def _parse_base64_file(data_uri):
 def register():
     role = request.form.get("role") if request.method == "POST" else request.args.get("role", "client")
     role = (role or "client").lower()
-    if role not in ("client", "artisan"):
+    if role not in ("client", "artisan", "technician"):
         role = "client"
 
     if role == "client" and request.method == "POST":
@@ -1047,8 +1047,8 @@ def register():
         finally:
             conn.close()
 
-    if role == "artisan":
-        return redirect(url_for("register_artisan"))
+    if role in ("artisan", "technician"):
+        return redirect(url_for("register_artisan", role=role))
 
     return render_template("choose_account.html")
 
@@ -1066,6 +1066,10 @@ def register_artisan():
             "SELECT id, category_id, name FROM services WHERE is_active = 1 ORDER BY name").fetchall()
     finally:
         conn.close()
+
+    role = (request.args.get("role") or request.form.get("role") or "artisan").lower()
+    if role not in ("artisan", "technician"):
+        role = "artisan"
 
     if request.method == "POST":
         full_name = request.form.get("full_name", "").strip()
@@ -1107,7 +1111,7 @@ def register_artisan():
                 " skills, years_experience, bio, city, zone_intervention, latitude, longitude,"
                 " is_verified, is_active, photo_url)"
                 " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (phone, generate_password_hash(temp_password), "artisan",
+                (phone, generate_password_hash(temp_password), role,
                  full_name, profession, specialite, experience, bio, address,
                  rayon, lat, lon, 1, 1, photo_url))
             conn.commit()
@@ -2436,6 +2440,10 @@ def login():
                 return redirect(next_url)
             if user["role"] == "client":
                 return redirect(url_for("artisans_page"))
+            if _is_technician(user):
+                return redirect(url_for("artisan_dashboard"))
+            if user["role"] == "admin":
+                return redirect(url_for("admin_dashboard"))
             return redirect(url_for("requests_list"))
 
         # Message identique pour ne pas reveler quel identifiant existe.
@@ -2532,11 +2540,12 @@ def mobile_dashboard():
 
 
 @app.route("/dashboard/technicien")
+@app.route("/technician/dashboard")
 @login_required
 def artisan_dashboard():
     """Tableau de bord professionnel du technicien."""
     user = get_current_user()
-    if user["role"] != "artisan":
+    if not _is_technician(user):
         flash("Cet espace est reserve aux techniciens.", "error")
         return redirect(url_for("dashboard"))
 
@@ -2645,7 +2654,7 @@ def artisan_dashboard():
 def update_artisan_services():
     """Mise a jour des services du technicien connecte."""
     user = get_current_user()
-    if user["role"] != "artisan":
+    if not _is_technician(user):
         flash("Cet espace est reserve aux techniciens.", "error")
         return redirect(url_for("dashboard"))
     services_ids = request.form.getlist("services")
@@ -3546,7 +3555,7 @@ def conversations():
     user = get_current_user()
     conn = get_db_connection()
     try:
-        if user["role"] == "artisan":
+        if _is_technician(user):
             rows = conn.execute(
                 "SELECT r.*, u.full_name AS client_name FROM requests r"
                 " JOIN users u ON u.id = r.client_id"
@@ -3689,7 +3698,7 @@ def requests_list():
     user = get_current_user()
     conn = get_db_connection()
     try:
-        if user["role"] == "artisan":
+        if _is_technician(user):
             rows = conn.execute(
                 "SELECT r.*, u.full_name AS artisan_name, rev.rating AS client_rating"
                 " FROM requests r"
@@ -3885,7 +3894,7 @@ def request_detail(request_id):
 @login_required
 def accept_request(request_id):
     user = get_current_user()
-    if user["role"] != "artisan" or not user.get("is_verified"):
+    if not _is_technician(user) or not user.get("is_verified"):
         flash("Seuls les artisans verifies peuvent accepter une demande.", "error")
         return redirect(url_for("requests_list"))
 
@@ -3923,7 +3932,7 @@ def accept_request(request_id):
 @login_required
 def propose_quote(request_id):
     user = get_current_user()
-    if user["role"] != "artisan" or not user.get("is_verified"):
+    if not _is_technician(user) or not user.get("is_verified"):
         flash("Seuls les artisans verifies peuvent proposer un devis.", "error")
         return redirect(url_for("requests_list"))
 
@@ -4196,7 +4205,7 @@ def api_messages(request_id):
 def api_technicien_status():
     """Met a jour le statut de disponibilite de l'artisan."""
     user = get_current_user()
-    if not user or user["role"] != "artisan":
+    if not user or not _is_technician(user):
         return jsonify({"error": "Reserve aux techniciens."}), 403
 
     status = (request.form.get("status") or "").strip()
@@ -4219,7 +4228,7 @@ def api_technicien_status():
 def api_technicien_position():
     """Recoit et stocke la position GPS en temps reel du technicien."""
     user = get_current_user()
-    if not user or user["role"] != "artisan":
+    if not user or not _is_technician(user):
         return jsonify({"error": "Reserve aux techniciens."}), 403
 
     try:
@@ -5756,7 +5765,7 @@ def admin_conversation(conversation_id):
 def artisan_mission(request_id):
     """Fiche detaillee d'une mission pour le technicien."""
     user = get_current_user()
-    if user["role"] != "artisan":
+    if not _is_technician(user):
         flash("Cet espace est reserve aux techniciens.", "error")
         return redirect(url_for("dashboard"))
 
@@ -5803,7 +5812,7 @@ def artisan_mission(request_id):
 def artisan_mission_action(request_id):
     """Actions principales d'une mission : statut, note, photo."""
     user = get_current_user()
-    if user["role"] != "artisan":
+    if not _is_technician(user):
         flash("Cet espace est reserve aux techniciens.", "error")
         return redirect(url_for("dashboard"))
 
@@ -5922,6 +5931,11 @@ def _notify_client(conn, request_id, title, body, kind):
     if row:
         create_notification(
             row["client_id"], title, body, kind, f"request_id:{request_id}")
+
+
+def _is_technician(user):
+    """Verifie si l'utilisateur est un technicien (artisan ou technician)."""
+    return bool(user and user.get("role") in ("artisan", "technician"))
 
 
 _settings_loaded = False

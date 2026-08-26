@@ -41,6 +41,7 @@
 
       <form method="post" class="fa-form" id="artisanForm" onsubmit="return validateArtisan();">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <input type="hidden" name="role" value="{{ request.args.get('role', 'artisan') }}" />
 
         <div id="step1">
           <h1 class="fa-title">Parlons de vous</h1>
