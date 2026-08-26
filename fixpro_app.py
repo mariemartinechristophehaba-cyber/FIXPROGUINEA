@@ -449,12 +449,16 @@ def payment_method_label(method):
 # cle = statut actuel, valeur = ensemble de statuts cibles permis.
 REQUEST_TRANSITIONS = {
     "pending": {"cancelled", "assigned"},
-    "assigned": {"in_progress", "quote_proposed", "cancelled"},
+    "REQUESTED": {"assigned", "rejected"},
+    "assigned": {"en_route", "quote_proposed", "rejected", "cancelled"},
+    "en_route": {"arrived", "cancelled"},
+    "arrived": {"in_progress", "cancelled"},
     "quote_proposed": {"quote_accepted", "quote_rejected", "cancelled"},
-    "quote_accepted": {"in_progress", "cancelled"},
+    "quote_accepted": {"arrived", "in_progress", "cancelled"},
     "in_progress": {"completed", "cancelled"},
     "completed": set(),
     "cancelled": set(),
+    "rejected": set(),
     "quote_rejected": {"quote_proposed", "cancelled"},
 }
 
@@ -2536,18 +2540,30 @@ def artisan_dashboard():
         flash("Cet espace est reserve aux techniciens.", "error")
         return redirect(url_for("dashboard"))
 
+    active_statuses = ("assigned", "en_route", "arrived", "in_progress", "quote_proposed", "quote_accepted")
+
     conn = get_db_connection()
     try:
         nouvelles = conn.execute(
             "SELECT COUNT(*) AS n FROM requests"
-            " WHERE status = 'pending' AND (category = ? OR ? = '')"
+            " WHERE status IN ('pending', 'REQUESTED') AND (category = ? OR ? = '')"
             " AND (client_id != ?)",
             (user["profession"], user["profession"], user["id"])).fetchone()["n"]
 
         assignees = conn.execute(
             "SELECT COUNT(*) AS n FROM requests"
-            " WHERE artisan_id = ? AND status IN ('assigned', 'quote_proposed', 'quote_accepted', 'in_progress')",
-            (user["id"],)).fetchone()["n"]
+            " WHERE artisan_id = ? AND status IN (?, ?, ?, ?, ?, ?)",
+            (user["id"],) + active_statuses).fetchone()["n"]
+
+        urgentes = conn.execute(
+            "SELECT COUNT(*) AS n FROM requests"
+            " WHERE artisan_id = ? AND status IN (?, ?, ?, ?, ?, ?) AND urgency = 'urgent'",
+            (user["id"],) + active_statuses).fetchone()["n"]
+
+        a_venir = conn.execute(
+            "SELECT COUNT(*) AS n FROM requests"
+            " WHERE artisan_id = ? AND status IN (?, ?, ?, ?, ?, ?) AND urgency != 'urgent'",
+            (user["id"],) + active_statuses).fetchone()["n"]
 
         terminees = conn.execute(
             "SELECT COUNT(*) AS n FROM requests"
@@ -2564,15 +2580,41 @@ def artisan_dashboard():
             "SELECT COALESCE(AVG(rating), 0) AS avg, COUNT(*) AS cnt FROM reviews"
             " WHERE artisan_id = ?", (user["id"],)).fetchone()
 
-        demandes = conn.execute("""
-            SELECT r.id, r.title, r.category, r.address, r.urgency, r.status,
+        active_mission = conn.execute("""
+            SELECT r.id, r.reference, r.title, r.category, r.address, r.urgency, r.status,
+                   r.description, r.latitude, r.longitude,
+                   u.full_name AS client_name, u.phone AS client_phone
+            FROM requests r
+            JOIN users u ON u.id = r.client_id
+            WHERE r.artisan_id = ? AND r.status IN (?, ?, ?, ?, ?, ?)
+            ORDER BY
+                CASE r.urgency WHEN 'urgent' THEN 0 WHEN 'haute' THEN 1 WHEN 'modere' THEN 2 ELSE 3 END,
+                r.updated_at DESC
+            LIMIT 1
+        """, (user["id"],) + active_statuses).fetchone()
+
+        missions = conn.execute("""
+            SELECT r.id, r.reference, r.title, r.category, r.address, r.urgency, r.status,
                    r.created_at, u.full_name AS client_name
             FROM requests r
             JOIN users u ON u.id = r.client_id
-            WHERE r.artisan_id = ? OR (r.status = 'pending' AND (r.category = ? OR ? = ''))
-            ORDER BY r.created_at DESC
+            WHERE r.artisan_id = ? OR (r.status IN ('pending', 'REQUESTED') AND (r.category = ? OR ? = ''))
+            ORDER BY
+                CASE WHEN r.status IN ('pending', 'REQUESTED') THEN 0 ELSE 1 END,
+                CASE r.urgency WHEN 'urgent' THEN 0 WHEN 'haute' THEN 1 WHEN 'modere' THEN 2 ELSE 3 END,
+                r.updated_at DESC
             LIMIT 20
         """, (user["id"], user["profession"], user["profession"])).fetchall()
+
+        missions_historique = conn.execute("""
+            SELECT r.id, r.reference, r.title, r.category, r.address, r.urgency, r.status,
+                   r.created_at, u.full_name AS client_name
+            FROM requests r
+            JOIN users u ON u.id = r.client_id
+            WHERE r.artisan_id = ? AND r.status IN ('completed', 'rejected', 'cancelled')
+            ORDER BY r.updated_at DESC
+            LIMIT 20
+        """, (user["id"],)).fetchall()
 
         avis = conn.execute(
             "SELECT r.rating, r.comment, r.created_at, u.full_name"
@@ -2589,9 +2631,11 @@ def artisan_dashboard():
 
     return render_template("dashboard_artisan.html", user=user,
                            stats={"nouvelles": nouvelles, "assignees": assignees,
+                                  "urgentes": urgentes, "a_venir": a_venir,
                                   "terminees": terminees, "revenus": revenus,
                                   "note_avg": note["avg"], "note_count": note["cnt"]},
-                           demandes=demandes, avis=avis,
+                           active_mission=active_mission, missions=missions,
+                           historique=missions_historique, avis=avis,
                            services_disponibles=services_disponibles,
                            artisan_services_ids=artisan_services_ids)
 
@@ -3849,14 +3893,19 @@ def accept_request(request_id):
     try:
         req = conn.execute(
             "SELECT * FROM requests WHERE id = ?", (request_id,)).fetchone()
-        if not req or req["status"] != "pending":
+        if not req or req["status"] not in ("pending", "REQUESTED"):
             flash("Cette demande n'est plus disponible.", "error")
             return redirect(url_for("requests_list"))
 
         conn.execute(
             "UPDATE requests SET artisan_id = ?, status = 'assigned',"
-            " updated_at = ? WHERE id = ? AND status = 'pending'",
+            " updated_at = ? WHERE id = ? AND status IN ('pending', 'REQUESTED')",
             (user["id"], now_iso(), request_id))
+        conn.execute(
+            "INSERT INTO intervention_history (request_id, status, actor, note, created_at)"
+            " VALUES (?, ?, ?, ?, ?)",
+            (request_id, "Mission acceptee", user["full_name"],
+             f"Technicien {user['full_name']} a accepte la mission", now_iso()))
         conn.commit()
         req = conn.execute("SELECT client_id FROM requests WHERE id = ?", (request_id,)).fetchone()
         if req:
@@ -3864,8 +3913,7 @@ def accept_request(request_id):
                 req["client_id"], "Artisan trouve",
                 "Un technicien a accepte votre demande.",
                 "request_accepted", f"request_id:{request_id}")
-        flash("Demande attribuée. Proposez un devis afin que le client puisse "
-              "l'accepter.", "success")
+        flash("Mission acceptee. Vous pouvez maintenant demarrer l'intervention.", "success")
     finally:
         conn.close()
     return redirect(url_for("request_detail", request_id=request_id))
@@ -5703,10 +5751,180 @@ def admin_conversation(conversation_id):
     return render_template("admin_conversation.html", conversation=conv, messages=messages, user=get_current_user())
 
 
+@app.route("/missions/<int:request_id>")
+@login_required
+def artisan_mission(request_id):
+    """Fiche detaillee d'une mission pour le technicien."""
+    user = get_current_user()
+    if user["role"] != "artisan":
+        flash("Cet espace est reserve aux techniciens.", "error")
+        return redirect(url_for("dashboard"))
+
+    conn = get_db_connection()
+    try:
+        req = conn.execute(
+            "SELECT r.*, u.full_name AS client_name, u.phone AS client_phone,"
+            " u.email AS client_email FROM requests r"
+            " JOIN users u ON u.id = r.client_id"
+            " WHERE r.id = ?",
+            (request_id,)).fetchone()
+        if not req:
+            flash("Mission introuvable.", "error")
+            return redirect(url_for("artisan_dashboard"))
+
+        if req["artisan_id"] and req["artisan_id"] != user["id"]:
+            flash("Cette mission n'est pas accessible.", "error")
+            return redirect(url_for("artisan_dashboard"))
+
+        photos = conn.execute(
+            "SELECT * FROM intervention_photos WHERE request_id = ? ORDER BY created_at DESC",
+            (request_id,)).fetchall()
+
+        history = conn.execute(
+            "SELECT * FROM intervention_history WHERE request_id = ? ORDER BY created_at DESC",
+            (request_id,)).fetchall()
+
+        distance = None
+        if (_is_valid_coordinate(user.get("latitude"), user.get("longitude"))
+                and _is_valid_coordinate(req["latitude"], req["longitude"])):
+            distance = _haversine(
+                float(user["latitude"]), float(user["longitude"]),
+                float(req["latitude"]), float(req["longitude"]))
+
+    finally:
+        conn.close()
+
+    return render_template("artisan_mission.html", user=user, req=req,
+                           photos=photos, history=history, distance=distance)
+
+
+@app.route("/missions/<int:request_id>/action", methods=["POST"])
+@login_required
+def artisan_mission_action(request_id):
+    """Actions principales d'une mission : statut, note, photo."""
+    user = get_current_user()
+    if user["role"] != "artisan":
+        flash("Cet espace est reserve aux techniciens.", "error")
+        return redirect(url_for("dashboard"))
+
+    action = (request.form.get("action") or "").strip()
+    if not action:
+        flash("Aucune action specifiee.", "error")
+        return redirect(url_for("artisan_mission", request_id=request_id))
+
+    conn = get_db_connection()
+    try:
+        req = conn.execute(
+            "SELECT * FROM requests WHERE id = ?", (request_id,)).fetchone()
+        if not req:
+            flash("Mission introuvable.", "error")
+            return redirect(url_for("artisan_dashboard"))
+
+        if req["artisan_id"] and req["artisan_id"] != user["id"]:
+            flash("Action non autorisee.", "error")
+            return redirect(url_for("artisan_dashboard"))
+
+        if action == "accept":
+            if req["status"] in ("pending", "REQUESTED"):
+                conn.execute(
+                    "UPDATE requests SET artisan_id = ?, status = 'assigned', updated_at = ?"
+                    " WHERE id = ? AND status IN ('pending', 'REQUESTED')",
+                    (user["id"], now_iso(), request_id))
+                conn.execute(
+                    "INSERT INTO intervention_history (request_id, status, actor, note, created_at)"
+                    " VALUES (?, ?, ?, ?, ?)",
+                    (request_id, "Mission acceptee", user["full_name"],
+                     "Le technicien a accepte la mission", now_iso()))
+                _notify_client(conn, request_id, "Mission acceptee",
+                               "Votre technicien a accepte la mission.", "request_accepted")
+                flash("Mission acceptee.", "success")
+            else:
+                flash("Cette mission ne peut plus etre acceptee.", "error")
+
+        elif action == "reject":
+            if req["status"] in ("pending", "REQUESTED", "assigned"):
+                reason = (request.form.get("reason") or "").strip()
+                conn.execute(
+                    "UPDATE requests SET artisan_id = NULL, status = 'rejected', updated_at = ?"
+                    " WHERE id = ?",
+                    (now_iso(), request_id))
+                conn.execute(
+                    "INSERT INTO intervention_history (request_id, status, actor, note, created_at)"
+                    " VALUES (?, ?, ?, ?, ?)",
+                    (request_id, "Mission refusee", user["full_name"],
+                     f"Refusee par le technicien. Raison : {reason or 'non precisee'}", now_iso()))
+                flash("Mission refusee. Elle sera reattribuee.", "success")
+            else:
+                flash("Cette mission ne peut plus etre refusee.", "error")
+
+        elif action in ("en_route", "arrived", "in_progress", "completed"):
+            new_status = action
+            if can_transition_request(req["status"], new_status):
+                conn.execute(
+                    "UPDATE requests SET status = ?, updated_at = ? WHERE id = ?",
+                    (new_status, now_iso(), request_id))
+                conn.execute(
+                    "INSERT INTO intervention_history (request_id, status, actor, note, created_at)"
+                    " VALUES (?, ?, ?, ?, ?)",
+                    (request_id, new_status.replace("_", " "), user["full_name"],
+                     f"Statut mis a jour : {new_status.replace('_', ' ')}", now_iso()))
+                _notify_client(conn, request_id, "Mise a jour de la mission",
+                               f"Statut de votre mission : {new_status.replace('_', ' ').capitalize()}",
+                               f"request_{new_status}")
+                flash("Statut mis a jour.", "success")
+            else:
+                flash("Changement de statut non autorise.", "error")
+
+        elif action == "add_note":
+            note = (request.form.get("note") or "").strip()
+            if note:
+                conn.execute(
+                    "INSERT INTO intervention_history (request_id, status, actor, note, created_at)"
+                    " VALUES (?, ?, ?, ?, ?)",
+                    (request_id, "Note technicien", user["full_name"], note, now_iso()))
+                flash("Note enregistree.", "success")
+            else:
+                flash("La note est vide.", "error")
+
+        elif action == "add_photo":
+            photo_data = (request.form.get("photo_data") or "").strip()
+            if photo_data:
+                try:
+                    photo_url = storage.get_storage().upload(f"mission_{request_id}", photo_data)
+                    conn.execute(
+                        "INSERT INTO intervention_photos (request_id, photo_url, created_at)"
+                        " VALUES (?, ?, ?)",
+                        (request_id, photo_url, now_iso()))
+                    conn.execute(
+                        "INSERT INTO intervention_history (request_id, status, actor, note, created_at)"
+                        " VALUES (?, ?, ?, ?, ?)",
+                        (request_id, "Photo ajoutee", user["full_name"], "Photo ajoutee a la mission", now_iso()))
+                    flash("Photo enregistree.", "success")
+                except ValueError as exc:
+                    flash(f"Erreur photo : {exc}", "error")
+            else:
+                flash("Aucune photo recue.", "error")
+
+        else:
+            flash("Action inconnue.", "error")
+
+        conn.commit()
+    finally:
+        conn.close()
+
+    return redirect(url_for("artisan_mission", request_id=request_id))
+
+
+def _notify_client(conn, request_id, title, body, kind):
+    """Cree une notification pour le client d'une mission."""
+    row = conn.execute(
+        "SELECT client_id FROM requests WHERE id = ?", (request_id,)).fetchone()
+    if row:
+        create_notification(
+            row["client_id"], title, body, kind, f"request_id:{request_id}")
+
+
 _settings_loaded = False
-
-
-@app.before_request
 def _ensure_settings_and_migrations():
     """Charge les settings et migrations une seule fois au premier appel."""
     global _settings_loaded

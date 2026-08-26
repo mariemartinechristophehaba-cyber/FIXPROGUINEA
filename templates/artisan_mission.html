@@ -1,0 +1,200 @@
+{% extends 'base.html' %}
+{% block title %}Mission - FixPro{% endblock %}
+
+{% block extra_head %}
+<meta name="csrf-token" content="{{ csrf_token() }}" />
+{% endblock %}
+
+{% block content %}
+<div class="fx-screen" style="background:var(--paper);padding-bottom:90px;">
+  <div class="fx-top" style="padding:14px 16px 18px;">
+    <div class="row1" style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+      <a class="fx-brand" href="{{ url_for('artisan_dashboard') }}">Mission</a>
+      <a href="{{ url_for('notifications') }}" style="color:#fff;" aria-label="Notifications"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></a>
+    </div>
+    <div style="margin-top:8px;font-size:12px;opacity:.85;">#{{ req.reference or req.id }}</div>
+  </div>
+
+  <div style="padding:14px 16px;">
+    <div style="background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+        <h1 style="font-size:18px;font-weight:700;color:var(--ink);margin:0;">{{ req.title }}</h1>
+        <span style="font-size:11px;padding:4px 10px;border-radius:20px;font-weight:600;{% if req.urgency == 'urgent' %}background:#FEE2E2;color:#B91C1C;{% elif req.urgency == 'haute' %}background:#FFEDD5;color:#C2410C;{% else %}background:#F3F4F6;color:#374151;{% endif %}">{{ req.urgency|upper }}</span>
+      </div>
+      <div style="font-size:13px;color:#155EEF;font-weight:600;margin-bottom:12px;">Statut : {{ req.status }}</div>
+      <div style="font-size:13px;color:var(--slate);margin-bottom:8px;">Client : {{ req.client_name }}</div>
+      <div style="font-size:13px;color:var(--slate);margin-bottom:8px;">Adresse : {{ req.address or 'Conakry' }}</div>
+      {% if distance is not none %}
+      <div style="font-size:13px;color:var(--slate);margin-bottom:8px;">Distance : {{ "%.1f"|format(distance) }} km</div>
+      {% endif %}
+      {% if req.client_phone %}
+      <a href="tel:{{ req.client_phone }}" style="display:inline-flex;align-items:center;gap:6px;font-size:13px;color:#155EEF;font-weight:600;margin-top:4px;">Appeler le client</a>
+      {% endif %}
+    </div>
+
+    <div style="background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:16px;">
+      <div class="fx-list-title" style="margin:0 0 10px;">Description</div>
+      <p style="font-size:13px;color:var(--ink);margin:0;line-height:1.5;">{{ req.description or 'Aucune description' }}</p>
+    </div>
+
+    <div style="background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:16px;">
+      <div class="fx-list-title" style="margin:0 0 12px;">Actions</div>
+
+      {% if req.status in ('pending', 'REQUESTED') %}
+      <form method="post" action="{{ url_for('artisan_mission_action', request_id=req.id) }}" style="margin-bottom:10px;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <input type="hidden" name="action" value="accept" />
+        <button type="submit" class="fx-btn" style="width:100%;height:48px;font-size:15px;font-weight:700;background:#22C55E;border-color:#22C55E;">Accepter la mission</button>
+      </form>
+      {% endif %}
+
+      {% if req.status in ('pending', 'REQUESTED', 'assigned') %}
+      <button type="button" class="fx-btn ghost" style="width:100%;height:44px;font-size:14px;margin-bottom:10px;border-color:#9CA3AF;color:#374151;" onclick="document.getElementById('refus-modal').style.display='block'">Refuser la mission</button>
+      {% endif %}
+
+      {% if req.status == 'assigned' %}
+      <form method="post" action="{{ url_for('artisan_mission_action', request_id=req.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <input type="hidden" name="action" value="en_route" />
+        <button type="submit" class="fx-btn" style="width:100%;height:48px;font-size:15px;font-weight:700;">En route</button>
+      </form>
+      {% elif req.status == 'en_route' %}
+      <form method="post" action="{{ url_for('artisan_mission_action', request_id=req.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <input type="hidden" name="action" value="arrived" />
+        <button type="submit" class="fx-btn" style="width:100%;height:48px;font-size:15px;font-weight:700;">Je suis arrive</button>
+      </form>
+      {% elif req.status == 'arrived' %}
+      <form method="post" action="{{ url_for('artisan_mission_action', request_id=req.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <input type="hidden" name="action" value="in_progress" />
+        <button type="submit" class="fx-btn" style="width:100%;height:48px;font-size:15px;font-weight:700;background:#F59E0B;border-color:#F59E0B;">Commencer l'intervention</button>
+      </form>
+      {% elif req.status == 'in_progress' %}
+      <form method="post" action="{{ url_for('artisan_mission_action', request_id=req.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <input type="hidden" name="action" value="completed" />
+        <button type="submit" class="fx-btn" style="width:100%;height:48px;font-size:15px;font-weight:700;background:#22C55E;border-color:#22C55E;">Terminer l'intervention</button>
+      </form>
+      {% elif req.status not in ('pending', 'REQUESTED') %}
+      <div style="font-size:13px;color:var(--slate);">Cette mission est terminee ou annulee.</div>
+      {% endif %}
+    </div>
+
+    {% if req.status in ('in_progress', 'arrived', 'completed') %}
+    <div style="background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:16px;">
+      <div class="fx-list-title" style="margin:0 0 12px;">Notes d'intervention</div>
+      {% for h in history %}
+      {% if h.status == 'Note technicien' %}
+      <div style="padding:10px 0;border-bottom:1px solid var(--line);">
+        <div style="font-size:11px;color:var(--slate);margin-bottom:2px;">{{ h.created_at[:16] }} - {{ h.actor }}</div>
+        <div style="font-size:13px;color:var(--ink);">{{ h.note }}</div>
+      </div>
+      {% endif %}
+      {% endfor %}
+      <form method="post" action="{{ url_for('artisan_mission_action', request_id=req.id) }}" style="margin-top:12px;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <input type="hidden" name="action" value="add_note" />
+        <textarea name="note" rows="3" placeholder="Decrivez ce qui a ete effectue..." style="width:100%;border:1px solid var(--line);border-radius:8px;padding:10px;font-size:13px;resize:vertical;"></textarea>
+        <button type="submit" class="fx-btn" style="width:100%;height:42px;font-size:14px;margin-top:10px;">Ajouter une note</button>
+      </form>
+    </div>
+    {% endif %}
+
+    <div style="background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:16px;">
+      <div class="fx-list-title" style="margin:0 0 12px;">Photos</div>
+      {% if photos %}
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;">
+        {% for p in photos %}
+        <div style="aspect-ratio:1;border-radius:8px;overflow:hidden;background:#f3f4f6;">
+          <img src="{{ p.photo_url }}" style="width:100%;height:100%;object-fit:cover;" alt="Photo intervention" />
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div style="font-size:13px;color:var(--slate);margin-bottom:10px;">Aucune photo pour le moment.</div>
+      {% endif %}
+      <form method="post" action="{{ url_for('artisan_mission_action', request_id=req.id) }}" id="photo-form" style="margin-top:10px;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <input type="hidden" name="action" value="add_photo" />
+        <input type="hidden" name="photo_data" id="photo-data" />
+        <label style="display:block;width:100%;margin-bottom:10px;">
+          <input type="file" accept="image/*" capture="environment" id="photo-input" style="font-size:13px;" />
+        </label>
+        <button type="submit" class="fx-btn ghost" style="width:100%;height:42px;font-size:14px;display:none;" id="photo-submit">Ajouter cette photo</button>
+      </form>
+    </div>
+
+    <div style="background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:16px;">
+      <div class="fx-list-title" style="margin:0 0 12px;">Historique</div>
+      {% for h in history %}
+      <div style="padding:8px 0;border-bottom:1px solid var(--line);font-size:13px;">
+        <div style="font-weight:600;color:var(--ink);">{{ h.status }}</div>
+        <div style="font-size:11px;color:var(--slate);">{{ h.created_at[:16] }} - {{ h.actor }}</div>
+        {% if h.note %}<div style="font-size:12px;color:var(--ink);margin-top:2px;">{{ h.note }}</div>{% endif %}
+      </div>
+      {% else %}
+      <div style="font-size:13px;color:var(--slate);">Aucun evenement enregistre.</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div id="refus-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);align-items:center;justify-content:center;padding:16px;z-index:100;">
+    <div style="background:#fff;border-radius:16px;padding:16px;width:100%;max-width:360px;">
+      <h3 style="font-size:16px;font-weight:700;margin:0 0 12px;">Refuser la mission</h3>
+      <form method="post" action="{{ url_for('artisan_mission_action', request_id=req.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <input type="hidden" name="action" value="reject" />
+        <label style="font-size:13px;">Raison</label>
+        <select name="reason" style="width:100%;height:40px;border:1px solid var(--line);border-radius:8px;padding:8px;margin:6px 0 12px;font-size:13px;">
+          <option value="indisponible">Indisponible</option>
+          <option value="trop loin">Trop loin</option>
+          <option value="mauvais metier">Mauvais metier</option>
+          <option value="autre">Autre</option>
+        </select>
+        <div style="display:flex;gap:10px;">
+          <button type="button" class="fx-btn ghost" style="flex:1;height:42px;" onclick="document.getElementById('refus-modal').style.display='none'">Annuler</button>
+          <button type="submit" class="fx-btn" style="flex:1;height:42px;background:#EF4444;border-color:#EF4444;">Confirmer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <nav class="tabbar">
+    <a class="tabbar-link active" href="{{ url_for('artisan_dashboard') }}">Missions</a>
+    <a class="tabbar-link" href="{{ url_for('requests_list') }}">Demandes</a>
+    <a class="tabbar-link" href="{{ url_for('client_messages') }}">Messages</a>
+    <a class="tabbar-link" href="{{ url_for('profile') }}">Profil</a>
+  </nav>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  (function() {
+    const input = document.getElementById('photo-input');
+    const dataField = document.getElementById('photo-data');
+    const submitBtn = document.getElementById('photo-submit');
+    if (!input) return;
+
+    input.addEventListener('change', function() {
+      const file = input.files[0];
+      if (!file) {
+        submitBtn.style.display = 'none';
+        dataField.value = '';
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        dataField.value = e.target.result;
+        submitBtn.style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+    });
+
+    document.getElementById('refus-modal').addEventListener('click', function(e) {
+      if (e.target === this) this.style.display = 'none';
+    });
+  })();
+</script>
+{% endblock %}
