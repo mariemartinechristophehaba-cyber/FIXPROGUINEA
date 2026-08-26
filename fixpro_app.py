@@ -5349,6 +5349,8 @@ def client_conversation(conversation_id):
             flash("Conversation introuvable.", "error")
             return redirect(url_for("client_messages"))
         if request.method == "POST":
+            status = conv["status"]
+            ready = False
             content = (request.form.get("content") or "").strip()
             if not content:
                 flash("Le message ne peut pas etre vide.", "error")
@@ -5387,6 +5389,7 @@ def client_conversation(conversation_id):
 
                     extra_messages = []
                     status = "ai_active"
+                    ready = analysis.get("ready", False)
                     if analysis["ready"]:
                         client_lat = _to_float(user.get("latitude")) or _to_float(session.get("client_lat"))
                         client_lon = _to_float(user.get("longitude")) or _to_float(session.get("client_lon"))
@@ -5454,7 +5457,7 @@ def client_conversation(conversation_id):
                             for m in latest
                         ],
                         "status": status,
-                        "ready": analysis.get("ready", False),
+                        "ready": ready,
                     })
         messages = conn.execute(
             "SELECT m.*, u.full_name AS sender_name"
