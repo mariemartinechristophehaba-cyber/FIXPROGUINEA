@@ -4492,6 +4492,165 @@ def api_admin_demandes():
         conn.close()
 
 
+@app.route("/api/admin/dashboard")
+@limiter.limit("100 per hour")
+def api_admin_dashboard():
+    """Vue consolidée du tableau de bord admin."""
+    auth = _require_api_key()
+    if auth:
+        return auth
+
+    now = datetime.now(timezone.utc)
+    mois_debut = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0).isoformat()
+    trente_jours = (now - timedelta(days=30)).isoformat()
+    sept_jours = (now - timedelta(days=7)).isoformat()
+
+    _PROFESSION_LABEL = {
+        "plombier": "Plomberie",
+        "electricien": "Électricité",
+        "frigoriste": "Frigoriste",
+        "menuisier": "Menuiserie",
+        "chauffagiste": "Chauffagiste",
+        "serrurier": "Serrurier",
+        "peintre": "Peinture",
+        "maçon": "Maçonnerie",
+        "macon": "Maçonnerie",
+    }
+
+    def _status_index(status):
+        if status in ("completed",):
+            return 3
+        if status in ("in_progress", "on_the_way"):
+            return 2
+        if status in ("assigned", "quote_proposed", "quote_accepted", "pending"):
+            return 1
+        return 0
+
+    def _label(cat):
+        return _PROFESSION_LABEL.get(cat.lower(), cat.capitalize()) if cat else "Autre"
+
+    conn = get_db_connection()
+    try:
+        interventions_mois = conn.execute(
+            "SELECT COUNT(*) AS n FROM requests WHERE created_at >= ?",
+            (mois_debut,)).fetchone()["n"]
+
+        revenu_gnf = int(conn.execute(
+            "SELECT COALESCE(SUM(commission_amount), 0) AS s FROM payments"
+            " WHERE status = 'completed' AND created_at >= ?",
+            (mois_debut,)).fetchone()["s"])
+
+        total_techniciens = conn.execute(
+            "SELECT COUNT(*) AS n FROM users WHERE role = 'artisan'").fetchone()["n"]
+        actifs_techniciens = conn.execute(
+            "SELECT COUNT(*) AS n FROM users WHERE role = 'artisan' AND is_active = 1").fetchone()["n"]
+
+        total_termine = conn.execute(
+            "SELECT COUNT(*) AS n FROM requests WHERE status = 'completed'").fetchone()["n"]
+        total_non_cancel = conn.execute(
+            "SELECT COUNT(*) AS n FROM requests WHERE status != 'cancelled'").fetchone()["n"]
+        taux_resolution = round((total_termine / total_non_cancel) * 100, 0) if total_non_cancel else 0
+
+        rows_cat = conn.execute(
+            "SELECT category, COUNT(*) AS n FROM requests"
+            " WHERE created_at >= ? GROUP BY category",
+            (trente_jours,)).fetchall()
+        categories = [
+            {"name": _label(r["category"]), "count": r["n"]}
+            for r in rows_cat
+        ]
+
+        rows_req = conn.execute(
+            "SELECT r.reference, r.title, r.category, r.status, r.latitude, r.longitude,"
+            " c.full_name AS client_name, a.full_name AS artisan_name, a.profession AS artisan_profession,"
+            " a.latitude AS artisan_lat, a.longitude AS artisan_lon"
+            " FROM requests r"
+            " JOIN users c ON c.id = r.client_id"
+            " LEFT JOIN users a ON a.id = r.artisan_id"
+            " ORDER BY r.updated_at DESC LIMIT 6").fetchall()
+        interventions = []
+        for r in rows_req:
+            client_lat = _to_float(r["latitude"])
+            client_lon = _to_float(r["longitude"])
+            art_lat = _to_float(r["artisan_lat"])
+            art_lon = _to_float(r["artisan_lon"])
+            if _is_valid_coordinate(client_lat, client_lon) and _is_valid_coordinate(art_lat, art_lon):
+                dist = round(_haversine(client_lat, client_lon, art_lat, art_lon), 1)
+                dist_label = f"{dist} km"
+            else:
+                dist_label = "—"
+            cat_norm = _domain_to_profession(r["category"]) or ""
+            art_norm = (r["artisan_profession"] or "").lower()
+            mismatch = bool(cat_norm and art_norm and cat_norm != art_norm)
+            interventions.append({
+                "code": r["reference"],
+                "client": r["client_name"],
+                "pb": r["title"],
+                "cat": _label(r["category"]),
+                "tech": r["artisan_name"],
+                "techCat": r["artisan_profession"] or "",
+                "status": _status_index(r["status"]),
+                "dist": dist_label,
+                "mismatch": mismatch,
+            })
+
+        rows_alert = conn.execute(
+            "SELECT r.id, a.full_name AS artisan_name, a.profession AS artisan_profession, r.category"
+            " FROM requests r"
+            " JOIN users a ON a.id = r.artisan_id"
+            " WHERE r.created_at >= ?",
+            (sept_jours,)).fetchall()
+        alert_map = {}
+        for r in rows_alert:
+            cat = _domain_to_profession(r["category"]) or ""
+            art_prof = (r["artisan_profession"] or "").lower()
+            if cat and art_prof and cat != art_prof:
+                name = r["artisan_name"]
+                if name not in alert_map:
+                    alert_map[name] = {"cat": r["artisan_profession"], "count": 0, "categories": set()}
+                alert_map[name]["count"] += 1
+                alert_map[name]["categories"].add(_label(r["category"]))
+
+        alert = None
+        if alert_map:
+            name, info = next(iter(alert_map.items()))
+            cats = " et ".join(info["categories"])
+            alert = {
+                "name": name,
+                "cat": info["cat"],
+                "count": info["count"],
+                "categories": cats,
+            }
+
+        rows_tech = conn.execute(
+            "SELECT full_name, profession, availability_status FROM users"
+            " WHERE role = 'artisan' ORDER BY availability_status = 'en_ligne' DESC, full_name").fetchall()
+        technicians = [
+            {"name": t["full_name"], "cat": t["profession"], "online": t["availability_status"] == "en_ligne"}
+            for t in rows_tech
+        ]
+
+        user = get_current_user()
+
+        return jsonify({
+            "kpis": {
+                "interventions_ce_mois": interventions_mois,
+                "revenu_commissions_gnf": revenu_gnf,
+                "revenu_commissions_usd": round(revenu_gnf / 8730, 0),
+                "techniciens_actifs": actifs_techniciens,
+                "techniciens_total": total_techniciens,
+                "taux_resolution": int(taux_resolution),
+            },
+            "categories": categories,
+            "interventions": interventions,
+            "technicians": technicians,
+            "alert": alert,
+            "admin": (user and user.get("full_name")) or "Mamadou Bah",
+        })
+    finally:
+        conn.close()
+
+
 @app.route("/api/admin/techniciens/<int:artisan_id>/verify", methods=["POST"])
 @limiter.limit("60 per hour", methods=["POST"])
 def api_admin_verify_artisan(artisan_id):
