@@ -61,6 +61,24 @@
   </div>
 </header>
 
+<section class="f-hero">
+  <div class="f-hero-bg"></div>
+  <div class="f-hero-city"></div>
+  <div class="f-container f-hero-inner">
+    <div class="f-hero-text">
+      <h1>Trouvez rapidement <span>le bon professionnel</span> pour vos travaux</h1>
+      <p style="color: var(--f-text-2); font-size: 16px; line-height: 1.5; margin: 0 0 18px;">Fiable, rapide et professionnel.</p>
+      <div class="f-hero-badges">
+        <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#155eef" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg> Professionnels vérifiés</span>
+        <span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#155eef" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Intervention rapide</span>
+      </div>
+    </div>
+    <div class="f-hero-avatar-wrap">
+      <img src="{{ url_for('static', filename='img/fixpro-avatar.png') }}" alt="Technicien FixPro" class="f-hero-avatar" />
+    </div>
+  </div>
+</section>
+
 {% set pro_labels = {
   'Plombier': 'Plombier',
   'Plomberie': 'Plombier',

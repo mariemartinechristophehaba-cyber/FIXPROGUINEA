@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+﻿{% extends 'base.html' %}
 {% block title %}Tableau de bord - Technicien{% endblock %}
 
 {% block extra_head %}
@@ -46,7 +46,7 @@
       <div style="font-size:13px;color:var(--slate);margin-bottom:8px;">Client : {{ active_mission.client_name }}</div>
       <div style="font-size:12px;color:var(--slate);margin-bottom:12px;">{{ active_mission.address or 'Conakry' }}</div>
       <div style="font-size:12px;font-weight:600;color:#155EEF;margin-bottom:10px;">Statut : {{ active_mission.status }}</div>
-      <div class="fx-btn" style="width:100%;font-size:13px;height:40px;display:flex;align-items:center;justify-content:center;">Ouvrir la mission</div>
+      <div class="f-btn" style="width:100%;font-size:13px;height:40px;display:flex;align-items:center;justify-content:center;">Ouvrir la mission</div>
     </a>
     {% endif %}
 

@@ -44,37 +44,37 @@
       <form method="post" action="{{ url_for('artisan_mission_action', request_id=req.id) }}" style="margin-bottom:10px;">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
         <input type="hidden" name="action" value="accept" />
-        <button type="submit" class="fx-btn" style="width:100%;height:48px;font-size:15px;font-weight:700;background:#22C55E;border-color:#22C55E;">Accepter la mission</button>
+        <button type="submit" class="f-btn" style="width:100%;height:48px;font-size:15px;font-weight:700;background:#22C55E;border-color:#22C55E;">Accepter la mission</button>
       </form>
       {% endif %}
 
       {% if req.status in ('pending', 'REQUESTED', 'assigned') %}
-      <button type="button" class="fx-btn ghost" style="width:100%;height:44px;font-size:14px;margin-bottom:10px;border-color:#9CA3AF;color:#374151;" onclick="document.getElementById('refus-modal').style.display='block'">Refuser la mission</button>
+      <button type="button" class="f-btn ghost" style="width:100%;height:44px;font-size:14px;margin-bottom:10px;border-color:#9CA3AF;color:#374151;" onclick="document.getElementById('refus-modal').style.display='block'">Refuser la mission</button>
       {% endif %}
 
       {% if req.status == 'assigned' %}
       <form method="post" action="{{ url_for('artisan_mission_action', request_id=req.id) }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
         <input type="hidden" name="action" value="en_route" />
-        <button type="submit" class="fx-btn" style="width:100%;height:48px;font-size:15px;font-weight:700;">En route</button>
+        <button type="submit" class="f-btn" style="width:100%;height:48px;font-size:15px;font-weight:700;">En route</button>
       </form>
       {% elif req.status == 'en_route' %}
       <form method="post" action="{{ url_for('artisan_mission_action', request_id=req.id) }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
         <input type="hidden" name="action" value="arrived" />
-        <button type="submit" class="fx-btn" style="width:100%;height:48px;font-size:15px;font-weight:700;">Je suis arrive</button>
+        <button type="submit" class="f-btn" style="width:100%;height:48px;font-size:15px;font-weight:700;">Je suis arrive</button>
       </form>
       {% elif req.status == 'arrived' %}
       <form method="post" action="{{ url_for('artisan_mission_action', request_id=req.id) }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
         <input type="hidden" name="action" value="in_progress" />
-        <button type="submit" class="fx-btn" style="width:100%;height:48px;font-size:15px;font-weight:700;background:#F59E0B;border-color:#F59E0B;">Commencer l'intervention</button>
+        <button type="submit" class="f-btn" style="width:100%;height:48px;font-size:15px;font-weight:700;background:#F59E0B;border-color:#F59E0B;">Commencer l'intervention</button>
       </form>
       {% elif req.status == 'in_progress' %}
       <form method="post" action="{{ url_for('artisan_mission_action', request_id=req.id) }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
         <input type="hidden" name="action" value="completed" />
-        <button type="submit" class="fx-btn" style="width:100%;height:48px;font-size:15px;font-weight:700;background:#22C55E;border-color:#22C55E;">Terminer l'intervention</button>
+        <button type="submit" class="f-btn" style="width:100%;height:48px;font-size:15px;font-weight:700;background:#22C55E;border-color:#22C55E;">Terminer l'intervention</button>
       </form>
       {% elif req.status not in ('pending', 'REQUESTED') %}
       <div style="font-size:13px;color:var(--slate);">Cette mission est terminee ou annulee.</div>
@@ -96,7 +96,7 @@
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
         <input type="hidden" name="action" value="add_note" />
         <textarea name="note" rows="3" placeholder="Decrivez ce qui a ete effectue..." style="width:100%;border:1px solid var(--line);border-radius:8px;padding:10px;font-size:13px;resize:vertical;"></textarea>
-        <button type="submit" class="fx-btn" style="width:100%;height:42px;font-size:14px;margin-top:10px;">Ajouter une note</button>
+        <button type="submit" class="f-btn" style="width:100%;height:42px;font-size:14px;margin-top:10px;">Ajouter une note</button>
       </form>
     </div>
     {% endif %}
@@ -121,7 +121,7 @@
         <label style="display:block;width:100%;margin-bottom:10px;">
           <input type="file" accept="image/*" capture="environment" id="photo-input" style="font-size:13px;" />
         </label>
-        <button type="submit" class="fx-btn ghost" style="width:100%;height:42px;font-size:14px;display:none;" id="photo-submit">Ajouter cette photo</button>
+        <button type="submit" class="f-btn ghost" style="width:100%;height:42px;font-size:14px;display:none;" id="photo-submit">Ajouter cette photo</button>
       </form>
     </div>
 
@@ -153,8 +153,8 @@
           <option value="autre">Autre</option>
         </select>
         <div style="display:flex;gap:10px;">
-          <button type="button" class="fx-btn ghost" style="flex:1;height:42px;" onclick="document.getElementById('refus-modal').style.display='none'">Annuler</button>
-          <button type="submit" class="fx-btn" style="flex:1;height:42px;background:#EF4444;border-color:#EF4444;">Confirmer</button>
+          <button type="button" class="f-btn ghost" style="flex:1;height:42px;" onclick="document.getElementById('refus-modal').style.display='none'">Annuler</button>
+          <button type="submit" class="f-btn" style="flex:1;height:42px;background:#EF4444;border-color:#EF4444;">Confirmer</button>
         </div>
       </form>
     </div>

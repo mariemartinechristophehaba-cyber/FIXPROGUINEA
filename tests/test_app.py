@@ -1196,5 +1196,81 @@ class InterventionTests(FixProTestCase):
         self.assertIn("cree", r["response"].lower())
 
 
+
+
+class TechnicianDashboardTests(FixProTestCase):
+    """Espace technicien : missions, statuts, permissions."""
+
+    def test_technician_dashboard_requires_artisan_role(self):
+        self.register_client()
+        self.login("+224620000000")
+        response = self.client.get("/dashboard/technicien", follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
+
+    def test_technician_sees_only_his_missions(self):
+        self.register_client(phone="+224620000000")
+        self.client.get("/logout")
+        self.register_artisan("t1@example.com", phone="+224621111111", name="T1 Diallo")
+        self.client.get("/logout")
+        self.register_artisan("t2@example.com", phone="+224622222222", name="T2 Bah")
+        self.login("+224621111111")
+
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute(
+                "INSERT INTO requests (client_id, artisan_id, reference, title, description, service, category, address, status, urgency, phone_contact, estimated_price, commission_rate, commission_amount, professional_amount, payment_status, created_at, updated_at)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (1, 2, "FP-000001", "Fuite", "desc", "Plombier", "Plombier", "Kaloum", "REQUESTED", "urgent", "+2246000", 100000, 0.1, 10000, 90000, "PENDING", "2026-01-01", "2026-01-01"))
+            conn.execute(
+                "INSERT INTO requests (client_id, artisan_id, reference, title, description, service, category, address, status, urgency, phone_contact, estimated_price, commission_rate, commission_amount, professional_amount, payment_status, created_at, updated_at)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (1, 3, "FP-000002", "Serrure", "desc", "Serrurier", "Serrurier", "Kaloum", "REQUESTED", "normal", "+2246000", 100000, 0.1, 10000, 90000, "PENDING", "2026-01-01", "2026-01-01"))
+            conn.commit()
+        finally:
+            conn.close()
+
+        response = self.client.get("/dashboard/technicien", follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Fuite", response.data)
+        self.assertNotIn(b"Serrure", response.data)
+
+    def test_technician_mission_status_workflow(self):
+        self.register_client(phone="+224620000000")
+        self.client.get("/logout")
+        self.register_artisan("t1@example.com", phone="+224621111111", name="T1 Diallo")
+        self.login("+224621111111")
+
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute(
+                "INSERT INTO requests (client_id, artisan_id, reference, title, description, service, category, address, status, urgency, phone_contact, estimated_price, commission_rate, commission_amount, professional_amount, payment_status, created_at, updated_at)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (1, 2, "FP-000003", "Fuite", "desc", "Plombier", "Plombier", "Kaloum", "assigned", "urgent", "+2246000", 100000, 0.1, 10000, 90000, "PENDING", "2026-01-01", "2026-01-01"))
+            conn.commit()
+        finally:
+            conn.close()
+
+        for action, expected in [
+            ("en_route", "en_route"),
+            ("arrived", "arrived"),
+            ("in_progress", "in_progress"),
+            ("completed", "completed"),
+        ]:
+            response = self.client.post(
+                "/missions/1/action",
+                data={"action": action},
+                follow_redirects=True)
+            self.assertEqual(response.status_code, 200, action)
+
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            row = conn.execute("SELECT status FROM requests WHERE id = 1").fetchone()
+            self.assertEqual(row["status"], "completed")
+            history = conn.execute("SELECT COUNT(*) AS n FROM intervention_history WHERE request_id = 1").fetchone()
+            self.assertGreaterEqual(history["n"], 4)
+        finally:
+            conn.close()
+
+
 if __name__ == "__main__":
     unittest.main()
