@@ -51,8 +51,10 @@ _admin_dashboard = app.config.get("ADMIN_DASHBOARD_URL", "http://localhost:3000"
 _cors_origins = [
     "http://localhost:3000",
     "http://localhost:3001",
+    "http://localhost:3006",
     "http://127.0.0.1:3000",
     "http://127.0.0.1:3001",
+    "http://127.0.0.1:3006",
     _admin_dashboard,
 ]
 if app.config.get("FLASK_ENV", "development") != "development":
