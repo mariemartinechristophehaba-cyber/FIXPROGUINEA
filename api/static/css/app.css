@@ -1169,6 +1169,7 @@ body.no-tabbar .site-footer { padding-bottom: 26px; }
 .artisan-rating svg { color: #f7c873; }
 .artisan-location {
   font-size: 0.78rem; color: var(--muted);
+  overflow-wrap: anywhere;
 }
 .artisan-row-price { margin-top: auto; }
 .artisan-delay { font-size: 0.75rem; color: var(--muted); }
