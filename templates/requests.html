@@ -10,7 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
     * { box-sizing: border-box; }
-    html, body { margin: 0; padding: 0; }
+    html, body { margin: 0; padding: 0; scroll-behavior: smooth; }
     body { font-family: 'Inter', sans-serif; background: #F1F5F9; color: #0F172A; -webkit-font-smoothing: antialiased; }
     a { text-decoration: none; color: inherit; }
 
@@ -32,20 +32,24 @@
 
     .r-tabs {
       display: flex; gap: 8px; padding: 12px 16px; background: #fff; border-bottom: 1px solid #E2E8F0;
+      position: sticky; top: 72px; z-index: 9;
     }
     .r-tabs a {
       flex: 1; text-align: center; padding: 10px; border-radius: 20px; font-size: 13px; font-weight: 600; color: #64748B;
-      background: #F1F5F9;
+      background: #F1F5F9; cursor: pointer; border: none; display: block; font-family: inherit;
     }
     .r-tabs a.active { background: #155EEF; color: #fff; }
 
     .r-main { padding: 14px 16px; }
+    .r-tab-content { display: none; }
+    .r-tab-content.active { display: block; }
     .r-section { margin: 6px 0 12px; font-size: 15px; font-weight: 700; color: #0F172A; }
     .r-card {
       background: #fff; border-radius: 20px; padding: 16px; margin-bottom: 12px;
       box-shadow: 0 2px 12px rgba(0,0,0,.04);
-      display: block;
+      display: block; transition: transform .08s;
     }
+    .r-card:active { transform: scale(.99); }
     .r-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
     .r-person { display: flex; align-items: center; gap: 12px; }
     .r-avatar { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; background: #E2E8F0; }
@@ -53,7 +57,7 @@
     .r-meta { margin: 2px 0 0; font-size: 12px; color: #64748B; }
     .r-pill {
       font-size: 11px; font-weight: 700; padding: 5px 10px; border-radius: 20px;
-      display: inline-flex; align-items: center; gap: 4px;
+      display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;
     }
     .r-pill-dot { width: 6px; height: 6px; border-radius: 50%; }
     .r-pill.green { background: #DCFCE7; color: #166534; }
@@ -67,7 +71,7 @@
     .r-pill.gray { background: #F1F5F9; color: #475569; }
     .r-pill.gray .r-pill-dot { background: #94A3B8; }
 
-    .r-problem { margin: 0 0 10px; font-size: 17px; font-weight: 700; color: #0F172A; }
+    .r-problem { margin: 0 0 10px; font-size: 17px; font-weight: 700; color: #0F172A; line-height: 1.25; }
     .r-row { margin: 0 0 8px; font-size: 13px; color: #475569; display: flex; align-items: center; gap: 8px; }
     .r-row svg { width: 16px; height: 16px; color: #94A3B8; flex-shrink: 0; }
     .r-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding-top: 12px; border-top: 1px solid #F1F5F9; }
@@ -94,6 +98,7 @@
       position: relative; top: -18px; width: 50px; height: 50px; border-radius: 50%; background: #155EEF; color: #fff;
       display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(21,94,239,.35);
     }
+    .r-nav .r-plus.active { background: #0F172A; box-shadow: 0 0 0 3px #155EEF; }
     .r-nav .r-plus svg { width: 26px; height: 26px; }
   </style>
 </head>
@@ -105,7 +110,7 @@
       </a>
       <div class="r-title">
         <h1>{% if user.role == 'client' %}Mes reservations{% else %}Missions{% endif %}</h1>
-        <p>{{ requests|length }} demande{% if requests|length > 1 %}s{% endif %}</p>
+        <p>{{ requests|length }} {{ 'demande' if user.role == 'client' else 'mission' }}{% if requests|length > 1 %}s{% endif %}</p>
       </div>
       <a href="{{ url_for('request_new') }}" class="r-new" aria-label="Nouvelle reservation">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
@@ -113,102 +118,106 @@
     </header>
 
     <div class="r-tabs">
-      <a class="active" href="#a-venir">A venir</a>
-      <a href="#historique">Historique</a>
+      <a class="r-tab-trigger active" data-tab="upcoming" role="button" tabindex="0">A venir</a>
+      <a class="r-tab-trigger" data-tab="past" role="button" tabindex="0">Historique</a>
     </div>
 
     <main class="r-main">
-      <h2 class="r-section" id="a-venir">A venir</h2>
-      {% set upcoming_count = namespace(value=0) %}
-      {% for item in requests %}
-        {% if item.status not in ('completed','cancelled','rejected') %}
-          {% set upcoming_count.value = upcoming_count.value + 1 %}
-          <a class="r-card" href="{{ url_for('request_detail', request_id=item.id) }}">
-            <div class="r-top">
-              <div class="r-person">
-                <img class="r-avatar" src="{{ url_for('static', filename='img/fixpro-avatar.png') }}" alt="" />
-                <div>
-                  <h3 class="r-name">{{ item.artisan_name or 'Technicien FixPro' }}</h3>
-                  <p class="r-meta">{{ item.category or 'Intervention' }}</p>
+      <div class="r-tab-content active" data-tab="upcoming">
+        <h2 class="r-section" id="a-venir">A venir</h2>
+        {% set upcoming_count = namespace(value=0) %}
+        {% for item in requests %}
+          {% if item.status not in ('completed','cancelled','rejected') %}
+            {% set upcoming_count.value = upcoming_count.value + 1 %}
+            <a class="r-card" href="{{ url_for('request_detail', request_id=item.id) }}">
+              <div class="r-top">
+                <div class="r-person">
+                  <img class="r-avatar" src="{{ url_for('static', filename='img/fixpro-avatar.png') }}" alt="" />
+                  <div>
+                    <h3 class="r-name">{{ item.artisan_name or 'Professionnel' }}</h3>
+                    <p class="r-meta">{{ 'Client' if user.role == 'artisan' else 'Technicien' }} · {{ item.category or 'Intervention' }}</p>
+                  </div>
                 </div>
+                {% if item.status in ('pending','REQUESTED') %}
+                  <span class="r-pill amber"><span class="r-pill-dot"></span> En attente</span>
+                {% elif item.status == 'assigned' %}
+                  <span class="r-pill blue"><span class="r-pill-dot"></span> Attribuee</span>
+                {% elif item.status in ('in_progress','quote_accepted','en_route','arrived') %}
+                  <span class="r-pill blue"><span class="r-pill-dot"></span> En cours</span>
+                {% elif item.status == 'quote_proposed' %}
+                  <span class="r-pill amber"><span class="r-pill-dot"></span> Devis</span>
+                {% else %}
+                  <span class="r-pill blue"><span class="r-pill-dot"></span>{{ item.status }}</span>
+                {% endif %}
               </div>
-              {% if item.status in ('pending','REQUESTED') %}
-                <span class="r-pill amber"><span class="r-pill-dot"></span> En attente</span>
-              {% elif item.status == 'assigned' %}
-                <span class="r-pill blue"><span class="r-pill-dot"></span> Attribuee</span>
-              {% elif item.status in ('in_progress','quote_accepted','en_route','arrived') %}
-                <span class="r-pill blue"><span class="r-pill-dot"></span> En cours</span>
-              {% elif item.status == 'quote_proposed' %}
-                <span class="r-pill amber"><span class="r-pill-dot"></span> Devis</span>
-              {% else %}
-                <span class="r-pill blue"><span class="r-pill-dot"></span>{{ item.status }}</span>
+              <h4 class="r-problem">{{ item.title or 'Demande sans titre' }}</h4>
+              <p class="r-row">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                {{ item.address or 'Conakry' }}
+              </p>
+              {% if item.requested_time %}
+              <p class="r-row">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                {{ item.requested_time }}
+              </p>
               {% endif %}
-            </div>
-            <h4 class="r-problem">{{ item.title or 'Demande sans titre' }}</h4>
-            <p class="r-row">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-              {{ item.address or 'Conakry' }}
-            </p>
-            {% if item.requested_time %}
-            <p class="r-row">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-              {{ item.requested_time }}
-            </p>
-            {% endif %}
-            <div class="r-foot">
-              <span class="r-date">{{ item.created_at[:10] if item.created_at else '' }}</span>
-              {% if item.budget %}<span class="r-price">{{ "{:,}".format(item.budget|int).replace(",", " ") }} GNF</span>{% endif %}
-            </div>
-          </a>
+              <div class="r-foot">
+                <span class="r-date">{{ item.created_at[:10] if item.created_at else '' }}</span>
+                {% if item.budget %}<span class="r-price">{{ "{:,}".format(item.budget|int).replace(",", " ") }} GNF</span>{% endif %}
+              </div>
+            </a>
+          {% endif %}
+        {% endfor %}
+        {% if upcoming_count.value == 0 %}
+          <div class="r-empty">
+            <strong>Aucune reservation a venir</strong>
+            <p>Reservez un professionnel pour voir vos demandes ici.</p>
+          </div>
         {% endif %}
-      {% endfor %}
-      {% if upcoming_count.value == 0 %}
-        <div class="r-empty">
-          <strong>Aucune reservation a venir</strong>
-          <p>Reservez un professionnel pour voir vos demandes ici.</p>
-        </div>
-      {% endif %}
+      </div>
 
-      <h2 class="r-section" id="historique">Historique</h2>
-      {% set past_count = namespace(value=0) %}
-      {% for item in requests %}
-        {% if item.status in ('completed','cancelled','rejected') %}
-          {% set past_count.value = past_count.value + 1 %}
-          <a class="r-card" href="{{ url_for('request_detail', request_id=item.id) }}">
-            <div class="r-top">
-              <div class="r-person">
-                <img class="r-avatar" src="{{ url_for('static', filename='img/fixpro-avatar.png') }}" alt="" />
-                <div>
-                  <h3 class="r-name">{{ item.artisan_name or 'Technicien FixPro' }}</h3>
-                  <p class="r-meta">{{ item.category or 'Intervention' }}</p>
+      <div class="r-tab-content" data-tab="past">
+        <h2 class="r-section" id="historique">Historique</h2>
+        {% set past_count = namespace(value=0) %}
+        {% for item in requests %}
+          {% if item.status in ('completed','cancelled','rejected') %}
+            {% set past_count.value = past_count.value + 1 %}
+            <a class="r-card" href="{{ url_for('request_detail', request_id=item.id) }}">
+              <div class="r-top">
+                <div class="r-person">
+                  <img class="r-avatar" src="{{ url_for('static', filename='img/fixpro-avatar.png') }}" alt="" />
+                  <div>
+                    <h3 class="r-name">{{ item.artisan_name or 'Professionnel' }}</h3>
+                    <p class="r-meta">{{ 'Client' if user.role == 'artisan' else 'Technicien' }} · {{ item.category or 'Intervention' }}</p>
+                  </div>
                 </div>
+                {% if item.status == 'completed' %}
+                  <span class="r-pill green"><span class="r-pill-dot"></span> Terminee</span>
+                {% elif item.status in ('cancelled','rejected') %}
+                  <span class="r-pill gray"><span class="r-pill-dot"></span> Annulee</span>
+                {% else %}
+                  <span class="r-pill gray"><span class="r-pill-dot"></span>{{ item.status }}</span>
+                {% endif %}
               </div>
-              {% if item.status == 'completed' %}
-                <span class="r-pill green"><span class="r-pill-dot"></span> Terminee</span>
-              {% elif item.status in ('cancelled','rejected') %}
-                <span class="r-pill gray"><span class="r-pill-dot"></span> Annulee</span>
-              {% else %}
-                <span class="r-pill gray"><span class="r-pill-dot"></span>{{ item.status }}</span>
-              {% endif %}
-            </div>
-            <h4 class="r-problem">{{ item.title or 'Demande sans titre' }}</h4>
-            <p class="r-row">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-              {{ item.address or 'Conakry' }}
-            </p>
-            <div class="r-foot">
-              <span class="r-date">{{ item.created_at[:10] if item.created_at else '' }}</span>
-              {% if item.quote_amount %}<span class="r-price">{{ "{:,}".format(item.quote_amount|int).replace(",", " ") }} GNF</span>{% endif %}
-            </div>
-          </a>
+              <h4 class="r-problem">{{ item.title or 'Demande sans titre' }}</h4>
+              <p class="r-row">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                {{ item.address or 'Conakry' }}
+              </p>
+              <div class="r-foot">
+                <span class="r-date">{{ item.created_at[:10] if item.created_at else '' }}</span>
+                {% if item.quote_amount %}<span class="r-price">{{ "{:,}".format(item.quote_amount|int).replace(",", " ") }} GNF</span>{% endif %}
+              </div>
+            </a>
+          {% endif %}
+        {% endfor %}
+        {% if past_count.value == 0 %}
+          <div class="r-empty">
+            <strong>Aucun historique</strong>
+            <p>Vos interventions terminees apparaitront ici.</p>
+          </div>
         {% endif %}
-      {% endfor %}
-      {% if past_count.value == 0 %}
-        <div class="r-empty">
-          <strong>Aucun historique</strong>
-          <p>Vos interventions terminees apparaitront ici.</p>
-        </div>
-      {% endif %}
+      </div>
     </main>
 
     <nav class="r-nav">
@@ -220,7 +229,7 @@
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
         Recherche
       </a>
-      <a class="r-plus" href="{{ url_for('request_new') }}" aria-label="Nouvelle reservation">
+      <a class="r-plus active" href="{{ url_for('requests_list') }}" aria-label="Reserver">
         <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
       </a>
       <a href="{{ url_for('client_messages') }}">
@@ -233,5 +242,20 @@
       </a>
     </nav>
   </div>
+
+  <script>
+    (function() {
+      const triggers = document.querySelectorAll('.r-tab-trigger');
+      const contents = document.querySelectorAll('.r-tab-content');
+      function switchTab(tab) {
+        triggers.forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+        contents.forEach(c => c.classList.toggle('active', c.dataset.tab === tab));
+      }
+      triggers.forEach(t => {
+        t.addEventListener('click', () => switchTab(t.dataset.tab));
+        t.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); switchTab(t.dataset.tab); } });
+      });
+    })();
+  </script>
 </body>
 </html>
