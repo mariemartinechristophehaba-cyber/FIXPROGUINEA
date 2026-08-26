@@ -8,6 +8,10 @@
 {% block extra_head %}
 <meta name="csrf-token" content="{{ csrf_token() }}" />
 <style>
+  .topbar, .support-fab, .site-footer, .tabbar, .sidebar, .appbar, .mobile-nav { display: none !important; }
+  body { padding-bottom: 0 !important; }
+  svg:not([width]) { width: 24px; height: 24px; }
+
   .t-root { min-height:100vh; background:#F8FAFC; padding-bottom:84px; font-family:Inter,sans-serif; color:#0F172A; }
   .t-hero { position:relative; height:240px; background:url('{{ url_for('static', filename='img/technician-hero-v2.jpg') }}') center/cover no-repeat; border-radius:0 0 28px 28px; overflow:hidden; }
   .t-hero::before { content:''; position:absolute; inset:0; background:linear-gradient(180deg, rgba(15,23,42,.55) 0%, rgba(15,23,42,.25) 60%, rgba(15,23,42,.45) 100%); }
