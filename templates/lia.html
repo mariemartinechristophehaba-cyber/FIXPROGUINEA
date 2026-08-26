@@ -69,16 +69,29 @@
     .l-nav .l-plus svg { width: 26px; height: 26px; }
 
     @media (min-width: 768px) {
-      body { background: #E2E8F0; }
+      body { background: #F1F5F9; }
       .l-wrap {
-        max-width: 720px;
-        height: calc(100vh - 40px);
-        margin: 20px auto;
-        border-radius: 24px;
+        max-width: 900px;
+        height: 100vh;
+        margin: 0 auto;
+        border-radius: 0;
         overflow: hidden;
-        box-shadow: 0 24px 80px rgba(0,0,0,.12);
+        box-shadow: none;
       }
-      .l-header { border-radius: 24px 24px 0 0; }
+      .l-header { border-radius: 0; }
+      .l-back { display: none; }
+      .l-body { max-width: 800px; margin: 0 auto; padding: 20px 24px 100px; }
+      .l-footer {
+        left: 50%;
+        right: auto;
+        width: 100%;
+        max-width: 800px;
+        transform: translateX(-50%);
+        padding: 12px 24px;
+        border: 1px solid #E2E8F0;
+        border-bottom: none;
+      }
+      .l-nav { display: none; }
       .l-bubble { font-size: 16px; }
       .l-input { font-size: 16px; }
     }
