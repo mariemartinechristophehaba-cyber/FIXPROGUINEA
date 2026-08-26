@@ -403,32 +403,7 @@ export default function FixProLiaPage() {
                   <p className='text-center text-[12px]' style={{ color: C.inkMuted }}>Chargement...</p>
                 )}
 
-                {thread.map((t) => (
-                  <React.Fragment key={t.id}>
-                    <div className='mb-3' style={{ display: 'flex', justifyContent: 'flex-start' }}>
-                      <div
-                        className='rounded-2xl rounded-tl-sm px-3.5 py-2.5 max-w-[85%]'
-                        style={{ background: C.clientBg, color: '#fff', boxShadow: SHADOW_SM }}
-                      >
-                        <p className='fx-body text-[12.5px]'>{t.message}</p>
-                        <p className='text-[9px] mt-1 opacity-70 fx-mono'>{formatDate(t.created_at)}</p>
-                      </div>
-                    </div>
-                    {t.reply && (
-                      <div className='mb-3' style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                        <div
-                          className='rounded-2xl rounded-tr-sm px-3.5 py-2.5 max-w-[85%]'
-                          style={{ background: C.aiBg, color: C.ink, boxShadow: SHADOW_SM }}
-                        >
-                          <p className='fx-body text-[12.5px]'>{t.reply}</p>
-                          <p className='text-[9px] mt-1 fx-mono' style={{ color: C.inkMuted }}>{formatDate(t.created_at)} · Lia</p>
-                        </div>
-                      </div>
-                    )}
-                  </React.Fragment>
-                ))}
-
-                {messages.length > 0 && thread.length === 0 && (
+                {isConv ? (
                   <>
                     {messages.map((m, idx) => {
                       const bubble = roleBubble(m.sender_role);
@@ -451,11 +426,40 @@ export default function FixProLiaPage() {
                         </div>
                       );
                     })}
+                    {messages.length === 0 && !msgLoading && (
+                      <p className='text-center text-[12px] mt-8' style={{ color: C.inkMuted }}>Aucun message.</p>
+                    )}
                   </>
-                )}
-
-                {messages.length === 0 && !msgLoading && !selected.reply && (
-                  <p className='text-center text-[12px] mt-8' style={{ color: C.inkMuted }}>Aucun message.</p>
+                ) : (
+                  <>
+                    {thread.map((t) => (
+                      <React.Fragment key={t.id}>
+                        <div className='mb-3' style={{ display: 'flex', justifyContent: 'flex-start' }}>
+                          <div
+                            className='rounded-2xl rounded-tl-sm px-3.5 py-2.5 max-w-[85%]'
+                            style={{ background: C.clientBg, color: '#fff', boxShadow: SHADOW_SM }}
+                          >
+                            <p className='fx-body text-[12.5px]'>{t.message}</p>
+                            <p className='text-[9px] mt-1 opacity-70 fx-mono'>{formatDate(t.created_at)}</p>
+                          </div>
+                        </div>
+                        {t.reply && (
+                          <div className='mb-3' style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                            <div
+                              className='rounded-2xl rounded-tr-sm px-3.5 py-2.5 max-w-[85%]'
+                              style={{ background: C.aiBg, color: C.ink, boxShadow: SHADOW_SM }}
+                            >
+                              <p className='fx-body text-[12.5px]'>{t.reply}</p>
+                              <p className='text-[9px] mt-1 fx-mono' style={{ color: C.inkMuted }}>{formatDate(t.created_at)} · Lia</p>
+                            </div>
+                          </div>
+                        )}
+                      </React.Fragment>
+                    ))}
+                    {thread.length === 0 && !msgLoading && (
+                      <p className='text-center text-[12px] mt-8' style={{ color: C.inkMuted }}>Aucun message.</p>
+                    )}
+                  </>
                 )}
                 <div ref={messagesEndRef} />
               </div>

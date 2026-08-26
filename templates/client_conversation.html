@@ -193,6 +193,28 @@
   }
 
   if (form) form.addEventListener('submit', handleSend);
+
+  async function pollMessages() {
+    try {
+      const r = await fetch(window.location.pathname, {
+        headers: {'X-Requested-With': 'XMLHttpRequest'}
+      });
+      if (!r.ok) return;
+      const data = await r.json();
+      if (data.ok && data.messages) {
+        const existingIds = new Set(Array.from(b.querySelectorAll('.m-msg[data-msg-id]')).map(el => el.dataset.msgId));
+        data.messages.forEach(m => {
+          if (!existingIds.has(String(m.id))) {
+            appendMessage(m.sender_role, m.content, m.created_at, m.id);
+          }
+        });
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+  setInterval(pollMessages, 4000);
+
   updateBtn();
 </script>
 {% endblock %}

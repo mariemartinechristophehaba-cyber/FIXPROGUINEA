@@ -5468,6 +5468,16 @@ def client_conversation(conversation_id):
             " WHERE conversation_id = ? AND sender_role = 'admin'",
             (conversation_id,))
         conn.commit()
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({
+                "ok": True,
+                "conversation": dict(conv),
+                "messages": [
+                    {"id": m["id"], "content": m["content"], "sender_role": m["sender_role"],
+                     "created_at": m["created_at"], "sender_name": m["sender_name"]}
+                    for m in messages
+                ]
+            })
         artisan = None
         if conv.get("artisan_id"):
             artisan = conn.execute(
