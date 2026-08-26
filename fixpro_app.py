@@ -25,8 +25,8 @@ from functools import wraps
 from authlib.integrations.flask_client import OAuth
 from abc import ABC, abstractmethod
 from email_validator import EmailNotValidError, validate_email
-from flask import (Flask, flash, g, jsonify, redirect, render_template, request,
-                   session, url_for)
+from flask import (Flask, flash, g, jsonify, redirect, render_template,
+                   render_template_string, request, session, url_for)
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_cors import CORS
@@ -36,12 +36,16 @@ from werkzeug.security import check_password_hash, generate_password_hash
 import ai_service
 import db
 import storage
-from config import get_config, setup_logging
+from config import BASE_DIR, get_config, setup_logging
+from dotenv import dotenv_values
 
 config = get_config()
 ADMIN_DEMO = False
 app = Flask(__name__, static_folder="api/static", static_url_path="/static")
 app.config.from_object(config)
+_dotenv = dotenv_values(BASE_DIR / ".env")
+if _dotenv.get("DEV_ROLE"):
+    app.config["DEV_ROLE"] = _dotenv.get("DEV_ROLE").lower()
 
 logger = setup_logging(app)
 csrf = CSRFProtect(app)
@@ -2650,16 +2654,18 @@ def artisan_dashboard():
     finally:
         conn.close()
 
-    return render_template("dashboard_artisan.html", user=user,
-                           stats={"nouvelles": nouvelles, "assignees": assignees,
-                                  "urgentes": urgentes, "a_venir": a_venir,
-                                  "terminees": terminees, "revenus": revenus,
-                                  "note_avg": note["avg"], "note_count": note["cnt"]},
-                           active_mission=active_mission, missions=missions,
-                           historique=missions_historique, avis=avis,
-                           unread_count=unread_count,
-                           services_disponibles=services_disponibles,
-                           artisan_services_ids=artisan_services_ids)
+    with app.open_resource("templates/dashboard_artisan.html", "r", encoding="utf-8") as f:
+        return render_template_string(
+            f.read(), user=user,
+            stats={"nouvelles": nouvelles, "assignees": assignees,
+                   "urgentes": urgentes, "a_venir": a_venir,
+                   "terminees": terminees, "revenus": revenus,
+                   "note_avg": note["avg"], "note_count": note["cnt"]},
+            active_mission=active_mission, missions=missions,
+            historique=missions_historique, avis=avis,
+            unread_count=unread_count,
+            services_disponibles=services_disponibles,
+            artisan_services_ids=artisan_services_ids)
 
 
 @app.route("/dashboard/technicien/services", methods=["POST"])
