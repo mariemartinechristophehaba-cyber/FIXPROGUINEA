@@ -229,8 +229,9 @@ def check_artisan_verification():
         return None
     public_endpoints = {
         "artisan_pending", "logout", "static", "login", "register",
-        "client_signup", "google_signup", "google_callback",
+        "register_artisan", "client_signup", "google_signup", "google_callback",
         "complete_profile", "health", "health-db", "index", "contact",
+        "lia", "api_lia_chat",
     }
     if request.endpoint in public_endpoints or request.endpoint is None:
         return None
