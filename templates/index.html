@@ -247,17 +247,15 @@
     <img src="{{ url_for('static', filename='img/icon-calendar.svg') }}" width="24" height="24" alt="" />
     <span class="f-main-text">Réserver</span>
   </a>
-  {% if nav_user %}
   <a href="{{ url_for('client_messages') }}">
     <img src="{{ url_for('static', filename='img/icon-message-circle.svg') }}" width="22" height="22" alt="" />
     Messages
     {% if unread_count %}<span class="f-notif">{{ unread_count }}</span>{% endif %}
   </a>
-  <a href="{{ url_for('profile') }}">
+  <a href="{% if nav_user %}{{ url_for('profile') }}{% else %}{{ url_for('login') }}{% endif %}">
     <img src="{{ url_for('static', filename='img/icon-user.svg') }}" width="22" height="22" alt="" />
     Profil
   </a>
-  {% endif %}
 </nav>
 
 <style>
