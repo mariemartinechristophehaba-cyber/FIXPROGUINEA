@@ -1,91 +1,226 @@
 ﻿{% extends 'base.html' %}
 {% block title %}Tableau de bord - Technicien{% endblock %}
+{% block header %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block tabbar %}{% endblock %}
 
 {% block extra_head %}
 <meta name="csrf-token" content="{{ csrf_token() }}" />
+<style>
+  .t-root { min-height:100vh; background:#f5f7fa; padding-bottom:90px; font-family:Inter,sans-serif; }
+  .t-hero { position:relative; background:url('{{ url_for('static', filename='img/technician-hero-v2.jpg') }}') center/cover no-repeat; border-radius:0 0 24px 24px; min-height:220px; overflow:hidden; }
+  .t-hero::before { content:''; position:absolute; inset:0; background:linear-gradient(160deg, rgba(21,94,239,.92) 0%, rgba(12,58,168,.85) 100%); }
+  .t-hero-inner { position:relative; z-index:2; padding:16px; color:#fff; }
+  .t-hero-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; }
+  .t-hero-top svg { width:22px; height:22px; }
+  .t-hero-logo { font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:18px; display:flex; align-items:center; gap:8px; }
+  .t-hero-logo img { width:28px; height:28px; }
+  .t-hero h1 { font-size:28px; font-weight:700; line-height:1.15; margin:0 0 8px; }
+  .t-hero p { margin:0; font-size:14px; opacity:.9; max-width:260px; line-height:1.45; }
+
+  .t-container { padding:0 16px; margin-top:-42px; position:relative; z-index:3; }
+  .t-card { background:#fff; border-radius:18px; padding:16px; box-shadow:0 4px 18px rgba(0,0,0,.06); margin-bottom:14px; }
+  .t-profile { display:grid; grid-template-columns:64px 1fr; gap:12px; align-items:center; }
+  .t-avatar { width:64px; height:64px; border-radius:50%; object-fit:cover; grid-row:1 / 3; border:2px solid #fff; box-shadow:0 0 0 2px #10B981; }
+  .t-name { font-size:16px; font-weight:700; color:#0A1122; margin:0; }
+  .t-meta { font-size:13px; color:#64748B; margin:2px 0 0; display:flex; align-items:center; gap:6px; }
+  .t-meta img, .t-meta svg { width:14px; height:14px; }
+  .t-status { display:flex; align-items:center; justify-content:space-between; margin-top:10px; grid-column:1 / 3; }
+  .t-status-left { display:flex; align-items:center; gap:8px; font-size:13px; color:#10B981; font-weight:600; }
+  .t-dot { width:8px; height:8px; background:#10B981; border-radius:50%; }
+  .t-status-right { background:#F0FDF4; color:#10B981; font-size:12px; font-weight:600; padding:5px 10px; border-radius:20px; display:flex; align-items:center; gap:6px; }
+  .t-status-right svg { width:12px; height:12px; }
+
+  .t-mission { padding:0; overflow:hidden; }
+  .t-mission-header { display:flex; justify-content:space-between; align-items:center; padding:14px 16px; border-bottom:1px solid #f1f5f9; }
+  .t-mission-header h3 { margin:0; font-size:15px; color:#0A1122; }
+  .t-urgent { color:#EF4444; font-weight:700; font-size:13px; }
+  .t-mission-body { display:grid; grid-template-columns:1fr 110px; gap:10px; padding:14px 16px; }
+  .t-mission-info { display:flex; gap:10px; }
+  .t-mission-icon { width:46px; height:46px; background:#FEF2F2; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .t-mission-icon img, .t-mission-icon svg { width:26px; height:26px; color:#155EEF; }
+  .t-mission-title { font-size:12px; color:#64748B; margin:0 0 2px; }
+  .t-mission-ref { font-size:18px; font-weight:700; color:#0A1122; margin:0; }
+  .t-mission-sub { font-size:13px; font-weight:600; color:#0A1122; margin:4px 0 0; }
+  .t-mission-row { font-size:12px; color:#64748B; margin:6px 0 0; display:flex; align-items:center; gap:5px; }
+  .t-mission-row img, .t-mission-row svg { width:14px; height:14px; color:#155EEF; }
+  .t-badge-new { display:inline-flex; align-items:center; gap:5px; background:#FEE2E2; color:#B91C1C; font-size:11px; font-weight:700; padding:4px 8px; border-radius:20px; margin-top:8px; }
+  .t-badge-new .dot { width:6px; height:6px; background:#EF4444; border-radius:50%; }
+  .t-mission-map { width:100%; height:110px; background:#e2e8f0; border-radius:12px; overflow:hidden; position:relative; }
+  .t-mission-map img { width:100%; height:100%; object-fit:cover; }
+  .t-mission-map .pin { position:absolute; top:50%; left:50%; transform:translate(-50%,-100%); width:24px; height:24px; }
+  .t-btn { display:flex; align-items:center; justify-content:center; gap:8px; background:#155EEF; color:#fff; font-size:14px; font-weight:600; text-decoration:none; border-radius:0 0 18px 18px; padding:14px 16px; margin:0 -16px -16px; }
+  .t-btn svg { width:18px; height:18px; }
+
+  .t-section-title { font-size:15px; font-weight:700; color:#0A1122; margin:18px 0 10px; padding:0 16px; }
+  .t-actions { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; padding:0 16px; }
+  .t-action { background:#fff; border-radius:14px; padding:12px 6px; text-align:center; text-decoration:none; color:#0A1122; font-size:12px; font-weight:600; box-shadow:0 2px 8px rgba(0,0,0,.04); position:relative; }
+  .t-action svg { width:26px; height:26px; color:#155EEF; margin-bottom:6px; }
+  .t-action .badge { position:absolute; top:8px; right:8px; background:#EF4444; color:#fff; font-size:10px; font-weight:700; width:18px; height:18px; border-radius:50%; display:flex; align-items:center; justify-content:center; }
+
+  .t-bottom { position:fixed; bottom:0; left:0; right:0; background:#fff; border-top:1px solid #E2E8F0; display:flex; justify-content:space-around; align-items:center; padding:8px 0 calc(8px + env(safe-area-inset-bottom)); z-index:50; }
+  .t-bottom a { display:flex; flex-direction:column; align-items:center; gap:4px; color:#94A3B8; font-size:11px; text-decoration:none; }
+  .t-bottom a.active { color:#155EEF; }
+  .t-bottom svg { width:22px; height:22px; }
+  .t-bottom .center { width:52px; height:52px; background:#155EEF; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; margin-top:-26px; box-shadow:0 4px 12px rgba(21,94,239,.35); }
+  .t-bottom .center svg { width:26px; height:26px; }
+
+  .t-empty { padding:30px 16px; text-align:center; color:#64748B; font-size:14px; }
+</style>
 {% endblock %}
 
 {% block content %}
-<div class="fx-screen" style="background:var(--paper);padding-bottom:80px;">
-  <div class="fx-top" style="padding:14px 16px 18px;">
-    <div class="row1" style="display:flex;align-items:center;justify-content:space-between;">
-      <a class="fx-brand" href="{{ url_for('index') }}">FixPro</a>
-      <a href="{{ url_for('notifications') }}" style="color:#fff;" aria-label="Notifications"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></a>
-    </div>
-    <div class="fx-loc" style="margin-top:10px;">Bonjour {{ (user.full_name or 'Utilisateur').split(' ')[0] }}</div>
-    <div style="margin-top:6px;font-size:13px;color:#10B981;font-weight:600;">
-      {% if user.availability_status == 'en_ligne' %}Disponible maintenant{% elif user.availability_status == 'occupe' %}Intervention en cours{% else %}Hors ligne{% endif %}
+<div class="t-root">
+  <div class="t-hero">
+    <div class="t-hero-inner">
+      <div class="t-hero-top">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+        <span class="t-hero-logo">
+          <img src="{{ url_for('static', filename='img/icon-wrench.svg') }}" alt="" style="filter:brightness(0) invert(1);" />
+          FixPro
+        </span>
+        <a href="{{ url_for('notifications') }}" style="color:#fff; position:relative;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          {% if unread_count %}<span class="badge" style="position:absolute;top:-4px;right:-4px;width:16px;height:16px;background:#EF4444;color:#fff;font-size:10px;border-radius:50%;display:flex;align-items:center;justify-content:center;">{{ unread_count }}</span>{% endif %}
+        </a>
+      </div>
+      <h1>Bienvenue,<br>{{ (user.full_name or 'Technicien').split(' ')[0] }}</h1>
+      <p>Prêt à intervenir et à aider vos clients aujourd'hui.</p>
     </div>
   </div>
 
-  <div class="fx-list" style="padding:14px 16px 0;">
-    <div class="fx-list-title" style="font-size:16px;font-weight:700;">Aujourd'hui</div>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px;">
-      <div style="background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;text-align:center;">
-        <div style="font-size:20px;font-weight:700;color:#EF4444;">{{ stats.urgentes }}</div>
-        <div style="font-size:11px;color:var(--slate);">Urgente{% if stats.urgentes > 1 %}s{% endif %}</div>
-      </div>
-      <div style="background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;text-align:center;">
-        <div style="font-size:20px;font-weight:700;color:#3B82F6;">{{ stats.a_venir }}</div>
-        <div style="font-size:11px;color:var(--slate);">A venir</div>
-      </div>
-      <div style="background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;text-align:center;">
-        <div style="font-size:20px;font-weight:700;color:#22C55E;">{{ stats.terminees }}</div>
-        <div style="font-size:11px;color:var(--slate);">Terminees</div>
+  <div class="t-container">
+    <div class="t-card t-profile">
+      <img class="t-avatar" src="{{ user.photo_url or url_for('static', filename='img/fixpro-avatar.png') }}" alt="" />
+      <h2 class="t-name">{{ user.full_name or 'Ibrahima Camara' }}</h2>
+      <p class="t-meta">
+        <img src="{{ url_for('static', filename='img/icon-wrench.svg') }}" alt="" />
+        {{ user.profession or 'Plombier' }}
+      </p>
+      <div class="t-status">
+        <div class="t-status-left"><span class="t-dot"></span> Disponible</div>
+        <div class="t-status-right">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+          En ligne
+        </div>
       </div>
     </div>
 
     {% if active_mission %}
-    <div class="fx-list-title" style="margin-top:18px;">Mission en cours</div>
-    <a href="{{ url_for('artisan_mission', request_id=active_mission.id) }}" class="fx-card" style="display:block;text-decoration:none;color:inherit;background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:18px;border-left:4px solid {% if active_mission.urgency == 'urgent' %}#EF4444{% else %}#F59E0B{% endif %};">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
-        <span style="font-size:13px;font-weight:700;color:var(--ink);">{{ active_mission.reference or '#' + active_mission.id|string }}</span>
-        <span class="pill" style="{% if active_mission.urgency == 'urgent' %}background:#FEE2E2;color:#B91C1C;{% else %}background:#FEF3C7;color:#B45309;{% endif %}font-size:11px;padding:4px 8px;border-radius:20px;">{{ active_mission.urgency|upper }}</span>
+    <div class="t-card t-mission">
+      <div class="t-mission-header">
+        <h3>Mission actuelle</h3>
+        <span class="t-urgent">{{ 'URGENTE' if active_mission.urgency == 'urgent' else active_mission.urgency|upper }}</span>
       </div>
-      <div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:4px;">{{ active_mission.title }}</div>
-      <div style="font-size:13px;color:var(--slate);margin-bottom:8px;">Client : {{ active_mission.client_name }}</div>
-      <div style="font-size:12px;color:var(--slate);margin-bottom:12px;">{{ active_mission.address or 'Conakry' }}</div>
-      <div style="font-size:12px;font-weight:600;color:#155EEF;margin-bottom:10px;">Statut : {{ active_mission.status }}</div>
-      <div class="f-btn" style="width:100%;font-size:13px;height:40px;display:flex;align-items:center;justify-content:center;">Ouvrir la mission</div>
-    </a>
+      <div class="t-mission-body">
+        <div class="t-mission-info">
+          <div class="t-mission-icon">
+            <img src="{{ url_for('static', filename='img/icon-droplet.svg') }}" alt="" />
+          </div>
+          <div>
+            <p class="t-mission-title">{{ active_mission.reference or '#' + active_mission.id|string }}</p>
+            <p class="t-mission-sub">{{ active_mission.title }}</p>
+            <div class="t-mission-row">
+              <img src="{{ url_for('static', filename='img/icon-user.svg') }}" alt="" />
+              Client : {{ active_mission.client_name }}
+            </div>
+            <div class="t-mission-row">
+              <img src="{{ url_for('static', filename='img/icon-map-pin.svg') }}" alt="" />
+              {{ active_mission.address or 'Conakry' }}
+            </div>
+            <div class="t-mission-row">
+              <img src="{{ url_for('static', filename='img/icon-clock.svg') }}" alt="" />
+              Heure prévue : {{ active_mission.requested_time or '10:30' }}
+            </div>
+            <span class="t-badge-new"><span class="dot"></span> Nouvelle mission</span>
+          </div>
+        </div>
+        <div class="t-mission-map" style="background:linear-gradient(135deg,#E2E8F0 0%,#CBD5E1 100%);display:flex;align-items:center;justify-content:center;">
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+        </div>
+      </div>
+      <a href="{{ url_for('artisan_mission', request_id=active_mission.id) }}" class="t-btn">
+        Voir la mission
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </a>
+    </div>
+    {% else %}
+    <div class="t-card t-empty">
+      Aucune mission en cours.
+      <br>Restez disponible pour recevoir une nouvelle mission.
+    </div>
     {% endif %}
 
-    <div class="fx-list-title" style="margin-top:18px;">Mes missions aujourd'hui</div>
     {% if missions %}
-    {% for m in missions %}
-    <a href="{{ url_for('artisan_mission', request_id=m.id) }}" class="fx-card" style="display:block;text-decoration:none;color:inherit;background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px;">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
-        <span style="font-size:12px;font-weight:700;color:var(--ink);">{{ m.reference or '#' + m.id|string }}</span>
-        <span class="pill" style="{% if m.urgency == 'urgent' %}background:#FEE2E2;color:#B91C1C;{% elif m.urgency == 'haute' %}background:#FFEDD5;color:#C2410C;{% else %}background:#E5E7EB;color:#374151;{% endif %}font-size:10px;padding:3px 8px;border-radius:20px;">{{ m.urgency|upper }}</span>
-      </div>
-      <div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:4px;">{{ m.title }}</div>
-      <div style="font-size:12px;color:var(--slate);margin-bottom:6px;">{{ m.category }} - {{ m.client_name }}</div>
-      <div style="display:flex;justify-content:space-between;align-items:center;">
-        <span style="font-size:12px;color:var(--slate);">{{ m.address or 'Conakry' }}</span>
-        <span style="font-size:12px;color:var(--slate);">{{ m.status }}</span>
-      </div>
-    </a>
-    {% endfor %}
-    {% else %}
-    <div class="fx-empty">Aucune mission pour le moment.</div>
+    <h3 class="t-section-title">Mes missions aujourd'hui</h3>
+    <div style="padding:0 16px 12px;">
+      {% for m in missions %}
+      <a href="{{ url_for('artisan_mission', request_id=m.id) }}" class="t-card" style="display:block;text-decoration:none;color:inherit;margin-bottom:10px;padding:12px 14px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
+          <span style="font-size:13px;font-weight:700;color:#0A1122;">{{ m.reference or '#' + m.id|string }}</span>
+          <span style="font-size:10px;padding:3px 8px;border-radius:20px;background:{% if m.urgency == 'urgent' %}#FEE2E2;color:#B91C1C;{% else %}#F3F4F6;color:#374151;{% endif %}">{{ m.urgency|upper }}</span>
+        </div>
+        <div style="font-size:14px;font-weight:700;color:#0A1122;margin-bottom:4px;">{{ m.title }}</div>
+        <div style="font-size:12px;color:#64748B;">{{ m.category }} - {{ m.client_name }}</div>
+      </a>
+      {% endfor %}
+    </div>
     {% endif %}
+
+    <h3 class="t-section-title">Actions rapides</h3>
+    <div class="t-actions">
+      <a class="t-action active" href="{{ url_for('artisan_dashboard') }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
+        Mes missions
+      </a>
+      <a class="t-action" href="{{ url_for('requests_list') }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Planning
+      </a>
+      <a class="t-action" href="{{ url_for('client_messages') }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 21l1.9-5.1A8.4 8.4 0 0 1 4 11.5a8.5 8.5 0 0 1 8.5-8.5A8.5 8.5 0 0 1 21 11.5z"/></svg>
+        Messages
+        {% if unread_count %}<span class="badge">{{ unread_count }}</span>{% endif %}
+      </a>
+      <a class="t-action" href="{{ url_for('profile') }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
+        Mon profil
+      </a>
+    </div>
 
     {% if historique %}
-    <div class="fx-list-title" style="margin-top:18px;">Historique</div>
-    {% for m in historique %}
-    <a href="{{ url_for('artisan_mission', request_id=m.id) }}" class="fx-card" style="display:block;text-decoration:none;color:inherit;background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px;opacity:.85;">
-      <div style="font-size:13px;font-weight:700;color:var(--ink);">{{ m.reference or '#' + m.id|string }} - {{ m.title }}</div>
-      <div style="font-size:12px;color:var(--slate);">{{ m.client_name }} - {{ m.status }} - {{ m.created_at[:10] }}</div>
-    </a>
-    {% endfor %}
+    <h3 class="t-section-title">Historique</h3>
+    <div style="padding:0 16px 12px;">
+      {% for m in historique %}
+      <a href="{{ url_for('artisan_mission', request_id=m.id) }}" class="t-card" style="display:block;text-decoration:none;color:inherit;margin-bottom:10px;padding:12px 14px;opacity:.9;">
+        <div style="font-size:13px;font-weight:700;color:#0A1122;">{{ m.reference or '#' + m.id|string }}</div>
+        <div style="font-size:12px;color:#64748B;">{{ m.title }} - {{ m.status }} - {{ m.created_at[:10] }}</div>
+      </a>
+      {% endfor %}
+    </div>
     {% endif %}
   </div>
 
-  <nav class="tabbar">
-    <a class="tabbar-link active" href="{{ url_for('artisan_dashboard') }}">Missions</a>
-    <a class="tabbar-link" href="{{ url_for('requests_list') }}">Demandes</a>
-    <a class="tabbar-link" href="{{ url_for('client_messages') }}">Messages</a>
-    <a class="tabbar-link" href="{{ url_for('profile') }}">Profil</a>
+  <nav class="t-bottom">
+    <a class="active" href="{{ url_for('artisan_dashboard') }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
+      Accueil
+    </a>
+    <a href="{{ url_for('artisan_dashboard') }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M9 14h6M9 17h4"/></svg>
+      Missions
+    </a>
+    <a class="center" href="{{ url_for('request_new') }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+    </a>
+    <a href="{{ url_for('requests_list') }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Planning
+    </a>
+    <a href="{{ url_for('profile') }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
+      Profil
+    </a>
   </nav>
 </div>
 {% endblock %}

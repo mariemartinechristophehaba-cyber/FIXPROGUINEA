@@ -2591,7 +2591,7 @@ def artisan_dashboard():
 
         active_mission = conn.execute("""
             SELECT r.id, r.reference, r.title, r.category, r.address, r.urgency, r.status,
-                   r.description, r.latitude, r.longitude,
+                   r.description, r.latitude, r.longitude, r.requested_time,
                    u.full_name AS client_name, u.phone AS client_phone
             FROM requests r
             JOIN users u ON u.id = r.client_id
@@ -2632,6 +2632,15 @@ def artisan_dashboard():
             " WHERE r.artisan_id = ? ORDER BY r.created_at DESC LIMIT 5",
             (user["id"],)).fetchall()
 
+        unread_count = 0
+        try:
+            row = conn.execute(
+                "SELECT COUNT(*) AS n FROM notifications WHERE user_id = ? AND is_read = 0",
+                (user["id"],)).fetchone()
+            unread_count = row["n"]
+        except Exception:
+            unread_count = 0
+
         services_disponibles = _services_for_category(conn, user["profession"] or "")
         artisan_services_ids = _artisan_service_ids(conn, user["id"])
 
@@ -2645,6 +2654,7 @@ def artisan_dashboard():
                                   "note_avg": note["avg"], "note_count": note["cnt"]},
                            active_mission=active_mission, missions=missions,
                            historique=missions_historique, avis=avis,
+                           unread_count=unread_count,
                            services_disponibles=services_disponibles,
                            artisan_services_ids=artisan_services_ids)
 
