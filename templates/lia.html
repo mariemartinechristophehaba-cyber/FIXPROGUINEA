@@ -14,7 +14,16 @@
     body { font-family: 'Inter', sans-serif; background: #F1F5F9; color: #0F172A; -webkit-font-smoothing: antialiased; }
     a { text-decoration: none; color: inherit; }
 
-    .l-wrap { max-width: 480px; margin: 0 auto; height: 100vh; display: flex; flex-direction: column; background: #F1F5F9; }
+    .l-wrap {
+      position: relative;
+      max-width: 480px;
+      margin: 0 auto;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: #F1F5F9;
+    }
+
     .l-header {
       background: #155EEF; color: #fff; padding: 16px; display: flex; align-items: center; gap: 12px; z-index: 10;
     }
@@ -46,18 +55,33 @@
     .l-typing span:nth-child(3) { animation-delay: .4s; }
     @keyframes l-bounce { 0%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-5px); } }
 
-    .l-footer { position: fixed; bottom: 64px; left: 0; right: 0; z-index: 20; max-width: 480px; margin: 0 auto; background: #fff; border-top: 1px solid #E2E8F0; padding: 10px 12px; display: flex; align-items: center; gap: 8px; }
+    .l-footer { position: absolute; bottom: 64px; left: 0; right: 0; background: #fff; border-top: 1px solid #E2E8F0; padding: 10px 12px; display: flex; align-items: center; gap: 8px; z-index: 20; }
     .l-input { flex: 1; border: 1px solid #E2E8F0; border-radius: 22px; padding: 10px 14px; font-size: 15px; outline: none; min-height: 44px; max-height: 120px; resize: none; font-family: 'Inter', sans-serif; }
     .l-send { width: 44px; height: 44px; border: none; border-radius: 50%; background: #155EEF; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 18px; transition: transform .1s; }
     .l-send:disabled { opacity: .5; }
     .l-send:active { transform: scale(.95); }
 
-    .l-nav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 30; max-width: 480px; margin: 0 auto; background: #fff; border-top: 1px solid #E2E8F0; display: flex; justify-content: space-around; align-items: center; padding: 8px 0 calc(8px + env(safe-area-inset-bottom)); }
+    .l-nav { position: absolute; bottom: 0; left: 0; right: 0; z-index: 30; background: #fff; border-top: 1px solid #E2E8F0; display: flex; justify-content: space-around; align-items: center; padding: 8px 0 calc(8px + env(safe-area-inset-bottom)); }
     .l-nav a { display: flex; flex-direction: column; align-items: center; gap: 3px; color: #94A3B8; font-size: 11px; padding: 4px 8px; }
     .l-nav a.active { color: #155EEF; }
     .l-nav a svg { width: 22px; height: 22px; }
     .l-nav .l-plus { position: relative; top: -18px; width: 50px; height: 50px; border-radius: 50%; background: #155EEF; color: #fff; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(21,94,239,.35); }
     .l-nav .l-plus svg { width: 26px; height: 26px; }
+
+    @media (min-width: 768px) {
+      body { background: #E2E8F0; }
+      .l-wrap {
+        max-width: 720px;
+        height: calc(100vh - 40px);
+        margin: 20px auto;
+        border-radius: 24px;
+        overflow: hidden;
+        box-shadow: 0 24px 80px rgba(0,0,0,.12);
+      }
+      .l-header { border-radius: 24px 24px 0 0; }
+      .l-bubble { font-size: 16px; }
+      .l-input { font-size: 16px; }
+    }
   </style>
 </head>
 <body>
