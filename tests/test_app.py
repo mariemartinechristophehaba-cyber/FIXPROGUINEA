@@ -1220,11 +1220,11 @@ class TechnicianDashboardTests(FixProTestCase):
             conn.execute(
                 "INSERT INTO requests (client_id, artisan_id, reference, title, description, service, category, address, status, urgency, phone_contact, estimated_price, commission_rate, commission_amount, professional_amount, payment_status, created_at, updated_at)"
                 " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (1, 2, "FP-000001", "Fuite", "desc", "Plombier", "Plombier", "Kaloum", "REQUESTED", "urgent", "+2246000", 100000, 0.1, 10000, 90000, "PENDING", "2026-01-01", "2026-01-01"))
+                (1, 2, "FP-000001", "Fuite", "desc", "Plombier", "Plombier", "Kaloum", "assigned", "urgent", "+2246000", 100000, 0.1, 10000, 90000, "PENDING", "2026-01-01", "2026-01-01"))
             conn.execute(
                 "INSERT INTO requests (client_id, artisan_id, reference, title, description, service, category, address, status, urgency, phone_contact, estimated_price, commission_rate, commission_amount, professional_amount, payment_status, created_at, updated_at)"
                 " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (1, 3, "FP-000002", "Serrure", "desc", "Serrurier", "Serrurier", "Kaloum", "REQUESTED", "normal", "+2246000", 100000, 0.1, 10000, 90000, "PENDING", "2026-01-01", "2026-01-01"))
+                (1, 3, "FP-000002", "Serrure", "desc", "Serrurier", "Serrurier", "Kaloum", "assigned", "normal", "+2246000", 100000, 0.1, 10000, 90000, "PENDING", "2026-01-01", "2026-01-01"))
             conn.commit()
         finally:
             conn.close()
@@ -1292,7 +1292,7 @@ class TechnicianAccessTests(FixProTestCase):
             conn.close()
         response = self.login("t1@example.com")
         self.assertEqual(response.status_code, 200)
-        self.assertIn(b"tableau de bord", response.data.lower())
+        self.assertIn(b"bienvenue", response.data.lower())
 
     def test_technician_route_alias_works(self):
         self.register_artisan("t1@example.com", phone="+224621111111", name="T1 Diallo")
