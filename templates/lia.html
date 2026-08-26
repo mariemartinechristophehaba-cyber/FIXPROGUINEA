@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% block title %}Lia - Assistante FixPro{% endblock %}
+{% block content %}
+<style>
+  .lia-chat { max-width: 640px; margin: 0 auto; padding: 24px 16px 100px; display: flex; flex-direction: column; gap: 12px; }
+  .lia-header { text-align: center; }
+  .lia-header h1 { font-size: 1.35rem; margin: 0 0 4px; }
+  .lia-header p { color: #64748b; font-size: 13px; margin: 0; }
+  .lia-messages { display: flex; flex-direction: column; gap: 10px; min-height: 300px; background: #f8fafc; border-radius: 12px; padding: 16px; overflow-y: auto; }
+  .lia-msg { max-width: 80%; padding: 10px 14px; border-radius: 14px; font-size: 14px; line-height: 1.45; }
+  .lia-user { align-self: flex-end; background: #155eef; color: #fff; border-bottom-right-radius: 4px; }
+  .lia-bot { align-self: flex-start; background: #fff; border: 1px solid #e2e8f0; border-bottom-left-radius: 4px; }
+  .lia-input { display: flex; gap: 8px; position: fixed; bottom: 70px; left: 50%; transform: translateX(-50%); width: 100%; max-width: 640px; padding: 0 16px; }
+  .lia-input input { flex: 1; padding: 12px 14px; border: 1px solid #e2e8f0; border-radius: 999px; font-size: 14px; }
+  .lia-input button { padding: 12px 18px; background: #155eef; color: #fff; border: none; border-radius: 999px; font-weight: 700; }
+  .lia-typing { font-size: 12px; color: #64748b; align-self: flex-start; }
+</style>
+<div class="lia-chat">
+  <div class="lia-header">
+    <h1>Discuter avec Lia</h1>
+    <p>L'assistante FixPro repond a vos questions.</p>
+  </div>
+  <div class="lia-messages" id="liaMessages">
+    <div class="lia-msg lia-bot">Bonjour, je suis Lia, votre assistante FixPro. Que puis-je faire pour vous ?</div>
+  </div>
+  <div id="liaTyping" class="lia-typing" style="display:none;">Lia ecrit...</div>
+</div>
+<form class="lia-input" id="liaForm" onsubmit="return false;">
+  <input type="text" id="liaInput" placeholder="Ecrivez votre message..." autocomplete="off" required />
+  <button type="submit" id="liaSend">Envoyer</button>
+</form>
+<script>
+  const liaForm = document.getElementById('liaForm');
+  const liaInput = document.getElementById('liaInput');
+  const liaMessages = document.getElementById('liaMessages');
+  const liaTyping = document.getElementById('liaTyping');
+
+  function addMessage(text, isUser) {
+    const div = document.createElement('div');
+    div.className = 'lia-msg ' + (isUser ? 'lia-user' : 'lia-bot');
+    div.textContent = text;
+    liaMessages.appendChild(div);
+    liaMessages.scrollTop = liaMessages.scrollHeight;
+  }
+
+  async function sendMessage() {
+    const text = liaInput.value.trim();
+    if (!text) return;
+    addMessage(text, true);
+    liaInput.value = '';
+    liaTyping.style.display = 'block';
+    try {
+      const res = await fetch('/api/lia/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text })
+      });
+      const data = await res.json();
+      addMessage(data.reply || 'Desole, une erreur est survenue.', false);
+    } catch (e) {
+      addMessage('Desole, le service est indisponible.', false);
+    } finally {
+      liaTyping.style.display = 'none';
+    }
+  }
+
+  liaForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    sendMessage();
+  });
+</script>
+{% endblock %}

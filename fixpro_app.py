@@ -4908,6 +4908,25 @@ def client_message_new():
     return render_template("client_message_new.html", user=user)
 
 
+@app.route("/lia", methods=["GET"])
+def lia():
+    """Page publique de discussion avec l'assistante FixPro."""
+    return render_template("lia.html", nav_user=get_current_user())
+
+
+@app.route("/api/lia/chat", methods=["POST"])
+@limiter.limit("100 per hour")
+def api_lia_chat():
+    """API de chat avec l'assistante FixPro."""
+    data = request.get_json(silent=True, force=True) or {}
+    message = data.get("message", "").strip()
+    if not message:
+        return jsonify({"error": "Message vide."}), 400
+    return jsonify({"reply": build_assistant_reply(message)})
+
+csrf.exempt(api_lia_chat)
+
+
 _CATEGORY_PROFESSION = {
     "plomberie": "plombier",
     "electricite": "electricien",
