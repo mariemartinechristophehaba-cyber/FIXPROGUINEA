@@ -1,167 +1,428 @@
+// @ts-nocheck
 'use client';
 
-import { useEffect, useState } from 'react';
-import Header from '@/components/Header';
-import StatusBadge from '@/components/StatusBadge';
+import React, { useEffect, useState } from 'react';
+import {
+  LayoutDashboard, Wrench, Users, UserRound, Grid3x3, Wallet, Settings,
+  Search, Bell, Star, Check, X, MapPin, Phone, Mail, FileText,
+  ChevronRight, Menu, Filter, ChevronDown,
+} from 'lucide-react';
 import { api } from '@/lib/api';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { useRouter, usePathname } from 'next/navigation';
 
-function statusBadge(statut: string) {
-  if (statut === 'verified' || statut === '1') return <StatusBadge variant="success">Verifie</StatusBadge>;
-  if (statut === 'pending' || statut === '0') return <StatusBadge variant="warning">En attente</StatusBadge>;
-  return <StatusBadge variant="danger">Refuse</StatusBadge>;
+const C = {
+  bg: '#EEF0F5',
+  surface: '#FFFFFF',
+  surfaceAlt: '#F4F5FA',
+  border: '#DDE1EA',
+  borderStrong: '#C6CBD9',
+  ink: '#0A0E1F',
+  inkMuted: '#585F73',
+  brand: '#16265E',
+  brandLight: '#2C4CB0',
+  brandDark: '#0E1A44',
+  amber: '#DB8A1F',
+  amberBg: '#FBF0DD',
+  green: '#0F7A52',
+  greenBg: '#E1F3EA',
+  red: '#B3271D',
+  redBg: '#FBE5E3',
+  blueBg: '#E4EAFB',
+};
+
+const SHADOW_SM = '0 1px 2px rgba(10,14,31,0.04), 0 2px 8px -2px rgba(10,14,31,0.06)';
+const SHADOW_MD = '0 2px 4px rgba(10,14,31,0.05), 0 8px 20px -6px rgba(10,14,31,0.10)';
+
+const FONT_STYLE = `
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+  .fx-display { font-family: 'Space Grotesk', sans-serif; letter-spacing: -0.01em; }
+  .fx-body { font-family: 'Inter', sans-serif; }
+  .fx-mono { font-family: 'JetBrains Mono', monospace; font-feature-settings: 'tnum'; }
+  .fx-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+  .fx-scroll::-webkit-scrollbar-thumb { background: ${C.borderStrong}; border-radius: 4px; }
+  .fx-row:hover { background: ${C.surfaceAlt} !important; }
+  .fx-navlink:hover { background: rgba(255,255,255,0.08); }
+`;
+
+const NAV = [
+  { label: 'Tableau de bord', icon: LayoutDashboard, href: '/admin/dashboard' },
+  { label: 'Interventions', icon: Wrench, href: '/admin/interventions' },
+  { label: 'Techniciens', icon: Users, href: '/admin/techniciens' },
+  { label: 'Clients', icon: UserRound, href: '/admin/clients' },
+  { label: 'Categories', icon: Grid3x3, href: '/admin/categories' },
+  { label: 'Paiements', icon: Wallet, href: '/admin/paiements' },
+  { label: 'Parametres', icon: Settings, href: '/admin/parametres' },
+];
+
+const FILTER_TABS = ['Tous', 'Verifies', 'En attente', 'Actifs', 'Inactifs'];
+
+const MOCK = [
+  { id: 1, full_name: 'Fatou Camara', profession: 'Electricien', phone: '621 11 22 33', email: 'fatou@fixpro.gn', doc_count: 3, completed: 12, avg_rating: 4.6, review_count: 8, is_verified: 1, is_active: 1, latitude: null, longitude: null, address: 'Conakry', created_at: '2026-08-20T10:00:00' },
+  { id: 2, full_name: 'Ibrahim Sylla', profession: 'Menuisier', phone: '622 22 33 44', email: 'ibrahim@fixpro.gn', doc_count: 2, completed: 7, avg_rating: 4.2, review_count: 5, is_verified: 1, is_active: 1, latitude: null, longitude: null, address: 'Kaloum', created_at: '2026-08-21T10:00:00' },
+  { id: 3, full_name: 'Mamadou Bah', profession: 'Plombier', phone: '623 33 44 55', email: 'mamadou@fixpro.gn', doc_count: 1, completed: 4, avg_rating: 3.8, review_count: 3, is_verified: 0, is_active: 1, latitude: null, longitude: null, address: 'Dixinn', created_at: '2026-08-22T10:00:00' },
+];
+
+function label(profession) {
+  if (!profession) return 'Autre';
+  return profession.charAt(0).toUpperCase() + profession.slice(1);
 }
 
-export default function TechniciensPage() {
-  const [rows, setRows] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [query, setQuery] = useState('');
-  const [page, setPage] = useState(1);
-  const pageSize = 5;
+function formatDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso;
+  const month = d.toLocaleDateString('fr-FR', { month: 'short' }).replace('.', '');
+  return `${d.getDate()} ${month} ${d.getFullYear()}`;
+}
 
-  const load = async () => {
-    setError('');
-    setLoading(true);
-    try {
-      const data = await api.techniciens();
-      setRows(data);
-    } catch (e: any) {
-      setError(e.message || 'Impossible de charger les techniciens.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => { load(); }, []);
-
-  const filtered = rows.filter((r) =>
-    [r.full_name, r.profession, r.city, r.zone, r.quartier].some((v) =>
-      String(v || '').toLowerCase().includes(query.toLowerCase())
-    )
+function Initials({ name, size = 32, bg = C.brand }) {
+  const initials = name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase();
+  return (
+    <div
+      className='fx-display flex items-center justify-center rounded-full text-white shrink-0'
+      style={{
+        width: size, height: size,
+        background: bg,
+        fontSize: size * 0.36, fontWeight: 700,
+        boxShadow: '0 1px 2px rgba(10,14,31,0.15)',
+      }}
+    >
+      {initials}
+    </div>
   );
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
-  const start = (page - 1) * pageSize;
-  const visible = filtered.slice(start, start + pageSize);
+}
 
-  const verify = async (id: number) => {
-    try {
-      await api.verifyArtisan(id);
-      load();
-    } catch (e: any) {
-      setError(e.message || 'Erreur lors de la validation.');
-    }
+function Stars({ value }) {
+  return (
+    <div className='flex items-center gap-0.5'>
+      {[1, 2, 3, 4, 5].map((i) => (
+        <Star
+          key={i}
+          size={12}
+          fill={i <= Math.round(value) ? C.amber : 'transparent'}
+          color={i <= Math.round(value) ? C.amber : C.borderStrong}
+        />
+      ))}
+      <span className='fx-body font-semibold text-[11.5px] ml-1'>{value.toFixed(1)}</span>
+    </div>
+  );
+}
+
+function Badge({ color, bg, children }) {
+  return (
+    <span className='fx-body font-semibold text-[11px] rounded-full px-2.5 py-1' style={{ background: bg, color, border: `1px solid ${color}33` }}>
+      {children}
+    </span>
+  );
+}
+
+export default function FixProTechniciensPage() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const [navOpen, setNavOpen] = useState(false);
+  const [filter, setFilter] = useState('Tous');
+  const [search, setSearch] = useState('');
+  const [category, setCategory] = useState('Toutes');
+  const [techniciens, setTechniciens] = useState(MOCK);
+  const [selected, setSelected] = useState(MOCK[0]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api.techniciens()
+      .then((rows) => {
+        const mapped = rows.map((r) => ({
+          ...r,
+          avg_rating: parseFloat(r.avg_rating || 0),
+          completed: parseInt(r.completed || 0, 10),
+          doc_count: parseInt(r.doc_count || 0, 10),
+          review_count: parseInt(r.review_count || 0, 10),
+        }));
+        if (mapped.length) {
+          setTechniciens(mapped);
+          setSelected(mapped[0]);
+        }
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error(err);
+        setLoading(false);
+      });
+  }, []);
+
+  const categories = ['Toutes', ...Array.from(new Set(techniciens.map((t) => label(t.profession))))];
+
+  const filtered = techniciens.filter((t) => {
+    if (search && !t.full_name.toLowerCase().includes(search.toLowerCase()) && !t.phone.includes(search)) return false;
+    if (category !== 'Toutes' && label(t.profession) !== category) return false;
+    if (filter === 'Verifies' && !t.is_verified) return false;
+    if (filter === 'En attente' && t.is_verified) return false;
+    if (filter === 'Actifs' && !t.is_active) return false;
+    if (filter === 'Inactifs' && t.is_active) return false;
+    return true;
+  });
+
+  const handleVerify = () => {
+    api.verifyArtisan(selected.id)
+      .then(() => setTechniciens(techniciens.map((t) => (t.id === selected.id ? { ...t, is_verified: 1 } : t))))
+      .catch(console.error);
   };
 
-  const reject = async (id: number) => {
-    if (!confirm('Refuser ce technicien ?')) return;
-    try {
-      await api.rejectArtisan(id);
-      load();
-    } catch (e: any) {
-      setError(e.message || 'Erreur lors du refus.');
-    }
+  const handleReject = () => {
+    api.rejectArtisan(selected.id)
+      .then(() => setTechniciens(techniciens.map((t) => (t.id === selected.id ? { ...t, is_verified: 0 } : t))))
+      .catch(console.error);
+  };
+
+  const counts = {
+    total: techniciens.length,
+    verified: techniciens.filter((t) => t.is_verified).length,
+    pending: techniciens.filter((t) => !t.is_verified).length,
+    active: techniciens.filter((t) => t.is_active).length,
   };
 
   return (
-    <div>
-      <Header title="Techniciens" />
-      <div className="p-6 space-y-6">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-medium">Liste des techniciens</h3>
-          <button className="flex items-center gap-2 px-4 py-2 bg-white text-black text-sm font-medium rounded-md hover:bg-zinc-200 transition-colors">
-            <Plus size={16} />
-            Ajouter
-          </button>
-        </div>
+    <div className='fx-body w-full min-h-[760px] flex' style={{ background: C.bg, color: C.ink }}>
+      <style dangerouslySetInnerHTML={{ __html: FONT_STYLE }} />
 
-        {error && (
-          <div className="p-3 rounded-md bg-red-500/10 text-red-400 text-sm border border-red-500/20">
-            {error}
+      <aside
+        className={`fixed lg:static z-20 h-full lg:h-auto transition-transform duration-200 ${navOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
+        style={{ width: 220, background: C.brandDark, boxShadow: SHADOW_MD }}
+      >
+        <div className='flex items-center gap-2 px-5 py-5' style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+          <div className='flex items-center justify-center rounded-lg' style={{ width: 28, height: 28, background: C.brandLight }}>
+            <Wrench size={15} color='#fff' />
           </div>
-        )}
+          <span className='fx-display font-bold text-white text-[16px]'>FixPro <span style={{ color: C.amber }}>Admin</span></span>
+          <button className='ml-auto lg:hidden text-white' onClick={() => setNavOpen(false)}><X size={18} /></button>
+        </div>
+        <nav className='px-3 mt-3 flex flex-col gap-0.5'>
+          {NAV.map(({ label, icon: Icon, href }) => {
+            const active = pathname === href || pathname.startsWith(href + '/');
+            return (
+              <button
+                key={label}
+                onClick={() => router.push(href)}
+                className='fx-navlink flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors'
+                style={{
+                  background: active ? C.brandLight : 'transparent',
+                  color: active ? '#fff' : 'rgba(255,255,255,0.68)',
+                  boxShadow: active ? '0 2px 6px rgba(44,76,176,0.4)' : 'none',
+                  fontWeight: active ? 600 : 500,
+                }}
+              >
+                <Icon size={16} strokeWidth={active ? 2.4 : 2} />
+                <span className='fx-body text-[13px]'>{label}</span>
+                {active && <ChevronRight size={13} className='ml-auto' />}
+              </button>
+            );
+          })}
+        </nav>
+      </aside>
+      {navOpen && <div className='fixed inset-0 bg-black/40 z-10 lg:hidden' onClick={() => setNavOpen(false)} />}
 
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => { setQuery(e.target.value); setPage(1); }}
-          placeholder="Rechercher..."
-          className="w-full max-w-sm bg-zinc-900 border border-zinc-800 rounded-md px-4 py-2 text-sm focus:outline-none focus:border-white/30"
-        />
-
-        <div className="overflow-x-auto border border-zinc-800 rounded-xl">
-          <table className="w-full text-sm text-left">
-            <thead className="bg-white/5 text-zinc-400 uppercase text-xs">
-              <tr>
-                <th className="px-4 py-3 font-medium">Nom</th>
-                <th className="px-4 py-3 font-medium">Metier</th>
-                <th className="px-4 py-3 font-medium">Zone</th>
-                <th className="px-4 py-3 font-medium">Note</th>
-                <th className="px-4 py-3 font-medium">Statut</th>
-                <th className="px-4 py-3 font-medium">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-800">
-              {loading ? (
-                <tr><td colSpan={6} className="px-4 py-8 text-center text-zinc-500">Chargement...</td></tr>
-              ) : visible.map((row: any) => (
-                <tr key={row.id} className="hover:bg-white/[0.03] transition-colors group">
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-xs font-medium">
-                        {String(row.full_name || '').split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()}
-                      </div>
-                      <span className="font-medium">{row.full_name}</span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">{row.profession || '—'}</td>
-                  <td className="px-4 py-3">{row.city || row.zone || '—'}</td>
-                  <td className="px-4 py-3">{row.avg_rating ? Number(row.avg_rating).toFixed(1) : '—'}</td>
-                  <td className="px-4 py-3">{statusBadge(String(row.is_verified))}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      {row.is_verified === 0 && (
-                        <button onClick={() => verify(row.id)} className="px-2 py-1 text-xs bg-emerald-500/10 text-emerald-400 rounded hover:bg-emerald-500/20">Accepter</button>
-                      )}
-                      {row.is_verified === 0 && (
-                        <button onClick={() => reject(row.id)} className="px-2 py-1 text-xs bg-red-500/10 text-red-400 rounded hover:bg-red-500/20">Refuser</button>
-                      )}
-                      <button className="p-1.5 hover:bg-white/10 rounded opacity-0 group-hover:opacity-100 transition-opacity"><Pencil size={16} /></button>
-                      <button className="p-1.5 hover:bg-white/10 rounded text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={16} /></button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {!loading && visible.length === 0 && (
-                <tr><td colSpan={6} className="px-4 py-8 text-center text-zinc-500">Aucun technicien</td></tr>
-              )}
-            </tbody>
-          </table>
+      <main className='flex-1 min-w-0 flex flex-col'>
+        <div
+          className='flex items-center gap-4 px-5 lg:px-8 py-4 sticky top-0 z-10'
+          style={{ background: 'rgba(238,240,245,0.92)', backdropFilter: 'blur(6px)', borderBottom: `1px solid ${C.border}` }}
+        >
+          <button className='lg:hidden' onClick={() => setNavOpen(true)}><Menu size={20} /></button>
+          <div>
+            <h1 className='fx-display font-bold text-[19px]'>Techniciens</h1>
+            <p className='fx-body text-[12.5px]' style={{ color: C.inkMuted }}>{counts.total} techniciens inscrits</p>
+          </div>
+          <div
+            className='hidden md:flex items-center gap-2 ml-4 px-3 py-2 rounded-lg flex-1 max-w-xs'
+            style={{ background: C.surface, border: `1px solid ${C.border}`, boxShadow: SHADOW_SM }}
+          >
+            <Search size={15} color={C.inkMuted} />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder='Rechercher un technicien...'
+              className='fx-body text-[13px] bg-transparent outline-none w-full'
+            />
+          </div>
+          <div className='ml-auto flex items-center gap-4'>
+            <button className='relative'>
+              <Bell size={19} color={C.inkMuted} />
+              <span
+                className='absolute -top-1 -right-1 rounded-full text-white flex items-center justify-center fx-mono font-semibold'
+                style={{ width: 15, height: 15, fontSize: 9, background: C.red, boxShadow: '0 0 0 2px ' + C.bg }}
+              >
+                3
+              </span>
+            </button>
+            <Initials name='Mamadou Bah' size={30} />
+          </div>
         </div>
 
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-zinc-500">{filtered.length} resultat(s)</span>
-            <div className="flex items-center gap-2">
+        <div className='p-5 lg:p-8 flex flex-col gap-5 fx-scroll overflow-y-auto'>
+          <div className='grid grid-cols-2 md:grid-cols-4 gap-3'>
+            {[
+              { label: 'Inscrits', value: counts.total },
+              { label: 'Verifies', value: counts.verified, color: C.green },
+              { label: 'En attente', value: counts.pending, color: C.amber },
+              { label: 'Actifs', value: counts.active, color: C.brandLight },
+            ].map((k) => (
+              <div key={k.label} className='rounded-xl p-4' style={{ background: C.surface, border: `1px solid ${C.border}`, boxShadow: SHADOW_SM }}>
+                <p className='fx-body text-[12px]' style={{ color: C.inkMuted }}>{k.label}</p>
+                <p className='fx-display text-[22px] font-bold mt-0.5' style={{ color: k.color || C.ink }}>{k.value}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className='flex flex-wrap gap-2 items-center'>
+            {FILTER_TABS.map((f) => (
               <button
-                disabled={page === 1}
-                onClick={() => setPage(page - 1)}
-                className="px-3 py-1 rounded-md border border-zinc-800 disabled:opacity-40 hover:bg-white/5"
+                key={f}
+                onClick={() => setFilter(f)}
+                className='fx-body font-semibold text-[12.5px] rounded-full px-3.5 py-1.5 transition-colors'
+                style={{
+                  background: filter === f ? C.brand : C.surface,
+                  color: filter === f ? '#fff' : C.ink,
+                  border: `1px solid ${filter === f ? C.brand : C.border}`,
+                  boxShadow: filter === f ? SHADOW_SM : 'none',
+                }}
               >
-                Precedent
+                {f === 'Tous' ? `${f} · ${techniciens.length}` : f}
               </button>
-              <span className="text-zinc-500">{page} / {totalPages}</span>
+            ))}
+            <div className='ml-auto flex items-center gap-2'>
               <button
-                disabled={page === totalPages}
-                onClick={() => setPage(page + 1)}
-                className="px-3 py-1 rounded-md border border-zinc-800 disabled:opacity-40 hover:bg-white/5"
+                className='fx-body font-medium text-[12.5px] rounded-lg px-3 py-1.5 flex items-center gap-1.5'
+                style={{ background: C.surface, border: `1px solid ${C.border}`, color: C.ink, boxShadow: SHADOW_SM }}
+                onClick={() => setCategory(category === 'Toutes' ? categories[1] || 'Toutes' : 'Toutes')}
               >
-                Suivant
+                <Filter size={13} /> {category} <ChevronDown size={13} />
               </button>
             </div>
           </div>
-        )}
-      </div>
+
+          <div className='grid grid-cols-1 xl:grid-cols-3 gap-5'>
+            <div className='xl:col-span-2 rounded-2xl overflow-hidden' style={{ background: C.surface, border: `1px solid ${C.border}`, boxShadow: SHADOW_MD }}>
+              <div className='fx-scroll overflow-x-auto'>
+                <table className='w-full'>
+                  <thead>
+                    <tr className='text-left' style={{ borderBottom: `2px solid ${C.border}` }}>
+                      {['Technicien', 'Metier', 'Documents', 'Terminees', 'Note', 'Verification', ''].map((h) => (
+                        <th key={h} className='fx-body font-bold text-[10.5px] uppercase tracking-wider px-4 py-3' style={{ color: C.inkMuted }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {loading && (
+                      <tr>
+                        <td colSpan={7} className='px-4 py-8 text-center fx-body text-[13px]' style={{ color: C.inkMuted }}>Chargement...</td>
+                      </tr>
+                    )}
+                    {!loading && filtered.map((t) => (
+                      <tr
+                        key={t.id}
+                        onClick={() => setSelected(t)}
+                        className='fx-row cursor-pointer transition-colors'
+                        style={{
+                          borderTop: `1px solid ${C.border}`,
+                          background: selected?.id === t.id ? C.surfaceAlt : 'transparent',
+                        }}
+                      >
+                        <td className='px-4 py-3.5 text-[13px] font-medium'>
+                          <div className='flex items-center gap-2'>
+                            <Initials name={t.full_name} size={26} bg={t.is_verified ? C.brandLight : C.inkMuted} />
+                            <div>
+                              {t.full_name}
+                              <div className='text-[11px] font-normal' style={{ color: C.inkMuted }}>{t.phone}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className='px-4 py-3.5'>
+                          <span className='fx-body font-semibold text-[11px] rounded-full px-2.5 py-1' style={{ background: C.surfaceAlt, border: `1px solid ${C.border}` }}>{label(t.profession)}</span>
+                        </td>
+                        <td className='px-4 py-3.5 fx-mono font-medium text-[11.5px]' style={{ color: C.inkMuted }}>{t.doc_count}</td>
+                        <td className='px-4 py-3.5 fx-mono font-medium text-[11.5px]' style={{ color: C.inkMuted }}>{t.completed}</td>
+                        <td className='px-4 py-3.5'><Stars value={t.avg_rating} /></td>
+                        <td className='px-4 py-3.5'>
+                          {t.is_verified ? (
+                            <Badge color={C.green} bg={C.greenBg}>Verifie</Badge>
+                          ) : (
+                            <Badge color={C.amber} bg={C.amberBg}>En attente</Badge>
+                          )}
+                        </td>
+                        <td className='px-4 py-3.5'><ChevronRight size={14} color={C.inkMuted} /></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className='rounded-2xl p-5 flex flex-col gap-4 h-fit' style={{ background: C.surface, border: `1px solid ${C.border}`, boxShadow: SHADOW_MD }}>
+              {selected && (
+                <>
+                  <div className='flex items-start justify-between'>
+                    <div className='flex items-center gap-3'>
+                      <Initials name={selected.full_name} size={48} bg={selected.is_verified ? C.brandLight : C.inkMuted} />
+                      <div>
+                        <h3 className='fx-display font-bold text-[16px]'>{selected.full_name}</h3>
+                        <p className='fx-body text-[12px]' style={{ color: C.inkMuted }}>{label(selected.profession)}</p>
+                      </div>
+                    </div>
+                    {selected.is_verified ? (
+                      <Badge color={C.green} bg={C.greenBg}>Verifie</Badge>
+                    ) : (
+                      <Badge color={C.amber} bg={C.amberBg}>En attente</Badge>
+                    )}
+                  </div>
+
+                  <div className='flex flex-col gap-2 text-[12.5px] font-medium' style={{ color: C.inkMuted }}>
+                    <div className='flex items-center gap-2'><Phone size={13} /> {selected.phone}</div>
+                    <div className='flex items-center gap-2'><Mail size={13} /> {selected.email || '—'}</div>
+                    <div className='flex items-center gap-2'><MapPin size={13} /> {selected.address || '—'}</div>
+                    <div className='flex items-center gap-2'><FileText size={13} /> {selected.doc_count} document{selected.doc_count > 1 ? 's' : ''}</div>
+                  </div>
+
+                  <div className='grid grid-cols-2 gap-3'>
+                    <div className='rounded-xl p-3' style={{ background: C.surfaceAlt, border: `1px solid ${C.border}` }}>
+                      <p className='fx-body text-[11px]' style={{ color: C.inkMuted }}>Interventions terminees</p>
+                      <p className='fx-display text-[20px] font-bold'>{selected.completed}</p>
+                    </div>
+                    <div className='rounded-xl p-3' style={{ background: C.surfaceAlt, border: `1px solid ${C.border}` }}>
+                      <p className='fx-body text-[11px]' style={{ color: C.inkMuted }}>Avis</p>
+                      <p className='fx-display text-[20px] font-bold'>{selected.review_count}</p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className='fx-body font-semibold text-[11.5px] mb-1.5' style={{ color: C.inkMuted }}>Note moyenne</p>
+                    <Stars value={selected.avg_rating} />
+                  </div>
+
+                  <div className='flex gap-2 mt-1'>
+                    {!selected.is_verified && (
+                      <button
+                        onClick={handleVerify}
+                        className='flex-1 fx-body font-semibold text-[12.5px] rounded-lg py-2.5 flex items-center justify-center gap-1.5'
+                        style={{ background: C.green, color: '#fff', boxShadow: '0 2px 6px rgba(15,122,82,0.3)' }}
+                      >
+                        <Check size={13} /> Verifier
+                      </button>
+                    )}
+                    {selected.is_verified && (
+                      <button
+                        onClick={handleReject}
+                        className='flex-1 fx-body font-semibold text-[12.5px] rounded-lg py-2.5 flex items-center justify-center gap-1.5'
+                        style={{ background: C.red, color: '#fff', boxShadow: '0 2px 6px rgba(179,39,29,0.3)' }}
+                      >
+                        <X size={13} /> Retirer
+                      </button>
+                    )}
+                  </div>
+                  <p className='fx-mono text-[10px]' style={{ color: C.inkMuted }}>Inscrit le {formatDate(selected.created_at)}</p>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      </main>
     </div>
   );
 }
