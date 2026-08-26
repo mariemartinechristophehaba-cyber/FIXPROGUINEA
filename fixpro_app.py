@@ -4881,8 +4881,8 @@ def client_messages():
 def client_message_new():
     """Nouvelle conversation client."""
     user = get_current_user()
-    if user["role"] != "client":
-        flash("Cet espace est reserve aux clients.", "error")
+    if user["role"] not in ("client", "admin"):
+        flash("Cet espace est reserve aux clients et administrateurs.", "error")
         return redirect(url_for("index"))
     if request.method == "POST":
         subject = (request.form.get("subject") or "").strip()
