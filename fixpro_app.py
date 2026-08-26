@@ -2973,7 +2973,7 @@ def artisans_page():
         " FROM users u"
         " LEFT JOIN reviews r ON r.artisan_id = u.id"
         " LEFT JOIN requests req_completed ON req_completed.artisan_id = u.id AND req_completed.status = 'completed'"
-        " WHERE u.role = 'artisan' AND u.is_active = 1 AND u.account_status != 'DELETED'")
+        " WHERE u.role = 'artisan' AND u.is_active = 1 AND u.is_verified = 1 AND u.account_status != 'DELETED'")
     params = []
 
     if query:
@@ -4517,6 +4517,9 @@ def api_admin_create_technicien():
     email = data.get("email", "").strip() or None
     profession = data.get("profession", "").strip()
     password = data.get("password", "").strip()
+    address = data.get("address", "").strip()
+    photo = data.get("photo", "").strip()
+    identity_doc = data.get("identity_doc", "").strip()
 
     if not full_name or not phone or not profession or not password:
         return jsonify({"error": "Tous les champs sont obligatoires."}), 400
@@ -4525,17 +4528,47 @@ def api_admin_create_technicien():
     try:
         if conn.execute("SELECT id FROM users WHERE phone = ?", (phone,)).fetchone():
             return jsonify({"error": "Ce numero de telephone est deja utilise."}), 409
+
+        lat, lon = _geocode_zone(address, "") if address else (0.0, 0.0)
+        store = storage.get_storage()
+        photo_url = photo
+        if photo:
+            try:
+                photo_url = store.upload("photo", photo)
+            except ValueError as exc:
+                return jsonify({"error": f"Photo invalide : {exc}"}), 400
+
         conn.execute(
             "INSERT INTO users (full_name, phone, email, password_hash, role, profession,"
-            " is_verified, is_active, availability_status)"
-            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            " city, latitude, longitude, is_verified, is_active, availability_status, photo_url)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (full_name, phone, email, generate_password_hash(password),
-             "artisan", profession, 1, 1, "hors_ligne"))
+             "artisan", profession, address, lat, lon, 1, 1, "hors_ligne", photo_url))
         conn.commit()
+
+        artisan = conn.execute("SELECT id FROM users WHERE phone = ?", (phone,)).fetchone()
+        artisan_id = artisan["id"]
+
+        if identity_doc:
+            try:
+                id_url = store.upload("identite", identity_doc)
+                mime, ext, _ = _parse_base64_file(identity_doc)
+                conn.execute(
+                    "INSERT INTO technician_documents (technician_id, document_type,"
+                    " file_name, mime_type, content_base64)"
+                    " VALUES (?, ?, ?, ?, ?)",
+                    (artisan_id, "identity", f"identite{ext}", mime or "application/octet-stream", id_url))
+                conn.commit()
+            except ValueError as exc:
+                return jsonify({"error": f"Document invalide : {exc}"}), 400
+
         user = conn.execute(
             "SELECT u.*,"
-            " 0 AS doc_count, 0 AS completed, 0 AS avg_rating, 0 AS review_count"
-            " FROM users u WHERE u.phone = ?", (phone,)).fetchone()
+            " COUNT(DISTINCT d.id) AS doc_count, 0 AS completed, 0 AS avg_rating, 0 AS review_count"
+            " FROM users u"
+            " LEFT JOIN technician_documents d ON d.technician_id = u.id"
+            " WHERE u.phone = ?"
+            " GROUP BY u.id", (phone,)).fetchone()
         return jsonify(dict(user))
     finally:
         conn.close()

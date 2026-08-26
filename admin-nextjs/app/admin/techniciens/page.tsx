@@ -128,7 +128,12 @@ export default function FixProTechniciensPage() {
   const [selected, setSelected] = useState(MOCK[0]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
-  const [formData, setFormData] = useState({ full_name: '', phone: '', email: '', profession: '', password: '' });
+  const [formData, setFormData] = useState({
+    full_name: '', phone: '', email: '', profession: '', password: '',
+    address: '', photo: '', identity_doc: '',
+  });
+  const [photoName, setPhotoName] = useState('');
+  const [docName, setDocName] = useState('');
   const [formError, setFormError] = useState('');
   const [creating, setCreating] = useState(false);
 
@@ -176,6 +181,18 @@ export default function FixProTechniciensPage() {
     api.rejectArtisan(selected.id)
       .then(() => setTechniciens(techniciens.map((t) => (t.id === selected.id ? { ...t, is_verified: 0 } : t))))
       .catch(console.error);
+  };
+
+  const handleFile = (field, setName) => (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result;
+      setFormData((prev) => ({ ...prev, [field]: dataUrl }));
+    };
+    reader.readAsDataURL(file);
+    setName(file.name);
   };
 
   const handleCreate = (e) => {
@@ -514,6 +531,33 @@ export default function FixProTechniciensPage() {
                 className='fx-body text-[13px] rounded-lg px-3 py-2.5 w-full'
                 style={{ background: C.surfaceAlt, border: `1px solid ${C.border}` }}
               />
+              <input
+                placeholder='Adresse / Ville'
+                value={formData.address}
+                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                className='fx-body text-[13px] rounded-lg px-3 py-2.5 w-full'
+                style={{ background: C.surfaceAlt, border: `1px solid ${C.border}` }}
+              />
+              <label className='fx-body text-[12px]' style={{ color: C.inkMuted }}>
+                Photo (optionnel)
+                <input
+                  type='file'
+                  accept='image/*'
+                  onChange={handleFile('photo', setPhotoName)}
+                  className='fx-body text-[13px] mt-1'
+                />
+                {photoName && <span className='block mt-1'>{photoName}</span>}
+              </label>
+              <label className='fx-body text-[12px]' style={{ color: C.inkMuted }}>
+                Document d'identite (optionnel)
+                <input
+                  type='file'
+                  accept='image/*,.pdf'
+                  onChange={handleFile('identity_doc', setDocName)}
+                  className='fx-body text-[13px] mt-1'
+                />
+                {docName && <span className='block mt-1'>{docName}</span>}
+              </label>
               <button
                 type='submit'
                 disabled={creating}
