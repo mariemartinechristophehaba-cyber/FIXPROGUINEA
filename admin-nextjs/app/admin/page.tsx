@@ -35,7 +35,7 @@ export default async function DashboardPage() {
     { title: 'Techniciens inscrits', value: String(stats.techniciens || 0), change: '+12% ce mois', positive: true },
     { title: 'Demandes du mois', value: String(stats.demandes_mois || 0), change: '+8% ce mois', positive: true },
     { title: 'Revenus GNF', value: `${(stats.revenus || 0).toLocaleString('fr-FR')}`, change: '-3% ce mois', positive: false },
-    { title: 'Avis moyen', value: `${(stats.avis_moyen || 0).toFixed(1)}/5`, change: '+0.2', positive: true },
+    { title: 'Avis moyen', value: `${Number(stats.avis_moyen || 0).toFixed(1)}/5`, change: '+0.2', positive: true },
   ];
 
   const recent = demandes.slice(0, 5);
