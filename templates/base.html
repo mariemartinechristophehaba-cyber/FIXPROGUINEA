@@ -51,7 +51,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M9 14h6M9 17h4"/></svg>
           Demandes
         </a>
-        <a class="sidebar-link {{ 'active' if request.endpoint in ('lia', 'client_messages', 'client_message_new', 'client_conversation') }}" href="{{ url_for('lia') }}">
+        <a class="sidebar-link {{ 'active' if request.endpoint in ('client_messages', 'client_message_new', 'client_conversation') }}" href="{{ url_for('client_messages') }}">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 21l1.9-5.1A8.4 8.4 0 0 1 4 11.5a8.5 8.5 0 0 1 8.5-8.5A8.5 8.5 0 0 1 21 11.5z"/></svg>
           Messages
         </a>
@@ -177,9 +177,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M9 14h6M9 17h4"/></svg>
         <span>Demandes</span>
       </a>
-      <a class="tab {{ 'active' if request.endpoint == 'lia' }}" href="{{ url_for('lia') }}">
+      <a class="tab {{ 'active' if request.endpoint == 'client_messages' }}" href="{{ url_for('client_messages') }}">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 21l1.9-5.1A8.4 8.4 0 0 1 4 11.5a8.5 8.5 0 0 1 8.5-8.5A8.5 8.5 0 0 1 21 11.5z"/></svg>
         <span>Messages</span>
+        {% if unread_count %}<span class="tab-badge">{{ unread_count }}</span>{% endif %}
       </a>
       <a class="tab {{ 'active' if request.endpoint == 'profile' }}" href="{{ url_for('profile') }}">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
