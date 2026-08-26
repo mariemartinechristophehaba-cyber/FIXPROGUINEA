@@ -4,8 +4,8 @@
 import React, { useEffect, useState } from 'react';
 import {
   LayoutDashboard, Wrench, Users, UserRound, Grid3x3, Wallet, Settings,
-  Search, Bell, Phone, Mail, MapPin, Calendar, FileText,
-  ChevronRight, Menu, X, Filter, ChevronDown,
+  Search, Bell, Phone, Mail, MapPin, Calendar, FileText, Copy,
+  ChevronRight, ChevronDown, ChevronUp, Menu, X,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useRouter, usePathname } from 'next/navigation';
@@ -70,6 +70,33 @@ function formatDate(iso) {
   return `${d.getDate()} ${month} ${d.getFullYear()}`;
 }
 
+function formatShortDate(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso;
+  const month = d.toLocaleDateString('fr-FR', { month: 'short' }).replace('.', '');
+  return `${d.getDate()} ${month}`;
+}
+
+function statusLabel(status) {
+  if (status === 'completed') return 'Termine';
+  if (status === 'in_progress' || status === 'on_the_way') return 'En cours';
+  if (status === 'assigned' || status === 'quote_proposed' || status === 'quote_accepted' || status === 'pending') return 'Assigne';
+  return 'Nouveau';
+}
+
+function statusColor(status) {
+  if (status === 'completed') return { bg: C.greenBg, color: C.green };
+  if (status === 'in_progress' || status === 'on_the_way') return { bg: C.blueBg, color: C.brandLight };
+  if (status === 'assigned' || status === 'quote_proposed' || status === 'quote_accepted' || status === 'pending') return { bg: C.amberBg, color: C.amber };
+  return { bg: C.surfaceAlt, color: C.inkMuted };
+}
+
+function labelProfession(p) {
+  if (!p) return 'Autre';
+  return p.charAt(0).toUpperCase() + p.slice(1);
+}
+
 function Initials({ name, size = 32, bg = C.brand }) {
   const initials = name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase();
   return (
@@ -95,6 +122,33 @@ function Badge({ color, bg, children }) {
   );
 }
 
+function Copyable({ value, icon: Icon }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = () => {
+    if (!value || value === '—') return;
+    navigator.clipboard.writeText(value).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  };
+  return (
+    <div className='flex items-center gap-2 group cursor-pointer' onClick={handleCopy}>
+      {Icon && <Icon size={13} />}
+      <span>{value}</span>
+      <Copy size={12} color={copied ? C.green : C.inkMuted} className='opacity-0 group-hover:opacity-100 transition-opacity' />
+      {copied && <span className='fx-body text-[10px]' style={{ color: C.green }}>copie</span>}
+    </div>
+  );
+}
+
+const SORTABLE = [
+  { key: 'full_name', label: 'Client' },
+  { key: 'phone', label: 'Telephone' },
+  { key: 'request_count', label: 'Demandes' },
+  { key: 'last_request', label: 'Derniere demande' },
+  { key: 'created_at', label: 'Inscription' },
+];
+
 export default function FixProClientsPage() {
   const router = useRouter();
   const pathname = usePathname();
@@ -102,13 +156,16 @@ export default function FixProClientsPage() {
   const [filter, setFilter] = useState('Tous');
   const [search, setSearch] = useState('');
   const [clients, setClients] = useState(MOCK);
+  const [demandes, setDemandes] = useState([]);
   const [selected, setSelected] = useState(MOCK[0]);
   const [loading, setLoading] = useState(true);
+  const [sortKey, setSortKey] = useState('created_at');
+  const [sortAsc, setSortAsc] = useState(false);
 
   useEffect(() => {
-    api.clients()
-      .then((rows) => {
-        const mapped = rows.map((r) => ({
+    Promise.all([api.clients(), api.demandes()])
+      .then(([clientRows, demandeRows]) => {
+        const mapped = clientRows.map((r) => ({
           ...r,
           request_count: parseInt(r.request_count || 0, 10),
         }));
@@ -116,6 +173,7 @@ export default function FixProClientsPage() {
           setClients(mapped);
           setSelected(mapped[0]);
         }
+        setDemandes(demandeRows);
         setLoading(false);
       })
       .catch((err) => {
@@ -124,12 +182,35 @@ export default function FixProClientsPage() {
       });
   }, []);
 
+  const handleSort = (key) => {
+    if (sortKey === key) {
+      setSortAsc(!sortAsc);
+    } else {
+      setSortKey(key);
+      setSortAsc(true);
+    }
+  };
+
   const filtered = clients.filter((c) => {
     if (search && !c.full_name.toLowerCase().includes(search.toLowerCase()) && !c.phone.includes(search)) return false;
     if (filter === 'Avec demandes' && c.request_count === 0) return false;
     if (filter === 'Sans demande' && c.request_count > 0) return false;
     return true;
+  }).sort((a, b) => {
+    let av = a[sortKey];
+    let bv = b[sortKey];
+    if (typeof av === 'string') {
+      av = av.toLowerCase();
+      bv = bv.toLowerCase();
+    }
+    if (av === null || av === undefined) av = '';
+    if (bv === null || bv === undefined) bv = '';
+    if (av < bv) return sortAsc ? -1 : 1;
+    if (av > bv) return sortAsc ? 1 : -1;
+    return 0;
   });
+
+  const clientRequests = demandes.filter((d) => d.client_id === selected?.id).slice(0, 6);
 
   const counts = {
     total: clients.length,
@@ -251,15 +332,26 @@ export default function FixProClientsPage() {
                 <table className='w-full'>
                   <thead>
                     <tr className='text-left' style={{ borderBottom: `2px solid ${C.border}` }}>
-                      {['Client', 'Telephone', 'Demandes', 'Derniere demande', 'Inscription', ''].map((h) => (
-                        <th key={h} className='fx-body font-bold text-[10.5px] uppercase tracking-wider px-4 py-3' style={{ color: C.inkMuted }}>{h}</th>
+                      {SORTABLE.map(({ key, label }) => (
+                        <th
+                          key={key}
+                          onClick={() => handleSort(key)}
+                          className='fx-body font-bold text-[10.5px] uppercase tracking-wider px-4 py-3 cursor-pointer select-none'
+                          style={{ color: C.inkMuted }}
+                        >
+                          <div className='flex items-center gap-1'>
+                            {label}
+                            {sortKey === key && (sortAsc ? <ChevronUp size={12} /> : <ChevronDown size={12} />)}
+                          </div>
+                        </th>
                       ))}
+                      <th className='fx-body font-bold text-[10.5px] uppercase tracking-wider px-4 py-3' style={{ color: C.inkMuted }}></th>
                     </tr>
                   </thead>
                   <tbody>
                     {loading && (
                       <tr>
-                        <td colSpan={6} className='px-4 py-8 text-center fx-body text-[13px]' style={{ color: C.inkMuted }}>Chargement...</td>
+                        <td colSpan={7} className='px-4 py-8 text-center fx-body text-[13px]' style={{ color: C.inkMuted }}>Chargement...</td>
                       </tr>
                     )}
                     {!loading && filtered.map((c) => (
@@ -289,8 +381,8 @@ export default function FixProClientsPage() {
                             <Badge color={C.inkMuted} bg={C.surfaceAlt}>Aucune</Badge>
                           )}
                         </td>
-                        <td className='px-4 py-3.5 fx-mono font-medium text-[11.5px]' style={{ color: C.inkMuted }}>{formatDate(c.last_request)}</td>
-                        <td className='px-4 py-3.5 fx-mono font-medium text-[11.5px]' style={{ color: C.inkMuted }}>{formatDate(c.created_at)}</td>
+                        <td className='px-4 py-3.5 fx-mono font-medium text-[11.5px]' style={{ color: C.inkMuted }}>{formatShortDate(c.last_request)}</td>
+                        <td className='px-4 py-3.5 fx-mono font-medium text-[11.5px]' style={{ color: C.inkMuted }}>{formatShortDate(c.created_at)}</td>
                         <td className='px-4 py-3.5'><ChevronRight size={14} color={C.inkMuted} /></td>
                       </tr>
                     ))}
@@ -318,8 +410,8 @@ export default function FixProClientsPage() {
                   </div>
 
                   <div className='flex flex-col gap-2 text-[12.5px] font-medium' style={{ color: C.inkMuted }}>
-                    <div className='flex items-center gap-2'><Phone size={13} /> {selected.phone}</div>
-                    <div className='flex items-center gap-2'><Mail size={13} /> {selected.email || '—'}</div>
+                    <Copyable value={selected.phone} icon={Phone} />
+                    <Copyable value={selected.email} icon={Mail} />
                     <div className='flex items-center gap-2'><MapPin size={13} /> {selected.address || '—'}</div>
                     <div className='flex items-center gap-2'><Calendar size={13} /> Inscrit le {formatDate(selected.created_at)}</div>
                   </div>
@@ -335,14 +427,35 @@ export default function FixProClientsPage() {
                     </div>
                   </div>
 
-                  {selected.last_request && (
-                    <div>
-                      <p className='fx-body font-semibold text-[11.5px] mb-1.5' style={{ color: C.inkMuted }}>Activite</p>
-                      <p className='fx-body text-[12.5px]' style={{ color: C.ink }}>
-                        Client actif, derniere demande le {formatDate(selected.last_request)}.
-                      </p>
+                  <div>
+                    <p className='fx-body font-semibold text-[11.5px] mb-1.5' style={{ color: C.inkMuted }}>Dernieres demandes</p>
+                    <div className='flex flex-col gap-2'>
+                      {clientRequests.length === 0 && (
+                        <p className='fx-body text-[12px]' style={{ color: C.inkMuted }}>Aucune demande pour ce client.</p>
+                      )}
+                      {clientRequests.map((d) => {
+                        const st = statusColor(d.status);
+                        return (
+                          <div
+                            key={d.id}
+                            onClick={() => router.push('/admin/interventions')}
+                            className='rounded-lg p-2.5 cursor-pointer transition-colors'
+                            style={{ background: C.surfaceAlt, border: `1px solid ${C.border}` }}
+                          >
+                            <div className='flex items-center justify-between'>
+                              <p className='fx-mono font-medium text-[10.5px]' style={{ color: C.inkMuted }}>{d.reference || `FP-${String(d.id).padStart(6, '0')}`}</p>
+                              <Badge color={st.color} bg={st.bg}>{statusLabel(d.status)}</Badge>
+                            </div>
+                            <p className='fx-body text-[12.5px] font-medium mt-0.5' style={{ color: C.ink }}>{d.title}</p>
+                            <div className='flex items-center justify-between mt-1'>
+                              <span className='fx-body text-[11px]' style={{ color: C.inkMuted }}>{labelProfession(d.category)} {d.artisan_name ? `· ${d.artisan_name}` : ''}</span>
+                              <span className='fx-body text-[10px]' style={{ color: C.inkMuted }}>{formatShortDate(d.created_at)}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                  )}
+                  </div>
 
                   <p className='fx-mono text-[10px]' style={{ color: C.inkMuted }}>ID client #{String(selected.id).padStart(6, '0')}</p>
                 </>
