@@ -9,7 +9,7 @@
         <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
       </svg>
     </span>
-    FixPro<small>GUINÉE</small>
+    FixPro
   </a>
   <div class="fa-appbar-actions">
     <a href="{{ url_for('login') }}" class="fa-appbar-link">Connexion</a>
@@ -22,7 +22,7 @@
 </header>
 {% endblock %}
 {% block footer %}{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/fixpro-auth.css', v='3') }}" />{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/fixpro-auth.css', v='4') }}" />{% endblock %}
 
 {% block content %}
 <style>
@@ -37,14 +37,14 @@
   .fa-doc-status.added { color: var(--fa-success); font-weight: 600; }
 </style>
 
-<div class="fa-page">
+<div class="fa-page fa-has-bottom-nav">
   <header class="fa-header fa-header-plain">
     <a href="{{ url_for('register') }}" class="fa-back" aria-label="Retour">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
     </a>
     <a href="{{ url_for('index') }}" class="fa-logo" style="color:var(--fa-ink);">
       <div class="fa-logo-mark"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0A1122" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></div>
-      FixPro<small>GUINÉE</small>
+      FixPro<span class="fa-logo-pill">Guinée</span>
     </a>
     <span></span>
   </header>
@@ -80,6 +80,7 @@
           <p class="fa-subtitle">Vos informations personnelles de connexion.</p>
 
           <div class="fa-fg">
+            <label class="fa-fl" for="first_name">Prénom</label>
             <div class="fa-input-wrap">
               <span class="fa-input-icon fa-input-icon-left" aria-hidden="true">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -88,6 +89,7 @@
             </div>
           </div>
           <div class="fa-fg">
+            <label class="fa-fl" for="last_name">Nom</label>
             <div class="fa-input-wrap">
               <span class="fa-input-icon fa-input-icon-left" aria-hidden="true">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -97,6 +99,7 @@
           </div>
           <input type="hidden" name="full_name" id="full_name" />
           <div class="fa-fg">
+            <label class="fa-fl" for="phone">Téléphone</label>
             <div class="fa-input-wrap">
               <span class="fa-phone-prefix" aria-label="Indicatif Guinée +224">
                 <span class="fa-flag-gn" aria-hidden="true">
@@ -106,8 +109,10 @@
               </span>
               <input id="phone" class="fa-fb fa-fb-phone" type="tel" name="phone" required inputmode="tel" placeholder="620 00 00 00" />
             </div>
+            <p class="fa-help">Nous vous enverrons un code de vérification par SMS.</p>
           </div>
           <div class="fa-fg">
+            <label class="fa-fl" for="email">Email</label>
             <div class="fa-input-wrap">
               <span class="fa-input-icon fa-input-icon-left" aria-hidden="true">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
@@ -116,6 +121,7 @@
             </div>
           </div>
           <div class="fa-fg">
+            <label class="fa-fl" for="password">Mot de passe</label>
             <div class="fa-input-wrap">
               <span class="fa-input-icon fa-input-icon-left" aria-hidden="true">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
@@ -125,8 +131,10 @@
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
               </button>
             </div>
+            <p class="fa-help">Minimum 8 caractères, avec lettres et chiffres.</p>
           </div>
           <div class="fa-fg">
+            <label class="fa-fl" for="confirm_password">Confirmer le mot de passe</label>
             <div class="fa-input-wrap">
               <span class="fa-input-icon fa-input-icon-left" aria-hidden="true">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
@@ -322,6 +330,29 @@
     </div>
   </div>
 </div>
+
+<nav class="fa-bottom-nav" aria-label="Navigation principale">
+  <a class="fa-bottom-tab" href="{{ url_for('index') }}" aria-label="Accueil">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
+    <span>Accueil</span>
+  </a>
+  <a class="fa-bottom-tab" href="{{ url_for('artisans_page') }}" aria-label="Recherche">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <span>Recherche</span>
+  </a>
+  <a class="fa-bottom-tab fa-bottom-tab-active" href="{{ url_for('request_new') }}" aria-label="Réserver">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    <span>Réserver</span>
+  </a>
+  <a class="fa-bottom-tab" href="{{ url_for('lia') }}" aria-label="Messages">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 21l1.9-5.1A8.4 8.4 0 0 1 4 11.5a8.5 8.5 0 0 1 8.5-8.5A8.5 8.5 0 0 1 21 11.5z"/></svg>
+    <span>Messages</span>
+  </a>
+  <a class="fa-bottom-tab" href="{{ url_for('profile') }}" aria-label="Profil">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
+    <span>Profil</span>
+  </a>
+</nav>
 
 <script>
   function readFile(input, cb){

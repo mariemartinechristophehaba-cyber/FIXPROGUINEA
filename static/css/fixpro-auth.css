@@ -102,7 +102,7 @@
   font-family: var(--fa-font);
 }
 
-.fa-fb:focus, .fa-fb-select:focus { outline: none; border-color: var(--fa-amber); }
+.fa-fb:focus, .fa-fb-select:focus { outline: none; border-color: var(--fa-blue); }
 
 .fa-fb::placeholder { color: var(--fa-slate-light); }
 
@@ -325,8 +325,10 @@
   transition: background .2s;
 }
 
+.fa-step-dot { background: var(--fa-slate-light); }
+
 .fa-step-dot.active,
-.fa-step-dot.completed { background: var(--fa-slate); }
+.fa-step-dot.completed { background: var(--fa-blue); }
 
 .fa-step-dot.active { background: var(--fa-blue); }
 
@@ -537,3 +539,90 @@
 @media (min-width: 768px) {
   .fa-job-grid { grid-template-columns: repeat(3, 1fr); }
 }
+
+/* ===== Etape 1 inscription artisan - mobile first ===== */
+
+.fa-help {
+  font-size: 12px;
+  color: var(--fa-slate);
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+.fa-logo-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: var(--fa-line);
+  color: var(--fa-ink);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.fa-page.fa-has-bottom-nav {
+  padding-bottom: 120px;
+}
+
+.fa-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  height: 72px;
+  padding: 8px 0 calc(8px + env(safe-area-inset-bottom, 0px));
+  background: #fff;
+  border-top: 1px solid var(--fa-line);
+  box-shadow: 0 -4px 20px rgba(10, 17, 34, 0.06);
+}
+
+.fa-bottom-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  color: var(--fa-slate);
+  text-decoration: none;
+  font-size: 11px;
+  font-weight: 500;
+  transition: color .2s, background .2s;
+}
+
+.fa-bottom-tab svg {
+  width: 22px;
+  height: 22px;
+  stroke: currentColor;
+}
+
+.fa-bottom-tab-active {
+  position: relative;
+  top: -18px;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: var(--fa-blue);
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(37, 99, 235, .35);
+}
+
+.fa-bottom-tab-active svg {
+  width: 24px;
+  height: 24px;
+}
+
+.fa-input-wrap:has(.fa-fb:focus) .fa-input-icon-left,
+.fa-input-wrap:has(.fa-fb:focus) .fa-phone-prefix {
+  color: var(--fa-blue);
+}
+
+.fa-header > span:last-child { width: 40px; }
