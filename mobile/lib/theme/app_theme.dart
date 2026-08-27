@@ -29,8 +29,8 @@ class AppTheme {
         foregroundColor: AppColors.white,
         centerTitle: false,
       ),
-      splashColor: AppColors.primaryBlue.withValues(alpha: 0.15),
-      highlightColor: AppColors.primaryBlue.withValues(alpha: 0.08),
+      splashColor: AppColors.primaryBlue.withOpacity( 0.15),
+      highlightColor: AppColors.primaryBlue.withOpacity( 0.08),
     );
   }
 

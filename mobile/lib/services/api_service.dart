@@ -135,14 +135,16 @@ class ApiService {
     return false;
   }
 
-  static Future<void> registerArtisan({
+  static Future<void> registerTechnician({
     required String firstName,
     required String lastName,
     required String phone,
+    required String password,
     String? email,
     String? profession,
     String? city,
     String? quartier,
+    String? bio,
     String? identityDoc,
     String? diplomaDoc,
   }) async {
@@ -152,10 +154,12 @@ class ApiService {
       'first_name': firstName,
       'last_name': lastName,
       'phone': phone,
+      'password': password,
       if (email != null && email.isNotEmpty) 'email': email,
       if (profession != null && profession.isNotEmpty) 'profession': profession,
       if (city != null && city.isNotEmpty) 'city': city,
       if (quartier != null && quartier.isNotEmpty) 'quartier': quartier,
+      if (bio != null && bio.isNotEmpty) 'bio': bio,
       if (identityDoc != null && identityDoc.isNotEmpty) 'identity_doc': identityDoc,
       if (diplomaDoc != null && diplomaDoc.isNotEmpty) 'diploma_doc': diplomaDoc,
     };

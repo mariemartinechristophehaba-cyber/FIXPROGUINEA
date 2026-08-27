@@ -226,7 +226,7 @@ class _CircleIconButton extends StatelessWidget {
           width: 46,
           height: 46,
           decoration: BoxDecoration(
-            color: AppColors.white.withValues(alpha: 0.06),
+            color: AppColors.white.withOpacity( 0.06),
             shape: BoxShape.circle,
             border: Border.all(color: AppColors.glassBorder),
           ),
@@ -273,7 +273,7 @@ class _SearchCard extends StatelessWidget {
           Text(
             'Des centaines de techniciens qualifiés près de chez vous à Conakry.',
             style: textTheme.bodyMedium?.copyWith(
-              color: AppColors.white.withValues(alpha: 0.85),
+              color: AppColors.white.withOpacity( 0.85),
               fontSize: 13.5,
               height: 1.4,
             ),
@@ -305,7 +305,7 @@ class _SearchField extends StatelessWidget {
       decoration: InputDecoration(
         isDense: true,
         filled: true,
-        fillColor: AppColors.background.withValues(alpha: 0.55),
+        fillColor: AppColors.background.withOpacity( 0.55),
         hintText: 'Ex : plombier, électricien, frigoriste...',
         hintStyle: const TextStyle(color: AppColors.lightGrey, fontSize: 13.5),
         prefixIcon:
@@ -343,7 +343,7 @@ class _LocationDropdownState extends State<_LocationDropdown> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14),
       decoration: BoxDecoration(
-        color: AppColors.background.withValues(alpha: 0.55),
+        color: AppColors.background.withOpacity( 0.55),
         borderRadius: BorderRadius.circular(16),
       ),
       child: DropdownButtonHideUnderline(

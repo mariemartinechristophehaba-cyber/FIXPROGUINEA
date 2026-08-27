@@ -113,7 +113,7 @@ class _ProfileHeader extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: BoxDecoration(
-            color: AppColors.orange.withValues(alpha: 0.14),
+            color: AppColors.orange.withOpacity( 0.14),
             borderRadius: BorderRadius.circular(20),
           ),
           child: RatingStars(rating: technician.rating, size: 18),
@@ -271,7 +271,7 @@ class _BottomBar extends StatelessWidget {
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.3),
+            color: Colors.black.withOpacity( 0.3),
             blurRadius: 20,
             offset: const Offset(0, -6),
           ),
@@ -305,7 +305,7 @@ class _CircleAction extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: AppColors.primaryBlue.withValues(alpha: 0.18),
+      color: AppColors.primaryBlue.withOpacity( 0.18),
       shape: const CircleBorder(),
       child: InkWell(
         customBorder: const CircleBorder(),

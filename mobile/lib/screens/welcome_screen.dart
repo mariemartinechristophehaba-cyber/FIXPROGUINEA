@@ -95,6 +95,33 @@ class WelcomeScreen extends StatelessWidget {
   }
 }
 
+/// Bouton secondaire transparent avec bordure blanche.
+class _SecondaryButton extends StatelessWidget {
+  final String label;
+  final VoidCallback onPressed;
+
+  const _SecondaryButton({required this.label, required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton(
+        onPressed: onPressed,
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.white,
+          side: const BorderSide(color: AppColors.white),
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        child: Text(label),
+      ),
+    );
+  }
+}
+
 /// Logo FixPro : badge a degrade + nom en deux couleurs.
 class _FixProLogo extends StatelessWidget {
   const _FixProLogo();
@@ -111,7 +138,7 @@ class _FixProLogo extends StatelessWidget {
             borderRadius: BorderRadius.circular(28),
             boxShadow: [
               BoxShadow(
-                color: AppColors.primaryBlue.withValues(alpha: 0.45),
+                color: AppColors.primaryBlue.withOpacity( 0.45),
                 blurRadius: 30,
                 offset: const Offset(0, 12),
               ),

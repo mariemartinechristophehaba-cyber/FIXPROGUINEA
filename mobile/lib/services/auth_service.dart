@@ -103,10 +103,12 @@ class AuthService {
     required String firstName,
     required String lastName,
     required String phone,
+    required String password,
     String? email,
     String? profession,
     String? city,
     String? quartier,
+    String? bio,
     String? identityDoc,
     String? diplomaDoc,
   }) async {
@@ -115,14 +117,16 @@ class AuthService {
         "API_URL non configure. Verifiez --dart-define=API_URL=...",
       );
     }
-    await ApiService.registerArtisan(
+    await ApiService.registerTechnician(
       firstName: firstName,
       lastName: lastName,
       phone: phone,
+      password: password,
       email: email,
       profession: profession,
       city: city,
       quartier: quartier,
+      bio: bio,
       identityDoc: identityDoc,
       diplomaDoc: diplomaDoc,
     );

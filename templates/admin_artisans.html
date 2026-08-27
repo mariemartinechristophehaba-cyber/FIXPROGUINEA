@@ -143,7 +143,7 @@
               <form method="post" class="admin-inline-form">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                 <input type="hidden" name="artisan_id" value="{{ artisan.id }}" />
-                <button class="btn btn-success btn-sm" type="submit" name="action" value="verify" onclick="return confirm('Accepter ce technicien ?')">Accepter</button>
+                <button class="btn btn-success btn-sm" type="submit" name="action" value="approve" onclick="return confirm('Accepter ce technicien ?')">Accepter</button>
                 <button class="btn btn-danger btn-sm" type="submit" name="action" value="reject" onclick="return confirm('Refuser et supprimer ce profil ?')">Refuser</button>
               </form>
               {% else %}

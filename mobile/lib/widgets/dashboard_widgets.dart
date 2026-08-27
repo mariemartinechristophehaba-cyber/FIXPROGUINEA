@@ -98,7 +98,7 @@ class _CategoryCardState extends State<CategoryCard> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryBlue.withValues(alpha: 0.18),
+                  color: AppColors.primaryBlue.withOpacity( 0.18),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Icon(widget.category.icon,
@@ -313,7 +313,7 @@ class ContractCard extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: contract.status.color.withValues(alpha: 0.16),
+                  color: contract.status.color.withOpacity( 0.16),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(

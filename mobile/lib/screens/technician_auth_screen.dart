@@ -5,6 +5,7 @@ import '../theme/app_colors.dart';
 import '../widgets/common.dart';
 import '../widgets/glass_card.dart';
 import 'technician_dashboard_screen.dart';
+import 'technician_signup_screen.dart';
 
 /// Ecran de connexion reserve au technicien (session FixPro Flask).
 class TechnicianAuthScreen extends StatefulWidget {
@@ -99,6 +100,18 @@ class _TechnicianAuthScreenState extends State<TechnicianAuthScreen> {
                         onPressed: _loading ? null : _login,
                         height: 52,
                       ),
+                      const SizedBox(height: 16),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(builder: (_) => const TechnicianSignupScreen()),
+                          );
+                        },
+                        child: const Text(
+                          "S'inscrire en tant que technicien",
+                          style: TextStyle(color: AppColors.lightGrey),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -132,7 +145,7 @@ class _Field extends StatelessWidget {
       decoration: InputDecoration(
         isDense: true,
         filled: true,
-        fillColor: AppColors.background.withValues(alpha: 0.55),
+        fillColor: AppColors.background.withOpacity( 0.55),
         hintText: label,
         hintStyle: const TextStyle(color: AppColors.lightGrey, fontSize: 14),
         contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),

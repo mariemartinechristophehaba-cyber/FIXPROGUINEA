@@ -57,7 +57,7 @@
       </a>
       <a href="{{ url_for('register_artisan') }}" class="f-drawer-item {{ 'active' if request.endpoint == 'register_artisan' }}">
         <img src="{{ url_for('static', filename='img/icon-wrench.svg') }}" width="20" height="20" alt="" />
-        <span>Devenir technicien</span>
+        <span>S'inscrire en tant que technicien</span>
       </a>
       <a href="{{ url_for('requests_list') }}" class="f-drawer-item {{ 'active' if request.endpoint in ('requests_list', 'request_detail', 'request_new') }}">
         <img src="{{ url_for('static', filename='img/icon-calendar.svg') }}" width="20" height="20" alt="" />

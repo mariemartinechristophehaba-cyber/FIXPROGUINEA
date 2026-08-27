@@ -298,7 +298,7 @@ class _AuthLogo extends StatelessWidget {
             borderRadius: BorderRadius.circular(22),
             boxShadow: [
               BoxShadow(
-                color: AppColors.primaryBlue.withValues(alpha: 0.4),
+                color: AppColors.primaryBlue.withOpacity( 0.4),
                 blurRadius: 24,
                 offset: const Offset(0, 10),
               ),
@@ -327,7 +327,7 @@ class _GoogleButton extends StatelessWidget {
         style: OutlinedButton.styleFrom(
           backgroundColor: AppColors.white,
           foregroundColor: const Color(0xFF1F1F1F),
-          disabledBackgroundColor: AppColors.white.withValues(alpha: 0.7),
+          disabledBackgroundColor: AppColors.white.withOpacity( 0.7),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
@@ -485,9 +485,9 @@ class _Banner extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.14),
+        color: color.withOpacity( 0.14),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: color.withValues(alpha: 0.5)),
+        border: Border.all(color: color.withOpacity( 0.5)),
       ),
       child: Text(
         message,
