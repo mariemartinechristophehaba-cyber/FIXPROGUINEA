@@ -1334,5 +1334,223 @@ class TechnicianAccessTests(FixProTestCase):
         self.assertEqual(response.status_code, 200)
 
 
+class TechnicianLifecycleTests(FixProTestCase):
+    """Cycle de vie complet : creation, validation, activation, acces."""
+
+    def _create_admin(self):
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute(
+                "INSERT INTO users (email, phone, password_hash, role, full_name, is_verified, is_active)"
+                " VALUES (?, ?, ?, 'admin', ?, 1, 1)",
+                ("admin@fixpro.local", "+224000000000",
+                 fixpro_app.generate_password_hash("adminpass"), "Administrateur"))
+            conn.commit()
+        finally:
+            conn.close()
+
+    def test_01_admin_creates_technician_pending(self):
+        self._create_admin()
+        self.login("admin@fixpro.local", "adminpass")
+        response = self.client.post("/admin/artisans", data={
+            "action": "create",
+            "full_name": "Ibrahima Camara",
+            "phone": "621111333",
+            "email": "ibrahima@fixpro.local",
+            "profession": "Plombier",
+            "city": "Conakry",
+            "zone_intervention": "Kaloum",
+            "years_experience": "5",
+            "bio": "Plombier experimente"
+        }, follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
+
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            tech = conn.execute(
+                "SELECT * FROM users WHERE email = ?", ("ibrahima@fixpro.local",)).fetchone()
+            self.assertIsNotNone(tech)
+            self.assertEqual(tech["role"], "technician")
+            self.assertEqual(tech["account_status"], "PENDING")
+            self.assertEqual(tech["is_verified"], 0)
+            self.assertEqual(tech["is_active"], 0)
+        finally:
+            conn.close()
+
+    def test_02_pending_technician_cannot_login(self):
+        self.test_01_admin_creates_technician_pending()
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute(
+                "UPDATE users SET password_hash = ? WHERE email = ?",
+                (fixpro_app.generate_password_hash("pendingpass"), "ibrahima@fixpro.local"))
+            conn.commit()
+        finally:
+            conn.close()
+        self.client.get("/logout")
+        response = self.login("ibrahima@fixpro.local", "pendingpass")
+        self.assertIn(b"attente", response.data.lower())
+
+    def test_03_admin_validates_technician_and_token_is_created(self):
+        self.test_01_admin_creates_technician_pending()
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            tech = conn.execute(
+                "SELECT id FROM users WHERE email = ?", ("ibrahima@fixpro.local",)).fetchone()
+        finally:
+            conn.close()
+
+        response = self.client.post("/admin/artisans", data={
+            "action": "verify",
+            "artisan_id": str(tech["id"])}, follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
+
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            tech = conn.execute(
+                "SELECT * FROM users WHERE email = ?", ("ibrahima@fixpro.local",)).fetchone()
+            self.assertEqual(tech["is_verified"], 1)
+            self.assertEqual(tech["account_status"], "PENDING")
+            notif = conn.execute(
+                "SELECT * FROM notifications WHERE user_id = ?",
+                (tech["id"],)).fetchone()
+            self.assertIsNotNone(notif)
+            self.assertIn(b"token:", (notif["data"] or "").encode())
+        finally:
+            conn.close()
+
+    def test_04_technician_activates_and_redirects_to_dashboard(self):
+        self.test_03_admin_validates_technician_and_token_is_created()
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            tech = conn.execute(
+                "SELECT * FROM users WHERE email = ?", ("ibrahima@fixpro.local",)).fetchone()
+            notif = conn.execute(
+                "SELECT * FROM notifications WHERE user_id = ?",
+                (tech["id"],)).fetchone()
+            token = (notif["data"] or "").replace("token:", "")
+        finally:
+            conn.close()
+
+        response = self.client.post(
+            f"/technician/activate?token={token}",
+            data={"token": token, "password": "PassTech2026!", "confirm_password": "PassTech2026!"},
+            follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
+
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            tech = conn.execute(
+                "SELECT * FROM users WHERE email = ?", ("ibrahima@fixpro.local",)).fetchone()
+            self.assertEqual(tech["account_status"], "ACTIVE")
+            self.assertEqual(tech["is_active"], 1)
+            self.assertEqual(tech["is_verified"], 1)
+        finally:
+            conn.close()
+
+        # Connexion automatique apres activation
+        self.assertIn(b"Bienvenue", response.data)
+
+    def test_05_technician_cannot_access_admin_dashboard(self):
+        self.test_04_technician_activates_and_redirects_to_dashboard()
+        response = self.client.get("/admin/dashboard", follow_redirects=False)
+        # Le decorateur admin_required redirige vers /admin/login
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/admin/login", response.location or "")
+
+    def test_06_technician_cannot_see_other_technician_mission(self):
+        self.test_04_technician_activates_and_redirects_to_dashboard()
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            tech = conn.execute(
+                "SELECT * FROM users WHERE email = ?", ("ibrahima@fixpro.local",)).fetchone()
+            # Deuxieme technicien
+            conn.execute(
+                "INSERT INTO users (email, phone, password_hash, role, full_name, profession, city, is_verified, is_active, account_status)"
+                " VALUES (?, ?, ?, 'technician', ?, ?, ?, 1, 1, 'ACTIVE')",
+                ("t2@fixpro.local", "+224622222222", fixpro_app.generate_password_hash("pass"),
+                 "T2 Bah", "Electricien", "Conakry"))
+            conn.execute(
+                "INSERT INTO requests (client_id, artisan_id, reference, title, description, category, address, status, urgency, phone_contact, estimated_price, commission_rate, commission_amount, professional_amount, payment_status, created_at, updated_at)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (1, tech["id"] + 1, "FP-000002", "Court-circuit", "desc", "Electricien", "Dixinn", "assigned", "urgent", "+2246000", 100000, 0.1, 10000, 90000, "PENDING", "2026-01-01", "2026-01-01"))
+            conn.commit()
+        finally:
+            conn.close()
+
+        response = self.client.get("/missions/2", follow_redirects=False)
+        self.assertEqual(response.status_code, 302)
+
+    def test_07_admin_can_list_technicians(self):
+        self._create_admin()
+        self.login("admin@fixpro.local", "adminpass")
+        response = self.client.get("/admin/artisans")
+        self.assertEqual(response.status_code, 200)
+
+    def test_08_mission_assigned_to_technician_appears_and_notifies(self):
+        self._create_admin()
+        self.login("admin@fixpro.local", "adminpass")
+        self.client.post("/admin/artisans", data={
+            "action": "create",
+            "full_name": "Ibrahima Camara",
+            "phone": "621111333",
+            "email": "ibrahima@fixpro.local",
+            "profession": "Plombier",
+            "city": "Conakry",
+            "zone_intervention": "Kaloum",
+            "years_experience": "5",
+            "bio": "Plombier experimente"
+        }, follow_redirects=True)
+
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            tech = conn.execute(
+                "SELECT id FROM users WHERE email = ?", ("ibrahima@fixpro.local",)).fetchone()
+            client = conn.execute(
+                "SELECT id FROM users WHERE phone = ?", ("+224000000000",)).fetchone()
+        finally:
+            conn.close()
+
+        if not client:
+            conn = db.connect(sqlite_path=self.db_path)
+            try:
+                conn.execute(
+                    "INSERT INTO users (email, phone, password_hash, role, full_name, city, is_verified, is_active)"
+                    " VALUES (?, ?, ?, 'client', ?, ?, 1, 1)",
+                    ("client2@fixpro.local", "+224620000000",
+                     fixpro_app.generate_password_hash("pass"), "Client Test", "Conakry"))
+                conn.commit()
+            finally:
+                conn.close()
+
+            conn = db.connect(sqlite_path=self.db_path)
+            try:
+                client = conn.execute(
+                    "SELECT id FROM users WHERE phone = ?", ("+224620000000",)).fetchone()
+            finally:
+                conn.close()
+
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute(
+                "INSERT INTO requests (client_id, artisan_id, reference, title, description, category, address, status, urgency, phone_contact, estimated_price, commission_rate, commission_amount, professional_amount, payment_status, created_at, updated_at)"
+                " VALUES (?, ?, 'FP-000003', 'Fuite sous evier', 'desc', 'Plombier', 'Kaloum, Conakry', 'assigned', 'urgent', '+2246000', 100000, 0.1, 10000, 90000, 'PENDING', '2026-01-01', '2026-01-01')",
+                (client["id"], tech["id"]))
+            conn.commit()
+        finally:
+            conn.close()
+
+        token = fixpro_app._generate_activation_token(tech["id"])
+        # Connexion du technicien
+        self.client.get("/logout")
+        self.client.post("/technician/activate",
+                         data={"token": token,
+                               "password": "PassTech2026!",
+                               "confirm_password": "PassTech2026!"}, follow_redirects=True)
+        response = self.client.get("/technician/dashboard", follow_redirects=True)
+        self.assertIn(b"FP-000003", response.data)
+        self.assertIn(b"Fuite sous evier", response.data)
+
+
 if __name__ == "__main__":
     unittest.main()

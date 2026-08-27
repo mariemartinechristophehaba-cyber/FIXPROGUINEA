@@ -5,6 +5,26 @@
 {% from '_category_colors.html' import category_colors, default_category_color, default_avatar_gradient %}
 
 {% block admin_content %}
+<div class="admin-card" style="margin-bottom: 24px;">
+  <div class="admin-section-head">
+    <h3>Ajouter un technicien</h3>
+    <span class="small muted">Creation par l'administration uniquement.</span>
+  </div>
+  <form method="post" action="{{ url_for('admin_artisans') }}" class="admin-filters" style="flex-wrap: wrap;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+    <input type="hidden" name="action" value="create" />
+    <input type="text" name="full_name" class="form-input" placeholder="Nom complet" required />
+    <input type="text" name="phone" class="form-input" placeholder="Telephone" required />
+    <input type="email" name="email" class="form-input" placeholder="Email" />
+    <input type="text" name="profession" class="form-input" placeholder="Metier" required />
+    <input type="text" name="city" class="form-input" placeholder="Ville" required />
+    <input type="text" name="zone_intervention" class="form-input" placeholder="Zone d'intervention" />
+    <input type="number" name="years_experience" class="form-input" placeholder="Annee(s)" min="0" />
+    <textarea name="bio" class="form-input" placeholder="Informations professionnelles" style="min-width: 220px; min-height: 60px;"></textarea>
+    <button type="submit" class="btn btn-primary btn-sm">Ajouter</button>
+  </form>
+</div>
+
 <div class="admin-card">
   <div class="admin-section-head">
     <h3>Liste complete des techniciens</h3>
@@ -92,12 +112,16 @@
           <td>
             {% if artisan.is_verified == 0 %}
               <span class="badge pending">En attente</span>
+            {% elif artisan.account_status == 'PENDING' %}
+              <span class="badge pending">A activer</span>
             {% elif artisan.account_status == 'ACTIVE' %}
               <span class="badge success">Actif</span>
             {% elif artisan.account_status == 'PAUSED' %}
               <span class="badge amber">Pause</span>
             {% elif artisan.account_status == 'SUSPENDED' %}
               <span class="badge failed">Suspendu</span>
+            {% elif artisan.account_status == 'INACTIVE' %}
+              <span class="badge muted">Inactif</span>
             {% elif artisan.account_status == 'DELETED' %}
               <span class="badge muted">Supprime</span>
             {% else %}

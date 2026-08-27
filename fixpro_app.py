@@ -31,6 +31,7 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_cors import CORS
 from flask_wtf.csrf import CSRFProtect
+from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 from werkzeug.security import check_password_hash, generate_password_hash
 
 import ai_service
@@ -1688,12 +1689,62 @@ def admin_artisans():
 
             def _set_status(status, is_active):
                 conn.execute(
-                    "UPDATE users SET account_status = ?, is_active = ? WHERE id = ? AND role = 'artisan'",
+                    "UPDATE users SET account_status = ?, is_active = ? WHERE id = ?",
                     (status, 1 if is_active else 0, artisan_id))
                 conn.commit()
 
+            if action == "create":
+                full_name = (request.form.get("full_name") or "").strip()
+                phone = _phone_with_prefix((request.form.get("phone") or "").strip())
+                email = (request.form.get("email") or "").strip().lower() or None
+                profession = (request.form.get("profession") or "").strip()
+                city = (request.form.get("city") or "").strip()
+                zone = (request.form.get("zone_intervention") or "").strip()
+                bio = (request.form.get("bio") or "").strip()
+                years = request.form.get("years_experience") or "0"
+
+                if not full_name or not phone or not profession or not city:
+                    flash("Nom, telephone, metier et ville sont obligatoires.", "error")
+                    return redirect(url_for("admin_artisans"))
+
+                if conn.execute("SELECT id FROM users WHERE phone = ?", (phone,)).fetchone():
+                    flash("Ce numero de telephone est deja utilise.", "error")
+                    return redirect(url_for("admin_artisans"))
+
+                temp_password = secrets.token_urlsafe(16)
+                conn.execute(
+                    "INSERT INTO users (email, phone, password_hash, role, full_name, profession,"
+                    " city, zone_intervention, bio, years_experience, is_verified, is_active,"
+                    " account_status)"
+                    " VALUES (?, ?, ?, 'technician', ?, ?, ?, ?, ?, ?, 0, 0, 'PENDING')",
+                    (email, phone, generate_password_hash(temp_password), full_name,
+                     profession, city, zone, bio, int(years or 0)))
+                conn.commit()
+                new_id = conn.execute("SELECT id FROM users WHERE phone = ?", (phone,)).fetchone()["id"]
+                log_admin_action(user["id"], user["email"], "create_technician", "user", new_id,
+                                 f"Creation du technicien {full_name}")
+                flash("Technicien cree. Il est en attente de validation.", "success")
+                return redirect(url_for("admin_artisans"))
+
+            artisan = conn.execute(
+                "SELECT id, role, full_name, email FROM users WHERE id = ? AND role IN ('artisan','technician')",
+                (artisan_id,)).fetchone()
+            if not artisan:
+                flash("Technicien introuvable.", "error")
+                return redirect(url_for("admin_artisans"))
+
             if action == "verify":
-                _set_status("ACTIVE", 1)
+                if artisan["role"] == "technician":
+                    _set_status("PENDING", 0)
+                    token = _generate_activation_token(artisan["id"])
+                    create_notification(
+                        artisan["id"],
+                        "Votre compte FixPro a ete valide",
+                        "Vous pouvez maintenant activer votre compte et acceder a votre espace technicien.",
+                        "info",
+                        f"token:{token}")
+                else:
+                    _set_status("ACTIVE", 1)
                 conn.execute("UPDATE users SET is_verified = 1 WHERE id = ?", (artisan_id,))
                 conn.commit()
                 log_admin_action(user["id"], user["email"], "verify", "user", artisan_id,
@@ -1731,7 +1782,7 @@ def admin_artisans():
         city_filter = request.args.get("city", "").strip()
         profession_filter = request.args.get("profession", "").strip()
 
-        where_parts = ["u.role = 'artisan'"]
+        where_parts = ["u.role IN ('artisan','technician')"]
         params = []
         if q:
             where_parts.append("(u.full_name LIKE ? OR u.phone LIKE ? OR u.email LIKE ?)")
@@ -1766,10 +1817,10 @@ def admin_artisans():
             tuple(params)).fetchall()
 
         cities = conn.execute(
-            "SELECT DISTINCT city FROM users WHERE role = 'artisan' AND city IS NOT NULL"
+            "SELECT DISTINCT city FROM users WHERE role IN ('artisan','technician') AND city IS NOT NULL"
             " ORDER BY city").fetchall()
         professions = conn.execute(
-            "SELECT DISTINCT profession FROM users WHERE role = 'artisan' AND profession IS NOT NULL"
+            "SELECT DISTINCT profession FROM users WHERE role IN ('artisan','technician') AND profession IS NOT NULL"
             " ORDER BY profession").fetchall()
     finally:
         conn.close()
@@ -1788,7 +1839,7 @@ def admin_artisan_detail(artisan_id):
     conn = get_db_connection()
     try:
         artisan = conn.execute(
-            "SELECT * FROM users WHERE id = ? AND role = 'artisan'", (artisan_id,)).fetchone()
+            "SELECT * FROM users WHERE id = ? AND role IN ('artisan','technician')", (artisan_id,)).fetchone()
         if not artisan:
             flash("Technicien introuvable.", "error")
             return redirect(url_for("admin_artisans"))
@@ -2417,6 +2468,48 @@ def complete_profile():
                            full_name=full_name)
 
 
+def _can_login(user):
+    """Verifie que le compte est actif et autorise la connexion."""
+    account_status = (user.get("account_status") or "ACTIVE").upper()
+    is_active = user.get("is_active", 1)
+
+    if is_active == 0 and account_status == "SUSPENDED":
+        flash("Votre compte FixPro est actuellement suspendu. Veuillez contacter l'administration.", "error")
+        return False
+    if account_status == "PENDING":
+        flash("Votre compte est en attente d'activation. Veuillez consulter votre email ou contacter l'administration.", "error")
+        return False
+    if account_status in ("INACTIVE", "DELETED"):
+        flash("Votre compte est inactif. Veuillez contacter l'administration.", "error")
+        return False
+    if is_active == 0:
+        flash("Votre compte est desactive. Veuillez contacter l'administration.", "error")
+        return False
+    return True
+
+
+_ACTIVATION_MAX_AGE = 7 * 24 * 60 * 60  # 7 jours
+_activation_serializer = URLSafeTimedSerializer(
+    app.config.get("SECRET_KEY") or "fallback-secret",
+    salt="technician-activation")
+
+
+def _generate_activation_token(user_id):
+    """Genere un jeton d'activation securise pour un technicien."""
+    return _activation_serializer.dumps({"user_id": user_id})
+
+
+def _verify_activation_token(token):
+    """Verifie un jeton d'activation et retourne l'identifiant utilisateur."""
+    if not token:
+        return None
+    try:
+        data = _activation_serializer.loads(token, max_age=_ACTIVATION_MAX_AGE)
+        return data.get("user_id")
+    except (BadSignature, SignatureExpired):
+        return None
+
+
 @app.route("/login", methods=["GET", "POST"])
 @limiter.limit("20 per hour", methods=["POST"])
 def login():
@@ -2438,6 +2531,9 @@ def login():
             conn.close()
 
         if user and check_password_hash(user["password_hash"], password):
+            if not _can_login(user):
+                return render_template("login.html", next_url=next_url)
+
             session.clear()
             session["user_id"] = user["id"]
             session.permanent = True
@@ -2464,6 +2560,58 @@ def logout():
     session.clear()
     flash("Vous avez été déconnecté.", "success")
     return redirect(url_for("login"))
+
+
+@app.route("/technician/activate", methods=["GET", "POST"])
+def technician_activate():
+    """Page d'activation du compte technicien (definition du mot de passe)."""
+    token = request.args.get("token") or request.form.get("token", "")
+    user_id = _verify_activation_token(token)
+
+    if not user_id:
+        flash("Lien d'activation invalide ou expire.", "error")
+        return redirect(url_for("login"))
+
+    conn = get_db_connection()
+    try:
+        user = conn.execute(
+            "SELECT * FROM users WHERE id = ? AND role IN ('artisan','technician')",
+            (user_id,)).fetchone()
+    finally:
+        conn.close()
+
+    if not user:
+        flash("Compte technicien introuvable.", "error")
+        return redirect(url_for("login"))
+
+    if request.method == "POST":
+        password = request.form.get("password", "")
+        confirm = request.form.get("confirm_password", "")
+
+        if not password or len(password) < 8:
+            flash("Le mot de passe doit contenir au moins 8 caracteres.", "error")
+            return render_template("technician_activate.html", token=token, user=user)
+        if password != confirm:
+            flash("Les mots de passe ne correspondent pas.", "error")
+            return render_template("technician_activate.html", token=token, user=user)
+
+        conn = get_db_connection()
+        try:
+            conn.execute(
+                "UPDATE users SET password_hash = ?, account_status = 'ACTIVE',"
+                " is_active = 1, is_verified = 1 WHERE id = ?",
+                (generate_password_hash(password), user_id))
+            conn.commit()
+        finally:
+            conn.close()
+
+        flash("Votre compte est active. Bienvenue sur FixPro.", "success")
+        session.clear()
+        session["user_id"] = user_id
+        session.permanent = True
+        return redirect(url_for("artisan_dashboard"))
+
+    return render_template("technician_activate.html", token=token, user=user)
 
 
 # ---------------------------------------------------------------------------
@@ -5303,7 +5451,7 @@ def _select_best_technician(conn, category, location, client_lat=None, client_lo
             SELECT artisan_id, COUNT(*) AS c
             FROM requests WHERE LOWER(status) = 'completed' GROUP BY artisan_id
         ) completed_count ON completed_count.artisan_id = u.id
-        WHERE u.role = 'artisan'
+        WHERE u.role IN ('artisan', 'technician')
           AND u.is_active = 1
           AND (u.account_status = 'ACTIVE' OR u.account_status IS NULL)
           AND LOWER(COALESCE(u.availability_status, 'hors_ligne')) NOT IN ('hors_ligne', 'en_intervention')
