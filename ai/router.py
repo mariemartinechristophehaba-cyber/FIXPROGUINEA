@@ -13,7 +13,7 @@ _INTENT_PATTERNS = {
     "thanks": [r"\bmerci\b", r"\bthanks\b"],
     "intervention": [r"\bintervention\b", r"\breparer\b", r"\bdepanner\b", r"\bfuite\b", r"\bpanne\b"],
     "follow_up": [r"\bstatut\b", r"\bou en est\b", r"\bmission\b", r"\bdemande\b"],
-    "cancel": [r"\bannul\b", r"\bsupprim\b"],
+    "cancel": [r"\bannul", r"\bsupprim"],
     "price": [r"\bprix\b", r"\btarif\b", r"\bcombien\b", r"\bdevis\b"],
     "help": [r"\baide\b", r"\bcomment\b", r"\bquestion\b"],
 }

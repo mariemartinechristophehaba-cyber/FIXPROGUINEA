@@ -18,26 +18,27 @@ class Assistant:
     def respond(self, message, context=None):
         """Genere une reponse a un message donne.
 
-        context : dict avec 'history' (liste de messages), 'user_id', 'role', etc.
-        Retourne un dict {'response', 'intent', 'error', 'collected', 'ready'}
+        context : dict avec 'history', 'user_id', 'role', 'conversation_id',
+                              'active_request', etc.
+        Retourne un dict {'response', 'intent', 'error', 'action', 'data'}
         """
         context = context or {}
-        history = context.get("history", [])
         intent = router.detect_intent(message)
 
-        messages = []
-        for h in history[-6:]:
-            messages.append({"role": "user", "content": h.get("user", "")})
-            if h.get("assistant"):
-                messages.append({"role": "assistant", "content": h["assistant"]})
-        messages.append({"role": "user", "content": message})
+        # Soins specifiques pour les actions FixPro
+        action_result = self._handle_action_intent(intent, message, context)
+        if action_result:
+            return action_result
 
-        # Contexte supplementaire (mission, compte)
-        context_text = self._build_context_text(context)
-        if context_text:
-            messages.insert(0, {"role": "user", "content": context_text})
+        # Conversation generale avec historique et contexte
+        history = context.get("history", [])
+        conversation_id = context.get("conversation_id")
+        if conversation_id and not history:
+            history = tools.get_conversation_history(conversation_id)
 
+        messages = self._build_messages(message, history, context)
         result = self.provider.generate(self.system_prompt, messages)
+
         if result.get("error"):
             logger.warning("Erreur IA: %s", result["error"])
             return {
@@ -47,17 +48,115 @@ class Assistant:
                 ),
                 "intent": intent,
                 "error": result["error"],
-                "collected": {},
-                "ready": False,
+                "action": None,
+                "data": None,
             }
 
         return {
             "response": result["text"],
             "intent": intent,
             "error": None,
-            "collected": {},
-            "ready": False,
+            "action": None,
+            "data": None,
         }
+
+    def _handle_action_intent(self, intent, message, context):
+        """Gere les intentions qui necessitent un outil FixPro."""
+        user_id = context.get("user_id")
+
+        if intent == "follow_up" and user_id:
+            return self._handle_follow_up(user_id)
+
+        if intent == "cancel" and user_id:
+            return self._handle_cancel(user_id, message, context)
+
+        return None
+
+    def _handle_follow_up(self, user_id):
+        """Retourne le statut de la demande active du client."""
+        active = tools.get_active_request(user_id)
+        if not active:
+            return {
+                "response": "Je ne trouve pas de demande en cours. Souhaitez-vous en creer une ?",
+                "intent": "follow_up",
+                "error": None,
+                "action": None,
+                "data": None,
+            }
+        full = tools.get_request_full(active["id"])
+        if full:
+            tech = full.get("technician_name") or "non attribue"
+            text = (f"Votre demande {full.get('reference')} est en statut "
+                    f"{full.get('status')}. Technicien : {tech}.")
+        else:
+            text = f"Votre demande {active.get('reference')} est en statut {active.get('status')}."
+        return {
+            "response": text,
+            "intent": "follow_up",
+            "error": None,
+            "action": None,
+            "data": active,
+        }
+
+    def _handle_cancel(self, user_id, message, context):
+        """Gere une demande d'annulation."""
+        active = tools.get_active_request(user_id)
+        if not active:
+            return {
+                "response": "Je ne trouve pas de demande en cours a annuler.",
+                "intent": "cancel",
+                "error": None,
+                "action": None,
+                "data": None,
+            }
+
+        # Confirmation implicite si le message contient 'oui' ou 'confirme'
+        confirmed = any(w in message.lower() for w in ("oui", "confirme", "valide", "yes"))
+        if not confirmed:
+            return {
+                "response": (f"Je peux annuler votre demande {active['reference']}. "
+                             "Confirmez-vous ? (Oui / Non)"),
+                "intent": "cancel",
+                "error": None,
+                "action": "awaiting_confirmation",
+                "data": {"request_id": active["id"]},
+            }
+
+        ok, reason = tools.cancel_request(active["id"], user_id)
+        if ok:
+            return {
+                "response": f"Votre demande {active['reference']} a ete annulee.",
+                "intent": "cancel",
+                "error": None,
+                "action": "cancelled",
+                "data": {"request_id": active["id"]},
+            }
+        return {
+            "response": reason,
+            "intent": "cancel",
+            "error": None,
+            "action": None,
+            "data": None,
+        }
+
+    def _build_messages(self, message, history, context):
+        """Construit la liste de messages pour le fournisseur."""
+        messages = []
+
+        # Contexte utilisateur et mission
+        context_text = self._build_context_text(context)
+        if context_text:
+            messages.append({"role": "user", "content": context_text})
+
+        # Historique recent
+        for h in history[-6:]:
+            if h.get("role") == "user" or h.get("user"):
+                messages.append({"role": "user", "content": h.get("content") or h.get("user", "")})
+            elif h.get("role") == "assistant" or h.get("assistant"):
+                messages.append({"role": "assistant", "content": h.get("content") or h.get("assistant", "")})
+
+        messages.append({"role": "user", "content": message})
+        return messages
 
     def _build_context_text(self, context):
         """Construit un texte de contexte securise pour le modele."""

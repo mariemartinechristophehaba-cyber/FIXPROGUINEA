@@ -93,6 +93,86 @@ def create_support_ticket(client_id, subject, message):
         conn.close()
 
 
+def get_conversation_history(conversation_id, limit=20):
+    """Retourne les derniers messages d'une conversation."""
+    conn = _conn()
+    try:
+        rows = conn.execute(
+            "SELECT sender_role, content FROM conversation_messages "
+            "WHERE conversation_id = ? ORDER BY id DESC LIMIT ?",
+            (conversation_id, limit)).fetchall()
+        history = []
+        for row in reversed(rows):
+            history.append({
+                "role": "user" if row["sender_role"] == "client" else "assistant",
+                "content": row["content"],
+            })
+        return history
+    finally:
+        conn.close()
+
+
+def get_request_full(request_id):
+    """Retourne une demande avec son technicien et ses messages."""
+    conn = _conn()
+    try:
+        row = conn.execute(
+            "SELECT r.*, t.full_name AS technician_name, t.phone AS technician_phone "
+            "FROM requests r LEFT JOIN users t ON r.artisan_id = t.id "
+            "WHERE r.id = ?",
+            (request_id,)).fetchone()
+        return dict(row) if row else None
+    finally:
+        conn.close()
+
+
+def create_request(client_id, title, description, category, address, urgency,
+                   latitude=0.0, longitude=0.0):
+    """Cree une demande d'intervention."""
+    import fixpro_app
+    conn = _conn()
+    now = fixpro_app.datetime.now(fixpro_app.timezone.utc).isoformat()
+    try:
+        ref = fixpro_app._generate_fixpro_reference(conn)
+        req_id = fixpro_app._insert_id(
+            conn,
+            "INSERT INTO requests (client_id, reference, title, description, category, address, "
+            "status, urgency, quote_amount, budget, latitude, longitude, created_at, updated_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 0, ?, ?, ?, ?)",
+            (client_id, ref, title, description, category, address,
+             fixpro_app.MISSION_STATUS_REQUESTED, urgency,
+             latitude, longitude, now, now))
+        fixpro_app._log_intervention_history(
+            conn, req_id, None, fixpro_app.MISSION_STATUS_REQUESTED,
+            "Assistant FixPro", "Demande creee par l'assistant IA", label="Nouvelle demande")
+        conn.commit()
+        return req_id
+    finally:
+        conn.close()
+
+
+def cancel_request(request_id, client_id):
+    """Annule une demande si elle appartient au client et n'a pas debute."""
+    conn = _conn()
+    try:
+        row = conn.execute(
+            "SELECT client_id, status FROM requests WHERE id = ?",
+            (request_id,)).fetchone()
+        if not row:
+            return (False, "Demande introuvable.")
+        if row["client_id"] != client_id:
+            return (False, "Acces refuse.")
+        if row["status"] in (fixpro_app.MISSION_STATUS_IN_PROGRESS, fixpro_app.MISSION_STATUS_COMPLETED):
+            return (False, "Impossible d'annuler une mission en cours ou terminee.")
+        conn.execute(
+            "UPDATE requests SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+            (fixpro_app.MISSION_STATUS_CANCELLED, request_id))
+        conn.commit()
+        return (True, "Demande annulee.")
+    finally:
+        conn.close()
+
+
 # Liste des outils documentes pour l'IA
 AVAILABLE_TOOLS = {
     "get_current_user_context": {

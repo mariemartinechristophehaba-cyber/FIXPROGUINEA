@@ -1,0 +1,15 @@
+Enrichit le module ai avec memoire, outils d'actions et tests dedies.
+
+- ai/service.py : gestion du suivi de mission, annulation avec confirmation,
+  chargement de l'historique conversationnel
+- ai/tools.py : get_conversation_history, get_request_full, create_request,
+  cancel_request
+- ai/router.py : intentions follow_up, cancel, intervention
+- ai/knowledge.py et prompts.py : connaissances et comportement etendus
+- tests/test_ai.py : 11 tests sur provider, routeur, connaissances, outils,
+  assistant
+- ai_service.analyze_message expose action/data pour les integrations futures
+
+Generated with [Devin](https://devin.ai)
+
+Co-Authored-By: Devin <158243242+devin-ai-integration[bot]@users.noreply.github.com>

@@ -763,6 +763,8 @@ def analyze_message(content, collected=None):
     et delegue les reponses conversationnelles au module ai.Assistant.
     """
     collected = _update_collected(collected or {}, content)
+    action = None
+    data = None
 
     # Si une collecte technique est en cours, on garde le moteur historique
     # pour guider l'utilisateur, recuperer les informations manquantes et
@@ -785,6 +787,8 @@ def analyze_message(content, collected=None):
         )
         response = result["response"]
         collected["last_intent"] = result["intent"]
+        action = result.get("action")
+        data = result.get("data")
 
     missing = _has_missing(collected)
     complete = (collected.get("mode") == "fixpro" and all(k not in missing for k in ["category", "location", "urgency", "availability"]))
@@ -801,6 +805,8 @@ def analyze_message(content, collected=None):
         "ready": ready,
         "needs_human": False,
         "needs_technician": ready,
+        "action": action,
+        "data": data,
     }
 
 
