@@ -8,6 +8,7 @@ import os
 import sys
 import tempfile
 import unittest
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -1922,6 +1923,169 @@ class MissionCycleTests(FixProTestCase):
         self.login("admin@fixpro.local", "adminpass")
         response = self.client.get(f"/admin/requests/{req_id}", follow_redirects=True)
         self.assertEqual(response.status_code, 200)
+
+
+class GpsTestCase(FixProTestCase):
+    """Tests du GPS technicien et de son utilisation dans le matching."""
+
+    def _create_technician(self, phone, name, profession, verified=True,
+                           status="ACTIVE", active=True,
+                           availability="en_ligne"):
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute(
+                "INSERT INTO users (email, phone, password_hash, role, full_name,"
+                " profession, city, quartier, is_verified, is_active,"
+                " account_status, availability_status, latitude, longitude)"
+                " VALUES (?, ?, ?, 'technician', ?, ?, 'Conakry', 'Kaloum', ?, ?, ?, ?, 0.0, 0.0)",
+                (f"{phone}@fixpro.local", phone,
+                 fixpro_app.generate_password_hash("TechnicianPass1!"),
+                 name, profession,
+                 1 if verified else 0, 1 if active else 0,
+                 status, availability))
+            conn.commit()
+            return conn.execute(
+                "SELECT id FROM users WHERE phone = ?", (phone,)).fetchone()["id"]
+        finally:
+            conn.close()
+
+    def _login_technician(self, phone="+224611111111"):
+        return self.client.post("/login", data={
+            "identifier": phone,
+            "password": "TechnicianPass1!",
+        }, follow_redirects=False)
+
+    def test_gps_01_valid_position_stored(self):
+        tech_id = self._create_technician("+224611111111", "Kaba Camara", "Plombier")
+        response = self._login_technician()
+        self.assertTrue(300 <= response.status_code < 400)
+
+        response = self.client.post("/api/technicien/position", data={
+            "lat": "9.5090",
+            "lon": "-13.7120",
+        })
+        self.assertEqual(response.status_code, 200)
+        body = response.get_json()
+        self.assertTrue(body["ok"])
+
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            row = conn.execute(
+                "SELECT * FROM technician_locations WHERE technician_id = ?",
+                (tech_id,)).fetchone()
+            self.assertIsNotNone(row)
+            self.assertAlmostEqual(row["latitude"], 9.5090, places=4)
+            self.assertAlmostEqual(row["longitude"], -13.7120, places=4)
+        finally:
+            conn.close()
+
+    def test_gps_02_offline_rejected(self):
+        tech_id = self._create_technician(
+            "+224611111112", "Binta Soumah", "Plombier",
+            availability="hors_ligne")
+        self._login_technician("+224611111112")
+
+        response = self.client.post("/api/technicien/position", data={
+            "lat": "9.5090",
+            "lon": "-13.7120",
+        })
+        self.assertEqual(response.status_code, 200)
+        body = response.get_json()
+        self.assertFalse(body["ok"])
+
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            row = conn.execute(
+                "SELECT * FROM technician_locations WHERE technician_id = ?",
+                (tech_id,)).fetchone()
+            self.assertIsNone(row)
+        finally:
+            conn.close()
+
+    def test_gps_04_invalid_position(self):
+        self._create_technician("+224611111114", "Amadou Diallo", "Plombier")
+        self._login_technician("+224611111114")
+
+        response = self.client.post("/api/technicien/position", data={
+            "lat": "200",
+            "lon": "300",
+        })
+        self.assertEqual(response.status_code, 400)
+
+    def test_gps_05_matching_uses_real_position(self):
+        # Client position
+        client_lat, client_lon = 9.5090, -13.7120
+
+        # Technicien proche
+        near_id = self._create_technician(
+            "+224611111115", "Proche Sylla", "Plombier")
+        # Technicien eloigne
+        far_id = self._create_technician(
+            "+224611111116", "Lointain Diallo", "Plombier")
+
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            # Pas de profil GPS, on force la table temps reel
+            conn.execute(
+                "INSERT INTO technician_locations (technician_id, latitude, longitude)"
+                " VALUES (?, ?, ?)",
+                (near_id, 9.5091, -13.7121))
+            conn.execute(
+                "INSERT INTO technician_locations (technician_id, latitude, longitude)"
+                " VALUES (?, ?, ?)",
+                (far_id, 9.5800, -13.7800))
+            conn.commit()
+
+            best = fixpro_app._select_best_technician(
+                conn, "Plombier", "Kaloum",
+                client_lat=client_lat, client_lon=client_lon)
+            self.assertIsNotNone(best)
+            self.assertEqual(best["id"], near_id)
+            self.assertEqual(best["gps_source"], "technician_locations")
+        finally:
+            conn.close()
+
+    def test_gps_06_stale_position_ignored(self):
+        client_lat, client_lon = 9.5090, -13.7120
+        fresh_id = self._create_technician(
+            "+224611111117", "Recent Diallo", "Plombier")
+        stale_id = self._create_technician(
+            "+224611111118", "Perime Bah", "Plombier")
+
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            stale_at = (datetime.now(timezone.utc) - timedelta(seconds=500)).replace(
+                tzinfo=None).strftime("%Y-%m-%d %H:%M:%S")
+            conn.execute(
+                "INSERT INTO technician_locations (technician_id, latitude, longitude, updated_at)"
+                " VALUES (?, ?, ?, CURRENT_TIMESTAMP)",
+                (fresh_id, 9.5092, -13.7122))
+            conn.execute(
+                "INSERT INTO technician_locations (technician_id, latitude, longitude, updated_at)"
+                " VALUES (?, ?, ?, ?)",
+                (stale_id, 9.5091, -13.7121, stale_at))
+            conn.commit()
+
+            best = fixpro_app._select_best_technician(
+                conn, "Plombier", "Kaloum",
+                client_lat=client_lat, client_lon=client_lon)
+            self.assertIsNotNone(best)
+            self.assertEqual(best["id"], fresh_id)
+        finally:
+            conn.close()
+
+    def test_gps_07_client_cannot_send_position(self):
+        self.register_client(phone="+224620000001", first_name="Mamadou", last_name="Diallo")
+        self.client.post("/login", data={
+            "identifier": "+224620000001",
+            "password": "FixPro2026!",
+        }, follow_redirects=False)
+
+        response = self.client.post("/api/technicien/position", data={
+            "lat": "9.5090",
+            "lon": "-13.7120",
+        })
+        self.assertEqual(response.status_code, 403)
 
 
 if __name__ == "__main__":

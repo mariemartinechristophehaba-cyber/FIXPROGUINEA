@@ -532,8 +532,13 @@ def can_transition_request(current_status, new_status):
 
 
 def _now_minus(seconds=300):
-    """Retourne un timestamp ISO pour le seuil de fraicheur d'une position."""
-    return (datetime.now(timezone.utc) - timedelta(seconds=seconds)).isoformat()
+    """Retourne un timestamp ISO pour le seuil de fraicheur d'une position.
+
+    Format 'YYYY-MM-DD HH:MM:SS' afin d'etre comparable avec CURRENT_TIMESTAMP
+    de SQLite et de PostgreSQL ( TEXT ).
+    """
+    return (datetime.now(timezone.utc) - timedelta(seconds=seconds)).replace(
+        tzinfo=None).strftime("%Y-%m-%d %H:%M:%S")
 
 
 def _match_technicians(conn, category, location=None, client_lat=None, client_lon=None,
@@ -4603,6 +4608,8 @@ def api_technicien_status():
         conn.close()
     return jsonify({"ok": True, "status": status})
 
+csrf.exempt(api_technicien_status)
+
 
 @app.route("/api/technicien/position", methods=["POST"])
 @login_required
@@ -4624,9 +4631,14 @@ def api_technicien_position():
     conn = get_db_connection()
     try:
         artisan = conn.execute(
-            "SELECT availability_status FROM users WHERE id = ?",
+            "SELECT availability_status, is_active, is_verified, account_status"
+            " FROM users WHERE id = ?",
             (user["id"],)).fetchone()
-        if not artisan or artisan["availability_status"] != "en_ligne":
+        if not artisan or artisan["is_active"] != 1 or artisan["is_verified"] != 1 \
+                or artisan["account_status"] != "ACTIVE":
+            return jsonify({"ok": False,
+                            "reason": "Compte technicien inactif ou non verifie."}), 200
+        if artisan["availability_status"] != "en_ligne":
             return jsonify({"ok": False,
                             "reason": "Statut non en ligne, position ignoree."}), 200
 
@@ -4641,6 +4653,8 @@ def api_technicien_position():
     finally:
         conn.close()
     return jsonify({"ok": True})
+
+csrf.exempt(api_technicien_position)
 
 
 @app.route("/api/technicien/<int:technician_id>/position")
@@ -4679,6 +4693,27 @@ def api_technicien_position_read(technician_id):
         "longitude": row["longitude"],
         "updated_at": row["updated_at"],
     })
+
+
+@app.route("/api/technicien/profile")
+@login_required
+def api_technicien_profile():
+    """Renvoie les informations du technicien connecte (JSON pour le mobile)."""
+    user = get_current_user()
+    if not user or not _is_technician(user):
+        return jsonify({"error": "Reserve aux techniciens."}), 403
+    return jsonify({
+        "id": user["id"],
+        "full_name": user["full_name"],
+        "profession": user.get("profession"),
+        "phone": user.get("phone"),
+        "availability_status": user.get("availability_status"),
+        "is_active": user.get("is_active"),
+        "is_verified": user.get("is_verified"),
+        "account_status": user.get("account_status"),
+    })
+
+csrf.exempt(api_technicien_profile)
 
 
 # ---------------------------------------------------------------------------
