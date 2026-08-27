@@ -69,6 +69,9 @@ class Config:
     GOOGLE_REDIRECT_URI = os.getenv(
         "GOOGLE_REDIRECT_URI", "").strip()
 
+    # Cle API Google Gemini (optionnel, pour l'assistant conversationnel avance)
+    GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "").strip()
+
     # Liste d'emails administrateurs autorises (separes par des virgules).
     # La connexion admin passe par Google OAuth. Le mot de passe ci-dessous
     # sert de secours si Google OAuth n'est pas configure (developpement).

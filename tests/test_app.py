@@ -94,9 +94,21 @@ class FixProTestCase(unittest.TestCase):
         return response
 
     def login(self, identifier, password="FixPro2026!"):
-        return self.client.post("/login", data={
+        response = self.client.post("/login", data={
             "identifier": identifier, "password": password},
             follow_redirects=True)
+        with self.client.session_transaction() as sess:
+            user_id = sess.get("user_id")
+        if user_id:
+            conn = db.connect(sqlite_path=self.db_path)
+            try:
+                user = conn.execute(
+                    "SELECT role FROM users WHERE id = ?", (user_id,)).fetchone()
+            finally:
+                conn.close()
+            if user and user["role"] == "admin":
+                self.client.post("/admin/unlock", data={"password": password})
+        return response
 
 
 class HealthAndSecurityTests(FixProTestCase):
@@ -453,6 +465,7 @@ class MessagingTests(FixProTestCase):
     def _login_admin(self):
         with self.client.session_transaction() as sess:
             sess["user_id"] = 1
+            sess["admin_unlocked"] = True
 
     def test_phone_number_is_blocked(self):
         self.assertTrue(fixpro_app.is_prohibited_message(
@@ -732,6 +745,40 @@ class AdminPanelTests(FixProTestCase):
     def login_admin(self):
         with self.client.session_transaction() as sess:
             sess["user_id"] = 1
+            sess["admin_unlocked"] = True
+
+    def test_admin_login_redirects_to_unlock(self):
+        response = self.client.post("/login", data={
+            "identifier": "admin@fixpro.local",
+            "password": "adminpass"}, follow_redirects=False)
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/admin/unlock", response.location or "")
+
+    def test_admin_dashboard_requires_unlock(self):
+        self.client.post("/login", data={
+            "identifier": "admin@fixpro.local",
+            "password": "adminpass"}, follow_redirects=False)
+        response = self.client.get("/admin/dashboard", follow_redirects=False)
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/admin/unlock", response.location or "")
+
+    def test_admin_unlock_wrong_password_fails(self):
+        self.client.post("/login", data={
+            "identifier": "admin@fixpro.local",
+            "password": "adminpass"}, follow_redirects=False)
+        response = self.client.post("/admin/unlock", data={
+            "password": "wrong"}, follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Mot de passe incorrect", response.data)
+
+    def test_admin_unlock_right_password_opens_dashboard(self):
+        self.client.post("/login", data={
+            "identifier": "admin@fixpro.local",
+            "password": "adminpass"}, follow_redirects=False)
+        response = self.client.post("/admin/unlock", data={
+            "password": "adminpass"}, follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Admin", response.data)
 
     def test_non_admin_cannot_access_dashboard(self):
         self.register_client(phone="+224620000000")

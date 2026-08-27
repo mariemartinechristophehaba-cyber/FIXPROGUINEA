@@ -14,6 +14,7 @@ import io
 import json
 import math
 import re
+import requests
 import urllib.parse
 import urllib.request
 import secrets
@@ -352,13 +353,16 @@ def login_required(view_func):
 
 
 def admin_required(view_func):
-    """Verifie que l'utilisateur connecte possede le role admin."""
+    """Verifie que l'utilisateur connecte possede le role admin et a déverrouillé sa session."""
     @wraps(view_func)
     def wrapper(*args, **kwargs):
         user = get_current_user()
         if not user or user["role"] != "admin":
             flash("Acces reserve aux administrateurs.", "error")
             return redirect(url_for("admin_login"))
+        if (request.endpoint and request.endpoint not in ("admin_unlock", "admin_logout")
+                and not session.get("admin_unlocked")):
+            return redirect(url_for("admin_unlock"))
         return view_func(*args, **kwargs)
     return wrapper
 
@@ -1519,7 +1523,9 @@ def admin_login():
     if session.get("user_id"):
         user = get_current_user()
         if user and user["role"] == "admin":
-            return redirect(url_for("admin_dashboard"))
+            if session.get("admin_unlocked"):
+                return redirect(url_for("admin_dashboard"))
+            return redirect(url_for("admin_unlock"))
 
     if request.method == "POST":
         email = (request.form.get("email") or "").strip().lower()
@@ -1534,11 +1540,27 @@ def admin_login():
         if admin and check_password_hash(admin["password_hash"], password):
             session.clear()
             session["user_id"] = admin["id"]
+            session["admin_unlocked"] = False
             session.permanent = True
-            return redirect(url_for("admin_dashboard"))
+            return redirect(url_for("admin_unlock"))
         flash("Email ou mot de passe incorrect.", "error")
 
     return render_template("admin_login.html")
+
+
+@app.route("/admin/unlock", methods=["GET", "POST"])
+@admin_required
+def admin_unlock():
+    """Verrou secondaire du tableau de bord administrateur."""
+    if request.method == "POST":
+        password = request.form.get("password", "")
+        user = get_current_user()
+        if user and check_password_hash(user["password_hash"], password):
+            session["admin_unlocked"] = True
+            flash("Tableau de bord deverrouille.", "success")
+            return redirect(url_for("admin_dashboard"))
+        flash("Mot de passe incorrect.", "error")
+    return render_template("admin_unlock.html")
 
 
 @app.route("/admin/login/google")
@@ -2333,9 +2355,21 @@ def ticket_new():
     return redirect(url_for("ticket_detail", ticket_id=ticket_id))
 
 
-def build_assistant_reply(message):
-    """Genere une reponse automatique simple, professionnelle et humaine."""
-    text = message.lower()
+_LIA_SYSTEM_PROMPT = (
+    "Tu es Lia, l'assistante conversationnelle de FixPro, une plateforme qui met "
+    "en relation des clients avec des techniciens verifies a Conakry (plomberie, "
+    "electricite, serrurerie, climatisation, menuiserie, etc.). "
+    "Tu reponds en francais, de maniere naturelle, chaleureuse, claire et concise. "
+    "Pour les questions generales, reponds normalement comme un assistant intelligent. "
+    "Si l'utilisateur decrit un probleme technique, identifie la categorie, pose les "
+    "bonnes questions pour preciser, et propose de creer une intervention. "
+    "Garde tes reponses courtes (moins de 150 mots)."
+)
+
+
+def _rule_based_reply(text):
+    """Reponses predefinies quand Gemini n'est pas configure ou en echec."""
+    text = text.lower()
     if any(w in text for w in ("bonjour", "salut", "hello", "bonsoir", "coucou")):
         return ("Bonjour, je suis votre assistante FixPro. Je transmets votre demande a notre equipe."
                 " Que puis-je faire pour vous aujourd'hui ?")
@@ -2358,6 +2392,44 @@ def build_assistant_reply(message):
         return ("Votre technicien sera informe de votre message."
                 " En attendant, notre equipe peut repondre a toutes vos questions.")
     return "Merci pour votre message. Notre equipe FixPro vous repondra dans les plus brefs delais."
+
+
+def _call_gemini(message, api_key):
+    """Appelle l'API Google Gemini pour generer une reponse."""
+    url = ("https://generativelanguage.googleapis.com/v1beta/models/"
+           f"gemini-2.0-flash:generateContent?key={api_key}")
+    payload = {
+        "systemInstruction": {"parts": [{"text": _LIA_SYSTEM_PROMPT}]},
+        "contents": [{"role": "user", "parts": [{"text": message}]}],
+        "generationConfig": {
+            "temperature": 0.7,
+            "maxOutputTokens": 300,
+        },
+    }
+    try:
+        response = requests.post(url, json=payload, timeout=30)
+        response.raise_for_status()
+        data = response.json()
+        candidates = data.get("candidates", [])
+        if not candidates:
+            return None
+        parts = candidates[0].get("content", {}).get("parts", [])
+        if not parts:
+            return None
+        return parts[0].get("text", "").strip()
+    except Exception as e:
+        logger.warning("Appel Gemini echoue: %s", e)
+        return None
+
+
+def build_assistant_reply(message):
+    """Genere une reponse intelligente via Gemini si configure, sinon regles."""
+    api_key = app.config.get("GOOGLE_API_KEY")
+    if api_key:
+        gemini_reply = _call_gemini(message, api_key)
+        if gemini_reply:
+            return gemini_reply
+    return _rule_based_reply(message)
 
 
 @app.route("/tickets/<int:ticket_id>", methods=["GET", "POST"])
@@ -2686,7 +2758,8 @@ def login():
             if _is_technician(user):
                 return redirect(url_for("artisan_dashboard"))
             if user["role"] == "admin":
-                return redirect(url_for("admin_dashboard"))
+                session["admin_unlocked"] = False
+                return redirect(url_for("admin_unlock"))
             return redirect(url_for("requests_list"))
 
         # Message identique pour ne pas reveler quel identifiant existe.
