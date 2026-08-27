@@ -151,7 +151,7 @@
             <p>Vos données sont sécurisées. Nous ne partageons jamais vos informations personnelles.</p>
           </div>
 
-          <button type="button" class="fa-btn fa-btn-primary" onclick="go(2)">Continuer <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+          <button type="button" class="fa-btn fa-btn-primary" onclick="if(validateStep1()) go(2)">Continuer <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
 
           <p class="fa-foot">Vous avez déjà un compte ? <a href="{{ url_for('login') }}">Connexion</a></p>
           <p class="fa-foot-lock">
@@ -384,6 +384,24 @@
   function togglePassword(id){
     const input = document.getElementById(id);
     input.type = input.type === 'password' ? 'text' : 'password';
+  }
+
+  function validateStep1(){
+    const fields = ['first_name','last_name','phone','password','confirm_password'];
+    for (const id of fields){
+      const el = document.getElementById(id);
+      if (!el.value.trim() || !el.checkValidity()) {
+        el.reportValidity();
+        return false;
+      }
+    }
+    const pwd = document.getElementById('password').value;
+    const confirm = document.getElementById('confirm_password').value;
+    if (pwd !== confirm) { alert('Les mots de passe ne correspondent pas.'); return false; }
+    const prenom = document.getElementById('first_name').value.trim();
+    const nom = document.getElementById('last_name').value.trim();
+    document.getElementById('full_name').value = prenom + ' ' + nom;
+    return true;
   }
 
   function go(n){
