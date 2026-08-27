@@ -73,6 +73,7 @@
     {% endblock %}
 
     <div class="app-wrap">
+      {% block appbar %}
       {% if not is_admin_route and not nav_user and request.endpoint not in ('dashboard', 'index', 'artisans_page') %}
       <header class="appbar guest-appbar">
         <a class="brand" href="{{ url_for('index') }}" style="transition: opacity .15s;">
@@ -85,7 +86,7 @@
         <nav class="appbar-nav" id="appbarNav">
           <a class="appbar-link" href="{{ url_for('index') }}">Accueil</a>
           <a class="appbar-link" href="{{ url_for('artisans_page') }}">Trouver un technicien</a>
-          <a class="appbar-link" href="{{ url_for('register', role='artisan') }}">Devenir technicien</a>
+          <a class="appbar-link" href="{{ url_for('register', role='artisan') }}">S'inscrire en tant que technicien</a>
         </nav>
 
         <div class="appbar-actions">
@@ -125,13 +126,14 @@
       <nav class="mobile-nav" id="mobileNav">
         <a class="mobile-link" href="{{ url_for('index') }}">Accueil</a>
         <a class="mobile-link" href="{{ url_for('artisans_page') }}">Trouver un technicien</a>
-        <a class="mobile-link" href="{{ url_for('register', role='artisan') }}">Devenir technicien</a>
+        <a class="mobile-link" href="{{ url_for('register', role='artisan') }}">S'inscrire en tant que technicien</a>
         {% if nav_user %}
         <a href="{{ url_for('profile') }}">Mon profil</a>
         <a href="{{ url_for('requests_list') }}">Mes demandes</a>
         <a href="{{ url_for('logout') }}">Deconnexion</a>
         {% endif %}
       </nav>
+      {% endblock %}
 
       <main class="page {% block main_class %}{% endblock %}">
         {% with messages = get_flashed_messages(with_categories=true) %}
