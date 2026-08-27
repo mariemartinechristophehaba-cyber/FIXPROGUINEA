@@ -1551,6 +1551,81 @@ class TechnicianLifecycleTests(FixProTestCase):
         self.assertIn(b"FP-000003", response.data)
         self.assertIn(b"Fuite sous evier", response.data)
 
+    def test_09_suspended_technician_cannot_login(self):
+        self._create_admin()
+        self.login("admin@fixpro.local", "adminpass")
+        self.client.post("/admin/artisans", data={
+            "action": "create",
+            "full_name": "Susp Camara",
+            "phone": "621111444",
+            "email": "susp@fixpro.local",
+            "profession": "Plombier",
+            "city": "Conakry",
+            "zone_intervention": "Kaloum",
+            "years_experience": "5",
+            "bio": "Plombier"
+        }, follow_redirects=True)
+
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute(
+                "UPDATE users SET account_status = 'SUSPENDED', is_active = 0,"
+                " password_hash = ? WHERE email = ?",
+                (fixpro_app.generate_password_hash("susppass"), "susp@fixpro.local"))
+            conn.commit()
+        finally:
+            conn.close()
+
+        self.client.get("/logout")
+        response = self.login("susp@fixpro.local", "susppass")
+        self.assertIn(b"suspendu", response.data.lower())
+
+    def test_10_inactive_technician_cannot_login(self):
+        self._create_admin()
+        self.login("admin@fixpro.local", "adminpass")
+        self.client.post("/admin/artisans", data={
+            "action": "create",
+            "full_name": "Inact Camara",
+            "phone": "621111555",
+            "email": "inact@fixpro.local",
+            "profession": "Plombier",
+            "city": "Conakry",
+            "zone_intervention": "Kaloum",
+            "years_experience": "5",
+            "bio": "Plombier"
+        }, follow_redirects=True)
+
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute(
+                "UPDATE users SET account_status = 'INACTIVE', is_active = 0,"
+                " password_hash = ? WHERE email = ?",
+                (fixpro_app.generate_password_hash("inactpass"), "inact@fixpro.local"))
+            conn.commit()
+        finally:
+            conn.close()
+
+        self.client.get("/logout")
+        response = self.login("inact@fixpro.local", "inactpass")
+        self.assertIn(b"inactif", response.data.lower())
+
+    def test_11_technician_cannot_access_admin_routes(self):
+        self.test_04_technician_activates_and_redirects_to_dashboard()
+        for route in ["/admin", "/admin/dashboard", "/admin/artisans",
+                      "/admin/requests", "/admin/tickets", "/admin/settings"]:
+            with self.subTest(route=route):
+                response = self.client.get(route, follow_redirects=False)
+                self.assertEqual(response.status_code, 302)
+                self.assertIn("/admin/login", response.location or "")
+
+    def test_12_admin_can_access_admin_dashboard_and_manage_technicians(self):
+        self._create_admin()
+        self.login("admin@fixpro.local", "adminpass")
+        dashboard = self.client.get("/admin/dashboard")
+        self.assertEqual(dashboard.status_code, 200)
+        artisans = self.client.get("/admin/artisans")
+        self.assertEqual(artisans.status_code, 200)
+
 
 if __name__ == "__main__":
     unittest.main()
