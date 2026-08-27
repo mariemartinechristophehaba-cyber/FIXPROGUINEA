@@ -61,7 +61,7 @@
             {% endif %}
           </td>
           <td>
-            <span class="badge {% if req.status == 'completed' %}success{% elif req.status in ('assigned', 'in_progress') %}info{% elif req.status == 'pending' %}pending{% elif req.status == 'cancelled' %}failed{% else %}neutral{% endif %}">
+            <span class="badge {% if req.status in ('completed','COMPLETED') %}success{% elif req.status in ('assigned','ASSIGNED','in_progress','IN_PROGRESS') %}info{% elif req.status in ('pending','REQUESTED','REASSIGNMENT_REQUIRED') %}pending{% elif req.status in ('cancelled','CANCELLED','refused','REFUSED') %}failed{% else %}neutral{% endif %}">
               {{ req.status }}
             </span>
           </td>

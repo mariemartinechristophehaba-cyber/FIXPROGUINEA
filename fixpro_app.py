@@ -451,79 +451,227 @@ def payment_method_label(method):
     return PAYMENT_METHODS.get(method, (method or "").replace("_", " ").title())
 
 
+# Statuts officiels du cycle de mission.
+MISSION_STATUS_REQUESTED = "REQUESTED"
+MISSION_STATUS_ASSIGNED = "ASSIGNED"
+MISSION_STATUS_ACCEPTED = "ACCEPTED"
+MISSION_STATUS_EN_ROUTE = "EN_ROUTE"
+MISSION_STATUS_ARRIVED = "ARRIVED"
+MISSION_STATUS_IN_PROGRESS = "IN_PROGRESS"
+MISSION_STATUS_COMPLETED = "COMPLETED"
+MISSION_STATUS_REFUSED = "REFUSED"
+MISSION_STATUS_CANCELLED = "CANCELLED"
+MISSION_STATUS_REASSIGNMENT_REQUIRED = "REASSIGNMENT_REQUIRED"
+
+# Alias legacy pour compatibilite (la DB et les templates peuvent encore
+# contenir les anciens libelles en minuscules).
+_MISSION_STATUS_ALIASES = {
+    "pending": MISSION_STATUS_REQUESTED,
+    "assigned": MISSION_STATUS_ASSIGNED,
+    "accepted": MISSION_STATUS_ACCEPTED,
+    "en_route": MISSION_STATUS_EN_ROUTE,
+    "arrived": MISSION_STATUS_ARRIVED,
+    "in_progress": MISSION_STATUS_IN_PROGRESS,
+    "completed": MISSION_STATUS_COMPLETED,
+    "rejected": MISSION_STATUS_REFUSED,
+    "refused": MISSION_STATUS_REFUSED,
+    "cancelled": MISSION_STATUS_CANCELLED,
+    "reassignment_required": MISSION_STATUS_REASSIGNMENT_REQUIRED,
+}
+
+# Libelles lisibles pour l'affichage dans l'historique.
+_MISSION_STATUS_LABELS = {
+    MISSION_STATUS_REQUESTED: "Nouvelle demande",
+    MISSION_STATUS_ASSIGNED: "Technicien attribue",
+    MISSION_STATUS_ACCEPTED: "Mission acceptee",
+    MISSION_STATUS_EN_ROUTE: "En route",
+    MISSION_STATUS_ARRIVED: "Arrivee",
+    MISSION_STATUS_IN_PROGRESS: "Intervention en cours",
+    MISSION_STATUS_COMPLETED: "Terminee",
+    MISSION_STATUS_REFUSED: "Mission refusee",
+    MISSION_STATUS_CANCELLED: "Mission annulee",
+    MISSION_STATUS_REASSIGNMENT_REQUIRED: "Reattribution requise",
+}
+
 # Transitions autorisees pour les demandes.
 # cle = statut actuel, valeur = ensemble de statuts cibles permis.
 REQUEST_TRANSITIONS = {
-    "pending": {"cancelled", "assigned"},
-    "REQUESTED": {"assigned", "rejected"},
-    "assigned": {"en_route", "quote_proposed", "rejected", "cancelled"},
-    "en_route": {"arrived", "cancelled"},
-    "arrived": {"in_progress", "cancelled"},
+    MISSION_STATUS_REQUESTED: {MISSION_STATUS_ASSIGNED, MISSION_STATUS_CANCELLED},
+    MISSION_STATUS_ASSIGNED: {MISSION_STATUS_ACCEPTED, MISSION_STATUS_REFUSED, MISSION_STATUS_CANCELLED},
+    MISSION_STATUS_ACCEPTED: {MISSION_STATUS_EN_ROUTE, "quote_proposed", MISSION_STATUS_CANCELLED},
+    MISSION_STATUS_EN_ROUTE: {MISSION_STATUS_ARRIVED, MISSION_STATUS_CANCELLED},
+    MISSION_STATUS_ARRIVED: {MISSION_STATUS_IN_PROGRESS, MISSION_STATUS_CANCELLED},
+    MISSION_STATUS_IN_PROGRESS: {MISSION_STATUS_COMPLETED, MISSION_STATUS_CANCELLED},
+    MISSION_STATUS_REFUSED: {MISSION_STATUS_REASSIGNMENT_REQUIRED, MISSION_STATUS_ASSIGNED, MISSION_STATUS_CANCELLED},
+    MISSION_STATUS_REASSIGNMENT_REQUIRED: {MISSION_STATUS_ASSIGNED, MISSION_STATUS_CANCELLED},
+    MISSION_STATUS_COMPLETED: set(),
+    MISSION_STATUS_CANCELLED: set(),
+    # Flux de devis conserve (hors cycle mission principal)
     "quote_proposed": {"quote_accepted", "quote_rejected", "cancelled"},
-    "quote_accepted": {"arrived", "in_progress", "cancelled"},
-    "in_progress": {"completed", "cancelled"},
-    "completed": set(),
-    "cancelled": set(),
-    "rejected": set(),
-    "quote_rejected": {"quote_proposed", "cancelled"},
+    "quote_accepted": {MISSION_STATUS_ARRIVED, MISSION_STATUS_IN_PROGRESS, MISSION_STATUS_CANCELLED},
+    "quote_rejected": {"quote_proposed", MISSION_STATUS_CANCELLED},
 }
+
+
+def _normalize_status(status):
+    """Convertit un ancien libelle de statut en libelle officiel."""
+    if not status:
+        return None
+    key = str(status).strip().lower()
+    return _MISSION_STATUS_ALIASES.get(key, status)
 
 
 def can_transition_request(current_status, new_status):
     """Verifie qu'un changement de statut de demande est autorise."""
-    allowed = REQUEST_TRANSITIONS.get(current_status, set())
-    return new_status in allowed
+    current = _normalize_status(current_status)
+    new = _normalize_status(new_status)
+    if not current or not new:
+        return False
+    allowed = REQUEST_TRANSITIONS.get(current, set())
+    return new in allowed
 
 
-def _score_artisan(artisan, client_city=""):
-    """Calcule un score de matching pour un artisan.
+def _now_minus(seconds=300):
+    """Retourne un timestamp ISO pour le seuil de fraicheur d'une position."""
+    return (datetime.now(timezone.utc) - timedelta(seconds=seconds)).isoformat()
 
-    Plus le score est eleve, plus l'artisan est pertinent pour la demande.
+
+def _match_technicians(conn, category, location=None, client_lat=None, client_lon=None,
+                       limit=10, require_gps=False, exclude_artisan_id=None):
+    """Retourne les techniciens eligibles classes pour une demande.
+
+    Criteres : role=technician, verifie, actif, ACTIVE, en_ligne,
+    sans mission en cours, metier compatible, position GPS recente.
     """
-    score = 0
-    if artisan.get("is_verified"):
-        score += 100
-    if artisan.get("is_active"):
-        score += 50
-    if artisan.get("availability_status") == "en_ligne":
-        score += 80
-    elif artisan.get("availability_status") == "occupe":
-        score += 20
-    score += float(artisan.get("avg_rating") or 0) * 15
-    score += int(artisan.get("review_count") or 0) * 2
-    score += int(artisan.get("completed") or 0) * 3
-    if client_city and (artisan.get("city") == client_city or artisan.get("quartier") == client_city):
-        score += 40
-    return score
+    profession = _domain_to_profession(category) if category else None
+    if not profession:
+        return []
 
+    # Coordonnees client
+    if _is_valid_coordinate(client_lat, client_lon):
+        lat, lon = float(client_lat), float(client_lon)
+    else:
+        lat, lon = _geocode_zone("Conakry", location or "Conakry")
+        if not _is_valid_coordinate(lat, lon):
+            lat, lon = _geocode_query(location or "Conakry")[:2] if location else (None, None)
+    client_pos = (lat, lon) if _is_valid_coordinate(lat, lon) else None
 
-def match_artisans(conn, category, client_city, lat=None, lon=None, limit=5):
-    """Retourne les artisans les mieux adaptes a la demande."""
+    freshness = _now_minus(300)
+
+    # Localisation GPS recente des techniciens
+    locations = {
+        row["technician_id"]: (float(row["latitude"]), float(row["longitude"]), row["updated_at"])
+        for row in conn.execute(
+            "SELECT technician_id, latitude, longitude, updated_at FROM technician_locations"
+            " WHERE updated_at > ?",
+            (freshness,)).fetchall()
+        if _is_valid_coordinate(row["latitude"], row["longitude"])
+    }
+    if require_gps and not locations:
+        return []
+
+    # Techniciens occupes par une mission non terminee
+    busy_sql = (
+        "SELECT artisan_id FROM requests"
+        " WHERE artisan_id IS NOT NULL"
+        " AND status NOT IN ('COMPLETED','CANCELLED','REFUSED','REASSIGNMENT_REQUIRED','REQUESTED')"
+        " GROUP BY artisan_id HAVING COUNT(*) > 0")
+    busy_ids = {r["artisan_id"] for r in conn.execute(busy_sql).fetchall()}
+    if exclude_artisan_id:
+        busy_ids.add(exclude_artisan_id)
+
     sql = """
-        SELECT u.id, u.full_name, u.profession, u.city, u.quartier, u.latitude, u.longitude,
-               u.is_verified, u.is_active, u.availability_status, u.hourly_rate,
-               COALESCE(AVG(r.rating), 0) AS avg_rating,
-               COUNT(DISTINCT r.id) AS review_count,
-               COUNT(DISTINCT req_completed.id) AS completed
+        SELECT u.id, u.full_name, u.profession, u.city, u.quartier,
+               u.latitude, u.longitude,
+               u.zone_intervention, u.mobility, u.years_experience, u.is_verified,
+               COALESCE(rating_data.avg_rating, 0) AS avg_rating,
+               COALESCE(rating_data.review_count, 0) AS review_count,
+               COALESCE(completed_count.c, 0) AS completed_count
         FROM users u
-        LEFT JOIN reviews r ON r.artisan_id = u.id
-        LEFT JOIN requests req_completed ON req_completed.artisan_id = u.id AND req_completed.status = 'completed'
-        WHERE u.role = 'artisan' AND u.is_verified = 1 AND u.is_active = 1
-        AND (u.profession = ? OR ? = '')
-        GROUP BY u.id
+        LEFT JOIN (
+            SELECT artisan_id, AVG(rating) AS avg_rating, COUNT(*) AS review_count
+            FROM reviews GROUP BY artisan_id
+        ) rating_data ON rating_data.artisan_id = u.id
+        LEFT JOIN (
+            SELECT artisan_id, COUNT(*) AS c
+            FROM requests WHERE LOWER(status) = 'completed' GROUP BY artisan_id
+        ) completed_count ON completed_count.artisan_id = u.id
+        WHERE u.role = 'technician'
+          AND u.is_verified = 1
+          AND u.is_active = 1
+          AND u.account_status = 'ACTIVE'
+          AND LOWER(u.availability_status) = 'en_ligne'
+          AND LOWER(REPLACE(REPLACE(u.profession, 'é', 'e'), 'É', 'E')) = ?
     """
-    rows = conn.execute(sql, (category, category)).fetchall()
-    artisans = [dict(r) for r in rows]
-    for a in artisans:
-        a["score"] = _score_artisan(a, client_city)
-        if lat is not None and lon is not None and a["latitude"] and a["longitude"]:
-            try:
-                a["distance"] = calculate_distance(lat, lon, float(a["latitude"]), float(a["longitude"]))
-                a["score"] += max(0, 30 - a["distance"])
-            except (TypeError, ValueError):
-                a["distance"] = None
-    artisans.sort(key=lambda a: a["score"], reverse=True)
-    return artisans[:limit]
+    rows = conn.execute(sql, (profession,)).fetchall()
+
+    location_norm = (location or "").lower()
+
+    def in_zone(a):
+        zones = " ".join([
+            (a.get("zone_intervention") or ""),
+            (a.get("quartier") or ""),
+            (a.get("city") or ""),
+        ]).lower()
+        return bool(location_norm) and (location_norm in zones or (a.get("mobility") or "").lower() == 'toute_conakry')
+
+    candidates = []
+    for a in rows:
+        if a["id"] in busy_ids:
+            continue
+        tech_pos = locations.get(a["id"])
+        if require_gps and not tech_pos:
+            continue
+        distance = None
+        if client_pos and tech_pos:
+            distance = _haversine(client_pos[0], client_pos[1], tech_pos[0], tech_pos[1])
+        elif client_pos and _is_valid_coordinate(a.get("latitude"), a.get("longitude")):
+            # Secours uniquement si le GPS temps reel manque
+            distance = _haversine(client_pos[0], client_pos[1], float(a["latitude"]), float(a["longitude"]))
+
+        score = 0
+        if tech_pos:
+            score += 80  # GPS recent
+        if in_zone(a):
+            score += 25
+        if a["is_verified"]:
+            score += 30
+        score += float(a["avg_rating"]) * 20
+        score += (a["completed_count"] or 0) * 2
+        score += (a["years_experience"] or 0)
+        if distance is not None:
+            score -= distance * 2
+        else:
+            score -= 25  # penalite si pas de distance fiable
+
+        artisan = dict(a)
+        artisan["distance_km"] = round(distance, 1) if distance is not None else None
+        artisan["selection_score"] = score
+        artisan["gps_source"] = "technician_locations" if tech_pos else "profile"
+        candidates.append(artisan)
+
+    candidates.sort(key=lambda a: (-a["selection_score"], a["distance_km"] or 9999, a["full_name"]))
+    return candidates[:limit]
+
+
+def _select_best_technician(conn, category, location, client_lat=None, client_lon=None,
+                            exclude_artisan_id=None):
+    """Selectionne le meilleur technicien."""
+    candidates = _match_technicians(conn, category, location=location,
+                                    client_lat=client_lat, client_lon=client_lon,
+                                    limit=1, require_gps=False,
+                                    exclude_artisan_id=exclude_artisan_id)
+    if not candidates:
+        return None
+    best = candidates[0]
+    parts = [best["profession"]]
+    if best["distance_km"] is not None:
+        parts.append(f"a {best['distance_km']} km")
+    parts.append("GPS " + ("temps reel" if best["gps_source"] == "technician_locations" else "profil"))
+    if best["is_verified"]:
+        parts.append("verifie")
+    best["selection_reason"] = "; ".join(parts)
+    return best
 
 
 class PaymentProvider(ABC):
@@ -592,8 +740,38 @@ def create_notification(user_id, title, body, notif_type="info", data=None):
             conn.commit()
         finally:
             conn.close()
-    except Exception:
-        logger.warning("Notification non creee : user_id=%s", user_id)
+    except Exception as exc:
+        logger.warning("Notification non creee : user_id=%s - %s", user_id, exc)
+
+
+def create_admin_notification(conn, title, body, notif_type="admin_alert", data=None):
+    """Cree une notification pour tous les administrateurs."""
+    try:
+        admins = conn.execute(
+            "SELECT id FROM users WHERE role = 'admin' AND is_active = 1").fetchall()
+        for admin in admins:
+            conn.execute(
+                "INSERT INTO notifications (user_id, title, body, type, data)"
+                " VALUES (?, ?, ?, ?, ?)",
+                (admin["id"], title, body, notif_type, data or ""))
+        conn.commit()
+    except Exception as exc:
+        logger.warning("Notification admin non creee : %s", exc)
+
+
+def _log_intervention_history(conn, request_id, old_status, new_status, actor, note="", label=None):
+    """Enregistre un evenement dans l'historique de la mission."""
+    try:
+        status_label = label if label is not None else new_status
+        conn.execute(
+            "INSERT INTO intervention_history"
+            " (request_id, old_status, status, new_status, actor, note, created_at)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (request_id, old_status, status_label,
+             new_status, actor, note or "", now_iso()))
+        conn.commit()
+    except Exception as exc:
+        logger.warning("Historique mission non enregistre : request_id=%s - %s", request_id, exc)
 
 
 @app.context_processor
@@ -612,7 +790,7 @@ def inject_layout_context():
             conn = get_db_connection()
             try:
                 rows = conn.execute(
-                    "SELECT 'pending_artisans' AS key, COUNT(*) AS n FROM users WHERE role = 'artisan' AND is_verified = 0"
+                    "SELECT 'pending_artisans' AS key, COUNT(*) AS n FROM users WHERE role = 'technician' AND is_verified = 0"
                     " UNION ALL"
                     " SELECT 'open_requests', COUNT(*) FROM requests WHERE LOWER(status) NOT IN ('completed', 'cancelled')"
                     " UNION ALL"
@@ -631,19 +809,12 @@ def inject_layout_context():
 
 
 def can_access_request(user, req):
-    """Determine si un utilisateur a le droit de consulter une intervention.
-
-    Le client et l'artisan attribue y ont acces. Une demande encore ouverte
-    reste visible par tous les artisans, sans quoi aucun d'eux ne pourrait
-    la consulter pour decider de la prendre en charge.
-    """
+    """Determine si un utilisateur a le droit de consulter une intervention."""
     if not user or not req:
         return False
     if user["role"] == "admin":
         return True
-    if user["id"] in (req["client_id"], req["artisan_id"]):
-        return True
-    return _is_technician(user) and req["status"] == "pending"
+    return user["id"] in (req["client_id"], req["artisan_id"])
 
 
 _PHONE_PATTERN = re.compile(r"(?:\d[\s\-\.\(\)]?){8,}")
@@ -695,7 +866,7 @@ def index():
                    COUNT(DISTINCT r.id) AS review_count
             FROM users u
             LEFT JOIN reviews r ON r.artisan_id = u.id
-            WHERE u.role = 'artisan' AND u.is_verified = 1 AND u.is_active = 1
+            WHERE u.role = 'technician' AND u.is_verified = 1 AND u.is_active = 1
             GROUP BY u.id
             ORDER BY avg_rating DESC, review_count DESC
         """).fetchall()
@@ -712,7 +883,7 @@ def index():
                 unread_count = 0
         counts = {}
         for row in conn.execute(
-            "SELECT profession, COUNT(*) AS n FROM users WHERE role = 'artisan' AND is_verified = 1 AND is_active = 1 GROUP BY profession").fetchall():
+            "SELECT profession, COUNT(*) AS n FROM users WHERE role = 'technician' AND is_verified = 1 AND is_active = 1 GROUP BY profession").fetchall():
             counts[row["profession"]] = row["n"]
         canonical = [
             ("Plomberie", ["Plombier", "Plomberie"]),
@@ -829,7 +1000,7 @@ def home():
                    COUNT(DISTINCT r.id) AS review_count
             FROM users u
             LEFT JOIN reviews r ON r.artisan_id = u.id
-            WHERE u.role = 'artisan' AND u.is_verified = 1 AND u.is_active = 1
+            WHERE u.role = 'technician' AND u.is_verified = 1 AND u.is_active = 1
             GROUP BY u.id
             ORDER BY avg_rating DESC, review_count DESC
         """).fetchall()
@@ -845,7 +1016,7 @@ def home():
                 unread_count = 0
         counts = {}
         for row in conn.execute(
-            "SELECT profession, COUNT(*) AS n FROM users WHERE role = 'artisan' AND is_verified = 1 AND is_active = 1 GROUP BY profession").fetchall():
+            "SELECT profession, COUNT(*) AS n FROM users WHERE role = 'technician' AND is_verified = 1 AND is_active = 1 GROUP BY profession").fetchall():
             counts[row["profession"]] = row["n"]
         canonical = [
             ("Plomberie", ["Plombier", "Plomberie"]),
@@ -893,7 +1064,7 @@ def categories():
         rows = conn.execute(
             "SELECT sc.name,"
             " (SELECT COUNT(*) FROM users u"
-            " WHERE u.role = 'artisan' AND u.is_verified = 1 AND u.is_active = 1"
+            " WHERE u.role = 'technician' AND u.is_verified = 1 AND u.is_active = 1"
             " AND (u.profession = sc.name OR u.skills LIKE '%' || sc.name || '%')) AS n"
             " FROM service_categories sc ORDER BY sc.name").fetchall()
         counts = {r["name"]: r["n"] for r in rows}
@@ -1054,7 +1225,7 @@ def register():
             conn.close()
 
     if role in ("artisan", "technician"):
-        return redirect(url_for("register_artisan", role=role))
+        return redirect(url_for("register_artisan", role="technician"))
 
     return render_template("choose_account.html")
 
@@ -1073,9 +1244,9 @@ def register_artisan():
     finally:
         conn.close()
 
-    role = (request.args.get("role") or request.form.get("role") or "artisan").lower()
+    role = (request.args.get("role") or request.form.get("role") or "technician").lower()
     if role not in ("artisan", "technician"):
-        role = "artisan"
+        role = "technician"
 
     if request.method == "POST":
         full_name = request.form.get("full_name", "").strip()
@@ -1222,7 +1393,7 @@ def _finalize_artisan_registration(wizard):
             " years_experience, bio, hourly_rate, latitude, longitude, is_verified, is_active)"
             " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (wizard["email"], wizard["phone"], generate_password_hash(password),
-             "artisan", full_name, wizard["civility"], wizard["profession"],
+             "technician", full_name, wizard["civility"], wizard["profession"],
              wizard["skills"], wizard["city"], wizard["quartier"],
              wizard["zone_intervention"], wizard["mobility"],
              wizard["years_experience"], wizard["bio"], 0, latitude, longitude, 1, 1))
@@ -1337,7 +1508,7 @@ def _finalize_artisan_registration_json(wizard):
             " years_experience, bio, hourly_rate, latitude, longitude, is_verified, is_active)"
             " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (wizard["email"], wizard["phone"], generate_password_hash(password),
-             "artisan", full_name, wizard["civility"], wizard["profession"],
+             "technician", full_name, wizard["civility"], wizard["profession"],
              wizard["skills"], wizard["city"], wizard["quartier"],
              wizard["zone_intervention"], wizard["mobility"],
              wizard["years_experience"], wizard["bio"], 0, latitude, longitude, 1, 1))
@@ -1548,7 +1719,7 @@ def admin_dashboard():
                 "SELECT COUNT(*) AS n FROM requests WHERE LOWER(status) IN ('requested', 'nouvelle demande', 'pending') AND created_at LIKE ?",
                 (today + "%",)).fetchone()["n"],
             "available_artisans": conn.execute(
-                "SELECT COUNT(*) AS n FROM users WHERE role = 'artisan' AND is_active = 1 AND account_status = 'ACTIVE' AND availability_status = 'en_ligne'").fetchone()["n"],
+                "SELECT COUNT(*) AS n FROM users WHERE role = 'technician' AND is_active = 1 AND account_status = 'ACTIVE' AND availability_status = 'en_ligne'").fetchone()["n"],
             "interventions_in_progress": conn.execute(
                 "SELECT COUNT(*) AS n FROM requests WHERE LOWER(status) IN ('in_progress', 'on_the_way', 'assigned')").fetchone()["n"],
             "interventions_delta": conn.execute(
@@ -1591,7 +1762,7 @@ def admin_dashboard():
             "SELECT u.*, AVG(rv.rating) AS avg_rating"
             " FROM users u"
             " LEFT JOIN reviews rv ON rv.artisan_id = u.id"
-            " WHERE u.role = 'artisan' AND u.is_active = 1 AND u.account_status = 'ACTIVE' AND u.availability_status = 'en_ligne'"
+            " WHERE u.role = 'technician' AND u.is_active = 1 AND u.account_status = 'ACTIVE' AND u.availability_status = 'en_ligne'"
             " GROUP BY u.id"
             " ORDER BY u.created_at DESC LIMIT 4").fetchall()
 
@@ -2157,7 +2328,7 @@ def ticket_new():
     try:
         artisan = conn.execute(
             "SELECT full_name, profession FROM users"
-            " WHERE id = ? AND role = 'artisan'", (artisan_id,)).fetchone()
+            " WHERE id = ? AND role = 'technician'", (artisan_id,)).fetchone()
         if not artisan:
             flash("Technicien introuvable.", "error")
             return redirect(url_for("artisans_page"))
@@ -2635,7 +2806,7 @@ def dashboard():
         for c in categories:
             count = conn.execute(
                 "SELECT COUNT(*) AS n FROM users"
-                " WHERE role = 'artisan' AND profession LIKE ?",
+                " WHERE role = 'technician' AND profession LIKE ?",
                 (f"%{c['name']}%",)).fetchone()["n"]
             artisan_counts[c["name"]] = count
 
@@ -2649,7 +2820,7 @@ def dashboard():
                        COUNT(DISTINCT r.id) AS review_count
                 FROM users u
                 LEFT JOIN reviews r ON r.artisan_id = u.id
-                WHERE u.role = 'artisan' AND u.is_verified = 1
+                WHERE u.role = 'technician' AND u.is_verified = 1
                 GROUP BY u.id
                 ORDER BY u.full_name
             """).fetchall()
@@ -2657,7 +2828,7 @@ def dashboard():
             artisans = conn.execute(
                 "SELECT id, full_name, profession, city, quartier, hourly_rate, is_verified,"
                 " photo_url, availability_status, estimated_delay"
-                " FROM users WHERE role = 'artisan' AND is_verified = 1"
+                " FROM users WHERE role = 'technician' AND is_verified = 1"
                 " ORDER BY full_name").fetchall()
 
         # Unread messages count
@@ -2704,35 +2875,36 @@ def artisan_dashboard():
         flash("Cet espace est reserve aux techniciens.", "error")
         return redirect(url_for("dashboard"))
 
-    active_statuses = ("assigned", "en_route", "arrived", "in_progress", "quote_proposed", "quote_accepted")
+    active_statuses = (MISSION_STATUS_ASSIGNED, MISSION_STATUS_ACCEPTED,
+                       MISSION_STATUS_EN_ROUTE, MISSION_STATUS_ARRIVED,
+                       MISSION_STATUS_IN_PROGRESS, "quote_proposed", "quote_accepted")
 
     conn = get_db_connection()
     try:
         nouvelles = conn.execute(
             "SELECT COUNT(*) AS n FROM requests"
-            " WHERE status IN ('pending', 'REQUESTED') AND (category = ? OR ? = '')"
-            " AND (client_id != ?)",
-            (user["profession"], user["profession"], user["id"])).fetchone()["n"]
+            " WHERE artisan_id = ? AND status = ?",
+            (user["id"], MISSION_STATUS_ASSIGNED)).fetchone()["n"]
 
         assignees = conn.execute(
             "SELECT COUNT(*) AS n FROM requests"
-            " WHERE artisan_id = ? AND status IN (?, ?, ?, ?, ?, ?)",
+            " WHERE artisan_id = ? AND status IN (?, ?, ?, ?, ?, ?, ?)",
             (user["id"],) + active_statuses).fetchone()["n"]
 
         urgentes = conn.execute(
             "SELECT COUNT(*) AS n FROM requests"
-            " WHERE artisan_id = ? AND status IN (?, ?, ?, ?, ?, ?) AND urgency = 'urgent'",
+            " WHERE artisan_id = ? AND status IN (?, ?, ?, ?, ?, ?, ?) AND urgency = 'urgent'",
             (user["id"],) + active_statuses).fetchone()["n"]
 
         a_venir = conn.execute(
             "SELECT COUNT(*) AS n FROM requests"
-            " WHERE artisan_id = ? AND status IN (?, ?, ?, ?, ?, ?) AND urgency != 'urgent'",
+            " WHERE artisan_id = ? AND status IN (?, ?, ?, ?, ?, ?, ?) AND urgency != 'urgent'",
             (user["id"],) + active_statuses).fetchone()["n"]
 
         terminees = conn.execute(
             "SELECT COUNT(*) AS n FROM requests"
-            " WHERE artisan_id = ? AND status = 'completed'",
-            (user["id"],)).fetchone()["n"]
+            " WHERE artisan_id = ? AND status = ?",
+            (user["id"], MISSION_STATUS_COMPLETED)).fetchone()["n"]
 
         revenus = conn.execute(
             "SELECT COALESCE(SUM(amount - commission_amount), 0) AS total"
@@ -2750,7 +2922,7 @@ def artisan_dashboard():
                    u.full_name AS client_name, u.phone AS client_phone
             FROM requests r
             JOIN users u ON u.id = r.client_id
-            WHERE r.artisan_id = ? AND r.status IN (?, ?, ?, ?, ?, ?)
+            WHERE r.artisan_id = ? AND r.status IN (?, ?, ?, ?, ?, ?, ?)
             ORDER BY
                 CASE r.urgency WHEN 'urgent' THEN 0 WHEN 'haute' THEN 1 WHEN 'modere' THEN 2 ELSE 3 END,
                 r.updated_at DESC
@@ -2762,23 +2934,22 @@ def artisan_dashboard():
                    r.created_at, u.full_name AS client_name
             FROM requests r
             JOIN users u ON u.id = r.client_id
-            WHERE r.artisan_id = ? OR (r.status IN ('pending', 'REQUESTED') AND (r.category = ? OR ? = ''))
+            WHERE r.artisan_id = ?
             ORDER BY
-                CASE WHEN r.status IN ('pending', 'REQUESTED') THEN 0 ELSE 1 END,
                 CASE r.urgency WHEN 'urgent' THEN 0 WHEN 'haute' THEN 1 WHEN 'modere' THEN 2 ELSE 3 END,
                 r.updated_at DESC
             LIMIT 20
-        """, (user["id"], user["profession"], user["profession"])).fetchall()
+        """, (user["id"],)).fetchall()
 
         missions_historique = conn.execute("""
             SELECT r.id, r.reference, r.title, r.category, r.address, r.urgency, r.status,
                    r.created_at, u.full_name AS client_name
             FROM requests r
             JOIN users u ON u.id = r.client_id
-            WHERE r.artisan_id = ? AND r.status IN ('completed', 'rejected', 'cancelled')
+            WHERE r.artisan_id = ? AND status IN (?, ?, ?)
             ORDER BY r.updated_at DESC
             LIMIT 20
-        """, (user["id"],)).fetchall()
+        """, (user["id"], MISSION_STATUS_COMPLETED, MISSION_STATUS_REFUSED, MISSION_STATUS_CANCELLED)).fetchall()
 
         avis = conn.execute(
             "SELECT r.rating, r.comment, r.created_at, u.full_name"
@@ -3105,7 +3276,7 @@ def _save_artisan_services(conn, artisan_id, service_ids):
         conn.execute("DELETE FROM artisan_services WHERE artisan_id = ?", (artisan_id,))
         return
     artisan = conn.execute(
-        "SELECT profession FROM users WHERE id = ? AND role = 'artisan'",
+        "SELECT profession FROM users WHERE id = ? AND role = 'technician'",
         (artisan_id,)).fetchone()
     if not artisan or not artisan["profession"]:
         raise ValueError("Domaine professionnel non defini.")
@@ -3193,7 +3364,7 @@ def artisans_page():
         " FROM users u"
         " LEFT JOIN reviews r ON r.artisan_id = u.id"
         " LEFT JOIN requests req_completed ON req_completed.artisan_id = u.id AND req_completed.status = 'completed'"
-        " WHERE u.role = 'artisan' AND u.is_active = 1 AND u.is_verified = 1 AND u.account_status != 'DELETED'")
+        " WHERE u.role = 'technician' AND u.is_active = 1 AND u.is_verified = 1 AND u.account_status != 'DELETED'")
     params = []
 
     if query:
@@ -3295,7 +3466,7 @@ def artisan_detail(artisan_id):
     conn = get_db_connection()
     try:
         artisan = conn.execute(
-            "SELECT * FROM users WHERE id = ? AND role = 'artisan'",
+            "SELECT * FROM users WHERE id = ? AND role = 'technician'",
             (artisan_id,)).fetchone()
         if not artisan:
             flash("Technicien introuvable.", "error")
@@ -3504,14 +3675,31 @@ def artisan_detail(artisan_id):
                 full_desc = description
                 if date_time:
                     full_desc += f"\n\nDate/heure souhaitée : {date_time}"
+
+                lat, lon = _geocode_zone("Conakry", address)
+                if not _is_valid_coordinate(lat, lon):
+                    lat, lon = _geocode_query(address)[:2]
+                lat = float(lat) if _is_valid_coordinate(lat) else 0.0
+                lon = float(lon) if _is_valid_coordinate(lon) else 0.0
+
+                ref = _generate_fixpro_reference(conn)
                 request_id = _insert_id(
                     conn,
                     "INSERT INTO requests"
-                    " (client_id, artisan_id, title, description, category, address, status, urgency, phone_contact, created_at, updated_at)"
-                    " VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?, datetime('now'), datetime('now'))",
-                    (user["id"], artisan_id, title, full_desc,
-                     artisan["profession"] or "Autre", address, urgency, phone_contact))
+                    " (client_id, artisan_id, reference, title, description, category, address, latitude, longitude, status, urgency, phone_contact, created_at, updated_at)"
+                    " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))",
+                    (user["id"], artisan_id, ref, title, full_desc,
+                     artisan["profession"] or "Autre", address, lat, lon,
+                     MISSION_STATUS_ASSIGNED, urgency, phone_contact))
                 conn.commit()
+                _log_intervention_history(conn, request_id, MISSION_STATUS_REQUESTED, MISSION_STATUS_ASSIGNED,
+                                         f"Client {user['full_name']}",
+                                         f"Demande directe assignee au technicien {artisan['full_name']}",
+                                         label="Technicien attribue")
+                create_notification(
+                    artisan_id, "Nouvelle demande",
+                    f"Nouvelle demande : {title} - {address or 'Conakry'}",
+                    "new_request", f"request_id:{request_id}")
                 flash("Demande d'intervention creee. Le technicien en sera informe.", "success")
                 return redirect(url_for("request_detail", request_id=request_id))
 
@@ -3643,7 +3831,7 @@ def demande(artisan_id):
     conn = get_db_connection()
     try:
         artisan = conn.execute(
-            "SELECT * FROM users WHERE id = ? AND role = 'artisan'",
+            "SELECT * FROM users WHERE id = ? AND role = 'technician'",
             (artisan_id,)).fetchone()
         if not artisan:
             flash("Technicien introuvable.", "error")
@@ -3871,7 +4059,7 @@ def requests_list():
                 " FROM requests r"
                 " LEFT JOIN users u ON u.id = r.client_id"
                 " LEFT JOIN reviews rev ON rev.request_id = r.id AND rev.client_id = ?"
-                " WHERE r.artisan_id = ? OR r.status = 'pending'"
+                " WHERE r.artisan_id = ?"
                 " ORDER BY r.created_at DESC", (user["id"], user["id"])).fetchall()
         else:
             rows = conn.execute(
@@ -3938,41 +4126,69 @@ def request_new():
                 "SELECT diagnostic_price FROM service_categories WHERE name = ?",
                 (category,)).fetchone()
 
-            # Matching : classe les artisans eligibles par score.
-            city = user.get("city") or ""
-            artisans = match_artisans(conn, category, city)
-            best = artisans[0] if artisans else None
+            # Geocodage de l'adresse de la demande
+            request_address = request.form.get("address", "").strip()
+            client_lat = user.get("latitude") or session.get("client_lat")
+            client_lon = user.get("longitude") or session.get("client_lon")
+            if not _is_valid_coordinate(client_lat, client_lon) and request_address:
+                client_lat, client_lon = _geocode_zone("Conakry", request_address)
+                if not _is_valid_coordinate(client_lat, client_lon):
+                    client_lat, client_lon = _geocode_query(request_address)[:2]
+            client_lat = float(client_lat) if _is_valid_coordinate(client_lat, client_lon) else 0.0
+            client_lon = float(client_lon) if _is_valid_coordinate(client_lat, client_lon) else 0.0
 
-            status = "pending" if not best else "assigned"
+            # Selection du meilleur technicien disponible et proche
+            best = _select_best_technician(conn, category, request_address,
+                                           client_lat=client_lat,
+                                           client_lon=client_lon)
+            ref = _generate_fixpro_reference(conn)
+            status = MISSION_STATUS_REQUESTED if not best else MISSION_STATUS_ASSIGNED
             artisan_id = best["id"] if best else None
+            artisan_name = best["full_name"] if best else None
 
             new_request_id = _insert_id(
                 conn,
-                "INSERT INTO requests (client_id, artisan_id, title, description, category,"
-                " address, photo_url, diagnostic_price, budget, status)"
-                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (user["id"], artisan_id, title, description, category,
-                 request.form.get("address", "").strip(),
+                "INSERT INTO requests (client_id, artisan_id, reference, title, description, category,"
+                " address, photo_url, diagnostic_price, budget, status, latitude, longitude, urgency)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (user["id"], artisan_id, ref, title, description, category,
+                 request_address,
                  request.form.get("photo_url", "").strip(),
                  float(category_row["diagnostic_price"]) if category_row else 0,
                  _to_float(request.form.get("budget")),
-                 status))
+                 status, client_lat, client_lon,
+                 request.form.get("urgency", "normal").strip()))
             conn.commit()
 
-            request_address = request.form.get("address", "").strip()
+            _log_intervention_history(
+                conn, new_request_id, None, status,
+                f"Client {user['full_name']}",
+                f"Demande creee ; reference {ref}",
+                label="Nouvelle demande")
+
+            create_notification(
+                user["id"], "Demande enregistree",
+                f"Votre demande '{title}' a ete enregistree.",
+                "request_created", f"request_id:{new_request_id}")
+
             if best:
                 create_notification(
                     best["id"], "Nouvelle demande",
                     f"Nouvelle demande : {title} - {request_address or 'Conakry'}",
                     "new_request", f"request_id:{new_request_id}")
+                _log_intervention_history(
+                    conn, new_request_id, MISSION_STATUS_REQUESTED, MISSION_STATUS_ASSIGNED,
+                    "Systeme",
+                    f"Technicien attribue : {artisan_name} ({best.get('selection_reason', '')})",
+                    label="Technicien attribue")
                 flash("Demande creee et assignee au meilleur technicien disponible.", "success")
             else:
-                flash("Demande d'intervention creee. Un artisan pourra maintenant "
-                      "la prendre en charge.", "success")
-            create_notification(
-                user["id"], "Demande enregistree",
-                f"Votre demande '{title}' a ete enregistree.",
-                "request_created", f"request_id:{new_request_id}")
+                create_admin_notification(
+                    conn, "Nouvelle mission non attribuee",
+                    f"Mission {ref} - {category} - {request_address or 'Conakry'} : aucun technicien disponible",
+                    "no_technician",
+                    f"request_id:{new_request_id}")
+                flash("Demande d'intervention creee. Nous recherchons un technicien disponible.", "success")
             return redirect(url_for("requests_list"))
     finally:
         conn.close()
@@ -4062,33 +4278,31 @@ def request_detail(request_id):
 def accept_request(request_id):
     user = get_current_user()
     if not _is_technician(user) or not user.get("is_verified"):
-        flash("Seuls les artisans verifies peuvent accepter une demande.", "error")
+        flash("Seuls les techniciens verifies peuvent accepter une mission.", "error")
         return redirect(url_for("requests_list"))
 
     conn = get_db_connection()
     try:
         req = conn.execute(
             "SELECT * FROM requests WHERE id = ?", (request_id,)).fetchone()
-        if not req or req["status"] not in ("pending", "REQUESTED"):
-            flash("Cette demande n'est plus disponible.", "error")
+        if not req or req["artisan_id"] != user["id"]:
+            flash("Cette mission ne vous est pas assignee.", "error")
+            return redirect(url_for("requests_list"))
+        if req["status"] != MISSION_STATUS_ASSIGNED:
+            flash("Cette mission n'est pas en attente d'acceptation.", "error")
             return redirect(url_for("requests_list"))
 
         conn.execute(
-            "UPDATE requests SET artisan_id = ?, status = 'assigned',"
-            " updated_at = ? WHERE id = ? AND status IN ('pending', 'REQUESTED')",
-            (user["id"], now_iso(), request_id))
-        conn.execute(
-            "INSERT INTO intervention_history (request_id, status, actor, note, created_at)"
-            " VALUES (?, ?, ?, ?, ?)",
-            (request_id, "Mission acceptee", user["full_name"],
-             f"Technicien {user['full_name']} a accepte la mission", now_iso()))
+            "UPDATE requests SET status = ?, updated_at = ? WHERE id = ? AND status = ?",
+            (MISSION_STATUS_ACCEPTED, now_iso(), request_id, MISSION_STATUS_ASSIGNED))
+        _log_intervention_history(
+            conn, request_id, MISSION_STATUS_ASSIGNED, MISSION_STATUS_ACCEPTED,
+            user["full_name"], f"Technicien {user['full_name']} a accepte la mission")
         conn.commit()
-        req = conn.execute("SELECT client_id FROM requests WHERE id = ?", (request_id,)).fetchone()
-        if req:
-            create_notification(
-                req["client_id"], "Artisan trouve",
-                "Un technicien a accepte votre demande.",
-                "request_accepted", f"request_id:{request_id}")
+        create_notification(
+            req["client_id"], "Technicien trouve",
+            "Un technicien a accepte votre mission.",
+            "request_accepted", f"request_id:{request_id}")
         flash("Mission acceptee. Vous pouvez maintenant demarrer l'intervention.", "success")
     finally:
         conn.close()
@@ -4541,6 +4755,47 @@ def _migrate_db():
                     " created_at TEXT DEFAULT CURRENT_TIMESTAMP,"
                     " updated_at TEXT DEFAULT CURRENT_TIMESTAMP"
                     ")")
+            # Extension intervention_history pour l'historique des statuts
+            try:
+                conn.execute("ALTER TABLE intervention_history ADD COLUMN old_status TEXT")
+            except Exception:
+                pass
+            try:
+                conn.execute("ALTER TABLE intervention_history ADD COLUMN new_status TEXT")
+            except Exception:
+                pass
+            # Normalisation des roles et statuts legacy
+            try:
+                conn.execute("UPDATE users SET role = 'technician' WHERE role = 'artisan'")
+                conn.execute(
+                    "UPDATE requests SET status = ? WHERE LOWER(status) IN ('pending','requested')",
+                    (MISSION_STATUS_REQUESTED,))
+                conn.execute(
+                    "UPDATE requests SET status = ? WHERE LOWER(status) IN ('assigned')",
+                    (MISSION_STATUS_ASSIGNED,))
+                conn.execute(
+                    "UPDATE requests SET status = ? WHERE LOWER(status) IN ('accepted')",
+                    (MISSION_STATUS_ACCEPTED,))
+                conn.execute(
+                    "UPDATE requests SET status = ? WHERE LOWER(status) IN ('en_route')",
+                    (MISSION_STATUS_EN_ROUTE,))
+                conn.execute(
+                    "UPDATE requests SET status = ? WHERE LOWER(status) IN ('arrived')",
+                    (MISSION_STATUS_ARRIVED,))
+                conn.execute(
+                    "UPDATE requests SET status = ? WHERE LOWER(status) IN ('in_progress')",
+                    (MISSION_STATUS_IN_PROGRESS,))
+                conn.execute(
+                    "UPDATE requests SET status = ? WHERE LOWER(status) IN ('completed')",
+                    (MISSION_STATUS_COMPLETED,))
+                conn.execute(
+                    "UPDATE requests SET status = ? WHERE LOWER(status) IN ('rejected','refused')",
+                    (MISSION_STATUS_REFUSED,))
+                conn.execute(
+                    "UPDATE requests SET status = ? WHERE LOWER(status) IN ('cancelled')",
+                    (MISSION_STATUS_CANCELLED,))
+            except Exception:
+                pass
             conn.commit()
         except Exception as e:
             logger.warning("Migration conversations impossible: %s", e)
@@ -4680,7 +4935,7 @@ def api_admin_stats():
     try:
         today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
         stats = {
-            "techniciens": conn.execute("SELECT COUNT(*) AS n FROM users WHERE role = 'artisan'").fetchone()["n"],
+            "techniciens": conn.execute("SELECT COUNT(*) AS n FROM users WHERE role = 'technician'").fetchone()["n"],
             "clients": conn.execute("SELECT COUNT(*) AS n FROM users WHERE role = 'client'").fetchone()["n"],
             "demandes_mois": conn.execute(
                 "SELECT COUNT(*) AS n FROM requests WHERE created_at LIKE ?",
@@ -4692,7 +4947,7 @@ def api_admin_stats():
             "avis_moyen": conn.execute(
                 "SELECT COALESCE(AVG(rating), 0) AS avg FROM reviews").fetchone()["avg"],
             "pending_artisans": conn.execute(
-                "SELECT COUNT(*) AS n FROM users WHERE role = 'artisan' AND is_verified = 0").fetchone()["n"],
+                "SELECT COUNT(*) AS n FROM users WHERE role = 'technician' AND is_verified = 0").fetchone()["n"],
             "open_requests": conn.execute(
                 "SELECT COUNT(*) AS n FROM requests WHERE status NOT IN ('completed', 'cancelled')").fetchone()["n"],
         }
@@ -4720,7 +4975,7 @@ def api_admin_techniciens():
             " LEFT JOIN technician_documents d ON d.technician_id = u.id"
             " LEFT JOIN requests req_completed ON req_completed.artisan_id = u.id AND req_completed.status = 'completed'"
             " LEFT JOIN reviews r ON r.artisan_id = u.id"
-            " WHERE u.role = 'artisan'"
+            " WHERE u.role = 'technician'"
             " GROUP BY u.id"
             " ORDER BY u.is_verified ASC, u.is_active DESC, u.created_at DESC").fetchall()
         return jsonify([dict(r) for r in rows])
@@ -4840,7 +5095,7 @@ def api_admin_categories():
         artisans_by_prof = conn.execute(
             "SELECT LOWER(profession) AS name, COUNT(*) AS artisan_count"
             " FROM users"
-            " WHERE role = 'artisan' AND profession IS NOT NULL"
+            " WHERE role = 'technician' AND profession IS NOT NULL"
             " GROUP BY LOWER(profession)").fetchall()
         by_name = {}
         for r in requests_by_cat:
@@ -5130,9 +5385,9 @@ def api_admin_dashboard():
             (mois_debut,)).fetchone()["s"])
 
         total_techniciens = conn.execute(
-            "SELECT COUNT(*) AS n FROM users WHERE role = 'artisan'").fetchone()["n"]
+            "SELECT COUNT(*) AS n FROM users WHERE role = 'technician'").fetchone()["n"]
         actifs_techniciens = conn.execute(
-            "SELECT COUNT(*) AS n FROM users WHERE role = 'artisan' AND is_active = 1").fetchone()["n"]
+            "SELECT COUNT(*) AS n FROM users WHERE role = 'technician' AND is_active = 1").fetchone()["n"]
 
         total_termine = conn.execute(
             "SELECT COUNT(*) AS n FROM requests WHERE status = 'completed'").fetchone()["n"]
@@ -5213,7 +5468,7 @@ def api_admin_dashboard():
 
         rows_tech = conn.execute(
             "SELECT full_name, profession, availability_status FROM users"
-            " WHERE role = 'artisan' ORDER BY availability_status = 'en_ligne' DESC, full_name").fetchall()
+            " WHERE role = 'technician' ORDER BY availability_status = 'en_ligne' DESC, full_name").fetchall()
         technicians = [
             {"name": t["full_name"], "cat": t["profession"], "online": t["availability_status"] == "en_ligne"}
             for t in rows_tech
@@ -5249,7 +5504,7 @@ def api_admin_verify_artisan(artisan_id):
         return auth
     conn = get_db_connection()
     try:
-        conn.execute("UPDATE users SET is_verified = 1 WHERE id = ? AND role = 'artisan'", (artisan_id,))
+        conn.execute("UPDATE users SET is_verified = 1 WHERE id = ? AND role = 'technician'", (artisan_id,))
         conn.commit()
     finally:
         conn.close()
@@ -5265,7 +5520,7 @@ def api_admin_reject_artisan(artisan_id):
         return auth
     conn = get_db_connection()
     try:
-        conn.execute("DELETE FROM users WHERE id = ? AND role = 'artisan' AND is_verified = 0", (artisan_id,))
+        conn.execute("DELETE FROM users WHERE id = ? AND role = 'technician' AND is_verified = 0", (artisan_id,))
         conn.commit()
     finally:
         conn.close()
@@ -5416,109 +5671,6 @@ def _domain_to_profession(category):
     return _CATEGORY_PROFESSION.get(category.lower(), category).lower()
 
 
-def _select_best_technician(conn, category, location, client_lat=None, client_lon=None):
-    """Selectionne le meilleur technicien selon le metier, la disponibilite,
-    la zone d'intervention, la position et la reputation.
-
-    Renvoie un dictionnaire artisan avec les cles `selection_reason` et
-    `distance_km` pour la tracabilite, ou None si aucun candidat.
-    """
-    if not category:
-        return None
-    profession = _domain_to_profession(category)
-    if not profession:
-        return None
-
-    if _is_valid_coordinate(client_lat, client_lon):
-        lat, lon = client_lat, client_lon
-    else:
-        lat, lon = _geocode_zone("Conakry", location or "Conakry")
-
-    sql = """
-        SELECT u.id, u.full_name, u.profession, u.latitude, u.longitude,
-               u.is_active, u.is_verified, u.availability_status,
-               u.zone_intervention, u.quartier, u.city, u.mobility, u.years_experience,
-               u.account_status,
-               COALESCE(rating_data.avg_rating, 0) AS avg_rating,
-               COALESCE(rating_data.review_count, 0) AS review_count,
-               COALESCE(completed_count.c, 0) AS completed_count
-        FROM users u
-        LEFT JOIN (
-            SELECT artisan_id, AVG(rating) AS avg_rating, COUNT(*) AS review_count
-            FROM reviews GROUP BY artisan_id
-        ) rating_data ON rating_data.artisan_id = u.id
-        LEFT JOIN (
-            SELECT artisan_id, COUNT(*) AS c
-            FROM requests WHERE LOWER(status) = 'completed' GROUP BY artisan_id
-        ) completed_count ON completed_count.artisan_id = u.id
-        WHERE u.role IN ('artisan', 'technician')
-          AND u.is_active = 1
-          AND (u.account_status = 'ACTIVE' OR u.account_status IS NULL)
-          AND LOWER(COALESCE(u.availability_status, 'hors_ligne')) NOT IN ('hors_ligne', 'en_intervention')
-          AND LOWER(REPLACE(REPLACE(u.profession, 'é', 'e'), 'É', 'E')) = ?
-    """
-    rows = conn.execute(sql, (profession,)).fetchall()
-
-    # Exclure les artisans occupes par une intervention en cours
-    busy_ids = {r["artisan_id"] for r in conn.execute(
-        "SELECT artisan_id FROM requests"
-        " WHERE LOWER(status) IN ('in_progress', 'on_the_way')"
-        " GROUP BY artisan_id HAVING COUNT(*) > 0").fetchall()}
-
-    location_norm = (location or "").lower()
-
-    def in_zone(a):
-        zones = " ".join([
-            (a.get("zone_intervention") or ""),
-            (a.get("quartier") or ""),
-            (a.get("city") or "")
-        ]).lower()
-        return bool(location_norm) and (location_norm in zones or (a.get("mobility") or "").lower() == 'toute_conakry')
-
-    def dist(a):
-        a_lat = a["latitude"]
-        a_lon = a["longitude"]
-        if _is_valid_coordinate(a_lat, a_lon) and _is_valid_coordinate(lat, lon):
-            return calculate_distance(lat, lon, float(a_lat), float(a_lon))
-        return 9999
-
-    candidates = []
-    for a in rows:
-        if a["id"] in busy_ids:
-            continue
-        d = dist(a)
-        score = 0
-        if a["availability_status"] and a["availability_status"].lower() == 'en_ligne':
-            score += 40
-        if a["is_verified"]:
-            score += 30
-        if in_zone(a):
-            score += 25
-        score += float(a["avg_rating"] or 0) * 20
-        score += (a["completed_count"] or 0) * 2
-        score += (a["years_experience"] or 0)
-        score -= d * 2
-        artisans = dict(a)
-        artisans["distance_km"] = round(d, 1) if d != 9999 else None
-        artisans["selection_score"] = score
-        candidates.append(artisans)
-
-    if not candidates:
-        return None
-
-    candidates.sort(key=lambda a: (-a["selection_score"], a["distance_km"] or 9999, a["full_name"]))
-    best = candidates[0]
-    parts = [best["profession"]]
-    if best["distance_km"] is not None:
-        parts.append(f"a {best['distance_km']} km")
-    if best["is_verified"]:
-        parts.append("verifie")
-    if best["availability_status"]:
-        parts.append(best["availability_status"].replace("_", " "))
-    best["selection_reason"] = "; ".join(parts)
-    return best
-
-
 def _create_intervention_from_chat(conn, conversation_id, client_id, analysis, artisan, sender_id, client_lat=None, client_lon=None):
     """Cree une intervention a partir d'une conversation."""
     ref = _generate_fixpro_reference(conn)
@@ -5536,20 +5688,21 @@ def _create_intervention_from_chat(conn, conversation_id, client_id, analysis, a
     req_id = _insert_id(
         conn,
         "INSERT INTO requests (client_id, artisan_id, reference, title, description, category, address, status, urgency, quote_amount, budget, latitude, longitude, created_at, updated_at)"
-        " VALUES (?, ?, ?, ?, ?, ?, ?, 'REQUESTED', ?, 0, 0, ?, ?, ?, ?)",
-        (client_id, artisan_id, ref, title, description, category, address, urgency, lat, lon, now, now))
+        " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, ?, ?, ?, ?)",
+        (client_id, artisan_id, ref, title, description, category, address,
+         MISSION_STATUS_ASSIGNED, urgency, lat, lon, now, now))
+    _log_intervention_history(conn, req_id, None, MISSION_STATUS_REQUESTED,
+                             "Assistant FixPro", "Demande creee depuis la conversation",
+                             label="Nouvelle demande")
+    _log_intervention_history(conn, req_id, MISSION_STATUS_REQUESTED, MISSION_STATUS_ASSIGNED,
+                             "Systeme", f"Technicien {artisan['full_name']} attribue — {reason}",
+                             label="Technicien attribue")
     conn.execute(
-        "INSERT INTO intervention_history (request_id, status, actor, note, created_at)"
+        "INSERT INTO notifications (user_id, title, body, type, data)"
         " VALUES (?, ?, ?, ?, ?)",
-        (req_id, "Nouvelle demande", "Assistant FixPro", "Demande creee depuis la conversation FixPro", now))
-    conn.execute(
-        "INSERT INTO intervention_history (request_id, status, actor, note, created_at)"
-        " VALUES (?, ?, ?, ?, ?)",
-        (req_id, "Technicien recherché", "Assistant FixPro", "Recherche du meilleur technicien disponible", now))
-    conn.execute(
-        "INSERT INTO intervention_history (request_id, status, actor, note, created_at)"
-        " VALUES (?, ?, ?, ?, ?)",
-        (req_id, "Technicien attribué", "Assistant FixPro", f"Technicien {artisan['full_name']} attribué — {reason}", now))
+        (artisan_id, "Nouvelle mission FixPro",
+         f"{title} - {address} ({urgency})",
+         "new_request", f"request_id:{req_id}"))
     conn.execute(
         "UPDATE conversations SET request_id = ?, status = 'converted_to_intervention' WHERE id = ?",
         (req_id, conversation_id))
@@ -5777,7 +5930,7 @@ def client_message_artisan(artisan_id):
     conn = get_db_connection()
     try:
         artisan = conn.execute(
-            "SELECT id, full_name, profession FROM users WHERE id = ? AND role = 'artisan'",
+            "SELECT id, full_name, profession FROM users WHERE id = ? AND role = 'technician'",
             (artisan_id,)).fetchone()
         if not artisan:
             flash("Technicien introuvable.", "error")
@@ -5949,7 +6102,7 @@ def artisan_mission(request_id):
             flash("Mission introuvable.", "error")
             return redirect(url_for("artisan_dashboard"))
 
-        if req["artisan_id"] and req["artisan_id"] != user["id"]:
+        if req["artisan_id"] != user["id"]:
             flash("Cette mission n'est pas accessible.", "error")
             return redirect(url_for("artisan_dashboard"))
 
@@ -5961,12 +6114,26 @@ def artisan_mission(request_id):
             "SELECT * FROM intervention_history WHERE request_id = ? ORDER BY created_at DESC",
             (request_id,)).fetchall()
 
+        # Distance reelle depuis la derniere position GPS du technicien
         distance = None
-        if (_is_valid_coordinate(user.get("latitude"), user.get("longitude"))
+        loc = conn.execute(
+            "SELECT latitude, longitude, updated_at FROM technician_locations"
+            " WHERE technician_id = ? ORDER BY updated_at DESC LIMIT 1",
+            (user["id"],)).fetchone()
+        tech_pos = None
+        if loc:
+            try:
+                updated = datetime.fromisoformat(str(loc["updated_at"]).replace("Z", "+00:00"))
+                if updated.tzinfo is None:
+                    updated = updated.replace(tzinfo=timezone.utc)
+                if (datetime.now(timezone.utc) - updated).total_seconds() <= 300:
+                    tech_pos = (float(loc["latitude"]), float(loc["longitude"]))
+            except (TypeError, ValueError):
+                pass
+        if (tech_pos
                 and _is_valid_coordinate(req["latitude"], req["longitude"])):
-            distance = _haversine(
-                float(user["latitude"]), float(user["longitude"]),
-                float(req["latitude"]), float(req["longitude"]))
+            distance = _haversine(tech_pos[0], tech_pos[1],
+                                  float(req["latitude"]), float(req["longitude"]))
 
     finally:
         conn.close()
@@ -5984,7 +6151,7 @@ def artisan_mission_action(request_id):
         flash("Cet espace est reserve aux techniciens.", "error")
         return redirect(url_for("dashboard"))
 
-    action = (request.form.get("action") or "").strip()
+    action = (request.form.get("action") or "").strip().lower()
     if not action:
         flash("Aucune action specifiee.", "error")
         return redirect(url_for("artisan_mission", request_id=request_id))
@@ -6002,16 +6169,17 @@ def artisan_mission_action(request_id):
             return redirect(url_for("artisan_dashboard"))
 
         if action == "accept":
-            if req["status"] in ("pending", "REQUESTED"):
+            if (req["status"] == MISSION_STATUS_ASSIGNED
+                    and req["artisan_id"] == user["id"]
+                    and can_transition_request(req["status"], MISSION_STATUS_ACCEPTED)):
                 conn.execute(
-                    "UPDATE requests SET artisan_id = ?, status = 'assigned', updated_at = ?"
-                    " WHERE id = ? AND status IN ('pending', 'REQUESTED')",
-                    (user["id"], now_iso(), request_id))
-                conn.execute(
-                    "INSERT INTO intervention_history (request_id, status, actor, note, created_at)"
-                    " VALUES (?, ?, ?, ?, ?)",
-                    (request_id, "Mission acceptee", user["full_name"],
-                     "Le technicien a accepte la mission", now_iso()))
+                    "UPDATE requests SET status = ?, updated_at = ?"
+                    " WHERE id = ? AND artisan_id = ? AND status = ?",
+                    (MISSION_STATUS_ACCEPTED, now_iso(), request_id, user["id"], MISSION_STATUS_ASSIGNED))
+                _log_intervention_history(
+                    conn, request_id, MISSION_STATUS_ASSIGNED, MISSION_STATUS_ACCEPTED,
+                    user["full_name"], "Le technicien a accepte la mission",
+                    label="Mission acceptee")
                 _notify_client(conn, request_id, "Mission acceptee",
                                "Votre technicien a accepte la mission.", "request_accepted")
                 flash("Mission acceptee.", "success")
@@ -6019,35 +6187,73 @@ def artisan_mission_action(request_id):
                 flash("Cette mission ne peut plus etre acceptee.", "error")
 
         elif action == "reject":
-            if req["status"] in ("pending", "REQUESTED", "assigned"):
+            if (req["artisan_id"] == user["id"]
+                    and can_transition_request(req["status"], MISSION_STATUS_REFUSED)):
                 reason = (request.form.get("reason") or "").strip()
                 conn.execute(
-                    "UPDATE requests SET artisan_id = NULL, status = 'rejected', updated_at = ?"
-                    " WHERE id = ?",
-                    (now_iso(), request_id))
-                conn.execute(
-                    "INSERT INTO intervention_history (request_id, status, actor, note, created_at)"
-                    " VALUES (?, ?, ?, ?, ?)",
-                    (request_id, "Mission refusee", user["full_name"],
-                     f"Refusee par le technicien. Raison : {reason or 'non precisee'}", now_iso()))
+                    "UPDATE requests SET artisan_id = NULL, status = ?, updated_at = ?"
+                    " WHERE id = ? AND artisan_id = ?",
+                    (MISSION_STATUS_REFUSED, now_iso(), request_id, user["id"]))
+                _log_intervention_history(
+                    conn, request_id, MISSION_STATUS_ASSIGNED, MISSION_STATUS_REFUSED,
+                    user["full_name"],
+                    f"Refusee par le technicien. Raison : {reason or 'non precisee'}",
+                    label="Mission refusee")
+
+                # Recherche d'un autre technicien compatible
+                new_artisan = _select_best_technician(
+                    conn, req["category"], req["address"],
+                    client_lat=req["latitude"], client_lon=req["longitude"],
+                    exclude_artisan_id=user["id"])
+                if new_artisan and new_artisan["id"] != user["id"]:
+                    conn.execute(
+                        "UPDATE requests SET artisan_id = ?, status = ?, updated_at = ? WHERE id = ?",
+                        (new_artisan["id"], MISSION_STATUS_ASSIGNED, now_iso(), request_id))
+                    _log_intervention_history(
+                        conn, request_id, MISSION_STATUS_REFUSED, MISSION_STATUS_ASSIGNED,
+                        "Systeme",
+                        f"Nouveau technicien attribue : {new_artisan['full_name']} ({new_artisan.get('selection_reason', '')})",
+                        label="Technicien attribue")
+                    conn.execute(
+                        "INSERT INTO notifications (user_id, title, body, type, data)"
+                        " VALUES (?, ?, ?, ?, ?)",
+                        (new_artisan["id"], "Nouvelle mission FixPro",
+                         f"{req['title']} - {req['address']} ({req['urgency']})",
+                         "new_request", f"request_id:{request_id}"))
+                else:
+                    conn.execute(
+                        "UPDATE requests SET status = ?, updated_at = ? WHERE id = ?",
+                        (MISSION_STATUS_REASSIGNMENT_REQUIRED, now_iso(), request_id))
+                    _log_intervention_history(
+                        conn, request_id, MISSION_STATUS_REFUSED, MISSION_STATUS_REASSIGNMENT_REQUIRED,
+                        "Systeme", "Aucun autre technicien disponible pour le moment",
+                        label="Reattribution requise")
+                    create_admin_notification(
+                        conn, "Reattribution requise",
+                        f"Mission {req['reference']} - {req['category']} : aucun remplacant disponible",
+                        "reassignment_required",
+                        f"request_id:{request_id}")
+                _notify_client(conn, request_id, "Mission en reattribution",
+                               "Votre demande est en cours de reattribution.", "request_reassigned")
                 flash("Mission refusee. Elle sera reattribuee.", "success")
             else:
                 flash("Cette mission ne peut plus etre refusee.", "error")
 
         elif action in ("en_route", "arrived", "in_progress", "completed"):
-            new_status = action
+            new_status = _normalize_status(action) or action.upper()
             if can_transition_request(req["status"], new_status):
                 conn.execute(
                     "UPDATE requests SET status = ?, updated_at = ? WHERE id = ?",
                     (new_status, now_iso(), request_id))
-                conn.execute(
-                    "INSERT INTO intervention_history (request_id, status, actor, note, created_at)"
-                    " VALUES (?, ?, ?, ?, ?)",
-                    (request_id, new_status.replace("_", " "), user["full_name"],
-                     f"Statut mis a jour : {new_status.replace('_', ' ')}", now_iso()))
+                label = _MISSION_STATUS_LABELS.get(new_status, new_status)
+                _log_intervention_history(
+                    conn, request_id, req["status"], new_status,
+                    user["full_name"],
+                    f"Statut mis a jour : {label}",
+                    label=label)
                 _notify_client(conn, request_id, "Mise a jour de la mission",
                                f"Statut de votre mission : {new_status.replace('_', ' ').capitalize()}",
-                               f"request_{new_status}")
+                               f"request_{new_status.lower()}")
                 flash("Statut mis a jour.", "success")
             else:
                 flash("Changement de statut non autorise.", "error")
@@ -6097,8 +6303,10 @@ def _notify_client(conn, request_id, title, body, kind):
     row = conn.execute(
         "SELECT client_id FROM requests WHERE id = ?", (request_id,)).fetchone()
     if row:
-        create_notification(
-            row["client_id"], title, body, kind, f"request_id:{request_id}")
+        conn.execute(
+            "INSERT INTO notifications (user_id, title, body, type, data)"
+            " VALUES (?, ?, ?, ?, ?)",
+            (row["client_id"], title, body, kind, f"request_id:{request_id}"))
 
 
 def _is_technician(user):

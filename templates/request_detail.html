@@ -34,17 +34,17 @@
       <div class="fx-step-dot">✓</div>
       <div class="fx-step-txt"><b>Demande envoyee</b><span>{{ (request_item.created_at|string)[:16] }}</span></div>
     </div>
-    <div class="fx-step {{ 'done' if request_item.status in ('accepted','assigned','quote_proposed','quote_accepted','in_progress','completed') }}">
-      <div class="fx-step-dot">{% if request_item.status in ('accepted','assigned','quote_proposed','quote_accepted','in_progress','completed') %}✓{% endif %}</div>
-      <div class="fx-step-txt"><b>Acceptee par {{ (artisan.full_name or 'le technicien').split(' ')[0] }}</b><span>{{ (request_item.updated_at|string)[:16] if request_item.status in ('accepted','assigned','quote_proposed','quote_accepted','in_progress','completed') else '—' }}</span></div>
+    <div class="fx-step {{ 'done' if request_item.status in ('accepted','ACCEPTED','assigned','ASSIGNED','quote_proposed','quote_accepted','in_progress','IN_PROGRESS','completed','COMPLETED') }}">
+      <div class="fx-step-dot">{% if request_item.status in ('accepted','ACCEPTED','assigned','ASSIGNED','quote_proposed','quote_accepted','in_progress','IN_PROGRESS','completed','COMPLETED') %}✓{% endif %}</div>
+      <div class="fx-step-txt"><b>Acceptee par {{ (artisan.full_name or 'le technicien').split(' ')[0] }}</b><span>{{ (request_item.updated_at|string)[:16] if request_item.status in ('accepted','ACCEPTED','assigned','ASSIGNED','quote_proposed','quote_accepted','in_progress','IN_PROGRESS','completed','COMPLETED') else '—' }}</span></div>
     </div>
-    <div class="fx-step {{ 'active' if request_item.status in ('assigned','in_progress','quote_accepted') else ('done' if request_item.status == 'completed' else '') }}">
+    <div class="fx-step {{ 'active' if request_item.status in ('assigned','ASSIGNED','in_progress','IN_PROGRESS','quote_accepted') else ('done' if request_item.status in ('completed','COMPLETED','ARRIVED','arrived') else '') }}">
       <div class="fx-step-dot"></div>
       <div class="fx-step-txt"><b>En route vers vous</b><span>ETA 9:47</span></div>
     </div>
-    <div class="fx-step {{ 'done' if request_item.status == 'completed' }}">
+    <div class="fx-step {{ 'done' if request_item.status in ('completed','COMPLETED','ARRIVED','arrived') }}">
       <div class="fx-step-dot"></div>
-      <div class="fx-step-txt"><b>Arrivee sur place</b><span>{{ '—' if request_item.status != 'completed' else (request_item.updated_at|string)[:16] }}</span></div>
+      <div class="fx-step-txt"><b>Arrivee sur place</b><span>{{ '—' if request_item.status not in ('completed','COMPLETED','ARRIVED','arrived') else (request_item.updated_at|string)[:16] }}</span></div>
     </div>
   </div>
 
@@ -59,7 +59,7 @@
     </form>
     {% endif %}
 
-    {% if user.role == 'client' and request_item.status in ('pending','assigned','quote_proposed') %}
+    {% if user.role == 'client' and request_item.status in ('pending','REQUESTED','assigned','ASSIGNED','quote_proposed') %}
     <form method="post" action="{{ url_for('request_detail', request_id=request_item.id) }}" style="margin:0;flex:1;display:flex;">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
       <input type="hidden" name="action" value="cancel" />

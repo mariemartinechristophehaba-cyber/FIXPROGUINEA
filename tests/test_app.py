@@ -86,7 +86,7 @@ class FixProTestCase(unittest.TestCase):
             if user:
                 conn.execute(
                     "UPDATE users SET is_verified = 1, is_active = 1, email = ?,"
-                    " password_hash = ? WHERE id = ?",
+                    " password_hash = ?, availability_status = 'en_ligne' WHERE id = ?",
                     (email, fixpro_app.generate_password_hash(password), user["id"]))
                 conn.commit()
         finally:
@@ -282,7 +282,7 @@ class RequestWorkflowTests(FixProTestCase):
         }, follow_redirects=True)
         self.assertEqual(response.status_code, 200)
         # La demande est maintenant automatiquement assignee a un artisan
-        self.assertEqual(self._request_field(1, "status"), "assigned")
+        self.assertEqual(self._request_field(1, "status"), "ASSIGNED")
 
     def test_diagnostic_price_comes_from_category(self):
         self.login("+224620000000")
@@ -297,7 +297,7 @@ class RequestWorkflowTests(FixProTestCase):
         # L'artisan prend la demande en charge puis propose un devis.
         self.login("artisan@example.com")
         self.client.post("/requests/1/accept")
-        self.assertEqual(self._request_field(1, "status"), "assigned")
+        self.assertEqual(self._request_field(1, "status"), "ACCEPTED")
 
         self.client.post("/requests/1/quote", data={
             "quote_amount": "250000",
@@ -637,6 +637,7 @@ class GeolocationTests(FixProTestCase):
 
     def test_position_ignored_when_artisan_is_offline(self):
         self.login("artisan@example.com")
+        self.client.post("/api/technicien/status", data={"status": "hors_ligne"})
         response = self.client.post("/api/technicien/position", data={
             "lat": "9.5", "lon": "-13.7"})
         self.assertEqual(response.status_code, 200)
@@ -745,7 +746,7 @@ class AdminPanelTests(FixProTestCase):
         conn = db.connect(sqlite_path=self.db_path)
         try:
             artisan = conn.execute(
-                "SELECT id FROM users WHERE role = 'artisan'").fetchone()
+                "SELECT id FROM users WHERE role = 'technician'").fetchone()
             artisan_id = artisan["id"]
         finally:
             conn.close()
@@ -775,7 +776,7 @@ class AdminPanelTests(FixProTestCase):
         try:
             conn.execute(
                 "UPDATE users SET availability_status = ? WHERE role = ?",
-                ("en_ligne", "artisan"))
+                ("en_ligne", "technician"))
             ref = fixpro_app._generate_fixpro_reference(conn)
             conn.execute(
                 "INSERT INTO requests (client_id, artisan_id, reference, title, description, category, address, status, urgency, quote_amount, budget, latitude, longitude, created_at, updated_at)"
@@ -798,7 +799,7 @@ class AdminPanelTests(FixProTestCase):
         conn = db.connect(sqlite_path=self.db_path)
         try:
             artisan = conn.execute(
-                "SELECT id FROM users WHERE role = 'artisan'").fetchone()
+                "SELECT id FROM users WHERE role = 'technician'").fetchone()
             artisan_id = artisan["id"]
         finally:
             conn.close()
@@ -892,7 +893,7 @@ class DomainTests(FixProTestCase):
         try:
             suffix = f"{abs(hash(full_name)) % 1000000:06d}"
             uid = fixpro_app._insert_id(conn, "INSERT INTO users (full_name, phone, email, password_hash, role, profession, city, latitude, longitude, is_verified, is_active, account_status, availability_status, zone_intervention) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                             (full_name, f"+22462{suffix}", f"{full_name.replace(' ', '')}@t.com", fixpro_app.generate_password_hash("FixPro2026!"), "artisan", profession, "Conakry", lat, lon, 1 if verified else 0, 1 if active else 0, "ACTIVE", availability, zone or "Conakry"))
+                             (full_name, f"+22462{suffix}", f"{full_name.replace(' ', '')}@t.com", fixpro_app.generate_password_hash("FixPro2026!"), "technician", profession, "Conakry", lat, lon, 1 if verified else 0, 1 if active else 0, "ACTIVE", availability, zone or "Conakry"))
             conn.commit()
             return uid
         finally:
@@ -960,7 +961,7 @@ class DomainTests(FixProTestCase):
                                                ("Client Test", "+224620000001", fixpro_app.generate_password_hash("FixPro2026!"), "client", "Conakry"))
             conn.execute(
                 "INSERT INTO requests (client_id, artisan_id, reference, title, description, category, address, status, urgency, quote_amount, budget, latitude, longitude, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (client_id, occupe, "FP-2026-999001", "Fuite", "Fuite", "Plomberie", "Kaloum", "in_progress", "urgent", 0, 0, 0, 0, "2026-01-01T00:00:00", "2026-01-01T00:00:00"))
+                (client_id, occupe, "FP-2026-999001", "Fuite", "Fuite", "Plomberie", "Kaloum", "IN_PROGRESS", "urgent", 0, 0, 0, 0, "2026-01-01T00:00:00", "2026-01-01T00:00:00"))
             conn.commit()
             artisan = fixpro_app._select_best_technician(conn, "plomberie", "Kaloum", client_lat=9.5012, client_lon=-13.7012)
             self.assertIsNotNone(artisan)
@@ -985,7 +986,7 @@ class DomainTests(FixProTestCase):
             client_id = fixpro_app._insert_id(conn, "INSERT INTO users (full_name, phone, password_hash, role, city) VALUES (?, ?, ?, ?, ?)",
                                                ("Client Test", "+224620000002", fixpro_app.generate_password_hash("FixPro2026!"), "client", "Conakry"))
             artisan_id = fixpro_app._insert_id(conn, "INSERT INTO users (full_name, phone, email, password_hash, role, profession, city, latitude, longitude, is_verified, is_active, account_status, availability_status, zone_intervention) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                                               ("Plombier Pro", "+22462999999", "pro@test.com", fixpro_app.generate_password_hash("FixPro2026!"), "artisan", "Plombier", "Conakry", 9.5010, -13.7010, 1, 1, "ACTIVE", "en_ligne", "Kaloum"))
+                                               ("Plombier Pro", "+22462999999", "pro@test.com", fixpro_app.generate_password_hash("FixPro2026!"), "technician", "Plombier", "Conakry", 9.5010, -13.7010, 1, 1, "ACTIVE", "en_ligne", "Kaloum"))
             artisan = conn.execute("SELECT * FROM users WHERE id = ?", (artisan_id,)).fetchone()
             artisan = dict(artisan)
             artisan["selection_reason"] = "test"
@@ -1007,7 +1008,7 @@ class DomainTests(FixProTestCase):
                 "SELECT status FROM intervention_history WHERE request_id = ? ORDER BY id",
                 (req_id,)).fetchall()
             self.assertEqual(hist[0]["status"], "Nouvelle demande")
-            self.assertTrue(any("Technicien attribué" in h["status"] for h in hist))
+            self.assertTrue(any("Technicien attribue" in h["status"] for h in hist))
         finally:
             conn.close()
 
@@ -1220,11 +1221,11 @@ class TechnicianDashboardTests(FixProTestCase):
             conn.execute(
                 "INSERT INTO requests (client_id, artisan_id, reference, title, description, service, category, address, status, urgency, phone_contact, estimated_price, commission_rate, commission_amount, professional_amount, payment_status, created_at, updated_at)"
                 " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (1, 2, "FP-000001", "Fuite", "desc", "Plombier", "Plombier", "Kaloum", "assigned", "urgent", "+2246000", 100000, 0.1, 10000, 90000, "PENDING", "2026-01-01", "2026-01-01"))
+                (1, 2, "FP-000001", "Fuite", "desc", "Plombier", "Plombier", "Kaloum", "ASSIGNED", "urgent", "+2246000", 100000, 0.1, 10000, 90000, "PENDING", "2026-01-01", "2026-01-01"))
             conn.execute(
                 "INSERT INTO requests (client_id, artisan_id, reference, title, description, service, category, address, status, urgency, phone_contact, estimated_price, commission_rate, commission_amount, professional_amount, payment_status, created_at, updated_at)"
                 " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (1, 3, "FP-000002", "Serrure", "desc", "Serrurier", "Serrurier", "Kaloum", "assigned", "normal", "+2246000", 100000, 0.1, 10000, 90000, "PENDING", "2026-01-01", "2026-01-01"))
+                (1, 3, "FP-000002", "Serrure", "desc", "Serrurier", "Serrurier", "Kaloum", "ASSIGNED", "normal", "+2246000", 100000, 0.1, 10000, 90000, "PENDING", "2026-01-01", "2026-01-01"))
             conn.commit()
         finally:
             conn.close()
@@ -1245,16 +1246,16 @@ class TechnicianDashboardTests(FixProTestCase):
             conn.execute(
                 "INSERT INTO requests (client_id, artisan_id, reference, title, description, service, category, address, status, urgency, phone_contact, estimated_price, commission_rate, commission_amount, professional_amount, payment_status, created_at, updated_at)"
                 " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (1, 2, "FP-000003", "Fuite", "desc", "Plombier", "Plombier", "Kaloum", "assigned", "urgent", "+2246000", 100000, 0.1, 10000, 90000, "PENDING", "2026-01-01", "2026-01-01"))
+                (1, 2, "FP-000003", "Fuite", "desc", "Plombier", "Plombier", "Kaloum", "ACCEPTED", "urgent", "+2246000", 100000, 0.1, 10000, 90000, "PENDING", "2026-01-01", "2026-01-01"))
             conn.commit()
         finally:
             conn.close()
 
         for action, expected in [
-            ("en_route", "en_route"),
-            ("arrived", "arrived"),
-            ("in_progress", "in_progress"),
-            ("completed", "completed"),
+            ("en_route", "EN_ROUTE"),
+            ("arrived", "ARRIVED"),
+            ("in_progress", "IN_PROGRESS"),
+            ("completed", "COMPLETED"),
         ]:
             response = self.client.post(
                 "/missions/1/action",
@@ -1265,7 +1266,7 @@ class TechnicianDashboardTests(FixProTestCase):
         conn = db.connect(sqlite_path=self.db_path)
         try:
             row = conn.execute("SELECT status FROM requests WHERE id = 1").fetchone()
-            self.assertEqual(row["status"], "completed")
+            self.assertEqual(row["status"], "COMPLETED")
             history = conn.execute("SELECT COUNT(*) AS n FROM intervention_history WHERE request_id = 1").fetchone()
             self.assertGreaterEqual(history["n"], 4)
         finally:
@@ -1324,7 +1325,7 @@ class TechnicianAccessTests(FixProTestCase):
             conn.execute(
                 "INSERT INTO requests (client_id, artisan_id, reference, title, description, category, address, status, urgency, phone_contact, estimated_price, commission_rate, commission_amount, professional_amount, payment_status, created_at, updated_at)"
                 " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (1, 2, "FP-000001", "Fuite", "desc", "Plombier", "Kaloum", "assigned", "urgent", "+2246000", 100000, 0.1, 10000, 90000, "PENDING", "2026-01-01", "2026-01-01"))
+                (1, 2, "FP-000001", "Fuite", "desc", "Plombier", "Kaloum", "ASSIGNED", "urgent", "+2246000", 100000, 0.1, 10000, 90000, "PENDING", "2026-01-01", "2026-01-01"))
             conn.commit()
         finally:
             conn.close()
@@ -1473,7 +1474,7 @@ class TechnicianLifecycleTests(FixProTestCase):
             conn.execute(
                 "INSERT INTO requests (client_id, artisan_id, reference, title, description, category, address, status, urgency, phone_contact, estimated_price, commission_rate, commission_amount, professional_amount, payment_status, created_at, updated_at)"
                 " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (1, tech["id"] + 1, "FP-000002", "Court-circuit", "desc", "Electricien", "Dixinn", "assigned", "urgent", "+2246000", 100000, 0.1, 10000, 90000, "PENDING", "2026-01-01", "2026-01-01"))
+                (1, tech["id"] + 1, "FP-000002", "Court-circuit", "desc", "Electricien", "Dixinn", "ASSIGNED", "urgent", "+2246000", 100000, 0.1, 10000, 90000, "PENDING", "2026-01-01", "2026-01-01"))
             conn.commit()
         finally:
             conn.close()
@@ -1534,7 +1535,7 @@ class TechnicianLifecycleTests(FixProTestCase):
         try:
             conn.execute(
                 "INSERT INTO requests (client_id, artisan_id, reference, title, description, category, address, status, urgency, phone_contact, estimated_price, commission_rate, commission_amount, professional_amount, payment_status, created_at, updated_at)"
-                " VALUES (?, ?, 'FP-000003', 'Fuite sous evier', 'desc', 'Plombier', 'Kaloum, Conakry', 'assigned', 'urgent', '+2246000', 100000, 0.1, 10000, 90000, 'PENDING', '2026-01-01', '2026-01-01')",
+                " VALUES (?, ?, 'FP-000003', 'Fuite sous evier', 'desc', 'Plombier', 'Kaloum, Conakry', 'ASSIGNED', 'urgent', '+2246000', 100000, 0.1, 10000, 90000, 'PENDING', '2026-01-01', '2026-01-01')",
                 (client["id"], tech["id"]))
             conn.commit()
         finally:
@@ -1625,6 +1626,302 @@ class TechnicianLifecycleTests(FixProTestCase):
         self.assertEqual(dashboard.status_code, 200)
         artisans = self.client.get("/admin/artisans")
         self.assertEqual(artisans.status_code, 200)
+
+
+class MissionCycleTests(FixProTestCase):
+    """Cycle complet d'une mission client → technicien."""
+
+    def _setup_mission(self):
+        self.register_client(phone="+224620000000", city="Conakry")
+        self.register_artisan("tech@fixpro.local", phone="+224621111111",
+                              name="Ibrahima Camara")
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute(
+                "UPDATE users SET role = 'technician', availability_status = 'en_ligne',"
+                " city = 'Conakry', quartier = 'Kaloum', zone_intervention = 'Kaloum',"
+                " latitude = 9.5370, longitude = -13.6785,"
+                " password_hash = ?, is_verified = 1, is_active = 1, account_status = 'ACTIVE'"
+                " WHERE email = ?",
+                (fixpro_app.generate_password_hash("techpass"), "tech@fixpro.local"))
+            conn.commit()
+            self.client_id = conn.execute(
+                "SELECT id FROM users WHERE phone = ?", ("+224620000000",)).fetchone()["id"]
+            self.tech_id = conn.execute(
+                "SELECT id FROM users WHERE email = ?", ("tech@fixpro.local",)).fetchone()["id"]
+        finally:
+            conn.close()
+
+    def _create_admin(self):
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute(
+                "INSERT INTO users (email, phone, password_hash, role, full_name, is_verified, is_active)"
+                " VALUES (?, ?, ?, 'admin', ?, 1, 1)",
+                ("admin@fixpro.local", "+224000000000",
+                 fixpro_app.generate_password_hash("adminpass"), "Administrateur"))
+            conn.commit()
+        finally:
+            conn.close()
+
+    def _login_technician(self):
+        with self.client.session_transaction() as sess:
+            sess["user_id"] = getattr(self, "tech_id", 2)
+
+    def _login_client(self):
+        with self.client.session_transaction() as sess:
+            sess["user_id"] = getattr(self, "client_id", 1)
+
+    def _get_req_id(self):
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            row = conn.execute(
+                "SELECT id FROM requests WHERE client_id = ? ORDER BY id DESC",
+                (getattr(self, "client_id", 1),)).fetchone()
+            return row["id"] if row else None
+        finally:
+            conn.close()
+
+    def _get_user_id_by_email(self, email):
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            row = conn.execute("SELECT id FROM users WHERE email = ?", (email,)).fetchone()
+            return row["id"] if row else None
+        finally:
+            conn.close()
+
+    def test_01_client_creates_request_and_gets_reference(self):
+        self._setup_mission()
+        self._login_client()
+        response = self.client.post("/requests/new", data={
+            "title": "Fuite d'eau sous l'evier",
+            "description": "L'eau coule sous l'evier depuis ce matin",
+            "category": "Plombier",
+            "address": "Kaloum, Conakry",
+            "budget": "100000"
+        }, follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
+
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            req = conn.execute(
+                "SELECT * FROM requests WHERE client_id = ?",
+                (getattr(self, "client_id", 1),)).fetchone()
+            self.assertIsNotNone(req)
+            self.assertTrue(req["reference"].startswith("FP-2026-"))
+            self.assertEqual(req["status"], "ASSIGNED")
+            self.assertEqual(req["category"], "Plombier")
+            self.assertIsNotNone(req["artisan_id"])
+        finally:
+            conn.close()
+
+    def test_02_technician_receives_notification_and_sees_dashboard(self):
+        self._setup_mission()
+        self.test_01_client_creates_request_and_gets_reference()
+
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            notif = conn.execute(
+                "SELECT * FROM notifications WHERE user_id = ?",
+                (getattr(self, "tech_id", 2),)).fetchone()
+            self.assertIsNotNone(notif)
+        finally:
+            conn.close()
+
+        self._login_technician()
+        response = self.client.get("/technician/dashboard", follow_redirects=True)
+        self.assertIn(b"Fuite", response.data)
+
+    def test_03_technician_accepts_and_client_sees_status(self):
+        self._setup_mission()
+        self.test_01_client_creates_request_and_gets_reference()
+        req_id = self._get_req_id()
+
+        self._login_technician()
+        response = self.client.post(
+            f"/missions/{req_id}/action",
+            data={"action": "accept"}, follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
+
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            req = conn.execute("SELECT * FROM requests WHERE id = ?", (req_id,)).fetchone()
+            self.assertEqual(req["status"], "ACCEPTED")
+            client_notif = conn.execute(
+                "SELECT * FROM notifications WHERE user_id = ? AND type = 'request_accepted'",
+                (getattr(self, "client_id", 1),)).fetchone()
+            self.assertIsNotNone(client_notif)
+        finally:
+            conn.close()
+
+    def test_04_technician_en_route_and_client_sees(self):
+        self._setup_mission()
+        self.test_03_technician_accepts_and_client_sees_status()
+        req_id = self._get_req_id()
+
+        self._login_technician()
+        self.client.post(f"/missions/{req_id}/action",
+                         data={"action": "en_route"})
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            req = conn.execute("SELECT status FROM requests WHERE id = ?", (req_id,)).fetchone()
+            self.assertEqual(req["status"], "EN_ROUTE")
+        finally:
+            conn.close()
+
+        self._login_client()
+        response = self.client.get(f"/requests/{req_id}", follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
+
+    def test_05_technician_arrived_in_progress_completed(self):
+        self._setup_mission()
+        self.test_04_technician_en_route_and_client_sees()
+        req_id = self._get_req_id()
+
+        actions = ["arrived", "in_progress", "completed"]
+        expected = ["ARRIVED", "IN_PROGRESS", "COMPLETED"]
+        self._login_technician()
+        for action, exp in zip(actions, expected):
+            response = self.client.post(
+                f"/missions/{req_id}/action",
+                data={"action": action}, follow_redirects=True)
+            self.assertEqual(response.status_code, 200)
+            conn = db.connect(sqlite_path=self.db_path)
+            try:
+                status = conn.execute(
+                    "SELECT status FROM requests WHERE id = ?", (req_id,)).fetchone()["status"]
+                self.assertEqual(status, exp, f"action={action}")
+            finally:
+                conn.close()
+
+    def test_06_completed_appears_in_history(self):
+        self._setup_mission()
+        self.test_05_technician_arrived_in_progress_completed()
+        req_id = self._get_req_id()
+
+        self._login_technician()
+        response = self.client.get("/technician/dashboard", follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
+
+        self._login_client()
+        response = self.client.get(f"/requests/{req_id}", follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"arrivee", response.data.lower())
+
+    def test_07_other_technician_cannot_access_mission(self):
+        self._setup_mission()
+        self.test_03_technician_accepts_and_client_sees_status()
+        req_id = self._get_req_id()
+
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute(
+                "INSERT INTO users (email, phone, password_hash, role, full_name, profession, city, is_verified, is_active, account_status, availability_status)"
+                " VALUES (?, ?, ?, 'technician', ?, ?, ?, 1, 1, 'ACTIVE', 'en_ligne')",
+                ("t2@fixpro.local", "+224622222222", fixpro_app.generate_password_hash("pass"),
+                 "T2 Bah", "Plombier", "Conakry"))
+            conn.commit()
+            other_id = self._get_user_id_by_email("t2@fixpro.local")
+        finally:
+            conn.close()
+
+        with self.client.session_transaction() as sess:
+            sess["user_id"] = other_id
+        response = self.client.get(f"/missions/{req_id}", follow_redirects=False)
+        self.assertEqual(response.status_code, 302)
+
+    def test_08_client_a_cannot_see_client_b_request(self):
+        self._setup_mission()
+        self.test_01_client_creates_request_and_gets_reference()
+        req_id = self._get_req_id()
+
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute(
+                "INSERT INTO users (email, phone, password_hash, role, full_name, city, is_verified, is_active)"
+                " VALUES (?, ?, ?, 'client', ?, ?, 1, 1)",
+                ("clientb@fixpro.local", "+224630000000",
+                 fixpro_app.generate_password_hash("pass"), "Client B", "Conakry"))
+            conn.commit()
+            client_b_id = self._get_user_id_by_email("clientb@fixpro.local")
+        finally:
+            conn.close()
+
+        with self.client.session_transaction() as sess:
+            sess["user_id"] = client_b_id
+        response = self.client.get(f"/requests/{req_id}", follow_redirects=False)
+        self.assertEqual(response.status_code, 302)
+
+    def test_09_suspended_technician_not_selected(self):
+        self._setup_mission()
+        # Suspendre le technicien
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute(
+                "UPDATE users SET is_active = 0, account_status = 'SUSPENDED' WHERE id = ?",
+                (getattr(self, "tech_id", 2),))
+            conn.commit()
+        finally:
+            conn.close()
+
+        self._login_client()
+        response = self.client.post("/requests/new", data={
+            "title": "Fuite sous evier",
+            "description": "Une nouvelle fuite",
+            "category": "Plombier",
+            "address": "Kaloum, Conakry"
+        }, follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
+
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            req = conn.execute(
+                "SELECT * FROM requests WHERE client_id = ? ORDER BY id DESC",
+                (getattr(self, "client_id", 1),)).fetchone()
+            self.assertIsNotNone(req)
+            self.assertEqual(req["artisan_id"], None)
+            self.assertEqual(req["status"], "REQUESTED")
+        finally:
+            conn.close()
+
+    def test_10_refused_mission_reassigned(self):
+        # Second technicien
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute(
+                "INSERT INTO users (email, phone, password_hash, role, full_name, profession, city, quartier, is_verified, is_active, account_status, availability_status)"
+                " VALUES (?, ?, ?, 'technician', ?, ?, 'Conakry', 'Kaloum', 1, 1, 'ACTIVE', 'en_ligne')",
+                ("t2@fixpro.local", "+224622222222", fixpro_app.generate_password_hash("pass"),
+                 "T2 Bah", "Plombier"))
+            conn.commit()
+            other_id = self._get_user_id_by_email("t2@fixpro.local")
+        finally:
+            conn.close()
+
+        self._setup_mission()
+        self.test_01_client_creates_request_and_gets_reference()
+        req_id = self._get_req_id()
+
+        self._login_technician()
+        self.client.post(f"/missions/{req_id}/action", data={"action": "reject", "reason": "Indisponible"})
+
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            req = conn.execute("SELECT * FROM requests WHERE id = ?", (req_id,)).fetchone()
+            self.assertEqual(req["artisan_id"], other_id)
+            self.assertEqual(req["status"], "ASSIGNED")
+        finally:
+            conn.close()
+
+    def test_11_admin_can_follow_mission(self):
+        self._create_admin()
+        self._setup_mission()
+        self.test_01_client_creates_request_and_gets_reference()
+        req_id = self._get_req_id()
+
+        self.login("admin@fixpro.local", "adminpass")
+        response = self.client.get(f"/admin/requests/{req_id}", follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
 
 
 if __name__ == "__main__":

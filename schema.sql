@@ -180,6 +180,8 @@ CREATE TABLE IF NOT EXISTS intervention_history (
     id          SERIAL PRIMARY KEY,
     request_id  INTEGER NOT NULL REFERENCES requests(id) ON DELETE CASCADE,
     status      TEXT NOT NULL,
+    old_status  TEXT,
+    new_status  TEXT,
     actor       TEXT,
     note        TEXT,
     created_at  TEXT DEFAULT CURRENT_TIMESTAMP
@@ -250,6 +252,8 @@ CREATE TABLE IF NOT EXISTS intervention_history (
     id          SERIAL PRIMARY KEY,
     request_id  INTEGER NOT NULL REFERENCES requests(id) ON DELETE CASCADE,
     status      TEXT NOT NULL,
+    old_status  TEXT,
+    new_status  TEXT,
     actor       TEXT,
     note        TEXT,
     created_at  TEXT DEFAULT CURRENT_TIMESTAMP

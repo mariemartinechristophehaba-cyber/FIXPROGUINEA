@@ -138,14 +138,18 @@
                     <p class="r-meta">{{ 'Client' if user.role == 'artisan' else 'Technicien' }} · {{ item.category or 'Intervention' }}</p>
                   </div>
                 </div>
-                {% if item.status in ('pending','REQUESTED') %}
+                {% if item.status in ('pending','REQUESTED','REASSIGNMENT_REQUIRED') %}
                   <span class="r-pill amber"><span class="r-pill-dot"></span> En attente</span>
-                {% elif item.status == 'assigned' %}
+                {% elif item.status in ('assigned','ASSIGNED') %}
                   <span class="r-pill blue"><span class="r-pill-dot"></span> Attribuee</span>
-                {% elif item.status in ('in_progress','quote_accepted','en_route','arrived') %}
+                {% elif item.status in ('in_progress','IN_PROGRESS','quote_accepted','en_route','EN_ROUTE','arrived','ARRIVED') %}
                   <span class="r-pill blue"><span class="r-pill-dot"></span> En cours</span>
-                {% elif item.status == 'quote_proposed' %}
+                {% elif item.status in ('quote_proposed','quote_accepted') %}
                   <span class="r-pill amber"><span class="r-pill-dot"></span> Devis</span>
+                {% elif item.status in ('accepted','ACCEPTED') %}
+                  <span class="r-pill blue"><span class="r-pill-dot"></span> Acceptee</span>
+                {% elif item.status in ('refused','REFUSED') %}
+                  <span class="r-pill gray"><span class="r-pill-dot"></span> Refusee</span>
                 {% else %}
                   <span class="r-pill blue"><span class="r-pill-dot"></span>{{ item.status }}</span>
                 {% endif %}
@@ -191,9 +195,9 @@
                     <p class="r-meta">{{ 'Client' if user.role == 'artisan' else 'Technicien' }} · {{ item.category or 'Intervention' }}</p>
                   </div>
                 </div>
-                {% if item.status == 'completed' %}
+                {% if item.status in ('completed','COMPLETED') %}
                   <span class="r-pill green"><span class="r-pill-dot"></span> Terminee</span>
-                {% elif item.status in ('cancelled','rejected') %}
+                {% elif item.status in ('cancelled','CANCELLED','rejected','REFUSED') %}
                   <span class="r-pill gray"><span class="r-pill-dot"></span> Annulee</span>
                 {% else %}
                   <span class="r-pill gray"><span class="r-pill-dot"></span>{{ item.status }}</span>
