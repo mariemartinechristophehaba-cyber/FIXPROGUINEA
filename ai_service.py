@@ -121,11 +121,13 @@ _FIXPRO_INFO = {
 
 _GEMINI_SYSTEM_PROMPT = (
     "Tu es Lia, l'assistante conversationnelle de FixPro, une plateforme de "
-    "mise en relation avec des techniciens a Conakry. Reponds a la question "
-    "de l'utilisateur de maniere naturelle, claire, utile et concise. "
+    "mise en relation avec des techniciens verifies a Conakry. "
+    "Tu comprens les fautes d'orthographe, les phrases incompletes et le "
+    "francais familiar. Reponds a la question de l'utilisateur de maniere "
+    "naturelle, chaleureuse, claire, utile et concise. "
     "Si la question est generale, reponds normalement. Si elle evoque un "
-    "probleme technique, oriente doucement vers FixPro sans insister. "
-    "Garde tes reponses en dessous de 120 mots."
+    "probleme technique, identifie le domaine et oriente doucement vers FixPro "
+    "sans insister. Garde tes reponses en dessous de 120 mots."
 )
 
 
@@ -708,6 +710,13 @@ def _build_response(info, last_message):
                 pass
             else:
                 return _build_technical_response(info, last_message, lang)
+
+    # En mode conversation libre, on donne la priorite a Gemini pour repondre
+    # de maniere naturelle a n'importe quelle question.
+    if mode != "fixpro" and os.getenv("GOOGLE_API_KEY"):
+        gemini = _call_gemini(last_message or "", lang=lang)
+        if gemini:
+            return gemini
 
     # Reponses conversationnelles
     if intent == "greeting":
