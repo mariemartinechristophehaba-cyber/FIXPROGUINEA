@@ -155,46 +155,115 @@
         </div>
 
         <div id="step2" style="display:none;">
-          <h1 class="fa-title">Votre activité</h1>
-          <p class="fa-sub">Dites-nous ce que vous savez faire.</p>
+          <h1 class="fa-title">Votre métier</h1>
+          <p class="fa-subtitle">Parlez-nous de votre activité professionnelle.</p>
 
           <div class="fa-fg">
-            <label class="fa-fl" for="profession">Métier</label>
-            <select id="profession" class="fa-fb-select" name="profession" required onchange="filterServices()">
-              <option value="" disabled selected>Choisir un métier</option>
-              {% for c in categories %}
-              <option value="{{ c.name }}">{{ c.name }}</option>
-              {% endfor %}
+            <span class="fa-fl">Quel est votre métier ?</span>
+            <div class="fa-job-grid" role="listbox" aria-label="Métiers">
+              <div class="fa-job-card" role="option" data-profession="Plombier" data-specialite="Plombier" tabindex="0" onclick="selectJob(this)">
+                <div class="fa-job-icon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                </div>
+                <div class="fa-job-name">Plombier</div>
+                <div class="fa-job-desc">Travaux de plomberie et dépannage</div>
+              </div>
+              <div class="fa-job-card" role="option" data-profession="Électricien" data-specialite="Électricien" tabindex="0" onclick="selectJob(this)">
+                <div class="fa-job-icon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                </div>
+                <div class="fa-job-name">Électricien</div>
+                <div class="fa-job-desc">Installations et réparations électriques</div>
+              </div>
+              <div class="fa-job-card" role="option" data-profession="Frigoriste" data-specialite="Frigoriste" tabindex="0" onclick="selectJob(this)">
+                <div class="fa-job-icon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M2 12h20M4.93 4.93l14.14 14.14M4.93 19.07l14.14-14.14"/></svg>
+                </div>
+                <div class="fa-job-name">Frigoriste</div>
+                <div class="fa-job-desc">Climatisation, froid et réfrigération</div>
+              </div>
+              <div class="fa-job-card" role="option" data-profession="Menuisier" data-specialite="Menuisier" tabindex="0" onclick="selectJob(this)">
+                <div class="fa-job-icon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="9" y="14" width="6" height="6" rx="1"/></svg>
+                </div>
+                <div class="fa-job-name">Menuisier</div>
+                <div class="fa-job-desc">Menuiserie, agencement et meubles</div>
+              </div>
+              <div class="fa-job-card" role="option" data-profession="Peintre" data-specialite="Peintre" tabindex="0" onclick="selectJob(this)">
+                <div class="fa-job-icon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 3l3 3-10 10-3-3 10-10z"/><path d="M2 22l4-4 3 3-4 4-3-3z"/></svg>
+                </div>
+                <div class="fa-job-name">Peintre</div>
+                <div class="fa-job-desc">Peinture, enduits et finitions</div>
+              </div>
+              <div class="fa-job-card" role="option" data-profession="Maçon" data-specialite="Maçon" tabindex="0" onclick="selectJob(this)">
+                <div class="fa-job-icon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="6" height="6"/><rect x="14" y="4" width="6" height="6"/><rect x="9" y="14" width="6" height="6"/></svg>
+                </div>
+                <div class="fa-job-name">Maçon</div>
+                <div class="fa-job-desc">Maçonnerie, dalle et ouvrage en dur</div>
+              </div>
+              <div class="fa-job-card" role="option" data-profession="Chauffagiste" data-specialite="Chauffagiste" tabindex="0" onclick="selectJob(this)">
+                <div class="fa-job-icon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c4.5-2.5 6-6 6-10 0-5-6-10-6-10S6 7 6 12c0 4 1.5 7.5 6 10z"/><path d="M12 16c-1.5 0-2.5-1.5-2.5-3 0-1.5 1-3 2.5-3s2.5 1.5 2.5 3-1 3-2.5 3z"/></svg>
+                </div>
+                <div class="fa-job-name">Chauffagiste</div>
+                <div class="fa-job-desc">Chauffage, chaudière et climatisation</div>
+              </div>
+            </div>
+            <input type="hidden" name="profession" id="profession" />
+            <input type="hidden" name="specialite" id="specialite" />
+          </div>
+
+          <div class="fa-fg">
+            <label class="fa-fl" for="experience">Depuis combien de temps exercez-vous ?</label>
+            <select id="experience" name="experience" class="fa-fb-select" required>
+              <option value="" disabled selected>Choisir une option</option>
+              <option value="0.5">Moins d'un an</option>
+              <option value="1.5">1 à 2 ans</option>
+              <option value="4">3 à 5 ans</option>
+              <option value="8">6 à 10 ans</option>
+              <option value="15">Plus de 10 ans</option>
             </select>
           </div>
+
           <div class="fa-fg">
-            <label class="fa-fl" for="specialite">Spécialité</label>
-            <input id="specialite" class="fa-fb" type="text" name="specialite" placeholder="Ex: Installation electrique" />
+            <span class="fa-fl">Où intervenez-vous ?</span>
+            <select id="city_select" class="fa-fb-select" onchange="updateAddress()">
+              <option value="" disabled selected>Choisir une ville</option>
+              <option value="Conakry">Conakry</option>
+              <option value="Nzérékoré">Nzérékoré</option>
+              <option value="Kankan">Kankan</option>
+              <option value="Labé">Labé</option>
+              <option value="Kindia">Kindia</option>
+              <option value="Boké">Boké</option>
+              <option value="Mamou">Mamou</option>
+              <option value="Faranah">Faranah</option>
+              <option value="Pita">Pita</option>
+              <option value="Kérouané">Kérouané</option>
+              <option value="Guéckédou">Guéckédou</option>
+              <option value="Dabola">Dabola</option>
+              <option value="Dinguiraye">Dinguiraye</option>
+              <option value="Tougué">Tougué</option>
+              <option value="Siguiri">Siguiri</option>
+              <option value="Autre">Autre</option>
+            </select>
+            <input id="address" class="fa-fb" type="text" name="address" required placeholder="Ville ou localité" oninput="updateAddress()" />
+            <input id="quartier" class="fa-fb" type="text" name="quartier" placeholder="Quartier" oninput="updateAddress()" />
+            <input id="rayon" class="fa-fb" type="text" name="rayon" placeholder="Rayon d'intervention (ex: 10 km)" />
+            <button type="button" class="fa-zone-btn" onclick="locateMe()">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+              Utiliser ma position
+            </button>
           </div>
-          <div class="fa-fg" id="servicesBox" style="display:none;">
-            <span class="fa-fl">Services proposés</span>
-            <div id="servicesList" class="fa-radio-group" style="margin-top:6px;">
-              {% for s in all_services %}
-              <label class="fa-radio service-item" data-cat="{% for c in categories %}{% if c.id == s.category_id %}{{ c.name }}{% endif %}{% endfor %}">
-                <input type="checkbox" name="services" value="{{ s.id }}" /> {{ s.name }}
-              </label>
-              {% endfor %}
-            </div>
-          </div>
+
           <div class="fa-fg">
-            <label class="fa-fl" for="experience">Années d'expérience</label>
-            <input id="experience" class="fa-fb" type="text" name="experience" placeholder="5 ans" />
+            <label class="fa-fl" for="bio">Présentez votre activité en quelques mots</label>
+            <textarea id="bio" name="bio" class="fa-fb fa-textarea" placeholder="Décrivez votre expérience, vos compétences et les services que vous proposez."></textarea>
           </div>
-          <div class="fa-fg">
-            <label class="fa-fl" for="address">Zone d'intervention</label>
-            <input id="address" class="fa-fb" type="text" name="address" required placeholder="Conakry" />
-          </div>
-          <div class="fa-fg">
-            <label class="fa-fl" for="rayon">Rayon</label>
-            <input id="rayon" class="fa-fb" type="text" name="rayon" placeholder="10 km" />
-          </div>
-          <button type="button" class="fa-btn fa-btn-outline" onclick="go(1)">Retour</button>
-          <button type="button" class="fa-btn" style="margin-top:12px;" onclick="go(3)">Continuer</button>
+
+          <button type="button" class="fa-btn fa-btn-primary" onclick="go(3)">Continuer</button>
+          <button type="button" class="fa-btn fa-btn-outline" style="margin-top:12px;" onclick="go(1)">Retour</button>
         </div>
 
         <div id="step3" style="display:none;">
@@ -208,11 +277,6 @@
             </div>
             <input type="file" id="photoInput" accept="image/*" style="display:none;" />
             <input type="hidden" name="photo" id="photoBase64" />
-          </div>
-
-          <div class="fa-fg">
-            <label class="fa-fl" for="bio">Présentation</label>
-            <textarea id="bio" class="fa-fb fa-textarea" name="bio" placeholder="Présentez votre expérience et les services que vous proposez."></textarea>
           </div>
 
           <div class="fa-fg">
@@ -300,14 +364,45 @@
     document.getElementById('pbar').style.width = ((n-1)*33.333) + '%';
   }
 
-  function filterServices(){
-    const cat = document.getElementById('profession').value;
-    const items = document.querySelectorAll('.service-item');
-    let any = false;
-    items.forEach(el => { const show = el.dataset.cat === cat; el.style.display = show ? 'flex' : 'none'; if (show) any = true; });
-    document.getElementById('servicesBox').style.display = any ? 'block' : 'none';
+  function selectJob(card){
+    document.querySelectorAll('.fa-job-card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+    document.getElementById('profession').value = card.dataset.profession;
+    document.getElementById('specialite').value = card.dataset.specialite;
   }
-  filterServices();
+
+  function updateAddress(){
+    const city = document.getElementById('city_select').value;
+    const quartier = document.getElementById('quartier').value.trim();
+    if (city && city !== 'Autre'){
+      document.getElementById('address').value = quartier ? city + ', ' + quartier : city;
+    }
+  }
+
+  function locateMe(){
+    if (!navigator.geolocation){
+      alert('La geolocalisation n\'est pas prise en charge par votre navigateur.');
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const {latitude, longitude} = pos.coords;
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+          const data = await res.json();
+          const addr = data.address || {};
+          const city = addr.city || addr.town || addr.village || addr.county || '';
+          const quartier = addr.suburb || addr.neighbourhood || addr.quarter || '';
+          if (city) { document.getElementById('address').value = city; }
+          else { document.getElementById('address').value = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`; }
+          if (quartier) { document.getElementById('quartier').value = quartier; }
+        } catch (e) {
+          document.getElementById('address').value = `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+        }
+      },
+      () => { alert('Impossible d\'obtenir votre position. Veuillez la saisir manuellement.'); }
+    );
+  }
 
   function validateArtisan(){
     const pwd = document.getElementById('password').value;
