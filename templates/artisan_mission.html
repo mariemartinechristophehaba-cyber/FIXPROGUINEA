@@ -52,12 +52,16 @@
       <button type="button" class="f-btn ghost" style="width:100%;height:44px;font-size:14px;margin-bottom:10px;border-color:#9CA3AF;color:#374151;" onclick="document.getElementById('refus-modal').style.display='block'">Refuser la mission</button>
       {% endif %}
 
-      {% if req.status in ('accepted', 'ACCEPTED') %}
+      {% if req.status in ('accepted', 'ACCEPTED', 'quote_accepted', 'QUOTE_ACCEPTED') %}
       <form method="post" action="{{ url_for('artisan_mission_action', request_id=req.id) }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
         <input type="hidden" name="action" value="en_route" />
         <button type="submit" class="f-btn" style="width:100%;height:48px;font-size:15px;font-weight:700;">En route</button>
       </form>
+      {% elif req.status in ('quote_proposed', 'QUOTE_PROPOSED') %}
+      <div style="font-size:13px;color:var(--slate);">Devis propose. En attente de validation par le client.</div>
+      {% elif req.status in ('quote_rejected', 'QUOTE_REJECTED') %}
+      <div style="font-size:13px;color:var(--slate);">Devis refuse par le client.</div>
       {% elif req.status in ('en_route', 'EN_ROUTE') %}
       <form method="post" action="{{ url_for('artisan_mission_action', request_id=req.id) }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />

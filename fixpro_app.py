@@ -227,8 +227,6 @@ oauth = OAuth(app)
 @app.before_request
 def check_artisan_verification():
     """Redirige les artisans non verifies vers la page d'attente."""
-    if app.config.get("BYPASS_AUTH"):
-        return None
     user_id = session.get("user_id")
     if not user_id:
         return None
@@ -339,51 +337,15 @@ def add_security_headers(response):
     return response
 
 
-def _ensure_dev_user(role="client"):
-    """Cree ou recupere un compte de test pour le developpement."""
-    email = f"dev.{role}@fixpro.local"
-    phone = f"+224999{role[:3].upper()}000"
-    full_name = f"Utilisateur Test {role.title()}"
-
-    conn = get_db_connection()
-    try:
-        user = conn.execute(
-            "SELECT * FROM users WHERE email = ? OR phone = ?",
-            (email, phone)).fetchone()
-        if user:
-            return user
-
-        profession = "Plombier" if role == "artisan" else None
-        hourly_rate = 50000 if role == "artisan" else 0
-        conn.execute(
-            "INSERT INTO users (email, phone, password_hash, role, full_name,"
-            " profession, city, hourly_rate)"
-            " VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-            (email, phone, generate_password_hash("dev"), role, full_name,
-             profession, "Conakry", hourly_rate),
-        )
-        conn.commit()
-        return conn.execute(
-            "SELECT * FROM users WHERE phone = ?", (phone,)).fetchone()
-    finally:
-        conn.close()
-
-
 def login_required(view_func):
     @wraps(view_func)
     def wrapper(*args, **kwargs):
         if not session.get("user_id"):
-            if app.config.get("BYPASS_AUTH"):
-                role = app.config.get("DEV_ROLE", "client")
-                dev_user = _ensure_dev_user(role)
-                session["user_id"] = dev_user["id"]
-                session.permanent = True
-            else:
-                flash("Veuillez vous connecter pour acceder a cette page.", "error")
-                next_login = (url_for("admin_login")
-                              if request.endpoint and request.endpoint.startswith("admin")
-                              else url_for("login", next=request.url))
-                return redirect(next_login)
+            flash("Veuillez vous connecter pour acceder a cette page.", "error")
+            next_login = (url_for("admin_login")
+                          if request.endpoint and request.endpoint.startswith("admin")
+                          else url_for("login", next=request.url))
+            return redirect(next_login)
         return view_func(*args, **kwargs)
 
     return wrapper
@@ -419,14 +381,6 @@ def get_current_user():
         return g._current_user
     user_id = session.get("user_id")
     if not user_id:
-        if app.config.get("BYPASS_AUTH"):
-            role = app.config.get("DEV_ROLE", "client")
-            dev_user = _ensure_dev_user(role)
-            session["user_id"] = dev_user["id"]
-            session.permanent = True
-            g._current_user = dev_user
-
-            return dev_user
         g._current_user = None
         return None
     conn = get_db_connection()
@@ -660,11 +614,13 @@ def _match_technicians(conn, category, location=None, client_lat=None, client_lo
 
 
 def _select_best_technician(conn, category, location, client_lat=None, client_lon=None,
-                            exclude_artisan_id=None):
+                            exclude_artisan_id=None, require_gps=None):
     """Selectionne le meilleur technicien."""
+    if require_gps is None:
+        require_gps = app.config.get("GPS_REQUIRED", False)
     candidates = _match_technicians(conn, category, location=location,
                                     client_lat=client_lat, client_lon=client_lon,
-                                    limit=1, require_gps=False,
+                                    limit=1, require_gps=require_gps,
                                     exclude_artisan_id=exclude_artisan_id)
     if not candidates:
         return None
@@ -733,20 +689,27 @@ def get_payment_provider():
     return MockPaymentProvider()
 
 
-def create_notification(user_id, title, body, notif_type="info", data=None):
-    """Cree une notification in-app pour un utilisateur."""
-    try:
+def create_notification(user_id, title, body, notif_type="info", data=None, conn=None):
+    """Cree une notification in-app pour un utilisateur.
+
+    Si une connexion est fournie, l'insertion fait partie de la transaction
+    courante et n'est ni validee ni fermee ici.
+    """
+    own = conn is None
+    if own:
         conn = get_db_connection()
-        try:
-            conn.execute(
-                "INSERT INTO notifications (user_id, title, body, type, data)"
-                " VALUES (?, ?, ?, ?, ?)",
-                (user_id, title, body, notif_type, data or ""))
+    try:
+        conn.execute(
+            "INSERT INTO notifications (user_id, title, body, type, data)"
+            " VALUES (?, ?, ?, ?, ?)",
+            (user_id, title, body, notif_type, data or ""))
+        if own:
             conn.commit()
-        finally:
-            conn.close()
     except Exception as exc:
         logger.warning("Notification non creee : user_id=%s - %s", user_id, exc)
+    finally:
+        if own:
+            conn.close()
 
 
 def create_admin_notification(conn, title, body, notif_type="admin_alert", data=None):
@@ -1918,7 +1881,8 @@ def admin_artisans():
                         "Votre compte FixPro a ete valide",
                         "Vous pouvez maintenant activer votre compte et acceder a votre espace technicien.",
                         "info",
-                        f"token:{token}")
+                        f"token:{token}",
+                        conn=conn)
                 else:
                     _set_status("ACTIVE", 1)
                 conn.execute("UPDATE users SET is_verified = 1 WHERE id = ?", (artisan_id,))
@@ -2132,7 +2096,7 @@ def admin_requests():
         where_parts = []
         params = []
         if status_filter:
-            where_parts.append("r.status = ?")
+            where_parts.append("LOWER(r.status) = LOWER(?)")
             params.append(status_filter)
         if q:
             where_parts.append("(r.title LIKE ? OR c.full_name LIKE ? OR a.full_name LIKE ?)")
@@ -3696,7 +3660,6 @@ def artisan_detail(artisan_id):
                     (user["id"], artisan_id, ref, title, full_desc,
                      artisan["profession"] or "Autre", address, lat, lon,
                      MISSION_STATUS_ASSIGNED, urgency, phone_contact))
-                conn.commit()
                 _log_intervention_history(conn, request_id, MISSION_STATUS_REQUESTED, MISSION_STATUS_ASSIGNED,
                                          f"Client {user['full_name']}",
                                          f"Demande directe assignee au technicien {artisan['full_name']}",
@@ -3704,7 +3667,9 @@ def artisan_detail(artisan_id):
                 create_notification(
                     artisan_id, "Nouvelle demande",
                     f"Nouvelle demande : {title} - {address or 'Conakry'}",
-                    "new_request", f"request_id:{request_id}")
+                    "new_request", f"request_id:{request_id}",
+                    conn=conn)
+                conn.commit()
                 flash("Demande d'intervention creee. Le technicien en sera informe.", "success")
                 return redirect(url_for("request_detail", request_id=request_id))
 
@@ -4163,7 +4128,6 @@ def request_new():
                  _to_float(request.form.get("budget")),
                  status, client_lat, client_lon,
                  request.form.get("urgency", "normal").strip()))
-            conn.commit()
 
             _log_intervention_history(
                 conn, new_request_id, None, status,
@@ -4174,13 +4138,15 @@ def request_new():
             create_notification(
                 user["id"], "Demande enregistree",
                 f"Votre demande '{title}' a ete enregistree.",
-                "request_created", f"request_id:{new_request_id}")
+                "request_created", f"request_id:{new_request_id}",
+                conn=conn)
 
             if best:
                 create_notification(
                     best["id"], "Nouvelle demande",
                     f"Nouvelle demande : {title} - {request_address or 'Conakry'}",
-                    "new_request", f"request_id:{new_request_id}")
+                    "new_request", f"request_id:{new_request_id}",
+                    conn=conn)
                 _log_intervention_history(
                     conn, new_request_id, MISSION_STATUS_REQUESTED, MISSION_STATUS_ASSIGNED,
                     "Systeme",
@@ -4194,6 +4160,7 @@ def request_new():
                     "no_technician",
                     f"request_id:{new_request_id}")
                 flash("Demande d'intervention creee. Nous recherchons un technicien disponible.", "success")
+            conn.commit()
             return redirect(url_for("requests_list"))
     finally:
         conn.close()
@@ -4220,10 +4187,19 @@ def request_detail(request_id):
         if request.method == "POST":
             action = request.form.get("action", "")
             if action == "cancel" and user["role"] == "client":
-                if can_transition_request(req["status"], "cancelled"):
+                old_status = req["status"]
+                new_status = MISSION_STATUS_CANCELLED
+                if can_transition_request(old_status, new_status):
                     conn.execute(
-                        "UPDATE requests SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP WHERE id = ?",
-                        (request_id,))
+                        "UPDATE requests SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                        (new_status, request_id))
+                    _log_intervention_history(
+                        conn, request_id, old_status, new_status,
+                        user["full_name"], "Intervention annulee par le client",
+                        label="Intervention annulee")
+                    _notify_client(conn, request_id, "Intervention annulee",
+                                   "Vous avez annule l'intervention.",
+                                   "request_cancelled")
                     conn.commit()
                     flash("Intervention annulee.", "success")
                 else:
@@ -4303,11 +4279,12 @@ def accept_request(request_id):
         _log_intervention_history(
             conn, request_id, MISSION_STATUS_ASSIGNED, MISSION_STATUS_ACCEPTED,
             user["full_name"], f"Technicien {user['full_name']} a accepte la mission")
-        conn.commit()
         create_notification(
             req["client_id"], "Technicien trouve",
             "Un technicien a accepte votre mission.",
-            "request_accepted", f"request_id:{request_id}")
+            "request_accepted", f"request_id:{request_id}",
+            conn=conn)
+        conn.commit()
         flash("Mission acceptee. Vous pouvez maintenant demarrer l'intervention.", "success")
     finally:
         conn.close()

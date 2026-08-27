@@ -75,10 +75,8 @@ class Config:
     ADMIN_EMAILS = [e.strip().lower() for e in os.getenv("ADMIN_EMAILS", "").split(",") if e.strip()]
     ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin" if FLASK_ENV == "development" else "").strip()
 
-    # Developpement uniquement : contourne l'authentification et injecte un
-    # compte de test. Ne JAMAIS activer en production.
-    BYPASS_AUTH = _bool("BYPASS_AUTH")
-    DEV_ROLE = os.getenv("DEV_ROLE", "client").lower()
+    # Si True, l'attribution refuse les techniciens sans GPS recent.
+    GPS_REQUIRED = _bool("GPS_REQUIRED")
 
     # Journalisation
     LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
