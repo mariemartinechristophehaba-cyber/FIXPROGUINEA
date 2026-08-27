@@ -4,8 +4,15 @@ Logique basee sur la comprehension d'intention, du contexte, de l'emotion
 et du domaine. Conserve la memoire conversationnelle via `collected`.
 """
 
+import os
 import random
 import re
+from pathlib import Path
+
+import requests
+from dotenv import load_dotenv
+
+load_dotenv(Path(__file__).resolve().parent / ".env")
 
 _DOMAINS = {
     "plomberie": [
@@ -110,6 +117,49 @@ _FIXPRO_INFO = {
         "Describe your issue and we find the right professional."
     ),
 }
+
+
+_GEMINI_SYSTEM_PROMPT = (
+    "Tu es Lia, l'assistante conversationnelle de FixPro, une plateforme de "
+    "mise en relation avec des techniciens a Conakry. Reponds a la question "
+    "de l'utilisateur de maniere naturelle, claire, utile et concise. "
+    "Si la question est generale, reponds normalement. Si elle evoque un "
+    "probleme technique, oriente doucement vers FixPro sans insister. "
+    "Garde tes reponses en dessous de 120 mots."
+)
+
+
+def _call_gemini(message, lang="fr"):
+    """Appelle Google Gemini pour repondre aux questions generales."""
+    api_key = os.getenv("GOOGLE_API_KEY", "").strip()
+    if not api_key:
+        return None
+    url = ("https://generativelanguage.googleapis.com/v1beta/models/"
+           f"gemini-3.6-flash:generateContent?key={api_key}")
+    system = _GEMINI_SYSTEM_PROMPT
+    if lang == "en":
+        system = system.replace("Reponds", "Answer").replace("l'utilisateur", "the user")
+    payload = {
+        "systemInstruction": {"parts": [{"text": system}]},
+        "contents": [{"role": "user", "parts": [{"text": message}]}],
+        "generationConfig": {
+            "temperature": 0.7,
+            "maxOutputTokens": 300,
+        },
+    }
+    try:
+        response = requests.post(url, json=payload, timeout=30)
+        response.raise_for_status()
+        data = response.json()
+        candidates = data.get("candidates", [])
+        if not candidates:
+            return None
+        parts = candidates[0].get("content", {}).get("parts", [])
+        if not parts:
+            return None
+        return parts[0].get("text", "").strip()
+    except Exception:
+        return None
 
 
 _NORMALIZE_PUNCT = str.maketrans("'-.,;:!?", " " * 8)
@@ -429,6 +479,9 @@ def _general_response(content, lang="fr"):
         if lang == "en":
             return "Air conditioning is a system that cools indoor air. \U0001F60A If yours isn't working, I can help you find a technician."
         return "La climatisation est un systeme qui rafraichit l'air interieur. \U0001F60A Si la votre ne marche plus, je peux vous aider a trouver un technicien."
+    gemini = _call_gemini(content, lang=lang)
+    if gemini:
+        return gemini
     if lang == "en":
         return "Good question \U0001F60A I can answer general things, and I'm here if you need help with FixPro."
     return "Bonne question \U0001F60A Je peux repondre a des choses generales, et je suis la si vous avez besoin d'aide avec FixPro."
@@ -453,7 +506,10 @@ def _fixpro_question_response(content, lang="fr"):
     return _FIXPRO_INFO["fr"] + " \U0001F60A"
 
 
-def _out_of_scope_response(lang="fr"):
+def _out_of_scope_response(content, lang="fr"):
+    gemini = _call_gemini(content, lang=lang)
+    if gemini:
+        return gemini
     if lang == "en":
         return "I don't have an answer for everything, but I'm here if you need help with FixPro \U0001F60A"
     return "Je ne peux pas repondre a tout, mais je suis la si vous avez besoin d'aide avec FixPro \U0001F60A"
@@ -688,7 +744,7 @@ def _build_response(info, last_message):
     if info.get("category"):
         return _build_technical_response(info, last_message, lang)
 
-    return _out_of_scope_response(lang)
+    return _out_of_scope_response(last_message or "", lang)
 
 
 def analyze_message(content, collected=None):
