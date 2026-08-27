@@ -13,13 +13,19 @@
   </a>
   <div class="fa-appbar-actions">
     <a href="{{ url_for('login') }}" class="fa-appbar-link">Connexion</a>
-    <button class="fa-appbar-burger" type="button" aria-label="Menu">
+    <button class="fa-appbar-burger" id="burgerBtn" type="button" aria-label="Menu">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M3 12h18M3 6h18M3 18h18"/>
       </svg>
     </button>
   </div>
 </header>
+
+<nav class="mobile-nav" id="mobileNav">
+  <a class="mobile-link" href="{{ url_for('index') }}">Accueil</a>
+  <a class="mobile-link" href="{{ url_for('artisans_page') }}">Trouver un technicien</a>
+  <a class="mobile-link" href="{{ url_for('register', role='artisan') }}">S'inscrire en tant que technicien</a>
+</nav>
 {% endblock %}
 {% block footer %}{% endblock %}
 {% block extra_head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/fixpro-auth.css', v='4') }}" />{% endblock %}
