@@ -163,11 +163,13 @@ export default function FixProLiaPage() {
   }, [filter, search, selected]);
 
   const counts = useMemo(() => {
-    total: logs.length,
-    open: logs.filter((l) => l.status === 'open').length,
-    handling: logs.filter((l) => l.status === 'handling').length,
-    closed: logs.filter((l) => l.status === 'closed').length,
-  }), [logs]);
+    return {
+      total: logs.length,
+      open: logs.filter((l) => l.status === 'open').length,
+      handling: logs.filter((l) => l.status === 'handling').length,
+      closed: logs.filter((l) => l.status === 'closed').length,
+    };
+  }, [logs]);
 
   const thread = useMemo(() => {
     if (!selected) return [];

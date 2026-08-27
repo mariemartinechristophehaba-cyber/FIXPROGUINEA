@@ -1420,10 +1420,14 @@ def artisan_pending():
 def api_mobile_register():
     """Inscription artisan depuis l'application mobile (JSON)."""
     data = request.get_json(silent=True) or {}
-    required = ["first_name", "last_name", "phone", "profession", "city", "quartier"]
+    required = ["first_name", "last_name", "phone", "password", "profession", "city", "quartier"]
     missing = [f for f in required if not data.get(f)]
     if missing:
         return jsonify({"error": "Champs manquants", "missing": missing}), 400
+
+    password = data["password"].strip()
+    if len(password) < 6:
+        return jsonify({"error": "Le mot de passe doit faire au moins 6 caracteres."}), 400
 
     phone = _phone_with_prefix(data["phone"])
     if not phone or len(phone.replace("+", "").replace(" ", "")) < 8:
@@ -1436,12 +1440,12 @@ def api_mobile_register():
     finally:
         conn.close()
 
-    password = phone.replace("+", "").replace(" ", "")
     wizard = {
         "civility": data.get("civility", "").strip(),
         "first_name": data["first_name"].strip(),
         "last_name": data["last_name"].strip(),
         "phone": phone,
+        "password": password,
         "email": data.get("email", "").strip(),
         "profession": data["profession"].strip(),
         "skills": data.get("skills", "").strip(),
@@ -1465,11 +1469,11 @@ csrf.exempt(api_mobile_register)
 
 
 def _finalize_artisan_registration_json(wizard):
-    """Version API JSON de l'inscription artisan (sans session ni redirect)."""
+    """Version API JSON de l'inscription d'un technicien depuis l'application mobile.
+
+    Le compte est cree en attente de validation administrative.
+    """
     full_name = f"{wizard['civility']} {wizard['first_name']} {wizard['last_name']}".strip()
-    # Mot de passe temporaire aleatoire ; l'artisan devra le reinitialiser.
-    temp_password = secrets.token_urlsafe(12)
-    password = temp_password
     latitude, longitude = _geocode_zone(wizard["city"], wizard["quartier"])
 
     conn = get_db_connection()
@@ -1477,14 +1481,14 @@ def _finalize_artisan_registration_json(wizard):
         conn.execute(
             "INSERT INTO users (email, phone, password_hash, role, full_name, civility,"
             " profession, skills, city, quartier, zone_intervention, mobility,"
-            " years_experience, bio, hourly_rate, latitude, longitude, is_verified, is_active)"
-            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            (wizard["email"], wizard["phone"], generate_password_hash(password),
+            " years_experience, bio, hourly_rate, latitude, longitude, account_status, is_verified, is_active)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (wizard["email"], wizard["phone"], generate_password_hash(wizard["password"]),
              "technician", full_name, wizard["civility"], wizard["profession"],
              wizard["skills"], wizard["city"], wizard["quartier"],
              wizard["zone_intervention"], wizard["mobility"],
-             wizard["years_experience"], wizard["bio"], 0, latitude, longitude, 1, 1))
-        conn.commit()
+             wizard["years_experience"], wizard["bio"], 0, latitude, longitude,
+             "PENDING", 0, 0))
 
         artisan = conn.execute(
             "SELECT id FROM users WHERE phone = ?", (wizard["phone"],)).fetchone()
@@ -1502,13 +1506,24 @@ def _finalize_artisan_registration_json(wizard):
                     " file_name, mime_type, content_base64)"
                     " VALUES (?, ?, ?, ?, ?)",
                     (artisan_id, doc_type, file_name, mime, encoded))
+
+        admins = conn.execute("SELECT id FROM users WHERE role = 'admin'").fetchall()
+        for admin in admins:
+            create_notification(
+                admin["id"],
+                "Nouvelle inscription technicien",
+                f"{full_name} ({wizard['profession']}, {wizard['city']}) demande a rejoindre FixPro.",
+                "info",
+                f"technician:{artisan_id}",
+                conn=conn)
+
         conn.commit()
     finally:
         conn.close()
 
     _send_admin_notification(
-        f"[FixPro] Nouvelle inscription artisan : {full_name}",
-        f"Un nouvel artisan s'est inscrit depuis l'application mobile.\n\n"
+        f"[FixPro] Nouvelle inscription technicien : {full_name}",
+        f"Un nouveau technicien s'est inscrit depuis l'application mobile.\n\n"
         f"Nom : {full_name}\n"
         f"Metier : {wizard.get('profession', 'Non precise')}\n"
         f"Telephone : {wizard.get('phone', '')}\n"
@@ -1912,6 +1927,19 @@ def admin_artisans():
                 log_admin_action(user["id"], user["email"], "verify", "user", artisan_id,
                                  reason or "Validation du profil artisan")
                 flash("Technicien valide.", "success")
+            elif action == "approve":
+                _set_status("ACTIVE", 1)
+                conn.execute("UPDATE users SET is_verified = 1 WHERE id = ?", (artisan_id,))
+                create_notification(
+                    artisan["id"],
+                    "Compte approuve",
+                    "Votre compte FixPro a ete approuve. Vous pouvez maintenant vous connecter.",
+                    "success",
+                    conn=conn)
+                conn.commit()
+                log_admin_action(user["id"], user["email"], "approve", "user", artisan_id,
+                                 reason or "Approbation du compte technicien")
+                flash("Compte approuve et active.", "success")
             elif action == "reject":
                 _set_status("DELETED", 0)
                 log_admin_action(user["id"], user["email"], "reject", "user", artisan_id,
@@ -2397,7 +2425,7 @@ def _rule_based_reply(text):
 def _call_gemini(message, api_key):
     """Appelle l'API Google Gemini pour generer une reponse."""
     url = ("https://generativelanguage.googleapis.com/v1beta/models/"
-           f"gemini-2.0-flash:generateContent?key={api_key}")
+           f"gemini-3.6-flash:generateContent?key={api_key}")
     payload = {
         "systemInstruction": {"parts": [{"text": _LIA_SYSTEM_PROMPT}]},
         "contents": [{"role": "user", "parts": [{"text": message}]}],
