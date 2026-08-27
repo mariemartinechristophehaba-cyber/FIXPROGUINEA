@@ -757,8 +757,34 @@ def _build_response(info, last_message):
 
 
 def analyze_message(content, collected=None):
+    """Analyse un message et retourne une reponse conversationnelle.
+
+    Cette fonction conserve le moteur de collecte technique historique
+    et delegue les reponses conversationnelles au module ai.Assistant.
+    """
     collected = _update_collected(collected or {}, content)
-    response = _build_response(collected, content)
+
+    # Si une collecte technique est en cours, on garde le moteur historique
+    # pour guider l'utilisateur, recuperer les informations manquantes et
+    # gerer les confirmations/corrections.
+    if collected.get("mode") == "fixpro":
+        response = _build_response(collected, content)
+    else:
+        from ai import Assistant
+
+        assistant = Assistant(role=collected.get("role", "client"))
+        history = [{"user": m, "assistant": ""} for m in collected.get("history", [])]
+        result = assistant.respond(
+            content,
+            context={
+                "history": history,
+                "user_id": collected.get("user_id"),
+                "role": collected.get("role", "client"),
+                "active_request": collected.get("active_request"),
+            },
+        )
+        response = result["response"]
+        collected["last_intent"] = result["intent"]
 
     missing = _has_missing(collected)
     complete = (collected.get("mode") == "fixpro" and all(k not in missing for k in ["category", "location", "urgency", "availability"]))
@@ -776,3 +802,11 @@ def analyze_message(content, collected=None):
         "needs_human": False,
         "needs_technician": ready,
     }
+
+
+def _is_ready_to_confirm(collected):
+    """Indique si toutes les informations techniques sont collectees."""
+    if collected.get("mode") != "fixpro":
+        return False
+    missing = _has_missing(collected)
+    return all(k not in missing for k in ["category", "location", "urgency", "availability"])
