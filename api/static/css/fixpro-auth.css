@@ -177,7 +177,6 @@ body { margin: 0; }
   color: var(--fa-ink);
   font-size: 10px;
   font-weight: 700;
-  text-transform: uppercase;
   letter-spacing: 0.02em;
 }
 
