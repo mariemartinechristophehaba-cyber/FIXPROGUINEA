@@ -199,3 +199,256 @@
   .fa-choice-grid { grid-template-columns: repeat(2, 1fr); }
   .fa-container { padding-top: 48px; }
 }
+
+/* ===== Nouveau design inscription technicien ===== */
+:root {
+  --fa-blue: #2563EB;
+  --fa-blue-soft: #EFF6FF;
+}
+
+/* Appbar bleue */
+.fa-appbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  background: var(--fa-blue);
+  color: #fff;
+}
+
+.fa-appbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--fa-display);
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  text-decoration: none;
+}
+
+.fa-appbar-mark {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fa-appbar-brand small {
+  display: block;
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.fa-appbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.fa-appbar-link {
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.fa-appbar-burger {
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Titre et sous-titre etape 1 */
+.fa-subtitle {
+  font-size: 14px;
+  color: var(--fa-slate);
+  margin: 0 0 28px;
+  line-height: 1.5;
+}
+
+/* Stepper a points */
+.fa-stepper-dots {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin: 28px 0 24px;
+}
+
+.fa-step-line {
+  position: absolute;
+  top: 13px;
+  left: 16%;
+  right: 16%;
+  height: 2px;
+  background: var(--fa-line);
+  z-index: 0;
+}
+
+.fa-step-line-fill {
+  height: 100%;
+  background: var(--fa-blue);
+  width: 0%;
+  transition: width .3s;
+}
+
+.fa-step-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  z-index: 1;
+}
+
+.fa-step-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--fa-slate-light);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  transition: background .2s;
+}
+
+.fa-step-dot.active,
+.fa-step-dot.completed { background: var(--fa-slate); }
+
+.fa-step-dot.active { background: var(--fa-blue); }
+
+.fa-step-label {
+  font-size: 10px;
+  color: var(--fa-slate);
+  text-align: center;
+  line-height: 1.2;
+}
+
+.fa-step-label.active {
+  color: var(--fa-blue);
+  font-weight: 600;
+}
+
+/* Champs avec icones */
+.fa-input-wrap {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.fa-input-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fa-slate-light);
+}
+
+.fa-input-icon-left {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.fa-input-icon-right {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  padding: 6px;
+  cursor: pointer;
+  color: var(--fa-slate);
+}
+
+.fa-fb-pad-left { padding-left: 46px; }
+.fa-fb-pad-right { padding-right: 46px; }
+
+/* Prefixe telephone */
+.fa-phone-prefix {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-right: 10px;
+  border-right: 1px solid var(--fa-line);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--fa-ink);
+}
+
+.fa-fb-phone { padding-left: 86px; }
+
+.fa-flag-gn {
+  width: 18px;
+  height: 13px;
+  border-radius: 2px;
+  overflow: hidden;
+  display: block;
+}
+
+.fa-flag-gn svg { display: block; }
+
+/* Boite info */
+.fa-info-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: var(--fa-blue-soft);
+  border-radius: var(--fa-radius-sm);
+  padding: 14px;
+  font-size: 13px;
+  color: var(--fa-ink);
+  margin: 8px 0 12px;
+}
+
+.fa-info-box p { margin: 0; }
+
+.fa-info-icon {
+  flex-shrink: 0;
+  color: var(--fa-blue);
+}
+
+/* Bouton principal bleu */
+.fa-btn-primary {
+  background: var(--fa-blue);
+  color: #fff;
+  border-radius: var(--fa-radius-sm);
+}
+
+.fa-btn-primary svg {
+  stroke: currentColor;
+}
+
+/* Pieds de page */
+.fa-foot a { color: var(--fa-blue); }
+
+.fa-foot-lock {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 14px;
+  font-size: 12px;
+  color: var(--fa-slate);
+  text-align: center;
+}
