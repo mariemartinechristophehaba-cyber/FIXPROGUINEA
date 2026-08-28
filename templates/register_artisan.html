@@ -146,26 +146,26 @@
             <label class="fa-fl" for="address">Ville / Localisation</label>
             <div class="fa-input-wrap">
               <span class="fa-input-icon fa-input-icon-left" aria-hidden="true">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="4"/><path d="M12 2l-9 8a10 10 0 0 0 18 0l-9-8z"/><path d="M12 14v8"/></svg>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a7 7 0 0 1 7 7c0 5.25-7 13-7 13s-7-7.75-7-13a7 7 0 0 1 7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
               </span>
               <input id="address" class="fa-fb fa-fb-pad-left fa-fb-pad-right" type="text" name="address" required placeholder="Votre ville ou quartier" />
               <button type="button" class="fa-input-icon fa-input-icon-right" onclick="locateMe()" aria-label="Utiliser ma position">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><path d="M12 2v6M12 16v6M2 12h6M16 12h6"/></svg>
               </button>
             </div>
           </div>
 
-          <div class="fa-fg">
+          <div class="fa-fg" style="margin-top: 10px;">
             <label class="fa-fl" for="quartier">Adresse complète <span class="fa-optional">(optionnel)</span></label>
             <div class="fa-input-wrap">
               <span class="fa-input-icon fa-input-icon-left" aria-hidden="true">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21v-7l5-5 5 5v7M14 7l5 5"/><path d="M9 11V7a3 3 0 0 1 6 0v4"/></svg>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="8" width="14" height="13" rx="2"/><path d="M5 8l7-5 7 5"/><path d="M8 13h2v2H8zM11 13h2v2h-2zM14 13h2v2h-2zM8 17h2v2H8zM11 17h2v2h-2zM14 17h2v2h-2z"/></svg>
               </span>
               <input id="quartier" class="fa-fb fa-fb-pad-left" type="text" name="quartier" placeholder="Votre adresse complète" />
             </div>
           </div>
 
-          <div class="fa-info-box fa-info-green" style="background: #ECFDF5; border: 1px solid #A7F3D0; color: #065F46; padding: 10px 12px; margin: 0 0 10px; border-radius: 12px;">
+          <div class="fa-info-box fa-info-green" style="background: #ECFDF5; border: 1px solid #A7F3D0; color: #065F46; padding: 10px 12px; margin: 12px 0 10px; border-radius: 12px;">
             <span class="fa-info-icon" aria-hidden="true" style="color: #059669;">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 12 15 16 10"/></svg>
             </span>
