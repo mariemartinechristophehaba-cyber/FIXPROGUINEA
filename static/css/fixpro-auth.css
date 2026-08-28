@@ -693,6 +693,18 @@ body { margin: 0; }
 .fa-upload-box.has-photo { border-style: solid; border-color: var(--fa-blue); background: var(--fa-white); }
 .fa-info-green { background: #ECFDF5 !important; border-color: #A7F3D0 !important; color: #065F46 !important; }
 .fa-info-green .fa-info-icon { color: #059669; }
+.fa-service-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; }
+.fa-service-card { display: flex; align-items: center; justify-content: space-between; gap: 8px; background: #fff; border: 1.5px solid var(--fa-line); border-radius: 14px; padding: 12px; cursor: pointer; transition: all .2s; }
+.fa-service-card:hover { border-color: var(--fa-blue); }
+.fa-service-card.selected { border-color: var(--fa-blue); background: #EFF6FF; box-shadow: 0 0 0 1px var(--fa-blue); }
+.fa-service-main { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.fa-service-icon { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.fa-service-icon svg { width: 24px; height: 24px; }
+.fa-service-info { min-width: 0; }
+.fa-service-title { font-size: 13px; font-weight: 700; color: var(--fa-ink); margin-bottom: 2px; }
+.fa-service-desc { font-size: 11px; color: var(--fa-slate); line-height: 1.3; }
+.fa-service-radio { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--fa-line); flex-shrink: 0; transition: all .2s; }
+.fa-service-card.selected .fa-service-radio { border-color: var(--fa-blue); background: var(--fa-blue); box-shadow: inset 0 0 0 3px #fff; }
 
 @media (min-width: 768px) {
   .fa-container { padding-top: 48px; }

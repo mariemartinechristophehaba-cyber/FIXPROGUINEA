@@ -1225,7 +1225,7 @@ def register_artisan():
         phone = _phone_with_prefix(request.form.get("phone", "").strip())
         profession = request.form.get("profession", "").strip()
         specialite = request.form.get("specialite", "").strip()
-        experience = request.form.get("experience", "").strip()
+        experience = int(request.form.get("experience") or 0)
         bio = request.form.get("bio", "").strip()
         address = request.form.get("address", "").strip()
         rayon = request.form.get("rayon", "").strip()
