@@ -28,7 +28,7 @@
 </nav>
 {% endblock %}
 {% block footer %}{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/fixpro-auth.css', v='10') }}" />{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/fixpro-auth.css', v='11') }}" />{% endblock %}
 
 {% block content %}
 <div class="fa-page fa-has-bottom-nav">
@@ -76,28 +76,52 @@
 
         <div id="step1">
           <h1 class="fa-title">Parlons de vous</h1>
-          <p class="fa-subtitle">Vos informations personnelles de connexion.</p>
+          <p class="fa-subtitle">Commençons par mieux vous connaître.</p>
+
+          <div class="fa-info-box">
+            <span class="fa-info-icon" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+            </span>
+            <div>
+              <h4>Informations importantes</h4>
+              <p>Ces informations nous permettront de créer votre profil et d'améliorer votre visibilité auprès des clients.</p>
+            </div>
+          </div>
 
           <div class="fa-fg">
-            <label class="fa-fl" for="first_name">Prénom</label>
-            <div class="fa-input-wrap">
-              <span class="fa-input-icon fa-input-icon-left" aria-hidden="true">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-              </span>
-              <input id="first_name" class="fa-fb fa-fb-pad-left" type="text" name="first_name" required placeholder="Ibrahim" />
+            <span class="fa-fl">Photo de profil</span>
+            <div class="fa-upload-box" id="step1PhotoBox">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="12" r="4"/><path d="M3 9h6l2-2h3l2 2h5"/></svg>
+              <div class="fa-upload-box-title">Ajoutez une photo claire et professionnelle.</div>
+              <div class="fa-upload-box-sub">Formats acceptés : JPG, PNG (max. 5 Mo)</div>
+            </div>
+            <input type="file" id="photoInput" accept="image/*" style="display:none;" />
+            <input type="hidden" name="photo" id="photoBase64" />
+          </div>
+
+          <div class="fa-two-col">
+            <div class="fa-fg">
+              <label class="fa-fl" for="first_name">Prénom</label>
+              <div class="fa-input-wrap">
+                <span class="fa-input-icon fa-input-icon-left" aria-hidden="true">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </span>
+                <input id="first_name" class="fa-fb fa-fb-pad-left" type="text" name="first_name" required placeholder="Votre prénom" />
+              </div>
+            </div>
+            <div class="fa-fg">
+              <label class="fa-fl" for="last_name">Nom</label>
+              <div class="fa-input-wrap">
+                <span class="fa-input-icon fa-input-icon-left" aria-hidden="true">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </span>
+                <input id="last_name" class="fa-fb fa-fb-pad-left" type="text" name="last_name" required placeholder="Votre nom" />
+              </div>
             </div>
           </div>
+
           <div class="fa-fg">
-            <label class="fa-fl" for="last_name">Nom</label>
-            <div class="fa-input-wrap">
-              <span class="fa-input-icon fa-input-icon-left" aria-hidden="true">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-              </span>
-              <input id="last_name" class="fa-fb fa-fb-pad-left" type="text" name="last_name" required placeholder="Sylla" />
-            </div>
-          </div>
-          <div class="fa-fg">
-            <label class="fa-fl" for="phone">Téléphone</label>
+            <label class="fa-fl" for="phone">Numéro de téléphone</label>
             <div class="fa-input-wrap">
               <span class="fa-phone-prefix" aria-label="Indicatif Guinée +224">
                 <span class="fa-flag-gn" aria-hidden="true">
@@ -105,59 +129,54 @@
                 </span>
                 <span>+224</span>
               </span>
-              <input id="phone" class="fa-fb fa-fb-phone" type="tel" name="phone" required inputmode="tel" placeholder="620 00 00 00" />
+              <input id="phone" class="fa-fb fa-fb-phone" type="tel" name="phone" required inputmode="tel" placeholder="610 12 34 56" />
             </div>
-            <p class="fa-help">Nous vous enverrons un code de vérification par SMS.</p>
           </div>
+
           <div class="fa-fg">
-            <label class="fa-fl" for="email">Email</label>
+            <label class="fa-fl" for="email">Adresse e-mail</label>
             <div class="fa-input-wrap">
               <span class="fa-input-icon fa-input-icon-left" aria-hidden="true">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
               </span>
-              <input id="email" class="fa-fb fa-fb-pad-left" type="email" name="email" placeholder="vous@email.com" />
+              <input id="email" class="fa-fb fa-fb-pad-left" type="email" name="email" placeholder="exemple@email.com" />
             </div>
           </div>
+
           <div class="fa-fg">
-            <label class="fa-fl" for="password">Mot de passe</label>
+            <label class="fa-fl" for="address">Ville / Localisation</label>
             <div class="fa-input-wrap">
               <span class="fa-input-icon fa-input-icon-left" aria-hidden="true">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="4"/><path d="M12 2l-9 8a10 10 0 0 0 18 0l-9-8z"/><path d="M12 14v8"/></svg>
               </span>
-              <input id="password" class="fa-fb fa-fb-pad-left fa-fb-pad-right" type="password" name="password" required minlength="8" placeholder="8 caractères minimum" />
-              <button type="button" class="fa-input-icon fa-input-icon-right" onclick="togglePassword('password')" aria-label="Afficher le mot de passe">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-              </button>
-            </div>
-            <p class="fa-help">Minimum 8 caractères, avec lettres et chiffres.</p>
-          </div>
-          <div class="fa-fg">
-            <label class="fa-fl" for="confirm_password">Confirmer le mot de passe</label>
-            <div class="fa-input-wrap">
-              <span class="fa-input-icon fa-input-icon-left" aria-hidden="true">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-              </span>
-              <input id="confirm_password" class="fa-fb fa-fb-pad-left fa-fb-pad-right" type="password" name="confirm_password" required minlength="8" placeholder="Confirmez le mot de passe" />
-              <button type="button" class="fa-input-icon fa-input-icon-right" onclick="togglePassword('confirm_password')" aria-label="Afficher le mot de passe">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              <input id="address" class="fa-fb fa-fb-pad-left fa-fb-pad-right" type="text" name="address" required placeholder="Votre ville ou quartier" />
+              <button type="button" class="fa-input-icon fa-input-icon-right" onclick="locateMe()" aria-label="Utiliser ma position">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
               </button>
             </div>
           </div>
 
-          <div class="fa-info-box">
+          <div class="fa-fg">
+            <label class="fa-fl" for="quartier">Adresse complète <span class="fa-optional">(optionnel)</span></label>
+            <div class="fa-input-wrap">
+              <span class="fa-input-icon fa-input-icon-left" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21v-7l5-5 5 5v7M14 7l5 5"/><path d="M9 11V7a3 3 0 0 1 6 0v4"/></svg>
+              </span>
+              <input id="quartier" class="fa-fb fa-fb-pad-left" type="text" name="quartier" placeholder="Votre adresse complète" />
+            </div>
+          </div>
+
+          <div class="fa-info-box fa-info-green">
             <span class="fa-info-icon" aria-hidden="true">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 12 15 16 10"/></svg>
             </span>
-            <p>Vos données sont sécurisées. Nous ne partageons jamais vos informations personnelles.</p>
+            <div>
+              <p>Vos informations sont sécurisées et ne seront jamais partagées sans votre autorisation.</p>
+            </div>
           </div>
 
-          <button type="button" class="fa-btn fa-btn-primary" onclick="if(validateStep1()) go(2)">Continuer <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
-
-          <p class="fa-foot">Vous avez déjà un compte ? <a href="{{ url_for('login') }}">Connexion</a></p>
-          <p class="fa-foot-lock">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            FixPro protège vos données
-          </p>
+          <button type="button" class="fa-btn fa-btn-outline" onclick="window.location.href='{{ url_for('register') }}'">Retour</button>
+          <button type="button" class="fa-btn fa-btn-primary" style="margin-top:12px;" onclick="if(validateStep1()) go(2)">Continuer <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
         </div>
 
         <div id="step2" style="display:none;">
@@ -234,33 +253,8 @@
           </div>
 
           <div class="fa-fg">
-            <span class="fa-fl">Où intervenez-vous ?</span>
-            <select id="city_select" class="fa-fb-select" onchange="updateAddress()">
-              <option value="" disabled selected>Choisir une ville</option>
-              <option value="Conakry">Conakry</option>
-              <option value="Nzérékoré">Nzérékoré</option>
-              <option value="Kankan">Kankan</option>
-              <option value="Labé">Labé</option>
-              <option value="Kindia">Kindia</option>
-              <option value="Boké">Boké</option>
-              <option value="Mamou">Mamou</option>
-              <option value="Faranah">Faranah</option>
-              <option value="Pita">Pita</option>
-              <option value="Kérouané">Kérouané</option>
-              <option value="Guéckédou">Guéckédou</option>
-              <option value="Dabola">Dabola</option>
-              <option value="Dinguiraye">Dinguiraye</option>
-              <option value="Tougué">Tougué</option>
-              <option value="Siguiri">Siguiri</option>
-              <option value="Autre">Autre</option>
-            </select>
-            <input id="address" class="fa-fb" type="text" name="address" required placeholder="Ville ou localité" oninput="updateAddress()" />
-            <input id="quartier" class="fa-fb" type="text" name="quartier" placeholder="Quartier" oninput="updateAddress()" />
+            <label class="fa-fl" for="rayon">Rayon d'intervention</label>
             <input id="rayon" class="fa-fb" type="text" name="rayon" placeholder="Rayon d'intervention (ex: 10 km)" />
-            <button type="button" class="fa-zone-btn" onclick="locateMe()">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
-              Utiliser ma position
-            </button>
           </div>
 
           <div class="fa-fg">
@@ -408,14 +402,20 @@
     document.getElementById('photoInput').click();
   }
 
+  document.getElementById('step1PhotoBox').addEventListener('click', openPhotoSelect);
   document.getElementById('photoPreviewWrap').addEventListener('click', openPhotoSelect);
   document.getElementById('photoCam').addEventListener('click', (e)=>{ e.stopPropagation(); openPhotoSelect(); });
   document.getElementById('photoChangeBtn').addEventListener('click', openPhotoSelect);
   document.getElementById('photoInput').addEventListener('change', function(){
     readFile(this, res=>{
       document.getElementById('photoBase64').value = res;
-      document.getElementById('photoPreview').src = res;
-      document.getElementById('confirmPhoto').src = res;
+      const step1 = document.getElementById('step1PhotoBox');
+      step1.innerHTML = `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="12" r="4"/><path d="M3 9h6l2-2h3l2 2h5"/></svg><div class="fa-upload-box-title">Photo ajoutee</div><div class="fa-upload-box-sub">Vous pouvez en changer si besoin</div>`;
+      step1.classList.add('has-photo');
+      const preview = document.getElementById('photoPreview');
+      if (preview) preview.src = res;
+      const confirm = document.getElementById('confirmPhoto');
+      if (confirm) confirm.src = res;
     });
   });
 
@@ -448,13 +448,8 @@
     return true;
   }
 
-  function togglePassword(id){
-    const input = document.getElementById(id);
-    input.type = input.type === 'password' ? 'text' : 'password';
-  }
-
   function validateStep1(){
-    const fields = ['first_name','last_name','phone','password','confirm_password'];
+    const fields = ['first_name','last_name','phone','address'];
     for (const id of fields){
       const el = document.getElementById(id);
       if (!el.value.trim() || !el.checkValidity()) {
@@ -462,9 +457,6 @@
         return false;
       }
     }
-    const pwd = document.getElementById('password').value;
-    const confirm = document.getElementById('confirm_password').value;
-    if (pwd !== confirm) { alert('Les mots de passe ne correspondent pas.'); return false; }
     const prenom = document.getElementById('first_name').value.trim();
     const nom = document.getElementById('last_name').value.trim();
     document.getElementById('full_name').value = prenom + ' ' + nom;
@@ -474,7 +466,6 @@
   function validateStep2(){
     if (!document.getElementById('profession').value) { alert('Choisissez un métier.'); return false; }
     if (!document.getElementById('experience').value) { alert('Indiquez votre expérience.'); return false; }
-    if (!document.getElementById('address').value.trim()) { alert('Indiquez une zone d\'intervention.'); return false; }
     return true;
   }
 
@@ -496,14 +487,6 @@
     card.classList.add('selected');
     document.getElementById('profession').value = card.dataset.profession;
     document.getElementById('specialite').value = card.dataset.specialite;
-  }
-
-  function updateAddress(){
-    const city = document.getElementById('city_select').value;
-    const quartier = document.getElementById('quartier').value.trim();
-    if (city && city !== 'Autre'){
-      document.getElementById('address').value = quartier ? city + ', ' + quartier : city;
-    }
   }
 
   function locateMe(){
@@ -545,9 +528,6 @@
   }
 
   function validateArtisan(){
-    const pwd = document.getElementById('password').value;
-    const confirm = document.getElementById('confirm_password').value;
-    if (pwd !== confirm) { alert('Les mots de passe ne correspondent pas.'); return false; }
     const prenom = document.getElementById('first_name').value;
     const nom = document.getElementById('last_name').value;
     document.getElementById('full_name').value = prenom + ' ' + nom;
