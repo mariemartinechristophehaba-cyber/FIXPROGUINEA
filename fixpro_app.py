@@ -43,7 +43,7 @@ from dotenv import dotenv_values
 
 config = get_config()
 ADMIN_DEMO = False
-app = Flask(__name__, static_folder="api/static", static_url_path="/static")
+app = Flask(__name__, static_folder="static", static_url_path="/static")
 app.config.from_object(config)
 _dotenv = dotenv_values(BASE_DIR / ".env")
 if _dotenv.get("DEV_ROLE"):
