@@ -286,26 +286,30 @@
           </div>
 
           <div class="fa-fg">
-            <label class="fa-fl" for="hourly_rate">Tarif indicatif (GNF)</label>
-            <input id="hourly_rate" class="fa-fb" type="number" name="hourly_rate" placeholder="150000" />
-          </div>
-
-          <div class="fa-fg">
             <span class="fa-fl">Disponibilité</span>
             <div class="fa-radio-group" id="availabilityGroup">
-              <label class="fa-radio"><input type="radio" name="availability" value="toujours" checked onchange="toggleDays()" /> Disponible toujours</label>
-              <label class="fa-radio"><input type="radio" name="availability" value="certains_jours" onchange="toggleDays()" /> Disponible certains jours</label>
+              <label class="fa-radio"><input type="radio" name="availability" value="toujours" checked onchange="handleAvailability()" /> Disponible toujours</label>
+              <label class="fa-radio"><input type="radio" name="availability" value="certains_jours" onchange="handleAvailability()" /> Disponible certains jours</label>
             </div>
-            <div class="fa-days" id="daysBox">
-              <span class="fa-fl" style="margin-bottom:6px;">Selectionnez vos jours</span>
+            <div class="fa-days-summary" id="daysSummary"></div>
+          </div>
+
+          <div class="fa-days-modal" id="daysBox">
+            <div class="fa-days-modal-backdrop" onclick="closeDaysModal()"></div>
+            <div class="fa-days-modal-content">
+              <div class="fa-days-modal-title">Selectionnez vos jours de disponibilité</div>
               <div class="fa-days-grid">
-                <label class="fa-day"><input type="checkbox" name="available_days" value="Lundi" /> Lun</label>
-                <label class="fa-day"><input type="checkbox" name="available_days" value="Mardi" /> Mar</label>
-                <label class="fa-day"><input type="checkbox" name="available_days" value="Mercredi" /> Mer</label>
-                <label class="fa-day"><input type="checkbox" name="available_days" value="Jeudi" /> Jeu</label>
-                <label class="fa-day"><input type="checkbox" name="available_days" value="Vendredi" /> Ven</label>
-                <label class="fa-day"><input type="checkbox" name="available_days" value="Samedi" /> Sam</label>
-                <label class="fa-day"><input type="checkbox" name="available_days" value="Dimanche" /> Dim</label>
+                <label class="fa-day"><input type="checkbox" name="available_days" value="Lundi" onchange="updateDaysSummary()" /> Lun</label>
+                <label class="fa-day"><input type="checkbox" name="available_days" value="Mardi" onchange="updateDaysSummary()" /> Mar</label>
+                <label class="fa-day"><input type="checkbox" name="available_days" value="Mercredi" onchange="updateDaysSummary()" /> Mer</label>
+                <label class="fa-day"><input type="checkbox" name="available_days" value="Jeudi" onchange="updateDaysSummary()" /> Jeu</label>
+                <label class="fa-day"><input type="checkbox" name="available_days" value="Vendredi" onchange="updateDaysSummary()" /> Ven</label>
+                <label class="fa-day"><input type="checkbox" name="available_days" value="Samedi" onchange="updateDaysSummary()" /> Sam</label>
+                <label class="fa-day"><input type="checkbox" name="available_days" value="Dimanche" onchange="updateDaysSummary()" /> Dim</label>
+              </div>
+              <div class="fa-days-modal-actions">
+                <button type="button" class="fa-btn fa-btn-outline" onclick="closeDaysModal()">Annuler</button>
+                <button type="button" class="fa-btn fa-btn-primary" onclick="saveDays()">Valider</button>
               </div>
             </div>
           </div>
@@ -382,9 +386,53 @@
     readFile(this, res=>{ document.getElementById('photoBase64').value = res; document.getElementById('photoBox').innerHTML = `<img src="${res}" alt="photo" class="fa-photo-preview"><div class="fa-photo-label">Photo ajoutee</div>`; });
   });
 
-  function toggleDays(){
-    const isCertains = document.querySelector('input[name="availability"]:checked').value === 'certains_jours';
-    document.getElementById('daysBox').classList.toggle('open', isCertains);
+  function handleAvailability(){
+    const val = document.querySelector('input[name="availability"]:checked')?.value;
+    if (val === 'certains_jours'){
+      openDaysModal();
+    } else {
+      closeDaysModal();
+      clearDays();
+      updateDaysSummary();
+    }
+  }
+
+  function openDaysModal(){
+    document.getElementById('daysBox').classList.add('open');
+  }
+
+  function closeDaysModal(){
+    document.getElementById('daysBox').classList.remove('open');
+    const checked = document.querySelectorAll('input[name="available_days"]:checked');
+    if (checked.length === 0){
+      document.querySelector('input[name="availability"][value="toujours"]').checked = true;
+    }
+  }
+
+  function clearDays(){
+    document.querySelectorAll('input[name="available_days"]').forEach(el => el.checked = false);
+  }
+
+  function saveDays(){
+    const checked = document.querySelectorAll('input[name="available_days"]:checked');
+    if (checked.length === 0){
+      alert('Selectionnez au moins un jour de disponibilite.');
+      return;
+    }
+    closeDaysModal();
+  }
+
+  function updateDaysSummary(){
+    document.querySelectorAll('input[name="available_days"]').forEach(el => {
+      el.parentElement.classList.toggle('selected', el.checked);
+    });
+    const checked = Array.from(document.querySelectorAll('input[name="available_days"]:checked')).map(el => el.value);
+    const summary = document.getElementById('daysSummary');
+    if (document.querySelector('input[name="availability"]:checked')?.value === 'certains_jours' && checked.length > 0){
+      summary.textContent = 'Jours selectionnes : ' + checked.join(', ');
+    } else {
+      summary.textContent = '';
+    }
   }
 
   function validateStep3(){
@@ -392,7 +440,7 @@
     if (availability === 'certains_jours'){
       const checked = document.querySelectorAll('input[name="available_days"]:checked');
       if (checked.length === 0){
-        alert('Selectionnez au moins un jour de disponibilite.');
+        openDaysModal();
         return false;
       }
     }

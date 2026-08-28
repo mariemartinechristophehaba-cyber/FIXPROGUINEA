@@ -608,8 +608,14 @@ body { margin: 0; }
   font-size: 11px;
   color: var(--fa-primary);
 }
-.fa-days { display: none; margin-top: 10px; }
-.fa-days.open { display: block; }
+.fa-days-summary { font-size: 12px; color: var(--fa-primary); margin-top: 8px; min-height: 18px; }
+.fa-days-modal { display: none; position: fixed; inset: 0; z-index: 200; align-items: center; justify-content: center; }
+.fa-days-modal.open { display: flex; }
+.fa-days-modal-backdrop { position: absolute; inset: 0; background: rgba(10,14,31,0.5); }
+.fa-days-modal-content { position: relative; width: 90%; max-width: 360px; background: var(--fa-white); border-radius: 20px; padding: 24px; z-index: 1; box-shadow: 0 16px 40px rgba(0,0,0,.2); }
+.fa-days-modal-title { font-family: var(--fa-display); font-size: 18px; font-weight: 700; margin-bottom: 18px; text-align: center; }
+.fa-days-modal-actions { display: flex; gap: 10px; margin-top: 18px; }
+.fa-days-modal-actions .fa-btn { flex: 1; margin: 0; }
 .fa-days-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -619,7 +625,7 @@ body { margin: 0; }
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 8px 4px;
+  padding: 10px 4px;
   border: 1px solid var(--fa-line);
   border-radius: 10px;
   font-size: 12px;
@@ -627,7 +633,7 @@ body { margin: 0; }
   text-align: center;
 }
 .fa-day input { display: none; }
-.fa-day:has(input:checked) { background: var(--fa-primary); color: var(--fa-white); border-color: var(--fa-primary); }
+.fa-day.selected { background: var(--fa-primary); color: var(--fa-white); border-color: var(--fa-primary); }
 
 @media (min-width: 768px) {
   .fa-container { padding-top: 48px; }
