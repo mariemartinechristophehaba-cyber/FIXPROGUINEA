@@ -639,7 +639,7 @@ body { margin: 0; }
   cursor: pointer;
   font-family: var(--fa-font);
 }
-.fa-avail-grid { display: flex; flex-direction: column; gap: 10px; }
+.fa-avail-grid { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
 .fa-avail-card {
   display: flex;
   align-items: center;
