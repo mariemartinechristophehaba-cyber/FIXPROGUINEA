@@ -587,4 +587,6 @@ body { margin: 0; }
   .fa-container { padding-top: 48px; }
   .fa-job-grid { grid-template-columns: repeat(3, 1fr); }
   .fa-choice-grid { grid-template-columns: repeat(2, 1fr); }
+  .fa-bottom-nav { display: none !important; }
+  .fa-page.fa-has-bottom-nav { padding-bottom: 0; }
 }

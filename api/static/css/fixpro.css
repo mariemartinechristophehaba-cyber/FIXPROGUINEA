@@ -465,6 +465,7 @@ body {
 @media (min-width: 768px) {
   .appbar-nav { display: flex; }
   .mobile-nav { display: none; }
+  .tabbar { display: none !important; }
 }
 
 .f-section { padding: 24px 0; }
