@@ -574,13 +574,42 @@
     document.getElementById('mobileNav').classList.toggle('open');
   });
 
+  function compressImage(file, cb){
+    if (!file) return;
+    if (!file.type.startsWith('image/')){ alert('Veuillez choisir une image.'); return; }
+    const r = new FileReader();
+    r.onload = e => {
+      const img = new Image();
+      img.onload = function(){
+        const max = 800;
+        let w = img.width, h = img.height;
+        if (w > h){ if (w > max){ h = h * (max / w); w = max; } }
+        else { if (h > max){ w = w * (max / h); h = max; } }
+        const c = document.createElement('canvas');
+        c.width = Math.round(w);
+        c.height = Math.round(h);
+        const ctx = c.getContext('2d');
+        ctx.drawImage(img, 0, 0, c.width, c.height);
+        const data = c.toDataURL('image/jpeg', 0.85);
+        cb(data);
+      };
+      img.onerror = () => alert('Image invalide.');
+      img.src = e.target.result;
+    };
+    r.readAsDataURL(file);
+  }
+
   function readFile(input, cb){
     const f = input.files[0];
     if (!f) return;
-    if (f.size > 5*1024*1024){ alert('Fichier trop volumineux. Max 5 Mo.'); return; }
-    const r = new FileReader();
-    r.onload = e => cb(e.target.result);
-    r.readAsDataURL(f);
+    if (f.size > 10*1024*1024){ alert('Fichier trop volumineux. Max 10 Mo.'); return; }
+    if (f.type.startsWith('image/')){
+      compressImage(f, cb);
+    } else {
+      const r = new FileReader();
+      r.onload = e => cb(e.target.result);
+      r.readAsDataURL(f);
+    }
   }
 
   function openPhotoSelect(){
