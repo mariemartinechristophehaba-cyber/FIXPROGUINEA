@@ -28,7 +28,7 @@
 </nav>
 {% endblock %}
 {% block footer %}{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/fixpro-auth.css', v='8') }}" />{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/fixpro-auth.css', v='9') }}" />{% endblock %}
 
 {% block content %}
 <div class="fa-page fa-has-bottom-nav">
@@ -277,7 +277,7 @@
           <p class="fa-sub">Attirez les clients avec un profil complet.</p>
 
           <div class="fa-fg">
-            <div class="fa-upload" id="photoBox">
+            <div class="fa-upload fa-photo-upload" id="photoBox">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="12" r="4"/><path d="M3 9h6l2-2h3l2 2h5"/></svg>
               <div style="margin-top:6px;">Ajouter une photo de profil</div>
             </div>
@@ -292,15 +292,26 @@
 
           <div class="fa-fg">
             <span class="fa-fl">Disponibilité</span>
-            <div class="fa-radio-group">
-              <label class="fa-radio"><input type="radio" name="availability" value="maintenant" checked /> Disponible maintenant</label>
-              <label class="fa-radio"><input type="radio" name="availability" value="certains_jours" /> Disponible certains jours</label>
-              <label class="fa-radio"><input type="radio" name="availability" value="rdv" /> Sur rendez-vous</label>
+            <div class="fa-radio-group" id="availabilityGroup">
+              <label class="fa-radio"><input type="radio" name="availability" value="toujours" checked onchange="toggleDays()" /> Disponible toujours</label>
+              <label class="fa-radio"><input type="radio" name="availability" value="certains_jours" onchange="toggleDays()" /> Disponible certains jours</label>
+            </div>
+            <div class="fa-days" id="daysBox">
+              <span class="fa-fl" style="margin-bottom:6px;">Selectionnez vos jours</span>
+              <div class="fa-days-grid">
+                <label class="fa-day"><input type="checkbox" name="available_days" value="Lundi" /> Lun</label>
+                <label class="fa-day"><input type="checkbox" name="available_days" value="Mardi" /> Mar</label>
+                <label class="fa-day"><input type="checkbox" name="available_days" value="Mercredi" /> Mer</label>
+                <label class="fa-day"><input type="checkbox" name="available_days" value="Jeudi" /> Jeu</label>
+                <label class="fa-day"><input type="checkbox" name="available_days" value="Vendredi" /> Ven</label>
+                <label class="fa-day"><input type="checkbox" name="available_days" value="Samedi" /> Sam</label>
+                <label class="fa-day"><input type="checkbox" name="available_days" value="Dimanche" /> Dim</label>
+              </div>
             </div>
           </div>
 
           <button type="button" class="fa-btn fa-btn-outline" onclick="go(2)">Retour</button>
-          <button type="button" class="fa-btn fa-btn-primary" style="margin-top:12px;" onclick="go(4)">Continuer</button>
+          <button type="button" class="fa-btn fa-btn-primary" style="margin-top:12px;" onclick="if(validateStep3()) go(4)">Continuer</button>
         </div>
 
         <div id="step4" style="display:none;">
@@ -368,8 +379,25 @@
 
   document.getElementById('photoBox').addEventListener('click', ()=>document.getElementById('photoInput').click());
   document.getElementById('photoInput').addEventListener('change', function(){
-    readFile(this, res=>{ document.getElementById('photoBase64').value = res; document.getElementById('photoBox').innerHTML = `<img src="${res}" alt="photo" style="max-height:120px;"><div style="margin-top:8px;">Photo ajoutee</div>`; });
+    readFile(this, res=>{ document.getElementById('photoBase64').value = res; document.getElementById('photoBox').innerHTML = `<img src="${res}" alt="photo" class="fa-photo-preview"><div class="fa-photo-label">Photo ajoutee</div>`; });
   });
+
+  function toggleDays(){
+    const isCertains = document.querySelector('input[name="availability"]:checked').value === 'certains_jours';
+    document.getElementById('daysBox').classList.toggle('open', isCertains);
+  }
+
+  function validateStep3(){
+    const availability = document.querySelector('input[name="availability"]:checked')?.value;
+    if (availability === 'certains_jours'){
+      const checked = document.querySelectorAll('input[name="available_days"]:checked');
+      if (checked.length === 0){
+        alert('Selectionnez au moins un jour de disponibilite.');
+        return false;
+      }
+    }
+    return true;
+  }
 
   document.getElementById('idBox').addEventListener('click', ()=>document.getElementById('idInput').click());
   document.getElementById('idInput').addEventListener('change', function(){

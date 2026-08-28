@@ -584,6 +584,51 @@ body { margin: 0; }
 .fa-choice-card h3 { font-size: 17px; margin: 0 0 6px; }
 .fa-choice-card p { font-size: 13px; color: var(--fa-slate); margin: 0 0 16px; }
 
+.fa-photo-upload {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  margin: 0 auto;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: var(--fa-paper);
+}
+.fa-photo-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+.fa-photo-label {
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--fa-primary);
+}
+.fa-days { display: none; margin-top: 10px; }
+.fa-days.open { display: block; }
+.fa-days-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+.fa-day {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 4px;
+  border: 1px solid var(--fa-line);
+  border-radius: 10px;
+  font-size: 12px;
+  cursor: pointer;
+  text-align: center;
+}
+.fa-day input { display: none; }
+.fa-day:has(input:checked) { background: var(--fa-primary); color: var(--fa-white); border-color: var(--fa-primary); }
+
 @media (min-width: 768px) {
   .fa-container { padding-top: 48px; }
   .fa-job-grid { grid-template-columns: repeat(3, 1fr); }

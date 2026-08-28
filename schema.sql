@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS users (
     zone_intervention TEXT,
     years_experience  INTEGER DEFAULT 0,
     availability_status TEXT DEFAULT 'hors_ligne',
+    available_days    TEXT,
     account_status    TEXT DEFAULT 'ACTIVE',
     estimated_delay TEXT,
     created_at      TEXT DEFAULT CURRENT_TIMESTAMP

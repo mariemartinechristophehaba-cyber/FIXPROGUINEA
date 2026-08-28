@@ -1232,6 +1232,23 @@ def register_artisan():
         identity_doc = request.form.get("identity_doc", "").strip()
         photo = request.form.get("photo", "").strip()
         portfolio_raw = request.form.get("portfolio", "").strip()
+        hourly_rate = _to_float(request.form.get("hourly_rate", 0))
+        availability = request.form.get("availability", "").strip()
+        available_days = request.form.getlist("available_days")
+
+        if availability == "certains_jours" and not available_days:
+            flash("Veuillez selectionner au moins un jour de disponibilite.", "error")
+            return redirect(url_for("register_artisan"))
+
+        if availability == "toujours":
+            availability_status = "en_ligne"
+            available_days_str = "Lundi,Mardi,Mercredi,Jeudi,Vendredi,Samedi,Dimanche"
+        elif availability == "certains_jours":
+            availability_status = "certains_jours"
+            available_days_str = ",".join(available_days)
+        else:
+            availability_status = "hors_ligne"
+            available_days_str = ""
 
         if not full_name or not phone or not profession or not address or not identity_doc:
             flash("Veuillez remplir tous les champs obligatoires.", "error")
@@ -1258,11 +1275,11 @@ def register_artisan():
             conn.execute(
                 "INSERT INTO users (phone, password_hash, role, full_name, profession,"
                 " skills, years_experience, bio, city, zone_intervention, latitude, longitude,"
-                " is_verified, is_active, photo_url)"
-                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                " hourly_rate, is_verified, is_active, photo_url, availability_status, available_days)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (phone, generate_password_hash(temp_password), role,
                  full_name, profession, specialite, experience, bio, address,
-                 rayon, lat, lon, 1, 1, photo_url))
+                 rayon, lat, lon, hourly_rate, 1, 1, photo_url, availability_status, available_days_str))
             conn.commit()
 
             artisan = conn.execute(
@@ -1481,14 +1498,17 @@ def _finalize_artisan_registration_json(wizard):
         conn.execute(
             "INSERT INTO users (email, phone, password_hash, role, full_name, civility,"
             " profession, skills, city, quartier, zone_intervention, mobility,"
-            " years_experience, bio, hourly_rate, latitude, longitude, account_status, is_verified, is_active)"
-            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            " years_experience, bio, hourly_rate, latitude, longitude, account_status, is_verified, is_active,"
+            " availability_status, available_days)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (wizard["email"], wizard["phone"], generate_password_hash(wizard["password"]),
              "technician", full_name, wizard["civility"], wizard["profession"],
              wizard["skills"], wizard["city"], wizard["quartier"],
              wizard["zone_intervention"], wizard["mobility"],
              wizard["years_experience"], wizard["bio"], 0, latitude, longitude,
-             "PENDING", 0, 0))
+             "PENDING", 0, 0,
+             wizard.get("availability_status") or "hors_ligne",
+             wizard.get("available_days") or ""))
 
         artisan = conn.execute(
             "SELECT id FROM users WHERE phone = ?", (wizard["phone"],)).fetchone()
@@ -4876,6 +4896,11 @@ def _migrate_db():
                 pass
             try:
                 conn.execute("ALTER TABLE intervention_history ADD COLUMN new_status TEXT")
+            except Exception:
+                pass
+            # Jours de disponibilite du technicien
+            try:
+                conn.execute("ALTER TABLE users ADD COLUMN available_days TEXT")
             except Exception:
                 pass
             # Normalisation des roles et statuts legacy
