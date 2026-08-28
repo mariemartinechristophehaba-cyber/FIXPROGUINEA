@@ -29,7 +29,7 @@
 {% endblock %}
 {% block footer %}{% endblock %}
 {% block extra_head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/fixpro-auth.css', v='15') }}" />
+<link rel="stylesheet" href="{{ url_for('static', filename='css/fixpro-auth.css', v='16') }}" />
 <style>
   .fa-service-grid { display: grid !important; grid-template-columns: 1fr 1fr !important; grid-auto-rows: 1fr !important; gap: 10px !important; margin-top: 8px !important; }
   .fa-service-card { display: flex !important; align-items: center !important; justify-content: space-between !important; gap: 8px !important; background: #fff !important; border: 1.5px solid #E5E7EB !important; border-radius: 14px !important; padding: 14px !important; min-height: 86px !important; height: 100% !important; overflow: hidden !important; cursor: pointer !important; transition: all .2s !important; }
@@ -60,10 +60,38 @@
   .fa-avail-sub { font-size: 12px !important; color: #6B7280 !important; }
   .fa-avail-pill { font-size: 10px !important; font-weight: 600 !important; color: #059669 !important; background: #D1FAE5 !important; padding: 3px 8px !important; border-radius: 20px !important; }
 
-  .fa-days-grid2 { display: grid !important; grid-template-columns: repeat(4, 1fr) !important; gap: 8px !important; margin: 8px 0 14px !important; }
-  .fa-day2 { display: flex !important; align-items: center !important; gap: 6px !important; padding: 10px 8px !important; border: 1px solid #E5E7EB !important; border-radius: 10px !important; font-size: 12px !important; cursor: pointer !important; background: #fff !important; color: #0A1122 !important; }
-  .fa-day2 input { width: 16px !important; height: 16px !important; accent-color: #2563EB !important; }
+  .fa-days-grid2 { display: grid !important; grid-template-columns: repeat(4, 1fr) !important; gap: 6px !important; margin: 8px 0 14px !important; }
+  .fa-day2 { display: flex !important; align-items: center !important; gap: 5px !important; padding: 8px 6px !important; border: 1px solid #E5E7EB !important; border-radius: 10px !important; font-size: 11px !important; cursor: pointer !important; background: #fff !important; color: #0A1122 !important; overflow: hidden !important; }
+  .fa-day2 input { width: 15px !important; height: 15px !important; accent-color: #2563EB !important; flex-shrink: 0 !important; }
+  .fa-day2 span { white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
   .fa-day2.selected { border-color: #2563EB !important; background: #EFF6FF !important; }
+
+  .fa-success-head { text-align: center !important; position: relative !important; margin-bottom: 18px !important; }
+  .fa-success-circle { width: 90px !important; height: 90px !important; border-radius: 50% !important; background: #16A34A !important; display: flex !important; align-items: center !important; justify-content: center !important; margin: 0 auto !important; box-shadow: 0 10px 30px rgba(22,163,74,.2) !important; }
+  .fa-success-confetti { position: absolute !important; top: 0 !important; left: 50% !important; width: 120px !important; height: 90px !important; transform: translateX(-50%) !important; pointer-events: none !important; }
+  .fa-success-confetti span { position: absolute !important; width: 6px !important; height: 6px !important; border-radius: 2px !important; }
+  .fa-success-confetti span:nth-child(1) { top: 10%; left: 20%; background: #F59E0B; transform: rotate(25deg); }
+  .fa-success-confetti span:nth-child(2) { top: 25%; right: 15%; background: #2563EB; transform: rotate(-20deg); }
+  .fa-success-confetti span:nth-child(3) { top: 60%; left: 10%; background: #10B981; transform: rotate(40deg); }
+  .fa-success-confetti span:nth-child(4) { top: 5%; right: 25%; background: #EF4444; transform: rotate(-35deg); }
+  .fa-success-confetti span:nth-child(5) { top: 70%; right: 10%; background: #F59E0B; transform: rotate(15deg); }
+  .fa-success-box { display: flex !important; align-items: flex-start !important; gap: 10px !important; background: #DCFCE7 !important; border: 1px solid #86EFAC !important; border-radius: 12px !important; padding: 12px !important; margin-bottom: 18px !important; color: #166534 !important; }
+  .fa-success-box-icon { flex-shrink: 0 !important; }
+  .fa-confirm-title { font-size: 15px !important; font-weight: 700 !important; color: #0A1122 !important; margin: 0 0 12px !important; }
+  .fa-confirm-card { border: 1px solid #E5E7EB !important; border-radius: 16px !important; background: #fff !important; overflow: hidden !important; margin-bottom: 12px !important; }
+  .fa-confirm-header { display: flex !important; align-items: center !important; gap: 12px !important; padding: 14px !important; border-bottom: 1px solid #E5E7EB !important; }
+  .fa-confirm-photo { width: 50px !important; height: 50px !important; border-radius: 50% !important; overflow: hidden !important; flex-shrink: 0 !important; }
+  .fa-confirm-photo img { width: 100% !important; height: 100% !important; object-fit: cover !important; }
+  .fa-confirm-header-info { flex: 1 !important; min-width: 0 !important; }
+  .fa-confirm-header-info h3 { margin: 0 0 2px !important; font-size: 15px !important; color: #0A1122 !important; }
+  .fa-confirm-header-info p { margin: 0 !important; font-size: 13px !important; color: #6B7280 !important; }
+  .fa-confirm-check { width: 22px !important; height: 22px !important; border-radius: 50% !important; background: #16A34A !important; display: flex !important; align-items: center !important; justify-content: center !important; flex-shrink: 0 !important; }
+  .fa-confirm-row { display: flex !important; align-items: center !important; justify-content: space-between !important; gap: 10px !important; padding: 12px 14px !important; border-bottom: 1px solid #F3F4F6 !important; font-size: 13px !important; }
+  .fa-confirm-row:last-child { border-bottom: none !important; }
+  .fa-confirm-row-left { display: flex !important; align-items: center !important; gap: 10px !important; color: #0A1122 !important; }
+  .fa-confirm-row-left svg { color: #2563EB !important; }
+  .fa-confirm-row-right { color: #0A1122 !important; font-weight: 500 !important; text-align: right !important; }
+  .fa-confirm-dot { display: inline-block !important; width: 8px !important; height: 8px !important; border-radius: 50% !important; background: #10B981 !important; margin-right: 4px !important; }
 </style>
 {% endblock %}
 
@@ -431,23 +459,87 @@
         </div>
 
         <div id="step4" style="display:none;">
-          <h1 class="fa-title">Félicitations !</h1>
-          <p class="fa-subtitle">Votre profil est pret a recevoir des missions.</p>
-
-          <div class="fa-confirm-card">
-            <div class="fa-confirm-photo">
-              <img id="confirmPhoto" src="{{ url_for('static', filename='img/fixpro-avatar.png') }}" alt="" />
+          <div class="fa-success-head">
+            <div class="fa-success-confetti">
+              <span></span><span></span><span></span><span></span><span></span>
             </div>
-            <div class="fa-confirm-info">
-              <h3 id="confirmName"></h3>
-              <p id="confirmProfession"></p>
-              <p id="confirmAvailability"></p>
-              <p id="confirmDays"></p>
+            <div class="fa-success-circle" aria-hidden="true">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <h1 class="fa-title" style="text-align:center; margin-top:18px;">Félicitations !</h1>
+            <p class="fa-subtitle" style="text-align:center;">Votre profil est prêt à recevoir des missions.</p>
+          </div>
+
+          <div class="fa-success-box">
+            <span class="fa-success-box-icon" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12l2.5 2.5L16 9"/></svg>
+            </span>
+            <div>
+              <h4 style="font-size:13px; margin:0 0 2px; color:#166534;">Vos informations ont été enregistrées avec succès.</h4>
+              <p style="font-size:12px; margin:0; color:#166534;">Vous pouvez maintenant accéder à votre espace et commencer à recevoir des demandes.</p>
             </div>
           </div>
 
-          <button type="button" class="fa-btn fa-btn-outline" onclick="go(3)">Retour</button>
-          <button type="submit" class="fa-btn fa-btn-primary" style="margin-top:12px;">Acceder a mon espace</button>
+          <h3 class="fa-confirm-title">Résumé de votre profil</h3>
+
+          <div class="fa-confirm-card">
+            <div class="fa-confirm-header">
+              <div class="fa-confirm-photo">
+                <img id="confirmPhoto" src="{{ url_for('static', filename='img/fixpro-avatar.png') }}" alt="" />
+              </div>
+              <div class="fa-confirm-header-info">
+                <h3 id="confirmName"></h3>
+                <p id="confirmProfession"></p>
+              </div>
+              <span class="fa-confirm-check" aria-hidden="true">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              </span>
+            </div>
+
+            <div class="fa-confirm-row">
+              <div class="fa-confirm-row-left">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                <span>Disponibilité</span>
+              </div>
+              <span class="fa-confirm-row-right" id="confirmAvailability"></span>
+            </div>
+
+            <div class="fa-confirm-row">
+              <div class="fa-confirm-row-left">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M9 16l2 2 4-4"/></svg>
+                <span>Jours disponibles</span>
+              </div>
+              <span class="fa-confirm-row-right" id="confirmDays"></span>
+            </div>
+
+            <div class="fa-confirm-row">
+              <div class="fa-confirm-row-left">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                <span>Horaires</span>
+              </div>
+              <span class="fa-confirm-row-right" id="confirmHours">08:00 - 18:00</span>
+            </div>
+
+            <div class="fa-confirm-row">
+              <div class="fa-confirm-row-left">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4z"/><path d="M6 1v3"/><path d="M10 1v3"/><path d="M14 1v3"/></svg>
+                <span>Pause</span>
+              </div>
+              <span class="fa-confirm-row-right" id="confirmPause">12:00 - 13:00</span>
+            </div>
+          </div>
+
+          <div class="fa-info-box" style="padding:10px 12px; margin:12px 0 14px; border-radius:12px;">
+            <span class="fa-info-icon" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </span>
+            <div>
+              <h4 style="font-size:12px; margin:0 0 2px;">Vous pouvez modifier ces informations à tout moment depuis votre profil.</h4>
+            </div>
+          </div>
+
+          <button type="submit" class="fa-btn fa-btn-primary" style="margin-top:0;">Accéder à mon espace <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-left:6px;"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+          <button type="submit" class="fa-btn fa-btn-outline" style="margin-top:12px; color:#2563EB;">Modifier plus tard</button>
         </div>
       </form>
     </div>
@@ -615,8 +707,9 @@
     document.getElementById('full_name').value = prenom + ' ' + nom;
     document.getElementById('confirmName').textContent = prenom + ' ' + nom;
     document.getElementById('confirmProfession').textContent = profession;
-    document.getElementById('confirmAvailability').textContent = availability === 'toujours' ? 'Disponible toujours' : 'Disponible certains jours';
-    document.getElementById('confirmDays').textContent = availability === 'certains_jours' && days.length > 0 ? 'Jours : ' + days.join(', ') : '';
+    const availText = availability === 'toujours' ? 'Disponible toujours' : 'Disponible certains jours';
+    document.getElementById('confirmAvailability').innerHTML = '<span class="fa-confirm-dot"></span> ' + availText;
+    document.getElementById('confirmDays').textContent = availability === 'certains_jours' && days.length > 0 ? days.join(', ') : 'Tous les jours';
   }
 
   function validateArtisan(){
