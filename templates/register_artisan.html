@@ -28,7 +28,7 @@
 </nav>
 {% endblock %}
 {% block footer %}{% endblock %}
-{% block extra_head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/fixpro-auth.css', v='9') }}" />{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/fixpro-auth.css', v='10') }}" />{% endblock %}
 
 {% block content %}
 <div class="fa-page fa-has-bottom-nav">
@@ -274,12 +274,24 @@
 
         <div id="step3" style="display:none;">
           <h1 class="fa-title">Présentez votre profil</h1>
-          <p class="fa-sub">Attirez les clients avec un profil complet.</p>
+          <p class="fa-subtitle">Attirez les clients avec un profil complet.</p>
 
           <div class="fa-fg">
-            <div class="fa-upload fa-photo-upload" id="photoBox">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="12" r="4"/><path d="M3 9h6l2-2h3l2 2h5"/></svg>
-              <div style="margin-top:6px;">Ajouter une photo de profil</div>
+            <div class="fa-photo-card" id="photoCard">
+              <div class="fa-photo-preview-wrap" id="photoPreviewWrap">
+                <img id="photoPreview" src="{{ url_for('static', filename='img/fixpro-avatar.png') }}" alt="Photo de profil" />
+                <button type="button" class="fa-photo-cam" id="photoCam" aria-label="Changer la photo">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="12" r="4"/><path d="M3 9h6l2-2h3l2 2h5"/></svg>
+                </button>
+              </div>
+              <div class="fa-photo-card-body">
+                <h3>Photo de profil</h3>
+                <p>Ajoutez une photo claire et professionnelle.</p>
+                <button type="button" class="fa-btn fa-btn-outline fa-btn-sm" id="photoChangeBtn">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="12" r="4"/><path d="M3 9h6l2-2h3l2 2h5"/></svg>
+                  Changer la photo
+                </button>
+              </div>
             </div>
             <input type="file" id="photoInput" accept="image/*" style="display:none;" />
             <input type="hidden" name="photo" id="photoBase64" />
@@ -287,29 +299,42 @@
 
           <div class="fa-fg">
             <span class="fa-fl">Disponibilité</span>
-            <div class="fa-radio-group" id="availabilityGroup">
-              <label class="fa-radio"><input type="radio" name="availability" value="toujours" checked onchange="handleAvailability()" /> Disponible toujours</label>
-              <label class="fa-radio"><input type="radio" name="availability" value="certains_jours" onchange="handleAvailability()" /> Disponible certains jours</label>
+            <div class="fa-avail-grid" id="availGrid">
+              <label class="fa-avail-card" id="availToujours">
+                <input type="radio" name="availability" value="toujours" checked onchange="handleAvailability()" />
+                <div class="fa-avail-main">
+                  <span class="fa-avail-title">Disponible toujours <span class="fa-avail-badge">Recommande</span></span>
+                  <span class="fa-avail-sub">Vous etes disponible 24h/24 et 7j/7</span>
+                </div>
+              </label>
+              <label class="fa-avail-card" id="availCertains">
+                <input type="radio" name="availability" value="certains_jours" onchange="handleAvailability()" />
+                <div class="fa-avail-main">
+                  <span class="fa-avail-title">Disponible certains jours</span>
+                  <span class="fa-avail-sub">Vous choisissez vos jours et horaires</span>
+                </div>
+              </label>
             </div>
-            <div class="fa-days-summary" id="daysSummary"></div>
           </div>
 
-          <div class="fa-days-modal" id="daysBox">
-            <div class="fa-days-modal-backdrop" onclick="closeDaysModal()"></div>
-            <div class="fa-days-modal-content">
-              <div class="fa-days-modal-title">Selectionnez vos jours de disponibilité</div>
-              <div class="fa-days-grid">
-                <label class="fa-day"><input type="checkbox" name="available_days" value="Lundi" onchange="updateDaysSummary()" /> Lun</label>
-                <label class="fa-day"><input type="checkbox" name="available_days" value="Mardi" onchange="updateDaysSummary()" /> Mar</label>
-                <label class="fa-day"><input type="checkbox" name="available_days" value="Mercredi" onchange="updateDaysSummary()" /> Mer</label>
-                <label class="fa-day"><input type="checkbox" name="available_days" value="Jeudi" onchange="updateDaysSummary()" /> Jeu</label>
-                <label class="fa-day"><input type="checkbox" name="available_days" value="Vendredi" onchange="updateDaysSummary()" /> Ven</label>
-                <label class="fa-day"><input type="checkbox" name="available_days" value="Samedi" onchange="updateDaysSummary()" /> Sam</label>
-                <label class="fa-day"><input type="checkbox" name="available_days" value="Dimanche" onchange="updateDaysSummary()" /> Dim</label>
-              </div>
-              <div class="fa-days-modal-actions">
-                <button type="button" class="fa-btn fa-btn-outline" onclick="closeDaysModal()">Annuler</button>
-                <button type="button" class="fa-btn fa-btn-primary" onclick="saveDays()">Valider</button>
+          <div class="fa-fg" id="daysSection" style="display:none;">
+            <span class="fa-fl">Selectionnez vos jours de disponibilite</span>
+            <div class="fa-days-grid2">
+              <label class="fa-day2"><input type="checkbox" name="available_days" value="Lundi" onchange="updateDaysSelection()" /> <span>Lun.</span></label>
+              <label class="fa-day2"><input type="checkbox" name="available_days" value="Mardi" onchange="updateDaysSelection()" /> <span>Mar.</span></label>
+              <label class="fa-day2"><input type="checkbox" name="available_days" value="Mercredi" onchange="updateDaysSelection()" /> <span>Mer.</span></label>
+              <label class="fa-day2"><input type="checkbox" name="available_days" value="Jeudi" onchange="updateDaysSelection()" /> <span>Jeu.</span></label>
+              <label class="fa-day2"><input type="checkbox" name="available_days" value="Vendredi" onchange="updateDaysSelection()" /> <span>Ven.</span></label>
+              <label class="fa-day2"><input type="checkbox" name="available_days" value="Samedi" onchange="updateDaysSelection()" /> <span>Sam.</span></label>
+              <label class="fa-day2"><input type="checkbox" name="available_days" value="Dimanche" onchange="updateDaysSelection()" /> <span>Dim.</span></label>
+            </div>
+            <div class="fa-info-box fa-info-blue">
+              <span class="fa-info-icon" aria-hidden="true">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+              </span>
+              <div>
+                <h4>Vos horaires</h4>
+                <p>Vous pourrez definir vos horaires precisement a l'etape suivante selon vos jours selectionnes.</p>
               </div>
             </div>
           </div>
@@ -319,25 +344,23 @@
         </div>
 
         <div id="step4" style="display:none;">
-          <h1 class="fa-title">Vérifions votre profil</h1>
-          <p class="fa-sub">La vérification permet de garantir la qualité et la sécurité de FixPro.</p>
+          <h1 class="fa-title">Félicitations !</h1>
+          <p class="fa-subtitle">Votre profil est pret a recevoir des missions.</p>
 
-          <div class="fa-fg">
-            <label class="fa-fl">Pièce d'identité</label>
-            <div class="fa-upload" id="idBox">+ Ajouter la pièce d'identité</div>
-            <input type="file" id="idInput" accept="image/*" style="display:none;" />
-            <input type="hidden" name="identity_doc" id="idBase64" />
-          </div>
-
-          <div class="fa-fg">
-            <label class="fa-fl">Document professionnel</label>
-            <div class="fa-upload" id="dipBox">+ Ajouter un document professionnel</div>
-            <input type="file" id="dipInput" accept="image/*" style="display:none;" />
-            <input type="hidden" name="diploma_doc" id="dipBase64" />
+          <div class="fa-confirm-card">
+            <div class="fa-confirm-photo">
+              <img id="confirmPhoto" src="{{ url_for('static', filename='img/fixpro-avatar.png') }}" alt="" />
+            </div>
+            <div class="fa-confirm-info">
+              <h3 id="confirmName"></h3>
+              <p id="confirmProfession"></p>
+              <p id="confirmAvailability"></p>
+              <p id="confirmDays"></p>
+            </div>
           </div>
 
           <button type="button" class="fa-btn fa-btn-outline" onclick="go(3)">Retour</button>
-          <button type="submit" class="fa-btn fa-btn-primary" style="margin-top:12px;">Envoyer mon profil</button>
+          <button type="submit" class="fa-btn fa-btn-primary" style="margin-top:12px;">Acceder a mon espace</button>
         </div>
       </form>
     </div>
@@ -381,58 +404,36 @@
     r.readAsDataURL(f);
   }
 
-  document.getElementById('photoBox').addEventListener('click', ()=>document.getElementById('photoInput').click());
+  function openPhotoSelect(){
+    document.getElementById('photoInput').click();
+  }
+
+  document.getElementById('photoPreviewWrap').addEventListener('click', openPhotoSelect);
+  document.getElementById('photoCam').addEventListener('click', (e)=>{ e.stopPropagation(); openPhotoSelect(); });
+  document.getElementById('photoChangeBtn').addEventListener('click', openPhotoSelect);
   document.getElementById('photoInput').addEventListener('change', function(){
-    readFile(this, res=>{ document.getElementById('photoBase64').value = res; document.getElementById('photoBox').innerHTML = `<img src="${res}" alt="photo" class="fa-photo-preview"><div class="fa-photo-label">Photo ajoutee</div>`; });
+    readFile(this, res=>{
+      document.getElementById('photoBase64').value = res;
+      document.getElementById('photoPreview').src = res;
+      document.getElementById('confirmPhoto').src = res;
+    });
   });
 
   function handleAvailability(){
     const val = document.querySelector('input[name="availability"]:checked')?.value;
-    if (val === 'certains_jours'){
-      openDaysModal();
-    } else {
-      closeDaysModal();
-      clearDays();
-      updateDaysSummary();
+    document.getElementById('availToujours').classList.toggle('selected', val === 'toujours');
+    document.getElementById('availCertains').classList.toggle('selected', val === 'certains_jours');
+    document.getElementById('daysSection').style.display = val === 'certains_jours' ? 'block' : 'none';
+    if (val === 'toujours'){
+      document.querySelectorAll('input[name="available_days"]').forEach(el => el.checked = false);
     }
+    updateDaysSelection();
   }
 
-  function openDaysModal(){
-    document.getElementById('daysBox').classList.add('open');
-  }
-
-  function closeDaysModal(){
-    document.getElementById('daysBox').classList.remove('open');
-    const checked = document.querySelectorAll('input[name="available_days"]:checked');
-    if (checked.length === 0){
-      document.querySelector('input[name="availability"][value="toujours"]').checked = true;
-    }
-  }
-
-  function clearDays(){
-    document.querySelectorAll('input[name="available_days"]').forEach(el => el.checked = false);
-  }
-
-  function saveDays(){
-    const checked = document.querySelectorAll('input[name="available_days"]:checked');
-    if (checked.length === 0){
-      alert('Selectionnez au moins un jour de disponibilite.');
-      return;
-    }
-    closeDaysModal();
-  }
-
-  function updateDaysSummary(){
-    document.querySelectorAll('input[name="available_days"]').forEach(el => {
-      el.parentElement.classList.toggle('selected', el.checked);
+  function updateDaysSelection(){
+    document.querySelectorAll('.fa-day2').forEach(el => {
+      el.classList.toggle('selected', el.querySelector('input').checked);
     });
-    const checked = Array.from(document.querySelectorAll('input[name="available_days"]:checked')).map(el => el.value);
-    const summary = document.getElementById('daysSummary');
-    if (document.querySelector('input[name="availability"]:checked')?.value === 'certains_jours' && checked.length > 0){
-      summary.textContent = 'Jours selectionnes : ' + checked.join(', ');
-    } else {
-      summary.textContent = '';
-    }
   }
 
   function validateStep3(){
@@ -440,22 +441,12 @@
     if (availability === 'certains_jours'){
       const checked = document.querySelectorAll('input[name="available_days"]:checked');
       if (checked.length === 0){
-        openDaysModal();
+        alert('Selectionnez au moins un jour de disponibilite.');
         return false;
       }
     }
     return true;
   }
-
-  document.getElementById('idBox').addEventListener('click', ()=>document.getElementById('idInput').click());
-  document.getElementById('idInput').addEventListener('change', function(){
-    readFile(this, res=>{ document.getElementById('idBase64').value = res; document.getElementById('idBox').textContent = 'Document ajoute'; });
-  });
-
-  document.getElementById('dipBox').addEventListener('click', ()=>document.getElementById('dipInput').click());
-  document.getElementById('dipInput').addEventListener('change', function(){
-    readFile(this, res=>{ document.getElementById('dipBase64').value = res; document.getElementById('dipBox').textContent = 'Document ajoute'; });
-  });
 
   function togglePassword(id){
     const input = document.getElementById(id);
@@ -496,6 +487,8 @@
       if (lab) lab.className = 'fa-step-label' + (i===n ? ' active' : '');
     }
     document.getElementById('pbar').style.width = ((n-1)*33.333) + '%';
+    if (n === 3) { handleAvailability(); }
+    if (n === 4) { updateConfirm(); }
   }
 
   function selectJob(card){
@@ -538,6 +531,19 @@
     );
   }
 
+  function updateConfirm(){
+    const prenom = document.getElementById('first_name').value;
+    const nom = document.getElementById('last_name').value;
+    const profession = document.getElementById('profession').value;
+    const availability = document.querySelector('input[name="availability"]:checked')?.value;
+    const days = Array.from(document.querySelectorAll('input[name="available_days"]:checked')).map(el => el.value);
+    document.getElementById('full_name').value = prenom + ' ' + nom;
+    document.getElementById('confirmName').textContent = prenom + ' ' + nom;
+    document.getElementById('confirmProfession').textContent = profession;
+    document.getElementById('confirmAvailability').textContent = availability === 'toujours' ? 'Disponible toujours' : 'Disponible certains jours';
+    document.getElementById('confirmDays').textContent = availability === 'certains_jours' && days.length > 0 ? 'Jours : ' + days.join(', ') : '';
+  }
+
   function validateArtisan(){
     const pwd = document.getElementById('password').value;
     const confirm = document.getElementById('confirm_password').value;
@@ -545,8 +551,9 @@
     const prenom = document.getElementById('first_name').value;
     const nom = document.getElementById('last_name').value;
     document.getElementById('full_name').value = prenom + ' ' + nom;
-    if (!document.getElementById('idBase64').value) { alert('Ajoutez votre piece d\'identite.'); return false; }
-    return true;
+    return validateStep3();
   }
+
+  handleAvailability();
 </script>
 {% endblock %}

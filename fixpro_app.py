@@ -1250,7 +1250,7 @@ def register_artisan():
             availability_status = "hors_ligne"
             available_days_str = ""
 
-        if not full_name or not phone or not profession or not address or not identity_doc:
+        if not full_name or not phone or not profession or not address:
             flash("Veuillez remplir tous les champs obligatoires.", "error")
             return redirect(url_for("register_artisan"))
 
@@ -1286,17 +1286,18 @@ def register_artisan():
                 "SELECT id FROM users WHERE phone = ?", (phone,)).fetchone()
             artisan_id = artisan["id"]
 
-            try:
-                id_url = store.upload("identite", identity_doc)
-                mime, ext, _ = _parse_base64_file(identity_doc)
-                conn.execute(
-                    "INSERT INTO technician_documents (technician_id, document_type,"
-                    " file_name, mime_type, content_base64)"
-                    " VALUES (?, ?, ?, ?, ?)",
-                    (artisan_id, "identity", f"identite{ext}", mime or "application/octet-stream", id_url))
-            except ValueError as exc:
-                flash(f"Document invalide : {exc}", "error")
-                return redirect(url_for("register_artisan"))
+            if identity_doc:
+                try:
+                    id_url = store.upload("identite", identity_doc)
+                    mime, ext, _ = _parse_base64_file(identity_doc)
+                    conn.execute(
+                        "INSERT INTO technician_documents (technician_id, document_type,"
+                        " file_name, mime_type, content_base64)"
+                        " VALUES (?, ?, ?, ?, ?)",
+                        (artisan_id, "identity", f"identite{ext}", mime or "application/octet-stream", id_url))
+                except ValueError as exc:
+                    flash(f"Document invalide : {exc}", "error")
+                    return redirect(url_for("register_artisan"))
 
             try:
                 portfolio = json.loads(portfolio_raw) if portfolio_raw else []
