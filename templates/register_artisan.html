@@ -29,7 +29,7 @@
 {% endblock %}
 {% block footer %}{% endblock %}
 {% block extra_head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/fixpro-auth.css', v='14') }}" />
+<link rel="stylesheet" href="{{ url_for('static', filename='css/fixpro-auth.css', v='15') }}" />
 <style>
   .fa-service-grid { display: grid !important; grid-template-columns: 1fr 1fr !important; grid-auto-rows: 1fr !important; gap: 10px !important; margin-top: 8px !important; }
   .fa-service-card { display: flex !important; align-items: center !important; justify-content: space-between !important; gap: 8px !important; background: #fff !important; border: 1.5px solid #E5E7EB !important; border-radius: 14px !important; padding: 14px !important; min-height: 86px !important; height: 100% !important; overflow: hidden !important; cursor: pointer !important; transition: all .2s !important; }
@@ -343,7 +343,7 @@
 
           <div class="fa-fg">
             <div class="fa-photo-card" id="photoCard">
-              <div class="fa-photo-preview-wrap" id="photoPreviewWrap">
+              <div class="fa-photo-circle" id="photoPreviewWrap">
                 <img id="photoPreview" src="{{ url_for('static', filename='img/fixpro-avatar.png') }}" alt="Photo de profil" />
                 <button type="button" class="fa-photo-cam" id="photoCam" aria-label="Changer la photo">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="12" r="4"/><path d="M3 9h6l2-2h3l2 2h5"/></svg>
@@ -352,7 +352,7 @@
               <div class="fa-photo-card-body">
                 <h3>Photo de profil</h3>
                 <p>Ajoutez une photo claire et professionnelle.</p>
-                <button type="button" class="fa-btn fa-btn-outline fa-btn-sm" id="photoChangeBtn">
+                <button type="button" class="fa-btn-change-photo" id="photoChangeBtn">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="12" r="4"/><path d="M3 9h6l2-2h3l2 2h5"/></svg>
                   Changer la photo
                 </button>
@@ -368,8 +368,8 @@
               <label class="fa-avail-card" id="availToujours">
                 <input type="radio" name="availability" value="toujours" checked onchange="handleAvailability()" />
                 <div class="fa-avail-main">
-                  <span class="fa-avail-title">Disponible toujours <span class="fa-avail-badge">Recommande</span></span>
-                  <span class="fa-avail-sub">Vous etes disponible 24h/24 et 7j/7</span>
+                  <span class="fa-avail-title">Disponible toujours <span class="fa-avail-pill">Recommandé</span></span>
+                  <span class="fa-avail-sub">Vous êtes disponible 24h/24 et 7j/7</span>
                 </div>
               </label>
               <label class="fa-avail-card" id="availCertains">
@@ -383,7 +383,7 @@
           </div>
 
           <div class="fa-fg" id="daysSection" style="display:none;">
-            <span class="fa-fl">Selectionnez vos jours de disponibilite</span>
+            <span class="fa-fl">Sélectionnez vos jours de disponibilité</span>
             <div class="fa-days-grid2">
               <label class="fa-day2"><input type="checkbox" name="available_days" value="Lundi" onchange="updateDaysSelection()" /> <span>Lun.</span></label>
               <label class="fa-day2"><input type="checkbox" name="available_days" value="Mardi" onchange="updateDaysSelection()" /> <span>Mar.</span></label>
@@ -393,13 +393,13 @@
               <label class="fa-day2"><input type="checkbox" name="available_days" value="Samedi" onchange="updateDaysSelection()" /> <span>Sam.</span></label>
               <label class="fa-day2"><input type="checkbox" name="available_days" value="Dimanche" onchange="updateDaysSelection()" /> <span>Dim.</span></label>
             </div>
-            <div class="fa-info-box fa-info-blue">
+            <div class="fa-info-box" style="padding: 10px 12px; margin: 12px 0 10px; border-radius: 12px;">
               <span class="fa-info-icon" aria-hidden="true">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
               </span>
               <div>
-                <h4>Vos horaires</h4>
-                <p>Vous pourrez definir vos horaires precisement a l'etape suivante selon vos jours selectionnes.</p>
+                <h4 style="font-size: 12px; margin: 0 0 2px;">Vos horaires</h4>
+                <p style="font-size: 12px;">Vous pourrez définir vos horaires précisément à l'étape suivante selon vos jours sélectionnés.</p>
               </div>
             </div>
           </div>

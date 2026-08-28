@@ -594,13 +594,13 @@ body { margin: 0; }
   border-radius: 16px;
   background: var(--fa-white);
 }
-.fa-photo-preview-wrap {
+.fa-photo-circle {
   position: relative;
-  width: 86px;
-  height: 86px;
+  width: 120px;
+  height: 120px;
   flex-shrink: 0;
 }
-.fa-photo-preview-wrap img {
+.fa-photo-circle img {
   width: 100%;
   height: 100%;
   border-radius: 50%;
@@ -609,13 +609,13 @@ body { margin: 0; }
 }
 .fa-photo-cam {
   position: absolute;
-  bottom: 0;
-  right: 0;
-  width: 28px;
-  height: 28px;
+  bottom: 4px;
+  right: 4px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  background: var(--fa-white);
-  color: var(--fa-primary);
+  background: #fff;
+  color: var(--fa-blue);
   border: 1px solid var(--fa-line);
   display: flex;
   align-items: center;
@@ -625,6 +625,20 @@ body { margin: 0; }
 }
 .fa-photo-card-body h3 { font-size: 16px; margin: 0 0 4px; }
 .fa-photo-card-body p { font-size: 12px; color: var(--fa-slate); margin: 0 0 10px; }
+.fa-btn-change-photo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fa-blue);
+  border: 1.5px solid var(--fa-blue);
+  border-radius: 10px;
+  background: #fff;
+  cursor: pointer;
+  font-family: var(--fa-font);
+}
 .fa-avail-grid { display: flex; flex-direction: column; gap: 10px; }
 .fa-avail-card {
   display: flex;
@@ -636,12 +650,12 @@ body { margin: 0; }
   background: var(--fa-white);
   cursor: pointer;
 }
-.fa-avail-card.selected { border-color: var(--fa-primary); background: var(--fa-primary-ghost, #EEF2FF); }
-.fa-avail-card input { width: 20px; height: 20px; accent-color: var(--fa-primary); flex-shrink: 0; }
+.fa-avail-card.selected { border-color: var(--fa-blue); background: #EFF6FF; }
+.fa-avail-card input { width: 20px; height: 20px; accent-color: var(--fa-blue); flex-shrink: 0; }
 .fa-avail-main { display: flex; flex-direction: column; gap: 2px; }
 .fa-avail-title { font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 8px; }
 .fa-avail-sub { font-size: 12px; color: var(--fa-slate); }
-.fa-avail-badge { font-size: 10px; font-weight: 600; color: #059669; background: #D1FAE5; padding: 3px 8px; border-radius: 20px; }
+.fa-avail-pill { font-size: 10px; font-weight: 600; color: #059669; background: #D1FAE5; padding: 3px 8px; border-radius: 20px; }
 .fa-days-grid2 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 8px 0 14px; }
 .fa-day2 {
   display: flex;
@@ -654,11 +668,8 @@ body { margin: 0; }
   cursor: pointer;
   background: var(--fa-white);
 }
-.fa-day2 input { width: 16px; height: 16px; accent-color: var(--fa-primary); }
-.fa-day2.selected { border-color: var(--fa-primary); background: var(--fa-primary-ghost, #EEF2FF); }
-.fa-info-blue { background: #EFF6FF; border-color: #BFDBFE; color: #1E40AF; }
-.fa-info-blue h4 { margin: 0 0 2px; font-size: 13px; }
-.fa-info-blue p { margin: 0; font-size: 12px; }
+.fa-day2 input { width: 16px; height: 16px; accent-color: var(--fa-blue); }
+.fa-day2.selected { border-color: var(--fa-blue); background: #EFF6FF; }
 .fa-confirm-card {
   display: flex;
   align-items: center;
