@@ -4867,6 +4867,9 @@ def _migrate_db():
                     "ALTER TABLE conversations ADD COLUMN IF NOT EXISTS collected_info JSONB DEFAULT '{}'"
                 )
                 conn.execute(
+                    "ALTER TABLE users ADD COLUMN IF NOT EXISTS available_days TEXT"
+                )
+                conn.execute(
                     "CREATE TABLE IF NOT EXISTS lia_logs ("
                     " id SERIAL PRIMARY KEY,"
                     " session_id TEXT,"
@@ -6471,6 +6474,9 @@ def _ensure_settings_and_migrations():
         _migrate_db()
     except Exception as e:
         logger.warning("Parametres ou migrations indisponibles: %s", e)
+
+
+app.before_request(_ensure_settings_and_migrations)
 
 
 if __name__ == "__main__":
