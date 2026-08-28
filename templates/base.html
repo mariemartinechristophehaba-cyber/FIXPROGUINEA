@@ -10,6 +10,7 @@
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://fixproguinea.vercel.app" />
     <meta name="theme-color" content="#0B0F1A" />
+    <meta name="csrf-token" content="{{ csrf_token() }}" />
     <title>{% block title %}FixPro Guinee{% endblock %}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -123,15 +124,133 @@
       {% endif %}
       {% endif %}
 
-      <nav class="mobile-nav" id="mobileNav">
-        <a class="mobile-link" href="{{ url_for('index') }}">Accueil</a>
-        <a class="mobile-link" href="{{ url_for('artisans_page') }}">Trouver un technicien</a>
-        <a class="mobile-link" href="{{ url_for('register', role='artisan') }}">S'inscrire en tant que technicien</a>
-        {% if nav_user %}
-        <a href="{{ url_for('profile') }}">Mon profil</a>
-        <a href="{{ url_for('requests_list') }}">Mes demandes</a>
-        <a href="{{ url_for('logout') }}">Deconnexion</a>
-        {% endif %}
+      <div id="mobileDrawerOverlay" class="f-drawer-overlay" aria-hidden="true"></div>
+      <nav id="mobileDrawer" class="f-drawer" aria-label="Menu de navigation">
+        <header class="f-drawer-header">
+          <div class="f-drawer-header-top">
+            <a href="{{ url_for('index') }}" class="f-drawer-logo" aria-label="FixPro">
+              <span class="f-drawer-logo-mark">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+                </svg>
+              </span>
+              FixPro
+            </a>
+            <button id="mobileDrawerClose" class="f-drawer-close" type="button" aria-label="Fermer le menu">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 6 6 18M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+          <div class="f-drawer-user">
+            <div class="f-drawer-avatar">
+              {% if nav_user and nav_user.photo_url %}
+                <img src="{{ nav_user.photo_url }}" alt="{{ nav_user.full_name }}" />
+              {% else %}
+                <span>{{ (nav_user.full_name or 'U')[0]|upper }}</span>
+              {% endif %}
+            </div>
+            <div class="f-drawer-user-info">
+              <p class="f-drawer-welcome">Bonjour, {{ (nav_user.full_name or 'Utilisateur').split(' ')[0] }}</p>
+              <p class="f-drawer-role">Client FixPro</p>
+              <p class="f-drawer-status">
+                <span class="f-status-dot {{ 'active' if nav_user and nav_user.is_active and nav_user.account_status == 'ACTIVE' else 'inactive' }}"></span>
+                Compte {{ 'actif' if nav_user and nav_user.is_active and nav_user.account_status == 'ACTIVE' else 'inactif' }}
+              </p>
+            </div>
+          </div>
+        </header>
+
+        <div class="f-drawer-body">
+          <section class="f-drawer-section">
+            <h2 class="f-drawer-section-title">Navigation</h2>
+            <a href="{{ url_for('index') }}" class="f-drawer-item {{ 'active' if request.endpoint == 'index' }}">
+              <svg class="f-drawer-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
+              <span>Accueil</span>
+            </a>
+            <a href="{{ url_for('artisans_page') }}" class="f-drawer-item {{ 'active' if request.endpoint == 'artisans_page' }}">
+              <svg class="f-drawer-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+              <span>Rechercher un professionnel</span>
+            </a>
+            <a href="{{ url_for('artisans_page') }}" class="f-drawer-item {{ 'active' if request.endpoint == 'artisans_page' }}">
+              <svg class="f-drawer-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+              <span>Professionnels</span>
+            </a>
+            <a href="{{ url_for('register_artisan') }}" class="f-drawer-item {{ 'active' if request.endpoint == 'register_artisan' }}">
+              <svg class="f-drawer-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+              <span>S'inscrire en tant que technicien</span>
+            </a>
+            <a href="{{ url_for('requests_list') }}" class="f-drawer-item {{ 'active' if request.endpoint in ('requests_list', 'request_new', 'request_detail') }}">
+              <svg class="f-drawer-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <span>Mes reservations</span>
+            </a>
+            <a href="{{ url_for('requests_list') }}" class="f-drawer-item {{ 'active' if request.endpoint in ('requests_list', 'request_new', 'request_detail') }}">
+              <svg class="f-drawer-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M9 14h6M9 17h4"/></svg>
+              <span>Mes demandes / interventions</span>
+            </a>
+            <a href="{{ url_for('conversations') }}" class="f-drawer-item {{ 'active' if request.endpoint in ('conversations', 'client_messages', 'client_conversation', 'client_message_new', 'lia') }}">
+              <svg class="f-drawer-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 21l1.9-5.1A8.4 8.4 0 0 1 4 11.5a8.5 8.5 0 0 1 8.5-8.5A8.5 8.5 0 0 1 21 11.5z"/></svg>
+              <span>Messages</span>
+            </a>
+            <a href="{{ url_for('notifications') }}" class="f-drawer-item {{ 'active' if request.endpoint == 'notifications' }}">
+              <svg class="f-drawer-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+              <span>Notifications</span>
+              {% if unread_count|default(0) > 0 %}<span class="f-drawer-badge">{{ unread_count }}</span>{% endif %}
+            </a>
+          </section>
+
+          <section class="f-drawer-section">
+            <h2 class="f-drawer-section-title">Mon compte</h2>
+            <a href="{{ url_for('edit_profile') }}" class="f-drawer-item {{ 'active' if request.endpoint == 'edit_profile' }}">
+              <svg class="f-drawer-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <span>Informations personnelles</span>
+            </a>
+            <div class="f-drawer-item f-drawer-loc">
+              <svg class="f-drawer-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+              <span>Ma localisation</span>
+              <button id="locRefreshBtn" class="f-drawer-refresh" type="button">Actualiser</button>
+            </div>
+            <a href="{{ url_for('client_security') }}" class="f-drawer-item {{ 'active' if request.endpoint == 'client_security' }}">
+              <svg class="f-drawer-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <span>Securite</span>
+            </a>
+          </section>
+
+          <section class="f-drawer-section">
+            <h2 class="f-drawer-section-title">Aide & assistance</h2>
+            <a href="{{ url_for('client_message_new') }}" class="f-drawer-item {{ 'active' if request.endpoint == 'client_message_new' }}">
+              <svg class="f-drawer-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+              <span>Aide & assistance</span>
+            </a>
+            <a href="{{ url_for('client_static', page='how-it-works') }}" class="f-drawer-item {{ 'active' if request.endpoint == 'client_static' and request.view_args.get('page') == 'how-it-works' }}">
+              <svg class="f-drawer-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22V11l-4 0"/></svg>
+              <span>Comment fonctionne FixPro ?</span>
+            </a>
+            <a href="{{ url_for('client_static', page='about') }}" class="f-drawer-item {{ 'active' if request.endpoint == 'client_static' and request.view_args.get('page') == 'about' }}">
+              <svg class="f-drawer-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+              <span>A propos de FixPro</span>
+            </a>
+            <a href="{{ url_for('client_static', page='terms') }}" class="f-drawer-item {{ 'active' if request.endpoint == 'client_static' and request.view_args.get('page') == 'terms' }}">
+              <svg class="f-drawer-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"/></svg>
+              <span>Conditions & confidentialite</span>
+            </a>
+          </section>
+
+          <section class="f-drawer-section">
+            <a href="{{ url_for('logout') }}" class="f-drawer-item f-drawer-logout-link">
+              <svg class="f-drawer-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+              <span>Deconnexion</span>
+            </a>
+          </section>
+
+          <div class="f-drawer-secure">
+            <svg class="f-drawer-secure-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <div class="f-drawer-secure-text">
+              <strong>Vos donnees sont securisees</strong>
+              <span>FixPro protege vos informations.</span>
+            </div>
+          </div>
+        </div>
       </nav>
       {% endblock %}
 
@@ -195,12 +314,36 @@
     <script>
       document.addEventListener('DOMContentLoaded', function() {
         const burger = document.getElementById('burgerBtn');
-        const mobileNav = document.getElementById('mobileNav');
-        if (burger && mobileNav) {
+        const drawer = document.getElementById('mobileDrawer');
+        const overlay = document.getElementById('mobileDrawerOverlay');
+        const closeBtn = document.getElementById('mobileDrawerClose');
+
+        function openDrawer() {
+          if (drawer) drawer.classList.add('open');
+          if (overlay) overlay.classList.add('open');
+          document.body.style.overflow = 'hidden';
+        }
+        function closeDrawer() {
+          if (drawer) drawer.classList.remove('open');
+          if (overlay) overlay.classList.remove('open');
+          document.body.style.overflow = '';
+        }
+
+        if (burger) {
           burger.addEventListener('click', function() {
-            mobileNav.classList.toggle('open');
+            if (drawer && drawer.classList.contains('open')) {
+              closeDrawer();
+            } else {
+              openDrawer();
+            }
           });
         }
+        if (closeBtn) closeBtn.addEventListener('click', closeDrawer);
+        if (overlay) overlay.addEventListener('click', closeDrawer);
+        document.addEventListener('keydown', function(e) {
+          if (e.key === 'Escape') closeDrawer();
+        });
+
         const userMenu = document.querySelector('.user-menu');
         if (userMenu) {
           const trigger = userMenu.querySelector('.user-menu-trigger');
@@ -212,9 +355,60 @@
             userMenu.classList.remove('open');
           });
         }
+
+        const locBtn = document.getElementById('locRefreshBtn');
+        if (locBtn) {
+          locBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (!navigator.geolocation) {
+              alert('La geolocalisation n\'est pas prise en charge par votre navigateur.');
+              return;
+            }
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+            navigator.geolocation.getCurrentPosition(
+              function(pos) {
+                fetch('/api/location', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                  },
+                  body: JSON.stringify({
+                    lat: pos.coords.latitude,
+                    lon: pos.coords.longitude,
+                    accuracy: pos.coords.accuracy || 0
+                  })
+                })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                  if (data.ok) {
+                    locBtn.textContent = data.zone || 'Actualise';
+                    setTimeout(function() { locBtn.textContent = 'Actualiser'; }, 2000);
+                  } else {
+                    alert(data.error || 'Impossible d\'actualiser la localisation.');
+                  }
+                })
+                .catch(function() {
+                  alert('Erreur reseau lors de l\'actualisation.');
+                });
+              },
+              function() {
+                fetch('/api/location/denied', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                  },
+                  body: JSON.stringify({})
+                });
+                alert('Autorisation de localisation refusee.');
+              }
+            );
+          });
+        }
       });
     </script>
-    {% include '_mobile_drawer.html' %}
     {% block scripts %}{% endblock %}
   </body>
 </html>
