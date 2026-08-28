@@ -700,7 +700,7 @@ body { margin: 0; }
 .fa-service-main { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .fa-service-icon { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .fa-service-icon svg { width: 24px; height: 24px; }
-.fa-service-info { min-width: 0; }
+.fa-service-info { min-width: 0; display: flex; flex-direction: column; justify-content: center; }
 .fa-service-title { font-size: 13px; font-weight: 700; color: var(--fa-ink); margin-bottom: 2px; }
 .fa-service-desc { font-size: 11px; color: var(--fa-slate); line-height: 1.3; }
 .fa-service-radio { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--fa-line); flex-shrink: 0; transition: all .2s; }
