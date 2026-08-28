@@ -301,13 +301,13 @@ body {
 
 .f-btn:hover { background: var(--f-primary-dark); }
 
-.f-section { padding: 40px 0; }
+.f-section { padding: 24px 0; }
 
 .f-section-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 20px;
+  margin-bottom: 12px;
 }
 
 .f-section-header h2 { font-family: var(--f-display); font-size: 18px; font-weight: 700; margin: 0; }
@@ -484,20 +484,20 @@ body {
 .f-steps {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: 8px;
 }
 .f-step {
   background: var(--f-white);
   border: 1px solid var(--f-line);
   border-radius: var(--f-radius-sm);
-  padding: 16px;
+  padding: 10px;
   display: flex;
   align-items: flex-start;
-  gap: 12px;
+  gap: 8px;
 }
 .f-step-num {
-  width: 32px;
-  height: 32px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   background: var(--f-primary);
   color: var(--f-white);
@@ -505,11 +505,11 @@ body {
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 13px;
+  font-size: 10px;
   flex-shrink: 0;
 }
-.f-step h4 { font-size: 14px; margin: 0 0 4px; }
-.f-step p { font-size: 12px; color: var(--f-text-2); margin: 0; }
+.f-step h4 { font-size: 12px; margin: 0 0 2px; }
+.f-step p { font-size: 11px; color: var(--f-text-2); margin: 0; }
 
 @media (min-width: 768px) {
   .f-cats { display: grid; grid-template-columns: repeat(3, 1fr); overflow-x: visible; }
