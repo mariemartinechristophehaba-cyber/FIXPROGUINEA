@@ -3010,7 +3010,7 @@ def artisan_dashboard():
 
         active_mission = conn.execute("""
             SELECT r.id, r.reference, r.title, r.category, r.address, r.urgency, r.status,
-                   r.description, r.latitude, r.longitude, r.requested_time,
+                   r.description, r.latitude, r.longitude, r.requested_time, r.estimated_price,
                    u.full_name AS client_name, u.phone AS client_phone
             FROM requests r
             JOIN users u ON u.id = r.client_id
@@ -3023,7 +3023,7 @@ def artisan_dashboard():
 
         missions = conn.execute("""
             SELECT r.id, r.reference, r.title, r.category, r.address, r.urgency, r.status,
-                   r.created_at, u.full_name AS client_name
+                   r.created_at, r.estimated_price, u.full_name AS client_name
             FROM requests r
             JOIN users u ON u.id = r.client_id
             WHERE r.artisan_id = ?

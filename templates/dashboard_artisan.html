@@ -3,257 +3,312 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#155EEF" />
+  <meta name="theme-color" content="#2563EB" />
   <title>Tableau de bord - Technicien</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <meta name="csrf-token" content="{{ csrf_token() }}" />
   <style>
     * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; }
-    body { font-family: 'Inter', sans-serif; background: #F1F5F9; color: #0F172A; -webkit-font-smoothing: antialiased; }
+    body { font-family: 'Inter', sans-serif; background: #F3F4F6; color: #111827; -webkit-font-smoothing: antialiased; }
     a { text-decoration: none; color: inherit; }
     button, select { font-family: inherit; }
 
-    .t-wrap { max-width: 480px; margin: 0 auto; min-height: 100vh; background: #F1F5F9; padding-bottom: 88px; }
+    .t-wrap { max-width: 480px; margin: 0 auto; min-height: 100vh; background: #F3F4F6; padding-bottom: 88px; }
 
-    .t-hero {
-      position: relative; height: 320px; width: 100%;
-      background:
-        linear-gradient(180deg, rgba(21,94,239,.88) 0%, rgba(21,94,239,.45) 40%, rgba(15,23,42,.55) 100%),
-        url('{{ url_for('static', filename='img/technician-hero-v2.jpg') }}') center/cover no-repeat;
-      border-radius: 0 0 28px 28px; overflow: hidden;
-    }
     .t-header {
-      position: absolute; top: 0; left: 0; right: 0; z-index: 10;
       display: flex; align-items: center; justify-content: space-between;
-      padding: 16px 18px; color: #fff;
+      padding: 14px 18px; background: #2563EB; color: #fff;
     }
-    .t-menu, .t-bell { background: none; border: none; color: #fff; cursor: pointer; padding: 4px; }
-    .t-menu svg, .t-bell svg { width: 24px; height: 24px; }
-    .t-logo { font-weight: 800; font-size: 22px; display: flex; align-items: center; gap: 8px; }
-    .t-logo svg { width: 26px; height: 26px; }
-    .t-bell { position: relative; }
-    .t-bell .t-badge {
-      position: absolute; top: -4px; right: -4px; min-width: 18px; height: 18px;
+    .t-logo { font-weight: 800; font-size: 20px; display: flex; align-items: center; gap: 6px; }
+    .t-logo-dot { width: 8px; height: 8px; border-radius: 50%; background: #22C55E; }
+    .t-bell { position: relative; color: #fff; padding: 4px; }
+    .t-bell svg { width: 24px; height: 24px; }
+    .t-badge {
+      position: absolute; top: -3px; right: -3px; min-width: 18px; height: 18px;
       background: #EF4444; color: #fff; font-size: 10px; font-weight: 700;
       border-radius: 50%; display: flex; align-items: center; justify-content: center; padding: 0 4px;
-      border: 2px solid #155EEF;
-    }
-    .t-hero-text { position: absolute; bottom: 26px; left: 18px; right: 18px; color: #fff; z-index: 2; }
-    .t-hero-text h1 { margin: 0 0 8px; font-size: 32px; font-weight: 800; line-height: 1.1; }
-    .t-hero-text p { margin: 0; font-size: 15px; opacity: .95; max-width: 280px; }
-    .t-hero-wave { font-size: 28px; }
-
-    .t-main { padding: 0 16px; position: relative; z-index: 3; margin-top: -46px; }
-
-    .t-card {
-      background: #fff; border-radius: 24px; padding: 16px;
-      box-shadow: 0 4px 24px rgba(0,0,0,.05); margin-bottom: 14px;
     }
 
-    .t-profile { position: relative; display: flex; align-items: center; gap: 14px; }
+    .t-hero {
+      background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+      margin: 0 16px 16px; border-radius: 20px; padding: 18px;
+      color: #fff; position: relative;
+    }
+    .t-profile { display: flex; align-items: center; gap: 14px; }
     .t-avatar-wrap { position: relative; flex-shrink: 0; }
-    .t-avatar { width: 74px; height: 74px; border-radius: 50%; object-fit: cover; border: 3px solid #fff; box-shadow: 0 0 0 2px #E2E8F0; }
-    .t-avatar-dot { position: absolute; bottom: 4px; right: 4px; width: 14px; height: 14px; border-radius: 50%; background: #22C55E; border: 2px solid #fff; }
+    .t-avatar { width: 70px; height: 70px; border-radius: 50%; object-fit: cover; border: 3px solid #fff; }
+    .t-avatar-dot { position: absolute; bottom: 2px; right: 2px; width: 16px; height: 16px; border-radius: 50%; background: #22C55E; border: 2px solid #fff; }
     .t-profile-info { flex: 1; min-width: 0; }
-    .t-name { margin: 0 0 2px; font-size: 17px; font-weight: 700; color: #0F172A; }
-    .t-job { margin: 0 0 8px; font-size: 13px; color: #64748B; display: flex; align-items: center; gap: 6px; }
-    .t-job svg { width: 14px; height: 14px; color: #64748B; }
-    .t-ready { margin: 0; font-size: 12px; color: #22C55E; display: flex; align-items: center; gap: 6px; }
-    .t-status {
-      position: absolute; top: 14px; right: 14px;
-      padding: 5px 22px 5px 10px; border: none; border-radius: 20px;
-      font-size: 12px; font-weight: 600; color: #15803D; background: #F0FDF4;
+    .t-greeting { margin: 0 0 2px; font-size: 16px; font-weight: 700; }
+    .t-greeting svg { width: 16px; height: 16px; }
+    .t-job { margin: 0 0 6px; font-size: 13px; opacity: .9; }
+    .t-status-select {
+      padding: 4px 22px 4px 8px; border: none; border-radius: 14px;
+      font-size: 12px; font-weight: 600; color: #15803D; background: #fff;
       appearance: none; -webkit-appearance: none;
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2315803D' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-      background-repeat: no-repeat; background-position: right 7px center;
+      background-repeat: no-repeat; background-position: right 6px center;
+    }
+    .t-rating { text-align: right; }
+    .t-rating-value { font-size: 18px; font-weight: 800; display: flex; align-items: center; justify-content: flex-end; gap: 4px; }
+    .t-rating-value svg { width: 18px; height: 18px; color: #FBBF24; fill: #FBBF24; }
+    .t-rating-label { font-size: 11px; opacity: .85; }
+
+    .t-main { padding: 0 16px; }
+    .t-section { margin: 18px 0 10px; font-size: 15px; font-weight: 700; color: #111827; }
+
+    .t-card { background: #fff; border-radius: 18px; padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 12px rgba(0,0,0,.04); }
+
+    .t-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    .t-stat { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; }
+    .t-stat-icon { width: 44px; height: 44px; border-radius: 14px; display: flex; align-items: center; justify-content: center; }
+    .t-stat-icon svg { width: 22px; height: 22px; }
+    .t-stat-num { font-size: 17px; font-weight: 800; color: #111827; }
+    .t-stat-label { font-size: 10px; color: #6B7280; line-height: 1.2; }
+
+    .t-mission-list { display: flex; flex-direction: column; gap: 12px; }
+    .t-mission {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 14px; border: 1px solid #E5E7EB; border-radius: 16px; background: #fff;
+    }
+    .t-mission-icon { width: 44px; height: 44px; border-radius: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .t-mission-icon svg { width: 24px; height: 24px; }
+    .t-mission-body { flex: 1; min-width: 0; }
+    .t-mission-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+    .t-mission-ref { font-size: 14px; font-weight: 700; color: #111827; }
+    .t-mission-urgency { font-size: 10px; font-weight: 700; padding: 4px 8px; border-radius: 12px; }
+    .t-mission-title { font-size: 13px; color: #374151; margin: 0 0 6px; }
+    .t-mission-meta { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #6B7280; margin-bottom: 4px; }
+    .t-mission-meta svg { width: 14px; height: 14px; color: #9CA3AF; }
+    .t-mission-bottom { display: flex; align-items: center; justify-content: space-between; }
+    .t-mission-price { font-size: 14px; font-weight: 700; }
+    .t-mission-status { font-size: 12px; font-weight: 600; }
+    .t-mission-arrow { color: #9CA3AF; }
+
+    .t-btn-link {
+      display: flex; align-items: center; justify-content: space-between;
+      width: 100%; padding: 12px 0; color: #2563EB; font-size: 13px; font-weight: 600;
+      background: none; border: none; cursor: pointer;
     }
 
-    .t-mission-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
-    .t-mission-head h2 { margin: 0; font-size: 16px; font-weight: 700; color: #0F172A; }
-    .t-urgent { color: #EF4444; font-size: 13px; font-weight: 800; letter-spacing: .5px; }
-    .t-mission-body { display: flex; gap: 14px; }
-    .t-mission-left { flex: 1; min-width: 0; }
-    .t-mission-icon { width: 48px; height: 48px; border-radius: 14px; background: #FEF2F2; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; }
-    .t-mission-icon svg { width: 26px; height: 26px; color: #DC2626; }
-    .t-ref { margin: 0 0 6px; font-size: 12px; color: #64748B; font-weight: 600; }
-    .t-problem { margin: 0 0 12px; font-size: 18px; font-weight: 700; color: #0F172A; line-height: 1.25; }
-    .t-row { margin: 0 0 10px; font-size: 13px; color: #475569; display: flex; align-items: center; gap: 8px; }
-    .t-row svg { width: 16px; height: 16px; color: #94A3B8; }
-    .t-map-wrap { width: 120px; height: 120px; border-radius: 18px; overflow: hidden; flex-shrink: 0; position: relative; background: #E2E8F0; }
-    .t-map-wrap img { width: 100%; height: 100%; object-fit: cover; }
-    .t-fallback { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; background: #F1F5F9; }
-    .t-fallback svg { width: 32px; height: 32px; color: #EF4444; }
-    .t-tag { display: inline-flex; align-items: center; gap: 6px; background: #FEE2E2; color: #B91C1C; font-size: 12px; font-weight: 700; padding: 6px 12px; border-radius: 20px; margin: 6px 0 14px; }
-    .t-tag .dot { width: 6px; height: 6px; border-radius: 50%; background: #EF4444; }
-    .t-btn {
-      display: flex; align-items: center; justify-content: center; gap: 10px;
-      width: 100%; background: #155EEF; color: #fff; font-size: 15px; font-weight: 700;
-      border-radius: 16px; padding: 15px; border: none; cursor: pointer;
+    .t-next {
+      background: linear-gradient(135deg, #1E40AF 0%, #2563EB 100%);
+      border-radius: 20px; padding: 18px; color: #fff;
     }
-    .t-btn svg { width: 18px; height: 18px; }
-
-    .t-empty { text-align: left; padding: 6px 2px; }
-    .t-empty strong { display: block; font-size: 15px; color: #0F172A; margin-bottom: 6px; }
-    .t-empty p { margin: 0; font-size: 13px; color: #64748B; }
-
-    .t-section { margin: 18px 0 12px; font-size: 15px; font-weight: 700; color: #0F172A; }
-    .t-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-    .t-action {
-      background: #fff; border-radius: 18px; padding: 14px 4px;
-      display: flex; flex-direction: column; align-items: center; gap: 8px;
-      box-shadow: 0 2px 10px rgba(0,0,0,.04); font-size: 12px; font-weight: 600; color: #0F172A;
-      position: relative;
-    }
-    .t-action svg { width: 26px; height: 26px; color: #155EEF; }
-    .t-action .t-badge { position: absolute; top: 8px; right: 14px; min-width: 18px; height: 18px; background: #EF4444; color: #fff; font-size: 10px; font-weight: 700; border-radius: 50%; display: flex; align-items: center; justify-content: center; padding: 0 4px; }
+    .t-next-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .t-next-icon { width: 46px; height: 46px; border-radius: 50%; background: rgba(255,255,255,.15); display: flex; align-items: center; justify-content: center; }
+    .t-next-icon svg { width: 24px; height: 24px; color: #fff; }
+    .t-next-title { flex: 1; }
+    .t-next-title h4 { margin: 0 0 2px; font-size: 15px; font-weight: 700; }
+    .t-next-title p { margin: 0; font-size: 13px; opacity: .9; }
+    .t-next-urgency { font-size: 10px; font-weight: 700; padding: 4px 8px; border-radius: 12px; background: rgba(255,255,255,.2); }
+    .t-next-meta { font-size: 13px; opacity: .9; display: flex; align-items: center; gap: 6px; margin-bottom: 14px; }
+    .t-next-meta svg { width: 16px; height: 16px; }
+    .t-next-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .t-next-btn { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 12px; border-radius: 12px; font-size: 13px; font-weight: 600; border: none; cursor: pointer; }
+    .t-next-btn-white { background: #fff; color: #2563EB; }
+    .t-next-btn-ghost { background: rgba(255,255,255,.15); color: #fff; }
 
     .t-nav {
       position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
       max-width: 480px; margin: 0 auto;
-      background: #fff; border-top: 1px solid #E2E8F0;
+      background: #fff; border-top: 1px solid #E5E7EB;
       display: flex; justify-content: space-around; align-items: center;
       padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
     }
-    .t-nav a { display: flex; flex-direction: column; align-items: center; gap: 3px; color: #94A3B8; font-size: 11px; padding: 4px 10px; position: relative; }
-    .t-nav a.active { color: #155EEF; }
-    .t-nav a.active::after { content: ''; position: absolute; top: -8px; left: 50%; transform: translateX(-50%); width: 20px; height: 3px; background: #155EEF; border-radius: 2px; }
+    .t-nav a { display: flex; flex-direction: column; align-items: center; gap: 3px; color: #9CA3AF; font-size: 11px; padding: 4px 8px; position: relative; }
+    .t-nav a.active { color: #2563EB; }
     .t-nav a svg { width: 22px; height: 22px; }
-    .t-nav .t-plus {
-      position: relative; top: -18px;
-      width: 54px; height: 54px; border-radius: 50%; background: #155EEF; color: #fff;
-      display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 4px 14px rgba(21,94,239,.35);
+    .t-nav .t-badge {
+      position: absolute; top: -2px; right: 2px; min-width: 16px; height: 16px;
+      background: #EF4444; color: #fff; font-size: 9px; font-weight: 700;
+      border-radius: 50%; display: flex; align-items: center; justify-content: center; padding: 0 3px;
     }
-    .t-nav .t-plus svg { width: 26px; height: 26px; }
 
-    .t-occupe .t-avatar-dot, .t-occupe .t-ready .dot { background: #F97316; }
-    .t-occupe .t-ready { color: #F97316; }
-    .t-hors .t-avatar-dot, .t-hors .t-ready .dot { background: #9CA3AF; }
-    .t-hors .t-ready { color: #9CA3AF; }
+    .u-urgent { background: #FEE2E2; color: #B91C1C; }
+    .u-urgent svg { color: #DC2626; }
+    .u-high { background: #FEF3C7; color: #B45309; }
+    .u-high svg { color: #D97706; }
+    .u-normal { background: #DBEAFE; color: #1D4ED8; }
+    .u-normal svg { color: #2563EB; }
+    .u-low { background: #E5E7EB; color: #4B5563; }
+    .u-low svg { color: #6B7280; }
+    .s-waiting { color: #F97316; }
+    .s-confirmed { color: #16A34A; }
+    .s-pending { color: #2563EB; }
+
+    .t-empty { text-align: center; padding: 24px 10px; }
+    .t-empty p { margin: 0; color: #6B7280; font-size: 13px; }
   </style>
 </head>
 <body>
   <div class="t-wrap">
-    <div class="t-hero">
-      <header class="t-header">
-        <button class="t-menu" aria-label="Menu">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
-        </button>
-        <div class="t-logo">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-          FixPro
-        </div>
-        <a href="{{ url_for('notifications') }}" class="t-bell" aria-label="Notifications">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-          {% if unread_count %}<span class="t-badge">{{ unread_count }}</span>{% endif %}
-        </a>
-      </header>
-      <div class="t-hero-text">
-        <h1>Bienvenue,<br>{{ (user.full_name or 'Ibrahima').split(' ')[0] }} <span class="t-hero-wave">👋</span></h1>
-        <p>Prêt à intervenir et à aider vos clients aujourd'hui.</p>
+    <header class="t-header">
+      <div class="t-logo">
+        FixPro
+        <span class="t-logo-dot"></span>
       </div>
-    </div>
+      <a href="{{ url_for('notifications') }}" class="t-bell" aria-label="Notifications">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        {% if unread_count %}<span class="t-badge">{{ unread_count }}</span>{% endif %}
+      </a>
+    </header>
 
-    <main class="t-main">
-      <div class="t-card t-profile {% if user.availability_status == 'occupe' %}t-occupe{% elif user.availability_status == 'hors_ligne' %}t-hors{% endif %}">
-        <select class="t-status" id="statusSelect" data-csrf="{{ csrf_token() }}">
-          <option value="en_ligne" {% if user.availability_status == 'en_ligne' %}selected{% endif %}>En ligne</option>
-          <option value="occupe" {% if user.availability_status == 'occupe' %}selected{% endif %}>En intervention</option>
-          <option value="hors_ligne" {% if user.availability_status == 'hors_ligne' %}selected{% endif %}>Hors ligne</option>
-        </select>
-
+    <div class="t-hero">
+      <div class="t-profile">
         <div class="t-avatar-wrap">
           <img class="t-avatar" src="{{ user.photo_url or url_for('static', filename='img/fixpro-avatar.png') }}" alt="" />
           <span class="t-avatar-dot"></span>
         </div>
         <div class="t-profile-info">
-          <h2 class="t-name">{{ user.full_name or 'Ibrahima Camara' }}</h2>
-          <p class="t-job">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-            {{ user.profession or 'Plombier' }}
-          </p>
-          <p class="t-ready">
-            <span class="dot" style="width:8px;height:8px;border-radius:50%;background:#22C55E;"></span>
-            <span>
-              {% if user.availability_status == 'en_ligne' %}Disponible — Prêt à recevoir des missions{% elif user.availability_status == 'occupe' %}En intervention{% else %}Hors ligne{% endif %}
-            </span>
-          </p>
+          <span style="display:none">Bienvenue</span>
+          <h2 class="t-greeting">Bonjour, {{ (user.full_name or 'Ibrahim').split(' ')[0] }} ! <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FBBF24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8c0 4.5-6 9-6 9s-6-4.5-6-9a6 6 0 0 1 12 0z"/><path d="M12 14v-3"/><path d="M12 7h.01"/></svg></h2>
+          <p class="t-job">{{ user.profession or 'Technicien' }}</p>
+          <select class="t-status-select" id="statusSelect" data-csrf="{{ csrf_token() }}">
+            <option value="en_ligne" {% if user.availability_status == 'en_ligne' %}selected{% endif %}>Disponible</option>
+            <option value="occupe" {% if user.availability_status == 'occupe' %}selected{% endif %}>En intervention</option>
+            <option value="hors_ligne" {% if user.availability_status == 'hors_ligne' %}selected{% endif %}>Hors ligne</option>
+          </select>
         </div>
-      </div>
-
-      <div class="t-card">
-        <div class="t-mission-head">
-          <h2>Mission actuelle</h2>
-          {% if active_mission and active_mission.urgency == 'urgent' %}<span class="t-urgent">URGENTE</span>{% endif %}
-        </div>
-
-        {% if active_mission %}
-        <div class="t-mission-body">
-          <div class="t-mission-left">
-            <div class="t-mission-icon">
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-            </div>
-            <p class="t-ref">{{ active_mission.reference or '#' + active_mission.id|string }}</p>
-            <h3 class="t-problem">{{ active_mission.title }}</h3>
-            <p class="t-row">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
-              Client : {{ active_mission.client_name }}
-            </p>
-            <p class="t-row">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-              {{ active_mission.address or 'Conakry' }}
-            </p>
-            <p class="t-row">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-              Heure prévue : {{ active_mission.requested_time or '10:30' }}
-            </p>
-            <div class="t-tag"><span class="dot"></span> Nouvelle mission</div>
+        <div class="t-rating">
+          <div class="t-rating-value">
+            {{ "%.1f"|format(stats.note_avg|default(0)|float) }}
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="#FBBF24" stroke="#FBBF24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
           </div>
-          <div class="t-map-wrap">
-            <img id="missionMap" alt=""
-                 src="https://staticmap.openstreetmap.de/staticmap.php?center=9.5120,-13.7120&amp;zoom=15&amp;size=200x200&amp;maptype=mapnik&amp;markers=9.5120,-13.7120,ol-marker"
-                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
-            <div class="t-fallback" style="display:flex;">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+          <div class="t-rating-label">{{ stats.note_count|default(0) }} avis</div>
+        </div>
+      </div>
+    </div>
+
+    <main class="t-main">
+      <h3 class="t-section">Votre activité aujourd'hui</h3>
+      <div class="t-card t-stats">
+        <div class="t-stat">
+          <div class="t-stat-icon u-normal">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          </div>
+          <div class="t-stat-num">{{ stats.a_venir|default(0) }}</div>
+          <div class="t-stat-label">Interventions à venir</div>
+        </div>
+        <div class="t-stat">
+          <div class="t-stat-icon u-high">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M9 14h6M9 17h4"/></svg>
+          </div>
+          <div class="t-stat-num">{{ stats.nouvelles|default(0) }}</div>
+          <div class="t-stat-label">Nouvelles demandes</div>
+        </div>
+        <div class="t-stat">
+          <div class="t-stat-icon u-urgent">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+          </div>
+          <div class="t-stat-num">{{ stats.assignees|default(0) }}</div>
+          <div class="t-stat-label">Intervention en cours</div>
+        </div>
+        <div class="t-stat">
+          <div class="t-stat-icon u-low">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+          </div>
+          <div class="t-stat-num">{{ "{:,.0f}".format(stats.revenus|default(0)|int).replace(",", " ") }}</div>
+          <div class="t-stat-label">Revenus aujourd'hui</div>
+        </div>
+      </div>
+
+      <h3 class="t-section">Mes interventions</h3>
+      {% if missions %}
+      <div class="t-mission-list">
+        {% for m in missions[:3] %}
+        <a href="{{ url_for('artisan_mission', request_id=m.id) }}" class="t-mission">
+          {% if 'électric' in m.category|lower %}
+          <div class="t-mission-icon u-urgent"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+          {% elif 'climat' in m.category|lower %}
+          <div class="t-mission-icon u-normal"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M9 8a5 5 0 1 0 6 0"/><path d="M12 12a4 4 0 0 0 0 8 4 4 0 0 0 0-8"/></svg></div>
+          {% elif 'plomb' in m.category|lower %}
+          <div class="t-mission-icon u-high"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a4 4 0 0 0 4 4h1a4 4 0 0 0 0-8h-1a4 4 0 0 0-4 4v5a4 4 0 0 0 4 4h1"/><path d="M14 13a4 4 0 0 0-4-4H9a4 4 0 0 0 0 8h1a4 4 0 0 0 4-4V7a4 4 0 0 0-4-4H9"/></svg></div>
+          {% elif 'réfrig' in m.category|lower %}
+          <div class="t-mission-icon u-normal"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2" ry="2"/><line x1="8" y1="7" x2="8" y2="7.01"/><line x1="8" y1="11" x2="8" y2="11.01"/></svg></div>
+          {% else %}
+          <div class="t-mission-icon u-low"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></div>
+          {% endif %}
+          <div class="t-mission-body">
+            <div class="t-mission-top">
+              <span class="t-mission-ref">Intervention #{{ m.reference or 'FP-' + '%05d'|format(m.id) }}</span>
+              <span class="t-mission-urgency
+                {% if m.urgency == 'urgent' %}u-urgent
+                {% elif m.urgency == 'haute' %}u-high
+                {% elif m.urgency == 'modere' %}u-high
+                {% else %}u-normal{% endif %}
+              ">
+                {% if m.urgency == 'urgent' %}Urgente{% elif m.urgency == 'haute' %}Haute{% elif m.urgency == 'modere' %}Moyenne{% else %}Normale{% endif %}
+              </span>
+            </div>
+            <p class="t-mission-title">{{ m.title }}</p>
+            <div class="t-mission-meta">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+              {{ m.address or 'Conakry' }}
+            </div>
+            <div class="t-mission-bottom">
+              <span class="t-mission-price" style="color:{% if m.urgency == 'urgent' %}#B91C1C{% elif m.urgency == 'haute' %}#D97706{% elif m.urgency == 'modere' %}#D97706{% else %}#2563EB{% endif %};">{{ "{:,.0f}".format(m.estimated_price|default(0)|int).replace(",", " ") }} GNF</span>
+              <span class="t-mission-status
+                {% if m.status == 'completed' %}s-confirmed
+                {% elif m.status in ['in_progress','arrived','en_route'] %}s-confirmed
+                {% else %}s-waiting{% endif %}
+              ">
+                {% if m.status == 'completed' %}Terminée
+                {% elif m.status in ['in_progress','arrived','en_route'] %}Confirmée
+                {% else %}En attente{% endif %}
+              </span>
             </div>
           </div>
-        </div>
-        <a href="{{ url_for('artisan_mission', request_id=active_mission.id) }}" class="t-btn">
-          Voir la mission
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+          <span class="t-mission-arrow">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+          </span>
         </a>
-        {% else %}
-        <div class="t-empty">
-          <strong>Aucune mission pour le moment</strong>
-          <p>Vous serez automatiquement informé lorsqu'une nouvelle mission vous sera attribuée.</p>
-
-        </div>
-        {% endif %}
+        {% endfor %}
       </div>
+      <a href="{{ url_for('requests_list') }}" class="t-btn-link">
+        Voir toutes mes interventions
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </a>
+      {% else %}
+      <div class="t-empty"><p>Aucune intervention pour le moment.</p></div>
+      {% endif %}
 
-      <h3 class="t-section">Actions rapides</h3>
-      <div class="t-grid">
-        <a class="t-action" href="{{ url_for('requests_list') }}">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M9 14h6M9 17h4"/></svg>
-          Mes missions
-        </a>
-        <a class="t-action" href="{{ url_for('requests_list') }}">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          Planning
-        </a>
-        <a class="t-action" href="{{ url_for('client_messages') }}">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 21l1.9-5.1A8.4 8.4 0 0 1 4 11.5a8.5 8.5 0 0 1 8.5-8.5A8.5 8.5 0 0 1 21 11.5z"/></svg>
-          Messages
-          {% if unread_count %}<span class="t-badge">{{ unread_count }}</span>{% endif %}
-        </a>
-        <a class="t-action" href="{{ url_for('profile') }}">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
-          Mon profil
-        </a>
+      {% if active_mission %}
+      <h3 class="t-section">Prochaine intervention</h3>
+      <div class="t-next">
+        <div class="t-next-header">
+          <div class="t-next-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+          </div>
+          <div class="t-next-title">
+            <h4>Intervention #{{ active_mission.reference or 'FP-' + '%05d'|format(active_mission.id) }}</h4>
+            <p>{{ active_mission.title }}</p>
+          </div>
+          <span class="t-next-urgency">{% if active_mission.urgency == 'urgent' %}Urgente{% elif active_mission.urgency == 'haute' %}Haute{% else %}Moyenne{% endif %}</span>
+        </div>
+        <div class="t-next-meta">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+          {{ active_mission.address or 'Conakry' }}
+        </div>
+        <div class="t-next-meta">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          {{ active_mission.requested_time or 'Aujourd\'hui, 10:30' }}
+        </div>
+        <div class="t-next-meta">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+          {{ "{:,.0f}".format(active_mission.estimated_price|default(0)|int).replace(",", " ") }} GNF
+        </div>
+        <div class="t-next-actions">
+          <button class="t-next-btn t-next-btn-white">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+            Itineraire
+          </button>
+          <a href="{{ url_for('artisan_mission', request_id=active_mission.id) }}" class="t-next-btn t-next-btn-ghost">Voir l'intervention</a>
+        </div>
       </div>
+      {% endif %}
     </main>
 
     <nav class="t-nav">
@@ -263,14 +318,16 @@
       </a>
       <a href="{{ url_for('requests_list') }}">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M9 14h6M9 17h4"/></svg>
-        Missions
-      </a>
-      <a class="t-plus" href="{{ url_for('client_message_new') }}" aria-label="Nouvelle conversation">
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+        Demandes
       </a>
       <a href="{{ url_for('requests_list') }}">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        Planning
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        Interventions
+      </a>
+      <a href="{{ url_for('client_messages') }}">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 21l1.9-5.1A8.4 8.4 0 0 1 4 11.5a8.5 8.5 0 0 1 8.5-8.5A8.5 8.5 0 0 1 21 11.5z"/></svg>
+        Messages
+        {% if unread_count %}<span class="t-badge">{{ unread_count }}</span>{% endif %}
       </a>
       <a href="{{ url_for('profile') }}">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
@@ -292,11 +349,6 @@
           .then(data => { if (data.ok) location.reload(); })
           .catch(() => {});
       });
-    })();
-
-    (function() {
-      const img = document.getElementById('missionMap');
-      if (img && !img.naturalWidth) img.onerror.call(img);
     })();
   </script>
 </body>
