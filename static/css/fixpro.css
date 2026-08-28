@@ -301,13 +301,13 @@ body {
 
 .f-btn:hover { background: var(--f-primary-dark); }
 
-.f-section { padding: 16px 0; }
+.f-section { padding: 8px 0; }
 
 .f-section-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 }
 
 .f-section-header h2 { font-family: var(--f-display); font-size: 18px; font-weight: 700; margin: 0; }
@@ -484,20 +484,20 @@ body {
 .f-steps {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 6px;
+  gap: 4px;
 }
 .f-step {
   background: var(--f-white);
   border: 1px solid var(--f-line);
   border-radius: var(--f-radius-sm);
-  padding: 8px;
+  padding: 4px 6px;
   display: flex;
-  align-items: flex-start;
-  gap: 6px;
+  align-items: center;
+  gap: 4px;
 }
 .f-step-num {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   background: var(--f-primary);
   color: var(--f-white);
@@ -505,11 +505,11 @@ body {
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 9px;
+  font-size: 8px;
   flex-shrink: 0;
 }
-.f-step h4 { font-size: 11px; margin: 0 0 2px; }
-.f-step p { font-size: 10px; color: var(--f-text-2); margin: 0; }
+.f-step h4 { font-size: 10px; margin: 0 0 1px; line-height: 1.2; }
+.f-step p { font-size: 9px; color: var(--f-text-2); margin: 0; line-height: 1.2; }
 
 @media (min-width: 768px) {
   .f-cats { display: grid; grid-template-columns: repeat(3, 1fr); overflow-x: visible; }
