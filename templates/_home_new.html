@@ -120,12 +120,15 @@
     box-shadow: var(--f-shadow-card);
   }
   .hp-cats {
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 22px;
+    display: flex; overflow-x: auto; gap: 12px; padding-bottom: 8px; margin-bottom: 22px;
+    scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;
   }
+  .hp-cats::-webkit-scrollbar { display: none; }
   .hp-cat {
+    flex: 0 0 92px; min-width: 92px;
     display: flex; flex-direction: column; align-items: center; text-align: center; text-decoration: none;
     background: #fff; border: 1px solid #f1f5f9; border-radius: 16px; padding: 14px 6px;
-    transition: transform .12s, box-shadow .12s; position: relative;
+    transition: transform .12s, box-shadow .12s; position: relative; scroll-snap-align: start;
   }
   .hp-cat:active { transform: scale(0.98); }
   .hp-cat-icon {
