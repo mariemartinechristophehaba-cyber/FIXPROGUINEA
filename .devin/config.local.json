@@ -37,7 +37,9 @@
       "Exec(ls)",
       "Exec((Invoke-RestMethod)",
       "Exec(0)",
-      "Exec(curl.exe)"
+      "Exec(curl.exe)",
+      "Exec(C:\\flutter\\bin\\flutter)",
+      "Exec(.venv\\Scripts\\python)"
     ]
   }
 }
