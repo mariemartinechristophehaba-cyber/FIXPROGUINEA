@@ -26,8 +26,8 @@ from functools import wraps
 from authlib.integrations.flask_client import OAuth
 from abc import ABC, abstractmethod
 from email_validator import EmailNotValidError, validate_email
-from flask import (Flask, flash, g, jsonify, redirect, render_template,
-                   render_template_string, request, session, url_for)
+from flask import (Flask, flash, g, jsonify, make_response, redirect,
+                   render_template, render_template_string, request, session, url_for)
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_cors import CORS
@@ -3066,7 +3066,7 @@ def artisan_dashboard():
         conn.close()
 
     with app.open_resource("templates/dashboard_artisan.html", "r", encoding="utf-8") as f:
-        return render_template_string(
+        html = render_template_string(
             f.read(), user=user,
             stats={"nouvelles": nouvelles, "assignees": assignees,
                    "urgentes": urgentes, "a_venir": a_venir,
@@ -3077,6 +3077,11 @@ def artisan_dashboard():
             unread_count=unread_count,
             services_disponibles=services_disponibles,
             artisan_services_ids=artisan_services_ids)
+        response = make_response(html)
+        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+        return response
 
 
 @app.route("/dashboard/technicien/services", methods=["POST"])
