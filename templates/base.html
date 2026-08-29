@@ -296,7 +296,7 @@
 
     {% block tabbar %}
     <nav class="tabbar">
-      {% if nav_user and nav_user.role == 'technician' %}
+      {% if nav_user and nav_user.role in ('artisan','technician') %}
       <a class="tab {{ 'active' if request.endpoint == 'artisan_dashboard' }}" href="{{ url_for('artisan_dashboard') }}">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
         <span>Accueil</span>
@@ -306,7 +306,7 @@
         <span>Demandes</span>
       </a>
       <a class="tab {{ 'active' if request.endpoint == 'artisan_dashboard' }}" href="{{ url_for('artisan_dashboard') }}">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
         <span>Interventions</span>
       </a>
       <a class="tab {{ 'active' if request.endpoint in ('lia', 'client_messages') }}" href="{{ url_for('lia') }}">
