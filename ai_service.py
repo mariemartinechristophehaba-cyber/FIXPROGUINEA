@@ -585,6 +585,20 @@ def _update_collected(collected, content):
         info["mode"] = "fixpro" if (dom or intent == "request_technician") else "chat"
     elif info.get("mode") == "chat" and (dom or intent == "request_technician"):
         info["mode"] = "fixpro"
+    elif (info.get("mode") == "fixpro" and
+          not info.get("needs_confirmation") and
+          content and content.strip() and
+          intent in ("greeting", "farewell", "thanks", "apology", "small_talk",
+                     "personal_ai", "general_question", "fixpro_question",
+                     "price_question", "status_question")):
+        # L'utilisateur change de sujet, on sort du flux technique
+        info["mode"] = "chat"
+        info.pop("category", None)
+        info.pop("location", None)
+        info.pop("urgency", None)
+        info.pop("availability", None)
+        info.pop("problem_detail", None)
+        info.pop("needs_confirmation", None)
 
     # memorise le prenom si le client le donne
     nt = _normalize(content)
