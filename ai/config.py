@@ -16,7 +16,7 @@ def get_ai_config():
     """Retourne la configuration IA depuis les variables d'environnement."""
     return {
         "provider": os.getenv("AI_PROVIDER", "gemini").strip().lower(),
-        "model": os.getenv("AI_MODEL", "gemini-3.6-flash").strip(),
+        "model": os.getenv("AI_MODEL", "gemini-1.5-flash").strip(),
         "api_key": os.getenv("AI_API_KEY", os.getenv("GOOGLE_API_KEY", "")).strip(),
         "timeout": int(os.getenv("AI_TIMEOUT", "30")),
         "max_output_tokens": int(os.getenv("AI_MAX_TOKENS", "500")),

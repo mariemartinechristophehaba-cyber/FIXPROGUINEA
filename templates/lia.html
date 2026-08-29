@@ -47,7 +47,7 @@
     .l-msg { display: flex; }
     .l-user { justify-content: flex-end; }
     .l-bot { justify-content: flex-start; }
-    .l-bubble { max-width: 82%; width: fit-content; padding: 10px 13px; border-radius: 18px; font-size: 15px; line-height: 1.4; white-space: pre-wrap; }
+    .l-bubble { max-width: 82%; width: fit-content; padding: 10px 13px; border-radius: 18px; font-size: 15px; line-height: 1.4; white-space: pre-wrap; word-wrap: break-word; overflow-wrap: anywhere; }
     .l-bot .l-bubble { background: #fff; color: #0F172A; border-bottom-left-radius: 4px; box-shadow: 0 1px 4px rgba(0,0,0,.04); }
     .l-user .l-bubble { background: #155EEF; color: #fff; border-bottom-right-radius: 4px; }
     .l-time { font-size: 10px; color: #94A3B8; margin-top: 3px; text-align: right; }
@@ -167,11 +167,17 @@
       return new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
     }
 
+    function escapeHtml(s) {
+      return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+    function formatText(text) {
+      return escapeHtml(text).replace(/\n/g, '<br>');
+    }
     function append(role, text, when) {
       if (empty) empty.style.display = 'none';
       const row = document.createElement('div');
       row.className = 'l-msg ' + (role === 'user' ? 'l-user' : 'l-bot');
-      row.innerHTML = '<div class="l-bubble">' + text.replace(/\n/g, '<br>') + '<div class="l-time">' + (when || time()) + '</div></div>';
+      row.innerHTML = '<div class="l-bubble">' + formatText(text) + '<div class="l-time">' + (when || time()) + '</div></div>';
       b.appendChild(row);
       scrollBottom();
     }

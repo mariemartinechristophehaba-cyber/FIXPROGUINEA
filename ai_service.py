@@ -137,7 +137,7 @@ def _call_gemini(message, lang="fr"):
     if not api_key:
         return None
     url = ("https://generativelanguage.googleapis.com/v1beta/models/"
-           f"gemini-3.6-flash:generateContent?key={api_key}")
+           f"gemini-1.5-flash:generateContent?key={api_key}")
     system = _GEMINI_SYSTEM_PROMPT
     if lang == "en":
         system = system.replace("Reponds", "Answer").replace("l'utilisateur", "the user")

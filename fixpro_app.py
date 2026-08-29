@@ -2528,7 +2528,7 @@ def _rule_based_reply(text):
 def _call_gemini(message, api_key):
     """Appelle l'API Google Gemini pour generer une reponse."""
     url = ("https://generativelanguage.googleapis.com/v1beta/models/"
-           f"gemini-3.6-flash:generateContent?key={api_key}")
+           f"gemini-1.5-flash:generateContent?key={api_key}")
     payload = {
         "systemInstruction": {"parts": [{"text": _LIA_SYSTEM_PROMPT}]},
         "contents": [{"role": "user", "parts": [{"text": message}]}],
