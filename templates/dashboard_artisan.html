@@ -127,14 +127,12 @@
       border-radius: 50%; display: flex; align-items: center; justify-content: center; padding: 0 3px;
     }
 
-    .u-urgent { background: #FEE2E2; color: #B91C1C; }
-    .u-urgent svg { color: #DC2626; }
-    .u-high { background: #FEF3C7; color: #B45309; }
-    .u-high svg { color: #D97706; }
-    .u-normal { background: #DBEAFE; color: #1D4ED8; }
-    .u-normal svg { color: #2563EB; }
-    .u-low { background: #E5E7EB; color: #4B5563; }
-    .u-low svg { color: #6B7280; }
+    .u-coming { background: #DCFCE7; color: #166534; }
+    .u-coming svg { color: #16A34A; }
+    .u-demand { background: #FEF3C7; color: #B45309; }
+    .u-demand svg { color: #D97706; }
+    .u-progress { background: #DBEAFE; color: #1D4ED8; }
+    .u-progress svg { color: #2563EB; }
     .u-wallet { background: #E0E7FF; color: #4F46E5; }
     .u-wallet svg { color: #4F46E5; }
     .s-waiting { color: #F97316; }
@@ -188,21 +186,21 @@
       <h3 class="t-section">Votre activité aujourd'hui</h3>
       <div class="t-card t-stats">
         <div class="t-stat">
-          <div class="t-stat-icon u-normal">
+          <div class="t-stat-icon u-coming">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
           </div>
           <div class="t-stat-num">{{ stats.a_venir|default(0) }}</div>
           <div class="t-stat-label">Interventions à venir</div>
         </div>
         <div class="t-stat">
-          <div class="t-stat-icon u-high">
+          <div class="t-stat-icon u-demand">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M9 14h6M9 17h4"/></svg>
           </div>
           <div class="t-stat-num">{{ stats.nouvelles|default(0) }}</div>
           <div class="t-stat-label">Nouvelles demandes</div>
         </div>
         <div class="t-stat">
-          <div class="t-stat-icon u-urgent">
+          <div class="t-stat-icon u-progress">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
           </div>
           <div class="t-stat-num">{{ stats.assignees|default(0) }}</div>
