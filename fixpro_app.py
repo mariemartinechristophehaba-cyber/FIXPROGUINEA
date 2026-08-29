@@ -4958,6 +4958,7 @@ def _migrate_db():
                 conn.execute(
                     "ALTER TABLE users ADD COLUMN IF NOT EXISTS available_days TEXT"
                 )
+                conn.commit()
                 conn.execute(
                     "CREATE TABLE IF NOT EXISTS lia_logs ("
                     " id SERIAL PRIMARY KEY,"
@@ -4999,6 +5000,7 @@ def _migrate_db():
             # Jours de disponibilite du technicien
             try:
                 conn.execute("ALTER TABLE users ADD COLUMN available_days TEXT")
+                conn.commit()
             except Exception:
                 pass
             # Normalisation des roles et statuts legacy
