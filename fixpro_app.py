@@ -3592,7 +3592,9 @@ def artisans_page():
         " FROM users u"
         " LEFT JOIN reviews r ON r.artisan_id = u.id"
         " LEFT JOIN requests req_completed ON req_completed.artisan_id = u.id AND req_completed.status = 'completed'"
-        " WHERE u.profession IS NOT NULL AND u.profession != ''")
+        " WHERE u.profession IS NOT NULL AND u.profession != ''"
+        " AND u.role IN ('artisan','technician') AND u.is_verified = 1 AND u.is_active = 1"
+        " AND u.account_status != 'DELETED'")
     params = []
 
     if query:
@@ -3788,7 +3790,8 @@ def artisan_detail(artisan_id):
     conn = get_db_connection()
     try:
         artisan = conn.execute(
-            "SELECT * FROM users WHERE id = ? AND role = 'technician'",
+            "SELECT * FROM users WHERE id = ? AND role IN ('artisan','technician')"
+            " AND is_verified = 1 AND is_active = 1 AND account_status != 'DELETED'",
             (artisan_id,)).fetchone()
         if not artisan:
             flash("Technicien introuvable.", "error")
