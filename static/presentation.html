@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Presentation - FixPro Guinee</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; font-family: 'Inter', sans-serif; overflow: hidden; }
+    body { background: #0F172A; color: #fff; }
+    .slides { width: 100%; height: 100%; position: relative; }
+    .slide {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      display: none; flex-direction: column; align-items: center; justify-content: center;
+      padding: 60px 8%; text-align: center;
+    }
+    .slide.active { display: flex; }
+    .slide h1 { font-size: 3.2rem; font-weight: 800; margin: 0 0 18px; line-height: 1.15; }
+    .slide h2 { font-size: 2.4rem; font-weight: 700; margin: 0 0 32px; color: #60A5FA; }
+    .slide h3 { font-size: 1.6rem; font-weight: 600; margin: 0 0 18px; color: #93C5FD; }
+    .slide p, .slide li { font-size: 1.3rem; color: #CBD5E1; line-height: 1.6; max-width: 900px; }
+    .slide ul { list-style: none; padding: 0; margin: 0; text-align: left; display: inline-block; }
+    .slide li { margin: 14px 0; padding-left: 34px; position: relative; }
+    .slide li::before { content: '—'; position: absolute; left: 0; color: #3B82F6; font-weight: 700; }
+    .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 28px; max-width: 1000px; text-align: left; }
+    .card { background: rgba(255,255,255,0.06); border-radius: 16px; padding: 24px; border: 1px solid rgba(255,255,255,0.08); }
+    .card h3 { color: #60A5FA; margin: 0 0 8px; }
+    .card p { font-size: 1rem; margin: 0; color: #CBD5E1; }
+    .accent { color: #3B82F6; }
+    .small { font-size: 1rem; color: #94A3B8; margin-top: 24px; }
+    .nav { position: fixed; bottom: 24px; right: 24px; display: flex; gap: 12px; z-index: 100; }
+    .nav button {
+      background: #3B82F6; color: #fff; border: none; border-radius: 10px;
+      padding: 12px 20px; font-size: 1rem; font-weight: 600; cursor: pointer;
+    }
+    .nav button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .counter { position: fixed; bottom: 24px; left: 24px; color: #64748B; font-size: 0.9rem; }
+    @media (max-width: 768px) {
+      .slide h1 { font-size: 2rem; }
+      .slide h2 { font-size: 1.5rem; }
+      .slide p, .slide li { font-size: 1rem; }
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="slides">
+
+    <div class="slide active">
+      <h1>FixPro <span class="accent">Guinee</span></h1>
+      <h2>La plateforme de mise en relation entre clients et techniciens qualifies</h2>
+      <p>Fiable, rapide, professionnel. Conakry et la Guinee en priorite.</p>
+      <p class="small">Utilisez les fleches ou les boutons pour naviguer.</p>
+    </div>
+
+    <div class="slide">
+      <h2>Le probleme</h2>
+      <ul>
+        <li>Difficulte a trouver un technicien de confiance rapidement</li>
+        <li>Pas de visibilite sur les avis reels des clients</li>
+        <li>Flou sur les tarifs, le temps d'intervention et la securite du paiement</li>
+        <li>Techniciens competents n'ayant pas assez de demandes</li>
+      </ul>
+    </div>
+
+    <div class="slide">
+      <h2>La solution</h2>
+      <p>Une application mobile et web qui connecte directement les clients aux plombiers, electriciens, frigoristes, menuisiers, peintres, macons et autres professionnels verifies.</p>
+      <ul>
+        <li>Recherche par categorie, localisation et disponibilite</li>
+        <li>Reservation, suivi et paiement securise</li>
+        <li>Assistant IA Lia oriente la premiere prise de contact</li>
+      </ul>
+    </div>
+
+    <div class="slide">
+      <h2>Fonctionnalites client</h2>
+      <div class="grid">
+        <div class="card">
+          <h3>Recherche</h3>
+          <p>Categories, localisation GPS, filtre par avis et disponibilite.</p>
+        </div>
+        <div class="card">
+          <h3>Reservation</h3>
+          <p>Demande d'intervention, devis, validation et suivi en temps reel.</p>
+        </div>
+        <div class="card">
+          <h3>Messagerie</h3>
+          <p>Conversation directe client-technicien et historique.</p>
+        </div>
+        <div class="card">
+          <h3>Paiement</h3>
+          <p>Paiement apres intervention avec suivi des transactions.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide">
+      <h2>Fonctionnalites technicien</h2>
+      <div class="grid">
+        <div class="card">
+          <h3>Dashboard</h3>
+          <p>Statut, note, statistiques du jour, interventions et revenus.</p>
+        </div>
+        <div class="card">
+          <h3>Demandes</h3>
+          <p>Liste des demandes, tri urgent/aujourd'hui, refus ou acceptation.</p>
+        </div>
+        <div class="card">
+          <h3>Interventions</h3>
+          <p>Suivi des missions en cours, terminees et annulees.</p>
+        </div>
+        <div class="card">
+          <h3>Profil</h3>
+          <p>Disponibilite, position GPS, documents, historique et avis.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide">
+      <h2>Administrateur</h2>
+      <ul>
+        <li>Validation des inscriptions de techniciens</li>
+        <li>Gestion des clients, techniciens, categories et interventions</li>
+        <li>Suivi des paiements et commissions</li>
+        <li>Supervision de l'assistant Lia</li>
+      </ul>
+    </div>
+
+    <div class="slide">
+      <h2>Technologies</h2>
+      <div class="grid">
+        <div class="card">
+          <h3>Backend</h3>
+          <p>Python 3.12, Flask, Flask-WTF, Werkzeug, SQLite/PostgreSQL.</p>
+        </div>
+        <div class="card">
+          <h3>Frontend</h3>
+          <p>Jinja, HTML/CSS/JS responsive, Next.js pour l'admin.</p>
+        </div>
+        <div class="card">
+          <h3>Mobile</h3>
+          <p>Flutter pour Android/iOS.</p>
+        </div>
+        <div class="card">
+          <h3>Cloud</h3>
+          <p>Vercel (serveurless), Supabase PostgreSQL.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide">
+      <h2>Parcours type</h2>
+      <ol style="text-align: left; max-width: 800px; font-size: 1.3rem; color: #CBD5E1; line-height: 1.8;">
+        <li>Le client cree une demande ou choisit un professionnel</li>
+        <li>Le technicien recoit la demande et l'accepte</li>
+        <li>L'intervention est planifiee et suivie</li>
+        <li>Apres l'intervention, le client paie et laisse un avis</li>
+        <li>L'administrateur supervise et regle les commissions</li>
+      </ol>
+    </div>
+
+    <div class="slide">
+      <h2>Questions ?</h2>
+      <p>Merci pour votre attention.</p>
+      <p class="small">https://fixproguinea.vercel.app</p>
+    </div>
+
+  </div>
+
+  <div class="nav">
+    <button id="prev" type="button">Precedent</button>
+    <button id="next" type="button">Suivant</button>
+  </div>
+  <div class="counter"><span id="index">1</span> / <span id="total">8</span></div>
+
+  <script>
+    const slides = document.querySelectorAll('.slide');
+    const prev = document.getElementById('prev');
+    const next = document.getElementById('next');
+    const indexEl = document.getElementById('index');
+    const totalEl = document.getElementById('total');
+    let current = 0;
+    totalEl.textContent = slides.length;
+
+    function show(i) {
+      slides.forEach((s, n) => s.classList.toggle('active', n === i));
+      indexEl.textContent = i + 1;
+      prev.disabled = i === 0;
+      next.disabled = i === slides.length - 1;
+    }
+
+    prev.addEventListener('click', () => { if (current > 0) { current--; show(current); } });
+    next.addEventListener('click', () => { if (current < slides.length - 1) { current++; show(current); } });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' && current < slides.length - 1) { current++; show(current); }
+      if (e.key === 'ArrowLeft' && current > 0) { current--; show(current); }
+    });
+    show(0);
+  </script>
+</body>
+</html>
