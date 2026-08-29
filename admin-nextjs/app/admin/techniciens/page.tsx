@@ -232,7 +232,7 @@ export default function FixProTechniciensPage() {
       <style dangerouslySetInnerHTML={{ __html: FONT_STYLE }} />
 
       <aside
-        className={`fixed top-0 left-0 z-20 h-screen transition-transform duration-200 ${navOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
+        className={`fixed top-0 left-0 z-20 h-screen flex flex-col overflow-hidden transition-transform duration-200 ${navOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
         style={{ width: 220, background: C.brandDark, boxShadow: SHADOW_MD }}
       >
         <div className='flex items-center gap-2 px-5 py-5' style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
@@ -242,7 +242,7 @@ export default function FixProTechniciensPage() {
           <span className='fx-display font-bold text-white text-[16px]'>FixPro <span style={{ color: C.amber }}>Admin</span></span>
           <button className='ml-auto lg:hidden text-white' onClick={() => setNavOpen(false)}><X size={18} /></button>
         </div>
-        <nav className='px-3 mt-3 flex flex-col gap-0.5'>
+        <nav className='px-3 mt-3 flex-1 overflow-y-auto flex flex-col gap-0.5'>
           {NAV.map(({ label, icon: Icon, href }) => {
             const active = pathname === href || pathname.startsWith(href + '/');
             return (

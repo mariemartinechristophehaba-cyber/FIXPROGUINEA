@@ -171,7 +171,7 @@ export default function FixProAdminDashboard() {
       <style dangerouslySetInnerHTML={{ __html: FONT_STYLE }} />
 
       <aside
-        className={`fixed top-0 left-0 z-20 h-screen transition-transform duration-200 ${
+        className={`fixed top-0 left-0 z-20 h-screen flex flex-col overflow-hidden transition-transform duration-200 ${
           navOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
         style={{ width: 236, background: C.brandDark }}

@@ -838,7 +838,7 @@ def index():
                    COUNT(DISTINCT r.id) AS review_count
             FROM users u
             LEFT JOIN reviews r ON r.artisan_id = u.id
-            WHERE u.role = 'technician' AND u.is_verified = 1 AND u.is_active = 1
+            WHERE u.role = 'technician' AND u.is_active = 1 AND (u.account_status != 'DELETED' OR u.account_status IS NULL)
             GROUP BY u.id, u.full_name, u.profession, u.photo_url, u.is_verified, u.availability_status,
                      u.city, u.zone_intervention, u.quartier, u.latitude, u.longitude, u.hourly_rate
             ORDER BY avg_rating DESC, review_count DESC
@@ -856,7 +856,7 @@ def index():
                 unread_count = 0
         counts = {}
         for row in conn.execute(
-            "SELECT profession, COUNT(*) AS n FROM users WHERE role = 'technician' AND is_verified = 1 AND is_active = 1 GROUP BY profession").fetchall():
+            "SELECT profession, COUNT(*) AS n FROM users WHERE role = 'technician' AND is_active = 1 AND (account_status != 'DELETED' OR account_status IS NULL) GROUP BY profession").fetchall():
             counts[row["profession"]] = row["n"]
         canonical = [
             ("Plomberie", ["Plombier", "Plomberie"]),
@@ -973,7 +973,7 @@ def home():
                    COUNT(DISTINCT r.id) AS review_count
             FROM users u
             LEFT JOIN reviews r ON r.artisan_id = u.id
-            WHERE u.role = 'technician' AND u.is_verified = 1 AND u.is_active = 1
+            WHERE u.role = 'technician' AND u.is_active = 1 AND (u.account_status != 'DELETED' OR u.account_status IS NULL)
             GROUP BY u.id, u.full_name, u.profession, u.photo_url, u.is_verified, u.availability_status,
                      u.city, u.zone_intervention, u.quartier, u.latitude, u.longitude, u.hourly_rate
             ORDER BY avg_rating DESC, review_count DESC
@@ -990,7 +990,7 @@ def home():
                 unread_count = 0
         counts = {}
         for row in conn.execute(
-            "SELECT profession, COUNT(*) AS n FROM users WHERE role = 'technician' AND is_verified = 1 AND is_active = 1 GROUP BY profession").fetchall():
+            "SELECT profession, COUNT(*) AS n FROM users WHERE role = 'technician' AND is_active = 1 AND (account_status != 'DELETED' OR account_status IS NULL) GROUP BY profession").fetchall():
             counts[row["profession"]] = row["n"]
         canonical = [
             ("Plomberie", ["Plombier", "Plomberie"]),
@@ -1038,7 +1038,7 @@ def categories():
         rows = conn.execute(
             "SELECT sc.name,"
             " (SELECT COUNT(*) FROM users u"
-            " WHERE u.role = 'technician' AND u.is_verified = 1 AND u.is_active = 1"
+            " WHERE u.role = 'technician' AND u.is_active = 1 AND (u.account_status != 'DELETED' OR u.account_status IS NULL)"
             " AND (u.profession = sc.name OR u.skills LIKE '%' || sc.name || '%')) AS n"
             " FROM service_categories sc ORDER BY sc.name").fetchall()
         counts = {r["name"]: r["n"] for r in rows}
@@ -1486,6 +1486,75 @@ def api_mobile_register():
 
 
 csrf.exempt(api_mobile_register)
+
+
+@app.route("/api/mobile/login", methods=["POST"])
+@limiter.limit("20 per hour")
+def api_mobile_login():
+    """Connexion technicien depuis l'application mobile (JSON + token 7 jours)."""
+    data = request.get_json(silent=True) or {}
+    phone = data.get("phone", "").strip()
+    password = data.get("password", "")
+
+    if not phone or not password:
+        return jsonify({"error": "Identifiants manquants"}), 400
+
+    conn = get_db_connection()
+    try:
+        user = conn.execute(
+            "SELECT * FROM users WHERE phone = ? AND role = 'technician'",
+            (phone,)).fetchone()
+    finally:
+        conn.close()
+
+    if not user or not check_password_hash(user["password_hash"], password):
+        return jsonify({"error": "Identifiants incorrects"}), 401
+
+    if user["account_status"] != "ACTIVE":
+        return jsonify({"error": "Votre compte FixPro est actuellement suspendu. Veuillez contacter l'administration."}), 403
+
+    token = _generate_mobile_token(user)
+    return jsonify({
+        "ok": True,
+        "token": token,
+        "user": {
+            "id": user["id"],
+            "full_name": user["full_name"],
+            "role": user["role"],
+            "account_status": user["account_status"],
+        }
+    }), 200
+
+
+@app.route("/api/mobile/verify", methods=["GET"])
+@limiter.limit("60 per hour")
+def api_mobile_verify():
+    """Verifie un token mobile et retourne le compte s'il est valide."""
+    auth = request.headers.get("Authorization", "")
+    if not auth.startswith("Bearer "):
+        return jsonify({"error": "Token manquant"}), 401
+
+    token = auth.split(" ", 1)[1].strip()
+    user, reason = _verify_mobile_token(token)
+
+    if reason == "expired":
+        return jsonify({"error": "Session expiree", "reason": "expired"}), 401
+    if reason:
+        return jsonify({"error": "Token invalide", "reason": reason}), 401
+
+    return jsonify({
+        "ok": True,
+        "user": {
+            "id": user["id"],
+            "full_name": user["full_name"],
+            "role": user["role"],
+            "account_status": user["account_status"],
+        }
+    }), 200
+
+
+csrf.exempt(api_mobile_login)
+csrf.exempt(api_mobile_verify)
 
 
 def _finalize_artisan_registration_json(wizard):
@@ -2774,6 +2843,47 @@ def _verify_activation_token(token):
         return None
 
 
+_MOBILE_TOKEN_MAX_AGE = 7 * 24 * 60 * 60  # 7 jours
+_mobile_serializer = URLSafeTimedSerializer(
+    app.config.get("SECRET_KEY") or "fallback-secret",
+    salt="technician-mobile")
+
+
+def _generate_mobile_token(user):
+    """Genere un token mobile de 7 jours pour un technicien."""
+    return _mobile_serializer.dumps({
+        "user_id": user["id"],
+        "role": user["role"],
+        "account_status": user.get("account_status", ""),
+    })
+
+
+def _verify_mobile_token(token):
+    """Verifie un token mobile et retourne (user, error_reason)."""
+    if not token:
+        return None, "missing"
+    try:
+        data = _mobile_serializer.loads(token, max_age=_MOBILE_TOKEN_MAX_AGE)
+    except SignatureExpired:
+        return None, "expired"
+    except BadSignature:
+        return None, "invalid"
+
+    conn = get_db_connection()
+    try:
+        user = conn.execute("SELECT * FROM users WHERE id = ?", (data.get("user_id"),)).fetchone()
+    finally:
+        conn.close()
+
+    if not user:
+        return None, "user_missing"
+    if user["role"] != "technician":
+        return None, "not_technician"
+    if user["account_status"] != "ACTIVE":
+        return None, "suspended"
+    return user, None
+
+
 @app.route("/login", methods=["GET", "POST"])
 @limiter.limit("20 per hour", methods=["POST"])
 def login():
@@ -3464,7 +3574,7 @@ def artisans_page():
         " FROM users u"
         " LEFT JOIN reviews r ON r.artisan_id = u.id"
         " LEFT JOIN requests req_completed ON req_completed.artisan_id = u.id AND req_completed.status = 'completed'"
-        " WHERE u.role = 'technician' AND u.is_active = 1 AND u.is_verified = 1 AND u.account_status != 'DELETED'")
+        " WHERE u.role = 'technician' AND u.is_active = 1 AND (u.account_status != 'DELETED' OR u.account_status IS NULL)")
     params = []
 
     if query:
@@ -3548,7 +3658,7 @@ def api_techniciens():
             " LEFT JOIN requests req_completed ON req_completed.artisan_id = u.id"
             " AND req_completed.status = 'completed'"
             " WHERE u.role = 'technician' AND u.is_active = 1"
-            " AND u.is_verified = 1 AND u.account_status != 'DELETED'")
+            " AND (u.account_status != 'DELETED' OR u.account_status IS NULL)")
         params = []
 
         if query:

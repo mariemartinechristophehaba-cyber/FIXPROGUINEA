@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 
 import '../config/app_config.dart';
+import 'token_service.dart';
 
 /// Service d'acces au backend FixPro Flask.
 ///
@@ -12,24 +13,19 @@ class ApiService {
   ApiService._();
 
   static final http.Client _client = http.Client();
-  static String? _sessionCookie;
 
   static String get baseUrl =>
       const String.fromEnvironment('API_URL', defaultValue: 'http://10.0.2.2:5000');
 
   static bool get isConfigured => baseUrl.isNotEmpty;
 
-  static bool get isLoggedIn => _sessionCookie != null && _sessionCookie!.isNotEmpty;
-
-  static void logout() {
-    _sessionCookie = null;
+  static Future<bool> get isLoggedIn async {
+    final token = await TokenService.getToken();
+    return token != null && token.isNotEmpty;
   }
 
-  /// Extrait le cookie de session Flask de l'en-tete `Set-Cookie`.
-  static String _extractSessionCookie(String? setCookie) {
-    if (setCookie == null || setCookie.isEmpty) return '';
-    final match = RegExp(r'session=[^;]+').firstMatch(setCookie);
-    return match?.group(0) ?? '';
+  static void logout() {
+    TokenService.clearAll();
   }
 
   static void _assertConfigured() {
@@ -38,48 +34,71 @@ class ApiService {
     }
   }
 
-  /// Connexion a la session Flask via telephone + mot de passe.
+  /// Verifie si une session mobile est encore valide.
+  static Future<Map<String, dynamic>?> verifySession() async {
+    await _assertConfigured();
+    final token = await TokenService.getToken();
+    if (token == null || token.isEmpty) return null;
+
+    final response = await _client.get(
+      Uri.parse('$baseUrl/api/mobile/verify'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 200) {
+      final body = jsonDecode(response.body) as Map<String, dynamic>;
+      final user = body['user'] as Map<String, dynamic>?;
+      if (user != null) {
+        await TokenService.setUser(jsonEncode(user));
+      }
+      return user;
+    }
+
+    if (response.statusCode == 401) {
+      await TokenService.clearAll();
+    }
+    return null;
+  }
+
+  /// Connexion d'un technicien et stockage securise du token 7 jours.
   static Future<void> login({
     required String phone,
     required String password,
   }) async {
-    _assertConfigured();
-    _sessionCookie = null;
+    await _assertConfigured();
+    await TokenService.clearAll();
 
-    final request = http.Request('POST', Uri.parse('$baseUrl/login'))
-      ..followRedirects = false
-      ..bodyFields = {'identifier': phone, 'password': password}
-      ..headers['Content-Type'] = 'application/x-www-form-urlencoded';
-
-    final streamed = await _client.send(request);
-    final response = await http.Response.fromStream(streamed);
-
-    if (response.statusCode >= 300 && response.statusCode < 400) {
-      _sessionCookie = _extractSessionCookie(response.headers['set-cookie']);
-      if (_sessionCookie == null || _sessionCookie!.isEmpty) {
-        throw const ApiFailure('Aucune session recue.');
-      }
-      return;
-    }
+    final response = await _client.post(
+      Uri.parse('$baseUrl/api/mobile/login'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'phone': phone, 'password': password}),
+    );
 
     if (response.statusCode >= 400) {
-      throw const ApiFailure('Identifiants incorrects.');
+      final message = _extractMessage(response.body);
+      throw ApiFailure(message);
     }
 
-    final message = _extractMessage(response.body);
-    if (message.toLowerCase().contains('incorrect')) {
-      throw const ApiFailure('Identifiants incorrects.');
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    final token = body['token'] as String?;
+    final user = body['user'] as Map<String, dynamic>?;
+
+    if (token == null || token.isEmpty || user == null) {
+      throw const ApiFailure('Reponse de connexion incomplete.');
     }
-    throw ApiFailure(message);
+
+    await TokenService.setToken(token);
+    await TokenService.setUser(jsonEncode(user));
   }
 
   static Future<Map<String, dynamic>> getProfile() async {
-    _assertConfigured();
-    if (!isLoggedIn) throw const ApiFailure('Session inconnue.');
+    await _assertConfigured();
+    if (!await isLoggedIn) throw const ApiFailure('Session inconnue.');
 
+    final token = await TokenService.getToken();
     final response = await _client.get(
       Uri.parse('$baseUrl/api/technicien/profile'),
-      headers: {'Cookie': _sessionCookie!},
+      headers: {'Authorization': 'Bearer $token'},
     );
 
     if (response.statusCode >= 400) {
@@ -90,17 +109,18 @@ class ApiService {
 
   /// Met a jour le statut de disponibilite (en_ligne / occupe / hors_ligne).
   static Future<void> updateAvailability(String status) async {
-    _assertConfigured();
-    if (!isLoggedIn) throw const ApiFailure('Session inconnue.');
+    await _assertConfigured();
+    if (!await isLoggedIn) throw const ApiFailure('Session inconnue.');
 
-    final request = http.Request('POST', Uri.parse('$baseUrl/api/technicien/status'))
-      ..followRedirects = false
-      ..bodyFields = {'status': status}
-      ..headers['Content-Type'] = 'application/x-www-form-urlencoded'
-      ..headers['Cookie'] = _sessionCookie!;
-
-    final streamed = await _client.send(request);
-    final response = await http.Response.fromStream(streamed);
+    final token = await TokenService.getToken();
+    final response = await _client.post(
+      Uri.parse('$baseUrl/api/technicien/status'),
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': 'Bearer $token',
+      },
+      body: {'status': status},
+    );
 
     if (response.statusCode >= 400) {
       throw const ApiFailure('Impossible de mettre a jour le statut.');
@@ -109,17 +129,18 @@ class ApiService {
 
   /// Envoie la position GPS au backend.
   static Future<bool> sendPosition(double latitude, double longitude) async {
-    _assertConfigured();
-    if (!isLoggedIn) throw const ApiFailure('Session inconnue.');
+    await _assertConfigured();
+    if (!await isLoggedIn) throw const ApiFailure('Session inconnue.');
 
-    final request = http.Request('POST', Uri.parse('$baseUrl/api/technicien/position'))
-      ..followRedirects = false
-      ..bodyFields = {'lat': latitude.toString(), 'lon': longitude.toString()}
-      ..headers['Content-Type'] = 'application/x-www-form-urlencoded'
-      ..headers['Cookie'] = _sessionCookie!;
-
-    final streamed = await _client.send(request);
-    final response = await http.Response.fromStream(streamed);
+    final token = await TokenService.getToken();
+    final response = await _client.post(
+      Uri.parse('$baseUrl/api/technicien/position'),
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': 'Bearer $token',
+      },
+      body: {'lat': latitude.toString(), 'lon': longitude.toString()},
+    );
 
     if (response.statusCode >= 400) {
       throw const ApiFailure('Serveur non joignable.');
@@ -148,7 +169,7 @@ class ApiService {
     String? identityDoc,
     String? diplomaDoc,
   }) async {
-    _assertConfigured();
+    await _assertConfigured();
 
     final body = {
       'first_name': firstName,
@@ -178,10 +199,8 @@ class ApiService {
 
   /// Liste les techniciens actifs et verifies depuis le backend.
   static Future<List<Map<String, dynamic>>> getTechnicians() async {
-    _assertConfigured();
-    final response = await _client.get(
-      Uri.parse('$baseUrl/api/techniciens'),
-    );
+    await _assertConfigured();
+    final response = await _client.get(Uri.parse('$baseUrl/api/techniciens'));
     if (response.statusCode >= 400) {
       throw ApiFailure(_extractMessage(response.body));
     }

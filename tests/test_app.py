@@ -4,6 +4,7 @@ Chaque test s'execute sur une base SQLite temporaire, isolee et jetable.
 Lancement : python -m pytest tests/ -v
 """
 
+import json
 import os
 import sys
 import tempfile
@@ -2134,6 +2135,76 @@ class GpsTestCase(FixProTestCase):
             "lon": "-13.7120",
         })
         self.assertEqual(response.status_code, 403)
+
+
+class MobileTechnicianSessionTests(FixProTestCase):
+    """Tests de la session mobile persistante 7 jours du technicien."""
+
+    def _insert_technician(self, phone, password, status="ACTIVE"):
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute(
+                "INSERT INTO users (phone, password_hash, role, full_name, account_status,"
+                " is_verified, is_active) VALUES (?, ?, ?, ?, ?, 1, 1)",
+                (phone, fixpro_app.generate_password_hash(password), "technician", "Tech Test", status))
+            conn.commit()
+            return conn.execute("SELECT id FROM users WHERE phone = ?", (phone,)).fetchone()["id"]
+        finally:
+            conn.close()
+
+    def test_mobile_login_technician_returns_token(self):
+        self._insert_technician("+224620000001", "Secret123!")
+        response = self.client.post("/api/mobile/login",
+                                    data=json.dumps({"phone": "+224620000001", "password": "Secret123!"}),
+                                    content_type="application/json")
+        self.assertEqual(response.status_code, 200)
+        body = response.get_json()
+        self.assertTrue(body["ok"])
+        self.assertIn("token", body)
+        self.assertEqual(body["user"]["role"], "technician")
+
+    def test_mobile_login_non_technician_fails(self):
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute(
+                "INSERT INTO users (phone, password_hash, role, full_name, account_status,"
+                " is_verified, is_active) VALUES (?, ?, ?, ?, ?, 1, 1)",
+                ("+224620000002", fixpro_app.generate_password_hash("Secret123!"), "client", "Client Test", "ACTIVE"))
+            conn.commit()
+        finally:
+            conn.close()
+        response = self.client.post("/api/mobile/login",
+                                    data=json.dumps({"phone": "+224620000002", "password": "Secret123!"}),
+                                    content_type="application/json")
+        self.assertEqual(response.status_code, 401)
+
+    def test_mobile_login_suspended_technician_fails(self):
+        self._insert_technician("+224620000003", "Secret123!", "SUSPENDED")
+        response = self.client.post("/api/mobile/login",
+                                    data=json.dumps({"phone": "+224620000003", "password": "Secret123!"}),
+                                    content_type="application/json")
+        self.assertEqual(response.status_code, 403)
+
+    def test_mobile_verify_valid_token(self):
+        self._insert_technician("+224620000004", "Secret123!")
+        login = self.client.post("/api/mobile/login",
+                                 data=json.dumps({"phone": "+224620000004", "password": "Secret123!"}),
+                                 content_type="application/json")
+        token = login.get_json()["token"]
+        response = self.client.get("/api/mobile/verify",
+                                   headers={"Authorization": f"Bearer {token}"})
+        self.assertEqual(response.status_code, 200)
+        body = response.get_json()
+        self.assertEqual(body["user"]["role"], "technician")
+
+    def test_mobile_verify_tampered_token_fails(self):
+        response = self.client.get("/api/mobile/verify",
+                                   headers={"Authorization": "Bearer fake-token"})
+        self.assertEqual(response.status_code, 401)
+
+    def test_mobile_verify_missing_token_fails(self):
+        response = self.client.get("/api/mobile/verify")
+        self.assertEqual(response.status_code, 401)
 
 
 if __name__ == "__main__":

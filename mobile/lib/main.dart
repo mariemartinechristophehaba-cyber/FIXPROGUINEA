@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 
 import 'screens/dashboard_screen.dart';
+import 'screens/technician_dashboard_screen.dart';
+import 'screens/technician_splash_screen.dart';
 import 'screens/welcome_screen.dart';
+import 'services/api_service.dart';
 import 'services/auth_service.dart';
 import 'services/supabase_service.dart';
 import 'theme/app_colors.dart';
@@ -29,8 +32,10 @@ class FixProApp extends StatelessWidget {
   }
 }
 
-/// Décide de l'écran de départ : tableau de bord si une session Supabase
-/// est déjà active, sinon écran de bienvenue.
+/// Décide de l'écran de départ :
+/// - technicien connecte au backend FixPro -> verification puis dashboard
+/// - session Supabase active -> dashboard client
+/// - sinon -> ecran de bienvenue.
 class AuthGate extends StatelessWidget {
   const AuthGate({super.key});
 
@@ -38,7 +43,30 @@ class AuthGate extends StatelessWidget {
   Widget build(BuildContext context) {
     const auth = AuthService();
     if (auth.isLoggedIn) return const DashboardScreen();
-    return const WelcomeScreen();
+    return const _TechnicianCheck();
+  }
+}
+
+/// Verifie asynchrone si un token technicien est present.
+class _TechnicianCheck extends StatelessWidget {
+  const _TechnicianCheck();
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<bool>(
+      future: ApiService.isLoggedIn,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        if (snapshot.data == true) {
+          return const TechnicianSplashScreen();
+        }
+        return const WelcomeScreen();
+      },
+    );
   }
 }
 
