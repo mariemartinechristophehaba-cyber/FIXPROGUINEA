@@ -19,11 +19,11 @@
 
     .t-header {
       display: flex; align-items: center; justify-content: space-between;
-      padding: 14px 18px; background: #2563EB; color: #fff;
+      padding: 14px 18px; background: #fff; color: #2563EB;
     }
     .t-logo { font-weight: 800; font-size: 20px; display: flex; align-items: center; gap: 6px; }
     .t-logo-dot { width: 8px; height: 8px; border-radius: 50%; background: #22C55E; }
-    .t-bell { position: relative; color: #fff; padding: 4px; }
+    .t-bell { position: relative; color: #111827; padding: 4px; }
     .t-bell svg { width: 24px; height: 24px; }
     .t-badge {
       position: absolute; top: -3px; right: -3px; min-width: 18px; height: 18px;
@@ -166,8 +166,8 @@
         </div>
         <div class="t-profile-info">
           <span style="display:none">Bienvenue</span>
-          <h2 class="t-greeting">Bonjour, {{ (user.full_name or 'Ibrahim').split(' ')[0] }} ! <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FBBF24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8c0 4.5-6 9-6 9s-6-4.5-6-9a6 6 0 0 1 12 0z"/><path d="M12 14v-3"/><path d="M12 7h.01"/></svg></h2>
-          <p class="t-job">{{ user.profession or 'Technicien' }}</p>
+          <h2 class="t-greeting">Bonjour, {{ (user.full_name or 'Ibrahim').split(' ')[0] }} ! <span style="font-size: 18px; margin-left: 4px;">👋</span></h2>
+          <p class="t-job">Technicien {{ user.profession or '' }}</p>
           <select class="t-status-select" id="statusSelect" data-csrf="{{ csrf_token() }}">
             <option value="en_ligne" {% if user.availability_status == 'en_ligne' %}selected{% endif %}>Disponible</option>
             <option value="occupe" {% if user.availability_status == 'occupe' %}selected{% endif %}>En intervention</option>
@@ -210,7 +210,7 @@
         </div>
         <div class="t-stat">
           <div class="t-stat-icon u-wallet">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-15a2 2 0 0 0 0 4h15a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1Z"/><path d="M16 11h.01"/></svg>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V8H4a2 2 0 0 1 0-4h16v4"/><path d="M20 12v4a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-4"/><path d="M18 10h.01"/><circle cx="16" cy="14" r="1.5"/></svg>
           </div>
           <div class="t-stat-num">{{ "{:,.0f}".format(stats.revenus|default(0)|int).replace(",", " ") }}</div>
           <div class="t-stat-label">Revenus aujourd'hui</div>
