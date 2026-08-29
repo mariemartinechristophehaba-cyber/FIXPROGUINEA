@@ -126,10 +126,12 @@
       {% if request.endpoint not in ('dashboard', 'index', 'artisans_page') %}
       <header class="topbar">
         <h1 class="topbar-title">{% block page_title %}{% endblock %}</h1>
+        {% if not (nav_user and nav_user.role in ('artisan','technician')) %}
         <a class="btn btn-primary btn-sm" href="{{ url_for('request_new') }}">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
           Nouvelle demande
         </a>
+        {% endif %}
       </header>
       {% endif %}
       {% endif %}
