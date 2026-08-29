@@ -171,7 +171,7 @@ export default function FixProAdminDashboard() {
       <style dangerouslySetInnerHTML={{ __html: FONT_STYLE }} />
 
       <aside
-        className={`fixed z-20 h-screen transition-transform duration-200 ${
+        className={`fixed top-0 left-0 z-20 h-screen transition-transform duration-200 ${
           navOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
         style={{ width: 236, background: C.brandDark }}
@@ -227,7 +227,7 @@ export default function FixProAdminDashboard() {
         <div className='fixed inset-0 bg-black/30 z-10 lg:hidden' onClick={() => setNavOpen(false)} />
       )}
 
-      <main className='flex-1 min-w-0 flex flex-col lg:ml-[220px]'>
+      <main className='flex-1 min-w-0 flex flex-col h-screen overflow-y-auto lg:ml-[220px]'>
         <div
           className='flex items-center gap-4 px-5 lg:px-8 py-4 sticky top-0 z-10'
           style={{ background: C.bg, borderBottom: `1px solid ${C.border}` }}
