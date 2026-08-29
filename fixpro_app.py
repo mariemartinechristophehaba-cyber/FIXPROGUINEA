@@ -873,6 +873,11 @@ def index():
             popular.append({"label": label, "count": n, "category": href_key})
 
         artisans = [dict(a) for a in artisans]
+
+        # Un technicien connecte n'a pas a voir l'accueil client
+        if user and user.get("role") == "technician":
+            return redirect(url_for("artisan_dashboard"))
+
         client_lat = _to_float(user.get("latitude")) if user else None
         client_lon = _to_float(user.get("longitude")) if user else None
         if client_lat is None or client_lon is None:
