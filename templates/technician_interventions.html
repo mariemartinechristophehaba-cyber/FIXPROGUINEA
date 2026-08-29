@@ -2,9 +2,9 @@
 {% block title %}Mes interventions - FixPro{% endblock %}
 {% block extra_head %}
 <style>
-  body { padding-top: 0 !important; margin: 0; }
-  .page { padding-top: 0 !important; }
-  .ti-wrap { min-height: 100vh; padding-bottom: 88px; }
+  body { padding: 0 !important; margin: 0; }
+  .page { padding: 0 !important; }
+  .ti-wrap { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 88px; }
 
   .ti-hero { background: #fff; border-radius: 0 0 18px 18px; padding: 0 16px 10px; margin-bottom: 6px; }
   .ti-appbar {
@@ -109,6 +109,7 @@
 </style>
 {% endblock %}
 
+{% block appbar %}{% endblock %}
 {% block header %}{% endblock %}
 
 {% macro render_card(r, progress, completed, cancelled) %}
