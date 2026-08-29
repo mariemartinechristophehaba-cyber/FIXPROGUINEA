@@ -874,14 +874,6 @@ def index():
 
         artisans = [dict(a) for a in artisans]
 
-        # Un technicien connecte n'a pas a voir l'accueil client
-        if user and _is_technician(user):
-            response = make_response(redirect(url_for("artisan_dashboard")))
-            response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
-            response.headers['Pragma'] = 'no-cache'
-            response.headers['Expires'] = '0'
-            return response
-
         client_lat = _to_float(user.get("latitude")) if user else None
         client_lon = _to_float(user.get("longitude")) if user else None
         if client_lat is None or client_lon is None:
@@ -2933,14 +2925,10 @@ def login():
 
             if next_url:
                 return redirect(next_url)
-            if user["role"] == "client":
-                return redirect(url_for("artisans_page"))
-            if _is_technician(user):
-                return redirect(url_for("artisan_dashboard"))
             if user["role"] == "admin":
                 session["admin_unlocked"] = False
                 return redirect(url_for("admin_unlock"))
-            return redirect(url_for("requests_list"))
+            return redirect(url_for("index"))
 
         # Message identique pour ne pas reveler quel identifiant existe.
         flash("Identifiants incorrects.", "error")
