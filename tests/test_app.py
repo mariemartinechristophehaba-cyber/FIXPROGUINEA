@@ -259,7 +259,8 @@ class ClientProfileTests(FixProTestCase):
         self.register_client()
         self.login("+224620000000")
         response = self.client.get("/messages/new")
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/messages/", response.location)
 
 
 class ArtisanRegistrationTests(FixProTestCase):

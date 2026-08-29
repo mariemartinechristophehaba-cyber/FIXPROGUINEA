@@ -6031,11 +6031,29 @@ def client_messages():
 @app.route("/messages/new", methods=["GET", "POST"])
 @login_required
 def client_message_new():
-    """Nouvelle conversation client."""
+    """Nouvelle conversation client/technicien."""
     user = get_current_user()
-    if user["role"] not in ("client", "admin"):
-        flash("Cet espace est reserve aux clients et administrateurs.", "error")
+    if user["role"] not in ("client", "admin", "artisan", "technician"):
+        flash("Cet espace est reserve aux utilisateurs connectes.", "error")
         return redirect(url_for("index"))
+    if request.method == "GET":
+        subject = "Nouvelle conversation"
+        conn = get_db_connection()
+        try:
+            if _is_technician(user):
+                conv_id = _insert_id(
+                    conn,
+                    "INSERT INTO conversations (client_id, artisan_id, subject) VALUES (?, ?, ?)",
+                    (user["id"], user["id"], subject))
+            else:
+                conv_id = _insert_id(
+                    conn,
+                    "INSERT INTO conversations (client_id, subject) VALUES (?, ?)",
+                    (user["id"], subject))
+            conn.commit()
+        finally:
+            conn.close()
+        return redirect(url_for("client_conversation", conversation_id=conv_id))
     if request.method == "POST":
         subject = (request.form.get("subject") or "").strip()
         content = (request.form.get("content") or "").strip()
@@ -6044,14 +6062,22 @@ def client_message_new():
             return redirect(url_for("client_message_new"))
         conn = get_db_connection()
         try:
-            conv_id = _insert_id(
-                conn,
-                "INSERT INTO conversations (client_id, subject) VALUES (?, ?)",
-                (user["id"], subject))
+            if _is_technician(user):
+                conv_id = _insert_id(
+                    conn,
+                    "INSERT INTO conversations (client_id, artisan_id, subject) VALUES (?, ?, ?)",
+                    (user["id"], user["id"], subject))
+                sender_role = "client"
+            else:
+                conv_id = _insert_id(
+                    conn,
+                    "INSERT INTO conversations (client_id, subject) VALUES (?, ?)",
+                    (user["id"], subject))
+                sender_role = "client"
             conn.execute(
                 "INSERT INTO conversation_messages"
                 " (conversation_id, sender_id, sender_role, content) VALUES (?, ?, ?, ?)",
-                (conv_id, user["id"], "client", content))
+                (conv_id, user["id"], sender_role, content))
             try:
                 conn.execute(
                     "INSERT INTO lia_logs"
