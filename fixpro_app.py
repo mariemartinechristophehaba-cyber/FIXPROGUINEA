@@ -4397,9 +4397,12 @@ def technician_interventions():
     progress_count = sum(1 for r in rows if r.get("status") in progress_statuses)
     completed_count = sum(1 for r in rows if r.get("status") in completed_statuses)
     cancelled_count = sum(1 for r in rows if r.get("status") in cancelled_statuses)
+    today = datetime.now().date()
+    yesterday = today - timedelta(days=1)
     return render_template("technician_interventions.html", requests=rows, user=user,
                            progress_count=progress_count, completed_count=completed_count,
-                           cancelled_count=cancelled_count)
+                           cancelled_count=cancelled_count,
+                           today_str=today.isoformat(), yesterday_str=yesterday.isoformat())
 
 
 @app.route("/requests")

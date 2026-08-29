@@ -6,44 +6,43 @@
   .page { padding-top: 0 !important; }
   .ti-wrap { min-height: 100vh; padding-bottom: 88px; }
 
-  .ti-hero { background: #fff; border-radius: 0 0 20px 20px; padding-bottom: 10px; margin-bottom: 6px; }
+  .ti-hero { background: #fff; border-radius: 0 0 18px 18px; padding: 0 16px 10px; margin-bottom: 6px; }
   .ti-appbar {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 4px 16px 0;
+    padding: 6px 0 0;
   }
-  .ti-brand { font-size: 23px; font-weight: 800; color: #0F172A; white-space: nowrap; }
+  .ti-brand { font-size: 22px; font-weight: 800; color: #0F172A; white-space: nowrap; }
   .ti-brand em { color: #155EEF; font-style: normal; }
-  .ti-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #22C55E; margin-left: 3px; vertical-align: middle; }
+  .ti-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #22C55E; margin-left: 3px; vertical-align: middle; }
   .ti-bell { position: relative; color: #0F172A; }
-  .ti-bell svg { width: 24px; height: 24px; }
+  .ti-bell svg { width: 22px; height: 22px; }
   .ti-badge {
-    position: absolute; top: -4px; right: -3px; min-width: 16px; height: 16px;
-    background: #EF4444; color: #fff; font-size: 10px; font-weight: 700;
-    border-radius: 50%; display: flex; align-items: center; justify-content: center; padding: 0 4px;
+    position: absolute; top: -4px; right: -3px; min-width: 14px; height: 14px;
+    background: #EF4444; color: #fff; font-size: 9px; font-weight: 700;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center; padding: 0 3px;
   }
 
-  .ti-header {
-    padding: 0 16px 4px;
-  }
-  .ti-header h1 { margin: 0; font-size: 19px; font-weight: 700; color: #0F172A; line-height: 1.2; }
-  .ti-header p { margin: 1px 0 0; font-size: 12px; color: #A0AEC0; }
+  .ti-header { padding: 2px 0 6px; }
+  .ti-header h1 { margin: 0; font-size: 18px; font-weight: 700; color: #0F172A; line-height: 1.3; }
+  .ti-header p { margin: 0; font-size: 12px; color: #94A3B8; }
 
   .ti-tabs {
-    display: flex; gap: 8px; padding: 12px 16px; background: #fff; border-bottom: 1px solid #E2E8F0;
+    display: flex; gap: 6px; padding: 6px 0 0;
   }
   .ti-tabs a {
-    flex: 1; padding: 10px 6px; border-radius: 14px; font-size: 12px; font-weight: 700;
+    flex: 1; padding: 8px 4px; border-radius: 12px; font-size: 11px; font-weight: 700;
     background: #F1F5F9; color: #64748B; text-align: center; text-decoration: none;
+    line-height: 1.2;
   }
   .ti-tabs a.active { background: #155EEF; color: #fff; }
 
   .ti-stats {
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 14px 16px; background: #fff;
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 10px 16px; background: #fff;
   }
-  .ti-stat { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; }
-  .ti-stat-icon { width: 44px; height: 44px; border-radius: 14px; display: flex; align-items: center; justify-content: center; }
-  .ti-stat-icon svg { width: 20px; height: 20px; }
-  .ti-stat-num { font-size: 15px; font-weight: 800; color: #0F172A; }
+  .ti-stat { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; }
+  .ti-stat-icon { width: 36px; height: 36px; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+  .ti-stat-icon svg { width: 16px; height: 16px; }
+  .ti-stat-num { font-size: 14px; font-weight: 800; color: #0F172A; }
   .ti-stat-label { font-size: 9px; color: #64748B; }
 
   .ti-total { background: #EEF2FF; color: #155EEF; }
@@ -51,62 +50,100 @@
   .ti-done { background: #DCFCE7; color: #16A34A; }
   .ti-cancel { background: #FEE2E2; color: #DC2626; }
 
-  .ti-main { padding: 14px 16px; }
-  .ti-section { font-size: 15px; font-weight: 700; color: #0F172A; margin: 8px 0 12px; }
+  .ti-main { padding: 12px 16px; }
+  .ti-section { font-size: 14px; font-weight: 700; color: #0F172A; margin: 14px 0 8px; }
+  .ti-empty { text-align: center; padding: 16px; font-size: 13px; color: #94A3B8; background: #fff; border-radius: 14px; margin-bottom: 12px; }
+
   .ti-card {
-    background: #fff; border-radius: 20px; padding: 14px; margin-bottom: 12px;
+    background: #fff; border-radius: 16px; padding: 12px; margin-bottom: 10px;
     box-shadow: 0 2px 12px rgba(0,0,0,.04);
   }
-  .ti-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; }
+  .ti-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 8px; }
   .ti-pill {
-    font-size: 11px; font-weight: 700; padding: 5px 10px; border-radius: 20px;
+    font-size: 10px; font-weight: 700; padding: 4px 8px; border-radius: 20px;
     display: inline-flex; align-items: center; gap: 4px;
   }
   .ti-pill.urgent { background: #FEE2E2; color: #991B1B; }
   .ti-pill.normal { background: #FEF3C7; color: #92400E; }
   .ti-pill.planned { background: #E0E7FF; color: #4F46E5; }
   .ti-pill.completed { background: #DCFCE7; color: #166534; }
-  .ti-status-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .ti-status-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
 
-  .ti-body { display: flex; align-items: flex-start; gap: 12px; }
+  .ti-body { display: flex; align-items: flex-start; gap: 10px; }
   .ti-icon {
-    width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
     flex-shrink: 0;
   }
   .ti-icon.elec { background: #FEE2E2; color: #DC2626; }
   .ti-icon.frigo { background: #E0F7FA; color: #0891B2; }
   .ti-icon.plomb { background: #DCFCE7; color: #16A34A; }
-  .ti-icon svg { width: 24px; height: 24px; }
+  .ti-icon svg { width: 22px; height: 22px; }
   .ti-info { flex: 1; min-width: 0; }
-  .ti-info h3 { margin: 0 0 2px; font-size: 15px; font-weight: 700; color: #0F172A; }
-  .ti-ref { font-size: 12px; color: #64748B; margin: 0 0 4px; }
-  .ti-desc { font-size: 13px; color: #0F172A; margin: 0 0 6px; }
-  .ti-row { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #64748B; margin: 0 0 3px; }
-  .ti-row svg { width: 14px; height: 14px; color: #94A3B8; }
+  .ti-info h3 { margin: 0 0 2px; font-size: 14px; font-weight: 700; color: #0F172A; }
+  .ti-ref { font-size: 11px; color: #64748B; margin: 0 0 3px; }
+  .ti-desc { font-size: 12px; color: #0F172A; margin: 0 0 4px; }
+  .ti-row { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #64748B; margin: 0 0 2px; }
+  .ti-row svg { width: 12px; height: 12px; color: #94A3B8; }
 
   .ti-price { text-align: right; }
-  .ti-price strong { display: block; font-size: 15px; font-weight: 800; color: #155EEF; }
-  .ti-payment { font-size: 11px; color: #64748B; margin-top: 2px; }
+  .ti-price strong { display: block; font-size: 14px; font-weight: 800; color: #155EEF; }
+  .ti-payment { font-size: 10px; color: #64748B; margin-top: 2px; }
   .ti-payment .en-attente { color: #F97316; }
   .ti-payment .partiel { color: #2563EB; }
   .ti-payment .paye { color: #16A34A; }
 
-  .ti-actions { display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px; margin-top: 14px; }
+  .ti-actions { display: grid; grid-template-columns: 1fr 1.4fr; gap: 8px; margin-top: 12px; }
   .ti-btn-detail {
-    display: flex; align-items: center; justify-content: center; gap: 6px;
-    padding: 12px; border-radius: 12px; background: #fff; color: #155EEF;
-    border: 1px solid #155EEF; font-size: 13px; font-weight: 700; text-decoration: none;
+    display: flex; align-items: center; justify-content: center; gap: 5px;
+    padding: 10px; border-radius: 10px; background: #fff; color: #155EEF;
+    border: 1px solid #155EEF; font-size: 12px; font-weight: 700; text-decoration: none;
   }
   .ti-btn-action {
-    display: flex; align-items: center; justify-content: center; gap: 6px;
-    padding: 12px; border-radius: 12px; background: #155EEF; color: #fff;
-    font-size: 13px; font-weight: 700; border: none; cursor: pointer; font-family: inherit;
+    display: flex; align-items: center; justify-content: center; gap: 5px;
+    padding: 10px; border-radius: 10px; background: #155EEF; color: #fff;
+    font-size: 12px; font-weight: 700; border: none; cursor: pointer; font-family: inherit;
   }
-  .ti-btn-action svg { width: 16px; height: 16px; }
+  .ti-btn-action svg { width: 14px; height: 14px; }
+
+  .ti-hidden { display: none !important; }
 </style>
 {% endblock %}
 
 {% block header %}{% endblock %}
+
+{% macro render_card(r, progress, completed, cancelled) %}
+{% set rstatus = 'progress' if r.status in progress else 'completed' if r.status in completed else 'cancelled' if r.status in cancelled else 'all' %}
+<div class="ti-card" data-status="{{ rstatus }}">
+  <div class="ti-top">
+    <span class="ti-pill {{ 'urgent' if r.urgency == 'urgent' else 'normal' if r.urgency == 'normal' else 'planned' }}">{% if r.urgency == 'urgent' %}Urgente{% elif r.urgency == 'normal' %}Normale{% else %}Planifiee{% endif %}</span>
+    <span class="ti-pill {{ 'completed' if r.status in completed else '' }}"><span class="ti-status-dot"></span>{% if r.status in completed %}Terminee{% else %}En cours{% endif %}</span>
+  </div>
+  <div class="ti-body">
+    <div class="ti-icon {{ 'elec' if 'electric' in r.category|lower or 'tableau' in r.title|lower else 'frigo' if 'froid' in r.category|lower or 'clim' in r.title|lower else 'plomb' }}">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+    </div>
+    <div class="ti-info">
+      <h3>Intervention #FP-{{ "%05d"|format(r.id) }}</h3>
+      <p class="ti-ref">{{ r.category or 'Intervention' }}</p>
+      <p class="ti-desc">{{ r.title or 'Intervention' }}</p>
+      <p class="ti-row"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg> {{ r.address or 'Conakry' }}</p>
+      <p class="ti-row"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> {{ r.requested_time or r.created_at[:10] }}</p>
+    </div>
+    <div class="ti-price">
+      <strong>{{ "{:,}".format((r.budget or 0)|int).replace(",", " ") }} GNF</strong>
+      <p class="ti-payment">Paiement : <span class="en-attente">En attente</span></p>
+    </div>
+  </div>
+  <div class="ti-actions">
+    <a class="ti-btn-detail" href="{{ url_for('request_detail', request_id=r.id) }}">Voir les details</a>
+    <form method="post" action="{{ url_for('request_detail', request_id=r.id) }}" style="display:contents;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      <input type="hidden" name="action" value="start" />
+      <button class="ti-btn-action" type="submit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3l14 9-14 9V3Z"/></svg> Demarrer</button>
+    </form>
+  </div>
+</div>
+{% endmacro %}
 
 {% block content %}
 <div class="ti-wrap">
@@ -114,115 +151,136 @@
     <header class="ti-appbar">
       <a class="ti-brand" href="{{ url_for('artisan_dashboard') }}">Fix<em>Pro</em><span class="ti-dot"></span></a>
       <a class="ti-bell" href="{{ url_for('notifications') }}" aria-label="Notifications">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
         {% if unread_count %}<span class="ti-badge">{{ unread_count }}</span>{% endif %}
       </a>
     </header>
     <header class="ti-header">
-    <h1>Mes interventions</h1>
-    <p>Suivez vos interventions en cours et passees</p>
+      <h1>Mes interventions</h1>
+      <p>Suivez vos interventions en cours et passees</p>
     </header>
-
-    <div class="ti-tabs" id="tiTabs">
-      <a class="active" href="#" data-tab="all" data-count="{{ requests|length }}">Toutes ({{ requests|length }})</a>
-      <a href="#" data-tab="progress" data-count="{{ progress_count }}">En cours ({{ progress_count }})</a>
-      <a href="#" data-tab="completed" data-count="{{ completed_count }}">Terminees ({{ completed_count }})</a>
-      <a href="#" data-tab="cancelled" data-count="{{ cancelled_count }}">Annulees ({{ cancelled_count }})</a>
-    </div>
+    <nav class="ti-tabs" id="tiTabs">
+      <a class="active" href="#" data-tab="all">Toutes ({{ requests|length }})</a>
+      <a href="#" data-tab="progress">En cours ({{ progress_count }})</a>
+      <a href="#" data-tab="completed">Terminees ({{ completed_count }})</a>
+      <a href="#" data-tab="cancelled">Annulees ({{ cancelled_count }})</a>
+    </nav>
   </div>
 
   <div class="ti-stats">
     <div class="ti-stat">
-      <div class="ti-stat-icon ti-total"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M16 2V6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M8 2V6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M3 10H21" stroke="currentColor" stroke-width="1.8"/></svg></div>
+      <div class="ti-stat-icon ti-total"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M16 2V6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M8 2V6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M3 10H21" stroke="currentColor" stroke-width="1.8"/></svg></div>
       <div class="ti-stat-num">{{ requests|length }}</div>
       <div class="ti-stat-label">Total</div>
     </div>
     <div class="ti-stat">
-      <div class="ti-stat-icon ti-progress"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 3L19 12 5 21V3Z" fill="currentColor"/></svg></div>
+      <div class="ti-stat-icon ti-progress"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 3L19 12 5 21V3Z" fill="currentColor"/></svg></div>
       <div class="ti-stat-num">{{ progress_count }}</div>
       <div class="ti-stat-label">En cours</div>
     </div>
     <div class="ti-stat">
-      <div class="ti-stat-icon ti-done"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="m8 12 3 3 5-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="ti-stat-icon ti-done"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="m8 12 3 3 5-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
       <div class="ti-stat-num">{{ completed_count }}</div>
       <div class="ti-stat-label">Terminees</div>
     </div>
     <div class="ti-stat">
-      <div class="ti-stat-icon ti-cancel"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M15 9l-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M9 9l6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div>
+      <div class="ti-stat-icon ti-cancel"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M15 9l-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M9 9l6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></div>
       <div class="ti-stat-num">{{ cancelled_count }}</div>
       <div class="ti-stat-label">Annulees</div>
     </div>
   </div>
 
-  <main class="ti-main">
+  <main class="ti-main" id="tiMain">
     {% set progress = ['in_progress','IN_PROGRESS','quote_accepted','en_route','EN_ROUTE','arrived','ARRIVED','assigned','ASSIGNED','accepted','ACCEPTED'] %}
     {% set completed = ['completed','COMPLETED'] %}
     {% set cancelled = ['cancelled','CANCELLED','rejected','REJECTED','refused','REFUSED'] %}
 
-    <div id="tiList">
-      {% for r in requests %}
-      {% set rstatus = 'progress' if r.status in progress else 'completed' if r.status in completed else 'cancelled' if r.status in cancelled else 'all' %}
-      <div class="ti-card" data-status="{{ rstatus }}">
-        <div class="ti-top">
-          <span class="ti-pill {{ 'urgent' if r.urgency == 'urgent' else 'normal' if r.urgency == 'normal' else 'planned' }}">{% if r.urgency == 'urgent' %}Urgente{% elif r.urgency == 'normal' %}Normale{% else %}Planifiee{% endif %}</span>
-          <span class="ti-pill {{ 'completed' if r.status in completed else '' }}"><span class="ti-status-dot"></span>{% if r.status in completed %}Terminee{% else %}En cours{% endif %}</span>
-        </div>
-        <div class="ti-body">
-          <div class="ti-icon {{ 'elec' if 'electric' in r.category|lower or 'tableau' in r.title|lower else 'frigo' if 'froid' in r.category|lower or 'clim' in r.title|lower else 'plomb' }}">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-          </div>
-          <div class="ti-info">
-            <h3>Intervention #FP-{{ "%05d"|format(r.id) }}</h3>
-            <p class="ti-ref">{{ r.category or 'Intervention' }}</p>
-            <p class="ti-desc">{{ r.title or 'Intervention' }}</p>
-            <p class="ti-row"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg> {{ r.address or 'Conakry' }}</p>
-            <p class="ti-row"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> {{ r.requested_time or r.created_at[:10] }}</p>
-          </div>
-          <div class="ti-price">
-            <strong>{{ "{:,}".format((r.budget or 0)|int).replace(",", " ") }} GNF</strong>
-            <p class="ti-payment">Paiement : <span class="en-attente">En attente</span></p>
-          </div>
-        </div>
-        <div class="ti-actions">
-          <a class="ti-btn-detail" href="{{ url_for('request_detail', request_id=r.id) }}">Voir les details</a>
-          <form method="post" action="{{ url_for('request_detail', request_id=r.id) }}" style="display:contents;">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-            <input type="hidden" name="action" value="start" />
-            <button class="ti-btn-action" type="submit"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3l14 9-14 9V3Z"/></svg> Demarrer</button>
-          </form>
-        </div>
+    <section class="ti-day-section" data-day="today">
+      <h2 class="ti-section">Aujourd'hui</h2>
+      {% set today_shown = namespace(value=false) %}
+      <div class="ti-list" data-list="today">
+        {% for r in requests %}
+          {% set rdate = r.created_at[:10] if r.created_at else '' %}
+          {% if rdate == today_str %}
+            {% set today_shown.value = true %}
+            {{ render_card(r, progress, completed, cancelled) }}
+          {% endif %}
+        {% endfor %}
       </div>
-      {% else %}
-      <p style="text-align:center; color:#64748B; padding: 40px 10px;" id="tiEmpty">Aucune intervention.</p>
-      {% endfor %}
-    </div>
-    <p style="text-align:center; color:#64748B; padding: 40px 10px; display:none;" id="tiFilterEmpty">Aucune intervention dans cette categorie.</p>
+      {% if not today_shown.value %}
+        <p class="ti-empty">Aucune intervention aujourd'hui.</p>
+      {% endif %}
+    </section>
+
+    <section class="ti-day-section" data-day="yesterday">
+      <h2 class="ti-section">Hier</h2>
+      {% set yesterday_shown = namespace(value=false) %}
+      <div class="ti-list" data-list="yesterday">
+        {% for r in requests %}
+          {% set rdate = r.created_at[:10] if r.created_at else '' %}
+          {% if rdate == yesterday_str %}
+            {% set yesterday_shown.value = true %}
+            {{ render_card(r, progress, completed, cancelled) }}
+          {% endif %}
+        {% endfor %}
+      </div>
+      {% if not yesterday_shown.value %}
+        <p class="ti-empty">Aucune intervention hier.</p>
+      {% endif %}
+    </section>
+
+    <section class="ti-day-section ti-hidden" data-day="older">
+      <h2 class="ti-section">Plus anciennes</h2>
+      <div class="ti-list" data-list="older">
+        {% for r in requests %}
+          {% set rdate = r.created_at[:10] if r.created_at else '' %}
+          {% if rdate not in (today_str, yesterday_str) %}
+            {{ render_card(r, progress, completed, cancelled) }}
+          {% endif %}
+        {% endfor %}
+      </div>
+    </section>
   </main>
 </div>
 
 <script>
   (function() {
     const tabs = document.querySelectorAll('#tiTabs a');
-    const cards = document.querySelectorAll('#tiList .ti-card');
-    const empty = document.getElementById('tiFilterEmpty');
+    const daySections = document.querySelectorAll('#tiMain .ti-day-section');
+
     tabs.forEach(function(tab) {
       tab.addEventListener('click', function(e) {
         e.preventDefault();
         tabs.forEach(function(t) { t.classList.remove('active'); });
         tab.classList.add('active');
         const filter = tab.dataset.tab;
-        let visible = 0;
-        cards.forEach(function(card) {
-          if (filter === 'all' || card.dataset.status === filter) {
-            card.style.display = '';
-            visible++;
+
+        daySections.forEach(function(section) {
+          const list = section.querySelector('.ti-list');
+          const empty = section.querySelector('.ti-empty');
+          const cards = list ? list.querySelectorAll('.ti-card') : [];
+          let visible = 0;
+
+          cards.forEach(function(card) {
+            const ok = (filter === 'all' || card.dataset.status === filter);
+            card.classList.toggle('ti-hidden', !ok);
+            if (ok) visible++;
+          });
+
+          if (filter === 'all') {
+            section.classList.remove('ti-hidden');
+            if (empty) empty.classList.remove('ti-hidden');
           } else {
-            card.style.display = 'none';
+            const hasCards = cards.length > 0;
+            if (hasCards) {
+              section.classList.toggle('ti-hidden', visible === 0);
+              if (empty) empty.classList.toggle('ti-hidden', visible > 0);
+            } else {
+              section.classList.remove('ti-hidden');
+              if (empty) empty.classList.remove('ti-hidden');
+            }
           }
         });
-        if (empty) {
-          empty.style.display = visible === 0 ? '' : 'none';
-        }
       });
     });
   })();
