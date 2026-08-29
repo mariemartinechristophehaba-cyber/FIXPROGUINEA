@@ -4373,6 +4373,35 @@ def mark_notification_read(notif_id):
 # Demandes d'intervention
 # ---------------------------------------------------------------------------
 
+@app.route("/interventions")
+@login_required
+def technician_interventions():
+    user = get_current_user()
+    if not _is_technician(user):
+        flash("Cet espace est reserve aux techniciens.", "error")
+        return redirect(url_for("dashboard"))
+    conn = get_db_connection()
+    try:
+        rows = conn.execute(
+            "SELECT r.*, u.full_name AS client_name"
+            " FROM requests r"
+            " LEFT JOIN users u ON u.id = r.client_id"
+            " WHERE r.artisan_id = ?"
+            " ORDER BY r.created_at DESC", (user["id"],)).fetchall()
+    finally:
+        conn.close()
+    progress_statuses = ('in_progress', 'IN_PROGRESS', 'quote_accepted', 'en_route', 'EN_ROUTE',
+                         'arrived', 'ARRIVED', 'assigned', 'ASSIGNED', 'accepted', 'ACCEPTED')
+    completed_statuses = ('completed', 'COMPLETED')
+    cancelled_statuses = ('cancelled', 'CANCELLED', 'rejected', 'REJECTED', 'refused', 'REFUSED')
+    progress_count = sum(1 for r in rows if r.get("status") in progress_statuses)
+    completed_count = sum(1 for r in rows if r.get("status") in completed_statuses)
+    cancelled_count = sum(1 for r in rows if r.get("status") in cancelled_statuses)
+    return render_template("technician_interventions.html", requests=rows, user=user,
+                           progress_count=progress_count, completed_count=completed_count,
+                           cancelled_count=cancelled_count)
+
+
 @app.route("/requests")
 @login_required
 def requests_list():
