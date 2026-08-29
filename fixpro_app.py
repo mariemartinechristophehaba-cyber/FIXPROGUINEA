@@ -3657,7 +3657,7 @@ def api_techniciens():
             " LEFT JOIN reviews r ON r.artisan_id = u.id"
             " LEFT JOIN requests req_completed ON req_completed.artisan_id = u.id"
             " AND req_completed.status = 'completed'"
-            " WHERE u.role = 'technician'")
+            " WHERE 1=1")
         params = []
 
         if query:
