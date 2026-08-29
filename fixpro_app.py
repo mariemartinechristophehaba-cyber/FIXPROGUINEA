@@ -1489,7 +1489,7 @@ csrf.exempt(api_mobile_register)
 def _finalize_artisan_registration_json(wizard):
     """Version API JSON de l'inscription d'un technicien depuis l'application mobile.
 
-    Le compte est cree en attente de validation administrative.
+    Le compte est cree actif pour acceder directement au tableau de bord.
     """
     full_name = f"{wizard['civility']} {wizard['first_name']} {wizard['last_name']}".strip()
     latitude, longitude = _geocode_zone(wizard["city"], wizard["quartier"])
@@ -1507,7 +1507,7 @@ def _finalize_artisan_registration_json(wizard):
              wizard["skills"], wizard["city"], wizard["quartier"],
              wizard["zone_intervention"], wizard["mobility"],
              wizard["years_experience"], wizard["bio"], 0, latitude, longitude,
-             "PENDING", 0, 0,
+             "ACTIVE", 1, 1,
              wizard.get("availability_status") or "hors_ligne",
              wizard.get("available_days") or ""))
 
