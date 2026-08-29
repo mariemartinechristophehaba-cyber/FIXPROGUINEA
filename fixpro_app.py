@@ -3057,6 +3057,7 @@ def artisan_dashboard():
                 (user["id"],)).fetchone()
             unread_count = row["n"]
         except Exception:
+            conn.rollback()
             unread_count = 0
 
         services_disponibles = _services_for_category(conn, user["profession"] or "")
