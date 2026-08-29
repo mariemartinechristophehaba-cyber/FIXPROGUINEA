@@ -2764,6 +2764,7 @@ def google_callback():
         # le telephone et la ville.
         session["google_email"] = email
         session["google_name"] = full_name
+        session["google_picture"] = userinfo.get("picture", "")
         session["google_next_url"] = next_url
         return redirect(url_for("complete_profile"))
     finally:
@@ -2772,9 +2773,10 @@ def google_callback():
 
 @app.route("/complete-profile", methods=["GET", "POST"])
 def complete_profile():
-    """Demande le telephone et la ville apres une inscription Google."""
+    """Finalise le profil apres une inscription Google : role, telephone, ville."""
     email = session.get("google_email")
     full_name = session.get("google_name")
+    picture_url = session.get("google_picture") or ""
 
     if not email or not full_name:
         flash("Session invalide. Veuillez recommencer.", "error")
@@ -2783,10 +2785,18 @@ def complete_profile():
     if request.method == "POST":
         phone = request.form.get("phone", "").strip()
         city = request.form.get("city", "").strip()
+        quartier = request.form.get("quartier", "").strip()
+        role = request.form.get("role", "client").strip()
+
+        if role not in ("client", "technician"):
+            flash("Veuillez choisir un type de compte.", "error")
+            return redirect(url_for("complete_profile"))
 
         if not phone or not city:
             flash("Veuillez remplir tous les champs.", "error")
             return redirect(url_for("complete_profile"))
+
+        is_verified = 1 if role == "client" else 0
 
         conn = get_db_connection()
         try:
@@ -2797,10 +2807,10 @@ def complete_profile():
                 return redirect(url_for("complete_profile"))
 
             conn.execute(
-                "INSERT INTO users (email, phone, password_hash, role, full_name, city)"
-                " VALUES (?, ?, ?, ?, ?, ?)",
+                "INSERT INTO users (email, phone, password_hash, role, full_name, city, quartier, is_verified, photo_url)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (email, phone, generate_password_hash("google_oauth"),
-                 "client", full_name, city),
+                 role, full_name, city, quartier, is_verified, picture_url or None),
             )
             conn.commit()
 
@@ -2816,7 +2826,7 @@ def complete_profile():
             conn.close()
 
     return render_template("complete_profile.html", email=email,
-                           full_name=full_name)
+                           full_name=full_name, picture_url=picture_url)
 
 
 def _can_login(user):
