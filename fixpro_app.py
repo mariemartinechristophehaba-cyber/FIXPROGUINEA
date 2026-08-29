@@ -1275,11 +1275,11 @@ def register_artisan():
             conn.execute(
                 "INSERT INTO users (phone, password_hash, role, full_name, profession,"
                 " skills, years_experience, bio, city, zone_intervention, latitude, longitude,"
-                " hourly_rate, is_verified, is_active, photo_url, availability_status, available_days)"
-                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                " hourly_rate, is_verified, is_active, account_status, photo_url, availability_status, available_days)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (phone, generate_password_hash(temp_password), role,
                  full_name, profession, specialite, experience, bio, address,
-                 rayon, lat, lon, hourly_rate, 1, 1, photo_url, availability_status, available_days_str))
+                 rayon, lat, lon, hourly_rate, 1, 1, 'ACTIVE', photo_url, availability_status, available_days_str))
             conn.commit()
 
             artisan = conn.execute(
@@ -5007,6 +5007,8 @@ def _migrate_db():
             # Normalisation des roles et statuts legacy
             try:
                 conn.execute("UPDATE users SET role = 'technician' WHERE role = 'artisan'")
+                conn.execute(
+                    "UPDATE users SET account_status = 'ACTIVE' WHERE account_status IS NULL OR account_status = ''")
                 conn.execute(
                     "UPDATE requests SET status = ? WHERE LOWER(status) IN ('pending','requested')",
                     (MISSION_STATUS_REQUESTED,))
