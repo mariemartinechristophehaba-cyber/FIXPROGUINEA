@@ -208,7 +208,11 @@
         </div>
         <div class="t-stat">
           <div class="t-stat-icon u-wallet">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7Z"/><path d="M2 11h20"/><path d="M17 13h2"/></svg>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M21 7H5C3.89543 7 3 7.89543 3 9V17C3 18.1046 3.89543 19 5 19H21C21.5523 19 22 18.5523 22 18V8C22 7.44772 21.5523 7 21 7Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M16 4H7C5.89543 4 5 4.89543 5 6V7H18V6C18 4.89543 17.1046 4 16 4Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="17" cy="13" r="1.5" fill="currentColor"/>
+            </svg>
           </div>
           <div class="t-stat-num">{{ "{:,.0f}".format(stats.revenus|default(0)|int).replace(",", " ") }}</div>
           <div class="t-stat-label">Revenus aujourd'hui</div>
