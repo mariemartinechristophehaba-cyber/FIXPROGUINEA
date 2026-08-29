@@ -6015,7 +6015,10 @@ def api_lia_chat():
     message = data.get("message", "").strip()
     if not message:
         return jsonify({"error": "Message vide."}), 400
-    reply = build_assistant_reply(message)
+    collected = session.get("lia_collected", {})
+    result = ai_service.analyze_message(message, collected)
+    session["lia_collected"] = result.get("collected_info", {})
+    reply = result.get("response", "Desole, je n'ai pas compris.")
     user = get_current_user()
     conn = get_db_connection()
     try:
