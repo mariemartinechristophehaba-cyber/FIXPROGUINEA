@@ -838,7 +838,7 @@ def index():
                    COUNT(DISTINCT r.id) AS review_count
             FROM users u
             LEFT JOIN reviews r ON r.artisan_id = u.id
-            WHERE u.role = 'technician'
+            WHERE u.profession IS NOT NULL AND u.profession != ''
             GROUP BY u.id, u.full_name, u.profession, u.photo_url, u.is_verified, u.availability_status,
                      u.city, u.zone_intervention, u.quartier, u.latitude, u.longitude, u.hourly_rate
             ORDER BY avg_rating DESC, review_count DESC
@@ -856,7 +856,7 @@ def index():
                 unread_count = 0
         counts = {}
         for row in conn.execute(
-            "SELECT profession, COUNT(*) AS n FROM users WHERE role = 'technician' GROUP BY profession").fetchall():
+            "SELECT profession, COUNT(*) AS n FROM users WHERE profession IS NOT NULL AND profession != '' GROUP BY profession").fetchall():
             counts[row["profession"]] = row["n"]
         canonical = [
             ("Plomberie", ["Plombier", "Plomberie"]),
@@ -973,7 +973,7 @@ def home():
                    COUNT(DISTINCT r.id) AS review_count
             FROM users u
             LEFT JOIN reviews r ON r.artisan_id = u.id
-            WHERE u.role = 'technician'
+            WHERE u.profession IS NOT NULL AND u.profession != ''
             GROUP BY u.id, u.full_name, u.profession, u.photo_url, u.is_verified, u.availability_status,
                      u.city, u.zone_intervention, u.quartier, u.latitude, u.longitude, u.hourly_rate
             ORDER BY avg_rating DESC, review_count DESC
@@ -990,7 +990,7 @@ def home():
                 unread_count = 0
         counts = {}
         for row in conn.execute(
-            "SELECT profession, COUNT(*) AS n FROM users WHERE role = 'technician' GROUP BY profession").fetchall():
+            "SELECT profession, COUNT(*) AS n FROM users WHERE profession IS NOT NULL AND profession != '' GROUP BY profession").fetchall():
             counts[row["profession"]] = row["n"]
         canonical = [
             ("Plomberie", ["Plombier", "Plomberie"]),
@@ -1038,7 +1038,7 @@ def categories():
         rows = conn.execute(
             "SELECT sc.name,"
             " (SELECT COUNT(*) FROM users u"
-            " WHERE u.role = 'technician'"
+            " WHERE u.profession IS NOT NULL AND u.profession != ''"
             " AND (u.profession = sc.name OR u.skills LIKE '%' || sc.name || '%')) AS n"
             " FROM service_categories sc ORDER BY sc.name").fetchall()
         counts = {r["name"]: r["n"] for r in rows}
@@ -3574,7 +3574,7 @@ def artisans_page():
         " FROM users u"
         " LEFT JOIN reviews r ON r.artisan_id = u.id"
         " LEFT JOIN requests req_completed ON req_completed.artisan_id = u.id AND req_completed.status = 'completed'"
-        " WHERE u.role = 'technician'")
+        " WHERE u.profession IS NOT NULL AND u.profession != ''")
     params = []
 
     if query:
@@ -3657,7 +3657,7 @@ def api_techniciens():
             " LEFT JOIN reviews r ON r.artisan_id = u.id"
             " LEFT JOIN requests req_completed ON req_completed.artisan_id = u.id"
             " AND req_completed.status = 'completed'"
-            " WHERE 1=1")
+            " WHERE u.profession IS NOT NULL AND u.profession != ''")
         params = []
 
         if query:

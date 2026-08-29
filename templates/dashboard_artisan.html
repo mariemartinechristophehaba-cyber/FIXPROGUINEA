@@ -33,7 +33,7 @@
 
     .t-hero {
       background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
-      margin: 0 16px 16px; border-radius: 20px; padding: 18px;
+      margin: 0 16px 16px; border-radius: 24px; padding: 22px 18px;
       color: #fff; position: relative;
     }
     .t-profile { display: flex; align-items: center; gap: 14px; }
@@ -135,6 +135,8 @@
     .u-normal svg { color: #2563EB; }
     .u-low { background: #E5E7EB; color: #4B5563; }
     .u-low svg { color: #6B7280; }
+    .u-wallet { background: #E0E7FF; color: #4F46E5; }
+    .u-wallet svg { color: #4F46E5; }
     .s-waiting { color: #F97316; }
     .s-confirmed { color: #16A34A; }
     .s-pending { color: #2563EB; }
@@ -207,8 +209,8 @@
           <div class="t-stat-label">Intervention en cours</div>
         </div>
         <div class="t-stat">
-          <div class="t-stat-icon u-low">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+          <div class="t-stat-icon u-wallet">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-15a2 2 0 0 0 0 4h15a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1Z"/><path d="M16 11h.01"/></svg>
           </div>
           <div class="t-stat-num">{{ "{:,.0f}".format(stats.revenus|default(0)|int).replace(",", " ") }}</div>
           <div class="t-stat-label">Revenus aujourd'hui</div>
