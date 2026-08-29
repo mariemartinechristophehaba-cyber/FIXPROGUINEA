@@ -911,11 +911,13 @@ body {
 
 .f-drawer-logout-link {
   justify-content: center;
+  width: 100%;
+  box-sizing: border-box;
   background: var(--f-white);
   border: 1px solid #DC2626;
   color: #DC2626;
   border-radius: var(--f-radius-sm);
-  margin: 0 -18px;
+  margin: 0;
   padding: 14px 18px;
   font-weight: 600;
 }
