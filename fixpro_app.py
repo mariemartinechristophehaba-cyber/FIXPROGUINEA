@@ -4381,12 +4381,16 @@ def requests_list():
     try:
         if _is_technician(user):
             rows = conn.execute(
-                "SELECT r.*, u.full_name AS artisan_name, rev.rating AS client_rating"
+                "SELECT r.*, u.full_name AS client_name"
                 " FROM requests r"
                 " LEFT JOIN users u ON u.id = r.client_id"
-                " LEFT JOIN reviews rev ON rev.request_id = r.id AND rev.client_id = ?"
-                " WHERE r.artisan_id = ?"
-                " ORDER BY r.created_at DESC", (user["id"], user["id"])).fetchall()
+                " WHERE LOWER(r.status) IN ('pending', 'requested', 'nouvelle demande')"
+                " AND (r.artisan_id IS NULL OR r.artisan_id = ?)"
+                " ORDER BY r.created_at DESC", (user["id"],)).fetchall()
+            urgent_count = sum(1 for r in rows if r.get("urgency") == "urgent")
+            today_count = sum(1 for r in rows if r.get("created_at") and str(r.get("created_at")).startswith(datetime.now().strftime("%Y-%m-%d")))
+            return render_template("technician_requests.html", requests=rows, user=user,
+                                   urgent_count=urgent_count, today_count=today_count)
         else:
             rows = conn.execute(
                 "SELECT r.*, u.full_name AS artisan_name, rev.rating AS client_rating"

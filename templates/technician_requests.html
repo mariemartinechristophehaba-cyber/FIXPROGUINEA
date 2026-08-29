@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#155EEF" />
+  <title>Demandes d'intervention - FixPro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: #F8FAFC; color: #0F172A; -webkit-font-smoothing: antialiased; }
+    a { text-decoration: none; color: inherit; }
+    button { font-family: inherit; border: none; cursor: pointer; }
+
+    .tr-wrap { max-width: 480px; margin: 0 auto; min-height: 100vh; background: #F8FAFC; padding-bottom: 88px; }
+
+    .tr-header {
+      background: #fff; padding: 16px 16px 12px; border-bottom: 1px solid #E2E8F0;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    .tr-header h1 { margin: 0 0 2px; font-size: 18px; font-weight: 800; color: #0F172A; }
+    .tr-header p { margin: 0; font-size: 12px; color: #64748B; }
+    .tr-filter {
+      display: flex; align-items: center; gap: 6px; padding: 8px 12px; border: 1px solid #E2E8F0;
+      border-radius: 12px; background: #fff; color: #0F172A; font-size: 13px; font-weight: 600;
+    }
+    .tr-filter svg { width: 16px; height: 16px; color: #64748B; }
+
+    .tr-tabs {
+      display: flex; gap: 10px; padding: 12px 16px; background: #fff;
+    }
+    .tr-tabs button {
+      flex: 1; padding: 10px 8px; border-radius: 14px; font-size: 13px; font-weight: 600;
+      background: #F1F5F9; color: #64748B;
+    }
+    .tr-tabs button.active { background: #155EEF; color: #fff; }
+
+    .tr-notice {
+      display: flex; align-items: center; gap: 14px;
+      margin: 12px 16px; padding: 14px 16px; background: #EEF2FF; border-radius: 16px;
+    }
+    .tr-notice-icon {
+      width: 44px; height: 44px; border-radius: 12px; background: #155EEF; color: #fff;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .tr-notice-icon svg { width: 22px; height: 22px; }
+    .tr-notice strong { font-size: 14px; font-weight: 700; color: #0F172A; }
+    .tr-notice p { margin: 2px 0 0; font-size: 12px; color: #64748B; }
+
+    .tr-main { padding: 0 16px; }
+    .tr-card {
+      background: #fff; border-radius: 20px; padding: 14px; margin-bottom: 12px;
+      box-shadow: 0 2px 12px rgba(0,0,0,.04);
+    }
+    .tr-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .tr-pill {
+      font-size: 11px; font-weight: 700; padding: 5px 10px; border-radius: 20px;
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .tr-pill.urgent { background: #FEE2E2; color: #991B1B; }
+    .tr-pill.normal { background: #FEF3C7; color: #92400E; }
+    .tr-pill.nouveau { background: #DBEAFE; color: #1E40AF; }
+
+    .tr-body { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px; }
+    .tr-icon {
+      width: 50px; height: 50px; border-radius: 14px; background: #FEF3C7; color: #D97706;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .tr-icon svg { width: 24px; height: 24px; }
+    .tr-info { flex: 1; min-width: 0; }
+    .tr-info h3 { margin: 0 0 4px; font-size: 15px; font-weight: 700; color: #0F172A; }
+    .tr-info p { margin: 0 0 4px; font-size: 12px; color: #64748B; }
+    .tr-row { display: flex; align-items: center; gap: 6px; }
+    .tr-row svg { width: 14px; height: 14px; color: #94A3B8; }
+    .tr-price { text-align: right; }
+    .tr-price strong { display: block; font-size: 15px; font-weight: 800; color: #155EEF; }
+    .tr-price span { font-size: 11px; color: #64748B; }
+
+    .tr-actions { display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px; }
+    .tr-btn-refuse {
+      padding: 12px; border-radius: 12px; background: #fff; color: #EF4444;
+      border: 1px solid #EF4444; font-size: 13px; font-weight: 700;
+    }
+    .tr-btn-view {
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 12px; border-radius: 12px; background: #155EEF; color: #fff;
+      font-size: 13px; font-weight: 700;
+    }
+    .tr-btn-view svg { width: 16px; height: 16px; }
+  </style>
+</head>
+<body>
+  <div class="tr-wrap">
+    <header class="tr-header">
+      <div>
+        <h1>Demandes d'intervention</h1>
+        <p>Choisissez une demande pour voir les details</p>
+      </div>
+      <button class="tr-filter" type="button" aria-label="Filtrer">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
+        Filtrer
+      </button>
+    </header>
+
+    <div class="tr-tabs">
+      <button class="active" type="button">Toutes ({{ requests|length }})</button>
+      <button type="button">Urgentes ({{ urgent_count }})</button>
+      <button type="button">Aujourd'hui ({{ today_count }})</button>
+    </div>
+
+    <div class="tr-notice">
+      <div class="tr-notice-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      </div>
+      <div>
+        <strong>{{ requests|length }} nouvelles demandes</strong>
+        <p>Consultez et acceptez rapidement pour ne rien manquer.</p>
+      </div>
+    </div>
+
+    <main class="tr-main">
+      {% for r in requests %}
+      <div class="tr-card">
+        <div class="tr-top">
+          <span class="tr-pill {{ 'urgent' if r.urgency == 'urgent' or r.priority == 'urgent' else 'normal' }}">
+            {{ 'Urgente' if r.urgency == 'urgent' or r.priority == 'urgent' else 'Normale' }}
+          </span>
+          <span class="tr-pill nouveau">Nouveau</span>
+        </div>
+        <div class="tr-body">
+          <div class="tr-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          </div>
+          <div class="tr-info">
+            <h3>{{ r.title or 'Demande d\'intervention' }}</h3>
+            <p>{{ r.category or 'Intervention' }}</p>
+            <p class="tr-row">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+              {{ r.address or 'Conakry' }}
+            </p>
+            <p class="tr-row">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              {{ r.requested_time or r.created_at[:10] if r.created_at else 'Aujourd\'hui' }}
+            </p>
+          </div>
+          <div class="tr-price">
+            <strong>{{ "{:,}".format((r.budget or 0)|int).replace(",", " ") }} GNF</strong>
+            <span>Prix propose</span>
+          </div>
+        </div>
+        <div class="tr-actions">
+          <form method="post" action="{{ url_for('request_detail', request_id=r.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <input type="hidden" name="action" value="reject" />
+            <button class="tr-btn-refuse" type="submit">Refuser</button>
+          </form>
+          <a class="tr-btn-view" href="{{ url_for('request_detail', request_id=r.id) }}">
+            Voir demande
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+          </a>
+        </div>
+      </div>
+      {% else %}
+      <p style="text-align:center; padding: 30px 10px; color: #64748B;">Aucune demande disponible pour le moment.</p>
+      {% endfor %}
+    </main>
+  </div>
+</body>
+</html>
