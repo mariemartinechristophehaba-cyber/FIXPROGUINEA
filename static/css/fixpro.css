@@ -713,7 +713,7 @@ body {
 .f-drawer.open { transform: translateX(0); }
 
 .f-drawer-header {
-  background: #0B1122;
+  background: var(--f-primary);
   color: var(--f-white);
   padding: 14px 18px 18px;
   padding-top: calc(14px + env(safe-area-inset-top));
