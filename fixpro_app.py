@@ -2952,7 +2952,7 @@ def login():
 def logout():
     session.clear()
     flash("Vous avez été déconnecté.", "success")
-    return redirect(url_for("login"))
+    return redirect(url_for("index"))
 
 
 @app.route("/technician/activate", methods=["GET", "POST"])
