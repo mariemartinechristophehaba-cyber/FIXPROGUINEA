@@ -9,98 +9,242 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
+    :root {
+      --primary: #155EEF;
+      --primary-dark: #1E3A8A;
+      --bg: #F1F5F9;
+      --bot: #fff;
+      --text: #0F172A;
+      --muted: #64748B;
+      --line: #E2E8F0;
+      --success: #22C55E;
+    }
     * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; height: 100%; }
-    body { font-family: 'Inter', sans-serif; background: #F1F5F9; color: #0F172A; -webkit-font-smoothing: antialiased; }
+    body { font-family: 'Inter', sans-serif; background: #E2E8F0; color: var(--text); -webkit-font-smoothing: antialiased; }
     a { text-decoration: none; color: inherit; }
 
     .l-wrap {
       position: relative;
       max-width: 480px;
       margin: 0 auto;
-      min-height: 100vh;
-      min-height: 100dvh;
       height: 100vh;
       height: 100dvh;
       display: flex;
       flex-direction: column;
-      background: #F1F5F9;
+      background: #fff;
+      overflow: hidden;
+      box-shadow: 0 0 40px rgba(0,0,0,.06);
     }
 
     .l-header {
-      background: #155EEF; color: #fff; padding: 16px; display: flex; align-items: center; gap: 12px; z-index: 10;
+      background: var(--primary);
+      color: #fff;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      z-index: 10;
+      box-shadow: 0 2px 12px rgba(0,0,0,.08);
     }
-    .l-back { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,.15); }
+    .l-back {
+      width: 38px; height: 38px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(255,255,255,.14); color: #fff;
+      transition: background .15s;
+    }
+    .l-back:hover { background: rgba(255,255,255,.22); }
     .l-back svg { width: 20px; height: 20px; }
-    .l-avatar { width: 40px; height: 40px; border-radius: 50%; background: #fff; display: flex; align-items: center; justify-content: center; color: #155EEF; border: 2px solid rgba(255,255,255,.3); }
-    .l-avatar svg { width: 22px; height: 22px; }
-    .l-info { flex: 1; }
-    .l-name { margin: 0; font-size: 15px; font-weight: 700; }
-    .l-status { font-size: 12px; opacity: .85; display: flex; align-items: center; gap: 4px; }
-    .l-dot { width: 8px; height: 8px; border-radius: 50%; background: #22C55E; animation: l-pulse 2s infinite; }
-    @keyframes l-pulse { 0% { box-shadow: 0 0 0 0 rgba(34,197,94,.4); } 70% { box-shadow: 0 0 0 5px rgba(34,197,94,0); } 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); } }
+    .l-avatar {
+      width: 44px; height: 44px; border-radius: 50%;
+      background: #fff; display: flex; align-items: center; justify-content: center;
+      color: var(--primary); font-weight: 700; font-size: 19px;
+      border: 2px solid rgba(255,255,255,.3);
+    }
+    .l-info { flex: 1; min-width: 0; }
+    .l-name { margin: 0; font-size: 16px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .l-status { font-size: 12px; opacity: .92; display: flex; align-items: center; gap: 5px; margin-top: 1px; }
+    .l-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); animation: l-pulse 2s infinite; }
+    @keyframes l-pulse {
+      0% { box-shadow: 0 0 0 0 rgba(34,197,94,.35); }
+      70% { box-shadow: 0 0 0 6px rgba(34,197,94,0); }
+      100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); }
+    }
+    .l-menu { width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; color: #fff; }
 
-    .l-body { flex: 1; overflow-y: auto; padding: 14px 16px 120px; padding-bottom: calc(120px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 10px; }
-    .l-empty { text-align: center; padding: 30px 10px; }
-    .l-empty h2 { font-size: 18px; color: #0F172A; margin: 0 0 6px; }
-    .l-empty p { font-size: 14px; color: #64748B; margin: 0; }
-    .l-msg { display: flex; }
+    .l-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px 14px 150px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      background: var(--bg);
+    }
+    .l-empty {
+      text-align: center;
+      padding: 24px 12px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .l-empty h2 { font-size: 17px; color: var(--text); margin: 0 0 6px; }
+    .l-empty p { margin: 0; }
+    .l-date {
+      text-align: center;
+      font-size: 11px;
+      color: var(--muted);
+      margin: 14px 0 8px;
+      font-weight: 500;
+    }
+    .l-msg { display: flex; margin-bottom: 4px; }
     .l-user { justify-content: flex-end; }
     .l-bot { justify-content: flex-start; }
-    .l-bubble { max-width: 82%; width: fit-content; padding: 10px 13px; border-radius: 18px; font-size: 15px; line-height: 1.4; white-space: pre-wrap; word-wrap: break-word; overflow-wrap: anywhere; }
-    .l-bot .l-bubble { background: #fff; color: #0F172A; border-bottom-left-radius: 4px; box-shadow: 0 1px 4px rgba(0,0,0,.04); }
-    .l-user .l-bubble { background: #155EEF; color: #fff; border-bottom-right-radius: 4px; }
-    .l-time { font-size: 10px; color: #94A3B8; margin-top: 3px; text-align: right; }
-    .l-user .l-time { color: rgba(255,255,255,.75); }
-    .l-typing { display: flex; gap: 4px; padding: 10px 13px; }
-    .l-typing span { width: 7px; height: 7px; border-radius: 50%; background: #94A3B8; animation: l-bounce 1.4s infinite; }
+    .l-bubble {
+      max-width: 84%;
+      padding: 10px 13px;
+      border-radius: 18px;
+      font-size: 15px;
+      line-height: 1.4;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      overflow-wrap: anywhere;
+      position: relative;
+      box-shadow: 0 1px 2px rgba(0,0,0,.05);
+    }
+    .l-bot .l-bubble {
+      background: var(--bot);
+      color: var(--text);
+      border-bottom-left-radius: 4px;
+    }
+    .l-user .l-bubble {
+      background: var(--primary);
+      color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+    .l-time {
+      font-size: 10px;
+      opacity: .78;
+      margin-top: 5px;
+      text-align: right;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 4px;
+    }
+    .l-user .l-time { color: rgba(255,255,255,.85); }
+    .l-bot .l-time { color: var(--muted); }
+    .l-check { width: 14px; height: 14px; }
+    .l-user .l-check { stroke: #fff; }
+
+    .l-typing { display: flex; gap: 4px; padding: 8px 0; }
+    .l-typing span {
+      width: 7px; height: 7px; border-radius: 50%; background: var(--muted);
+      animation: l-bounce 1.4s infinite;
+    }
     .l-typing span:nth-child(2) { animation-delay: .2s; }
     .l-typing span:nth-child(3) { animation-delay: .4s; }
     @keyframes l-bounce { 0%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-5px); } }
 
-    .l-footer { position: absolute; bottom: 70px; bottom: calc(70px + env(safe-area-inset-bottom)); left: 0; right: 0; background: #fff; border-top: 1px solid #E2E8F0; padding: 10px 12px; display: flex; align-items: center; gap: 8px; z-index: 20; }
-    .l-input { flex: 1; border: 1px solid #E2E8F0; border-radius: 22px; padding: 10px 14px; font-size: 15px; outline: none; min-height: 44px; max-height: 120px; resize: none; font-family: 'Inter', sans-serif; }
-    .l-send { width: 44px; height: 44px; border: none; border-radius: 50%; background: #155EEF; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 18px; transition: transform .1s; }
-    .l-send:disabled { opacity: .5; }
-    .l-send:active { transform: scale(.95); }
+    .l-footer {
+      position: absolute;
+      bottom: 70px;
+      bottom: calc(70px + env(safe-area-inset-bottom));
+      left: 0; right: 0;
+      background: #fff;
+      border-top: 1px solid var(--line);
+      padding: 8px 12px 12px;
+      z-index: 20;
+    }
+    .l-quick {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      margin-bottom: 6px;
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    .l-quick::-webkit-scrollbar { display: none; }
+    .l-chip {
+      white-space: nowrap;
+      padding: 7px 14px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: #F8FAFC;
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all .15s;
+      user-select: none;
+    }
+    .l-chip:hover { background: #F1F5F9; border-color: #CBD5E1; }
+    .l-form { display: flex; align-items: flex-end; gap: 8px; }
+    .l-input {
+      flex: 1;
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      padding: 11px 16px;
+      font-size: 15px;
+      outline: none;
+      min-height: 46px;
+      max-height: 120px;
+      resize: none;
+      font-family: 'Inter', sans-serif;
+      line-height: 1.35;
+      background: #FAFAFA;
+    }
+    .l-input:focus { border-color: var(--primary); background: #fff; }
+    .l-send {
+      width: 46px; height: 46px;
+      border: none; border-radius: 50%;
+      background: var(--primary); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      transition: transform .1s, background .15s;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+    .l-send:hover { background: var(--primary-dark); }
+    .l-send:disabled { background: #BFDBFE; cursor: default; }
+    .l-send:active:not(:disabled) { transform: scale(.95); }
 
-    .l-nav { position: absolute; bottom: 0; left: 0; right: 0; z-index: 30; background: #fff; border-top: 1px solid #E2E8F0; display: flex; justify-content: space-around; align-items: center; padding: 10px 0 16px; padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
-    .l-nav a { display: flex; flex-direction: column; align-items: center; gap: 3px; color: #94A3B8; font-size: 11px; padding: 4px 8px; }
-    .l-nav a.active { color: #155EEF; }
+    .l-nav {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      z-index: 30;
+      background: #fff;
+      border-top: 1px solid var(--line);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding: 10px 0 16px;
+      padding-bottom: calc(16px + env(safe-area-inset-bottom));
+    }
+    .l-nav a { display: flex; flex-direction: column; align-items: center; gap: 3px; color: var(--muted); font-size: 11px; padding: 4px 8px; }
+    .l-nav a.active { color: var(--primary); }
     .l-nav a svg { width: 22px; height: 22px; }
-    .l-nav .l-plus { position: relative; top: -18px; width: 50px; height: 50px; border-radius: 50%; background: #155EEF; color: #fff; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(21,94,239,.35); }
+    .l-nav .l-plus {
+      position: relative; top: -18px;
+      width: 50px; height: 50px; border-radius: 50%;
+      background: var(--primary); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 14px rgba(21,94,239,.35);
+    }
     .l-nav .l-plus svg { width: 26px; height: 26px; }
 
     @media (min-width: 768px) {
-      body { background: #F1F5F9; }
-      .l-wrap {
-        max-width: 900px;
-        min-height: 100vh;
-        min-height: 100dvh;
-        height: 100vh;
-        height: 100dvh;
-        margin: 0 auto;
-        border-radius: 0;
-        overflow: hidden;
-        box-shadow: none;
-      }
+      body { background: #E2E8F0; }
+      .l-wrap { max-width: 800px; border-radius: 0; overflow: hidden; }
       .l-header { border-radius: 0; }
       .l-back { display: none; }
-      .l-body { max-width: 800px; margin: 0 auto; padding: 20px 24px 120px; }
+      .l-body { padding: 18px 24px 120px; }
+      .l-bubble { font-size: 16px; }
       .l-footer {
-        left: 50%;
-        right: auto;
-        bottom: 0;
-        width: 100%;
-        max-width: 800px;
+        left: 50%; right: auto; width: 100%; max-width: 800px;
         transform: translateX(-50%);
-        padding: 12px 24px;
-        border: 1px solid #E2E8F0;
-        border-bottom: none;
+        bottom: 0; border: 1px solid var(--line); border-bottom: none;
       }
       .l-nav { display: none; }
-      .l-bubble { font-size: 16px; }
-      .l-input { font-size: 16px; }
     }
   </style>
 </head>
@@ -110,26 +254,38 @@
       <a href="{{ url_for('home') }}" class="l-back" aria-label="Retour">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
       </a>
-      <div class="l-avatar">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 21l1.9-5.1A8.4 8.4 0 0 1 4 11.5a8.5 8.5 0 0 1 8.5-8.5A8.5 8.5 0 0 1 21 11.5z"/></svg>
-      </div>
+      <div class="l-avatar">L</div>
       <div class="l-info">
         <h1 class="l-name">Lia</h1>
         <p class="l-status"><span class="l-dot"></span> Assistante FixPro en ligne</p>
+      </div>
+      <div class="l-menu" aria-label="Menu">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
       </div>
     </header>
 
     <main class="l-body" id="l-body">
       <div class="l-empty" id="l-empty">
-        <h2>Assistance FixPro</h2>
-        <p>Posez-moi vos questions, je vous guide.</p>
+        <h2>Bonjour !</h2>
+        <p>Je suis Lia, votre assistante FixPro.<br>Comment puis-je vous aider aujourd'hui ?</p>
       </div>
     </main>
 
-    <form class="l-footer" id="l-form" onsubmit="return false;">
-      <textarea class="l-input" id="l-input" placeholder="Écrivez votre message..." required rows="1" oninput="this.style.height='auto'; this.style.height=Math.min(this.scrollHeight,120)+'px';"></textarea>
-      <button class="l-send" id="l-send" type="submit" aria-label="Envoyer">→</button>
-    </form>
+    <div class="l-footer" id="l-footer">
+      <div class="l-quick" id="l-quick">
+        <span class="l-chip" data-text="Je cherche un plombier urgent">Plombier urgent</span>
+        <span class="l-chip" data-text="J'ai un problème électrique">Électricien</span>
+        <span class="l-chip" data-text="Devis pour une installation clim">Climatisation</span>
+        <span class="l-chip" data-text="Suivi de ma demande">Suivre ma demande</span>
+        <span class="l-chip" data-text="Parlez-moi de FixPro">Qu'est-ce que FixPro ?</span>
+      </div>
+      <form class="l-form" id="l-form" onsubmit="return false;">
+        <textarea class="l-input" id="l-input" placeholder="Écrivez votre message..." required rows="1" oninput="this.style.height='auto'; this.style.height=Math.min(this.scrollHeight,120)+'px';"></textarea>
+        <button class="l-send" id="l-send" type="submit" aria-label="Envoyer" disabled>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+        </button>
+      </form>
+    </div>
 
     <nav class="l-nav">
       <a href="{{ url_for('home') }}">
@@ -160,6 +316,7 @@
     const ta = document.getElementById('l-input');
     const btn = document.getElementById('l-send');
     const empty = document.getElementById('l-empty');
+    const quick = document.getElementById('l-quick');
 
     function scrollBottom() { if (b) b.scrollTop = b.scrollHeight; }
 
@@ -173,11 +330,16 @@
     function formatText(text) {
       return escapeHtml(text).replace(/\n/g, '<br>');
     }
+
     function append(role, text, when) {
       if (empty) empty.style.display = 'none';
       const row = document.createElement('div');
       row.className = 'l-msg ' + (role === 'user' ? 'l-user' : 'l-bot');
-      row.innerHTML = '<div class="l-bubble">' + formatText(text) + '<div class="l-time">' + (when || time()) + '</div></div>';
+      const isUser = role === 'user';
+      const check = isUser
+        ? '<svg class="l-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>'
+        : '';
+      row.innerHTML = '<div class="l-bubble">' + formatText(text) + '<div class="l-time">' + (when || time()) + check + '</div></div>';
       b.appendChild(row);
       scrollBottom();
     }
@@ -188,7 +350,7 @@
         if (t) return;
         t = document.createElement('div');
         t.className = 'l-msg l-bot l-typing';
-        t.innerHTML = '<div class="l-bubble"><div class="l-typing"><span></span><span></span><span></span></div><div class="l-time">Lia écrit...</div></div>';
+        t.innerHTML = '<div class="l-bubble"><div class="l-typing"><span></span><span></span><span></span></div></div>';
         b.appendChild(t);
         scrollBottom();
       } else if (t) {
@@ -197,8 +359,6 @@
     }
 
     function updateBtn() { btn.disabled = !ta.value.trim(); }
-    ta.addEventListener('input', updateBtn);
-    ta.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); form.dispatchEvent(new Event('submit')); } });
 
     async function send() {
       const text = ta.value.trim();
@@ -221,9 +381,22 @@
     }
 
     form.addEventListener('submit', (e) => { e.preventDefault(); send(); });
+    ta.addEventListener('input', updateBtn);
+    ta.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); form.dispatchEvent(new Event('submit')); } });
+
+    if (quick) {
+      quick.querySelectorAll('.l-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          ta.value = chip.dataset.text;
+          updateBtn();
+          form.dispatchEvent(new Event('submit'));
+        });
+      });
+    }
 
     append('bot', 'Bonjour, je suis Lia, votre assistante FixPro. Que puis-je faire pour vous ?');
     updateBtn();
+    scrollBottom();
   </script>
 </body>
 </html>
