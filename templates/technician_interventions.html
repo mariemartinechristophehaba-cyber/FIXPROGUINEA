@@ -6,9 +6,10 @@
   .page { padding-top: 0 !important; }
   .ti-wrap { min-height: 100vh; padding-bottom: 88px; }
 
+  .ti-hero { background: #fff; border-radius: 0 0 24px 24px; padding-bottom: 12px; margin-bottom: 8px; }
   .ti-appbar {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 10px 16px 0; background: #fff;
+    padding: 10px 16px 0;
   }
   .ti-brand { font-size: 25px; font-weight: 800; color: #0F172A; white-space: nowrap; }
   .ti-brand em { color: #155EEF; font-style: normal; }
@@ -22,7 +23,7 @@
   }
 
   .ti-header {
-    background: #fff; padding: 0 16px 6px;
+    padding: 0 16px 6px;
   }
   .ti-header h1 { margin: 0; font-size: 21px; font-weight: 700; color: #0F172A; line-height: 1.2; }
   .ti-header p { margin: 1px 0 0; font-size: 13px; color: #A0AEC0; }
@@ -105,28 +106,29 @@
 </style>
 {% endblock %}
 
-{% block header %}
-<header class="ti-appbar">
-  <a class="ti-brand" href="{{ url_for('artisan_dashboard') }}">Fix<em>Pro</em><span class="ti-dot"></span></a>
-  <a class="ti-bell" href="{{ url_for('notifications') }}" aria-label="Notifications">
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-    {% if unread_count %}<span class="ti-badge">{{ unread_count }}</span>{% endif %}
-  </a>
-</header>
-{% endblock %}
+{% block header %}{% endblock %}
 
 {% block content %}
 <div class="ti-wrap">
-  <header class="ti-header">
+  <div class="ti-hero">
+    <header class="ti-appbar">
+      <a class="ti-brand" href="{{ url_for('artisan_dashboard') }}">Fix<em>Pro</em><span class="ti-dot"></span></a>
+      <a class="ti-bell" href="{{ url_for('notifications') }}" aria-label="Notifications">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        {% if unread_count %}<span class="ti-badge">{{ unread_count }}</span>{% endif %}
+      </a>
+    </header>
+    <header class="ti-header">
     <h1>Mes interventions</h1>
     <p>Suivez vos interventions en cours et passees</p>
-  </header>
+    </header>
 
-  <div class="ti-tabs" id="tiTabs">
-    <a class="active" href="#" data-tab="all" data-count="{{ requests|length }}">Toutes ({{ requests|length }})</a>
-    <a href="#" data-tab="progress" data-count="{{ progress_count }}">En cours ({{ progress_count }})</a>
-    <a href="#" data-tab="completed" data-count="{{ completed_count }}">Terminees ({{ completed_count }})</a>
-    <a href="#" data-tab="cancelled" data-count="{{ cancelled_count }}">Annulees ({{ cancelled_count }})</a>
+    <div class="ti-tabs" id="tiTabs">
+      <a class="active" href="#" data-tab="all" data-count="{{ requests|length }}">Toutes ({{ requests|length }})</a>
+      <a href="#" data-tab="progress" data-count="{{ progress_count }}">En cours ({{ progress_count }})</a>
+      <a href="#" data-tab="completed" data-count="{{ completed_count }}">Terminees ({{ completed_count }})</a>
+      <a href="#" data-tab="cancelled" data-count="{{ cancelled_count }}">Annulees ({{ cancelled_count }})</a>
+    </div>
   </div>
 
   <div class="ti-stats">
