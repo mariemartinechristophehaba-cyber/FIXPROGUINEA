@@ -31,6 +31,9 @@
     .card p { font-size: 1rem; margin: 0; color: #CBD5E1; }
     .accent { color: #3B82F6; }
     .small { font-size: 1rem; color: #94A3B8; margin-top: 24px; }
+    .metric { font-size: 3rem; font-weight: 800; color: #60A5FA; margin: 0; }
+    .metric-label { font-size: 1rem; color: #94A3B8; margin-top: 6px; }
+    .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; max-width: 900px; }
     .nav { position: fixed; bottom: 24px; right: 24px; display: flex; gap: 12px; z-index: 100; }
     .nav button {
       background: #3B82F6; color: #fff; border: none; border-radius: 10px;
@@ -43,6 +46,8 @@
       .slide h2 { font-size: 1.5rem; }
       .slide p, .slide li { font-size: 1rem; }
       .grid { grid-template-columns: 1fr; }
+      .metrics { grid-template-columns: 1fr; }
+      .metric { font-size: 2.2rem; }
     }
   </style>
 </head>
@@ -121,6 +126,30 @@
     </div>
 
     <div class="slide">
+      <h2>Modele economique</h2>
+      <div class="metrics" style="margin-bottom: 40px;">
+        <div>
+          <div class="metric">10%</div>
+          <div class="metric-label">Commission par intervention</div>
+        </div>
+        <div>
+          <div class="metric">250</div>
+          <div class="metric-label">Techniciens cibles annee 1</div>
+        </div>
+        <div>
+          <div class="metric">2 M</div>
+          <div class="metric-label">Population cible a Conakry</div>
+        </div>
+      </div>
+      <ul>
+        <li>Prix moyen d'une intervention : 150 000 GNF</li>
+        <li>Un technicien actif realise ~4 missions par semaine</li>
+        <li>Chiffre d'affaires annuel projete : 750 M GNF a 1,2 Mrd GNF sur 24 mois</li>
+        <li>Revenus complementaires : abonnements pro et mises en avant</li>
+      </ul>
+    </div>
+
+    <div class="slide">
       <h2>Administrateur</h2>
       <ul>
         <li>Validation des inscriptions de techniciens</li>
@@ -175,7 +204,7 @@
     <button id="prev" type="button">Precedent</button>
     <button id="next" type="button">Suivant</button>
   </div>
-  <div class="counter"><span id="index">1</span> / <span id="total">8</span></div>
+  <div class="counter"><span id="index">1</span> / <span id="total">9</span></div>
 
   <script>
     const slides = document.querySelectorAll('.slide');
