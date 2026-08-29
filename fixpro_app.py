@@ -3306,7 +3306,19 @@ def profile():
         return redirect(url_for("profile"))
 
     if user.get("role") == "artisan":
-        return render_template("profile.html", user=user)
+        conn = get_db_connection()
+        try:
+            unread_count = 0
+            try:
+                row = conn.execute(
+                    "SELECT COUNT(*) AS n FROM notifications WHERE user_id = ? AND is_read = 0",
+                    (user["id"],)).fetchone()
+                unread_count = row["n"]
+            except Exception:
+                unread_count = 0
+        finally:
+            conn.close()
+        return render_template("profile.html", user=user, unread_count=unread_count)
 
     conn = get_db_connection()
     try:
@@ -3379,7 +3391,11 @@ def profile():
 @login_required
 def edit_profile():
     """Page de modification du profil client."""
-    return render_template("profile.html", user=get_current_user())
+    user = get_current_user()
+    return render_template("client_profile.html", user=user,
+                           client_zone=user.get("city") or user.get("quartier") or "Conakry",
+                           counts={"reservations": 0, "demandes": 0}, unread_count=0,
+                           messages_unread=0)
 
 
 @app.route("/client-page/<page>")

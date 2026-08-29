@@ -7,316 +7,279 @@
   <title>Mon profil - FixPro</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
     * { box-sizing: border-box; }
-    html, body { margin: 0; padding: 0; height: 100%; }
-    body { font-family: 'Inter', sans-serif; background: #F1F5F9; color: #0F172A; -webkit-font-smoothing: antialiased; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: #F8FAFC; color: #0F172A; -webkit-font-smoothing: antialiased; }
     a { text-decoration: none; color: inherit; }
+    button { font-family: inherit; border: none; cursor: pointer; }
 
-    .p-wrap { position: relative; max-width: 480px; margin: 0 auto; min-height: 100vh; background: #F1F5F9; padding-bottom: 72px; }
+    .p-wrap { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: 88px; }
 
-    .p-header { background: #155EEF; color: #fff; padding: 16px; display: flex; align-items: center; gap: 12px; }
-    .p-back { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,.15); }
-    .p-back svg { width: 20px; height: 20px; }
-    .p-title { flex: 1; text-align: center; font-size: 17px; font-weight: 700; }
-    .p-spacer { width: 40px; }
+    .p-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 16px 0;
+    }
+    .p-brand { font-size: 22px; font-weight: 800; color: #0F172A; white-space: nowrap; text-decoration: none; }
+    .p-brand em { color: #155EEF; font-style: normal; }
+    .p-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #22C55E; margin-left: 3px; vertical-align: middle; }
+    .p-bell { position: relative; color: #0F172A; }
+    .p-bell svg { width: 22px; height: 22px; }
+    .p-badge {
+      position: absolute; top: -4px; right: -3px; min-width: 14px; height: 14px;
+      background: #EF4444; color: #fff; font-size: 9px; font-weight: 700;
+      border-radius: 50%; display: flex; align-items: center; justify-content: center; padding: 0 3px;
+    }
 
-    .p-main { padding: 14px 16px; }
+    .p-title { padding: 2px 16px 4px; }
+    .p-title h1 { margin: 0; font-size: 20px; font-weight: 700; color: #0F172A; }
+    .p-title p { margin: 1px 0 0; font-size: 12px; color: #94A3B8; }
 
-    .p-hero { background: #fff; border-radius: 20px; padding: 18px; display: flex; align-items: center; gap: 14px; margin-bottom: 16px; box-shadow: 0 2px 12px rgba(0,0,0,.04); }
-    .p-avatar { width: 70px; height: 70px; border-radius: 50%; overflow: hidden; background: #EEF4FF; color: #155EEF; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 700; flex-shrink: 0; }
+    .p-main { padding: 10px 16px; }
+
+    .p-hero {
+      background: linear-gradient(135deg, #1E3A8A 0%, #155EEF 100%);
+      border-radius: 20px; padding: 18px; color: #fff;
+      box-shadow: 0 10px 30px rgba(21,94,239,.25); margin-bottom: 16px;
+    }
+    .p-hero-top { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 16px; }
+    .p-avatar-wrap { position: relative; }
+    .p-avatar {
+      width: 70px; height: 70px; border-radius: 50%; overflow: hidden;
+      background: #fff; display: flex; align-items: center; justify-content: center;
+      color: #155EEF; font-size: 24px; font-weight: 800;
+    }
     .p-avatar img { width: 100%; height: 100%; object-fit: cover; }
-    .p-info { flex: 1; min-width: 0; }
-    .p-name { margin: 0; font-size: 17px; font-weight: 700; color: #0F172A; }
-    .p-role { margin: 2px 0 0; font-size: 13px; color: #64748B; }
-    .p-status { margin: 6px 0 0; font-size: 12px; color: #15803D; display: flex; align-items: center; gap: 5px; }
-    .p-dot { width: 8px; height: 8px; border-radius: 50%; background: #22C55E; }
+    .p-online { position: absolute; bottom: 2px; right: 2px; width: 18px; height: 18px; border-radius: 50%; background: #22C55E; border: 2px solid #1E3A8A; }
+    .p-hero-info { flex: 1; }
+    .p-name { margin: 0; font-size: 18px; font-weight: 700; }
+    .p-role { margin: 3px 0 0; font-size: 13px; opacity: .9; }
+    .p-rating { display: inline-flex; align-items: center; gap: 4px; margin-top: 8px; background: rgba(255,255,255,.2); padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+    .p-rating svg { width: 14px; height: 14px; }
+    .p-edit {
+      margin-left: auto; display: inline-flex; align-items: center; gap: 4px;
+      padding: 6px 12px; border-radius: 12px; background: rgba(255,255,255,.15); color: #fff;
+      font-size: 12px; font-weight: 600; border: 1px solid rgba(255,255,255,.3);
+    }
+    .p-hero-bottom { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; text-align: center; }
+    .p-hero-item { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .p-hero-item svg { width: 18px; height: 18px; }
+    .p-hero-label { font-size: 10px; opacity: .85; }
+    .p-hero-value { font-size: 12px; font-weight: 700; }
 
-    .p-section { margin-bottom: 16px; }
-    .p-section-title { font-size: 15px; font-weight: 700; color: #0F172A; margin: 0 0 12px; }
-    .p-card { background: #fff; border-radius: 20px; padding: 16px; box-shadow: 0 2px 12px rgba(0,0,0,.04); }
-    .p-field { margin-bottom: 14px; }
-    .p-field:last-child { margin-bottom: 0; }
-    .p-field label { display: block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 6px; }
-    .p-field input, .p-field textarea, .p-field select { width: 100%; padding: 12px 14px; border: 1px solid #E2E8F0; border-radius: 14px; font-size: 15px; font-family: 'Inter', sans-serif; outline: none; }
-    .p-field input:focus, .p-field textarea:focus { border-color: #155EEF; }
-    .p-field textarea { min-height: 90px; resize: vertical; }
-    .p-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .p-submit { width: 100%; padding: 15px; background: #155EEF; color: #fff; border: none; border-radius: 16px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 6px; }
-
-    .p-status-chooser { display: flex; gap: 8px; }
-    .p-status-option { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px; border: 1px solid #E2E8F0; border-radius: 12px; background: #fff; cursor: pointer; font-size: 13px; font-weight: 600; }
-    .p-status-option input { position: absolute; opacity: 0; }
-    .p-status-option.active { border-color: #155EEF; background: #EEF4FF; color: #155EEF; }
-    .p-status-dot { width: 10px; height: 10px; border-radius: 50%; }
-    .p-geo { margin-top: 12px; padding: 12px; border-radius: 12px; background: #F0FDF4; color: #166534; font-size: 13px; display: none; }
-    .p-geo.warn { background: #FEF3C7; color: #92400E; }
-
-    .p-link { display: flex; align-items: center; gap: 12px; padding: 14px 0; border-bottom: 1px solid #F1F5F9; color: #0F172A; }
+    .p-card { background: #fff; border-radius: 18px; padding: 14px; margin-bottom: 14px; box-shadow: 0 2px 8px rgba(0,0,0,.03); }
+    .p-card-title { font-size: 14px; font-weight: 700; color: #0F172A; margin: 0 0 12px; }
+    .p-link { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid #F1F5F9; }
     .p-link:last-child { border-bottom: none; }
-    .p-link-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .p-link-icon { width: 38px; height: 38px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
     .p-link-icon svg { width: 20px; height: 20px; }
-    .p-link-text { flex: 1; font-size: 15px; font-weight: 600; }
-    .p-link svg { width: 16px; height: 16px; color: #94A3B8; }
-    .p-logout { width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; height: 48px; border: 1px solid #FECACA; border-radius: 16px; background: #FEF2F2; color: #DC2626; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .p-link-body { flex: 1; min-width: 0; }
+    .p-link-title { font-size: 14px; font-weight: 600; color: #0F172A; }
+    .p-link-sub { font-size: 12px; color: #64748B; }
+    .p-link-arrow { color: #94A3B8; }
+    .p-link-arrow svg { width: 16px; height: 16px; }
+    .p-tag { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 12px; }
+    .p-tag.green { background: #DCFCE7; color: #166534; }
 
-    .p-nav { position: fixed; bottom: 0; left: 0; right: 0; z-index: 30; max-width: 480px; margin: 0 auto; background: #fff; border-top: 1px solid #E2E8F0; display: flex; justify-content: space-around; align-items: center; padding: 8px 0 calc(8px + env(safe-area-inset-bottom)); }
+    .p-section-title { font-size: 14px; font-weight: 700; color: #0F172A; margin: 0 0 10px 4px; }
+
+    .p-logout {
+      width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 14px; border-radius: 14px; background: #fff; color: #DC2626;
+      font-size: 14px; font-weight: 700; box-shadow: 0 2px 8px rgba(0,0,0,.03);
+    }
+
+    .p-nav {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 50; max-width: 480px; margin: 0 auto;
+      background: #fff; border-top: 1px solid #E2E8F0; display: flex; justify-content: space-around; align-items: center;
+      padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
+    }
     .p-nav a { display: flex; flex-direction: column; align-items: center; gap: 3px; color: #94A3B8; font-size: 11px; padding: 4px 8px; }
     .p-nav a.active { color: #155EEF; }
     .p-nav a svg { width: 22px; height: 22px; }
-    .p-nav .p-plus { position: relative; top: -18px; width: 50px; height: 50px; border-radius: 50%; background: #155EEF; color: #fff; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(21,94,239,.35); }
-    .p-nav .p-plus svg { width: 26px; height: 26px; }
-
-    @media (min-width: 768px) {
-      body { background: #E2E8F0; }
-      .p-wrap { max-width: 720px; min-height: calc(100vh - 40px); margin: 20px auto; border-radius: 24px; overflow: hidden; box-shadow: 0 24px 80px rgba(0,0,0,.12); padding-bottom: 72px; }
-      .p-nav { max-width: 720px; bottom: 20px; margin: 0 auto; left: 50%; transform: translateX(-50%); border-radius: 0 0 24px 24px; }
-      .p-header { border-radius: 24px 24px 0 0; }
-    }
   </style>
 </head>
 <body>
   <div class="p-wrap">
     <header class="p-header">
-      <a href="{{ url_for('home') }}" class="p-back" aria-label="Retour">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      <a class="p-brand" href="{{ url_for('artisan_dashboard') }}">Fix<em>Pro</em><span class="p-dot"></span></a>
+      <a class="p-bell" href="{{ url_for('notifications') }}" aria-label="Notifications">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        {% if unread_count %}<span class="p-badge">{{ unread_count }}</span>{% endif %}
       </a>
-      <h1 class="p-title">Mon profil</h1>
-      <div class="p-spacer"></div>
     </header>
 
+    <div class="p-title">
+      <h1>Mon profil</h1>
+      <p>Gerez vos informations personnelles</p>
+    </div>
+
     <main class="p-main">
-      <section class="p-hero">
-        <div class="p-avatar">
-          {% if user.photo_url %}
-            <img src="{{ user.photo_url }}" alt="{{ user.full_name }}" />
-          {% else %}
-            <span>{{ (user.full_name or 'U')[0]|upper }}</span>
-          {% endif %}
+      <div class="p-hero">
+        <div class="p-hero-top">
+          <div class="p-avatar-wrap">
+            <div class="p-avatar">
+              {% if user.photo_url %}<img src="{{ user.photo_url }}" alt="" />{% else %}{{ (user.full_name or 'U')[0]|upper }}{% endif %}
+            </div>
+            <span class="p-online"></span>
+          </div>
+          <div class="p-hero-info">
+            <p class="p-name">{{ user.full_name or 'Utilisateur' }}</p>
+            <p class="p-role">Technicien {{ user.profession or 'General' }}</p>
+            <span class="p-rating">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="#F59E0B" xmlns="http://www.w3.org/2000/svg"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.2-5.4-2.9-5.4 2.9 1-6.2L3.2 9.5l6.1-.9z"/></svg>
+              4.8 · 128 avis
+            </span>
+          </div>
+          <a class="p-edit" href="#edit" onclick="document.getElementById('editForm').scrollIntoView({behavior:'smooth'})">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+            Modifier
+          </a>
         </div>
-        <div class="p-info">
-          <p class="p-name">{{ user.full_name or 'Utilisateur' }}</p>
-          <p class="p-role">{{ 'Technicien' if user.role == 'artisan' else 'Client' }}{% if user.city %} · {{ user.city }}{% endif %}</p>
-          {% if user.is_verified %}
-            <p class="p-status"><span class="p-dot"></span>Compte vérifié</p>
-          {% endif %}
+        <div class="p-hero-bottom">
+          <div class="p-hero-item">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.3 12.3 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.3 12.3 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3z"/></svg>
+            <span class="p-hero-label">Telephone</span>
+            <span class="p-hero-value">{{ user.phone or 'Non renseigne' }}</span>
+          </div>
+          <div class="p-hero-item">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            <span class="p-hero-label">Email</span>
+            <span class="p-hero-value">{{ user.email or 'Non renseigne' }}</span>
+          </div>
+          <div class="p-hero-item">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+            <span class="p-hero-label">Localisation</span>
+            <span class="p-hero-value">{{ user.city or 'Conakry' }}, Guinee</span>
+          </div>
         </div>
+      </div>
+
+      <section class="p-card">
+        <a class="p-link" href="{{ url_for('profile') }}">
+          <div class="p-link-icon" style="background:#DCFCE7; color:#166534;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.4 6.5 14 10l1-1 6.4-3.5-1-1Z"/><path d="m4 8 6.2 3.6L14 8l-3.8-2.1L4 8Z"/><path d="m4 14 6.2 3.6L14 14l-3.8-2.1L4 14Z"/><path d="M20 14v6"/><path d="M18 16h4"/></svg>
+          </div>
+          <div class="p-link-body">
+            <div class="p-link-title">Verification d'identite</div>
+            <div class="p-link-sub">Votre compte est verifie</div>
+          </div>
+          <span class="p-tag green">Verifie ✓</span>
+          <span class="p-link-arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+        </a>
       </section>
 
-      <section class="p-section">
-        <h2 class="p-section-title">Informations personnelles</h2>
-        <form class="p-card" method="post" action="{{ url_for('profile') }}">
+      <p class="p-section-title">Informations professionnelles</p>
+      <section class="p-card" id="editForm">
+        <form method="post" action="{{ url_for('profile') }}">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-          <div class="p-field">
-            <label for="full_name">Nom complet</label>
-            <input id="full_name" type="text" name="full_name" value="{{ user.full_name or '' }}" required />
+          <div class="p-link" style="border-bottom:1px solid #F1F5F9; padding:0 0 12px;">
+            <div class="p-link-icon" style="background:#EEF2FF; color:#155EEF;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+            </div>
+            <div class="p-link-body">
+              <div class="p-link-title">Votre metier</div>
+              <div class="p-link-sub"><input name="profession" value="{{ user.profession or 'Technicien' }}" style="border:none;background:transparent;font-size:12px;color:#64748B;padding:0;" /></div>
+            </div>
+            <span class="p-link-arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
           </div>
-          <div class="p-row">
-            <div class="p-field">
-              <label for="phone">Téléphone</label>
-              <input id="phone" type="text" name="phone" value="{{ user.phone or '' }}" />
+          <div class="p-link" style="border-bottom:1px solid #F1F5F9; padding:12px 0;">
+            <div class="p-link-icon" style="background:#FEF3C7; color:#B45309;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="M12 13v9"/><path d="M9 16h6"/></svg>
             </div>
-            <div class="p-field">
-              <label for="city">Ville</label>
-              <input id="city" type="text" name="city" value="{{ user.city or '' }}" />
+            <div class="p-link-body">
+              <div class="p-link-title">Experience</div>
+              <div class="p-link-sub">{{ user.bio or '5 ans d\'experience' }}</div>
             </div>
+            <span class="p-link-arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
           </div>
-          {% if user.role == 'artisan' %}
-          <div class="p-row">
-            <div class="p-field">
-              <label for="profession">Métier</label>
-              <input id="profession" type="text" name="profession" value="{{ user.profession or '' }}" />
+          <div class="p-link" style="border-bottom:1px solid #F1F5F9; padding:12px 0;">
+            <div class="p-link-icon" style="background:#E0F7FA; color:#0891B2;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5h2M18 9h1.5a2.5 2.5 0 0 0 0-5h-2M12 22V9M8 5 12 1l4 4M6 9h12v6H6z"/><path d="M12 15v7"/></svg>
             </div>
-            <div class="p-field">
-              <label for="hourly_rate">Tarif horaire (GNF)</label>
-              <input id="hourly_rate" type="number" name="hourly_rate" value="{{ user.hourly_rate or 0 }}" min="0" step="5000" />
+            <div class="p-link-body">
+              <div class="p-link-title">Specialites</div>
+              <div class="p-link-sub">Installation, Reparation, Depannage</div>
             </div>
+            <span class="p-link-arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
           </div>
-          {% else %}
-            <input type="hidden" name="profession" value="{{ user.profession or '' }}" />
-            <input type="hidden" name="hourly_rate" value="{{ user.hourly_rate or 0 }}" />
-          {% endif %}
-          <div class="p-row">
-            <div class="p-field">
-              <label for="latitude">Latitude</label>
-              <input id="latitude" type="text" name="latitude" value="{{ user.latitude or 0 }}" />
+          <div class="p-link" style="padding:12px 0 0;">
+            <div class="p-link-icon" style="background:#DCFCE7; color:#16A34A;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6M9 15l3-3 3 3"/></svg>
             </div>
-            <div class="p-field">
-              <label for="longitude">Longitude</label>
-              <input id="longitude" type="text" name="longitude" value="{{ user.longitude or 0 }}" />
+            <div class="p-link-body">
+              <div class="p-link-title">Certifications</div>
+              <div class="p-link-sub">Habilitation electrique, Norme NF C 15-100</div>
             </div>
+            <span class="p-link-arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
           </div>
-          <div class="p-field">
-            <label for="bio">Présentation</label>
-            <textarea id="bio" name="bio" placeholder="Présentez votre expérience en quelques lignes.">{{ user.bio or '' }}</textarea>
-          </div>
-          <button class="p-submit" type="submit">Enregistrer les modifications</button>
+          <button class="p-logout" type="submit" style="margin-top:16px; color:#155EEF; border:1px solid #155EEF;">Enregistrer</button>
         </form>
       </section>
 
-      {% if user.role == 'artisan' %}
-      <section class="p-section">
-        <h2 class="p-section-title">Ma disponibilité</h2>
-        <div class="p-card">
-          <p style="font-size:13px;color:#64748B;margin:0 0 12px;">Passe en ligne pour partager votre position avec les clients proches.</p>
-          <form method="post" id="statusForm" action="{{ url_for('api_technicien_status') }}">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-            <div class="p-status-chooser">
-              <label class="p-status-option {% if (user.availability_status or 'hors_ligne') == 'en_ligne' %}active{% endif %}">
-                <input type="radio" name="status" value="en_ligne" {% if (user.availability_status or 'hors_ligne') == 'en_ligne' %}checked{% endif %} />
-                <span class="p-status-dot" style="background:#22C55E;"></span> En ligne
-              </label>
-              <label class="p-status-option {% if user.availability_status == 'occupe' %}active{% endif %}">
-                <input type="radio" name="status" value="occupe" {% if user.availability_status == 'occupe' %}checked{% endif %} />
-                <span class="p-status-dot" style="background:#F59E0B;"></span> Occupé
-              </label>
-              <label class="p-status-option {% if (user.availability_status or 'hors_ligne') == 'hors_ligne' %}active{% endif %}">
-                <input type="radio" name="status" value="hors_ligne" {% if (user.availability_status or 'hors_ligne') == 'hors_ligne' %}checked{% endif %} />
-                <span class="p-status-dot" style="background:#94A3B8;"></span> Hors ligne
-              </label>
-            </div>
-          </form>
-          <div class="p-geo" id="geoStatus">Position en attente...</div>
-          <p style="font-size:12px;color:#64748B;margin:10px 0 0;">Votre navigateur demandera l'autorisation d'accéder à votre position. Refuser ne bloque pas le changement de statut.</p>
-        </div>
+      <p class="p-section-title">Preferences</p>
+      <section class="p-card">
+        <a class="p-link" href="{{ url_for('notifications') }}">
+          <div class="p-link-icon" style="background:#EEF2FF; color:#155EEF;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          </div>
+          <div class="p-link-body">
+            <div class="p-link-title">Notifications</div>
+            <div class="p-link-sub">Gerer vos preferences de notifications</div>
+          </div>
+          <span class="p-link-arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+        </a>
+        <a class="p-link" href="#">
+          <div class="p-link-icon" style="background:#FEF3C7; color:#B45309;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <div class="p-link-body">
+            <div class="p-link-title">Securite</div>
+            <div class="p-link-sub">Changer votre mot de passe</div>
+          </div>
+          <span class="p-link-arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+        </a>
+        <a class="p-link" href="#'">
+          <div class="p-link-icon" style="background:#E0F7FA; color:#0891B2;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M12 2v20"/></svg>
+          </div>
+          <div class="p-link-body">
+            <div class="p-link-title">Langue</div>
+            <div class="p-link-sub">Francais</div>
+          </div>
+          <span class="p-link-arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+        </a>
       </section>
-      {% endif %}
 
-      <section class="p-section">
-        <h2 class="p-section-title">Paramètres</h2>
-        <div class="p-card">
-          <a href="{{ url_for('payments') }}" class="p-link">
-            <div class="p-link-icon" style="background:#EEF4FF; color:#155EEF;">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
-            </div>
-            <span class="p-link-text">Mes paiements</span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-          </a>
-          <a href="{{ url_for('reviews') }}" class="p-link">
-            <div class="p-link-icon" style="background:#FFFBEB; color:#B45309;">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.2-5.4-2.9-5.4 2.9 1-6.2L3.2 9.5l6.1-.9z"/></svg>
-            </div>
-            <span class="p-link-text">Mes avis</span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-          </a>
-          <a href="{{ url_for('logout') }}" class="p-link" style="border-bottom:none; color:#DC2626;">
-            <div class="p-link-icon" style="background:#FEF2F2; color:#DC2626;">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-            </div>
-            <span class="p-link-text">Se déconnecter</span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-          </a>
-        </div>
-      </section>
+      <a class="p-logout" href="{{ url_for('logout') }}" style="color:#DC2626; margin-bottom:16px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Se deconnecter
+      </a>
     </main>
 
     <nav class="p-nav">
-      <a href="{{ url_for('home') }}">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
+      <a href="{{ url_for('artisan_dashboard') }}">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
         Accueil
       </a>
-      <a href="{{ url_for('artisans_page') }}">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-        Recherche
+      <a href="{{ url_for('requests_list') }}">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M8.5 8H15.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M8.5 12H15.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M8.5 16H12.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        Demandes
       </a>
-      <a class="p-plus" href="{{ url_for('requests_list') }}" aria-label="Reserver">
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+      <a href="{{ url_for('technician_interventions') }}">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        Interventions
       </a>
       <a href="{{ url_for('client_messages') }}">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 21l1.9-5.1A8.4 8.4 0 0 1 4 11.5a8.5 8.5 0 0 1 8.5-8.5A8.5 8.5 0 0 1 21 11.5z"/></svg>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
         Messages
       </a>
       <a href="{{ url_for('profile') }}" class="active">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
         Profil
       </a>
     </nav>
   </div>
-
-  {% if user.role == 'artisan' %}
-  <script>
-  (function () {
-    const form = document.getElementById('statusForm');
-    const options = form.querySelectorAll('input[name="status"]');
-    const geoStatus = document.getElementById('geoStatus');
-    let watchId = null;
-
-    function setGeoMessage(ok, text) {
-      geoStatus.textContent = text;
-      geoStatus.className = 'p-geo' + (ok ? '' : ' warn');
-      geoStatus.style.display = 'block';
-    }
-
-    function sendPosition(lat, lon) {
-      const fd = new FormData();
-      fd.append('csrf_token', form.querySelector('input[name="csrf_token"]').value);
-      fd.append('lat', lat);
-      fd.append('lon', lon);
-      fetch('{{ url_for("api_technicien_position") }}', {
-        method: 'POST',
-        body: fd,
-      }).then(r => r.json()).then(data => {
-        if (data.ok) {
-          setGeoMessage(true, 'Position partagée (' + lat.toFixed(5) + ', ' + lon.toFixed(5) + ')');
-        } else {
-          setGeoMessage(false, data.reason || 'Partage non actif');
-        }
-      }).catch(() => {
-        setGeoMessage(false, 'Erreur d\'envoi de position');
-      });
-    }
-
-    function startSharing() {
-      if (!navigator.geolocation) {
-        setGeoMessage(false, 'Géolocalisation non supportée');
-        return;
-      }
-      watchId = navigator.geolocation.watchPosition(
-        function (pos) {
-          sendPosition(pos.coords.latitude, pos.coords.longitude);
-        },
-        function () {
-          setGeoMessage(false, 'Position refusée ou indisponible');
-        },
-        { enableHighAccuracy: true, maximumAge: 15000, timeout: 10000 }
-      );
-    }
-
-    function stopSharing() {
-      if (watchId !== null) {
-        navigator.geolocation.clearWatch(watchId);
-        watchId = null;
-      }
-      if (geoStatus) geoStatus.style.display = 'none';
-    }
-
-    function updateStatus(status) {
-      const fd = new FormData(form);
-      fd.set('status', status);
-      fetch('{{ url_for("api_technicien_status") }}', {
-        method: 'POST',
-        body: fd,
-      }).then(r => r.json()).then(data => {
-        if (data.ok) {
-          options.forEach(radio => {
-            const label = radio.closest('.p-status-option');
-            label.classList.toggle('active', radio.value === status);
-            radio.checked = radio.value === status;
-          });
-          if (status === 'en_ligne') startSharing(); else stopSharing();
-        }
-      });
-    }
-
-    options.forEach(radio => {
-      radio.addEventListener('change', function () { if (radio.checked) updateStatus(radio.value); });
-    });
-
-    const current = form.querySelector('input[name="status"]:checked');
-    if (current && current.value === 'en_ligne') startSharing();
-  })();
-  </script>
-  {% endif %}
 </body>
 </html>
