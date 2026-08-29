@@ -4,6 +4,7 @@ import '../services/api_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/common.dart';
 import '../widgets/glass_card.dart';
+import 'technician_dashboard_screen.dart';
 
 /// Ecran d'inscription d'un technicien depuis l'application mobile.
 class TechnicianSignupScreen extends StatefulWidget {
@@ -55,13 +56,17 @@ class _TechnicianSignupScreenState extends State<TechnicianSignupScreen> {
         bio: _bio.text.trim(),
       );
       if (!mounted) return;
+      await ApiService.login(
+        phone: _phone.text.trim(),
+        password: _password.text.trim(),
+      );
+      if (!mounted) return;
       await showDialog(
         context: context,
         builder: (_) => AlertDialog(
           backgroundColor: AppColors.background,
-          title: const Text("Inscription envoyee"),
-          content: const Text(
-              "Votre demande a ete envoyee. Un administrateur va l'etudier."),
+          title: const Text("Bienvenue"),
+          content: const Text("Votre compte est actif. Accedez a votre tableau de bord."),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
@@ -70,7 +75,12 @@ class _TechnicianSignupScreenState extends State<TechnicianSignupScreen> {
           ],
         ),
       );
-      if (mounted) Navigator.of(context).pop();
+      if (mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const TechnicianDashboardScreen()),
+          (route) => false,
+        );
+      }
     } on ApiFailure catch (e) {
       setState(() => _error = e.message);
     } finally {
@@ -96,7 +106,7 @@ class _TechnicianSignupScreenState extends State<TechnicianSignupScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  "Remplissez ce formulaire. Votre compte sera active apres validation.",
+                  "Remplissez ce formulaire. Votre compte sera active immediatement.",
                   style: textTheme.bodyMedium?.copyWith(
                     color: AppColors.lightGrey,
                     fontSize: 14,
