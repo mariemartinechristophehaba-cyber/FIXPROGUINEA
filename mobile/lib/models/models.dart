@@ -85,6 +85,10 @@ class Technician {
     );
   }
 
+  /// Alias explicite pour la deserialisation JSON du backend.
+  factory Technician.fromJson(Map<String, dynamic> json) =>
+      Technician.fromProfile(json);
+
   static double _toDouble(Object? v) =>
       v == null ? 0 : (v is num ? v.toDouble() : double.tryParse('$v') ?? 0);
 

@@ -176,6 +176,21 @@ class ApiService {
     }
   }
 
+  /// Liste les techniciens actifs et verifies depuis le backend.
+  static Future<List<Map<String, dynamic>>> getTechnicians() async {
+    _assertConfigured();
+    final response = await _client.get(
+      Uri.parse('$baseUrl/api/techniciens'),
+    );
+    if (response.statusCode >= 400) {
+      throw ApiFailure(_extractMessage(response.body));
+    }
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    final data = (body['technicians'] as List<dynamic>? ?? [])
+        .cast<Map<String, dynamic>>();
+    return data;
+  }
+
   static String _extractMessage(String body) {
     try {
       final decoded = jsonDecode(body) as Map<String, dynamic>?;

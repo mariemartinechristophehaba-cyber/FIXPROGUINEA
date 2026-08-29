@@ -3522,6 +3522,95 @@ def artisans_page():
                            query=query, zone=zone)
 
 
+@app.route("/api/techniciens", methods=["GET"])
+def api_techniciens():
+    """Liste publique des techniciens actifs et verifies au format JSON."""
+    query = request.args.get("q", "").strip()
+    category = request.args.get("category", "").strip()
+    zone = request.args.get("location", request.args.get("zone", "")).strip()
+
+    try:
+        sql = (
+            "SELECT u.id, u.full_name, u.profession, u.city,"
+            " u.hourly_rate, u.latitude, u.longitude, u.photo_url,"
+            " u.years_experience, u.bio, u.is_verified, u.availability_status,"
+            " COALESCE(AVG(r.rating), 0) AS avg_rating,"
+            " COUNT(DISTINCT r.id) AS review_count,"
+            " COUNT(DISTINCT req_completed.id) AS completed"
+            " FROM users u"
+            " LEFT JOIN reviews r ON r.artisan_id = u.id"
+            " LEFT JOIN requests req_completed ON req_completed.artisan_id = u.id"
+            " AND req_completed.status = 'completed'"
+            " WHERE u.role = 'technician' AND u.is_active = 1"
+            " AND u.is_verified = 1 AND u.account_status != 'DELETED'")
+        params = []
+
+        if query:
+            sql += (
+                " AND (u.full_name LIKE ? OR u.profession LIKE ? OR u.city LIKE ?)")
+            like = f"%{query}%"
+            params.extend([like, like, like])
+
+        if category:
+            sql += " AND u.profession LIKE ?"
+            params.append(f"%{category}%")
+
+        if zone:
+            sql += (
+                " AND (u.city LIKE ? OR u.quartier LIKE ?"
+                " OR u.zone_intervention LIKE ?)")
+            like = f"%{zone}%"
+            params.extend([like, like, like])
+
+        sql += " GROUP BY u.id ORDER BY u.full_name"
+
+        client_lat = _to_float(request.args.get("lat"))
+        client_lon = _to_float(request.args.get("lon"))
+
+        conn = get_db_connection()
+        try:
+            rows = conn.execute(sql, params).fetchall()
+            artisans = [_enrich_artisan(row, client_lat, client_lon) for row in rows]
+        finally:
+            conn.close()
+
+        client_in_conakry = (
+            _is_valid_coordinate(client_lat, client_lon)
+            and _nearest_zone(client_lat, client_lon, max_km=50.0) is not None)
+        if client_in_conakry:
+            for a in artisans:
+                a_lat = _to_float(a.get("latitude"))
+                a_lon = _to_float(a.get("longitude"))
+                if _is_valid_coordinate(a_lat, a_lon):
+                    a["distance"] = _haversine(
+                        client_lat, client_lon, a_lat, a_lon)
+                else:
+                    a["distance"] = None
+            artisans = sorted(artisans, key=lambda a: a.get("distance") or 999)
+
+        limit = _to_int(request.args.get("limit", 50), default=50)
+        artisans = artisans[:limit]
+
+        technicians = []
+        for a in artisans:
+            distance = a.get("distance")
+            technicians.append({
+                "full_name": a.get("full_name") or "",
+                "profession": a.get("profession") or "Technicien",
+                "rating": float(a.get("rating") or 0),
+                "distance_km": float(distance) if distance is not None else 0,
+                "hourly_rate": int(a.get("hourly_rate") or 0),
+                "review_count": int(a.get("review_count") or 0),
+                "interventions": int(a.get("completed") or 0),
+                "experience_years": int(a.get("years_experience") or 0),
+                "bio": (a.get("bio") or "").strip(),
+            })
+
+        return jsonify({"technicians": technicians}), 200
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 500
+
+
 @app.route("/artisans/<int:artisan_id>/contact")
 @login_required
 def artisan_contact(artisan_id):

@@ -1,37 +1,23 @@
 import '../models/models.dart';
-import '../services/supabase_service.dart';
+import '../services/api_service.dart';
 import 'mock_data.dart';
 
-/// Source de données des techniciens.
+/// Source de donnees des techniciens.
 ///
-/// Interroge Supabase (table `profiles`, rôles artisan/technicien) quand
-/// l'app est configurée ; retombe sur les données de démo sinon ou en cas
-/// d'erreur, afin que l'interface reste toujours fonctionnelle.
+/// Interroge le backend Flask quand l'app est configuree ; retombe sur les
+/// donnees de demo sinon ou en cas d'erreur, afin que l'interface reste
+/// toujours fonctionnelle.
 class TechnicianRepository {
   const TechnicianRepository();
 
-  static const List<String> _artisanRoles = [
-    'artisan',
-    'technicien',
-    'technician',
-    'prestataire',
-  ];
-
   Future<List<Technician>> fetchNearby({int limit = 10}) async {
-    if (!SupabaseService.isReady) return MockData.technicians;
-    try {
-      final rows = await SupabaseService.client
-          .from('profiles')
-          .select()
-          .inFilter('role', _artisanRoles)
-          .limit(limit);
-      final list = (rows as List)
-          .cast<Map<String, dynamic>>()
-          .map(Technician.fromProfile)
-          .toList();
-      return list.isEmpty ? MockData.technicians : list;
-    } catch (_) {
-      return MockData.technicians;
+    if (ApiService.isConfigured) {
+      try {
+        final rows = await ApiService.getTechnicians();
+        final list = rows.map(Technician.fromJson).take(limit).toList();
+        if (list.isNotEmpty) return list;
+      } catch (_) {}
     }
+    return MockData.technicians;
   }
 }
