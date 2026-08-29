@@ -141,6 +141,18 @@
 
     .t-empty { text-align: center; padding: 24px 10px; }
     .t-empty p { margin: 0; color: #6B7280; font-size: 13px; }
+
+    @media (min-width: 1024px) {
+      .t-wrap { max-width: 1200px; padding: 0 24px 40px; }
+      .t-nav { display: none; }
+      .t-header { padding: 20px 0; }
+      .t-hero { margin: 0 0 24px; border-radius: 28px; padding: 28px 24px; }
+      .t-main { padding: 0; }
+      .t-mission-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+      .t-mission { height: 100%; box-sizing: border-box; }
+      .t-next { max-width: 600px; }
+      .t-section { font-size: 17px; }
+    }
   </style>
 </head>
 <body>
