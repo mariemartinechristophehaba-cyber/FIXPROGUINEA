@@ -2,12 +2,12 @@
 {% block title %}Demandes d'intervention - FixPro{% endblock %}
 {% block extra_head %}
 <style>
-  body { padding-top: 0 !important; margin: 0; }
-  .page { padding-top: 0 !important; }
+  body { padding: 0 !important; margin: 0; }
+  .page { padding: 0 !important; }
   .tr-wrap { min-height: 100vh; padding-bottom: 88px; }
 
   .tr-header {
-    background: #fff; padding: 16px 16px 12px; border-bottom: 1px solid #E2E8F0;
+    background: #fff; padding: 10px 16px 10px; border-bottom: 1px solid #E2E8F0;
     display: flex; align-items: center; justify-content: space-between; gap: 12px;
   }
   .tr-header h1 { margin: 0 0 2px; font-size: 18px; font-weight: 800; color: #0F172A; }
@@ -98,9 +98,9 @@
   </header>
 
   <div class="tr-tabs">
-    <button class="active" type="button">Toutes ({{ requests|length }})</button>
-    <button type="button">Urgentes ({{ urgent_count }})</button>
-    <button type="button">Aujourd'hui ({{ today_count }})</button>
+    <button class="tr-tab-btn active" data-filter="all" type="button">Toutes ({{ requests|length }})</button>
+    <button class="tr-tab-btn" data-filter="urgent" type="button">Urgentes ({{ urgent_count }})</button>
+    <button class="tr-tab-btn" data-filter="today" type="button">Aujourd'hui ({{ today_count }})</button>
   </div>
 
   <div class="tr-notice">
@@ -115,7 +115,7 @@
 
   <main class="tr-main">
     {% for r in requests %}
-    <div class="tr-card">
+    <div class="tr-card" data-urgency="{{ 'urgent' if (r.urgency == 'urgent' or r.priority == 'urgent') else 'normal' }}" data-created="{{ r.created_at[:10] if r.created_at else '' }}">
       <div class="tr-top">
         <span class="tr-pill {{ 'urgent' if r.urgency == 'urgent' or r.priority == 'urgent' else 'normal' }}">
           {{ 'Urgente' if r.urgency == 'urgent' or r.priority == 'urgent' else 'Normale' }}
@@ -160,4 +160,32 @@
     {% endfor %}
   </main>
 </div>
+
+<script>
+  (function() {
+    const buttons = document.querySelectorAll('.tr-tab-btn');
+    const cards = document.querySelectorAll('.tr-card');
+    const today = new Date().toISOString().split('T')[0];
+
+    function applyFilter(filter) {
+      cards.forEach(card => {
+        const isUrgent = card.dataset.urgency === 'urgent';
+        const isToday = card.dataset.created === today;
+        if (filter === 'all' || (filter === 'urgent' && isUrgent) || (filter === 'today' && isToday)) {
+          card.style.display = '';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    }
+
+    buttons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        buttons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        applyFilter(btn.dataset.filter);
+      });
+    });
+  })();
+</script>
 {% endblock %}
