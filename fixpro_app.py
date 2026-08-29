@@ -4157,7 +4157,7 @@ def demande(artisan_id):
     conn = get_db_connection()
     try:
         artisan = conn.execute(
-            "SELECT * FROM users WHERE id = ? AND role = 'technician'",
+            "SELECT * FROM users WHERE id = ? AND role IN ('artisan','technician')",
             (artisan_id,)).fetchone()
         if not artisan:
             flash("Technicien introuvable.", "error")
@@ -5094,14 +5094,32 @@ def _migrate_db():
         conn = get_db_connection()
         try:
             is_pg = db.is_postgres_url(app.config.get("DATABASE_URL"))
+            cols = conn.table_columns('conversations')
+            if 'artisan_id' not in cols:
+                conn.execute("ALTER TABLE conversations ADD COLUMN artisan_id INTEGER REFERENCES users(id) ON DELETE SET NULL")
+            if 'request_id' not in cols:
+                conn.execute("ALTER TABLE conversations ADD COLUMN request_id INTEGER REFERENCES requests(id) ON DELETE SET NULL")
+            if 'ai_active' not in cols:
+                conn.execute("ALTER TABLE conversations ADD COLUMN ai_active INTEGER DEFAULT 1")
+            if 'ai_category' not in cols:
+                conn.execute("ALTER TABLE conversations ADD COLUMN ai_category TEXT")
+            if 'urgency' not in cols:
+                conn.execute("ALTER TABLE conversations ADD COLUMN urgency TEXT")
+            if 'needs_human' not in cols:
+                conn.execute("ALTER TABLE conversations ADD COLUMN needs_human INTEGER DEFAULT 0")
+            if 'needs_technician' not in cols:
+                conn.execute("ALTER TABLE conversations ADD COLUMN needs_technician INTEGER DEFAULT 0")
+            if 'collected_info' not in cols:
+                if is_pg:
+                    conn.execute("ALTER TABLE conversations ADD COLUMN collected_info JSONB DEFAULT '{}'")
+                else:
+                    conn.execute("ALTER TABLE conversations ADD COLUMN collected_info TEXT DEFAULT '{}'")
+
+            if 'available_days' not in conn.table_columns('users'):
+                conn.execute("ALTER TABLE users ADD COLUMN available_days TEXT")
+
+            conn.commit()
             if is_pg:
-                conn.execute(
-                    "ALTER TABLE conversations ADD COLUMN IF NOT EXISTS collected_info JSONB DEFAULT '{}'"
-                )
-                conn.execute(
-                    "ALTER TABLE users ADD COLUMN IF NOT EXISTS available_days TEXT"
-                )
-                conn.commit()
                 conn.execute(
                     "CREATE TABLE IF NOT EXISTS lia_logs ("
                     " id SERIAL PRIMARY KEY,"
@@ -5116,8 +5134,6 @@ def _migrate_db():
                     " updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
                     ")")
             else:
-                conn.execute(
-                    "ALTER TABLE conversations ADD COLUMN IF NOT EXISTS collected_info TEXT DEFAULT '{}'")
                 conn.execute(
                     "CREATE TABLE IF NOT EXISTS lia_logs ("
                     " id INTEGER PRIMARY KEY AUTOINCREMENT,"
@@ -6324,7 +6340,7 @@ def client_message_artisan(artisan_id):
     conn = get_db_connection()
     try:
         artisan = conn.execute(
-            "SELECT id, full_name, profession FROM users WHERE id = ? AND role = 'technician'",
+            "SELECT id, full_name, profession FROM users WHERE id = ? AND role IN ('artisan','technician')",
             (artisan_id,)).fetchone()
         if not artisan:
             flash("Technicien introuvable.", "error")
