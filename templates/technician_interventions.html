@@ -90,8 +90,7 @@
 </style>
 {% endblock %}
 
-{% block header %}{% endblock %}
-{% block sidebar %}{% endblock %}
+{% block page_title %}Mes interventions{% endblock %}
 
 {% block content %}
 <div class="ti-wrap">
@@ -100,11 +99,11 @@
     <p>Suivez vos interventions en cours et passees</p>
   </header>
 
-  <div class="ti-tabs">
-    <a class="active" href="#">Toutes ({{ requests|length }})</a>
-    <a href="#">En cours ({{ progress_count }})</a>
-    <a href="#">Terminees ({{ completed_count }})</a>
-    <a href="#">Annulees ({{ cancelled_count }})</a>
+  <div class="ti-tabs" id="tiTabs">
+    <a class="active" href="#" data-tab="all" data-count="{{ requests|length }}">Toutes ({{ requests|length }})</a>
+    <a href="#" data-tab="progress" data-count="{{ progress_count }}">En cours ({{ progress_count }})</a>
+    <a href="#" data-tab="completed" data-count="{{ completed_count }}">Terminees ({{ completed_count }})</a>
+    <a href="#" data-tab="cancelled" data-count="{{ cancelled_count }}">Annulees ({{ cancelled_count }})</a>
   </div>
 
   <div class="ti-stats">
@@ -134,21 +133,11 @@
     {% set progress = ['in_progress','IN_PROGRESS','quote_accepted','en_route','EN_ROUTE','arrived','ARRIVED','assigned','ASSIGNED','accepted','ACCEPTED'] %}
     {% set completed = ['completed','COMPLETED'] %}
     {% set cancelled = ['cancelled','CANCELLED','rejected','REJECTED','refused','REFUSED'] %}
-    {% set progress_count = namespace(value=0) %}
-    {% set completed_count = namespace(value=0) %}
-    {% set cancelled_count = namespace(value=0) %}
-    {% for r in requests %}
-      {% if r.status in progress %}{% set progress_count.value = progress_count.value + 1 %}{% endif %}
-      {% if r.status in completed %}{% set completed_count.value = completed_count.value + 1 %}{% endif %}
-      {% if r.status in cancelled %}{% set cancelled_count.value = cancelled_count.value + 1 %}{% endif %}
-    {% endfor %}
 
-    <h2 class="ti-section">Aujourd'hui</h2>
-    {% set shown = namespace(value=false) %}
-    {% for r in requests %}
-      {% if r.created_at and 'Aujourd' in r.created_at or (r.requested_time and r.requested_time.startswith('Aujourd')) %}
-      {% set shown.value = true %}
-      <div class="ti-card">
+    <div id="tiList">
+      {% for r in requests %}
+      {% set rstatus = 'progress' if r.status in progress else 'completed' if r.status in completed else 'cancelled' if r.status in cancelled else 'all' %}
+      <div class="ti-card" data-status="{{ rstatus }}">
         <div class="ti-top">
           <span class="ti-pill {{ 'urgent' if r.urgency == 'urgent' else 'normal' if r.urgency == 'normal' else 'planned' }}">{% if r.urgency == 'urgent' %}Urgente{% elif r.urgency == 'normal' %}Normale{% else %}Planifiee{% endif %}</span>
           <span class="ti-pill {{ 'completed' if r.status in completed else '' }}"><span class="ti-status-dot"></span>{% if r.status in completed %}Terminee{% else %}En cours{% endif %}</span>
@@ -178,11 +167,39 @@
           </form>
         </div>
       </div>
-      {% endif %}
-    {% endfor %}
-    {% if not shown.value %}
-      <p style="text-align:center; color:#64748B; padding: 20px 10px;">Aucune intervention aujourd'hui.</p>
-    {% endif %}
+      {% else %}
+      <p style="text-align:center; color:#64748B; padding: 40px 10px;" id="tiEmpty">Aucune intervention.</p>
+      {% endfor %}
+    </div>
+    <p style="text-align:center; color:#64748B; padding: 40px 10px; display:none;" id="tiFilterEmpty">Aucune intervention dans cette categorie.</p>
   </main>
 </div>
+
+<script>
+  (function() {
+    const tabs = document.querySelectorAll('#tiTabs a');
+    const cards = document.querySelectorAll('#tiList .ti-card');
+    const empty = document.getElementById('tiFilterEmpty');
+    tabs.forEach(function(tab) {
+      tab.addEventListener('click', function(e) {
+        e.preventDefault();
+        tabs.forEach(function(t) { t.classList.remove('active'); });
+        tab.classList.add('active');
+        const filter = tab.dataset.tab;
+        let visible = 0;
+        cards.forEach(function(card) {
+          if (filter === 'all' || card.dataset.status === filter) {
+            card.style.display = '';
+            visible++;
+          } else {
+            card.style.display = 'none';
+          }
+        });
+        if (empty) {
+          empty.style.display = visible === 0 ? '' : 'none';
+        }
+      });
+    });
+  })();
+</script>
 {% endblock %}
