@@ -78,6 +78,25 @@
     font-size: 13px; font-weight: 700;
   }
   .tr-btn-view svg { width: 16px; height: 16px; }
+
+  @media (min-width: 1024px) {
+    .app-wrap { margin-left: 0 !important; }
+    body { padding: 0 !important; }
+    .tr-wrap { max-width: 1200px; margin: 0 auto; padding: 0 24px 40px; }
+    .tr-header { padding: 20px 24px; max-width: 1200px; margin: 0 auto; }
+    .tr-tabs { padding: 16px 24px; max-width: 1200px; margin: 0 auto; }
+    .tr-tabs button { flex: none; padding: 12px 24px; font-size: 14px; }
+    .tr-notice { margin: 16px auto; max-width: 1200px; }
+    .tr-main {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+    .tr-card { margin: 0; }
+  }
 </style>
 {% endblock %}
 
