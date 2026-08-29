@@ -3464,9 +3464,7 @@ def artisans_page():
         " FROM users u"
         " LEFT JOIN reviews r ON r.artisan_id = u.id"
         " LEFT JOIN requests req_completed ON req_completed.artisan_id = u.id AND req_completed.status = 'completed'"
-        " WHERE u.role = 'technician' AND u.is_active = 1 AND u.is_verified = 1 AND u.account_status != 'DELETED'"
-        " GROUP BY u.id, u.full_name, u.profession, u.city, u.hourly_rate,"
-        " u.latitude, u.longitude, u.photo_url, u.is_verified, u.availability_status")
+        " WHERE u.role = 'technician' AND u.is_active = 1 AND u.is_verified = 1 AND u.account_status != 'DELETED'")
     params = []
 
     if query:
@@ -3484,7 +3482,10 @@ def artisans_page():
         like = f"%{zone}%"
         params.extend([like, like, like])
 
-    sql += " ORDER BY u.full_name"
+    sql += (
+        " GROUP BY u.id, u.full_name, u.profession, u.city, u.hourly_rate,"
+        " u.latitude, u.longitude, u.photo_url, u.is_verified, u.availability_status"
+        " ORDER BY u.full_name")
 
     client_lat = _to_float(user.get("latitude")) if user else None
     client_lon = _to_float(user.get("longitude")) if user else None
@@ -3547,9 +3548,7 @@ def api_techniciens():
             " LEFT JOIN requests req_completed ON req_completed.artisan_id = u.id"
             " AND req_completed.status = 'completed'"
             " WHERE u.role = 'technician' AND u.is_active = 1"
-            " AND u.is_verified = 1 AND u.account_status != 'DELETED'"
-            " GROUP BY u.id, u.full_name, u.profession, u.city, u.hourly_rate,"
-            " u.latitude, u.longitude, u.photo_url, u.years_experience, u.bio, u.is_verified, u.availability_status")
+            " AND u.is_verified = 1 AND u.account_status != 'DELETED'")
         params = []
 
         if query:
@@ -3569,7 +3568,10 @@ def api_techniciens():
             like = f"%{zone}%"
             params.extend([like, like, like])
 
-        sql += " ORDER BY u.full_name"
+        sql += (
+            " GROUP BY u.id, u.full_name, u.profession, u.city, u.hourly_rate,"
+            " u.latitude, u.longitude, u.photo_url, u.years_experience, u.bio, u.is_verified, u.availability_status"
+            " ORDER BY u.full_name")
 
         client_lat = _to_float(request.args.get("lat"))
         client_lon = _to_float(request.args.get("lon"))
