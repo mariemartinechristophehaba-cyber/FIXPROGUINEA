@@ -189,7 +189,7 @@ export default function FixProAdminDashboard() {
           </button>
         </div>
 
-        <nav className='px-3 mt-3 flex flex-col gap-0.5'>
+        <nav className='px-3 mt-3 flex-1 overflow-y-auto flex flex-col gap-0.5'>
           {NAV.map(({ label, icon: Icon, href }) => {
             const active = pathname === href || pathname.startsWith(href + '/');
             return (
