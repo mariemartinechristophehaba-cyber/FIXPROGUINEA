@@ -239,6 +239,18 @@
     .hp-rec-profession { font-size: 0.75rem; }
     .hp-rec-btn { font-size: 0.75rem; padding: 7px 12px; }
   }
+  @media (min-width: 1280px) {
+    .hp-hero-inner, .hp-search, .hp-info, .hp-section { max-width: 1200px; }
+    .hp-hero { padding: 36px 32px 44px; }
+    .hp-hero h1 { font-size: 2.4rem; }
+    .hp-cats { grid-template-columns: repeat(4, 1fr); }
+    .hp-rec-grid { grid-template-columns: repeat(4, 1fr); }
+    .hp-cat h3 { font-size: 1rem; }
+    .hp-cat p { font-size: 0.78rem; }
+    .hp-rec-info h4 { font-size: 0.9rem; }
+    .hp-rec-profession { font-size: 0.78rem; }
+    .hp-rec-btn { font-size: 0.78rem; }
+  }
 </style>
 
 <div id="locOverlay" class="hp-loc-overlay" {% if loc_state in ('granted', 'manual') %}style="display:none;"{% endif %}>
