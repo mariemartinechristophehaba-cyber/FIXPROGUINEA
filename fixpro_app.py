@@ -875,8 +875,12 @@ def index():
         artisans = [dict(a) for a in artisans]
 
         # Un technicien connecte n'a pas a voir l'accueil client
-        if user and user.get("role") == "technician":
-            return redirect(url_for("artisan_dashboard"))
+        if user and _is_technician(user):
+            response = make_response(redirect(url_for("artisan_dashboard")))
+            response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+            response.headers['Pragma'] = 'no-cache'
+            response.headers['Expires'] = '0'
+            return response
 
         client_lat = _to_float(user.get("latitude")) if user else None
         client_lon = _to_float(user.get("longitude")) if user else None
@@ -893,11 +897,15 @@ def index():
         artisans = artisans[:4]
     finally:
         conn.close()
-    return render_template("index.html", artisans=artisans, unread_count=unread_count,
+    response = make_response(render_template("index.html", artisans=artisans, unread_count=unread_count,
                            loc_permission=session.get("loc_permission", "prompt"),
                            client_zone=session.get("client_zone"),
                            category_counts=counts,
-                           popular=popular)
+                           popular=popular))
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
 
 @app.route("/api/location", methods=["POST"])
