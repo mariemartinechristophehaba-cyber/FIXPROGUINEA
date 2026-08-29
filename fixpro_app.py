@@ -6028,7 +6028,7 @@ def lia():
 
 
 @app.route("/api/lia/chat", methods=["POST"])
-@limiter.limit("100 per hour")
+@limiter.limit("100 per minute")
 def api_lia_chat():
     """API de chat avec l'assistante FixPro."""
     data = request.get_json(silent=True, force=True) or {}
