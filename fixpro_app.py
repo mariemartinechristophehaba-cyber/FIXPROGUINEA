@@ -1070,8 +1070,13 @@ def health_db():
         conn = get_db_connection()
         try:
             conn.execute("SELECT 1").fetchone()
-            return jsonify({"status": "ok", "db": "connected",
-                            "timestamp": now_iso()})
+            engine = "postgresql" if conn.is_postgres else "sqlite"
+            return jsonify({
+                "status": "ok",
+                "db": "connected",
+                "engine": engine,
+                "timestamp": now_iso(),
+            })
         finally:
             conn.close()
     except Exception as exc:

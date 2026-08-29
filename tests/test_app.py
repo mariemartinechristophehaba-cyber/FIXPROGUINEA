@@ -119,6 +119,14 @@ class HealthAndSecurityTests(FixProTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.get_json()["status"], "ok")
 
+    def test_health_db_endpoint(self):
+        response = self.client.get("/health-db")
+        self.assertEqual(response.status_code, 200)
+        body = response.get_json()
+        self.assertEqual(body["status"], "ok")
+        self.assertEqual(body["db"], "connected")
+        self.assertEqual(body["engine"], "sqlite")
+
     def test_security_headers_present(self):
         headers = self.client.get("/").headers
         self.assertEqual(headers["X-Frame-Options"], "SAMEORIGIN")
