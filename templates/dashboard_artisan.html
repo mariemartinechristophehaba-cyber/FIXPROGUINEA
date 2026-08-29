@@ -153,6 +153,22 @@
       .t-next { max-width: 600px; }
       .t-section { font-size: 17px; }
     }
+    @media (min-width: 1400px) {
+      .t-wrap { max-width: 1400px; padding: 0 40px 60px; }
+      .t-mission-list { grid-template-columns: repeat(3, 1fr); gap: 20px; }
+      .t-hero { padding: 32px 32px; }
+      .t-header { padding: 24px 0; }
+      .t-main { display: grid; grid-template-columns: 1fr 360px; gap: 24px; align-items: start; }
+      .t-main > .t-section:first-of-type,
+      .t-main > .t-card.t-stats,
+      .t-main > .t-section:nth-of-type(2),
+      .t-main > .t-mission-list,
+      .t-main > .t-empty,
+      .t-main > .t-btn-link { grid-column: 1; }
+      .t-main > .t-section:nth-of-type(3),
+      .t-main > .t-next { grid-column: 2; grid-row: 1 / span 4; }
+      .t-next { max-width: none; width: 100%; box-sizing: border-box; }
+    }
   </style>
 </head>
 <body>
