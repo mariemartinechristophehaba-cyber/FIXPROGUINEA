@@ -6007,7 +6007,9 @@ def client_messages():
             (user["id"], user["id"])).fetchall()
     finally:
         conn.close()
-    return render_template("client_messages.html", conversations=conversations, user=user)
+    unread_count = sum(c.get("unread", 0) or 0 for c in conversations)
+    return render_template("client_messages.html", conversations=conversations, user=user,
+                           unread_count=unread_count)
 
 
 @app.route("/messages/new", methods=["GET", "POST"])
