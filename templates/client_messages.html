@@ -4,64 +4,117 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#155EEF" />
-  <title>Mes messages - FixPro</title>
+  <title>Messages - FixPro</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
     * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; }
-    body { font-family: 'Inter', sans-serif; background: #F1F5F9; color: #0F172A; -webkit-font-smoothing: antialiased; }
+    body { font-family: 'Inter', sans-serif; background: #F8FAFC; color: #0F172A; -webkit-font-smoothing: antialiased; }
     a { text-decoration: none; color: inherit; }
+    button { font-family: inherit; border: none; cursor: pointer; }
 
-    .m-wrap { max-width: 480px; margin: 0 auto; min-height: 100vh; background: #F1F5F9; padding-bottom: 88px; }
+    .ms-wrap { max-width: 480px; margin: 0 auto; min-height: 100vh; background: #F8FAFC; padding-bottom: 88px; }
 
-    .m-header {
-      background: #155EEF; color: #fff; padding: 16px; position: sticky; top: 0; z-index: 10;
-      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    .ms-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 16px 0;
     }
-    .m-header a { color: #fff; }
-    .m-back, .m-new {
-      width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
-      background: rgba(255,255,255,.15);
+    .ms-brand { font-size: 22px; font-weight: 800; color: #0F172A; white-space: nowrap; text-decoration: none; }
+    .ms-brand em { color: #155EEF; font-style: normal; }
+    .ms-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #22C55E; margin-left: 3px; vertical-align: middle; }
+    .ms-bell { position: relative; color: #0F172A; }
+    .ms-bell svg { width: 22px; height: 22px; }
+    .ms-badge {
+      position: absolute; top: -4px; right: -3px; min-width: 14px; height: 14px;
+      background: #EF4444; color: #fff; font-size: 9px; font-weight: 700;
+      border-radius: 50%; display: flex; align-items: center; justify-content: center; padding: 0 3px;
     }
-    .m-back svg, .m-new svg { width: 20px; height: 20px; }
-    .m-title { flex: 1; text-align: center; }
-    .m-title h1 { margin: 0; font-size: 17px; font-weight: 700; }
-    .m-title p { margin: 2px 0 0; font-size: 12px; opacity: .85; }
 
-    .m-main { padding: 14px 16px; }
-    .m-card {
-      background: #fff; border-radius: 20px; padding: 16px; margin-bottom: 12px;
-      box-shadow: 0 2px 12px rgba(0,0,0,.04); display: flex; align-items: center; gap: 14px;
-      transition: transform .08s;
-    }
-    .m-card:active { transform: scale(.99); }
-    .m-avatar {
-      width: 50px; height: 50px; border-radius: 50%; background: #F1F5F9;
-      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-    }
-    .m-avatar svg { width: 24px; height: 24px; color: #155EEF; }
-    .m-body { flex: 1; min-width: 0; }
-    .m-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 4px; }
-    .m-subject { font-weight: 700; font-size: 15px; color: #0F172A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .m-time { font-size: 11px; color: #94A3B8; white-space: nowrap; }
-    .m-preview { font-size: 13px; color: #64748B; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .m-unread {
-      width: 20px; height: 20px; border-radius: 50%; background: #EF4444; color: #fff;
-      font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-    }
-    .m-status { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 10px; margin-top: 6px; display: inline-block; }
-    .m-status.open { background: #DBEAFE; color: #1E40AF; }
-    .m-status.closed { background: #F1F5F9; color: #64748B; }
-    .m-empty { text-align: center; padding: 40px 20px; }
-    .m-empty strong { display: block; font-size: 16px; color: #0F172A; margin-bottom: 6px; }
-    .m-empty p { margin: 0; font-size: 14px; color: #64748B; }
+    .ms-title { padding: 2px 16px 6px; }
+    .ms-title h1 { margin: 0; font-size: 19px; font-weight: 700; color: #0F172A; }
+    .ms-title p { margin: 1px 0 0; font-size: 12px; color: #94A3B8; }
 
-    .m-cta {
-      display: block; width: calc(100% - 32px); margin: 0 16px 16px; background: #155EEF; color: #fff; text-align: center;
-      font-weight: 700; font-size: 15px; padding: 15px; border-radius: 16px;
+    .ms-search {
+      display: flex; align-items: center; gap: 8px; padding: 8px 16px;
     }
+    .ms-input-wrap {
+      flex: 1; display: flex; align-items: center; gap: 8px;
+      background: #fff; border: 1px solid #E2E8F0; border-radius: 12px; padding: 9px 12px;
+    }
+    .ms-input-wrap svg { width: 16px; height: 16px; color: #94A3B8; }
+    .ms-input {
+      flex: 1; border: none; background: transparent; outline: none; font-size: 13px; color: #0F172A;
+    }
+    .ms-filter {
+      width: 38px; height: 38px; border-radius: 12px; background: #fff; border: 1px solid #E2E8F0;
+      display: flex; align-items: center; justify-content: center; color: #64748B;
+    }
+    .ms-filter svg { width: 18px; height: 18px; }
+
+    .ms-tabs {
+      display: flex; align-items: center; gap: 8px; padding: 6px 16px 10px;
+    }
+    .ms-tab {
+      display: flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 24px;
+      background: #fff; border: 1px solid #E2E8F0; color: #64748B; font-size: 13px; font-weight: 700;
+    }
+    .ms-tab.active { background: #155EEF; color: #fff; border-color: #155EEF; }
+    .ms-tab svg { width: 16px; height: 16px; }
+    .ms-count { min-width: 18px; height: 18px; border-radius: 50%; background: #fff; color: #155EEF; font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+    .ms-tab.active .ms-count { background: rgba(255,255,255,.25); color: #fff; }
+
+    .ms-section { padding: 8px 16px; font-size: 14px; font-weight: 700; color: #0F172A; }
+    .ms-card {
+      background: #fff; border-radius: 16px; padding: 12px; margin: 0 16px 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.03); display: flex; align-items: center; gap: 12px;
+    }
+    .ms-avatar {
+      width: 46px; height: 46px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      background: #EEF2FF; color: #155EEF; font-weight: 700; font-size: 14px;
+    }
+    .ms-avatar svg { width: 22px; height: 22px; }
+    .ms-body { flex: 1; min-width: 0; }
+    .ms-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 3px; }
+    .ms-name { font-size: 14px; font-weight: 700; color: #0F172A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ms-time { font-size: 11px; color: #94A3B8; white-space: nowrap; }
+    .ms-preview { font-size: 12px; color: #64748B; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0 0 2px; }
+    .ms-tag { font-size: 10px; font-weight: 700; color: #155EEF; background: #EEF2FF; padding: 3px 8px; border-radius: 12px; display: inline-flex; align-items: center; gap: 4px; }
+    .ms-tag svg { width: 10px; height: 10px; }
+    .ms-unread { min-width: 18px; height: 18px; border-radius: 50%; background: #155EEF; color: #fff; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+
+    .ms-recent { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 0 16px 16px; }
+    .ms-rcard {
+      background: #fff; border-radius: 16px; padding: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.03);
+    }
+    .ms-rcard-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    .ms-rcard-avatar { width: 34px; height: 34px; border-radius: 50%; background: #EEF2FF; color: #155EEF; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; }
+    .ms-rcard-avatar svg { width: 16px; height: 16px; }
+    .ms-rcard-name { font-size: 13px; font-weight: 700; color: #0F172A; margin-bottom: 2px; }
+    .ms-rcard-sub { font-size: 11px; color: #64748B; margin-bottom: 8px; }
+    .ms-rcard-msg { font-size: 11px; color: #0F172A; background: #F1F5F9; border-radius: 10px; padding: 8px; }
+
+    .ms-banner {
+      display: flex; align-items: flex-start; gap: 12px;
+      background: #EEF2FF; border-radius: 16px; padding: 12px; margin: 0 16px 16px;
+    }
+    .ms-banner-icon { width: 40px; height: 40px; border-radius: 12px; background: #155EEF; color: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .ms-banner-icon svg { width: 20px; height: 20px; }
+    .ms-banner-title { font-size: 13px; font-weight: 700; color: #0F172A; margin-bottom: 2px; }
+    .ms-banner-text { font-size: 12px; color: #64748B; }
+    .ms-close { margin-left: auto; color: #64748B; }
+    .ms-close svg { width: 16px; height: 16px; }
+
+    .ms-empty { text-align: center; padding: 20px 16px; font-size: 13px; color: #94A3B8; background: #fff; border-radius: 16px; margin: 0 16px 16px; }
+
+    .ms-fab {
+      position: fixed; bottom: 88px; right: 16px; z-index: 40;
+      display: flex; align-items: center; gap: 6px; padding: 12px 18px; border-radius: 24px;
+      background: #155EEF; color: #fff; font-size: 13px; font-weight: 700; box-shadow: 0 4px 14px rgba(21,94,239,.35);
+    }
+    .ms-fab svg { width: 18px; height: 18px; }
 
     .m-nav {
       position: fixed; bottom: 0; left: 0; right: 0; z-index: 50; max-width: 480px; margin: 0 auto;
@@ -71,74 +124,123 @@
     .m-nav a { display: flex; flex-direction: column; align-items: center; gap: 3px; color: #94A3B8; font-size: 11px; padding: 4px 8px; }
     .m-nav a.active { color: #155EEF; }
     .m-nav a svg { width: 22px; height: 22px; }
-    .m-nav .m-plus {
-      position: relative; top: -18px; width: 50px; height: 50px; border-radius: 50%; background: #155EEF; color: #fff;
-      display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(21,94,239,.35);
-    }
-    .m-nav .m-plus svg { width: 26px; height: 26px; }
   </style>
 </head>
 <body>
-  <div class="m-wrap">
-    <header class="m-header">
-      <a href="{{ url_for('home') }}" class="m-back" aria-label="Retour">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-      </a>
-      <div class="m-title">
-        <h1>Mes messages</h1>
-        <p>{{ conversations|length }} conversation{% if conversations|length > 1 %}s{% endif %}</p>
-      </div>
-      <a href="{{ url_for('client_message_new') }}" class="m-new" aria-label="Nouveau message">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+  <div class="ms-wrap">
+    <header class="ms-header">
+      <a class="ms-brand" href="{{ url_for('artisan_dashboard') }}">Fix<em>Pro</em><span class="ms-dot"></span></a>
+      <a class="ms-bell" href="{{ url_for('notifications') }}" aria-label="Notifications">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        {% if unread_count %}<span class="ms-badge">{{ unread_count }}</span>{% endif %}
       </a>
     </header>
 
-    <main class="m-main">
+    <div class="ms-title">
+      <h1>Messages</h1>
+      <p>Discutez avec FixPro et suivez vos conversations</p>
+    </div>
+
+    <div class="ms-search">
+      <div class="ms-input-wrap">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
+        <input class="ms-input" type="text" placeholder="Rechercher une conversation..." />
+      </div>
+      <button class="ms-filter" type="button" aria-label="Filtrer">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
+      </button>
+    </div>
+
+    <div class="ms-tabs">
+      <a class="ms-tab active" href="#">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 21l1.9-5.1A8.4 8.4 0 0 1 4 11.5a8.5 8.5 0 0 1 8.5-8.5A8.5 8.5 0 0 1 21 11.5z"/></svg>
+        Toutes <span class="ms-count">{{ conversations|length }}</span>
+      </a>
+      <a class="ms-tab" href="{{ url_for('lia') }}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8.56 2.75c4.37 6.03 6.02 9.42 8.03 17.72m2.54-15.38-5.72 14.53"/></svg>
+        FixPro
+      </a>
+    </div>
+
+    <main>
       {% for c in conversations %}
-      <a class="m-card" href="{{ url_for('client_conversation', conversation_id=c.id) }}">
-        <div class="m-avatar">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 21l1.9-5.1A8.4 8.4 0 0 1 4 11.5a8.5 8.5 0 0 1 8.5-8.5A8.5 8.5 0 0 1 21 11.5z"/></svg>
+      <a class="ms-card" href="{{ url_for('client_conversation', conversation_id=c.id) }}">
+        <div class="ms-avatar">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 21l1.9-5.1A8.4 8.4 0 0 1 4 11.5a8.5 8.5 0 0 1 8.5-8.5A8.5 8.5 0 0 1 21 11.5z"/></svg>
         </div>
-        <div class="m-body">
-          <div class="m-row">
-            <span class="m-subject">{{ c.subject or 'Assistance FixPro' }}</span>
-            <span class="m-time">{{ c.updated_at[:10] if c.updated_at else '' }}</span>
+        <div class="ms-body">
+          <div class="ms-row">
+            <span class="ms-name">{{ c.subject or 'FixPro Support' }}</span>
+            <span class="ms-time">{{ c.updated_at[:10] if c.updated_at else '' }}</span>
           </div>
-          <p class="m-preview">{{ c.last_message or 'Aucun message' }}</p>
-          <span class="m-status {{ 'open' if c.status in ('open','active','admin_active') else 'closed' }}">
-            {{ 'En cours' if c.status in ('open','active','admin_active') else 'Terminee' }}
-          </span>
+          <p class="ms-preview">{{ c.last_message or 'Nous sommes la pour vous aider.' }}</p>
+          <span class="ms-tag"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17l9.2-9.2M17 17V7H7"/></svg> Nouveau message</span>
         </div>
-        {% if c.unread %}<span class="m-unread">{{ c.unread }}</span>{% endif %}
+        {% if c.unread %}<span class="ms-unread">{{ c.unread }}</span>{% endif %}
       </a>
       {% else %}
-      <div class="m-empty">
-        <strong>Aucune conversation</strong>
-        <p>Commencez une discussion avec FixPro.</p>
-      </div>
+      <p class="ms-empty">Aucune conversation pour le moment.</p>
       {% endfor %}
+
+      <h2 class="ms-section">Conversations recentes</h2>
+      {% if conversations %}
+      <div class="ms-recent">
+        {% for c in conversations[:2] %}
+        <a class="ms-rcard" href="{{ url_for('client_conversation', conversation_id=c.id) }}">
+          <div class="ms-rcard-top">
+            <div class="ms-rcard-avatar">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 21l1.9-5.1A8.4 8.4 0 0 1 4 11.5a8.5 8.5 0 0 1 8.5-8.5A8.5 8.5 0 0 1 21 11.5z"/></svg>
+            </div>
+            {% if c.unread %}<span class="ms-unread">{{ c.unread }}</span>{% endif %}
+          </div>
+          <div class="ms-rcard-name">{{ c.subject or 'FixPro Support' }}</div>
+          <div class="ms-rcard-sub">Support officiel FixPro</div>
+          <div class="ms-rcard-msg">{{ c.last_message or 'Aucun message' }}</div>
+        </a>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="ms-empty">Aucune conversation recente.</p>
+      {% endif %}
+
+      <div class="ms-banner" id="securityBanner">
+        <div class="ms-banner-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <div>
+          <div class="ms-banner-title">Communiquez en toute securite</div>
+          <div class="ms-banner-text">Vos echanges sont securises et tous les messages sont sauvegardes.</div>
+        </div>
+        <button class="ms-close" type="button" onclick="document.getElementById('securityBanner').style.display='none'" aria-label="Fermer">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
     </main>
 
-    <a class="m-cta" href="{{ url_for('client_message_new') }}">Nouvelle conversation</a>
+    <a class="ms-fab" href="{{ url_for('client_message_new') }}">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 21l1.9-5.1A8.4 8.4 0 0 1 4 11.5a8.5 8.5 0 0 1 8.5-8.5A8.5 8.5 0 0 1 21 11.5z"/></svg>
+      Nouveau message
+    </a>
 
     <nav class="m-nav">
-      <a href="{{ url_for('home') }}">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
+      <a href="{{ url_for('artisan_dashboard') }}">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
         Accueil
       </a>
-      <a href="{{ url_for('artisans_page') }}">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-        Recherche
+      <a href="{{ url_for('requests_list') }}">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M8.5 8H15.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M8.5 12H15.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M8.5 16H12.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        Demandes
       </a>
-      <a class="m-plus" href="{{ url_for('requests_list') if nav_user else url_for('artisans_page') }}" aria-label="Reserver">
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+      <a href="{{ url_for('technician_interventions') }}">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        Interventions
       </a>
       <a href="{{ url_for('client_messages') }}" class="active">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 21l1.9-5.1A8.4 8.4 0 0 1 4 11.5a8.5 8.5 0 0 1 8.5-8.5A8.5 8.5 0 0 1 21 11.5z"/></svg>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
         Messages
       </a>
-      <a href="{% if nav_user %}{{ url_for('profile') }}{% else %}{{ url_for('login') }}{% endif %}">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
+      <a href="{{ url_for('profile') }}">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
         Profil
       </a>
     </nav>

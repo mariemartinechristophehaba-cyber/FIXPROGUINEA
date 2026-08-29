@@ -5984,7 +5984,7 @@ csrf.exempt(api_admin_reject_artisan)
 
 @app.route("/messages")
 def client_messages():
-    """Liste des conversations du client connecte. Les invites sont orientes vers Lia."""
+    """Liste des conversations du client ou technicien connecte."""
     user = get_current_user()
     if not user:
         return redirect(url_for("lia"))
@@ -5999,12 +5999,12 @@ def client_messages():
             " LEFT JOIN ("
             "   SELECT conversation_id, COUNT(*) AS n"
             "   FROM conversation_messages"
-            "   WHERE sender_role = 'admin' AND is_read = 0"
+            "   WHERE sender_role != 'client' AND is_read = 0"
             "   GROUP BY conversation_id"
             " ) unread ON unread.conversation_id = c.id"
-            " WHERE c.client_id = ?"
+            " WHERE c.client_id = ? OR c.artisan_id = ?"
             " ORDER BY c.updated_at DESC",
-            (user["id"],)).fetchall()
+            (user["id"], user["id"])).fetchall()
     finally:
         conn.close()
     return render_template("client_messages.html", conversations=conversations, user=user)
