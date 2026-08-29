@@ -5038,6 +5038,10 @@ def _migrate_db():
             conn.commit()
         except Exception as e:
             logger.warning("Migration conversations impossible: %s", e)
+            try:
+                conn.rollback()
+            except Exception:
+                pass
         finally:
             conn.close()
     except Exception as e:
