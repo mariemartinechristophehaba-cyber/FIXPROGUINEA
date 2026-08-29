@@ -6,6 +6,16 @@
   .page { padding-top: 0 !important; }
   .ti-wrap { min-height: 100vh; padding-bottom: 88px; }
 
+  .ti-appbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 16px; background: #fff;
+  }
+  .ti-brand { font-size: 22px; font-weight: 800; color: #0F172A; display: flex; align-items: center; gap: 6px; }
+  .ti-brand em { color: #155EEF; font-style: normal; }
+  .ti-dot { width: 8px; height: 8px; border-radius: 50%; background: #22C55E; }
+  .ti-bell { position: relative; color: #0F172A; }
+  .ti-bell svg { width: 24px; height: 24px; }
+
   .ti-header {
     background: #fff; padding: 16px 16px 12px;
   }
@@ -90,7 +100,14 @@
 </style>
 {% endblock %}
 
-{% block page_title %}Mes interventions{% endblock %}
+{% block header %}
+<header class="ti-appbar">
+  <a class="ti-brand" href="{{ url_for('artisan_dashboard') }}">Fix<em>Pro</em><span class="ti-dot"></span></a>
+  <a class="ti-bell" href="{{ url_for('notifications') }}" aria-label="Notifications">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+  </a>
+</header>
+{% endblock %}
 
 {% block content %}
 <div class="ti-wrap">
