@@ -274,6 +274,24 @@
     .hp-bottom-nav { display: none; }
     body { padding-bottom: 0 !important; }
   }
+  @media (min-width: 1024px) {
+    .hp-hero { padding: 48px 24px 28px; text-align: center; }
+    .hp-hero h1 { font-size: 2.4rem; }
+    .hp-search, .hp-info, .hp-section { max-width: 1000px; }
+    .hp-cats { display: grid; grid-template-columns: repeat(4, 1fr); overflow: visible; gap: 16px; padding-bottom: 0; }
+    .hp-cat { flex: none; min-width: 0; padding: 22px 8px; }
+    .hp-cat-icon { width: 64px; height: 64px; }
+    .hp-cat h3 { font-size: 1rem; }
+    .hp-cat p { font-size: 0.8rem; }
+    .hp-loc-input { max-width: 600px; margin: 0 auto 22px; }
+    .hp-search-btn { max-width: 420px; margin: 0 auto; }
+    .hp-info { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+    .hp-rec-grid { grid-template-columns: repeat(3, 1fr); }
+    .hp-pop-grid { grid-template-columns: repeat(3, 1fr); }
+    .hp-steps { grid-template-columns: repeat(4, 1fr); }
+    .hp-bottom-nav { display: none !important; }
+    body { padding-bottom: 0 !important; }
+  }
 </style>
 
 <div id="locOverlay" class="hp-loc-overlay" {% if loc_state in ('granted', 'manual') %}style="display:none;"{% endif %}>
