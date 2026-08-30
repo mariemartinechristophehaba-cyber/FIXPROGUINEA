@@ -742,3 +742,101 @@ body { margin: 0; }
   .fa-job-grid { grid-template-columns: repeat(3, 1fr); }
   .fa-choice-grid { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* ============================================================
+   Etape 1 "Parlons de vous" - refonte maquette
+   ============================================================ */
+.fa-appbar { position: relative; padding: 14px 16px; padding-top: calc(14px + env(safe-area-inset-top)); }
+.fa-appbar-back {
+  width: 40px; height: 40px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; text-decoration: none; border-radius: 10px;
+}
+.fa-appbar-back:active { background: rgba(255,255,255,.12); }
+.fa-appbar-brand {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  font-size: 20px; gap: 8px;
+}
+.fa-appbar-mark { background: transparent; width: 26px; height: 26px; }
+.fa-appbar-link {
+  border: 1.5px solid rgba(255,255,255,.55);
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-size: 13px;
+}
+
+.fa-container { padding-top: 18px; }
+
+/* Encadré info avec illustration */
+.fa-info-rich { align-items: center; gap: 10px; padding: 12px 14px; }
+.fa-info-rich .fa-info-txt { min-width: 0; }
+.fa-info-rich h4 { margin: 0 0 3px; font-size: 13px; font-weight: 700; color: var(--fa-blue); }
+.fa-info-rich p { font-size: 12px; line-height: 1.45; color: var(--fa-ink); }
+.fa-info-art { flex-shrink: 0; margin-left: 4px; opacity: .95; }
+
+/* Zone dépôt photo */
+.fa-photo-drop {
+  margin-top: 4px;
+  border: 1.5px dashed #C7D2FE;
+  border-radius: 16px;
+  background: #F8FAFF;
+  padding: 26px 16px;
+  text-align: center;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  -webkit-tap-highlight-color: transparent;
+}
+.fa-photo-drop:active { background: #EEF2FF; }
+.fa-photo-drop-ico {
+  width: 52px; height: 52px; border-radius: 50%;
+  background: var(--fa-blue); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+}
+.fa-photo-drop-title { font-size: 14px; font-weight: 600; color: var(--fa-ink); }
+.fa-photo-drop-sub { font-size: 12px; color: var(--fa-slate); }
+.fa-photo-drop.has-photo { border-style: solid; border-color: var(--fa-blue); background: #fff; padding: 16px; }
+.fa-photo-drop-preview { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; }
+
+/* Champ téléphone */
+.fa-phone-row {
+  display: flex;
+  align-items: stretch;
+  height: 54px;
+  border: 1px solid var(--fa-line);
+  border-radius: var(--fa-radius-sm);
+  background: #fff;
+  overflow: hidden;
+}
+.fa-phone-row:focus-within { border-color: var(--fa-blue); }
+.fa-phone-cc {
+  display: flex; align-items: center; gap: 6px;
+  padding: 0 10px 0 12px;
+  border-right: 1px solid var(--fa-line);
+  font-size: 14px; font-weight: 600; color: var(--fa-ink);
+  background: #F9FAFB;
+  white-space: nowrap;
+}
+.fa-phone-cc svg:last-child { color: var(--fa-slate); }
+.fa-phone-input {
+  flex: 1; min-width: 0;
+  border: none; outline: none;
+  padding: 0 12px;
+  font-size: 15px; font-family: var(--fa-font);
+  color: var(--fa-ink); background: transparent;
+}
+.fa-phone-input::placeholder { color: var(--fa-slate-light); }
+.fa-phone-ico {
+  display: flex; align-items: center; justify-content: center;
+  width: 44px; flex-shrink: 0;
+  color: var(--fa-blue);
+}
+
+/* Bouton retour bleu */
+.fa-btn-outline-blue {
+  background: #fff;
+  border: 1.5px solid var(--fa-blue);
+  color: var(--fa-blue);
+}
