@@ -371,3 +371,29 @@ CREATE TABLE IF NOT EXISTS conversation_messages (
 
 CREATE INDEX IF NOT EXISTS idx_conversation_messages_conv ON conversation_messages(conversation_id);
 CREATE INDEX IF NOT EXISTS idx_conversation_messages_unread ON conversation_messages(conversation_id, is_read);
+
+-- Contacts clients anonymes depuis les fiches techniciens
+CREATE TABLE IF NOT EXISTS client_contacts (
+    id              SERIAL PRIMARY KEY,
+    client_user_id  INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    artisan_id      INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    first_name      TEXT NOT NULL,
+    last_name       TEXT NOT NULL,
+    phone           TEXT NOT NULL,
+    status          TEXT DEFAULT 'nouveau',
+    source          TEXT DEFAULT 'profil_artisan',
+    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_client_contacts_artisan ON client_contacts(artisan_id);
+CREATE INDEX IF NOT EXISTS idx_client_contacts_phone ON client_contacts(phone);
+
+-- Historique des evenements sur un contact
+CREATE TABLE IF NOT EXISTS client_contact_events (
+    id          SERIAL PRIMARY KEY,
+    contact_id  INTEGER NOT NULL REFERENCES client_contacts(id) ON DELETE CASCADE,
+    event_type  TEXT NOT NULL,
+    details     TEXT,
+    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

@@ -1,0 +1,69 @@
+{% extends 'admin_base.html' %}
+{% block title %}Contacts - FixPro Admin{% endblock %}
+{% block admin_title %}Gestion des contacts{% endblock %}
+
+{% block admin_content %}
+<div class="admin-card">
+  <div class="admin-section-head">
+    <h3>Tous les contacts clients</h3>
+  </div>
+
+  <form class="admin-filters" method="get" action="{{ url_for('admin_contacts') }}">
+    <input type="text" name="q" class="form-input" value="{{ q }}" placeholder="Nom, telephone ou technicien" />
+    <select name="status" onchange="this.form.submit()">
+      <option value="" {% if not status_filter %}selected{% endif %}>Tous les statuts</option>
+      <option value="nouveau" {% if status_filter == 'nouveau' %}selected{% endif %}>Nouveau</option>
+      <option value="contacte" {% if status_filter == 'contacte' %}selected{% endif %}>Contacte</option>
+      <option value="intervention_demandee" {% if status_filter == 'intervention_demandee' %}selected{% endif %}>Intervention demandee</option>
+      <option value="cloture" {% if status_filter == 'cloture' %}selected{% endif %}>Cloture</option>
+    </select>
+    <button type="submit" class="btn btn-soft btn-sm">Filtrer</button>
+  </form>
+
+  <div class="admin-table-wrap">
+    <table class="admin-table admin-table-large">
+      <thead>
+        <tr>
+          <th>Client</th>
+          <th>Telephone</th>
+          <th>Technicien</th>
+          <th>Metier</th>
+          <th>Date</th>
+          <th>Statut</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for contact in contacts %}
+        <tr>
+          <td>
+            <div class="admin-user-cell">
+              <span class="admin-avatar" style="background: var(--brand-soft); color: var(--brand);">
+                {{ (contact.client_full_name or (contact.first_name + ' ' + contact.last_name) or '?')[0]|upper }}
+              </span>
+              <div>
+                <div class="admin-user-name">
+                  {% if contact.client_full_name %}{{ contact.client_full_name }}{% else %}{{ contact.first_name }} {{ contact.last_name }}{% endif %}
+                </div>
+              </div>
+            </div>
+          </td>
+          <td>{{ contact.phone }}</td>
+          <td>{{ contact.artisan_name or '—' }}</td>
+          <td>{{ contact.artisan_profession or '—' }}</td>
+          <td>{{ (contact.created_at|string)[:16] }}</td>
+          <td>
+            <span class="badge {{ contact.status }}">{{ contact.status|replace('_', ' ')|capitalize }}</span>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="6" class="muted" style="text-align: center; padding: 32px;">
+            <div style="font-size: 1.1rem; font-weight: 700;">Aucun contact</div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

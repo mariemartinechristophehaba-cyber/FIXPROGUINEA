@@ -2242,6 +2242,40 @@ def admin_clients():
                            q=q, status_filter=status_filter)
 
 
+@app.route("/admin/contacts", methods=["GET"])
+@login_required
+@admin_required
+def admin_contacts():
+    """Liste de tous les contacts clients provenant des fiches techniciens."""
+    user = get_current_user()
+    q = request.args.get("q", "").strip()
+    status_filter = request.args.get("status", "").strip()
+    conn = get_db_connection()
+    try:
+        where_parts = ["1=1"]
+        params = []
+        if q:
+            where_parts.append("(c.first_name LIKE ? OR c.last_name LIKE ? OR c.phone LIKE ? OR a.full_name LIKE ?)")
+            like = f"%{q}%"
+            params.extend([like, like, like, like])
+        if status_filter:
+            where_parts.append("c.status = ?")
+            params.append(status_filter)
+        where_clause = " WHERE " + " AND ".join(where_parts)
+        contacts = conn.execute(
+            "SELECT c.*, a.full_name AS artisan_name, a.profession AS artisan_profession,"
+            " cl.full_name AS client_full_name"
+            " FROM client_contacts c"
+            " LEFT JOIN users a ON a.id = c.artisan_id"
+            " LEFT JOIN users cl ON cl.id = c.client_user_id"
+            + where_clause +
+            " ORDER BY c.created_at DESC", tuple(params)).fetchall()
+    finally:
+        conn.close()
+    return render_template("admin_contacts.html", user=user, contacts=contacts,
+                           q=q, status_filter=status_filter)
+
+
 @app.route("/admin/requests")
 @login_required
 @admin_required
@@ -3190,6 +3224,21 @@ def artisan_dashboard():
             " WHERE r.artisan_id = ? ORDER BY r.created_at DESC LIMIT 5",
             (user["id"],)).fetchall()
 
+        contacts = conn.execute(
+            "SELECT id, first_name, last_name, phone, status, created_at"
+            " FROM client_contacts WHERE artisan_id = ?"
+            " ORDER BY created_at DESC LIMIT 20",
+            (user["id"],)).fetchall()
+
+        new_contact_count = 0
+        try:
+            new_contact_count = conn.execute(
+                "SELECT COUNT(*) AS n FROM client_contacts"
+                " WHERE artisan_id = ? AND status = 'nouveau'",
+                (user["id"],)).fetchone()["n"]
+        except Exception:
+            new_contact_count = 0
+
         unread_count = 0
         try:
             row = conn.execute(
@@ -3216,6 +3265,8 @@ def artisan_dashboard():
             active_mission=active_mission, missions=missions,
             historique=missions_historique, avis=avis,
             unread_count=unread_count,
+            contacts=contacts,
+            new_contact_count=new_contact_count,
             services_disponibles=services_disponibles,
             artisan_services_ids=artisan_services_ids)
         response = make_response(html)
@@ -4124,9 +4175,9 @@ def artisan_detail(artisan_id):
                            zones=zones)
 
 
-@app.route("/artisans/<int:artisan_id>/contacter")
+@app.route("/artisans/<int:artisan_id>/contacter", methods=["GET", "POST"])
 def contact_artisan(artisan_id):
-    """Page de contact simplifiee pour appeler un technicien."""
+    """Page de contact client -> enregistrement en base + notification."""
     conn = get_db_connection()
     try:
         artisan = conn.execute(
@@ -4139,8 +4190,69 @@ def contact_artisan(artisan_id):
     if not artisan:
         flash("Technicien introuvable.", "error")
         return redirect(url_for("artisans_page"))
+
+    artisan = dict(artisan)
+    user = get_current_user()
+    client_user_id = user["id"] if user and user.get("role") == "client" else None
+
+    if request.method == "POST":
+        first_name = (request.form.get("first_name") or "").strip()
+        last_name = (request.form.get("last_name") or "").strip()
+        phone = (request.form.get("phone") or "").replace(" ", "")
+        country = (request.form.get("country") or "+224").strip()
+
+        if not first_name or not last_name:
+            flash("Veuillez renseigner votre prénom et votre nom.", "error")
+            return redirect(url_for("contact_artisan", artisan_id=artisan_id))
+        if not phone or not phone.isdigit() or len(phone) < 8:
+            flash("Veuillez saisir un numéro de téléphone valide.", "error")
+            return redirect(url_for("contact_artisan", artisan_id=artisan_id))
+
+        full_phone = f"{country} {phone}"
+
+        conn = get_db_connection()
+        try:
+            # Recherche d'un contact existant pour ce client et ce technicien
+            existing = conn.execute(
+                "SELECT id FROM client_contacts"
+                " WHERE artisan_id = ? AND REPLACE(phone, ' ', '') = ?",
+                (artisan_id, full_phone.replace(" ", ""))).fetchone()
+
+            if existing:
+                contact_id = existing["id"]
+                conn.execute(
+                    "UPDATE client_contacts SET updated_at = CURRENT_TIMESTAMP,"
+                    " first_name = ?, last_name = ?, phone = ?, client_user_id = COALESCE(client_user_id, ?)"
+                    " WHERE id = ?",
+                    (first_name, last_name, full_phone, client_user_id, contact_id))
+            else:
+                result = conn.execute(
+                    "INSERT INTO client_contacts"
+                    " (client_user_id, artisan_id, first_name, last_name, phone, status, source)"
+                    " VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    (client_user_id, artisan_id, first_name, last_name,
+                     full_phone, "nouveau", "profil_artisan"))
+                contact_id = result.lastrowid
+
+            conn.execute(
+                "INSERT INTO client_contact_events (contact_id, event_type, details)"
+                " VALUES (?, ?, ?)",
+                (contact_id, "creation", f"Contact depuis le profil de {artisan['full_name']}"))
+
+            create_notification(
+                artisan_id, "Nouveau contact",
+                f"{first_name} {last_name} ({full_phone}) vous a contacté depuis votre profil.",
+                "new_contact", f"contact_id:{contact_id}", conn=conn)
+
+            conn.commit()
+        finally:
+            conn.close()
+
+        flash("Votre demande de contact a bien été envoyée. Le technicien vous rappellera.", "success")
+        return redirect(url_for("artisan_detail", artisan_id=artisan_id))
+
     return render_template("contact_artisan.html",
-                           artisan=dict(artisan),
+                           artisan=artisan,
                            back_url=request.referrer or url_for("artisan_detail", artisan_id=artisan_id))
 
 
@@ -5277,6 +5389,56 @@ def _migrate_db():
                     (MISSION_STATUS_CANCELLED,))
             except Exception:
                 pass
+            # Table des contacts clients anonymes provenant des fiches techniciens
+            if is_pg:
+                conn.execute(
+                    "CREATE TABLE IF NOT EXISTS client_contacts ("
+                    " id SERIAL PRIMARY KEY,"
+                    " client_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,"
+                    " artisan_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,"
+                    " first_name TEXT NOT NULL,"
+                    " last_name TEXT NOT NULL,"
+                    " phone TEXT NOT NULL,"
+                    " status TEXT DEFAULT 'nouveau',"
+                    " source TEXT DEFAULT 'profil_artisan',"
+                    " created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,"
+                    " updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
+                    ")")
+                conn.execute(
+                    "CREATE TABLE IF NOT EXISTS client_contact_events ("
+                    " id SERIAL PRIMARY KEY,"
+                    " contact_id INTEGER NOT NULL REFERENCES client_contacts(id) ON DELETE CASCADE,"
+                    " event_type TEXT NOT NULL,"
+                    " details TEXT,"
+                    " created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
+                    ")")
+                conn.execute("CREATE INDEX IF NOT EXISTS idx_client_contacts_artisan ON client_contacts(artisan_id)")
+                conn.execute("CREATE INDEX IF NOT EXISTS idx_client_contacts_phone ON client_contacts(phone)")
+            else:
+                conn.execute(
+                    "CREATE TABLE IF NOT EXISTS client_contacts ("
+                    " id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                    " client_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,"
+                    " artisan_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,"
+                    " first_name TEXT NOT NULL,"
+                    " last_name TEXT NOT NULL,"
+                    " phone TEXT NOT NULL,"
+                    " status TEXT DEFAULT 'nouveau',"
+                    " source TEXT DEFAULT 'profil_artisan',"
+                    " created_at TEXT DEFAULT CURRENT_TIMESTAMP,"
+                    " updated_at TEXT DEFAULT CURRENT_TIMESTAMP"
+                    ")")
+                conn.execute(
+                    "CREATE TABLE IF NOT EXISTS client_contact_events ("
+                    " id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                    " contact_id INTEGER NOT NULL REFERENCES client_contacts(id) ON DELETE CASCADE,"
+                    " event_type TEXT NOT NULL,"
+                    " details TEXT,"
+                    " created_at TEXT DEFAULT CURRENT_TIMESTAMP"
+                    ")")
+                conn.execute("CREATE INDEX IF NOT EXISTS idx_client_contacts_artisan ON client_contacts(artisan_id)")
+                conn.execute("CREATE INDEX IF NOT EXISTS idx_client_contacts_phone ON client_contacts(phone)")
+
             conn.commit()
         except Exception as e:
             logger.warning("Migration conversations impossible: %s", e)
