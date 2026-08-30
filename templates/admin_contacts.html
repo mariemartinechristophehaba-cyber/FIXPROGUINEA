@@ -15,6 +15,8 @@
       <option value="nouveau" {% if status_filter == 'nouveau' %}selected{% endif %}>Nouveau</option>
       <option value="contacte" {% if status_filter == 'contacte' %}selected{% endif %}>Contacte</option>
       <option value="intervention_demandee" {% if status_filter == 'intervention_demandee' %}selected{% endif %}>Intervention demandee</option>
+      <option value="intervention_confirmee" {% if status_filter == 'intervention_confirmee' %}selected{% endif %}>Intervention confirmee</option>
+      <option value="intervention_terminee" {% if status_filter == 'intervention_terminee' %}selected{% endif %}>Intervention terminee</option>
       <option value="cloture" {% if status_filter == 'cloture' %}selected{% endif %}>Cloture</option>
     </select>
     <button type="submit" class="btn btn-soft btn-sm">Filtrer</button>
@@ -30,6 +32,7 @@
           <th>Metier</th>
           <th>Date</th>
           <th>Statut</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -53,6 +56,20 @@
           <td>{{ (contact.created_at|string)[:16] }}</td>
           <td>
             <span class="badge {{ contact.status }}">{{ contact.status|replace('_', ' ')|capitalize }}</span>
+          </td>
+          <td>
+            <form method="post" action="{{ url_for('admin_contact_detail', contact_id=contact.id) }}" class="admin-inline-form" style="margin-bottom:6px;">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+              <select name="status" onchange="this.form.submit()" class="form-input" style="width:120px;padding:6px 8px;font-size:12px;">
+                <option value="nouveau" {% if contact.status == 'nouveau' %}selected{% endif %}>Nouveau</option>
+                <option value="contacte" {% if contact.status == 'contacte' %}selected{% endif %}>Contacte</option>
+                <option value="intervention_demandee" {% if contact.status == 'intervention_demandee' %}selected{% endif %}>Intervention</option>
+                <option value="intervention_confirmee" {% if contact.status == 'intervention_confirmee' %}selected{% endif %}>Confirmee</option>
+                <option value="intervention_terminee" {% if contact.status == 'intervention_terminee' %}selected{% endif %}>Terminee</option>
+                <option value="cloture" {% if contact.status == 'cloture' %}selected{% endif %}>Cloture</option>
+              </select>
+            </form>
+            <a href="{{ url_for('admin_contact_detail', contact_id=contact.id) }}" class="btn btn-soft btn-sm">Voir</a>
           </td>
         </tr>
         {% else %}

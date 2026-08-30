@@ -2276,6 +2276,55 @@ def admin_contacts():
                            q=q, status_filter=status_filter)
 
 
+@app.route("/admin/contacts/<int:contact_id>", methods=["GET", "POST"])
+@login_required
+@admin_required
+def admin_contact_detail(contact_id):
+    """Detail d'un contact client : informations, statut et historique."""
+    user = get_current_user()
+    conn = get_db_connection()
+    try:
+        contact = conn.execute(
+            "SELECT c.*, a.full_name AS artisan_name, a.profession AS artisan_profession,"
+            " cl.full_name AS client_full_name"
+            " FROM client_contacts c"
+            " LEFT JOIN users a ON a.id = c.artisan_id"
+            " LEFT JOIN users cl ON cl.id = c.client_user_id"
+            " WHERE c.id = ?", (contact_id,)).fetchone()
+        if not contact:
+            flash("Contact introuvable.", "error")
+            return redirect(url_for("admin_contacts"))
+
+        if request.method == "POST":
+            new_status = request.form.get("status")
+            note = (request.form.get("note") or "").strip()
+            if new_status in ("nouveau", "contacte", "intervention_demandee",
+                              "intervention_confirmee", "intervention_terminee", "cloture"):
+                conn.execute(
+                    "UPDATE client_contacts SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                    (new_status, contact_id))
+                conn.execute(
+                    "INSERT INTO client_contact_events (contact_id, event_type, details)"
+                    " VALUES (?, ?, ?)",
+                    (contact_id, "status_change",
+                     f"Statut admin : {contact['status']} -> {new_status}{' — ' + note if note else ''}"))
+                conn.commit()
+                log_admin_action(user["id"], user["email"], "update_contact_status", "client_contacts", contact_id)
+                flash("Statut mis à jour.", "success")
+            else:
+                flash("Statut invalide.", "error")
+            return redirect(url_for("admin_contact_detail", contact_id=contact_id))
+
+        events = conn.execute(
+            "SELECT * FROM client_contact_events"
+            " WHERE contact_id = ? ORDER BY created_at DESC",
+            (contact_id,)).fetchall()
+    finally:
+        conn.close()
+    return render_template("admin_contact_detail.html",
+                           user=user, contact=contact, events=events)
+
+
 @app.route("/admin/requests")
 @login_required
 @admin_required
@@ -3274,6 +3323,45 @@ def artisan_dashboard():
         response.headers['Pragma'] = 'no-cache'
         response.headers['Expires'] = '0'
         return response
+
+
+@app.route("/dashboard/technicien/contact/<int:contact_id>/status", methods=["POST"])
+@login_required
+def technician_contact_status(contact_id):
+    """Met a jour le statut d'un contact client par le technicien."""
+    user = get_current_user()
+    if not _is_technician(user):
+        flash("Cet espace est reserve aux techniciens.", "error")
+        return redirect(url_for("dashboard"))
+
+    new_status = request.form.get("status", "").strip()
+    if new_status not in ("contacte", "intervention_demandee", "intervention_confirmee",
+                          "intervention_terminee", "cloture"):
+        flash("Statut invalide.", "error")
+        return redirect(url_for("artisan_dashboard"))
+
+    conn = get_db_connection()
+    try:
+        contact = conn.execute(
+            "SELECT id, artisan_id, status FROM client_contacts WHERE id = ?",
+            (contact_id,)).fetchone()
+        if not contact or contact["artisan_id"] != user["id"]:
+            flash("Contact introuvable ou non autorise.", "error")
+            return redirect(url_for("artisan_dashboard"))
+
+        conn.execute(
+            "UPDATE client_contacts SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+            (new_status, contact_id))
+        conn.execute(
+            "INSERT INTO client_contact_events (contact_id, event_type, details)"
+            " VALUES (?, ?, ?)",
+            (contact_id, "status_change",
+             f"Statut technicien : {contact['status']} -> {new_status}"))
+        conn.commit()
+        flash("Statut mis a jour.", "success")
+    finally:
+        conn.close()
+    return redirect(url_for("artisan_dashboard"))
 
 
 @app.route("/dashboard/technicien/services", methods=["POST"])

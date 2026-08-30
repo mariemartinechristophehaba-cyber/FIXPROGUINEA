@@ -264,12 +264,22 @@
               <span class="t-mission-urgency u-normal">{{ c.status|replace('_', ' ')|capitalize }}</span>
             </div>
             <div class="t-mission-meta">{{ c.phone }}</div>
-            <div class="t-mission-bottom">
+            <div class="t-mission-bottom" style="gap:10px;flex-wrap:wrap;align-items:center;">
               <span class="t-mission-status s-waiting">{{ (c.created_at|string)[:16] }}</span>
               <a href="tel:{{ c.phone }}" style="color:#155EEF;font-weight:700;font-size:13px;display:flex;align-items:center;gap:4px;">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.62 9.5a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
                 Appeler
               </a>
+              <form method="post" action="{{ url_for('technician_contact_status', contact_id=c.id) }}" style="display:flex;align-items:center;gap:6px;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <select name="status" onchange="this.form.submit()" style="border:1px solid #DEE5F0;border-radius:8px;padding:6px 8px;font-size:13px;color:#0F172A;background:#fff;">
+                  <option value="contacte" {% if c.status == 'contacte' %}selected{% endif %}>Contacte</option>
+                  <option value="intervention_demandee" {% if c.status == 'intervention_demandee' %}selected{% endif %}>Intervention</option>
+                  <option value="intervention_confirmee" {% if c.status == 'intervention_confirmee' %}selected{% endif %}>Confirmee</option>
+                  <option value="intervention_terminee" {% if c.status == 'intervention_terminee' %}selected{% endif %}>Terminee</option>
+                  <option value="cloture" {% if c.status == 'cloture' %}selected{% endif %}>Cloture</option>
+                </select>
+              </form>
             </div>
           </div>
         </div>
