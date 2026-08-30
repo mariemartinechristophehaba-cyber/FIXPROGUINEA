@@ -1404,6 +1404,30 @@ class TechnicianAccessTests(FixProTestCase):
         r = self.client.get("/dashboard", follow_redirects=False)
         self.assertNotIn("/localisation", r.headers.get("Location", ""))
 
+    def test_manual_quartier_stays_in_conakry(self):
+        """Choisir un quartier de la liste ne doit JAMAIS geocoder a
+        l'etranger (bug : 'Madina' -> Medine, Arabie Saoudite)."""
+        for quartier in ("Madina", "Ratoma", "Kaloum", "Kipe"):
+            r = self.client.post("/api/location/zone", json={"zone": quartier})
+            self.assertEqual(r.status_code, 200)
+            lat = r.get_json().get("lat")
+            self.assertIsNotNone(lat, f"{quartier} sans coordonnees")
+            self.assertTrue(9.3 < lat < 9.9,
+                            f"{quartier} -> lat {lat} hors de Conakry")
+
+    def test_location_endpoints_accept_post_without_csrf_token(self):
+        """Les routes /api/location* acceptent un POST sans token CSRF
+        (navigateur mobile / proxy de traduction sans header Referer)."""
+        fixpro_app.app.config["WTF_CSRF_ENABLED"] = True
+        try:
+            client = fixpro_app.app.test_client()
+            r1 = client.post("/api/location", json={"lat": 9.53, "lon": -13.68})
+            r2 = client.post("/api/location/zone", json={"zone": "Kaloum"})
+            self.assertEqual(r1.status_code, 200)
+            self.assertEqual(r2.status_code, 200)
+        finally:
+            fixpro_app.app.config["WTF_CSRF_ENABLED"] = False
+
     def test_artisans_filtered_by_radius(self):
         """Seuls les techniciens dans le rayon du client sont affiches."""
         conn = db.connect(sqlite_path=self.db_path)
