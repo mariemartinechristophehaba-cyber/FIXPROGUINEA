@@ -743,23 +743,14 @@ body {
 .f-drawer-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
-}
-.f-drawer-notif {
-  position: relative; color: var(--f-white); padding: 4px;
-  display: flex; align-items: center; justify-content: center;
-}
-.f-drawer-notif-badge {
-  position: absolute; top: -2px; right: -2px;
-  min-width: 15px; height: 15px; border-radius: 50%;
-  background: #EF4444; color: #fff; font-size: 9px; font-weight: 700;
-  display: flex; align-items: center; justify-content: center;
+  gap: 12px;
 }
 .f-drawer-avatar-sm {
-  width: 36px; height: 36px; border-radius: 50%; overflow: hidden;
+  width: 38px; height: 38px; border-radius: 50%; overflow: hidden;
   background: var(--f-bg); color: var(--f-primary);
   display: flex; align-items: center; justify-content: center;
-  font-size: 14px; font-weight: 700;
+  font-size: 15px; font-weight: 700;
+  border: 2px solid rgba(255,255,255,.25);
 }
 .f-drawer-avatar-sm img { width: 100%; height: 100%; object-fit: cover; }
 
@@ -840,7 +831,7 @@ body {
 }
 
 .f-drawer-section {
-  padding: 16px 18px;
+  padding: 12px 18px;
   border-bottom: 1px solid var(--f-line);
 }
 
@@ -987,11 +978,13 @@ body {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 14px;
+  padding: 14px 16px;
+  margin: 8px 0;
   background: #EEF2FF;
   border-radius: 16px;
   color: var(--f-primary);
   text-decoration: none;
+  border: 1px solid rgba(21, 94, 239, .12);
 }
 .f-drawer-help-icon { flex-shrink: 0; }
 .f-drawer-help-text { flex: 1; display: flex; flex-direction: column; gap: 2px; }
@@ -999,8 +992,22 @@ body {
 .f-drawer-help-text span { font-size: 12px; color: var(--f-text-2); }
 .f-drawer-help-arrow { flex-shrink: 0; color: var(--f-text-2); }
 
-.f-drawer-logout { padding-top: 8px; padding-bottom: 24px; }
-.f-drawer-logout-link { border-radius: 14px; border: 1px solid #E2E8F0; background: #fff; color: #DC2626; font-weight: 600; }
+.f-drawer-logout { padding: 20px 18px 30px; }
+.f-drawer-logout-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid #E2E8F0;
+  background: #fff;
+  color: #DC2626;
+  font-weight: 600;
+  font-size: 15px;
+  text-decoration: none;
+}
 
 @media (min-width: 768px) {
   .f-drawer,
