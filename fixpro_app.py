@@ -5538,21 +5538,26 @@ def _migrate_db():
                     " created_at TEXT DEFAULT CURRENT_TIMESTAMP,"
                     " updated_at TEXT DEFAULT CURRENT_TIMESTAMP"
                     ")")
-            # Extension intervention_history pour l'historique des statuts
+            # Extension intervention_history pour l'historique des statuts.
+            # Chaque ALTER est isole : sur PostgreSQL, une erreur (colonne deja
+            # presente) abandonne la transaction, il faut donc rollback sinon
+            # toutes les instructions suivantes echouent en cascade.
             try:
                 conn.execute("ALTER TABLE intervention_history ADD COLUMN old_status TEXT")
+                conn.commit()
             except Exception:
-                pass
+                conn.rollback()
             try:
                 conn.execute("ALTER TABLE intervention_history ADD COLUMN new_status TEXT")
+                conn.commit()
             except Exception:
-                pass
+                conn.rollback()
             # Jours de disponibilite du technicien
             try:
                 conn.execute("ALTER TABLE users ADD COLUMN available_days TEXT")
                 conn.commit()
             except Exception:
-                pass
+                conn.rollback()
             # Normalisation des roles et statuts legacy
             try:
                 conn.execute("UPDATE users SET role = 'technician' WHERE role = 'artisan'")
@@ -5588,8 +5593,9 @@ def _migrate_db():
                 conn.execute(
                     "UPDATE requests SET status = ? WHERE LOWER(status) IN ('cancelled')",
                     (MISSION_STATUS_CANCELLED,))
+                conn.commit()
             except Exception:
-                pass
+                conn.rollback()
             # Table des contacts clients anonymes provenant des fiches techniciens
             if is_pg:
                 conn.execute(

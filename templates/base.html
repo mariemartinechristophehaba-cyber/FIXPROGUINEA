@@ -15,7 +15,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/fixpro.css', v='9') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/fixpro.css', v='10') }}" />
     {% block extra_head %}{% endblock %}
   </head>
   {% set is_admin_route = request.endpoint and request.endpoint.startswith('admin') %}
@@ -136,7 +136,129 @@
       {% endif %}
       {% endif %}
 
-      {# Menu de navigation (drawer) retire - nouvelle version a implementer #}
+      <div id="mobileDrawerOverlay" class="f-drawer-overlay" aria-hidden="true"></div>
+      <nav id="mobileDrawer" class="f-drawer" aria-label="Menu de navigation">
+        <header class="f-drawer-header">
+          <div class="f-drawer-header-top">
+            <a href="{{ url_for('index') }}" class="f-drawer-logo" aria-label="FixPro">
+              <span class="f-drawer-logo-mark">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/>
+                  <path d="M14.5 8.5a2 2 0 0 1-2.6 2.6l-2.5 2.5-1.4-1.4 2.5-2.5a2 2 0 0 1 2.6-2.6l-1.2 1.2 1.1 1.1 1.2-1.2Z" fill="currentColor" stroke="none"/>
+                </svg>
+              </span>
+              <span class="f-drawer-logo-txt">
+                <span class="f-drawer-logo-text">FixPro</span>
+                <span class="f-drawer-tagline">Trouvez. Comparez. Réservez.</span>
+              </span>
+            </a>
+            <button id="mobileDrawerClose" class="f-drawer-close" type="button" aria-label="Fermer le menu">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 6 6 18M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+
+          <div class="f-drawer-user">
+            <div class="f-drawer-avatar">
+              {% if nav_user and nav_user.photo_url %}
+                <img src="{{ nav_user.photo_url }}" alt="{{ nav_user.full_name }}" />
+              {% else %}
+                <span>{{ (nav_user.full_name or 'U')[0]|upper }}</span>
+              {% endif %}
+              <a href="{{ url_for('edit_profile') }}" class="f-drawer-avatar-edit" aria-label="Modifier le profil">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+              </a>
+            </div>
+            <div class="f-drawer-user-info">
+              <p class="f-drawer-welcome">Bonjour, {{ (nav_user.full_name or 'Utilisateur').split(' ')[0] }}</p>
+              <p class="f-drawer-role">Client FixPro</p>
+              <p class="f-drawer-status">
+                <span class="f-status-dot {{ 'active' if nav_user and nav_user.is_active and nav_user.account_status == 'ACTIVE' else 'inactive' }}"></span>
+                Compte {{ 'actif' if nav_user and nav_user.is_active and nav_user.account_status == 'ACTIVE' else 'inactif' }}
+              </p>
+            </div>
+          </div>
+        </header>
+
+        <div class="f-drawer-body">
+          <section class="f-drawer-section">
+            <h2 class="f-drawer-section-title">Navigation</h2>
+            <a href="{{ url_for('index') }}" class="f-drawer-item {{ 'active' if request.endpoint == 'index' }}">
+              <span class="f-drawer-item-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></span>
+              <span class="f-drawer-item-label">Accueil</span>
+              <svg class="f-drawer-item-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+            </a>
+            <a href="{{ url_for('artisans_page') }}" class="f-drawer-item {{ 'active' if request.endpoint == 'artisans_page' }}">
+              <span class="f-drawer-item-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></span>
+              <span class="f-drawer-item-label">Rechercher un professionnel</span>
+              <svg class="f-drawer-item-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+            </a>
+            <a href="{{ url_for('artisans_page') }}" class="f-drawer-item">
+              <span class="f-drawer-item-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+              <span class="f-drawer-item-label">Professionnels</span>
+              <svg class="f-drawer-item-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+            </a>
+            <a href="{{ url_for('register_artisan') }}" class="f-drawer-item {{ 'active' if request.endpoint == 'register_artisan' }}">
+              <span class="f-drawer-item-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg></span>
+              <span class="f-drawer-item-label">S'inscrire en tant que technicien</span>
+              <svg class="f-drawer-item-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+            </a>
+            <a href="{{ url_for('requests_list') }}" class="f-drawer-item">
+              <span class="f-drawer-item-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
+              <span class="f-drawer-item-label">Mes réservations</span>
+              <svg class="f-drawer-item-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+            </a>
+            <a href="{{ url_for('requests_list') }}" class="f-drawer-item {{ 'active' if request.endpoint in ('requests_list', 'request_new', 'request_detail') }}">
+              <span class="f-drawer-item-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M9 14h6M9 17h4"/></svg></span>
+              <span class="f-drawer-item-label">Mes demandes / interventions</span>
+              <svg class="f-drawer-item-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+            </a>
+            <a href="{{ url_for('conversations') }}" class="f-drawer-item {{ 'active' if request.endpoint in ('conversations', 'client_messages', 'client_conversation', 'client_message_new', 'lia') }}">
+              <span class="f-drawer-item-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 21l1.9-5.1A8.4 8.4 0 0 1 4 11.5a8.5 8.5 0 0 1 8.5-8.5A8.5 8.5 0 0 1 21 11.5z"/></svg></span>
+              <span class="f-drawer-item-label">Messages</span>
+              <svg class="f-drawer-item-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+            </a>
+            <a href="{{ url_for('notifications') }}" class="f-drawer-item {{ 'active' if request.endpoint == 'notifications' }}">
+              <span class="f-drawer-item-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></span>
+              <span class="f-drawer-item-label">Notifications</span>
+              {% if unread_count|default(0) > 0 %}<span class="f-drawer-badge">{{ unread_count }}</span>{% endif %}
+              <svg class="f-drawer-item-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+            </a>
+          </section>
+
+          <section class="f-drawer-section">
+            <h2 class="f-drawer-section-title">Mon compte</h2>
+            <a href="{{ url_for('edit_profile') }}" class="f-drawer-item {{ 'active' if request.endpoint == 'edit_profile' }}">
+              <span class="f-drawer-item-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+              <span class="f-drawer-item-label">Informations personnelles</span>
+              <svg class="f-drawer-item-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+            </a>
+            <div class="f-drawer-item f-drawer-loc">
+              <span class="f-drawer-item-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></span>
+              <span class="f-drawer-item-label">Ma localisation</span>
+              <button id="locRefreshBtn" class="f-drawer-refresh" type="button">Actualiser</button>
+              <svg class="f-drawer-item-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+            </div>
+            <a href="{{ url_for('client_security') }}" class="f-drawer-item {{ 'active' if request.endpoint == 'client_security' }}">
+              <span class="f-drawer-item-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg></span>
+              <span class="f-drawer-item-label">Sécurité</span>
+              <svg class="f-drawer-item-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+            </a>
+          </section>
+
+          <section class="f-drawer-section f-drawer-logout">
+            <a href="{{ url_for('logout') }}" class="f-drawer-item f-drawer-logout-link">
+              <span class="f-drawer-item-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg></span>
+              <span class="f-drawer-item-label">
+                <strong>Se déconnecter</strong>
+                <span>Quitter votre compte FixPro</span>
+              </span>
+              <svg class="f-drawer-item-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+            </a>
+          </section>
+        </div>
+      </nav>
       {% endblock %}
 
       <main class="page {% block main_class %}{% endblock %}">
@@ -222,7 +344,32 @@
 
     <script>
       document.addEventListener('DOMContentLoaded', function() {
-        // Menu de navigation (drawer) retire - nouvelle version a implementer
+        const burger = document.getElementById('burgerBtn');
+        const drawer = document.getElementById('mobileDrawer');
+        const overlay = document.getElementById('mobileDrawerOverlay');
+        const closeBtn = document.getElementById('mobileDrawerClose');
+
+        function openDrawer() {
+          if (drawer) drawer.classList.add('open');
+          if (overlay) overlay.classList.add('open');
+          document.body.style.overflow = 'hidden';
+        }
+        function closeDrawer() {
+          if (drawer) drawer.classList.remove('open');
+          if (overlay) overlay.classList.remove('open');
+          document.body.style.overflow = '';
+        }
+
+        if (burger) {
+          burger.addEventListener('click', function() {
+            if (drawer && drawer.classList.contains('open')) { closeDrawer(); } else { openDrawer(); }
+          });
+        }
+        if (closeBtn) closeBtn.addEventListener('click', closeDrawer);
+        if (overlay) overlay.addEventListener('click', closeDrawer);
+        document.addEventListener('keydown', function(e) {
+          if (e.key === 'Escape') closeDrawer();
+        });
 
         const userMenu = document.querySelector('.user-menu');
         if (userMenu) {
@@ -233,6 +380,46 @@
           });
           document.addEventListener('click', function() {
             userMenu.classList.remove('open');
+          });
+        }
+
+        const locBtn = document.getElementById('locRefreshBtn');
+        if (locBtn) {
+          locBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (!navigator.geolocation) {
+              alert('La geolocalisation n\'est pas prise en charge par votre navigateur.');
+              return;
+            }
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+            navigator.geolocation.getCurrentPosition(
+              function(pos) {
+                fetch('/api/location', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+                  body: JSON.stringify({ lat: pos.coords.latitude, lon: pos.coords.longitude, accuracy: pos.coords.accuracy || 0 })
+                })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                  if (data.ok) {
+                    locBtn.textContent = data.zone || 'Actualise';
+                    setTimeout(function() { locBtn.textContent = 'Actualiser'; }, 2000);
+                  } else {
+                    alert(data.error || 'Impossible d\'actualiser la localisation.');
+                  }
+                })
+                .catch(function() { alert('Erreur reseau lors de l\'actualisation.'); });
+              },
+              function() {
+                fetch('/api/location/denied', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+                  body: JSON.stringify({})
+                });
+                alert('Autorisation de localisation refusee.');
+              }
+            );
           });
         }
       });

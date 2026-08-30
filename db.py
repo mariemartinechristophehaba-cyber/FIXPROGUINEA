@@ -95,7 +95,13 @@ class Connection:
         if self.is_postgres:
             cursor = self._raw.cursor(
                 cursor_factory=psycopg2.extras.RealDictCursor)
-            cursor.execute(_translate(sql, bool(params)), params)
+            if params:
+                cursor.execute(_translate(sql, True), params)
+            else:
+                # Sans le second argument, psycopg2 n'interprete pas les `%` :
+                # une requete contenant un `%` litteral (LIKE '%x%') ne plante
+                # donc pas lorsqu'elle n'a aucun parametre.
+                cursor.execute(_translate(sql, False))
         else:
             cursor = self._raw.execute(sql, params)
         return Result(cursor, self.is_postgres)
