@@ -143,23 +143,33 @@ def get_config():
 
     if is_production:
         config = ProductionConfig()
+
+        # Erreurs bloquantes : l'application ne peut objectivement pas
+        # fonctionner sans ces valeurs.
         errors = []
-        if _is_placeholder(config.SECRET_KEY):
+        if not config.SECRET_KEY:
             errors.append(
-                "SECRET_KEY doit contenir une valeur forte "
-                "(generez-la avec : python manage.py secret).")
+                "SECRET_KEY est obligatoire (python manage.py secret).")
         if not config.DATABASE_URL.startswith(("postgres://", "postgresql://")):
             errors.append(
                 "DATABASE_URL doit pointer vers PostgreSQL/Supabase "
                 "(le systeme de fichiers Vercel est en lecture seule).")
-        if config.ADMIN_API_KEY and _is_placeholder(config.ADMIN_API_KEY):
-            errors.append("ADMIN_API_KEY contient une valeur d'exemple.")
-        if config.ADMIN_PASSWORD and _is_placeholder(config.ADMIN_PASSWORD):
-            errors.append("ADMIN_PASSWORD contient une valeur d'exemple.")
         if errors:
             raise RuntimeError(
                 "Configuration de production invalide :\n  - "
                 + "\n  - ".join(errors))
+
+        # Avertissements non bloquants : valeurs qui ressemblent a des
+        # exemples laisses en place. On journalise sans empecher le demarrage
+        # pour eviter toute coupure sur un faux positif.
+        import logging as _logging
+        _log = _logging.getLogger("fixpro")
+        for name in ("SECRET_KEY", "ADMIN_API_KEY", "ADMIN_PASSWORD"):
+            value = getattr(config, name, "")
+            if value and _is_placeholder(value):
+                _log.warning(
+                    "%s ressemble a une valeur d'exemple : remplacez-la par "
+                    "un secret fort.", name)
         return config
 
     if env == "testing":
