@@ -249,10 +249,11 @@
 
       <h3 class="t-section">
         Nouveaux contacts
-        {% if new_contact_count|default(0) > 0 %}<span style="background:#EF4444;color:#fff;font-size:12px;border-radius:10px;padding:2px 8px;margin-left:8px;">{{ new_contact_count }}</span>{% endif %}
+        {% if new_contact_count|default(0) > 0 %}<span id="contactBadge" style="background:#EF4444;color:#fff;font-size:12px;border-radius:10px;padding:2px 8px;margin-left:8px;">{{ new_contact_count }}</span>{% else %}<span id="contactBadge" style="display:none;"></span>{% endif %}
       </h3>
+      <div id="contactsSection">
       {% if contacts %}
-      <div class="t-mission-list">
+      <div id="contactList" class="t-mission-list">
         {% for c in contacts %}
         <div class="t-mission" style="align-items:center;">
           <div class="t-mission-icon u-normal" style="background:#EEF4FF;color:#155EEF;">
@@ -286,8 +287,9 @@
         {% endfor %}
       </div>
       {% else %}
-      <div class="t-empty" style="padding:20px;background:#F9FAFB;border-radius:12px;text-align:center;color:#64748B;font-size:14px;">Aucun contact recent</div>
+      <div id="noContacts" class="t-empty" style="padding:20px;background:#F9FAFB;border-radius:12px;text-align:center;color:#64748B;font-size:14px;">Aucun contact recent</div>
       {% endif %}
+      </div>
 
       <h3 class="t-section">Mes interventions</h3>
       {% if missions %}
@@ -423,6 +425,104 @@
           .then(data => { if (data.ok) location.reload(); })
           .catch(() => {});
       });
+    })();
+  </script>
+
+  <script>
+    (function() {
+      const statusLabels = {
+        'nouveau': 'Nouveau',
+        'contacte': 'Contacte',
+        'intervention_demandee': 'Intervention',
+        'intervention_confirmee': 'Confirmee',
+        'intervention_terminee': 'Terminee',
+        'cloture': 'Cloture'
+      };
+
+      const csrf = (document.querySelector('input[name="csrf_token"]') || {}).value
+                 || (document.getElementById('statusSelect') || {}).dataset?.csrf
+                 || '';
+
+      function phoneHtml(phone) {
+        return `<a href="tel:${phone.replace(/ /g, '')}" style="color:#155EEF;font-weight:700;font-size:13px;display:flex;align-items:center;gap:4px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.62 9.5a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          Appeler
+        </a>`;
+      }
+
+      function statusForm(contact) {
+        const options = ['contacte','intervention_demandee','intervention_confirmee','intervention_terminee','cloture']
+          .map(s => `<option value="${s}" ${contact.status === s ? 'selected' : ''}>${statusLabels[s]}</option>`).join('');
+        return `<form method="post" action="/dashboard/technicien/contact/${contact.id}/status" style="display:flex;align-items:center;gap:6px;">
+          <input type="hidden" name="csrf_token" value="${csrf}" />
+          <select name="status" onchange="this.form.submit()" style="border:1px solid #DEE5F0;border-radius:8px;padding:6px 8px;font-size:13px;color:#0F172A;background:#fff;">
+            ${options}
+          </select>
+        </form>`;
+      }
+
+      function renderContact(c) {
+        return `<div class="t-mission" style="align-items:center;">
+          <div class="t-mission-icon u-normal" style="background:#EEF4FF;color:#155EEF;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+          <div class="t-mission-body">
+            <div class="t-mission-top">
+              <span class="t-mission-title">${c.first_name} ${c.last_name}</span>
+              <span class="t-mission-urgency u-normal">${(c.status || 'nouveau').replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
+            </div>
+            <div class="t-mission-meta">${c.phone}</div>
+            <div class="t-mission-bottom" style="gap:10px;flex-wrap:wrap;align-items:center;">
+              <span class="t-mission-status s-waiting">${c.created_at ? c.created_at.slice(0,16) : ''}</span>
+              ${phoneHtml(c.phone)}
+              ${statusForm(c)}
+            </div>
+          </div>
+        </div>`;
+      }
+
+      function renderList(contacts) {
+        const section = document.getElementById('contactsSection');
+        if (!section) return;
+        if (!contacts.length) {
+          section.innerHTML = '<div id="noContacts" class="t-empty" style="padding:20px;background:#F9FAFB;border-radius:12px;text-align:center;color:#64748B;font-size:14px;">Aucun contact recent</div>';
+          return;
+        }
+        section.innerHTML = '<div id="contactList" class="t-mission-list">' + contacts.map(renderContact).join('') + '</div>';
+      }
+
+      function updateBadge(newCount) {
+        const badge = document.getElementById('contactBadge');
+        if (!badge) return;
+        if (newCount > 0) {
+          badge.textContent = newCount;
+          badge.style.display = 'inline-block';
+        } else {
+          badge.style.display = 'none';
+        }
+      }
+
+      let lastCount = parseInt(document.getElementById('contactBadge')?.textContent || '0') || 0;
+
+      function check() {
+        fetch('/dashboard/technicien/contacts/json', {credentials: 'same-origin'})
+          .then(r => r.json())
+          .then(data => {
+            if (!data.ok) return;
+            const current = data.contacts.length;
+            const newCount = data.new_count || 0;
+            updateBadge(newCount);
+            renderList(data.contacts);
+            if (current > lastCount) {
+              const diff = current - lastCount;
+              alert(`${diff} nouveau(x) contact(s) !`);
+            }
+            lastCount = current;
+          })
+          .catch(() => {});
+      }
+
+      setInterval(check, 10000);
     })();
   </script>
 </body>

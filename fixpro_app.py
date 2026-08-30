@@ -3364,6 +3364,37 @@ def technician_contact_status(contact_id):
     return redirect(url_for("artisan_dashboard"))
 
 
+@app.route("/dashboard/technicien/contacts/json")
+@login_required
+def artisan_dashboard_contacts_json():
+    """API JSON : retourne les contacts du technicien connecte."""
+    user = get_current_user()
+    if not _is_technician(user):
+        return jsonify({"ok": False, "error": "Reserve aux techniciens"}), 403
+    conn = get_db_connection()
+    try:
+        contacts = conn.execute(
+            "SELECT id, first_name, last_name, phone, status, created_at"
+            " FROM client_contacts WHERE artisan_id = ?"
+            " ORDER BY created_at DESC LIMIT 20",
+            (user["id"],)).fetchall()
+        new_count = conn.execute(
+            "SELECT COUNT(*) AS n FROM client_contacts"
+            " WHERE artisan_id = ? AND status = 'nouveau'",
+            (user["id"],)).fetchone()["n"]
+        unread_notif = conn.execute(
+            "SELECT COUNT(*) AS n FROM notifications WHERE user_id = ? AND is_read = 0",
+            (user["id"],)).fetchone()["n"]
+    finally:
+        conn.close()
+    return jsonify({
+        "ok": True,
+        "contacts": [dict(c) for c in contacts],
+        "new_count": new_count,
+        "unread_notif": unread_notif
+    })
+
+
 @app.route("/dashboard/technicien/services", methods=["POST"])
 @login_required
 def update_artisan_services():
