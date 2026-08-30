@@ -1090,7 +1090,7 @@ def location_gate():
                            quartiers=_CONAKRY_QUARTIERS, next=nxt)
 
 
-# Pages sur lesquelles un client doit avoir defini sa localisation.
+# Pages sur lesquelles la localisation est requise avant d'entrer dans l'app.
 _LOCATION_GATED_ENDPOINTS = {
     "index", "artisans_page", "categories", "requests_list",
     "request_new", "dashboard",
@@ -1099,15 +1099,21 @@ _LOCATION_GATED_ENDPOINTS = {
 
 @app.before_request
 def require_client_location():
-    """Envoie un client sans localisation vers l'ecran de localisation."""
+    """Ecran de localisation a l'entree de l'app.
+
+    Le client n'a PAS besoin d'etre connecte : un visiteur qui arrive tombe
+    directement sur l'ecran, autorise sa position (stockee en session), puis
+    entre dans l'app. Seuls les techniciens et admins connectes sont exemptes.
+    """
     if request.method != "GET" or request.endpoint not in _LOCATION_GATED_ENDPOINTS:
         return None
     user = get_current_user()
-    if not user or user["role"] != "client":
+    if user and user["role"] in ("technician", "artisan", "admin"):
         return None
     if (session.get("client_lat") or session.get("client_zone")
-            or session.get("loc_gate_dismissed")
-            or _is_valid_coordinate(user.get("latitude"), user.get("longitude"))):
+            or session.get("loc_gate_dismissed")):
+        return None
+    if user and _is_valid_coordinate(user.get("latitude"), user.get("longitude")):
         return None
     return redirect(url_for("location_gate", next=request.path))
 
