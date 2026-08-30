@@ -45,7 +45,7 @@
     --hp-primary: #155EEF;
     --hp-primary-dark: #0F3DBB;
     --hp-yellow: #F7B718;
-    --hp-bg: #F4F7FE;
+    --hp-bg: #F4F7FD;
     --hp-text: #0F172A;
     --hp-muted: #64748B;
     --hp-line: #E6ECF5;
@@ -129,29 +129,32 @@
   /* --- hero --- */
   .hp-hero {
     position: relative; z-index: 2;
-    background: linear-gradient(180deg, #E9F0FE 0%, #EEF3FD 100%);
-    padding: 14px 16px 18px;
-    min-height: 150px;
+    background: #F4F7FD;
+    padding: 16px 16px 20px;
+    min-height: 300px;
     overflow: hidden;
   }
-  .hp-hero-tech {
-    position: absolute; z-index: 1;
-    right: -4px; top: -40px;
-    width: 50%; max-width: 214px; height: 372px;
-    object-fit: cover; object-position: 68% 2%;
-    -webkit-mask-image: linear-gradient(to bottom, #000 58%, rgba(0,0,0,.35) 82%, transparent 100%);
-    mask-image: linear-gradient(to bottom, #000 58%, rgba(0,0,0,.35) 82%, transparent 100%);
+  .hp-hero-bg {
+    position: absolute; top: 0; right: -8%; z-index: 0;
+    width: 142%; height: 100%;
+    object-fit: cover; object-position: 58% 6%;
     pointer-events: none;
   }
+  .hp-hero::after {
+    content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+    background:
+      linear-gradient(100deg, #F4F7FD 22%, rgba(244,247,253,0.9) 42%, rgba(244,247,253,0) 68%),
+      linear-gradient(to bottom, transparent 72%, #F4F7FD 100%);
+  }
   .hp-hero-inner { position: relative; z-index: 3; max-width: 1100px; margin: 0 auto; }
-  .hp-hero-text { max-width: 60%; position: relative; }
+  .hp-hero-text { max-width: 55%; position: relative; }
   .hp-hero h1 {
-    font-size: 1.25rem; font-weight: 800; color: var(--hp-text);
+    font-size: 1.22rem; font-weight: 800; color: var(--hp-text);
     margin: 0 0 8px; line-height: 1.32;
   }
   .hp-hero h1 strong { color: var(--hp-primary); font-weight: 800; }
   .hp-hero-pin {
-    position: absolute; top: 30px; right: -14px; z-index: 4; line-height: 0; color: var(--hp-primary);
+    position: absolute; top: 34px; right: -16px; z-index: 4; line-height: 0; color: var(--hp-primary);
   }
   .hp-hero-pin svg { width: 26px; height: 26px; display: block; filter: drop-shadow(0 4px 8px rgba(21,94,239,.28)); }
   .hp-hero-sub { margin: 0; color: var(--hp-muted); font-size: 0.8rem; font-weight: 500; }
@@ -381,13 +384,13 @@
     <svg viewBox="0 0 400 70" preserveAspectRatio="none" fill="none">
       <path d="M0 44 C 60 10, 140 10, 200 34 C 260 58, 340 58, 400 30 L400 70 L0 70 Z" fill="#BAD1FF" opacity="0.55"/>
       <path d="M0 52 C 70 24, 150 24, 210 44 C 270 64, 340 64, 400 44 L400 70 L0 70 Z" fill="#DCE8FF" opacity="0.7"/>
-      <path d="M0 58 C 80 38, 150 38, 220 52 C 290 66, 350 62, 400 54 L400 70 L0 70 Z" fill="#E9F0FE"/>
+      <path d="M0 58 C 80 38, 150 38, 220 52 C 290 66, 350 62, 400 54 L400 70 L0 70 Z" fill="#F4F7FD"/>
     </svg>
   </div>
 </header>
 
 <section class="hp-hero">
-  <img class="hp-hero-tech" src="{{ url_for('static', filename='img/technician-hero-v2.png') }}" alt="Technicien FixPro" />
+  <img class="hp-hero-bg" src="{{ url_for('static', filename='img/technician-hero-v2.png') }}" alt="Technicien FixPro" />
   <div class="hp-hero-inner">
     <div class="hp-hero-text">
       <h1>Trouvez rapidement<br/>le <strong>bon professionnel</strong><br/>pour vos travaux</h1>
