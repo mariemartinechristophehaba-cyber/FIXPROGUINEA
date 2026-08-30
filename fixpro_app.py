@@ -234,7 +234,7 @@ def check_artisan_verification():
     public_endpoints = {
         "artisan_pending", "logout", "static", "login", "register",
         "register_artisan", "client_signup", "google_signup", "google_callback",
-        "complete_profile", "health", "health-db", "index", "contact",
+        "complete_profile", "contact_artisan", "health", "health-db", "index", "contact",
         "lia", "api_lia_chat",
     }
     if request.endpoint in public_endpoints or request.endpoint is None:
@@ -4122,6 +4122,26 @@ def artisan_detail(artisan_id):
                            artisan_position=artisan_position,
                            zone_center=zone_center,
                            zones=zones)
+
+
+@app.route("/artisans/<int:artisan_id>/contacter")
+def contact_artisan(artisan_id):
+    """Page de contact simplifiee pour appeler un technicien."""
+    conn = get_db_connection()
+    try:
+        artisan = conn.execute(
+            "SELECT id, full_name, profession, phone, photo_url, is_verified"
+            " FROM users WHERE id = ? AND role IN ('artisan','technician')"
+            " AND is_active = 1 AND account_status != 'DELETED'",
+            (artisan_id,)).fetchone()
+    finally:
+        conn.close()
+    if not artisan:
+        flash("Technicien introuvable.", "error")
+        return redirect(url_for("artisans_page"))
+    return render_template("contact_artisan.html",
+                           artisan=dict(artisan),
+                           back_url=request.referrer or url_for("artisan_detail", artisan_id=artisan_id))
 
 
 def _services_for_profession(profession):

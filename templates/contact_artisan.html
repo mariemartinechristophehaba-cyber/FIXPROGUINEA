@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Contacter {{ artisan.full_name }} - FixPro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background: #155EEF; color: #0F172A; }
+    .ct-page { min-height: 100dvh; display: flex; flex-direction: column; position: relative; overflow: hidden; }
+
+    .ct-top {
+      background: linear-gradient(135deg, #1E3A8A 0%, #0F2B8C 100%);
+      color: #fff; padding: 14px 16px 60px; text-align: center; position: relative;
+    }
+    .ct-top::before {
+      content: ''; position: absolute; left: -20%; right: -20%; bottom: -80px; height: 140px; background: #fff;
+      border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+    }
+    .ct-close {
+      position: absolute; top: 14px; right: 14px; width: 38px; height: 38px; border-radius: 50%;
+      background: rgba(255,255,255,.15); color: #fff; display: flex; align-items: center; justify-content: center;
+      text-decoration: none; z-index: 2; backdrop-filter: blur(4px);
+    }
+    .ct-close svg { width: 20px; height: 20px; }
+
+    .ct-avatar-wrap { position: relative; width: 90px; height: 90px; margin: -30px auto 14px; z-index: 1; }
+    .ct-avatar {
+      width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 4px solid #fff;
+      box-shadow: 0 8px 24px rgba(0,0,0,.1); background: #E2E8F0;
+    }
+    .ct-dot {
+      position: absolute; bottom: 6px; right: 6px; width: 18px; height: 18px; border-radius: 50%;
+      background: #22C55E; border: 3px solid #fff;
+    }
+
+    .ct-content {
+      flex: 1; background: #fff; padding: 0 20px 24px; margin-top: -20px; position: relative; z-index: 1;
+      display: flex; flex-direction: column; align-items: center; text-align: center;
+    }
+    .ct-title { font-size: 22px; font-weight: 800; margin: 0 0 4px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .ct-title svg { width: 22px; height: 22px; color: #155EEF; }
+    .ct-subtitle { color: #64748B; font-size: 14px; margin: 0 0 22px; }
+
+    .ct-form { width: 100%; max-width: 440px; }
+    .ct-field { margin-bottom: 14px; text-align: left; }
+    .ct-input {
+      width: 100%; height: 52px; border: 1.5px solid #DEE5F0; border-radius: 14px;
+      padding: 0 16px 0 50px; font-size: 15px; color: #0F172A; background: #fff; outline: none;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .ct-input:focus { border-color: #155EEF; box-shadow: 0 0 0 4px rgba(21,94,239,0.08); }
+    .ct-input::placeholder { color: #94A3B8; }
+    .ct-wrap { position: relative; }
+    .ct-icon { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #64748B; }
+    .ct-icon svg { width: 20px; height: 20px; }
+
+    .ct-phone { display: flex; align-items: center; border: 1.5px solid #DEE5F0; border-radius: 14px; overflow: hidden; }
+    .ct-phone-prefix { display: flex; align-items: center; gap: 8px; padding: 0 12px; border-right: 1px solid #E2E8F0; font-size: 15px; font-weight: 600; color: #0F172A; }
+    .ct-phone select { border: none; background: transparent; font-size: 16px; color: #0F172A; outline: none; -webkit-appearance: none; appearance: none; width: 22px; }
+    .ct-phone input { flex: 1; border: none; height: 50px; padding: 0 14px; font-size: 15px; outline: none; }
+
+    .ct-secure { display: flex; align-items: flex-start; gap: 10px; text-align: left; margin: 8px 0 22px; }
+    .ct-secure svg { width: 20px; height: 20px; color: #155EEF; flex-shrink: 0; margin-top: 2px; }
+    .ct-secure span { font-size: 13px; color: #64748B; line-height: 1.4; }
+    .ct-secure b { color: #0F172A; }
+
+    .ct-call {
+      width: 100%; height: 54px; border-radius: 14px; background: #155EEF; color: #fff;
+      font-size: 17px; font-weight: 700; text-decoration: none;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      transition: background .15s; box-shadow: 0 8px 20px rgba(21,94,239,.25);
+    }
+    .ct-call:hover { background: #1D4ED8; }
+    .ct-call svg { width: 22px; height: 22px; }
+
+    @media (min-width: 600px) {
+      body { background: #0F2B8C; }
+      .ct-content { padding: 0 24px 32px; }
+      .ct-form { max-width: 480px; }
+    }
+  </style>
+</head>
+<body>
+<div class="ct-page">
+  <div class="ct-top">
+    <a href="{{ back_url }}" class="ct-close" aria-label="Fermer">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+    </a>
+  </div>
+
+  <div class="ct-content">
+    <div class="ct-avatar-wrap">
+      <img class="ct-avatar" src="{{ artisan.photo_url or url_for('static', filename='img/fixpro-avatar.png') }}" alt="{{ artisan.full_name }}" />
+      <div class="ct-dot"></div>
+    </div>
+
+    <h1 class="ct-title">
+      Contacter {{ artisan.full_name }}
+      {% if artisan.is_verified %}
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color:#155EEF"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 12 15 17 10"/></svg>
+      {% endif %}
+    </h1>
+    <p class="ct-subtitle">Renseignez vos informations pour le contacter</p>
+
+    <form class="ct-form" method="get" onsubmit="event.preventDefault(); callArtisan();">
+      <div class="ct-field">
+        <div class="ct-wrap">
+          <span class="ct-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+          <input class="ct-input" type="text" name="first_name" placeholder="Prénom" required />
+        </div>
+      </div>
+      <div class="ct-field">
+        <div class="ct-wrap">
+          <span class="ct-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+          <input class="ct-input" type="text" name="last_name" placeholder="Nom" required />
+        </div>
+      </div>
+      <div class="ct-field">
+        <div class="ct-phone">
+          <div class="ct-phone-prefix">
+            <span class="ct-flag" style="font-size:18px;">🇬🇳</span>
+            <select name="country" aria-label="Indicatif">
+              <option value="+224">+224</option>
+            </select>
+          </div>
+          <input type="tel" name="phone" placeholder="Votre numéro de téléphone" required pattern="[0-9]{9}" />
+        </div>
+      </div>
+
+      <div class="ct-secure">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <span><b>Vos informations sont sécurisées</b> et ne seront partagées qu'avec {{ artisan.full_name }}.</span>
+      </div>
+
+      <a href="tel:{{ artisan.phone or '' }}" class="ct-call" onclick="if (!'{{ artisan.phone }}') { alert('Numéro de téléphone non renseigné.'); return false; }">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.62 9.5a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        Appeler
+      </a>
+    </form>
+  </div>
+</div>
+</body>
+</html>
