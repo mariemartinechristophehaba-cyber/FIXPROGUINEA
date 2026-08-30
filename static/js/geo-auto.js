@@ -1,4 +1,7 @@
 /**
+ * FIGE (2026-08-31) - logique de localisation client. Couvert par
+ * tests/test_app.py. Modifier avec prudence (le flux d'entree en depend).
+ *
  * FixPro - localisation client automatique.
  *
  *  - request()      : declenche la demande de position (bouton "Autoriser").

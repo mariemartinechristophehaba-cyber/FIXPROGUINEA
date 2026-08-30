@@ -1387,6 +1387,45 @@ class TechnicianAccessTests(FixProTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"Recherche", response.data)
 
+    def test_technician_not_gated_by_location(self):
+        """Un technicien connecte n'est jamais renvoye vers /localisation."""
+        self.register_artisan("gate-tech@example.com", phone="+224629999999")
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute(
+                "UPDATE users SET role = 'technician' WHERE phone = ?",
+                ("+224629999999",))
+            conn.commit()
+        finally:
+            conn.close()
+        self.client.get("/logout")
+        self._clear_client_location()
+        self.login("gate-tech@example.com")
+        r = self.client.get("/dashboard", follow_redirects=False)
+        self.assertNotIn("/localisation", r.headers.get("Location", ""))
+
+    def test_artisans_filtered_by_radius(self):
+        """Seuls les techniciens dans le rayon du client sont affiches."""
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            for name, lat, lon in [("Proche Kaloum", 9.5077, -13.7114),
+                                   ("Loin Ratoma", 9.6678, -13.5569)]:
+                conn.execute(
+                    "INSERT INTO users (phone, password_hash, role, full_name,"
+                    " profession, latitude, longitude, is_verified, is_active,"
+                    " account_status, availability_status)"
+                    " VALUES (?, ?, 'technician', ?, 'Plombier', ?, ?, 1, 1,"
+                    " 'ACTIVE', 'en_ligne')",
+                    (name.replace(" ", ""),
+                     fixpro_app.generate_password_hash("x"), name, lat, lon))
+            conn.commit()
+        finally:
+            conn.close()
+        # Le visiteur est localise a Kaloum (defini dans setUp).
+        body = self.client.get("/artisans").data.decode("utf-8", "replace")
+        self.assertIn("Proche Kaloum", body)
+        self.assertNotIn("Loin Ratoma", body)
+
     def test_technician_is_redirected_to_dashboard(self):
         self.register_artisan("t1@example.com", phone="+224621111111", name="T1 Diallo")
         conn = db.connect(sqlite_path=self.db_path)
