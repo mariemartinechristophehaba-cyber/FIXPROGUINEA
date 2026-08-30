@@ -56,9 +56,14 @@
   .p-stat b { display: block; color: #102A43; font-size: 16px; font-weight: 700; }
   .p-stat-icon { width: 38px; height: 38px; background: #F5F7FA; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
   .p-actions { display: flex; flex-direction: column; gap: 10px; }
-  .p-btn { height: 46px; border-radius: 10px; font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; cursor: pointer; }
-  .p-btn-primary { background: #155EEF; color: #fff; border: none; }
+  .p-btn { height: 48px; border-radius: 14px; font-weight: 700; font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 10px; text-decoration: none; cursor: pointer; }
+  .p-btn-primary { background: #155EEF; color: #fff; border: none; width: 100%; }
+  .p-btn-primary svg { width: 20px; height: 20px; }
   .p-btn-secondary { background: #fff; color: #155EEF; border: 1.5px solid #155EEF; }
+
+  .p-new-badge { display: inline-flex; align-items: center; background: #EEF4FF; color: #155EEF; font-size: 12px; font-weight: 700; padding: 6px 14px; border-radius: 50px; margin: 8px 0 12px; }
+  .p-verified-by { display: inline-flex; align-items: center; gap: 8px; color: #155EEF; font-size: 14px; font-weight: 600; margin-top: 12px; }
+  .p-verified-by svg { width: 20px; height: 20px; flex-shrink: 0; }
 
   .p-tabs { background: #fff; border-radius: 14px; padding: 6px; display: inline-flex; gap: 6px; margin: 24px 0; box-shadow: 0 4px 12px rgba(16,42,67,.05); }
   .p-tab { padding: 10px 20px; border-radius: 10px; color: #667085; text-decoration: none; font-size: 14px; font-weight: 600; }
@@ -142,12 +147,13 @@
     .p-header-inner { padding: 0 16px; }
     .p-logo, .p-nav, .p-header-right { display: none !important; }
     .p-mobile-bar { display: flex !important; }
-    .p-back { font-size: 14px; }
+    .p-back { font-size: 14px; display: flex; align-items: center; gap: 6px; }
+    .p-back svg { width: 18px; height: 18px; }
     .p-main { padding: 16px; }
     .p-back-link { display: none; }
-    .p-hero { padding: 20px 16px 24px; border-radius: 20px; margin-bottom: 16px; width: 100%; box-sizing: border-box; }
+    .p-hero { padding: 20px 16px 24px; border-radius: 24px; margin-bottom: 16px; width: 100%; box-sizing: border-box; }
     .p-hero-grid { grid-template-columns: 1fr; text-align: center; gap: 18px; }
-    .p-avatar-wrap { width: 150px; height: 150px; margin: 0 auto; border-radius: 50%; background: #EAF3FF; padding: 6px; }
+    .p-avatar-wrap { width: 120px; height: 120px; margin: 0 auto; border-radius: 50%; background: #EAF3FF; padding: 4px; }
     .p-avatar-wrap img { border-radius: 50%; object-fit: cover; }
     .p-name { font-size: 24px; line-height: 1.2; }
     .p-name-row { justify-content: center; flex-wrap: wrap; }
@@ -213,16 +219,17 @@
       </a>
     </div>
     <div class="p-mobile-bar">
-      <a href="{{ url_for('artisans_page') }}" class="p-back">&#8592; Retour</a>
-      <a href="{{ url_for('index') }}" class="p-logo" style="font-size:18px;">
-        <div class="p-logo-mark" style="width:32px;height:32px;">
-          <img src="{{ url_for('static', filename='img/icon-wrench.svg') }}" width="18" height="18" alt="" />
-        </div>
-        FixPro
+      <a href="{{ url_for('artisans_page') }}" class="p-back">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        <span>Retour</span>
       </a>
       <div class="p-top-actions">
-        <a href="#" aria-label="Enregistrer">&#9825;</a>
-        <a href="#" aria-label="Partager">&#8599;</a>
+        <a href="#" aria-label="Enregistrer">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        </a>
+        <a href="#" aria-label="Partager" onclick="navigator.share?navigator.share({title:'{{ artisan.full_name }} - FixPro',url:window.location.href}).catch(()=>{}):alert('Partager: '+window.location.href); return false;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        </a>
       </div>
     </div>
   </div>
@@ -254,6 +261,9 @@
         </div>
         <p class="p-job">{{ artisan.profession or 'Technicien' }}</p>
         <p class="p-meta">{{ artisan.experience or '7 ans' }} d'expérience · Membre depuis {{ member_since }}</p>
+        {% if review_stats.count == 0 %}
+        <div class="p-new-badge">Nouveau</div>
+        {% endif %}
         <div class="p-rating-row">
           {% if review_stats.count > 0 %}
           <div class="p-rating">
@@ -288,9 +298,10 @@
         </div>
       </div>
       <div class="p-actions">
-        <a href="{{ url_for('demande', artisan_id=artisan.id) }}" class="p-btn p-btn-primary">Demander une intervention</a>
-        <a href="{{ url_for('client_message_artisan', artisan_id=artisan.id) }}" class="p-btn p-btn-secondary">Envoyer un message</a>
-        <a href="tel:{{ artisan.phone or '' }}" class="p-btn p-btn-secondary" onclick="alert('Appel: {{ artisan.phone or 'non renseigné' }}'); return false;">Appeler</a>
+        <a href="tel:{{ artisan.phone or '' }}" class="p-btn p-btn-primary" onclick="alert('Appel: {{ artisan.phone or 'non renseigné' }}'); return false;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.62 9.5a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          Contacter
+        </a>
       </div>
     </div>
   </section>
@@ -300,7 +311,7 @@
     <a href="#services" class="p-tab" data-tab="services">Services</a>
     <a href="#avis" class="p-tab" data-tab="avis">Avis ({{ review_stats.count }})</a>
     <a href="#realisations" class="p-tab" data-tab="realisations">Réalisations</a>
-    <a href="#infos" class="p-tab" data-tab="infos">Infos</a>
+
   </div>
 
   <div class="p-grid">
@@ -308,13 +319,9 @@
       <section class="p-card" id="apercu">
         <h3>À propos</h3>
         <p class="p-about">{{ artisan.bio or 'Professionnel expérimenté, disponible pour intervenir rapidement dans votre zone. Tarifs transparents et travail soigné.' }}</p>
-        <div class="p-checks">
-          <div class="p-check">Intervention rapide</div>
-          <div class="p-check">Devis gratuit</div>
-          <div class="p-check">Travail propre et garanti</div>
-          <div class="p-check">Garantie sur toutes les interventions</div>
-          <div class="p-check">Tarifs transparents</div>
-          <div class="p-check">Disponible 24h/24 et 7j/7</div>
+        <div class="p-verified-by">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          {% if artisan.is_verified %}Technicien vérifié par FixPro{% else %}Profil non vérifié{% endif %}
         </div>
       </section>
 
