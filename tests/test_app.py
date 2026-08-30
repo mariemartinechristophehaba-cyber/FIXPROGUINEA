@@ -48,9 +48,22 @@ class FixProTestCase(unittest.TestCase):
             conn.close()
 
         self.client = fixpro_app.app.test_client()
+        # La plupart des tests ne testent pas l'ecran de localisation : on
+        # simule un visiteur deja localise pour ne pas etre redirige vers
+        # /localisation a chaque page. Les tests dedies vident la session.
+        with self.client.session_transaction() as sess:
+            sess["client_lat"] = 9.5077
+            sess["client_lon"] = -13.7114
+            sess["client_zone"] = "Kaloum"
 
     def tearDown(self):
         self._tmpdir.cleanup()
+
+    def _clear_client_location(self):
+        with self.client.session_transaction() as sess:
+            for k in ("client_lat", "client_lon", "client_zone",
+                      "loc_gate_dismissed"):
+                sess.pop(k, None)
 
     # -- utilitaires ----------------------------------------------------
 
@@ -1347,16 +1360,24 @@ class TechnicianDashboardTests(FixProTestCase):
 class TechnicianAccessTests(FixProTestCase):
     """Connexion, redirections et permissions du role technician."""
 
-    def test_client_without_location_sees_location_gate(self):
-        """Un client fraichement connecte, sans localisation, tombe d'abord
-        sur l'ecran de localisation."""
-        self.register_client()
-        response = self.client.post("/login", data={
-            "identifier": "+224620000000", "password": "FixPro2026!"},
-            follow_redirects=True)
+    def test_visitor_without_location_sees_location_gate(self):
+        """Un visiteur (meme non connecte) tombe d'abord sur l'ecran de
+        localisation avant d'entrer dans l'app."""
+        self._clear_client_location()
+        response = self.client.get("/artisans", follow_redirects=True)
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"data-location-gate", response.data)
         self.assertIn("Où êtes-vous".encode("utf-8"), response.data)
+
+    def test_visitor_enters_app_after_setting_zone(self):
+        """Apres avoir choisi un quartier (sans compte), le visiteur accede
+        a la recherche filtree."""
+        self._clear_client_location()
+        r = self.client.post("/api/location/zone", json={"zone": "Kaloum"})
+        self.assertEqual(r.get_json()["ok"], True)
+        response = self.client.get("/artisans")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Recherche", response.data)
 
     def test_client_with_location_sees_artisans(self):
         """Une fois la localisation definie, le client accede a la recherche."""
