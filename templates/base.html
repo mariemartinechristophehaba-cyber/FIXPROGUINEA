@@ -148,6 +148,7 @@
               </span>
               FixPro
             </a>
+            <p class="f-drawer-tagline">Trouvez. Comparez. Reservez.</p>
             <button id="mobileDrawerClose" class="f-drawer-close" type="button" aria-label="Fermer le menu">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M18 6 6 18M6 6l12 12"/>
@@ -229,39 +230,22 @@
           </section>
 
           <section class="f-drawer-section">
-            <h2 class="f-drawer-section-title">Aide & assistance</h2>
-            <a href="{{ url_for('client_message_new') }}" class="f-drawer-item {{ 'active' if request.endpoint == 'client_message_new' }}">
-              <svg class="f-drawer-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
-              <span>Aide & assistance</span>
-            </a>
-            <a href="{{ url_for('client_static', page='how-it-works') }}" class="f-drawer-item {{ 'active' if request.endpoint == 'client_static' and request.view_args.get('page') == 'how-it-works' }}">
-              <svg class="f-drawer-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22V11l-4 0"/></svg>
-              <span>Comment fonctionne FixPro ?</span>
-            </a>
-            <a href="{{ url_for('client_static', page='about') }}" class="f-drawer-item {{ 'active' if request.endpoint == 'client_static' and request.view_args.get('page') == 'about' }}">
-              <svg class="f-drawer-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
-              <span>A propos de FixPro</span>
-            </a>
-            <a href="{{ url_for('client_static', page='terms') }}" class="f-drawer-item {{ 'active' if request.endpoint == 'client_static' and request.view_args.get('page') == 'terms' }}">
-              <svg class="f-drawer-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"/></svg>
-              <span>Conditions & confidentialite</span>
+            <a href="{{ url_for('client_message_new') }}" class="f-drawer-help">
+              <svg class="f-drawer-help-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
+              <div class="f-drawer-help-text">
+                <strong>Besoin d'aide ?</strong>
+                <span>Notre equipe est disponible 24/7</span>
+              </div>
+              <svg class="f-drawer-help-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
             </a>
           </section>
 
-          <section class="f-drawer-section">
-            <a href="{{ url_for('logout') }}" class="f-drawer-item f-drawer-logout-link">
+          <section class="f-drawer-section f-drawer-logout">
+            <a href="{{ url_for('logout') }}" class="f-drawer-logout-link">
               <svg class="f-drawer-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
-              <span>Deconnexion</span>
+              <span>Se deconnecter</span>
             </a>
           </section>
-
-          <div class="f-drawer-secure">
-            <svg class="f-drawer-secure-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            <div class="f-drawer-secure-text">
-              <strong>Vos donnees sont securisees</strong>
-              <span>FixPro protege vos informations.</span>
-            </div>
-          </div>
         </div>
       </nav>
       {% endblock %}
