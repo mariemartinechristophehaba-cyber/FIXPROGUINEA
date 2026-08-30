@@ -1,6 +1,9 @@
 {% extends 'base.html' %}
 {% block title %}Accueil - FixPro Guinée{% endblock %}
 {% block header %}{% endblock %}
+{% block extra_head %}
+<link rel="preload" as="image" href="{{ url_for('static', filename='img/technician-hero-v2-hd.jpg') }}" fetchpriority="high" />
+{% endblock %}
 {% block footer %}{% endblock %}
 {% block tabbar %}{% endblock %}
 
