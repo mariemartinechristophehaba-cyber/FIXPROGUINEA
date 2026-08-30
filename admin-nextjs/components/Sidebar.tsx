@@ -17,6 +17,15 @@ export default function Sidebar() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
 
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/admin/logout', { method: 'POST' });
+    } catch {
+      // on redirige quand meme
+    }
+    window.location.href = '/admin/login';
+  };
+
   return (
     <>
       <button
@@ -56,7 +65,10 @@ export default function Sidebar() {
             })}
           </nav>
           <div className="p-4 border-t border-border">
-            <button className="flex items-center gap-3 px-3 py-2 text-sm text-muted hover:text-white transition-colors w-full">
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-3 px-3 py-2 text-sm text-muted hover:text-white transition-colors w-full"
+            >
               <LogOut size={18} />
               Deconnexion
             </button>

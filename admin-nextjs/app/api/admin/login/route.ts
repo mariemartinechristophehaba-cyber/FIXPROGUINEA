@@ -1,37 +1,54 @@
 import { NextResponse, NextRequest } from 'next/server';
-
-function serializeCookie(
-  name: string,
-  value: string,
-  options: { httpOnly?: boolean; secure?: boolean; sameSite?: string; maxAge?: number; path?: string } = {}
-) {
-  const { httpOnly = true, secure = false, sameSite = 'Lax', maxAge = 86400, path = '/' } = options;
-  let cookie = `${name}=${encodeURIComponent(value)}; Path=${path}; Max-Age=${maxAge}; SameSite=${sameSite}`;
-  if (httpOnly) cookie += '; HttpOnly';
-  if (secure) cookie += '; Secure';
-  return cookie;
-}
+import {
+  createSessionToken,
+  timingSafeEqual,
+  SESSION_COOKIE,
+  sessionCookieOptions,
+} from '@/lib/session';
 
 export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json();
-    const { email, password } = body || {};
+  const expectedEmail = process.env.ADMIN_DASHBOARD_EMAIL;
+  const expectedPassword = process.env.ADMIN_DASHBOARD_PASSWORD;
 
-    const expectedEmail = process.env.ADMIN_DASHBOARD_EMAIL || 'admin@fixpro.local';
-    const expectedPassword = process.env.ADMIN_DASHBOARD_PASSWORD || 'admin';
-
-    if (email !== expectedEmail || password !== expectedPassword) {
-      return NextResponse.json({ error: 'Email ou mot de passe incorrect.' }, { status: 401 });
-    }
-
-    const response = NextResponse.json({ ok: true });
-    const isProduction = process.env.NODE_ENV === 'production';
-    response.headers.append(
-      'Set-Cookie',
-      serializeCookie('admin-token', '1', { secure: isProduction })
+  if (!expectedEmail || !expectedPassword) {
+    return NextResponse.json(
+      { error: 'Authentification admin non configuree.' },
+      { status: 500 }
     );
-    return response;
+  }
+
+  let body: any;
+  try {
+    body = await request.json();
   } catch {
     return NextResponse.json({ error: 'Requete invalide.' }, { status: 400 });
   }
+
+  const email = String(body?.email || '').trim().toLowerCase();
+  const password = String(body?.password || '');
+
+  const ok =
+    timingSafeEqual(email, expectedEmail.trim().toLowerCase()) &&
+    timingSafeEqual(password, expectedPassword);
+
+  if (!ok) {
+    return NextResponse.json(
+      { error: 'Email ou mot de passe incorrect.' },
+      { status: 401 }
+    );
+  }
+
+  let token: string;
+  try {
+    token = await createSessionToken(email, false);
+  } catch {
+    return NextResponse.json(
+      { error: 'ADMIN_SESSION_SECRET non configure cote serveur.' },
+      { status: 500 }
+    );
+  }
+
+  const response = NextResponse.json({ ok: true });
+  response.cookies.set(SESSION_COOKIE, token, sessionCookieOptions());
+  return response;
 }

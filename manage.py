@@ -10,11 +10,13 @@ Commandes disponibles :
     python manage.py secret       Genere une SECRET_KEY solide
     python manage.py create-admin Cree un compte administrateur
     python manage.py seed         Insere des donnees de demonstration
+    python manage.py purge-guests Supprime les comptes visiteurs anonymes inactifs
 """
 
 import getpass
 import secrets
 import sys
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from werkzeug.security import generate_password_hash
@@ -321,6 +323,38 @@ def cmd_upgrade_db(config):
     return 0
 
 
+def cmd_purge_guests(config):
+    """Supprime les comptes visiteurs anonymes crees il y a plus de 7 jours
+    et qui n'ont jamais envoye de message, ainsi que leurs conversations vides.
+    """
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
+    conn = _connect(config)
+    try:
+        stale = conn.execute(
+            "SELECT u.id FROM users u"
+            " WHERE u.role = 'client' AND u.full_name = 'Visiteur'"
+            " AND u.phone LIKE 'guest-%'"
+            " AND COALESCE(u.created_at, '') < ?"
+            " AND NOT EXISTS ("
+            "   SELECT 1 FROM conversation_messages m"
+            "   WHERE m.sender_id = u.id AND m.sender_role = 'client')",
+            (cutoff,)).fetchall()
+        ids = [row["id"] for row in stale]
+        if not ids:
+            print("Aucun compte visiteur inactif a supprimer.")
+            return 0
+        placeholders = ",".join("?" for _ in ids)
+        conn.execute(
+            "DELETE FROM conversations WHERE client_id IN (%s)" % placeholders, ids)
+        conn.execute(
+            "DELETE FROM users WHERE id IN (%s)" % placeholders, ids)
+        conn.commit()
+        print("%d compte(s) visiteur supprime(s)." % len(ids))
+    finally:
+        conn.close()
+    return 0
+
+
 COMMANDS = {
     "init-db": cmd_init_db,
     "check": cmd_check,
@@ -330,6 +364,7 @@ COMMANDS = {
     "create-admin": cmd_create_admin,
     "seed": cmd_seed,
     "geocode-artisans": cmd_geocode_artisans,
+    "purge-guests": cmd_purge_guests,
 }
 
 

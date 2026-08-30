@@ -27,7 +27,7 @@ from authlib.integrations.flask_client import OAuth
 from abc import ABC, abstractmethod
 from email_validator import EmailNotValidError, validate_email
 from flask import (Flask, flash, g, jsonify, make_response, redirect,
-                   render_template, render_template_string, request, session, url_for)
+                   render_template, request, session, url_for)
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_cors import CORS
@@ -83,11 +83,18 @@ def _format_dt_hm(value):
     return s
 
 
+_ratelimit_storage = app.config.get("RATELIMIT_STORAGE_URI", "memory://")
+if (_ratelimit_storage == "memory://"
+        and app.config.get("FLASK_ENV") == "production"):
+    logger.warning(
+        "Rate limiting en memoire : inefficace en serverless. "
+        "Definissez RATELIMIT_STORAGE_URI (Redis/Upstash) en production.")
+
 limiter = Limiter(
     app=app,
     key_func=get_remote_address,
     default_limits=["400 per day", "100 per hour"],
-    storage_uri="memory://",
+    storage_uri=_ratelimit_storage,
 )
 
 # Coordonnees approximatives des quartiers/zones de Conakry utilisees
@@ -139,8 +146,20 @@ def _zone_coordinate(zone_name):
     return _ARTISAN_GEOCODE.get(key)
 
 
+_NOMINATIM_CACHE = {}
+_NOMINATIM_CACHE_MAX = 512
+
+
 def _nominatim_request(url):
-    """Appelle Nominatim avec un User-Agent identifiable."""
+    """Appelle Nominatim avec un User-Agent identifiable.
+
+    Les reponses sont mises en cache en memoire : les memes coordonnees ou
+    requetes reviennent souvent et l'usage intensif de Nominatim est contraire
+    a ses conditions d'utilisation.
+    """
+    if url in _NOMINATIM_CACHE:
+        return _NOMINATIM_CACHE[url]
+
     req = urllib.request.Request(
         url,
         headers={
@@ -150,10 +169,15 @@ def _nominatim_request(url):
     )
     try:
         with urllib.request.urlopen(req, timeout=6) as resp:
-            return json.loads(resp.read().decode("utf-8"))
+            data = json.loads(resp.read().decode("utf-8"))
     except Exception as e:
         logger.warning("Erreur Nominatim : %s", e)
         return None
+
+    if len(_NOMINATIM_CACHE) >= _NOMINATIM_CACHE_MAX:
+        _NOMINATIM_CACHE.clear()
+    _NOMINATIM_CACHE[url] = data
+    return data
 
 
 def _extract_place_name(data):
@@ -325,23 +349,59 @@ def get_db_connection():
 # Securite et helpers
 # ---------------------------------------------------------------------------
 
+# Sources externes reellement utilisees par les gabarits (polices Google,
+# Leaflet via unpkg, Chart.js via jsDelivr, tuiles OpenStreetMap en images).
+_CSP = "; ".join([
+    "default-src 'self'",
+    "base-uri 'self'",
+    "object-src 'none'",
+    "frame-ancestors 'self'",
+    "form-action 'self'",
+    "img-src 'self' data: https:",
+    "font-src 'self' https://fonts.gstatic.com data:",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com",
+    "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com",
+    "connect-src 'self'",
+])
+
+
 @app.after_request
 def add_security_headers(response):
     """Ajoute les en-tetes de securite recommandes a chaque reponse."""
     response.headers["X-Frame-Options"] = "SAMEORIGIN"
     response.headers["X-Content-Type-Options"] = "nosniff"
-    response.headers["X-XSS-Protection"] = "1; mode=block"
+    # X-XSS-Protection est obsolete et peut introduire des failles : desactive.
+    response.headers["X-XSS-Protection"] = "0"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers.setdefault("Content-Security-Policy", _CSP)
     if not app.config.get("DEBUG"):
         response.headers["Strict-Transport-Security"] = (
             "max-age=31536000; includeSubDomains")
     return response
 
 
+def _bearer_token_user():
+    """Utilisateur associe a un token mobile Bearer valide, sinon None.
+
+    Permet aux endpoints de l'application mobile de s'authentifier sans cookie
+    de session : la requete n'est donc pas rejouable par un site tiers (CSRF).
+    """
+    auth = request.headers.get("Authorization", "")
+    if not auth.startswith("Bearer "):
+        return None
+    try:
+        user, reason = _verify_mobile_token(auth.split(" ", 1)[1].strip())
+    except Exception:
+        return None
+    return user if not reason else None
+
+
 def login_required(view_func):
     @wraps(view_func)
     def wrapper(*args, **kwargs):
-        if not session.get("user_id"):
+        if not session.get("user_id") and not get_current_user():
+            if request.headers.get("Authorization", "").startswith("Bearer "):
+                return jsonify({"error": "Session expiree ou invalide."}), 401
             flash("Veuillez vous connecter pour acceder a cette page.", "error")
             next_login = (url_for("admin_login")
                           if request.endpoint and request.endpoint.startswith("admin")
@@ -383,17 +443,19 @@ def log_admin_action(admin_id, admin_email, action, target_type=None, target_id=
 def get_current_user():
     if hasattr(g, "_current_user"):
         return g._current_user
+    user = None
     user_id = session.get("user_id")
-    if not user_id:
-        g._current_user = None
-        return None
-    conn = get_db_connection()
-    try:
-        g._current_user = conn.execute(
-            "SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
-        return g._current_user
-    finally:
-        conn.close()
+    if user_id:
+        conn = get_db_connection()
+        try:
+            user = conn.execute(
+                "SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+        finally:
+            conn.close()
+    if user is None:
+        user = _bearer_token_user()
+    g._current_user = user
+    return user
 
 
 PAYMENT_METHODS = {
@@ -930,7 +992,7 @@ def set_location():
         return jsonify({"ok": True, "zone": zone, "lat": lat, "lon": lon, "accuracy": accuracy})
     except Exception as e:
         logger.warning("Erreur enregistrement position: %s", e)
-        return jsonify({"ok": False, "error": str(e)}), 500
+        return jsonify({"ok": False, "error": "Position non enregistree."}), 500
 
 
 @app.route("/api/location/zone", methods=["POST"])
@@ -960,7 +1022,7 @@ def set_location_zone():
         return jsonify({"ok": True, "zone": zone, "lat": session.get("client_lat"), "lon": session.get("client_lon")})
     except Exception as e:
         logger.warning("Erreur enregistrement zone manuelle: %s", e)
-        return jsonify({"ok": False, "error": str(e)}), 500
+        return jsonify({"ok": False, "error": "Zone non enregistree."}), 500
 
 
 @app.route("/api/location/denied", methods=["POST"])
@@ -1094,8 +1156,10 @@ def health_db():
             conn.close()
     except Exception as exc:
         logger.exception("Echec de la connexion a la base de donnees")
-        return jsonify({"status": "error", "db": "disconnected",
-                        "error": str(exc)}), 500
+        payload = {"status": "error", "db": "disconnected"}
+        if app.config.get("DEBUG"):
+            payload["error"] = str(exc)
+        return jsonify(payload), 500
 
 
 # ---------------------------------------------------------------------------
@@ -1706,6 +1770,11 @@ def admin_google_callback():
     google_client = _get_google_client()
     if not google_client:
         flash("La connexion Google n'est pas configuree.", "error")
+        return redirect(url_for("admin_login"))
+
+    # Le flux doit avoir demarre via /admin/login/google (anti-rejeu).
+    if not session.pop("oauth_admin", False):
+        flash("Session de connexion invalide. Reessayez.", "error")
         return redirect(url_for("admin_login"))
 
     try:
@@ -3157,9 +3226,8 @@ def dashboard():
         except Exception:
             unread_count = 0
     except Exception as exc:
-        import traceback
-        traceback.print_exc()
-        flash(f"Erreur dashboard : {exc}", "error")
+        logger.exception("Erreur dashboard client: %s", exc)
+        flash("Une erreur est survenue lors du chargement du tableau de bord.", "error")
         return render_template("dashboard_client.html", user=user,
                                categories=categories if 'categories' in locals() else [],
                                artisans=artisans if 'artisans' in locals() else [],
@@ -3304,25 +3372,24 @@ def artisan_dashboard():
     finally:
         conn.close()
 
-    with app.open_resource("templates/dashboard_artisan.html", "r", encoding="utf-8") as f:
-        html = render_template_string(
-            f.read(), user=user,
-            stats={"nouvelles": nouvelles, "assignees": assignees,
-                   "urgentes": urgentes, "a_venir": a_venir,
-                   "terminees": terminees, "revenus": revenus,
-                   "note_avg": note["avg"], "note_count": note["cnt"]},
-            active_mission=active_mission, missions=missions,
-            historique=missions_historique, avis=avis,
-            unread_count=unread_count,
-            contacts=contacts,
-            new_contact_count=new_contact_count,
-            services_disponibles=services_disponibles,
-            artisan_services_ids=artisan_services_ids)
-        response = make_response(html)
-        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
-        response.headers['Pragma'] = 'no-cache'
-        response.headers['Expires'] = '0'
-        return response
+    html = render_template(
+        "dashboard_artisan.html", user=user,
+        stats={"nouvelles": nouvelles, "assignees": assignees,
+               "urgentes": urgentes, "a_venir": a_venir,
+               "terminees": terminees, "revenus": revenus,
+               "note_avg": note["avg"], "note_count": note["cnt"]},
+        active_mission=active_mission, missions=missions,
+        historique=missions_historique, avis=avis,
+        unread_count=unread_count,
+        contacts=contacts,
+        new_contact_count=new_contact_count,
+        services_disponibles=services_disponibles,
+        artisan_services_ids=artisan_services_ids)
+    response = make_response(html)
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
 
 @app.route("/dashboard/technicien/contact/<int:contact_id>/status", methods=["POST"])
@@ -3942,7 +4009,8 @@ def api_techniciens():
 
         return jsonify({"technicians": technicians}), 200
     except Exception as exc:
-        return jsonify({"error": str(exc)}), 500
+        logger.exception("Erreur API artisans: %s", exc)
+        return jsonify({"error": "Impossible de charger les artisans."}), 500
 
 
 @app.route("/artisans/<int:artisan_id>/contact")
@@ -5374,12 +5442,16 @@ def page_not_found(error):
 @app.errorhandler(500)
 def internal_error(error):
     import sys, traceback
-    exc_info = sys.exc_info()
-    if exc_info[0]:
-        message = "".join(traceback.format_exception(*exc_info))
-    else:
-        message = str(error)
     logger.exception("Erreur interne: %s", error)
+    # La trace complete n'est exposee qu'en mode debug : en production elle
+    # divulguerait le code source, les requetes SQL et la logique interne.
+    message = None
+    if app.config.get("DEBUG"):
+        exc_info = sys.exc_info()
+        if exc_info[0]:
+            message = "".join(traceback.format_exception(*exc_info))
+        else:
+            message = str(error)
     return render_template("500.html", message=message), 500
 
 
@@ -5676,6 +5748,23 @@ def admin_settings():
 # API interne pour le dashboard admin Next.js
 # ---------------------------------------------------------------------------
 
+_SENSITIVE_USER_KEYS = ("password_hash", "reset_token", "activation_token")
+
+
+def _public_user(row, extra_keys=()):
+    """Convertit une ligne utilisateur en dict sans les champs sensibles.
+
+    Evite de divulguer les hachages de mot de passe (et autres secrets) dans
+    les reponses JSON de l'API admin.
+    """
+    if row is None:
+        return None
+    clean = dict(row)
+    for key in _SENSITIVE_USER_KEYS + tuple(extra_keys):
+        clean.pop(key, None)
+    return clean
+
+
 def _require_api_key():
     """Verifie la cle API partagee entre Flask et le dashboard Next.js.
 
@@ -5685,7 +5774,7 @@ def _require_api_key():
     if not key:
         return jsonify({"error": "ADMIN_API_KEY non configuree"}), 500
     header = request.headers.get("X-API-Key", "")
-    if header != key:
+    if not secrets.compare_digest(str(header), str(key)):
         return jsonify({"error": "Non autorise"}), 401
     return None
 
@@ -5744,7 +5833,7 @@ def api_admin_techniciens():
             " WHERE u.role = 'technician'"
             " GROUP BY u.id"
             " ORDER BY u.is_verified ASC, u.is_active DESC, u.created_at DESC").fetchall()
-        return jsonify([dict(r) for r in rows])
+        return jsonify([_public_user(r) for r in rows])
     finally:
         conn.close()
 
@@ -5814,7 +5903,7 @@ def api_admin_create_technicien():
             " LEFT JOIN technician_documents d ON d.technician_id = u.id"
             " WHERE u.phone = ?"
             " GROUP BY u.id", (phone,)).fetchone()
-        return jsonify(dict(user))
+        return jsonify(_public_user(user))
     finally:
         conn.close()
 
@@ -6722,8 +6811,13 @@ def _get_or_create_guest_user(conn):
 
 
 @app.route("/messages/artisan/<int:artisan_id>", methods=["GET"])
+@limiter.limit("15 per hour")
 def client_message_artisan(artisan_id):
-    """Ouvre directement la messagerie FixPro sans inscription."""
+    """Ouvre directement la messagerie FixPro sans inscription.
+
+    Cette route cree un compte visiteur anonyme et une conversation : elle est
+    donc limitee en debit pour empecher un robot de gonfler la table users.
+    """
     conn = get_db_connection()
     try:
         artisan = conn.execute(

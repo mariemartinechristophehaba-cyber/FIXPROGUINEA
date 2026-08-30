@@ -1,42 +1,46 @@
 import { NextResponse, NextRequest } from 'next/server';
-
-function serializeCookie(
-  name: string,
-  value: string,
-  options: { httpOnly?: boolean; secure?: boolean; sameSite?: string; maxAge?: number; path?: string } = {}
-) {
-  const { httpOnly = true, secure = false, sameSite = 'Lax', maxAge = 86400, path = '/' } = options;
-  let cookie = `${name}=${encodeURIComponent(value)}; Path=${path}; Max-Age=${maxAge}; SameSite=${sameSite}`;
-  if (httpOnly) cookie += '; HttpOnly';
-  if (secure) cookie += '; Secure';
-  return cookie;
-}
+import {
+  verifySessionToken,
+  createSessionToken,
+  timingSafeEqual,
+  SESSION_COOKIE,
+  sessionCookieOptions,
+} from '@/lib/session';
 
 export async function POST(request: NextRequest) {
-  try {
-    const token = request.cookies.get('admin-token')?.value;
-    if (!token) {
-      return NextResponse.json({ error: 'Session non initialisee.' }, { status: 403 });
-    }
+  const session = await verifySessionToken(
+    request.cookies.get(SESSION_COOKIE)?.value
+  );
+  if (!session) {
+    return NextResponse.json({ error: 'Session non initialisee.' }, { status: 401 });
+  }
 
-    const body = await request.json();
-    const { password } = body || {};
-
-    const expectedPassword = process.env.ADMIN_DASHBOARD_UNLOCK || 'fixpro';
-    const masterPassword = 'fixpro';
-
-    if (password !== expectedPassword && password !== masterPassword) {
-      return NextResponse.json({ error: 'Mot de passe deverrouillage incorrect.' }, { status: 401 });
-    }
-
-    const response = NextResponse.json({ ok: true });
-    const isProduction = process.env.NODE_ENV === 'production';
-    response.headers.append(
-      'Set-Cookie',
-      serializeCookie('admin-unlocked', '1', { secure: isProduction })
+  const expected = process.env.ADMIN_DASHBOARD_UNLOCK;
+  if (!expected) {
+    return NextResponse.json(
+      { error: 'Deverrouillage admin non configure.' },
+      { status: 500 }
     );
-    return response;
+  }
+
+  let body: any;
+  try {
+    body = await request.json();
   } catch {
     return NextResponse.json({ error: 'Requete invalide.' }, { status: 400 });
   }
+
+  const password = String(body?.password || '');
+
+  if (!timingSafeEqual(password, expected)) {
+    return NextResponse.json(
+      { error: 'Mot de passe deverrouillage incorrect.' },
+      { status: 401 }
+    );
+  }
+
+  const token = await createSessionToken(session.sub, true);
+  const response = NextResponse.json({ ok: true });
+  response.cookies.set(SESSION_COOKIE, token, sessionCookieOptions());
+  return response;
 }

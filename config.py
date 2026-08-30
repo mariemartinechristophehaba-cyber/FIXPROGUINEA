@@ -8,6 +8,7 @@ import logging
 import os
 import secrets
 import sys
+from datetime import timedelta
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -84,12 +85,17 @@ class Config:
     # Journalisation
     LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
 
+    # Stockage du compteur de rate limiting. "memory://" ne fonctionne pas en
+    # serverless (Vercel) : chaque invocation repart d'un process vide, donc les
+    # limites ne s'appliquent jamais. Fournir alors une URL Redis / Upstash.
+    RATELIMIT_STORAGE_URI = os.getenv("RATELIMIT_STORAGE_URI", "memory://").strip()
+
     # Securite des sessions
     SECRET_KEY = os.getenv("SECRET_KEY", "").strip()
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
     SESSION_COOKIE_SECURE = True
-    PERMANENT_SESSION_LIFETIME = 86400
+    PERMANENT_SESSION_LIFETIME = timedelta(days=1)
     WTF_CSRF_TIME_LIMIT = 86400
 
 
@@ -109,12 +115,25 @@ class ProductionConfig(Config):
     DEBUG = False
 
 
+_PLACEHOLDER_MARKERS = ("remplacez", "change_me", "changeme", "votre-",
+                        "your-", "example", "placeholder", "a_generer",
+                        "generee")
+
+
+def _is_placeholder(value):
+    """Detecte une valeur d'exemple laissee dans la configuration."""
+    v = (value or "").strip().lower()
+    return not v or any(marker in v for marker in _PLACEHOLDER_MARKERS)
+
+
 def get_config():
     """Retourne la configuration correspondant a FLASK_ENV ou a Vercel.
 
-    En production, SECRET_KEY doit imperativement etre fournie : une cle
-    generee au demarrage serait differente sur chaque instance Vercel, ce
-    qui deconnecterait les utilisateurs en permanence.
+    En production, plusieurs variables sont obligatoires et validees ici :
+    - SECRET_KEY : une cle generee au demarrage differerait sur chaque
+      instance Vercel et deconnecterait les utilisateurs en permanence ;
+    - DATABASE_URL : le systeme de fichiers Vercel est en lecture seule, un
+      repli sur SQLite ferait planter l'application.
     """
     env = os.getenv("FLASK_ENV", "development").lower()
     vercel_env = os.getenv("VERCEL_ENV", "").lower()
@@ -124,10 +143,23 @@ def get_config():
 
     if is_production:
         config = ProductionConfig()
-        if not config.SECRET_KEY:
+        errors = []
+        if _is_placeholder(config.SECRET_KEY):
+            errors.append(
+                "SECRET_KEY doit contenir une valeur forte "
+                "(generez-la avec : python manage.py secret).")
+        if not config.DATABASE_URL.startswith(("postgres://", "postgresql://")):
+            errors.append(
+                "DATABASE_URL doit pointer vers PostgreSQL/Supabase "
+                "(le systeme de fichiers Vercel est en lecture seule).")
+        if config.ADMIN_API_KEY and _is_placeholder(config.ADMIN_API_KEY):
+            errors.append("ADMIN_API_KEY contient une valeur d'exemple.")
+        if config.ADMIN_PASSWORD and _is_placeholder(config.ADMIN_PASSWORD):
+            errors.append("ADMIN_PASSWORD contient une valeur d'exemple.")
+        if errors:
             raise RuntimeError(
-                "SECRET_KEY est obligatoire en production. "
-                "Definissez-la dans les variables d'environnement Vercel.")
+                "Configuration de production invalide :\n  - "
+                + "\n  - ".join(errors))
         return config
 
     if env == "testing":

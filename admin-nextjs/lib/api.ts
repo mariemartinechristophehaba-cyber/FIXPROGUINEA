@@ -1,16 +1,25 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:5000';
-const API_KEY = process.env.NEXT_PUBLIC_ADMIN_API_KEY || '';
+/**
+ * Client API du dashboard admin.
+ *
+ * Les appels ne vont PLUS directement vers Flask : ils passent par le proxy
+ * same-origin `/api/proxy/*`, qui detient la cle ADMIN_API_KEY cote serveur
+ * et verifie la session. Aucun secret n'est expose au navigateur.
+ */
 
 async function fetchJson<T = any>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
+  const proxyPath = path.replace(/^\/api\/admin/, '/api/proxy');
+  const res = await fetch(proxyPath, {
+    credentials: 'same-origin',
     headers: {
       'Content-Type': 'application/json',
-      'X-API-Key': API_KEY,
       ...(init?.headers || {}),
     },
     ...init,
   });
   if (!res.ok) {
+    if ((res.status === 401 || res.status === 403) && typeof window !== 'undefined') {
+      window.location.href = '/admin/login';
+    }
     const text = await res.text();
     throw new Error(`Erreur ${res.status}: ${text}`);
   }
