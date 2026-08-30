@@ -1,16 +1,261 @@
-<!doctype html>
-<html lang="fr">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#155EEF" />
-  <title>{% if user.role == 'client' %}Mes reservations{% else %}Missions{% endif %} - FixPro</title>
-</head>
-<body>
-  {# Page reservations videe avant refonte - nouvelle version a implementer.
-     Contexte disponible : `requests` (liste), `user`. #}
-  <main style="max-width:480px;margin:0 auto;padding:24px;font-family:system-ui,sans-serif;">
-    <p>Page Reservations en cours de refonte.</p>
-  </main>
-</body>
-</html>
+{% extends 'base.html' %}
+{% set nav_user = nav_user or user %}
+
+{% block title %}Mes reservations - FixPro{% endblock %}
+
+{%- macro cat_kind(item) -%}
+  {%- set c = ((item.category or '') ~ ' ' ~ (item.artisan_profession or '') ~ ' ' ~ (item.service or '') ~ ' ' ~ (item.title or ''))|lower -%}
+  {%- if 'plomb' in c or 'fuite' in c or 'eau' in c -%}plumb
+  {%- elif 'electr' in c or 'élec' in c or 'prise' in c or 'courant' in c -%}elec
+  {%- elif 'frigo' in c or 'clim' in c or 'froid' in c or 'climatis' in c -%}cold
+  {%- elif 'peint' in c -%}paint
+  {%- else -%}other{%- endif -%}
+{%- endmacro -%}
+
+{%- macro bucket(item) -%}
+  {%- set s = (item.status or '')|lower -%}
+  {%- if s in ('completed', 'done', 'termine', 'terminee') -%}done
+  {%- elif s in ('cancelled', 'canceled', 'rejected', 'refused', 'annulee', 'annule') -%}cancelled
+  {%- elif s in ('in_progress', 'en_route', 'on_the_way', 'arrived', 'quote_accepted', 'en cours') -%}ongoing
+  {%- else -%}upcoming{%- endif -%}
+{%- endmacro -%}
+
+{% block appbar %}
+<header class="rz-appbar">
+  <button class="rz-appbar-btn" id="burgerBtn" type="button" aria-label="Ouvrir le menu">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+  </button>
+  <a href="{{ url_for('index') }}" class="rz-appbar-brand">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--f-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="M14.5 8.5a2 2 0 0 1-2.6 2.6l-2.5 2.5-1.4-1.4 2.5-2.5a2 2 0 0 1 2.6-2.6l-1.2 1.2 1.1 1.1 1.2-1.2Z" fill="var(--f-primary)" stroke="none"/></svg>
+    <span>Fix<em>Pro</em></span>
+  </a>
+  <div class="rz-appbar-right">
+    <a href="{{ url_for('notifications') }}" class="rz-appbar-btn" aria-label="Notifications">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      {% if unread_count|default(0) > 0 %}<span class="rz-appbar-badge">{{ unread_count if unread_count < 10 else '9+' }}</span>{% endif %}
+    </a>
+    <a href="{{ url_for('profile') }}" class="rz-appbar-avatar" aria-label="Mon profil">
+      {% if nav_user and nav_user.photo_url %}<img src="{{ nav_user.photo_url }}" alt="" />{% else %}<span>{{ (nav_user.full_name or 'U')[0]|upper if nav_user else 'U' }}</span>{% endif %}
+    </a>
+  </div>
+</header>
+{% include '_drawer.html' %}
+{% endblock %}
+
+{% block main_class %}rz-page{% endblock %}
+
+{% block content %}
+{% set counts = namespace(all=0, upcoming=0, ongoing=0, done=0, cancelled=0) %}
+{% for item in requests %}
+  {% set b = bucket(item)|trim %}
+  {% set counts.all = counts.all + 1 %}
+  {% if b == 'upcoming' %}{% set counts.upcoming = counts.upcoming + 1 %}
+  {% elif b == 'ongoing' %}{% set counts.ongoing = counts.ongoing + 1 %}
+  {% elif b == 'done' %}{% set counts.done = counts.done + 1 %}
+  {% elif b == 'cancelled' %}{% set counts.cancelled = counts.cancelled + 1 %}{% endif %}
+{% endfor %}
+
+<div class="rz">
+  <div class="rz-head">
+    <h1>Mes réservations</h1>
+    <p>Consultez et gérez toutes vos réservations</p>
+  </div>
+
+  <div class="rz-filters" role="tablist">
+    <button class="rz-chip active" data-filter="all" role="tab">Toutes <span class="rz-chip-n">{{ counts.all }}</span></button>
+    <button class="rz-chip" data-filter="upcoming" role="tab">À venir <span class="rz-chip-n">{{ counts.upcoming }}</span></button>
+    <button class="rz-chip" data-filter="ongoing" role="tab">En cours <span class="rz-chip-n">{{ counts.ongoing }}</span></button>
+    <button class="rz-chip" data-filter="done" role="tab">Terminées <span class="rz-chip-n">{{ counts.done }}</span></button>
+    <button class="rz-chip" data-filter="cancelled" role="tab">Annulées <span class="rz-chip-n">{{ counts.cancelled }}</span></button>
+  </div>
+
+  <div class="rz-toolbar">
+    <div class="rz-search">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input type="search" id="rzSearch" placeholder="Rechercher une réservation..." autocomplete="off" />
+    </div>
+    <details class="rz-sort">
+      <summary>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+        Filtrer
+      </summary>
+      <div class="rz-sort-menu">
+        <button data-sort="recent" class="active">Plus récentes d'abord</button>
+        <button data-sort="old">Plus anciennes d'abord</button>
+      </div>
+    </details>
+  </div>
+
+  <h2 class="rz-list-title" id="rzListTitle">Toutes les réservations ({{ counts.all }})</h2>
+
+  <div class="rz-list" id="rzList">
+    {% for item in requests %}
+    {% set b = bucket(item)|trim %}
+    {% set kind = cat_kind(item)|trim %}
+    {% set title = item.title or 'Réservation' %}
+    <article class="rz-card" data-bucket="{{ b }}" data-ts="{{ item.created_at or '' }}"
+             data-search="{{ (title ~ ' ' ~ (item.artisan_name or '') ~ ' ' ~ (item.address or '') ~ ' ' ~ (item.reference or '') ~ ' ' ~ (item.category or ''))|lower }}">
+      <a class="rz-card-main" href="{{ url_for('request_detail', request_id=item.id) }}">
+        <span class="rz-card-icon rz-ic-{{ kind }}">
+          {% if kind == 'plumb' %}<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h6v3H3zM9 6h4a3 3 0 0 1 3 3v1h4M12 10v4a4 4 0 0 0 4 4v0a4 4 0 0 0 4-4"/></svg>
+          {% elif kind == 'elec' %}<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M13 2 4.5 13.5a.6.6 0 0 0 .5.9h5l-1 7.6 8.5-11.5a.6.6 0 0 0-.5-.9h-5z"/></svg>
+          {% elif kind == 'cold' %}<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M4 5l16 14M20 5 4 19M2 12h20"/></svg>
+          {% elif kind == 'paint' %}<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="13" height="6" rx="1"/><path d="M16 7h3a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-7v3M11 16h2v6h-2z"/></svg>
+          {% else %}<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>{% endif %}
+        </span>
+        <div class="rz-card-body">
+          <span class="rz-tag rz-tag-{{ b }}">
+            {%- if b == 'upcoming' %}À venir{% elif b == 'ongoing' %}En cours{% elif b == 'done' %}Terminée{% else %}Annulée{% endif -%}
+          </span>
+          <h3 class="rz-card-title">{{ title }}</h3>
+          <p class="rz-card-line">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+            {{ item.address or 'Conakry' }}
+          </p>
+          <p class="rz-card-line">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+            {% if item.requested_date %}{{ item.requested_date }}{% if item.requested_time %} à {{ item.requested_time }}{% endif %}
+            {% elif item.created_at %}{{ item.created_at[:10] }}{% else %}Date à confirmer{% endif %}
+          </p>
+        </div>
+        <div class="rz-card-side">
+          <span class="rz-ref">Réf. {{ item.reference or ('RES-%05d' % item.id) }}</span>
+          {% if b == 'done' %}
+            <span class="rz-side-status ok"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-1 14-4-4 1.4-1.4L11 13.2l4.6-4.6L17 10z"/></svg> Terminée</span>
+          {% elif b == 'cancelled' %}
+            <span class="rz-side-status ko">✕ Annulée</span>
+          {% else %}
+            <span class="rz-side-status">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+              {{ item.requested_time or 'À confirmer' }}
+            </span>
+          {% endif %}
+        </div>
+        <svg class="rz-card-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </a>
+      <div class="rz-card-foot">
+        <div class="rz-pro">
+          <span class="rz-pro-avatar">
+            {% if item.artisan_photo %}<img src="{{ item.artisan_photo }}" alt="" />{% else %}<span>{{ (item.artisan_name or 'P')[0]|upper }}</span>{% endif %}
+          </span>
+          <div>
+            <strong>{{ item.artisan_name or 'Professionnel à assigner' }}</strong>
+            <span class="rz-pro-meta">
+              {{ item.artisan_profession or item.category or 'Intervention' }}
+              {% if item.artisan_rating %}<span class="rz-star">★ {{ '%.1f'|format(item.artisan_rating) }}</span>{% endif %}
+            </span>
+          </div>
+        </div>
+        {% if b == 'ongoing' %}
+        <a class="rz-btn rz-btn-primary" href="{{ url_for('request_detail', request_id=item.id) }}">Suivre l'intervention</a>
+        {% else %}
+        <a class="rz-btn rz-btn-ghost" href="{{ url_for('request_detail', request_id=item.id) }}">Voir détails</a>
+        {% endif %}
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+
+  <div class="rz-empty" id="rzEmpty" hidden>
+    <span class="rz-empty-icon">
+      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+    </span>
+    <strong>Aucune réservation</strong>
+    <p>Aucune réservation ne correspond à cette vue.</p>
+    <a class="rz-btn rz-btn-primary" href="{{ url_for('artisans_page') }}">Réserver un professionnel</a>
+  </div>
+</div>
+{% endblock %}
+
+{% block tabbar %}
+<nav class="tabbar rz-tabbar">
+  <a class="tab" href="{{ url_for('index') }}">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
+    <span>Accueil</span>
+  </a>
+  <a class="tab" href="{{ url_for('artisans_page') }}">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <span>Recherche</span>
+  </a>
+  <a class="tab tab-fab active" href="{{ url_for('requests_list') }}">
+    <span class="tab-fab-circle"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>
+    <span>Réservations</span>
+  </a>
+  <a class="tab" href="{{ url_for('conversations') }}">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 21l1.9-5.1A8.4 8.4 0 0 1 4 11.5a8.5 8.5 0 0 1 8.5-8.5A8.5 8.5 0 0 1 21 11.5z"/></svg>
+    <span>Messages</span>
+  </a>
+  <a class="tab" href="{{ url_for('profile') }}">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
+    <span>Profil</span>
+  </a>
+</nav>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  (function () {
+    var list = document.getElementById('rzList');
+    if (!list) return;
+    var cards = Array.prototype.slice.call(list.querySelectorAll('.rz-card'));
+    var chips = document.querySelectorAll('.rz-chip');
+    var search = document.getElementById('rzSearch');
+    var title = document.getElementById('rzListTitle');
+    var empty = document.getElementById('rzEmpty');
+    var sortBtns = document.querySelectorAll('.rz-sort-menu button');
+    var state = { filter: 'all', q: '', sort: 'recent' };
+
+    var LABELS = { all: 'Toutes les réservations', upcoming: 'Réservations à venir', ongoing: 'Interventions en cours', done: 'Réservations terminées', cancelled: 'Réservations annulées' };
+
+    function apply() {
+      var visible = 0;
+      cards.forEach(function (c) {
+        var okF = state.filter === 'all' || c.dataset.bucket === state.filter;
+        var okQ = !state.q || (c.dataset.search || '').indexOf(state.q) !== -1;
+        var show = okF && okQ;
+        c.hidden = !show;
+        if (show) visible++;
+      });
+      title.textContent = LABELS[state.filter] + ' (' + visible + ')';
+      empty.hidden = visible !== 0;
+    }
+
+    function sort() {
+      var sorted = cards.slice().sort(function (a, b) {
+        var av = a.dataset.ts || '', bv = b.dataset.ts || '';
+        return state.sort === 'recent' ? bv.localeCompare(av) : av.localeCompare(bv);
+      });
+      sorted.forEach(function (c) { list.appendChild(c); });
+    }
+
+    chips.forEach(function (chip) {
+      chip.addEventListener('click', function () {
+        chips.forEach(function (x) { x.classList.remove('active'); });
+        chip.classList.add('active');
+        state.filter = chip.dataset.filter;
+        apply();
+      });
+    });
+
+    if (search) {
+      search.addEventListener('input', function () {
+        state.q = search.value.trim().toLowerCase();
+        apply();
+      });
+    }
+
+    sortBtns.forEach(function (b) {
+      b.addEventListener('click', function () {
+        sortBtns.forEach(function (x) { x.classList.remove('active'); });
+        b.classList.add('active');
+        state.sort = b.dataset.sort;
+        sort();
+        var d = document.querySelector('.rz-sort');
+        if (d) d.removeAttribute('open');
+      });
+    });
+
+    apply();
+  })();
+</script>
+{% endblock %}
