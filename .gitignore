@@ -67,3 +67,7 @@ static/uploads/
 .DS_Store
 Thumbs.db
 .vercel
+
+.claude/settings.local.json
+
+.claude/settings.local.json
