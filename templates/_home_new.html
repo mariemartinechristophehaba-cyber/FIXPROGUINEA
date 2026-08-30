@@ -1,6 +1,14 @@
 <input type="hidden" id="locCsrf" value="{{ csrf_token() }}" />
 {% set loc_state = loc_permission or 'prompt' %}
 
+<svg width="0" height="0" style="position:absolute;left:-9999px;" aria-hidden="true">
+  <defs>
+    <clipPath id="hp-header-wave" clipPathUnits="objectBoundingBox">
+      <path d="M0,0 H1 V0.65 C0.75,0.95 0.25,0.95 0,0.65 Z" />
+    </clipPath>
+  </defs>
+</svg>
+
 {% set pro_labels = {
   'Plombier': 'Plombier',
   'Plomberie': 'Plombier',
@@ -89,18 +97,15 @@
   .hp-header {
     background: linear-gradient(135deg, var(--hp-primary) 0%, var(--hp-primary-dark) 100%);
     color: #fff; position: sticky; top: 0; z-index: 100;
-    padding: 16px 16px 0;
+    padding: 16px 16px 90px;
     padding-top: calc(16px + env(safe-area-inset-top));
+    clip-path: url(#hp-header-wave);
   }
   .hp-header-top {
     max-width: 1200px; margin: 0 auto;
     display: flex; align-items: center; justify-content: space-between;
     position: relative;
   }
-  .hp-header-wave {
-    width: 100%; height: 70px; background: #fff; overflow: hidden; line-height: 0;
-  }
-  .hp-header-wave svg { width: 100%; height: 100%; display: block; }
   .hp-menu-btn {
     background: transparent; border: none; color: #fff; padding: 4px; cursor: pointer;
   }
@@ -360,11 +365,6 @@
         {% endif %}
       </a>
     </div>
-  </div>
-  <div class="hp-header-wave">
-    <svg viewBox="0 0 375 80" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M0,0 H375 V45 C280,80 95,80 0,45 Z" fill="#155EEF"/>
-    </svg>
   </div>
 </header>
 
