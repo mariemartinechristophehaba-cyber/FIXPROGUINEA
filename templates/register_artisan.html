@@ -33,7 +33,7 @@
 {% endblock %}
 {% block footer %}{% endblock %}
 {% block extra_head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/fixpro-auth.css', v='19') }}" />
+<link rel="stylesheet" href="{{ url_for('static', filename='css/fixpro-auth.css', v='20') }}" />
 <style>
   .fa-service-grid { display: grid !important; grid-template-columns: 1fr 1fr !important; grid-auto-rows: 1fr !important; gap: 10px !important; margin-top: 8px !important; }
   .fa-service-card { display: flex !important; align-items: center !important; justify-content: space-between !important; gap: 8px !important; background: #fff !important; border: 1.5px solid #E5E7EB !important; border-radius: 14px !important; padding: 14px !important; min-height: 86px !important; height: 100% !important; overflow: hidden !important; cursor: pointer !important; transition: all .2s !important; }
@@ -252,17 +252,28 @@
               <p class="fa-subtitle">Sélectionnez votre domaine d'expertise.</p>
             </div>
             <span class="fa-step-head-art" aria-hidden="true">
-              <svg width="76" height="76" viewBox="0 0 64 64" fill="none">
+              <svg width="80" height="80" viewBox="0 0 64 64" fill="none">
                 <circle cx="32" cy="32" r="30" fill="#EEF3FF"/>
-                <g transform="rotate(18 33 20)">
-                  <rect x="31" y="8" width="4.5" height="9" rx="2.25" fill="#F5A623"/>
-                  <rect x="32" y="16" width="2.5" height="13" rx="1.25" fill="#9DBEF5"/>
+                <!-- Tournevis -->
+                <g transform="rotate(24 41 20)">
+                  <rect x="37.5" y="4" width="7" height="12" rx="3.5" fill="#F5A623"/>
+                  <rect x="38.5" y="15" width="5" height="3" rx="1" fill="#D98B12"/>
+                  <rect x="39.5" y="17" width="3" height="15" rx="1.5" fill="#CBD5E1"/>
+                  <path d="M39.5 32h3l-1.5 3z" fill="#94A3B8"/>
                 </g>
-                <path d="M20 15.5a4.5 4.5 0 0 0 5.9 4.3l2.4 2.4-3.4 3.4-2.4-2.4a4.5 4.5 0 0 1-4.3-5.9l2.4 2.4 1.8-1.8z" fill="#9DBEF5"/>
-                <path d="M13 29h38v16.5a2.5 2.5 0 0 1-2.5 2.5H15.5A2.5 2.5 0 0 1 13 45.5z" fill="#2563EB"/>
-                <path d="M13 29l4.6-5.7A2 2 0 0 1 19.2 22.5h25.6a2 2 0 0 1 1.6.8L51 29z" fill="#1D4ED8"/>
-                <path d="M26.5 22v-1.5a5.5 5.5 0 0 1 11 0V22" stroke="#1D4ED8" stroke-width="3" stroke-linecap="round"/>
-                <rect x="28" y="33.5" width="8" height="5" rx="1.5" fill="#BFD7FF"/>
+                <!-- Cle plate -->
+                <g transform="rotate(-14 24 22)">
+                  <path d="M20 6a6 6 0 0 0 2 11.7 6 6 0 0 0 4-1.2l1.6 1.6-6.4 6.4-1.6-1.6a2.5 2.5 0 0 1-3.5 0 2.5 2.5 0 0 1 0-3.5l1.6 1.6 6.4-6.4-1.6-1.6A6 6 0 0 0 26 4.5L22.7 7.8a1.6 1.6 0 0 1-2.3 0L20 6z" fill="#93C5FD"/>
+                </g>
+                <!-- Corps de la boite -->
+                <path d="M11 30h42v15.5a3.5 3.5 0 0 1-3.5 3.5H14.5A3.5 3.5 0 0 1 11 45.5z" fill="#2563EB"/>
+                <!-- Couvercle -->
+                <path d="M11 30l5.6-7A2.5 2.5 0 0 1 18.5 22h27a2.5 2.5 0 0 1 1.9.9L53 30z" fill="#1D4ED8"/>
+                <!-- Anse -->
+                <path d="M25 21.5V20a7 7 0 0 1 14 0v1.5" fill="none" stroke="#1D4ED8" stroke-width="4" stroke-linecap="round"/>
+                <!-- Loquet -->
+                <rect x="27.5" y="35" width="9" height="5.5" rx="1.5" fill="#BFD7FF"/>
+                <line x1="11" y1="37" x2="53" y2="37" stroke="#1D4ED8" stroke-width="1.5" opacity=".5"/>
               </svg>
             </span>
           </div>
