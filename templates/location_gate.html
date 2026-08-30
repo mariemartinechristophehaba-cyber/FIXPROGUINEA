@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="csrf-token" content="{{ csrf_token() }}" />
+  <title>Votre position - FixPro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --primary: #155EEF; --primary-dark: #0F49C9;
+      --ink: #0F172A; --muted: #64748B; --faint: #94A3B8;
+      --line: #E6ECF5; --wash: #EEF4FF; --green: #16A34A; --surface: #fff;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0; background: var(--surface); color: var(--ink);
+      font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+      -webkit-font-smoothing: antialiased;
+      display: flex; flex-direction: column;
+    }
+    .lg-wrap { flex: 1; display: flex; flex-direction: column; max-width: 460px; width: 100%; margin: 0 auto; }
+
+    /* ---- gate ---- */
+    .gate { flex: 1; display: flex; flex-direction: column; padding: 24px 24px calc(28px + env(safe-area-inset-bottom)); text-align: center; }
+    .brand { font-family: "Space Grotesk", sans-serif; font-weight: 700; font-size: 17px; margin: 8px 0 0; }
+    .brand span { color: var(--primary); }
+
+    .map-card {
+      margin: 34px auto 0; width: 210px; height: 210px; border-radius: 28px;
+      background: radial-gradient(circle at 50% 45%, rgba(21,94,239,.10), transparent 62%), var(--wash);
+      border: 1px solid #DCE7FF; position: relative; overflow: hidden;
+    }
+    .map-card::before, .map-card::after { content: ""; position: absolute; background: rgba(21,94,239,.13); }
+    .map-card::before { left: 0; right: 0; height: 1px; top: 33%; box-shadow: 0 46px 0 rgba(21,94,239,.13), 0 92px 0 rgba(21,94,239,.09); }
+    .map-card::after  { top: 0; bottom: 0; width: 1px; left: 34%; box-shadow: 50px 0 0 rgba(21,94,239,.13), 100px 0 0 rgba(21,94,239,.09); }
+    .map-road { position: absolute; left: -10%; right: -10%; top: 58%; height: 13px; background: #fff; border-top: 1px solid #D4E1FB; border-bottom: 1px solid #D4E1FB; transform: rotate(-14deg); }
+    .pin { position: absolute; left: 50%; top: 46%; transform: translate(-50%,-100%); color: var(--primary); z-index: 2; filter: drop-shadow(0 6px 8px rgba(21,94,239,.35)); }
+    .pin-pulse { position: absolute; left: 50%; top: 46%; width: 14px; height: 14px; transform: translate(-50%,-50%); border-radius: 50%; background: rgba(21,94,239,.35); animation: lg-pulse 2.4s ease-out infinite; }
+    @keyframes lg-pulse { 0% { box-shadow: 0 0 0 0 rgba(21,94,239,.30); } 70% { box-shadow: 0 0 0 28px rgba(21,94,239,0); } 100% { box-shadow: 0 0 0 0 rgba(21,94,239,0); } }
+    @media (prefers-reduced-motion: reduce) { .pin-pulse { animation: none; } }
+
+    .gate h1 { font-family: "Space Grotesk", sans-serif; font-weight: 700; font-size: 24px; letter-spacing: -.02em; margin: 34px 0 10px; }
+    .gate .sub { margin: 0 auto; font-size: 14.5px; color: var(--muted); max-width: 30ch; line-height: 1.5; }
+
+    .actions { margin-top: auto; padding-top: 28px; display: flex; flex-direction: column; gap: 12px; }
+    .btn {
+      display: flex; align-items: center; justify-content: center; gap: 9px;
+      border: none; border-radius: 14px; padding: 16px; width: 100%;
+      font-family: "Inter", sans-serif; font-weight: 600; font-size: 15px; cursor: pointer;
+    }
+    .btn-primary { background: var(--primary); color: #fff; box-shadow: 0 10px 24px rgba(21,94,239,.28); }
+    .btn-primary:active { background: var(--primary-dark); }
+    .btn-primary[disabled] { opacity: .6; }
+    .btn-ghost { background: none; color: var(--primary); font-size: 14px; padding: 6px; }
+    .reassure { display: flex; gap: 8px; align-items: flex-start; margin-top: 4px; font-size: 12px; color: var(--muted); line-height: 1.4; text-align: left; }
+    .reassure svg { flex: none; color: var(--green); margin-top: 1px; }
+    .err { color: #C4392F; font-size: 12.5px; min-height: 1em; margin-top: 2px; }
+
+    /* ---- feuille quartiers ---- */
+    .sheet {
+      position: fixed; inset: 0; background: var(--surface); z-index: 20;
+      transform: translateY(100%); transition: transform .25s ease;
+      display: flex; flex-direction: column;
+    }
+    .sheet.open { transform: translateY(0); }
+    .sheet-head { display: flex; align-items: center; gap: 12px; padding: 16px 18px; border-bottom: 1px solid var(--line); }
+    .sheet-head button { background: none; border: none; padding: 4px; color: var(--ink); cursor: pointer; }
+    .sheet-head h2 { font-family: "Space Grotesk", sans-serif; font-weight: 700; font-size: 18px; margin: 0; }
+    .q-search { margin: 14px 18px 4px; display: flex; align-items: center; gap: 9px; border: 1px solid var(--line); border-radius: 12px; padding: 12px 13px; }
+    .q-search svg { flex: none; color: var(--muted); }
+    .q-search input { flex: 1; border: none; outline: none; font: inherit; font-size: 14px; background: none; color: var(--ink); }
+    .q-list { flex: 1; overflow-y: auto; padding: 8px 10px 24px; }
+    .q-item {
+      display: flex; align-items: center; gap: 12px; width: 100%;
+      padding: 13px 12px; border-radius: 12px; background: none; border: none;
+      font: inherit; font-size: 14.5px; color: var(--ink); cursor: pointer; text-align: left;
+    }
+    .q-item:active { background: var(--wash); }
+    .q-item .q-pin { width: 32px; height: 32px; border-radius: 9px; background: var(--wash); color: var(--primary); display: flex; align-items: center; justify-content: center; flex: none; }
+    .q-item .q-name { flex: 1; font-weight: 500; }
+    .q-empty { text-align: center; color: var(--muted); font-size: 13px; padding: 30px 16px; }
+  </style>
+</head>
+<body data-location-gate>
+  <div class="lg-wrap">
+    <div class="gate">
+      <p class="brand">Fix<span>Pro</span></p>
+
+      <div class="map-card" aria-hidden="true">
+        <div class="map-road"></div>
+        <span class="pin-pulse"></span>
+        <span class="pin">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c-4.14 0-7.5 3.36-7.5 7.5 0 5.05 5.78 11.06 6.79 12.06.4.4 1.03.4 1.42 0C13.72 20.56 19.5 14.55 19.5 9.5 19.5 5.36 16.14 2 12 2Zm0 10a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5Z"/></svg>
+        </span>
+      </div>
+
+      <h1>Où êtes-vous ?</h1>
+      <p class="sub">FixPro affiche les techniciens vérifiés de votre quartier à Conakry. Activez votre position pour commencer.</p>
+
+      <div class="actions">
+        <p class="err" id="lg-err" role="alert"></p>
+        <button class="btn btn-primary" id="lg-allow" type="button">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="2.5" fill="currentColor" stroke="none"/></svg>
+          <span id="lg-allow-label">Autoriser ma position</span>
+        </button>
+        <button class="btn btn-ghost" id="lg-manual" type="button">Choisir mon quartier manuellement</button>
+        <div class="reassure">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+          <span>Votre position sert seulement à trouver un technicien proche. Elle n'est jamais partagée avec eux.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sheet" id="lg-sheet" aria-hidden="true">
+    <div class="sheet-head">
+      <button type="button" id="lg-sheet-close" aria-label="Retour">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <h2>Votre quartier</h2>
+    </div>
+    <div class="q-search">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input type="text" id="lg-q-search" placeholder="Rechercher un quartier…" autocomplete="off" />
+    </div>
+    <div class="q-list" id="lg-q-list">
+      {% for q in quartiers %}
+      <button class="q-item" type="button" data-zone="{{ q }}">
+        <span class="q-pin"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c-4.14 0-7.5 3.36-7.5 7.5 0 5.05 5.78 11.06 6.79 12.06.4.4 1.03.4 1.42 0C13.72 20.56 19.5 14.55 19.5 9.5 19.5 5.36 16.14 2 12 2Zm0 10a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5Z"/></svg></span>
+        <span class="q-name">{{ q }}</span>
+      </button>
+      {% endfor %}
+      <p class="q-empty" id="lg-q-empty" hidden>Aucun quartier trouvé.</p>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/geo-auto.js') }}"></script>
+  <script>
+    (function () {
+      var NEXT = {{ (next or '/artisans') | tojson }};
+      var errEl = document.getElementById('lg-err');
+      var allowBtn = document.getElementById('lg-allow');
+      var allowLabel = document.getElementById('lg-allow-label');
+      var sheet = document.getElementById('lg-sheet');
+
+      function showSheet() { sheet.classList.add('open'); sheet.setAttribute('aria-hidden', 'false'); }
+      function hideSheet() { sheet.classList.remove('open'); sheet.setAttribute('aria-hidden', 'true'); }
+
+      allowBtn.addEventListener('click', function () {
+        errEl.textContent = '';
+        allowBtn.disabled = true;
+        allowLabel.textContent = 'Localisation…';
+        window.FixProGeo.request({
+          next: NEXT,
+          onDenied: function () {
+            allowBtn.disabled = false;
+            allowLabel.textContent = 'Autoriser ma position';
+            errEl.textContent = 'Autorisation refusée. Choisissez votre quartier ci-dessous.';
+            showSheet();
+          },
+          onError: function (msg) {
+            allowBtn.disabled = false;
+            allowLabel.textContent = 'Autoriser ma position';
+            errEl.textContent = msg || 'Position introuvable. Réessayez ou choisissez votre quartier.';
+          },
+          onUnsupported: function () {
+            allowBtn.disabled = false;
+            allowLabel.textContent = 'Autoriser ma position';
+            errEl.textContent = 'Géolocalisation non disponible. Choisissez votre quartier.';
+            showSheet();
+          }
+        });
+      });
+
+      document.getElementById('lg-manual').addEventListener('click', showSheet);
+      document.getElementById('lg-sheet-close').addEventListener('click', hideSheet);
+
+      document.getElementById('lg-q-list').addEventListener('click', function (e) {
+        var btn = e.target.closest('.q-item');
+        if (!btn) return;
+        btn.style.opacity = '.5';
+        window.FixProGeo.setZone(btn.dataset.zone, {
+          next: NEXT,
+          onError: function () { btn.style.opacity = '1'; errEl.textContent = 'Erreur. Réessayez.'; }
+        });
+      });
+
+      var search = document.getElementById('lg-q-search');
+      var emptyEl = document.getElementById('lg-q-empty');
+      search.addEventListener('input', function () {
+        var term = search.value.trim().toLowerCase();
+        var visible = 0;
+        document.querySelectorAll('#lg-q-list .q-item').forEach(function (it) {
+          var match = it.dataset.zone.toLowerCase().indexOf(term) !== -1;
+          it.hidden = !match;
+          if (match) visible++;
+        });
+        emptyEl.hidden = visible !== 0;
+      });
+    })();
+  </script>
+</body>
+</html>

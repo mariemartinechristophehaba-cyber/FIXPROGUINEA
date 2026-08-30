@@ -64,6 +64,10 @@ class Config:
     # Commission preleve par la plateforme sur chaque intervention
     FIXPRO_COMMISSION_RATE = float(os.getenv("FIXPRO_COMMISSION_RATE", "0.10"))
 
+    # Rayon (km) autour du client dans lequel un technicien est considere
+    # comme "de son secteur". Au-dela, il n'est pas affiche dans la recherche.
+    LOCAL_RADIUS_KM = float(os.getenv("LOCAL_RADIUS_KM", "10"))
+
     # Google OAuth (optionnel, pour le bouton "Continuer avec Google")
     GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "").strip()
     GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "").strip()

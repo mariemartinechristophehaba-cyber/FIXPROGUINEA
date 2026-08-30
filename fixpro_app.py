@@ -119,6 +119,17 @@ _ARTISAN_GEOCODE = {
     "taouyah": (9.6100, -13.6000),
 }
 
+# Liste proposee au client sur l'ecran de localisation (choix manuel du
+# quartier). Ordre = du centre-ville vers la peripherie.
+_CONAKRY_QUARTIERS = [
+    "Kaloum", "Almamya", "Sandervalia", "Coronthie", "Boulbinet",
+    "Dixinn", "Camayenne", "Belle-Vue", "Landreah",
+    "Matam", "Bonfi", "Madina", "Coleah", "Hamdallaye",
+    "Ratoma", "Taouyah", "Kipe", "Nongo", "Kaporo", "Lambanyi", "Sonfonia",
+    "Matoto", "Gbessia", "Yimbaya", "Dabompa", "Tanene", "Kissosso", "Simbaya",
+    "Bambeto", "Cosa", "Enta", "Wanindara", "Sangoyah",
+]
+
 
 def _nearest_zone(lat, lon, max_km=15.0):
     """Retourne le quartier connu le plus proche d'une position GPS.
@@ -970,9 +981,39 @@ def index():
     return response
 
 
+def _persist_client_location(lat=None, lon=None, zone=None):
+    """Enregistre la localisation du client dans son profil (s'il est connecte).
+
+    Permet a la position de survivre a la session : aux visites suivantes,
+    l'app connait deja son secteur sans rien redemander.
+    """
+    user_id = session.get("user_id")
+    if not user_id:
+        return
+    sets, params = [], []
+    if _is_valid_coordinate(lat, lon):
+        sets += ["latitude = ?", "longitude = ?"]
+        params += [float(lat), float(lon)]
+    if zone:
+        sets.append("quartier = ?")
+        params.append(zone)
+    if not sets:
+        return
+    params.append(user_id)
+    conn = get_db_connection()
+    try:
+        conn.execute("UPDATE users SET " + ", ".join(sets) + " WHERE id = ?", params)
+        conn.commit()
+    except Exception as exc:
+        conn.rollback()
+        logger.warning("Localisation non enregistree dans le profil: %s", exc)
+    finally:
+        conn.close()
+
+
 @app.route("/api/location", methods=["POST"])
 def set_location():
-    """Enregistre la position GPS du client en session."""
+    """Enregistre la position GPS du client en session (et dans son profil)."""
     try:
         data = request.get_json(force=True, silent=True) or {}
         lat = _to_float(data.get("lat"))
@@ -985,10 +1026,12 @@ def set_location():
         session["client_loc_accuracy"] = accuracy
         session["client_loc_at"] = datetime.now(timezone.utc).isoformat()
         session["loc_permission"] = "granted"
+        session.pop("loc_gate_dismissed", None)
         zone = _nearest_zone(lat, lon)
         if not zone:
             zone = _reverse_geocode(lat, lon) or "Ma position"
         session["client_zone"] = zone
+        _persist_client_location(lat, lon, zone if zone != "Ma position" else None)
         return jsonify({"ok": True, "zone": zone, "lat": lat, "lon": lon, "accuracy": accuracy})
     except Exception as e:
         logger.warning("Erreur enregistrement position: %s", e)
@@ -1013,12 +1056,17 @@ def set_location_zone():
             elif lat is not None and lon is not None:
                 coords = (lat, lon)
         session["client_zone"] = zone
+        session.pop("loc_gate_dismissed", None)
         if coords:
             session["client_lat"] = coords[0]
             session["client_lon"] = coords[1]
         else:
             session.pop("client_lat", None)
             session.pop("client_lon", None)
+        _persist_client_location(
+            coords[0] if coords else None,
+            coords[1] if coords else None,
+            zone)
         return jsonify({"ok": True, "zone": zone, "lat": session.get("client_lat"), "lon": session.get("client_lon")})
     except Exception as e:
         logger.warning("Erreur enregistrement zone manuelle: %s", e)
