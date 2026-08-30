@@ -3896,6 +3896,16 @@ def artisans_page():
             active_requests = {r["artisan_id"]: r["id"] for r in rows_req}
         categories = conn.execute(
             "SELECT id, name FROM service_categories ORDER BY name").fetchall()
+        unread_count = 0
+        if user:
+            try:
+                unread_row = conn.execute(
+                    "SELECT COUNT(*) AS n FROM notifications WHERE user_id = ? AND is_read = 0",
+                    (user["id"],)).fetchone()
+                unread_count = unread_row["n"] if unread_row else 0
+            except Exception:
+                conn.rollback()
+                unread_count = 0
     finally:
         conn.close()
 
@@ -3917,7 +3927,7 @@ def artisans_page():
     return render_template("artisans.html", artisans=artisans, user=user,
                            active_requests=active_requests, categories=categories,
                            category_filter=category,
-                           client_zone=client_zone,
+                           client_zone=client_zone, unread_count=unread_count,
                            query=query, zone=zone)
 
 

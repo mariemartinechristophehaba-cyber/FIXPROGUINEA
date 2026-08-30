@@ -3,280 +3,371 @@
 {% block header %}{% endblock %}
 {% block footer %}{% endblock %}
 {% block sidebar %}{% endblock %}
+{% block tabbar %}{% endblock %}
 
 {% block content %}
+{% set pro_labels = {
+  'Plombier': 'Plombier', 'Plomberie': 'Plombier', 'plombier': 'Plombier',
+  'Électricien': 'Électricien', 'Electricien': 'Électricien', 'Electricite': 'Électricien',
+  'Frigoriste': 'Frigoriste', 'Menuisier': 'Menuisier', 'Menuiserie': 'Menuisier',
+  'Peintre': 'Peintre', 'Peinture': 'Peintre', 'Maçon': 'Maçon', 'Maçonnerie': 'Maçon',
+  'Serrurier': 'Serrurier', 'Chauffagiste': 'Chauffagiste'
+} %}
+{% set sr_cats = [
+  {'name': 'Plombier',    'color': '#155EEF', 'bg': '#EEF4FF', 'svg': '<path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/>'},
+  {'name': 'Électricien', 'color': '#F7B718', 'bg': '#FFFBEB', 'svg': '<path d="M15.914 4a1.5 1.5 0 0 0-2.474-1.561l-9 9A1.5 1.5 0 0 0 5.5 14h4.002a.5.5 0 0 1 .471.666L8.086 20a1.5 1.5 0 0 0 2.475 1.56l9-9A1.5 1.5 0 0 0 18.5 10h-3.997a.5.5 0 0 1-.472-.667z"/>'},
+  {'name': 'Frigoriste',  'color': '#2EC3E5', 'bg': '#ECFBFF', 'svg': '<path d="m10 20-1.25-2.5L6 18"/><path d="M10 4 8.75 6.5 6 6"/><path d="m14 20 1.25-2.5L18 18"/><path d="m14 4 1.25 2.5L18 6"/><path d="m17 21-3-6h-4"/><path d="m17 3-3 6 1.5 3"/><path d="M2 12h6.5L10 9"/><path d="m20 10-1.5 2 1.5 2"/><path d="M22 12h-6.5L14 15"/><path d="m4 10 1.5 2L4 14"/><path d="m7 21 3-6-1.5-3"/><path d="m7 3 3 6h4"/>'},
+  {'name': 'Peintre',     'color': '#7C3AED', 'bg': '#F3F0FF', 'svg': '<rect width="16" height="6" x="2" y="2" rx="2"/><path d="M10 16v-2a2 2 0 0 1 2-2h8a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect width="4" height="6" x="8" y="16" rx="1"/>'},
+  {'name': 'Autres',      'color': '#64748B', 'bg': '#F1F5F9', 'svg': '<rect x="3" y="3" width="7" height="7" rx="1.6"/><rect x="14" y="3" width="7" height="7" rx="1.6"/><rect x="3" y="14" width="7" height="7" rx="1.6"/><rect x="14" y="14" width="7" height="7" rx="1.6"/>'}
+] %}
+
 <style>
-  .r-page { background: #F5F7FA; min-height: 100vh; padding-bottom: 80px; font-family: 'Inter', sans-serif; }
+  :root {
+    --sr-primary: #155EEF;
+    --sr-text: #0F172A;
+    --sr-muted: #64748B;
+    --sr-line: #E6ECF5;
+    --sr-bg: #FFFFFF;
+    --sr-green: #16A34A;
+  }
+  body { padding-bottom: 92px !important; background: var(--sr-bg); }
   .mobile-nav, .tabbar, .fx-tabbar, .guest-appbar, .topbar { display: none !important; }
 
-  .r-header {
-    background: #155EEF;
-    color: #fff;
-    padding: 12px 0;
-    position: sticky;
-    top: 0;
-    z-index: 100;
+  .sr-header {
+    position: sticky; top: 0; z-index: 100;
+    background: #fff; border-bottom: 1px solid var(--sr-line);
+    padding: 12px 16px; padding-top: calc(12px + env(safe-area-inset-top));
+    display: flex; align-items: center; gap: 14px;
   }
-  .r-header-inner {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 20px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+  .sr-menu { background: none; border: none; padding: 4px; color: var(--sr-text); cursor: pointer; }
+  .sr-title { font-size: 1.2rem; font-weight: 800; color: var(--sr-text); margin: 0; flex: 1; }
+  .sr-h-actions { display: flex; align-items: center; gap: 14px; }
+  .sr-notif { position: relative; display: flex; color: var(--sr-text); }
+  .sr-notif-badge {
+    position: absolute; top: -6px; right: -6px; min-width: 16px; height: 16px; padding: 0 3px;
+    background: #E6543A; color: #fff; font-size: 10px; font-weight: 700; border-radius: 50px;
+    display: flex; align-items: center; justify-content: center;
   }
-  .r-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; font-weight: 700; font-size: 20px; }
-  .r-logo-mark { width: 38px; height: 38px; background: rgba(255,255,255,.15); border-radius: 10px; display: flex; align-items: center; justify-content: center; }
-  .r-nav { display: none; align-items: center; gap: 28px; }
-  .r-nav a { color: rgba(255,255,255,.85); text-decoration: none; font-size: 14px; font-weight: 500; }
-  .r-nav a.active { color: #fff; position: relative; }
-  .r-nav a.active::after { content: ''; position: absolute; bottom: -6px; left: 0; right: 0; height: 3px; background: #fff; border-radius: 2px; }
-  .r-header-right { display: flex; align-items: center; gap: 18px; }
-  .r-loc { display: none; align-items: center; gap: 6px; font-size: 13px; color: rgba(255,255,255,.9); }
-  .r-loc select, .r-loc span { background: transparent; border: none; color: #fff; font-size: 13px; cursor: pointer; }
-  .r-notif { position: relative; }
-  .r-badge { position: absolute; top: -4px; right: -4px; width: 16px; height: 16px; background: #F7B718; color: #102A43; font-size: 10px; font-weight: 700; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
-  .r-user { display: none; align-items: center; gap: 8px; color: #fff; text-decoration: none; font-size: 13px; }
-  .r-avatar-sm { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(255,255,255,.3); }
+  .sr-avatar {
+    position: relative; width: 38px; height: 38px; border-radius: 50%; overflow: visible;
+    display: block; flex-shrink: 0;
+  }
+  .sr-avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+  .sr-avatar .dot { position: absolute; bottom: 0; right: 0; width: 10px; height: 10px; background: var(--sr-green); border: 2px solid #fff; border-radius: 50%; }
 
-  .r-hero { background: linear-gradient(90deg, #EAF3FF 0%, #F5F7FA 100%); padding: 32px 0 120px; position: relative; overflow: hidden; }
-  .r-hero-inner { max-width: 1200px; margin: 0 auto; padding: 0 20px; display: flex; align-items: center; justify-content: space-between; position: relative; z-index: 1; }
-  .r-hero-text { max-width: 520px; }
-  .r-hero h1 { font-family: 'Space Grotesk', sans-serif; font-size: 38px; font-weight: 800; color: #102A43; margin: 0 0 8px; line-height: 1.1; }
-  .r-hero h1 span { color: #155EEF; }
-  .r-hero p { color: #667085; font-size: 15px; margin: 0; }
-  .r-hero-avatar { position: relative; width: 320px; height: 320px; display: none; }
-  .r-hero-avatar img { width: 100%; height: 100%; object-fit: contain; position: relative; z-index: 2; }
-  .r-hero-city { position: absolute; inset: 0; background: url('{{ url_for('static', filename='img/fixpro-avatar.png') }}') no-repeat center bottom; background-size: contain; opacity: .12; filter: blur(1px); z-index: 0; }
+  .sr-main { max-width: 640px; margin: 0 auto; padding: 16px; }
 
-  .r-search-wrap { max-width: 1200px; margin: -90px auto 0; padding: 0 20px; position: relative; z-index: 2; }
-  .r-search-card { background: #fff; border-radius: 20px; padding: 24px; box-shadow: 0 16px 40px rgba(16,42,67,.08); }
-  .r-search-bar { display: flex; gap: 12px; margin-bottom: 20px; }
-  .r-input { flex: 1; display: flex; align-items: center; gap: 10px; height: 50px; padding: 0 16px; background: #F5F7FA; border: 1px solid #E2E8F0; border-radius: 12px; }
-  .r-input input { flex: 1; border: none; background: transparent; font-size: 14px; color: #102A43; outline: none; }
-  .r-btn-light { height: 50px; padding: 0 18px; background: #fff; border: 1px solid #E2E8F0; border-radius: 12px; color: #102A43; font-size: 14px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
-  .r-cats { display: flex; gap: 12px; flex-wrap: wrap; }
-  .r-cat { display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 50px; background: #fff; border: 1px solid #E2E8F0; color: #102A43; text-decoration: none; font-size: 14px; font-weight: 600; }
-  .r-cat.active { background: #155EEF; color: #fff; border-color: #155EEF; }
-  .r-cat img { width: 18px; height: 18px; }
+  .sr-search { display: flex; gap: 10px; margin-bottom: 14px; }
+  .sr-search-field {
+    flex: 1; display: flex; align-items: center; gap: 10px;
+    background: #fff; border: 1px solid var(--sr-line); border-radius: 14px;
+    padding: 0 14px; height: 52px; box-shadow: 0 4px 14px rgba(16,42,67,0.05);
+  }
+  .sr-search-field svg { width: 20px; height: 20px; color: var(--sr-muted); flex-shrink: 0; }
+  .sr-search-field input {
+    flex: 1; border: none; outline: none; background: transparent;
+    font-size: 0.9rem; color: var(--sr-text); min-width: 0;
+  }
+  .sr-search-field input::placeholder { color: #94A3B8; }
+  .sr-gps {
+    width: 52px; height: 52px; flex-shrink: 0; border-radius: 14px;
+    background: #fff; border: 1px solid var(--sr-line); color: var(--sr-primary);
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+    box-shadow: 0 4px 14px rgba(16,42,67,0.05);
+  }
+  .sr-gps svg { width: 22px; height: 22px; }
 
-  .r-pros { max-width: 1200px; margin: 0 auto; padding: 28px 20px; }
-  .r-pro { display: flex; align-items: center; gap: 18px; background: #fff; border-radius: 20px; padding: 18px; margin-bottom: 16px; box-shadow: 0 8px 24px rgba(16,42,67,.06); text-decoration: none; color: #102A43; }
-  .r-pro-avatar { position: relative; width: 74px; height: 74px; flex: 0 0 74px; }
-  .r-pro-avatar img { width: 74px; height: 74px; border-radius: 50%; object-fit: cover; }
-  .r-pro-dot { position: absolute; bottom: 2px; right: 2px; width: 14px; height: 14px; background: #10B981; border: 2px solid #fff; border-radius: 50%; }
-  .r-pro-info { flex: 1; min-width: 0; }
-  .r-pro-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
-  .r-pro h4 { margin: 0 0 2px; font-size: 17px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .r-pro-job { color: #155EEF; font-size: 14px; font-weight: 600; margin: 0 0 4px; }
-  .r-pro-rating { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #667085; }
-  .r-pro-rating .star { color: #F7B718; }
-  .r-pro-rating strong { color: #102A43; }
-  .r-pro-avail { font-size: 13px; color: #10B981; font-weight: 600; display: flex; align-items: center; gap: 6px; }
-  .r-pro-avail::before { content: ''; width: 8px; height: 8px; background: #10B981; border-radius: 50%; }
-  .r-pro-distance { font-size: 13px; color: #667085; display: flex; align-items: center; gap: 4px; white-space: normal; overflow-wrap: anywhere; }
-  .r-pro-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
-  .r-pro-tags span { background: #F5F7FA; padding: 5px 12px; border-radius: 20px; font-size: 12px; color: #667085; }
-  .r-pro-cta { flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
-  .r-pro-cta-btn { padding: 10px 20px; border: 1.5px solid #155EEF; border-radius: 10px; color: #155EEF; font-weight: 700; font-size: 13px; text-decoration: none; white-space: nowrap; }
+  .sr-loc {
+    display: flex; align-items: center; gap: 12px;
+    background: #F7F9FE; border: 1px solid var(--sr-line); border-radius: 14px;
+    padding: 12px 14px; margin-bottom: 22px;
+  }
+  .sr-loc-pin { color: var(--sr-primary); display: flex; flex-shrink: 0; }
+  .sr-loc-pin svg { width: 22px; height: 22px; }
+  .sr-loc-text { flex: 1; display: flex; flex-direction: column; line-height: 1.25; min-width: 0; }
+  .sr-loc-text span { font-size: 0.72rem; color: var(--sr-muted); }
+  .sr-loc-text strong { font-size: 0.92rem; color: var(--sr-primary); font-weight: 700; }
+  .sr-loc-edit { background: none; border: none; color: var(--sr-primary); font-size: 0.82rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
 
-  .r-benefits { max-width: 1200px; margin: 0 auto 40px; padding: 0 20px; }
-  .r-benefits-inner { background: #fff; border-radius: 20px; padding: 24px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; box-shadow: 0 8px 24px rgba(16,42,67,.06); }
-  .r-benefit { text-align: center; }
-  .r-benefit img { width: 28px; height: 28px; margin-bottom: 8px; }
-  .r-benefit h4 { margin: 0 0 4px; font-size: 14px; font-weight: 700; }
-  .r-benefit p { margin: 0; font-size: 12px; color: #667085; }
+  .sr-section-title { font-size: 1.05rem; font-weight: 800; color: var(--sr-text); margin: 0 0 14px; }
 
-  .r-bottom { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid #E2E8F0; padding: 8px 0 14px; display: flex; justify-content: space-around; z-index: 100; }
-  .r-bottom a { display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: #667085; font-size: 11px; font-weight: 500; }
-  .r-bottom a.active { color: #155EEF; }
-  .r-bottom-main { width: 52px; height: 52px; background: #155EEF; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-top: -22px; box-shadow: 0 6px 16px rgba(21,94,239,.35); }
-  .r-bottom .r-notif { position: absolute; top: 2px; right: 2px; }
+  .sr-cats {
+    display: flex; gap: 12px; overflow-x: auto; margin: 0 -16px 22px; padding: 2px 16px 8px;
+    scrollbar-width: none; -webkit-overflow-scrolling: touch;
+  }
+  .sr-cats::-webkit-scrollbar { display: none; }
+  .sr-cat {
+    flex: 0 0 auto; width: 92px;
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+    text-decoration: none; border-radius: 16px; padding: 16px 6px;
+    background: #fff; border: 1.5px solid var(--sr-line);
+    transition: border-color .12s, box-shadow .12s;
+  }
+  .sr-cat svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+  .sr-cat span { font-size: 0.74rem; font-weight: 600; color: var(--sr-text); }
+  .sr-cat.active { border-color: var(--sr-primary); box-shadow: 0 8px 20px rgba(21,94,239,0.14); }
+  .sr-cat.active span { color: var(--sr-primary); font-weight: 700; }
+
+  .sr-filters {
+    display: flex; align-items: center; justify-content: space-between;
+    background: #fff; border: 1px solid var(--sr-line); border-radius: 14px;
+    padding: 13px 16px; margin-bottom: 22px; box-shadow: 0 4px 14px rgba(16,42,67,0.04);
+  }
+  .sr-filters-left { display: flex; align-items: center; gap: 9px; color: var(--sr-text); font-weight: 700; font-size: 0.9rem; }
+  .sr-filters-left svg { width: 18px; height: 18px; }
+  .sr-filters-right { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; color: var(--sr-muted); }
+  .sr-filters-right .sort-label { color: var(--sr-muted); }
+  .sr-filters-right b { color: var(--sr-primary); font-weight: 700; }
+  .sr-filters-right svg { width: 16px; height: 16px; color: var(--sr-primary); }
+  .sr-filters-sep { width: 1px; height: 20px; background: var(--sr-line); margin: 0 4px; }
+
+  .sr-count { font-size: 1rem; font-weight: 800; color: var(--sr-text); margin: 0 0 14px; }
+
+  .sr-pro {
+    display: flex; align-items: center; gap: 14px;
+    background: #fff; border: 1px solid #EEF2F9; border-radius: 18px;
+    padding: 14px; margin-bottom: 14px; text-decoration: none;
+    box-shadow: 0 6px 18px rgba(16,42,67,0.05);
+  }
+  .sr-pro-avatar { position: relative; width: 64px; height: 64px; flex-shrink: 0; border-radius: 50%; }
+  .sr-pro-avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+  .sr-pro-avatar .fallback {
+    width: 100%; height: 100%; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 700; font-size: 1.1rem;
+  }
+  .sr-pro-avatar .dot { position: absolute; bottom: 2px; right: 2px; width: 14px; height: 14px; background: var(--sr-green); border: 2.5px solid #fff; border-radius: 50%; }
+  .sr-pro-body { flex: 1; min-width: 0; }
+  .sr-pro-name { font-size: 0.98rem; font-weight: 800; color: var(--sr-text); margin: 0 0 1px; }
+  .sr-pro-job { font-size: 0.8rem; font-weight: 700; color: var(--sr-primary); margin: 0 0 6px; }
+  .sr-pro-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 12px; font-size: 0.76rem; color: var(--sr-muted); margin-bottom: 8px; }
+  .sr-pro-meta .rate { display: flex; align-items: center; gap: 4px; }
+  .sr-pro-meta .rate svg { width: 13px; height: 13px; color: #F7B718; fill: currentColor; }
+  .sr-pro-meta .rate strong { color: var(--sr-text); font-weight: 700; }
+  .sr-pro-meta .dist { display: flex; align-items: center; gap: 3px; }
+  .sr-pro-meta .dist svg { width: 12px; height: 12px; }
+  .sr-pro-avail {
+    display: inline-block; font-size: 0.7rem; font-weight: 600;
+    padding: 4px 10px; border-radius: 50px;
+  }
+  .sr-pro-avail.now { color: var(--sr-green); background: #DCFCE7; }
+  .sr-pro-avail.today { color: var(--sr-primary); background: #EAF1FF; }
+  .sr-pro-cta {
+    flex-shrink: 0; align-self: center;
+    border: 1.5px solid var(--sr-primary); color: var(--sr-primary);
+    border-radius: 11px; padding: 10px 16px; font-size: 0.78rem; font-weight: 700; white-space: nowrap;
+  }
+  .sr-empty { text-align: center; color: var(--sr-muted); padding: 40px 16px; font-size: 0.9rem; }
+
+  .sr-bottom-nav {
+    position: fixed; bottom: 0; left: 0; right: 0; background: #fff;
+    border-top: 1px solid var(--sr-line); display: flex; justify-content: space-around; align-items: flex-end;
+    padding: 8px 0 14px; z-index: 90;
+  }
+  .sr-bottom-nav a {
+    display: flex; flex-direction: column; align-items: center; gap: 3px; color: var(--sr-muted);
+    text-decoration: none; font-size: 0.65rem; font-weight: 600; flex: 1;
+  }
+  .sr-bottom-nav a svg { width: 22px; height: 22px; }
+  .sr-bottom-nav a.active { color: var(--sr-primary); }
+  .sr-bottom-nav a.sr-fab {
+    position: relative; top: -16px;
+    flex: 0 0 54px; width: 54px; height: 54px; min-width: 54px;
+    background: var(--sr-primary); color: #fff; border-radius: 50%;
+    justify-content: center; align-self: flex-start;
+    box-shadow: 0 10px 22px rgba(21,94,239,0.34);
+  }
+  .sr-bottom-nav a.sr-fab svg { width: 24px; height: 24px; }
+  .sr-bottom-nav a.sr-fab span {
+    position: absolute; bottom: -18px; width: 92px; left: 50%; transform: translateX(-50%);
+    text-align: center; color: var(--sr-muted); font-size: 0.65rem;
+  }
 
   @media (min-width: 768px) {
-    .r-nav, .r-user, .r-loc { display: flex; }
-    .r-hero-avatar { display: block; }
-    .r-bottom { display: none; }
-  }
-  @media (max-width: 767px) {
-    .r-hero h1 { font-size: 26px; }
-    .r-hero { padding: 24px 0 100px; }
-    .r-search-bar { flex-wrap: wrap; }
-    .r-btn-light { flex: 1; justify-content: center; }
-    .r-pro { flex-wrap: wrap; }
-    .r-pro-cta { width: 100%; margin-top: 8px; }
-    .r-pro-cta-btn { width: 100%; text-align: center; }
-    .r-benefits-inner { grid-template-columns: repeat(2, 1fr); }
+    .sr-bottom-nav { display: none; }
+    body { padding-bottom: 0 !important; }
   }
 </style>
 
-<header class="r-header">
-  <div class="r-header-inner">
-    <a href="{{ url_for('index') }}" class="r-logo">
-      <div class="r-logo-mark">
-        <img src="{{ url_for('static', filename='img/icon-wrench.svg') }}" width="22" height="22" alt="" />
-      </div>
-      FixPro
+<header class="sr-header">
+  <button class="sr-menu f-menu-btn" id="burgerBtn" type="button" aria-label="Menu">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+  </button>
+  <h1 class="sr-title">Recherche</h1>
+  <div class="sr-h-actions">
+    <a href="{{ url_for('notifications') }}" class="sr-notif" aria-label="Notifications">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></svg>
+      {% if unread_count %}<span class="sr-notif-badge">{{ unread_count }}</span>{% endif %}
     </a>
-    <nav class="r-nav">
-      <a href="{{ url_for('index') }}">Accueil</a>
-      <a href="{{ url_for('artisans_page') }}" class="active">Recherche</a>
-      <a href="{{ url_for('artisans_page') }}">Professionnels</a>
-      <a href="{{ url_for('requests_list') }}">Réservations</a>
-      <a href="{{ url_for('client_messages') }}">Messages</a>
-      <a href="{{ url_for('reviews') }}">Avis</a>
-    </nav>
-    <div class="r-header-right">
-      <div class="r-loc">
-        <img src="{{ url_for('static', filename='img/icon-map-pin.svg') }}" width="16" height="16" alt="" />
-        <span>{{ client_zone or 'Ma position' }}</span>
-        <span>&#9662;</span>
-      </div>
-      <a href="{{ url_for('notifications') }}" class="r-notif">
-        <img src="{{ url_for('static', filename='img/icon-bell.svg') }}" width="22" height="22" alt="" />
-        <span class="r-badge">2</span>
-      </a>
-      <a href="{% if user %}{{ url_for('profile') }}{% else %}{{ url_for('login') }}{% endif %}" class="r-user">
-        {% if user and user.photo_url %}
-          <img src="{{ user.photo_url }}" class="r-avatar-sm" alt="" />
-        {% else %}
-          <img src="{{ url_for('static', filename='img/fixpro-avatar.png') }}" class="r-avatar-sm" alt="" />
-        {% endif %}
-        <span>Bonjour {% if user %}{{ (user.full_name or 'Utilisateur').split(' ')[0] }}{% else %}Utilisateur{% endif %}</span>
-        <span>&#9662;</span>
-      </a>
-    </div>
+    <a href="{% if nav_user %}{{ url_for('profile') }}{% else %}{{ url_for('login') }}{% endif %}" class="sr-avatar" aria-label="Mon profil">
+      {% if nav_user and nav_user.photo_url %}
+        <img src="{{ nav_user.photo_url }}" alt="{{ nav_user.full_name }}" />
+      {% else %}
+        <img src="{{ url_for('static', filename='img/fixpro-avatar.png') }}" alt="Profil" />
+      {% endif %}
+      {% if nav_user %}<span class="dot"></span>{% endif %}
+    </a>
   </div>
 </header>
 
-<section class="r-hero">
-  <div class="r-hero-inner">
-    <div class="r-hero-text">
-      {% if category_filter %}
-        <h1>{{ category_filter }}s <span>disponibles</span></h1>
-        <p>Techniciens {{ category_filter }}s près de votre position.</p>
-      {% else %}
-        <h1>Professionnels <span>autour de vous</span></h1>
-        <p>Nous avons trouvé des professionnels disponibles près de votre position.</p>
-      {% endif %}
+<main class="sr-main">
+  <form class="sr-search" method="get" action="{{ url_for('artisans_page') }}">
+    {% if category_filter %}<input type="hidden" name="category" value="{{ category_filter }}" />{% endif %}
+    <div class="sr-search-field">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+      <input type="text" name="q" value="{{ query or '' }}" placeholder="Que recherchez-vous ? (Plombier, Électricien...)" />
     </div>
-    <div class="r-hero-avatar">
-      <div class="r-hero-city"></div>
-      <img src="{{ url_for('static', filename='img/fixpro-avatar.png') }}" alt="Technicien FixPro" />
-    </div>
-  </div>
-</section>
+    <button type="button" class="sr-gps" id="gpsBtn" aria-label="Ma position">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2" fill="currentColor" stroke="none"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/></svg>
+    </button>
+  </form>
 
-<div class="r-search-wrap">
-  <div class="r-search-card">
-    <div class="r-search-bar">
-      <div class="r-input">
-        <img src="{{ url_for('static', filename='img/icon-search.svg') }}" width="20" height="20" alt="" />
-        <input type="text" placeholder="Rechercher un professionnel..." />
-      </div>
-      <button class="r-btn-light">
-        <img src="{{ url_for('static', filename='img/icon-navigation.svg') }}" width="18" height="18" alt="" />
-        Trier par
-      </button>
-      <button class="r-btn-light">
-        <img src="{{ url_for('static', filename='img/icon-menu.svg') }}" width="18" height="18" alt="" />
-        Filtres
-      </button>
-    </div>
-    <div class="r-cats">
-      <a href="{{ url_for('artisans_page') }}" class="r-cat {% if not category_filter %}active{% endif %}">Tous</a>
-      {% for c in categories %}
-      <a href="{{ url_for('artisans_page', category=c.name) }}" class="r-cat {% if category_filter == c.name %}active{% endif %}">
-        {{ c.name }}s
-      </a>
-      {% endfor %}
-    </div>
+  <div class="sr-loc">
+    <span class="sr-loc-pin">
+      <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2C7.86 2 4.5 5.36 4.5 9.5c0 5.05 5.78 11.06 6.79 12.06.4.4 1.03.4 1.42 0C13.72 20.56 19.5 14.55 19.5 9.5 19.5 5.36 16.14 2 12 2Zm0 10a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5Z"/></svg>
+    </span>
+    <span class="sr-loc-text">
+      <span>Ma position actuelle</span>
+      <strong id="locDisplay">{{ client_zone or 'Position non définie' }}</strong>
+    </span>
+    <button type="button" class="sr-loc-edit" id="locEditBtn">Modifier</button>
   </div>
-</div>
 
-<section class="r-pros" id="prosSection">
+  <h2 class="sr-section-title">Catégories</h2>
+  <div class="sr-cats">
+    {% for c in sr_cats %}
+    {% set is_active = (category_filter == c.name) or (c.name == 'Autres' and not category_filter) %}
+    <a href="{% if c.name == 'Autres' %}{{ url_for('artisans_page') }}{% else %}{{ url_for('artisans_page', category=c.name) }}{% endif %}"
+       class="sr-cat {% if is_active %}active{% endif %}">
+      <span style="color: {% if is_active %}var(--sr-primary){% else %}{{ c.color }}{% endif %};">
+        <svg viewBox="0 0 24 24">{{ c.svg | safe }}</svg>
+      </span>
+      <span>{{ c.name }}</span>
+    </a>
+    {% endfor %}
+  </div>
+
+  <div class="sr-filters">
+    <span class="sr-filters-left">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/><line x1="14" x2="14" y1="2" y2="6"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="16" x2="16" y1="18" y2="22"/></svg>
+      Filtres
+    </span>
+    <span class="sr-filters-right">
+      <span class="sr-filters-sep"></span>
+      <span class="sort-label">Trier par</span>
+      <b>Recommandés</b>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+    </span>
+  </div>
+
+  <h3 class="sr-count">{{ artisans|length }} professionnel{{ 's' if artisans|length != 1 }} disponible{{ 's' if artisans|length != 1 }}</h3>
+
   {% for a in artisans %}
-  <a href="{{ url_for('artisan_detail', artisan_id=a.id) }}" class="r-pro">
-    <div class="r-pro-avatar">
+  <a href="{{ url_for('artisan_detail', artisan_id=a.id) }}" class="sr-pro">
+    <div class="sr-pro-avatar">
       {% if a.photo_url %}
         <img src="{{ a.photo_url }}" alt="{{ a.full_name }}" />
       {% else %}
-        <img src="{{ url_for('static', filename='img/fixpro-avatar.png') }}" alt="{{ a.full_name }}" />
+        <span class="fallback" style="background: {{ a.gradient }};">{{ (a.full_name or 'T')[0]|upper }}</span>
       {% endif %}
-      <span class="r-pro-dot"></span>
+      {% if a.availability_status == 'en_ligne' %}<span class="dot"></span>{% endif %}
     </div>
-    <div class="r-pro-info">
-      <div class="r-pro-row">
-        <div>
-          <h4>{{ a.full_name }}</h4>
-          <p class="r-pro-job">{{ a.profession or 'Technicien' }}</p>
-        </div>
-        <div class="r-pro-distance">
-          <img src="{{ url_for('static', filename='img/icon-map-pin.svg') }}" width="14" height="14" alt="" />
-          {% if a.distance is not none %}{{ "%.1f" | format(a.distance) }} km{% else %}Distance non disponible{% endif %}
-        </div>
-      </div>
-      <div class="r-pro-row" style="margin-top: 6px;">
-        <div class="r-pro-rating">
-          <span class="star">&#9733;</span>
+    <div class="sr-pro-body">
+      <p class="sr-pro-name">{{ a.full_name }}</p>
+      <p class="sr-pro-job">{{ pro_labels.get(a.profession, a.profession or 'Technicien') }}</p>
+      <div class="sr-pro-meta">
+        <span class="rate">
+          <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
           {% if a.review_count and a.review_count > 0 %}
-            <strong>{{ "%.1f" | format(a.rating) }}</strong>
-            <span>({{ a.review_count }} avis)</span>
+            <strong>{{ "%.1f"|format(a.rating) }}</strong> ({{ a.review_count }} avis)
           {% else %}
             <strong>Nouveau</strong>
           {% endif %}
-        </div>
-        <div class="r-pro-avail">Disponible maintenant</div>
-      </div>
-      <div class="r-pro-tags">
-        {% if a.profession in ['Plombier', 'Plomberie'] %}
-          <span>Fuite d'eau</span><span>Installation</span><span>Dépannage</span><span>+2</span>
-        {% elif a.profession in ['Electricien', 'Electricite', 'Électricien'] %}
-          <span>Installation</span><span>Dépannage</span><span>Tableau électrique</span><span>+1</span>
-        {% elif a.profession == 'Frigoriste' %}
-          <span>Climatisation</span><span>Froid</span><span>Maintenance</span><span>+2</span>
-        {% else %}
-          <span>Installation</span><span>Dépannage</span><span>+2</span>
+        </span>
+        {% if a.distance is not none %}
+        <span class="dist">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+          {{ "%.1f"|format(a.distance) }} km de vous
+        </span>
+        {% elif a.city %}
+        <span class="dist">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+          {{ a.city }}
+        </span>
         {% endif %}
       </div>
+      {% if a.availability_status == 'en_ligne' %}
+        <span class="sr-pro-avail now">Disponible maintenant</span>
+      {% else %}
+        <span class="sr-pro-avail today">Disponible aujourd'hui</span>
+      {% endif %}
     </div>
-    <div class="r-pro-cta">
-      <span class="r-pro-cta-btn">Voir le profil</span>
-    </div>
+    <span class="sr-pro-cta">Voir le profil</span>
   </a>
+  {% else %}
+  <div class="sr-empty">Aucun professionnel ne correspond à votre recherche.</div>
   {% endfor %}
-</section>
+</main>
 
-<nav class="r-bottom">
+<nav class="sr-bottom-nav">
   <a href="{{ url_for('index') }}">
-    <img src="{{ url_for('static', filename='img/icon-home.svg') }}" width="22" height="22" alt="" />
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
     Accueil
   </a>
   <a href="{{ url_for('artisans_page') }}" class="active">
-    <img src="{{ url_for('static', filename='img/icon-search.svg') }}" width="22" height="22" alt="" />
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
     Recherche
   </a>
-  <a href="{{ url_for('requests_list') }}" class="r-bottom-main">
-    <img src="{{ url_for('static', filename='img/icon-calendar.svg') }}" width="24" height="24" alt="" />
+  <a href="{{ url_for('requests_list') if nav_user else url_for('login') }}" class="sr-fab">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v3M16 2v3"/><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/></svg>
+    <span>Réservations</span>
   </a>
   <a href="{{ url_for('client_messages') }}">
-    <img src="{{ url_for('static', filename='img/icon-message-circle.svg') }}" width="22" height="22" alt="" />
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"/></svg>
     Messages
   </a>
-  <a href="{% if user %}{{ url_for('profile') }}{% else %}{{ url_for('login') }}{% endif %}">
-    <img src="{{ url_for('static', filename='img/icon-user.svg') }}" width="22" height="22" alt="" />
+  <a href="{% if nav_user %}{{ url_for('profile') }}{% else %}{{ url_for('login') }}{% endif %}">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
     Profil
   </a>
 </nav>
 
 <script>
-  const cats = document.querySelectorAll('.r-cat');
-  cats.forEach(c => {
-    c.addEventListener('click', e => {
-      if (c.getAttribute('href') === '#') {
-        e.preventDefault();
-      }
-    });
-  });
+  (function () {
+    var csrf = document.querySelector('meta[name="csrf-token"]');
+    var token = csrf ? csrf.content : '';
+    var locDisplay = document.getElementById('locDisplay');
+    var gpsBtn = document.getElementById('gpsBtn');
+    var editBtn = document.getElementById('locEditBtn');
+
+    function useGps() {
+      if (!navigator.geolocation) { manualZone(); return; }
+      navigator.geolocation.getCurrentPosition(function (pos) {
+        fetch('/api/location', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': token },
+          body: JSON.stringify({ lat: pos.coords.latitude, lon: pos.coords.longitude, accuracy: pos.coords.accuracy || 0 })
+        }).then(function (r) { return r.json(); }).then(function (d) {
+          if (d.ok && d.zone && locDisplay) locDisplay.textContent = d.zone;
+          location.reload();
+        }).catch(function () {});
+      }, function () { manualZone(); });
+    }
+
+    function manualZone() {
+      var z = prompt('Entrez votre ville ou quartier :', locDisplay ? locDisplay.textContent : '');
+      if (!z) return;
+      fetch('/api/location/zone', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': token },
+        body: JSON.stringify({ zone: z.trim() })
+      }).then(function (r) { return r.json(); }).then(function (d) {
+        if (d.ok && d.zone && locDisplay) locDisplay.textContent = d.zone;
+        location.reload();
+      }).catch(function () {});
+    }
+
+    if (gpsBtn) gpsBtn.addEventListener('click', useGps);
+    if (editBtn) editBtn.addEventListener('click', manualZone);
+  })();
 </script>
 {% endblock %}
