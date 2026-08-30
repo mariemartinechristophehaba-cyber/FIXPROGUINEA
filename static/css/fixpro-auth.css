@@ -840,3 +840,73 @@ body { margin: 0; }
   border: 1.5px solid var(--fa-blue);
   color: var(--fa-blue);
 }
+
+/* ============================================================
+   Etape 2 "Votre metier"
+   ============================================================ */
+.fa-step-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.fa-step-head-txt { min-width: 0; }
+.fa-step-head .fa-subtitle { margin-bottom: 18px; }
+.fa-step-head-art { flex-shrink: 0; }
+
+.fa-info-icon-fill { display: flex; align-items: center; justify-content: center; }
+
+.fa-section-h {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--fa-ink);
+  margin: 6px 0 12px;
+}
+
+.fa-job-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.fa-job-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+  padding: 16px 8px;
+  background: #fff;
+  border: 1.5px solid var(--fa-line);
+  border-radius: 14px;
+  box-shadow: 0 4px 14px rgba(10, 17, 34, .05);
+  cursor: pointer;
+  transition: border-color .15s, background .15s, box-shadow .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.fa-job-card:active { background: #F8FAFF; }
+.fa-job-card.selected {
+  border-color: var(--fa-blue);
+  background: var(--fa-blue-soft);
+  box-shadow: 0 0 0 1px var(--fa-blue);
+}
+.fa-job-ico {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fa-blue);
+}
+.fa-job-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--fa-ink);
+  line-height: 1.2;
+}
+.fa-job-desc {
+  font-size: 10.5px;
+  color: var(--fa-slate);
+  line-height: 1.35;
+}
+
+@media (max-width: 360px) {
+  .fa-job-grid { gap: 7px; }
+  .fa-job-card { padding: 14px 5px; }
+  .fa-job-desc { font-size: 10px; }
+}
