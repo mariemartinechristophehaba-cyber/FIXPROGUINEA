@@ -1340,7 +1340,7 @@ class TechnicianAccessTests(FixProTestCase):
         self.register_client()
         response = self.login("+224620000000")
         self.assertEqual(response.status_code, 200)
-        self.assertIn(b"Rechercher", response.data)
+        self.assertIn(b"Recherche", response.data)
 
     def test_technician_is_redirected_to_dashboard(self):
         self.register_artisan("t1@example.com", phone="+224621111111", name="T1 Diallo")
