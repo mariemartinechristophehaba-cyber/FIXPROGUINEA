@@ -119,16 +119,47 @@ _ARTISAN_GEOCODE = {
     "taouyah": (9.6100, -13.6000),
 }
 
-# Liste proposee au client sur l'ecran de localisation (choix manuel du
-# quartier). Ordre = du centre-ville vers la peripherie.
-_CONAKRY_QUARTIERS = [
-    "Kaloum", "Almamya", "Sandervalia", "Coronthie", "Boulbinet",
-    "Dixinn", "Camayenne", "Belle-Vue", "Landreah",
-    "Matam", "Bonfi", "Madina", "Coleah", "Hamdallaye",
-    "Ratoma", "Taouyah", "Kipe", "Nongo", "Kaporo", "Lambanyi", "Sonfonia",
-    "Matoto", "Gbessia", "Yimbaya", "Dabompa", "Tanene", "Kissosso", "Simbaya",
-    "Bambeto", "Cosa", "Enta", "Wanindara", "Sangoyah",
-]
+# Quartiers proposes au client sur l'ecran de localisation (choix manuel).
+# Coordonnees approximatives FIGEES ici : ne jamais geocoder ces noms via un
+# service externe (ex : "Madina" -> Medine, Arabie Saoudite). Ordre = du
+# centre-ville vers la peripherie.
+_CONAKRY_QUARTIERS = {
+    "Kaloum": (9.5092, -13.7122),
+    "Almamya": (9.5122, -13.7062),
+    "Sandervalia": (9.5140, -13.7100),
+    "Coronthie": (9.5050, -13.7150),
+    "Boulbinet": (9.5020, -13.7080),
+    "Tombo": (9.4289, -13.5833),
+    "Dixinn": (9.5450, -13.6780),
+    "Camayenne": (9.5350, -13.6850),
+    "Belle-Vue": (9.5400, -13.6720),
+    "Landreah": (9.5520, -13.6670),
+    "Matam": (9.5300, -13.6500),
+    "Bonfi": (9.5350, -13.6600),
+    "Madina": (9.5380, -13.6670),
+    "Coleah": (9.5450, -13.6550),
+    "Hamdallaye": (9.5750, -13.6350),
+    "Ratoma": (9.6150, -13.6100),
+    "Taouyah": (9.6050, -13.6120),
+    "Kipe": (9.6200, -13.6100),
+    "Nongo": (9.6350, -13.6000),
+    "Kaporo": (9.6500, -13.5900),
+    "Lambanyi": (9.6400, -13.6000),
+    "Sonfonia": (9.6600, -13.5750),
+    "Kobaya": (9.6550, -13.5850),
+    "Matoto": (9.5850, -13.6150),
+    "Gbessia": (9.5750, -13.6050),
+    "Yimbaya": (9.6000, -13.5900),
+    "Dabompa": (9.6150, -13.5600),
+    "Tanene": (9.6300, -13.5600),
+    "Kissosso": (9.6100, -13.5750),
+    "Simbaya": (9.6050, -13.5600),
+    "Bambeto": (9.6150, -13.6150),
+    "Cosa": (9.6050, -13.6200),
+    "Enta": (9.5900, -13.6000),
+    "Wanindara": (9.6400, -13.6150),
+    "Sangoyah": (9.5900, -13.6200),
+}
 
 
 def _nearest_zone(lat, lon, max_km=15.0):
@@ -1047,14 +1078,26 @@ def set_location_zone():
         if not zone:
             return jsonify({"ok": False, "error": "Zone vide"}), 400
         session["loc_permission"] = "manual"
-        coords = _zone_coordinate(zone)
+
+        # 1. Quartier de la liste FixPro : coordonnees figees, aucun geocodage
+        #    externe (sinon "Madina" -> Medine, Arabie Saoudite).
+        coords = None
+        for name, xy in _CONAKRY_QUARTIERS.items():
+            if name.lower() == zone.lower():
+                coords, zone = xy, name
+                break
+        # 2. Zone connue de _ARTISAN_GEOCODE.
         if not coords:
-            lat, lon, place = _geocode_query(zone)
-            if place:
+            coords = _zone_coordinate(zone)
+        # 3. Dernier recours : geocodage borne a Conakry (rejette les
+        #    homonymes a l'etranger).
+        if not coords:
+            lat, lon, place = _geocode_query(zone + ", Conakry, Guinee")
+            if (lat is not None and lon is not None
+                    and _nearest_zone(lat, lon, max_km=60.0)):
                 coords = (lat, lon)
-                zone = place
-            elif lat is not None and lon is not None:
-                coords = (lat, lon)
+                if place:
+                    zone = place
         session["client_zone"] = zone
         session.pop("loc_gate_dismissed", None)
         if coords:
@@ -1078,6 +1121,16 @@ def set_location_denied():
     """Marque la permission GPS comme refusee."""
     session["loc_permission"] = "denied"
     return jsonify({"ok": True})
+
+
+# Appelees en fetch depuis l'ecran de localisation, souvent depuis un
+# navigateur mobile (ou via un proxy de traduction) qui n'envoie pas le
+# header Referer -> la verification stricte de Flask-WTF les rejetait
+# ("The referrer header is missing"). Definir sa propre position n'est pas
+# une cible d'attaque CSRF : on exempte.
+csrf.exempt(set_location)
+csrf.exempt(set_location_zone)
+csrf.exempt(set_location_denied)
 
 
 @app.route("/localisation")
