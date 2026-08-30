@@ -94,6 +94,14 @@ class FixProTestCase(unittest.TestCase):
             conn.close()
         return response
 
+    def _set_client_location(self, lat=9.5077, lon=-13.7114, zone="Kaloum"):
+        """Simule un client ayant deja defini sa localisation (evite l'ecran
+        de localisation qui s'intercale sinon avant chaque page cliente)."""
+        with self.client.session_transaction() as sess:
+            sess["client_lat"] = lat
+            sess["client_lon"] = lon
+            sess["client_zone"] = zone
+
     def login(self, identifier, password="FixPro2026!"):
         response = self.client.post("/login", data={
             "identifier": identifier, "password": password},
@@ -109,6 +117,8 @@ class FixProTestCase(unittest.TestCase):
                 conn.close()
             if user and user["role"] == "admin":
                 self.client.post("/admin/unlock", data={"password": password})
+            if user and user["role"] == "client":
+                self._set_client_location()
         return response
 
 
@@ -181,7 +191,8 @@ class ClientRegistrationTests(FixProTestCase):
 
     def test_client_is_redirected_to_artisans_after_login(self):
         self.register_client()
-        response = self.login("+224620000000")
+        self.login("+224620000000")  # le helper definit la localisation
+        response = self.client.get("/artisans")
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"Techniciens", response.data)
 
@@ -1336,9 +1347,22 @@ class TechnicianDashboardTests(FixProTestCase):
 class TechnicianAccessTests(FixProTestCase):
     """Connexion, redirections et permissions du role technician."""
 
-    def test_client_is_redirected_to_client_home(self):
+    def test_client_without_location_sees_location_gate(self):
+        """Un client fraichement connecte, sans localisation, tombe d'abord
+        sur l'ecran de localisation."""
         self.register_client()
-        response = self.login("+224620000000")
+        response = self.client.post("/login", data={
+            "identifier": "+224620000000", "password": "FixPro2026!"},
+            follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"data-location-gate", response.data)
+        self.assertIn("Où êtes-vous".encode("utf-8"), response.data)
+
+    def test_client_with_location_sees_artisans(self):
+        """Une fois la localisation definie, le client accede a la recherche."""
+        self.register_client()
+        self.login("+224620000000")  # le helper definit une localisation
+        response = self.client.get("/artisans")
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"Recherche", response.data)
 

@@ -1080,6 +1080,38 @@ def set_location_denied():
     return jsonify({"ok": True})
 
 
+@app.route("/localisation")
+def location_gate():
+    """Ecran plein ecran demandant la position du client a l'entree de l'app."""
+    nxt = request.args.get("next") or ""
+    if not nxt.startswith("/") or nxt.startswith("//"):
+        nxt = url_for("artisans_page")
+    return render_template("location_gate.html",
+                           quartiers=_CONAKRY_QUARTIERS, next=nxt)
+
+
+# Pages sur lesquelles un client doit avoir defini sa localisation.
+_LOCATION_GATED_ENDPOINTS = {
+    "index", "artisans_page", "categories", "requests_list",
+    "request_new", "dashboard",
+}
+
+
+@app.before_request
+def require_client_location():
+    """Envoie un client sans localisation vers l'ecran de localisation."""
+    if request.method != "GET" or request.endpoint not in _LOCATION_GATED_ENDPOINTS:
+        return None
+    user = get_current_user()
+    if not user or user["role"] != "client":
+        return None
+    if (session.get("client_lat") or session.get("client_zone")
+            or session.get("loc_gate_dismissed")
+            or _is_valid_coordinate(user.get("latitude"), user.get("longitude"))):
+        return None
+    return redirect(url_for("location_gate", next=request.path))
+
+
 @app.route("/home")
 @login_required
 def home():
@@ -3957,26 +3989,40 @@ def artisans_page():
     finally:
         conn.close()
 
-    if not client_lat and not client_lon:
-        client_lat = _to_float(session.get("client_lat"))
-        client_lon = _to_float(session.get("client_lon"))
+    # Localisation du client : parametres URL > profil > session.
     if request.args.get("lat") and request.args.get("lon"):
         client_lat = _to_float(request.args.get("lat"))
         client_lon = _to_float(request.args.get("lon"))
-    client_in_conakry = _is_valid_coordinate(client_lat, client_lon) and _nearest_zone(client_lat, client_lon, max_km=50.0) is not None
-    if client_in_conakry:
+    if not _is_valid_coordinate(client_lat, client_lon):
+        client_lat = _to_float(session.get("client_lat"))
+        client_lon = _to_float(session.get("client_lon"))
+
+    radius_km = app.config.get("LOCAL_RADIUS_KM", 10.0)
+    location_active = _is_valid_coordinate(client_lat, client_lon)
+
+    if location_active:
+        # On ne garde QUE les techniciens du secteur du client (rayon
+        # LOCAL_RADIUS_KM), tries du plus proche au plus loin. Un client
+        # hors de Conakry n'aura donc aucun technicien affiche.
         for a in artisans:
             a_lat = _to_float(a.get("latitude"))
             a_lon = _to_float(a.get("longitude"))
-            a["distance"] = _haversine(client_lat, client_lon, a_lat, a_lon) if _is_valid_coordinate(a_lat, a_lon) else None
-        artisans = sorted(artisans, key=lambda a: a.get("distance") or 999)
+            a["distance"] = (_haversine(client_lat, client_lon, a_lat, a_lon)
+                             if _is_valid_coordinate(a_lat, a_lon) else None)
+        artisans = sorted(
+            [a for a in artisans
+             if a.get("distance") is not None and a["distance"] <= radius_km],
+            key=lambda a: a["distance"])
 
-    client_zone = session.get("client_zone") or (user.get("city") if user else None)
+    client_zone = (session.get("client_zone")
+                   or _nearest_zone(client_lat, client_lon)
+                   or (user.get("city") if user else None))
     return render_template("artisans.html", artisans=artisans, user=user,
                            active_requests=active_requests, categories=categories,
                            category_filter=category,
                            client_zone=client_zone, unread_count=unread_count,
-                           query=query, zone=zone)
+                           query=query, zone=zone,
+                           location_active=location_active, radius_km=radius_km)
 
 
 @app.route("/api/techniciens", methods=["GET"])
