@@ -99,7 +99,7 @@
   .sr-cat {
     flex: 0 0 auto; width: 86px;
     display: flex; flex-direction: column; align-items: center; gap: 9px;
-    text-decoration: none; border-radius: 15px; padding: 13px 6px;
+    text-decoration: none; border-radius: 15px; padding: 12px 6px;
     background: #fff; border: 1.5px solid var(--sr-line);
     transition: border-color .12s, box-shadow .12s;
   }
@@ -267,7 +267,7 @@
       {% if a.photo_url %}
         <img src="{{ a.photo_url }}" alt="{{ a.full_name }}" />
       {% else %}
-        <span class="fallback" style="background: {{ a.gradient }};">{{ (a.full_name or 'T')[0]|upper }}</span>
+        <span class="fallback">{{ (a.full_name or 'T')[0]|upper }}</span>
       {% endif %}
       {% if a.availability_status == 'en_ligne' %}<span class="dot"></span>{% endif %}
     </div>

@@ -4780,15 +4780,26 @@ def requests_list():
                                    urgent_count=urgent_count, today_count=today_count)
         else:
             rows = conn.execute(
-                "SELECT r.*, u.full_name AS artisan_name, rev.rating AS client_rating"
+                "SELECT r.*, u.full_name AS artisan_name, u.photo_url AS artisan_photo,"
+                " u.profession AS artisan_profession,"
+                " rev.rating AS client_rating,"
+                " (SELECT ROUND(AVG(rating), 1) FROM reviews WHERE artisan_id = r.artisan_id) AS artisan_rating"
                 " FROM requests r"
                 " LEFT JOIN users u ON u.id = r.artisan_id"
                 " LEFT JOIN reviews rev ON rev.request_id = r.id AND rev.client_id = ?"
                 " WHERE r.client_id = ?"
                 " ORDER BY r.created_at DESC", (user["id"], user["id"])).fetchall()
+        unread_count = 0
+        try:
+            row = conn.execute(
+                "SELECT COUNT(*) AS n FROM notifications WHERE user_id = ? AND is_read = 0",
+                (user["id"],)).fetchone()
+            unread_count = row["n"] if row else 0
+        except Exception:
+            unread_count = 0
     finally:
         conn.close()
-    return render_template("requests.html", requests=rows, user=user)
+    return render_template("requests.html", requests=rows, user=user, unread_count=unread_count)
 
 
 @app.route("/export/requests")
