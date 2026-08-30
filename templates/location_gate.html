@@ -1,3 +1,19 @@
+<!--
+  ========================================================================
+  ECRAN DE LOCALISATION - FIGE (2026-08-31)
+  ------------------------------------------------------------------------
+  LIBRE de restyler : couleurs, --primary/--ink/etc., le pin, la carte,
+  les espacements, les icones SVG, les textes.
+
+  NE PAS MODIFIER (sinon le flux casse - couvert par tests/test_app.py) :
+   - <body data-location-gate>            (empeche la reprise auto ici)
+   - #lg-allow / #lg-manual / #lg-sheet / #lg-sheet-close / #lg-q-list
+   - les .q-item avec data-zone="..."
+   - le <script src=".../geo-auto.js"> et le bloc window.FixProGeo.*
+   - <meta name="csrf-token" ...>
+  Garder ce fichier AUTONOME (il n'etend pas base.html).
+  ========================================================================
+-->
 <!doctype html>
 <html lang="fr">
 <head>

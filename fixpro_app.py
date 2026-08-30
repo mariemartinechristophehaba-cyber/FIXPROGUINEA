@@ -1090,6 +1090,13 @@ def location_gate():
                            quartiers=_CONAKRY_QUARTIERS, next=nxt)
 
 
+# ---------------------------------------------------------------------------
+# LOCALISATION CLIENT - FIGE (2026-08-31). Couvert par tests/test_app.py
+# (test_visitor_without_location_sees_location_gate, ..._enters_app_after...,
+#  test_technician_not_gated_by_location, test_artisans_filtered_by_radius).
+# Ne pas modifier sans mettre a jour ces tests.
+# ---------------------------------------------------------------------------
+
 # Pages sur lesquelles la localisation est requise avant d'entrer dans l'app.
 _LOCATION_GATED_ENDPOINTS = {
     "index", "artisans_page", "categories", "requests_list",
