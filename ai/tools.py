@@ -4,12 +4,21 @@ Chaque outil est une fonction controlee. L'IA ne modifie jamais
 directement la base de donnees.
 """
 
+import os
+
 import db
 
 
 def _conn():
-    """Obtient une connexion via le module db."""
-    return db.connect()
+    """Connexion vers la base configuree (PostgreSQL en prod, SQLite sinon).
+
+    Lit les variables d'environnement en direct, pour rester coherent avec
+    get_db_connection() de fixpro_app et fonctionner en test.
+    """
+    return db.connect(
+        database_url=os.getenv("DATABASE_URL", "").strip(),
+        sqlite_path=os.getenv("FIXPRO_DB_PATH", "fixpro.db"),
+    )
 
 
 def get_current_user_context(user_id):

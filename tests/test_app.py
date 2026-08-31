@@ -781,6 +781,26 @@ class AdminPanelTests(FixProTestCase):
             sess["user_id"] = 1
             sess["admin_unlocked"] = True
 
+    def test_admin_document_escapes_filename(self):
+        """Le nom de fichier d'un document (saisi par le technicien) ne doit
+        pas s'executer comme du HTML dans la vue admin (XSS stockee)."""
+        import base64
+        png = base64.b64encode(b"\x89PNG\r\n\x1a\n" + b"0" * 40).decode()
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute(
+                "INSERT INTO technician_documents (technician_id, document_type,"
+                " file_name, mime_type, content_base64) VALUES (1, 'identity', ?, ?, ?)",
+                ("x</title><script>alert(1)</script>", "image/png", png))
+            conn.commit()
+        finally:
+            conn.close()
+        self.login_admin()
+        r = self.client.get("/admin/document/1")
+        self.assertEqual(r.status_code, 200)
+        self.assertNotIn(b"<script>alert(1)", r.data)
+        self.assertIn(b"&lt;script&gt;", r.data)
+
     def test_admin_login_redirects_to_unlock(self):
         response = self.client.post("/login", data={
             "identifier": "admin@fixpro.local",
