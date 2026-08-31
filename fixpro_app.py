@@ -2197,163 +2197,218 @@ def _mock_admin_dashboard_data():
     }
 
 
+def _period_bounds(period):
+    """(debut_iso, libelle, debut_periode_precedente_iso) pour le selecteur."""
+    now = datetime.now(timezone.utc)
+    if period == "today":
+        start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        return start.isoformat(), "Aujourd'hui", (start - timedelta(days=1)).isoformat()
+    if period == "7d":
+        start = now - timedelta(days=7)
+        return start.isoformat(), "7 derniers jours", (start - timedelta(days=7)).isoformat()
+    if period == "year":
+        start = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+        return start.isoformat(), "Cette annee", start.replace(year=start.year - 1).isoformat()
+    if period == "month":
+        start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        prev = (start - timedelta(seconds=1)).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        return start.isoformat(), "Ce mois", prev.isoformat()
+    start = now - timedelta(days=30)
+    return start.isoformat(), "30 derniers jours", (start - timedelta(days=30)).isoformat()
+
+
+def _pct_delta(current, previous):
+    if not previous:
+        return None
+    return round((current - previous) / previous * 100, 1)
+
+
+def _safe_url(endpoint, **kw):
+    """url_for tolerant : renvoie '#' si la route n'existe pas encore."""
+    try:
+        return url_for(endpoint, **kw)
+    except Exception:
+        return "#"
+
+
+def _admin_sidebar_badges(conn, admin_id):
+    def one(sql, params=()):
+        row = conn.execute(sql, params).fetchone()
+        return row["n"] if row else 0
+    return {
+        "validations": one(
+            "SELECT COUNT(*) AS n FROM users WHERE role = 'technician' AND verification_status = ?",
+            (VERIF_PENDING,)),
+        "notifications": one(
+            "SELECT COUNT(*) AS n FROM notifications WHERE user_id = ? AND is_read = 0", (admin_id,)),
+        "reclamations": one(
+            "SELECT COUNT(*) AS n FROM complaints WHERE status IN ('new', 'in_progress')"),
+        "messages": one(
+            "SELECT COUNT(*) AS n FROM conversations WHERE status IN ('needs_human', 'admin_active')"),
+    }
+
+
+_INTERVENTION_ACTIVE = (
+    "assigned", "accepted", "en_route", "on_the_way", "arrived", "in_progress")
+
+
 @app.route("/admin/dashboard")
 @login_required
 @admin_required
 def admin_dashboard():
-    """Tableau de bord admin complet."""
+    """Tableau de bord admin : abonnements, paiements, activite, alertes."""
     user = get_current_user()
-    if ADMIN_DEMO:
-        data = _mock_admin_dashboard_data()
-        data["today"] = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-        data["user"] = user
-        return render_template("admin_dashboard.html", **data)
+    period = request.args.get("period", "month")
+    start_iso, period_label, prev_start_iso = _period_bounds(period)
     now = datetime.now(timezone.utc)
     today = now.strftime("%Y-%m-%d")
-    yesterday = (now - timedelta(days=1)).strftime("%Y-%m-%d")
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0).isoformat()
+    soon = (now + timedelta(days=7)).isoformat()
+
     conn = get_db_connection()
     try:
-        today_signups = conn.execute(
-            "SELECT COUNT(*) AS n FROM users WHERE created_at LIKE ?", (today + "%",)).fetchone()["n"]
+        def scalar(sql, params=()):
+            row = conn.execute(sql, params).fetchone()
+            if not row:
+                return 0
+            return list(row.values())[0]
 
-        stats = {
-            "pending_requests": conn.execute(
-                "SELECT COUNT(*) AS n FROM requests WHERE LOWER(status) IN ('requested', 'nouvelle demande', 'pending')").fetchone()["n"],
-            "pending_requests_delta": conn.execute(
-                "SELECT COUNT(*) AS n FROM requests WHERE LOWER(status) IN ('requested', 'nouvelle demande', 'pending') AND created_at LIKE ?",
-                (today + "%",)).fetchone()["n"],
-            "available_artisans": conn.execute(
-                "SELECT COUNT(*) AS n FROM users WHERE role = 'technician' AND is_active = 1 AND account_status = 'ACTIVE' AND availability_status = 'en_ligne'").fetchone()["n"],
-            "interventions_in_progress": conn.execute(
-                "SELECT COUNT(*) AS n FROM requests WHERE LOWER(status) IN ('in_progress', 'on_the_way', 'assigned')").fetchone()["n"],
-            "interventions_delta": conn.execute(
-                "SELECT COUNT(*) AS n FROM requests WHERE LOWER(status) IN ('in_progress', 'on_the_way') AND created_at LIKE ?",
-                (today + "%",)).fetchone()["n"],
-            "today_commission": conn.execute(
-                "SELECT COALESCE(SUM(commission_amount), 0) AS s FROM payments WHERE status = 'completed' AND created_at LIKE ?",
-                (today + "%",)).fetchone()["s"],
-            "today_commission_delta": 0,
-        }
+        tech_actifs = scalar(
+            "SELECT COUNT(*) AS n FROM users WHERE role = 'technician'"
+            " AND is_active = 1 AND account_status = 'ACTIVE'")
+        tech_actifs_prev = scalar(
+            "SELECT COUNT(*) AS n FROM users WHERE role = 'technician'"
+            " AND is_active = 1 AND account_status = 'ACTIVE' AND created_at < ?", (start_iso,))
+        abos_actifs = scalar(
+            "SELECT COUNT(*) AS n FROM technician_subscriptions WHERE status = 'ACTIVE'")
+        abos_expires = scalar(
+            "SELECT COUNT(*) AS n FROM technician_subscriptions WHERE status = 'EXPIRED'")
+        paiements_mois = int(scalar(
+            "SELECT COALESCE(SUM(amount), 0) AS s FROM subscription_payments"
+            " WHERE status = 'paid' AND paid_at >= ?", (month_start,)) or 0)
+        paiements_mois_prev = int(scalar(
+            "SELECT COALESCE(SUM(amount), 0) AS s FROM subscription_payments"
+            " WHERE status = 'paid' AND paid_at >= ? AND paid_at < ?",
+            (prev_start_iso, start_iso)) or 0)
+        nouveaux_clients = scalar(
+            "SELECT COUNT(*) AS n FROM users WHERE role = 'client' AND created_at >= ?", (start_iso,))
+        nouveaux_clients_prev = scalar(
+            "SELECT COUNT(*) AS n FROM users WHERE role = 'client'"
+            " AND created_at >= ? AND created_at < ?", (prev_start_iso, start_iso))
+        interventions_cours = scalar(
+            "SELECT COUNT(*) AS n FROM requests WHERE LOWER(status) IN (%s)"
+            % ",".join("?" for _ in _INTERVENTION_ACTIVE), _INTERVENTION_ACTIVE)
 
-        today_paid = float(conn.execute(
-            "SELECT COALESCE(SUM(amount), 0) AS s FROM payments WHERE status = 'completed' AND created_at LIKE ?",
-            (today + "%",)).fetchone()["s"] or 0)
-        today_commission = float(conn.execute(
-            "SELECT COALESCE(SUM(commission_amount), 0) AS s FROM payments WHERE status = 'completed' AND created_at LIKE ?",
-            (today + "%",)).fetchone()["s"] or 0)
-        financial = {
-            "today_paid": today_paid,
-            "today_commission": today_commission,
-            "today_paid_to_artisans": max(0, today_paid - today_commission),
-        }
+        kpis = [
+            {"label": "Techniciens actifs", "value": tech_actifs,
+             "delta": _pct_delta(tech_actifs, tech_actifs_prev), "icon": "users", "tone": "blue",
+             "href": _safe_url("admin_artisans")},
+            {"label": "Abonnements actifs", "value": abos_actifs, "delta": None,
+             "icon": "shield_check", "tone": "green", "href": _safe_url("admin_subscriptions")},
+            {"label": "Abonnements expires", "value": abos_expires, "delta": None,
+             "icon": "clock", "tone": "orange", "sub": "A renouveler",
+             "href": _safe_url("admin_subscriptions", filter="expired")},
+            {"label": "Paiements ce mois", "value": paiements_mois,
+             "delta": _pct_delta(paiements_mois, paiements_mois_prev), "icon": "wallet",
+             "tone": "violet", "money": True, "href": _safe_url("admin_subscription_payments")},
+            {"label": "Nouveaux clients", "value": nouveaux_clients,
+             "delta": _pct_delta(nouveaux_clients, nouveaux_clients_prev), "icon": "user_plus",
+             "tone": "blue", "href": _safe_url("admin_clients")},
+            {"label": "Interventions en cours", "value": interventions_cours, "delta": None,
+             "icon": "wrench", "tone": "red", "href": _safe_url("admin_requests")},
+        ]
 
-        pending_requests = conn.execute(
-            "SELECT r.*, c.full_name AS client_name, c.phone AS client_phone"
-            " FROM requests r"
-            " LEFT JOIN users c ON c.id = r.client_id"
-            " WHERE LOWER(r.status) IN ('requested', 'nouvelle demande', 'pending')"
-            " ORDER BY r.created_at DESC LIMIT 5").fetchall()
+        rev_rows = conn.execute(
+            "SELECT SUBSTR(paid_at, 1, 10) AS jour, COALESCE(SUM(amount), 0) AS montant"
+            " FROM subscription_payments WHERE status = 'paid' AND paid_at >= ?"
+            " GROUP BY SUBSTR(paid_at, 1, 10) ORDER BY jour", (start_iso,)).fetchall()
+        revenue_series = [{"date": r["jour"], "amount": int(r["montant"] or 0)} for r in rev_rows]
+        revenue_total = sum(p["amount"] for p in revenue_series)
+        revenue_prev = int(scalar(
+            "SELECT COALESCE(SUM(amount), 0) AS s FROM subscription_payments"
+            " WHERE status = 'paid' AND paid_at >= ? AND paid_at < ?",
+            (prev_start_iso, start_iso)) or 0)
 
-        in_progress = conn.execute(
-            "SELECT r.*, c.full_name AS client_name, a.full_name AS artisan_name"
-            " FROM requests r"
+        plan_rows = conn.execute(
+            "SELECT p.name, p.code, COUNT(s.id) AS n FROM subscription_plans p"
+            " LEFT JOIN technician_subscriptions s ON s.plan_id = p.id AND s.status = 'ACTIVE'"
+            " WHERE p.is_active = 1 GROUP BY p.id ORDER BY p.sort_order").fetchall()
+        repartition = [{"name": r["name"], "code": r["code"], "count": r["n"]} for r in plan_rows]
+        repartition_total = sum(r["count"] for r in repartition)
+
+        def sub_count(where, params=()):
+            return scalar("SELECT COUNT(*) AS n FROM technician_subscriptions WHERE " + where, params)
+        s_actifs = sub_count("status = 'ACTIVE'")
+        s_expirant = sub_count("status = 'ACTIVE' AND end_date IS NOT NULL AND end_date <= ?", (soon,))
+        s_expires = sub_count("status = 'EXPIRED'")
+        s_impayes = sub_count("status = 'PAST_DUE'")
+        s_total = (s_actifs + s_expires + s_impayes + sub_count("status = 'SUSPENDED'")
+                   + sub_count("status IN ('TRIAL', 'CANCELLED')"))
+        statut_abos = [
+            {"label": "Actifs", "count": s_actifs, "tone": "green"},
+            {"label": "Expirant bientot (7 jours)", "count": s_expirant, "tone": "orange"},
+            {"label": "Expires", "count": s_expires, "tone": "red"},
+            {"label": "Impayes", "count": s_impayes, "tone": "violet"},
+        ]
+        for s in statut_abos:
+            s["pct"] = round(s["count"] / s_total * 100) if s_total else 0
+
+        derniers_paiements = conn.execute(
+            "SELECT sp.amount, sp.status, sp.paid_at, sp.created_at, sp.payment_method,"
+            " u.full_name AS tech_name, pl.name AS plan_name"
+            " FROM subscription_payments sp"
+            " LEFT JOIN users u ON u.id = sp.user_id"
+            " LEFT JOIN subscription_plans pl ON pl.id = sp.plan_id"
+            " ORDER BY COALESCE(sp.paid_at, sp.created_at) DESC LIMIT 5").fetchall()
+
+        interventions_recentes = conn.execute(
+            "SELECT r.id, r.title, r.category, r.status, r.address, r.created_at,"
+            " c.full_name AS client_name, a.full_name AS tech_name FROM requests r"
             " LEFT JOIN users c ON c.id = r.client_id"
             " LEFT JOIN users a ON a.id = r.artisan_id"
-            " WHERE LOWER(r.status) IN ('in_progress', 'on_the_way', 'assigned')"
             " ORDER BY r.created_at DESC LIMIT 5").fetchall()
 
-        available_artisans = conn.execute(
-            "SELECT u.*, AVG(rv.rating) AS avg_rating"
-            " FROM users u"
-            " LEFT JOIN reviews rv ON rv.artisan_id = u.id"
-            " WHERE u.role = 'technician' AND u.is_active = 1 AND u.account_status = 'ACTIVE' AND u.availability_status = 'en_ligne'"
-            " GROUP BY u.id"
-            " ORDER BY u.created_at DESC LIMIT 4").fetchall()
-
-        recent_requests = conn.execute(
-            "SELECT r.*, c.full_name AS client_name, a.full_name AS artisan_name"
-            " FROM requests r"
-            " LEFT JOIN users c ON c.id = r.client_id"
-            " LEFT JOIN users a ON a.id = r.artisan_id"
-            " ORDER BY r.created_at DESC LIMIT 6").fetchall()
-
-        recent_activities = []
-        for r in recent_requests:
-            status = (r["status"] or "").upper()
-            title_map = {
-                "REQUESTED": "Nouvelle demande",
-                "NOUVELLE DEMANDE": "Nouvelle demande",
-                "PENDING": "Nouvelle demande",
-                "ACCEPTED": "Intervention acceptee",
-                "ASSIGNED": "Intervention assignee",
-                "IN_PROGRESS": "Intervention en cours",
-                "ON_THE_WAY": "Technicien en route",
-                "COMPLETED": "Intervention terminee",
-                "CANCELLED": "Intervention annulee",
-                "PAID": "Paiement recu",
-            }
-            meta_map = {
-                "REQUESTED": "Nouvelle demande de " + (r["client_name"] or "—"),
-                "NOUVELLE DEMANDE": "Nouvelle demande de " + (r["client_name"] or "—"),
-                "PENDING": "Nouvelle demande de " + (r["client_name"] or "—"),
-                "ACCEPTED": "Intervention #" + (r["reference"] or str(r["id"])) + " acceptee",
-                "ASSIGNED": "Intervention #" + (r["reference"] or str(r["id"])) + " assignee",
-                "IN_PROGRESS": "Mission #" + (r["reference"] or str(r["id"])) + " en cours",
-                "ON_THE_WAY": "Technicien en route pour mission #" + (r["reference"] or str(r["id"])),
-                "COMPLETED": "Intervention #" + (r["reference"] or str(r["id"])) + " terminee",
-                "CANCELLED": "Intervention #" + (r["reference"] or str(r["id"])) + " annulee",
-                "PAID": "Paiement recu pour intervention #" + (r["reference"] or str(r["id"])),
-            }
-            color_map = {
-                "REQUESTED": "#ef4444",
-                "NOUVELLE DEMANDE": "#ef4444",
-                "PENDING": "#ef4444",
-                "ACCEPTED": "#10b981",
-                "ASSIGNED": "#2563eb",
-                "IN_PROGRESS": "#f59e0b",
-                "ON_THE_WAY": "#f59e0b",
-                "COMPLETED": "#10b981",
-                "CANCELLED": "#ef4444",
-                "PAID": "#8b5cf6",
-            }
-            icon_map = {
-                "REQUESTED": "file_plus",
-                "NOUVELLE DEMANDE": "file_plus",
-                "PENDING": "file_plus",
-                "ACCEPTED": "user_check",
-                "ASSIGNED": "user_check",
-                "IN_PROGRESS": "clock",
-                "ON_THE_WAY": "clock",
-                "COMPLETED": "check_circle",
-                "CANCELLED": "x_circle",
-                "PAID": "credit_card",
-            }
-            recent_activities.append({
-                "title": title_map.get(status, "Mise a jour"),
-                "time": "Il y a " + (str(r["created_at"])[-8:-3] if r["created_at"] else "—"),
-                "meta": meta_map.get(status, (r["client_name"] or "—")),
-                "color": color_map.get(status, "#64748b"),
-                "icon": icon_map.get(status, "clock"),
-            })
-        recent_activities = recent_activities[:6]
-
-        new_technician_requests = conn.execute(
+        demandes_validation = conn.execute(
             "SELECT id, full_name, profession, city, quartier, photo_url, created_at"
             " FROM users WHERE role = 'technician' AND verification_status = ?"
-            " ORDER BY created_at DESC LIMIT 10", (VERIF_PENDING,)).fetchall()
+            " ORDER BY created_at DESC LIMIT 6", (VERIF_PENDING,)).fetchall()
 
+        alertes = [
+            {"label": "Paiements echoues", "count": scalar(
+                "SELECT COUNT(*) AS n FROM subscription_payments WHERE status = 'failed'"),
+             "tone": "red", "sub": "Necessitent une action",
+             "href": _safe_url("admin_subscription_payments", filter="failed")},
+            {"label": "Abonnements expires", "count": s_expires, "tone": "orange",
+             "sub": "Necessitent une action", "href": _safe_url("admin_subscriptions", filter="expired")},
+            {"label": "Abonnements expirant bientot", "count": s_expirant, "tone": "amber",
+             "sub": "Dans les 7 prochains jours", "href": _safe_url("admin_subscriptions", filter="expiring")},
+            {"label": "Techniciens en attente", "count": scalar(
+                "SELECT COUNT(*) AS n FROM users WHERE role = 'technician' AND verification_status = ?",
+                (VERIF_PENDING,)),
+             "tone": "blue", "sub": "Demandes a valider", "href": _safe_url("admin_artisans", filter="pending")},
+            {"label": "Reclamations ouvertes", "count": scalar(
+                "SELECT COUNT(*) AS n FROM complaints WHERE status IN ('new', 'in_progress')"),
+             "tone": "violet", "sub": "En attente de traitement", "href": _safe_url("admin_complaints")},
+        ]
+
+        badges = _admin_sidebar_badges(conn, user["id"])
     finally:
         conn.close()
 
-    return render_template("admin_dashboard.html", user=user, today=today,
-                           stats=stats, financial=financial,
-                           pending_requests=pending_requests,
-                           in_progress=in_progress,
-                           available_artisans=available_artisans,
-                           new_technician_requests=new_technician_requests,
-                           recent_activities=recent_activities)
-
-
+    return render_template(
+        "admin_dashboard.html",
+        user=user, active="dashboard", badges=badges,
+        period=period, period_label=period_label, today=today,
+        kpis=kpis,
+        revenue_series=revenue_series, revenue_total=revenue_total,
+        revenue_delta=_pct_delta(revenue_total, revenue_prev),
+        repartition=repartition, repartition_total=repartition_total,
+        statut_abos=statut_abos, statut_total=s_total,
+        derniers_paiements=derniers_paiements,
+        interventions_recentes=interventions_recentes,
+        demandes_validation=demandes_validation,
+        alertes=alertes,
+    )
 @app.route("/admin/artisans", methods=["GET", "POST"])
 @login_required
 @admin_required
@@ -6211,10 +6266,99 @@ def _migrate_db():
                 conn.rollback()
             except Exception:
                 pass
+
+        # --- Abonnements techniciens (dashboard admin v2) -------------------
+        try:
+            _migrate_subscriptions(conn)
+            conn.commit()
+        except Exception as e:
+            logger.warning("Migration abonnements impossible: %s", e)
+            try:
+                conn.rollback()
+            except Exception:
+                pass
         finally:
             conn.close()
     except Exception as e:
         logger.warning("Connexion DB indisponible pour migration: %s", e)
+
+
+def _migrate_subscriptions(conn):
+    """Cree les tables d'abonnement et seme les 3 plans par defaut.
+
+    Compatible SQLite (dev/test) et PostgreSQL (prod).
+    """
+    pk = "SERIAL PRIMARY KEY" if conn.is_postgres else "INTEGER PRIMARY KEY AUTOINCREMENT"
+    ts = "TIMESTAMP" if conn.is_postgres else "TEXT"
+
+    if "admin_role" not in conn.table_columns("users"):
+        conn.execute("ALTER TABLE users ADD COLUMN admin_role TEXT")
+        conn.execute("UPDATE users SET admin_role = 'owner' WHERE role = 'admin'")
+
+    conn.execute(
+        f"CREATE TABLE IF NOT EXISTS subscription_plans ("
+        f" id {pk}, code TEXT NOT NULL UNIQUE, name TEXT NOT NULL,"
+        f" price_month INTEGER NOT NULL DEFAULT 0, currency TEXT NOT NULL DEFAULT 'GNF',"
+        f" features TEXT DEFAULT '', is_active INTEGER NOT NULL DEFAULT 1,"
+        f" sort_order INTEGER NOT NULL DEFAULT 0,"
+        f" created_at {ts} DEFAULT CURRENT_TIMESTAMP, updated_at {ts} DEFAULT CURRENT_TIMESTAMP)")
+
+    conn.execute(
+        f"CREATE TABLE IF NOT EXISTS technician_subscriptions ("
+        f" id {pk},"
+        f" technician_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,"
+        f" plan_id INTEGER REFERENCES subscription_plans(id) ON DELETE SET NULL,"
+        f" status TEXT NOT NULL DEFAULT 'TRIAL',"
+        f" start_date {ts} DEFAULT CURRENT_TIMESTAMP, end_date {ts},"
+        f" auto_renew INTEGER NOT NULL DEFAULT 1,"
+        f" created_at {ts} DEFAULT CURRENT_TIMESTAMP, updated_at {ts} DEFAULT CURRENT_TIMESTAMP)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_tech_subs_technician ON technician_subscriptions(technician_id)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_tech_subs_status ON technician_subscriptions(status)")
+
+    conn.execute(
+        f"CREATE TABLE IF NOT EXISTS subscription_payments ("
+        f" id {pk},"
+        f" user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,"
+        f" subscription_id INTEGER REFERENCES technician_subscriptions(id) ON DELETE SET NULL,"
+        f" plan_id INTEGER REFERENCES subscription_plans(id) ON DELETE SET NULL,"
+        f" amount INTEGER NOT NULL DEFAULT 0, currency TEXT NOT NULL DEFAULT 'GNF',"
+        f" payment_method TEXT DEFAULT 'orange_money', transaction_reference TEXT,"
+        f" status TEXT NOT NULL DEFAULT 'pending', paid_at {ts},"
+        f" period_start {ts}, period_end {ts},"
+        f" created_at {ts} DEFAULT CURRENT_TIMESTAMP)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_sub_payments_user ON subscription_payments(user_id)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_sub_payments_status ON subscription_payments(status)")
+
+    conn.execute(
+        f"CREATE TABLE IF NOT EXISTS complaints ("
+        f" id {pk},"
+        f" client_id INTEGER REFERENCES users(id) ON DELETE SET NULL,"
+        f" technician_id INTEGER REFERENCES users(id) ON DELETE SET NULL,"
+        f" request_id INTEGER REFERENCES requests(id) ON DELETE SET NULL,"
+        f" subject TEXT NOT NULL, message TEXT DEFAULT '',"
+        f" priority TEXT NOT NULL DEFAULT 'normal', status TEXT NOT NULL DEFAULT 'new',"
+        f" created_at {ts} DEFAULT CURRENT_TIMESTAMP, resolved_at {ts},"
+        f" resolved_by INTEGER REFERENCES users(id) ON DELETE SET NULL, resolution_note TEXT)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_complaints_status ON complaints(status)")
+
+    for code, name, price, order, features in _DEFAULT_PLANS:
+        exists = conn.execute(
+            "SELECT 1 FROM subscription_plans WHERE code = ?", (code,)).fetchone()
+        if not exists:
+            conn.execute(
+                "INSERT INTO subscription_plans (code, name, price_month, sort_order, features)"
+                " VALUES (?, ?, ?, ?, ?)",
+                (code, name, price, order, features))
+
+
+_DEFAULT_PLANS = [
+    ("basic", "Basic", 50000, 1,
+     "Profil verifie\nApparait dans la recherche\nMessagerie avec les clients"),
+    ("pro", "Pro", 100000, 2,
+     "Tout Basic\nMise en avant dans la recherche\nStatistiques detaillees\nSupport prioritaire"),
+    ("premium", "Premium", 200000, 3,
+     "Tout Pro\nBadge Premium\nEn tete des resultats\nAccompagnement dedie"),
+]
 
 
 @app.route("/admin/commissions")

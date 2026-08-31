@@ -878,18 +878,22 @@ class AdminPanelTests(FixProTestCase):
         self.assertIn("Admin".encode(), response.data)
 
     def test_admin_dashboard_shows_real_counts(self):
+        """Le dashboard v2 affiche les vrais chiffres (abonnements, techniciens)."""
         self.register_artisan("artisan@example.com", phone="+224621111111")
         self.login_admin()
         conn = db.connect(sqlite_path=self.db_path)
         try:
+            conn.execute("UPDATE users SET account_status = 'ACTIVE', is_active = 1"
+                         " WHERE role = 'technician'")
+            plan = conn.execute("SELECT id FROM subscription_plans WHERE code = 'pro'").fetchone()
+            tech = conn.execute("SELECT id FROM users WHERE role = 'technician'").fetchone()
             conn.execute(
-                "UPDATE users SET availability_status = ? WHERE role = ?",
-                ("en_ligne", "technician"))
-            ref = fixpro_app._generate_fixpro_reference(conn)
+                "INSERT INTO technician_subscriptions (technician_id, plan_id, status)"
+                " VALUES (?, ?, 'ACTIVE')", (tech["id"], plan["id"]))
             conn.execute(
-                "INSERT INTO requests (client_id, artisan_id, reference, title, description, category, address, status, urgency, quote_amount, budget, latitude, longitude, created_at, updated_at)"
-                " VALUES (1, 1, ?, 'Titre', 'Desc', 'plomberie', 'Kaloum', 'REQUESTED', 'normal', 0, 0, 0, 0, datetime('now'), datetime('now'))",
-                (ref,))
+                "INSERT INTO subscription_payments (user_id, plan_id, amount, status, paid_at)"
+                " VALUES (?, ?, 100000, 'paid', ?)",
+                (tech["id"], plan["id"], fixpro_app.now_iso()))
             conn.commit()
         finally:
             conn.close()
@@ -897,8 +901,21 @@ class AdminPanelTests(FixProTestCase):
         response = self.client.get("/admin/dashboard")
         self.assertEqual(response.status_code, 200)
         html = response.data.decode()
-        self.assertIn("Nouvelle demande", html)
-        self.assertIn("Disponible", html)
+        self.assertIn("Techniciens actifs", html)
+        self.assertIn("Abonnements actifs", html)
+        self.assertIn("Revenus des abonnements", html)
+        # 1 abonnement actif, 1 paiement de 100 000
+        self.assertIn("100 000 GNF", html)
+        self.assertNotIn("commission", html.lower())
+
+    def test_subscription_plans_seeded(self):
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            codes = {r["code"] for r in conn.execute(
+                "SELECT code FROM subscription_plans").fetchall()}
+        finally:
+            conn.close()
+        self.assertEqual(codes, {"basic", "pro", "premium"})
 
     def test_admin_can_suspend_and_restore_artisan(self):
         self.register_artisan("artisan@example.com", phone="+224621111111")
@@ -2457,7 +2474,7 @@ class TechnicianVerificationFlowTests(FixProTestCase):
         tech = self._tech()
         dash = self.client.get("/admin/dashboard")
         self.assertEqual(dash.status_code, 200)
-        self.assertIn("Nouvelles demandes de techniciens", dash.get_data(as_text=True))
+        self.assertIn("Demandes de validation", dash.get_data(as_text=True))
         detail = self.client.get(f"/admin/artisans/{tech['id']}")
         self.assertEqual(detail.status_code, 200)
         self.assertIn("Justificatif professionnel", detail.get_data(as_text=True))

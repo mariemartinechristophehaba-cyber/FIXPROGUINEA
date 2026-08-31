@@ -3,202 +3,188 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="csrf-token" content="{{ csrf_token() }}" />
     <title>{% block title %}Administration FixPro{% endblock %}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <style>
       :root {
-        --navy: #0b1120;
-        --navy-active: #1d4ed8;
-        --text-light: #94a3b8;
-        --white: #ffffff;
-        --bg: #f3f6f9;
-        --card: #ffffff;
-        --blue: #2563eb;
-        --green: #10b981;
-        --orange: #f59e0b;
-        --red: #ef4444;
-        --purple: #8b5cf6;
-        --text: #1e293b;
-        --muted: #64748b;
+        --blue: #2563eb; --blue-soft: #eff4ff;
+        --green: #10b981; --orange: #f59e0b; --amber: #fbbf24;
+        --red: #ef4444; --violet: #8b5cf6;
+        /* thème clair (pages admin existantes) */
+        --bg: #f3f6f9; --card: #ffffff; --text: #1e293b; --muted: #64748b;
+        --line: #e6ecf5; --sidebar-bg: #0b1120; --sidebar-fg: #94a3b8;
+        --topbar-bg: #ffffff;
+      }
+      /* thème sombre (dashboard v2, cf. maquette) */
+      body.admin-dark {
+        --bg: #0a0f1c; --card: #111a2e; --text: #e8edf7; --muted: #8a97ad;
+        --line: #1e293f; --topbar-bg: #0d1526;
       }
       * { box-sizing: border-box; margin: 0; padding: 0; }
       body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); }
       a { text-decoration: none; color: inherit; }
       svg { display: inline-block; vertical-align: middle; }
       .admin-app { display: flex; min-height: 100vh; }
-      .sidebar { width: 260px; background: var(--navy); color: var(--text-light); position: fixed; inset: 0 auto 0 0; display: flex; flex-direction: column; z-index: 100; }
-      .sidebar-header { display: flex; align-items: center; gap: 12px; padding: 22px 24px; border-bottom: 1px solid rgba(255,255,255,0.05); }
-      .logo-mark { width: 36px; height: 36px; background: var(--blue); border-radius: 8px; display: grid; place-items: center; color: #fff; }
-      .logo-mark svg { width: 22px; height: 22px; }
-      .logo-text { color: var(--white); font-weight: 800; font-size: 1.1rem; line-height: 1.1; }
-      .logo-text small { display: block; font-size: 0.58rem; letter-spacing: 0.14em; color: var(--orange); font-weight: 700; margin-top: 1px; }
-      .nav { flex: 1; padding: 16px 12px; overflow-y: auto; }
-      .nav a { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 8px; font-size: 0.88rem; color: var(--text-light); margin-bottom: 3px; transition: .15s; position: relative; }
-      .nav a:hover, .nav a.active { background: rgba(255,255,255,0.06); color: var(--white); }
-      .nav a.active { background: var(--navy-active); }
-      .nav a svg { width: 20px; height: 20px; }
-      .nav a .badge { margin-left: auto; background: var(--red); color: #fff; font-size: 0.65rem; padding: 2px 7px; border-radius: 10px; font-weight: 700; }
-      .nav-sep { height: 1px; background: rgba(255,255,255,0.06); margin: 12px 14px; }
-      .logout { display: flex; align-items: center; gap: 10px; padding: 10px 14px; margin: 0 12px; color: var(--red); border-radius: 8px; font-size: 0.88rem; font-weight: 600; }
-      .logout:hover { background: rgba(239,68,68,0.1); }
-      .main { flex: 1; margin-left: 260px; min-width: 0; display: flex; flex-direction: column; }
-      .topbar { height: 70px; background: var(--card); display: flex; align-items: center; justify-content: space-between; padding: 0 28px; position: sticky; top: 0; z-index: 50; }
-      .topbar-left { display: flex; align-items: center; gap: 16px; }
+
+      .sidebar {
+        width: 250px; background: var(--sidebar-bg); color: var(--sidebar-fg);
+        position: fixed; inset: 0 auto 0 0; display: flex; flex-direction: column; z-index: 100;
+      }
+      .sidebar-header { display: flex; align-items: center; gap: 11px; padding: 20px 22px; }
+      .logo-mark { width: 34px; height: 34px; background: var(--blue); border-radius: 9px; display: grid; place-items: center; color: #fff; }
+      .logo-mark svg { width: 20px; height: 20px; }
+      .logo-text { color: #fff; font-weight: 800; font-size: 1.15rem; line-height: 1; }
+      .logo-text small { display: block; font-size: 0.6rem; letter-spacing: 0.12em; color: var(--sidebar-fg); font-weight: 600; margin-top: 3px; }
+      .nav { flex: 1; padding: 10px 12px; overflow-y: auto; }
+      .nav a {
+        display: flex; align-items: center; gap: 12px; padding: 10px 13px; border-radius: 9px;
+        font-size: 0.875rem; font-weight: 500; color: var(--sidebar-fg); margin-bottom: 2px; transition: .12s;
+      }
+      .nav a:hover { background: rgba(255,255,255,0.05); color: #fff; }
+      .nav a.active { background: var(--blue); color: #fff; }
+      .nav a svg { width: 19px; height: 19px; flex: none; }
+      .nav a .badge {
+        margin-left: auto; background: var(--orange); color: #fff; font-size: 0.66rem;
+        min-width: 18px; text-align: center; padding: 1px 6px; border-radius: 9px; font-weight: 700;
+      }
+      .nav a.active .badge { background: rgba(255,255,255,0.25); }
+      .side-foot { padding: 12px; border-top: 1px solid rgba(255,255,255,0.06); }
+      .side-user { display: flex; align-items: center; gap: 10px; padding: 8px 8px 10px; }
+      .side-user .av { width: 36px; height: 36px; border-radius: 50%; background: var(--blue); color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 0.85rem; flex: none; }
+      .side-user .nm { color: #fff; font-size: 0.82rem; font-weight: 600; }
+      .side-user .rl { font-size: 0.68rem; }
+      .side-user .tag { display: inline-block; margin-top: 3px; background: rgba(37,99,235,0.2); color: #93b4fb; font-size: 0.6rem; font-weight: 700; padding: 1px 7px; border-radius: 6px; text-transform: uppercase; letter-spacing: .04em; }
+      .logout { display: flex; align-items: center; gap: 10px; padding: 9px 10px; color: #f87171; border-radius: 8px; font-size: 0.84rem; font-weight: 600; }
+      .logout:hover { background: rgba(239,68,68,0.12); }
+
+      .main { flex: 1; margin-left: 250px; min-width: 0; display: flex; flex-direction: column; }
+      .topbar {
+        background: var(--topbar-bg); border-bottom: 1px solid var(--line);
+        display: flex; align-items: center; justify-content: space-between; gap: 18px;
+        padding: 16px 28px; position: sticky; top: 0; z-index: 50;
+      }
+      .topbar-left h1 { font-size: 1.35rem; font-weight: 800; letter-spacing: -0.01em; display: flex; align-items: center; gap: 8px; }
+      .topbar-left p { font-size: 0.85rem; color: var(--muted); margin-top: 2px; }
+      .topbar-right { display: flex; align-items: center; gap: 14px; }
       .menu-btn { display: none; background: none; border: none; cursor: pointer; }
       .menu-btn span { display: block; width: 22px; height: 2px; background: var(--text); margin: 5px 0; }
-      .search { width: 260px; padding: 10px 14px 10px 40px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 0.9rem; background: #f8fafc url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="%2394a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>') no-repeat 14px center; }
-      .topbar-right { display: flex; align-items: center; gap: 22px; }
-      .notif { position: relative; background: none; border: none; cursor: pointer; display: grid; place-items: center; }
-      .notif svg { width: 22px; height: 22px; color: var(--muted); }
-      .notif-count { position: absolute; top: -4px; right: -4px; background: var(--red); color: #fff; border-radius: 50%; width: 18px; height: 18px; font-size: 0.65rem; display: grid; place-items: center; }
-      .profile { position: relative; display: flex; align-items: center; gap: 10px; cursor: pointer; }
-      .profile-avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--blue); color: #fff; display: grid; place-items: center; font-weight: 700; }
-      .profile-text { line-height: 1.2; }
-      .profile-name { font-weight: 600; font-size: 0.9rem; }
-      .profile-role { font-size: 0.75rem; color: var(--muted); }
-      .profile-menu { display: none; position: absolute; top: 54px; right: 0; width: 180px; background: #fff; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.12); padding: 6px; z-index: 60; }
-      .profile-menu.show { display: block; }
-      .profile-menu a { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; font-size: 0.85rem; color: var(--text); }
-      .profile-menu a:hover { background: #f3f6f9; }
-      .profile-menu a svg { width: 18px; height: 18px; color: var(--muted); }
-      .content { padding: 24px; flex: 1; overflow-y: auto; }
-      .flash { padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 0.85rem; }
-      .flash.success { background: #d1fae5; color: #047857; }
-      .flash.error { background: #fee2e2; color: #b91c1c; }
+
+      .period {
+        display: flex; align-items: center; gap: 8px; border: 1px solid var(--line);
+        background: var(--card); border-radius: 10px; padding: 8px 12px; font-size: 0.85rem; font-weight: 600; color: var(--text);
+      }
+      .period select { border: none; background: none; font: inherit; color: inherit; cursor: pointer; outline: none; }
+      .icon-btn { position: relative; width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--line); background: var(--card); display: grid; place-items: center; cursor: pointer; color: var(--muted); }
+      .icon-btn svg { width: 19px; height: 19px; }
+      .icon-btn .dot { position: absolute; top: -5px; right: -5px; min-width: 18px; height: 18px; padding: 0 4px; background: var(--red); color: #fff; border-radius: 9px; font-size: 0.62rem; font-weight: 700; display: grid; place-items: center; }
+      .btn-add { display: flex; align-items: center; gap: 7px; background: var(--blue); color: #fff; border: none; border-radius: 10px; padding: 10px 16px; font-size: 0.85rem; font-weight: 700; cursor: pointer; }
+      .btn-add:hover { background: #1d4ed8; }
+      .search { width: 220px; padding: 9px 12px 9px 36px; border: 1px solid var(--line); border-radius: 10px; font-size: 0.85rem; background: var(--card) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="%2394a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>') no-repeat 12px center; color: var(--text); }
+
+      .content { padding: 24px 28px 40px; flex: 1; }
+      .flash { padding: 12px 16px; border-radius: 10px; margin-bottom: 18px; font-size: 0.85rem; font-weight: 600; }
+      .flash.success { background: rgba(16,185,129,0.14); color: #059669; }
+      .flash.error { background: rgba(239,68,68,0.14); color: #dc2626; }
+
+      .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 90; }
       @media (max-width: 1024px) {
         .sidebar { transform: translateX(-100%); transition: .2s; }
         .sidebar.open { transform: translateX(0); }
         .main { margin-left: 0; }
         .menu-btn { display: block; }
-        .search { display: none; }
+        .search, .topbar-left p { display: none; }
+        .overlay.show { display: block; }
         .content { padding: 16px; }
+        .topbar { padding: 12px 16px; }
       }
-      .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 90; }
-      .overlay.show { display: block; }
     </style>
     {% block extra_head %}{% endblock %}
   </head>
-  <body>
+  <body class="{% block body_class %}{% endblock %}">
     <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
     <div class="admin-app">
       <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
           <div class="logo-mark">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
-            </svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
           </div>
-          <div class="logo-text">FixPro <small>ADMIN</small></div>
+          <div class="logo-text">FixPro <small>Admin Dashboard</small></div>
         </div>
 
+        {% set b = badges if badges is defined else {} %}
+        {% set _live = ('admin_dashboard','admin_artisans','admin_clients','admin_requests','admin_payments','admin_messages','admin_reviews','admin_tickets','admin_settings','admin_activity','admin_contacts','admin_commissions') %}
+        {% macro navlink(endpoint, label, badge=0) %}
+          <a class="{{ 'active' if request.endpoint == endpoint }}" href="{{ url_for(endpoint) if endpoint in _live else '#' }}"{% if endpoint not in _live %} data-soon="1"{% endif %}>
+            {{ caller() }}
+            <span>{{ label }}</span>
+            {% if badge %}<span class="badge">{{ badge }}</span>{% endif %}
+          </a>
+        {% endmacro %}
+
         <nav class="nav">
-          <a class="{{ 'active' if request.endpoint == 'admin_dashboard' }}" href="{{ url_for('admin_dashboard') }}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/></svg>
-            Tableau de bord
-          </a>
-          <a class="{{ 'active' if request.endpoint == 'admin_requests' }}" href="{{ url_for('admin_requests') }}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
-            Demandes
-            {% if admin_stats and admin_stats.pending_requests %}<span class="badge">{{ admin_stats.pending_requests }}</span>{% endif %}
-          </a>
-          <a class="{{ 'active' if request.endpoint == 'admin_requests' }}" href="{{ url_for('admin_requests') }}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="12" y1="11" x2="12" y2="11"/></svg>
-            Interventions
-            {% if admin_stats and admin_stats.open_requests %}<span class="badge">{{ admin_stats.open_requests }}</span>{% endif %}
-          </a>
-          <a class="{{ 'active' if request.endpoint == 'admin_artisans' }}" href="{{ url_for('admin_artisans') }}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19v-2a4 4 0 0 0-4-4h-2"/><path d="M16 21v-2a4 4 0 0 0-4-4h-4a4 4 0 0 0-4 4v2"/><circle cx="8" cy="7" r="4"/><circle cx="18" cy="6" r="3"/></svg>
-            Techniciens
-          </a>
-          <a class="{{ 'active' if request.endpoint == 'admin_clients' }}" href="{{ url_for('admin_clients') }}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4h-4a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            Clients
-          </a>
-          <a class="{{ 'active' if request.endpoint == 'admin_contacts' }}" href="{{ url_for('admin_contacts') }}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-            Contacts
-          </a>
-          <a class="{{ 'active' if request.endpoint == 'admin_payments' }}" href="{{ url_for('admin_payments') }}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-            Paiements
-          </a>
-          <a class="{{ 'active' if request.endpoint == 'admin_commissions' }}" href="{{ url_for('admin_commissions') }}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a3 3 0 0 0 0 6h4a3 3 0 0 1 0 6H8"/><path d="M12 2v4"/></svg>
-            Commissions
-          </a>
-          <a class="{{ 'active' if request.endpoint == 'admin_messages' }}" href="{{ url_for('admin_messages') }}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-            Messagerie
-            {% if admin_stats and admin_stats.open_messages %}<span class="badge">{{ admin_stats.open_messages }}</span>{% endif %}
-          </a>
-          <a class="{{ 'active' if request.endpoint == 'admin_reviews' }}" href="{{ url_for('admin_reviews') }}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-            Avis clients
-          </a>
-          <a class="{{ 'active' if request.endpoint == 'admin_tickets' }}" href="{{ url_for('admin_tickets') }}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
-            Litiges
-          </a>
-          <a class="{{ 'active' if request.endpoint == 'admin_activity' }}" href="{{ url_for('admin_activity') }}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v6"/></svg>
-            Rapports
-          </a>
-          <a class="{{ 'active' if request.endpoint == 'admin_settings' }}" href="{{ url_for('admin_settings') }}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-            Parametres
-          </a>
-          <a class="{{ 'active' if request.endpoint == 'admin_activity' }}" href="{{ url_for('admin_activity') }}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
-            Notifications
-            {% if admin_stats and admin_stats.open_tickets %}<span class="badge">{{ admin_stats.open_tickets }}</span>{% endif %}
-          </a>
+          {% call navlink('admin_dashboard', 'Tableau de bord') %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>{% endcall %}
+          {% call navlink('admin_artisans', 'Techniciens') %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>{% endcall %}
+          {% call navlink('admin_clients', 'Clients') %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>{% endcall %}
+          {% call navlink('admin_subscriptions', 'Abonnements') %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"/><path d="M4 6v12c0 1.1.9 2 2 2h14v-4"/><path d="M18 12a2 2 0 0 0-2 2c0 1.1.9 2 2 2h4v-4h-4z"/></svg>{% endcall %}
+          {% call navlink('admin_subscription_payments', 'Paiements') %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>{% endcall %}
+          {% call navlink('admin_requests', 'Interventions', b.get('interventions', 0)) %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>{% endcall %}
+          {% call navlink('admin_artisans', 'Demandes de validation', b.get('validations', 0)) %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>{% endcall %}
+          {% call navlink('admin_messages', 'Messages', b.get('messages', 0)) %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>{% endcall %}
+          {% call navlink('admin_reviews', 'Avis & Evaluations') %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>{% endcall %}
+          {% call navlink('admin_complaints', 'Reclamations', b.get('reclamations', 0)) %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>{% endcall %}
+          {% call navlink('admin_activity', 'Notifications', b.get('notifications', 0)) %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>{% endcall %}
+          {% call navlink('admin_activity', 'Rapports') %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>{% endcall %}
+          {% call navlink('admin_users', 'Utilisateurs') %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>{% endcall %}
+          {% call navlink('admin_settings', 'Parametres') %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>{% endcall %}
+        </nav>
 
-          <div class="nav-sep"></div>
-
+        <div class="side-foot">
+          <div class="side-user">
+            <div class="av">{{ (user.full_name or 'A')[0]|upper if user else 'A' }}</div>
+            <div>
+              <div class="nm">{{ user.full_name or 'Administrateur' if user else 'Administrateur' }}</div>
+              <div class="rl">{{ user.email or 'admin@fixpro' if user else 'admin@fixpro' }}</div>
+              <span class="tag">{{ (user.admin_role or 'admin') if user else 'admin' }}</span>
+            </div>
+          </div>
           <a class="logout" href="{{ url_for('admin_logout') }}">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
             Deconnexion
           </a>
-        </nav>
+        </div>
       </aside>
 
       <main class="main">
         <header class="topbar">
           <div class="topbar-left">
             <button class="menu-btn" type="button" onclick="toggleMenu()" aria-label="Menu"><span></span><span></span><span></span></button>
-            <input class="search" type="text" placeholder="Rechercher..." />
+            <div>
+              <h1>{% block admin_title %}Administration{% endblock %}</h1>
+              <p>{% block admin_subtitle %}{% endblock %}</p>
+            </div>
           </div>
           <div class="topbar-right">
-            <button class="notif" aria-label="Notifications">
+            {% block topbar_actions %}{% endblock %}
+            <input class="search" type="text" placeholder="Rechercher..." />
+            <button class="icon-btn" type="button" aria-label="Notifications" onclick="window.location='{{ url_for('admin_activity') }}'">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
-              {% if admin_stats and admin_stats.open_tickets + admin_stats.open_requests %}<span class="notif-count">{{ admin_stats.open_tickets + admin_stats.open_requests }}</span>{% endif %}
+              {% if b.get('notifications', 0) %}<span class="dot">{{ b.get('notifications') }}</span>{% endif %}
             </button>
-            <div class="profile" onclick="toggleProfile()">
-              <div class="profile-avatar">{{ (user.full_name or 'A')[0]|upper }}</div>
-              <div class="profile-text">
-                <div class="profile-name">Administrateur FixPro</div>
-                <div class="profile-role">Super Admin</div>
-              </div>
-              <svg class="chevron" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-              <div class="profile-menu" id="profileMenu">
-                <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="10" r="3"/><path d="M7 20.7a9 9 0 0 1 10 0"/></svg> Mon profil</a>
-                <a href="{{ url_for('admin_settings') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> Parametres</a>
-                <a href="{{ url_for('admin_activity') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="6" x2="12" y2="12"/><line x1="12" y1="12" x2="16" y2="12"/></svg> Journal d'activite</a>
-                <a href="{{ url_for('admin_logout') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> Deconnexion</a>
-              </div>
-            </div>
+            <button class="btn-add" type="button" onclick="window.location='{{ url_for('admin_artisans') }}'">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+              Ajouter / Gerer
+            </button>
           </div>
         </header>
         <div class="content">
           {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-              {% for category, message in messages %}
-                <div class="flash {{ category }}">{{ message }}</div>
-              {% endfor %}
-            {% endif %}
+            {% if messages %}{% for category, message in messages %}
+              <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}{% endif %}
           {% endwith %}
           {% block admin_content %}{% endblock %}
         </div>
@@ -209,16 +195,14 @@
         document.getElementById('sidebar').classList.toggle('open');
         document.getElementById('overlay').classList.toggle('show');
       }
-      function toggleProfile() {
-        document.getElementById('profileMenu').classList.toggle('show');
-      }
-      document.addEventListener('click', function(e) {
-        const profile = document.querySelector('.profile');
-        const menu = document.getElementById('profileMenu');
-        if (profile && menu && !profile.contains(e.target)) {
-          menu.classList.remove('show');
-        }
-      });
+      (function () {
+        var sel = document.getElementById('periodSelect');
+        if (sel) sel.addEventListener('change', function () {
+          var u = new URL(window.location.href);
+          u.searchParams.set('period', this.value);
+          window.location.href = u.toString();
+        });
+      })();
     </script>
     {% block scripts %}{% endblock %}
   </body>
