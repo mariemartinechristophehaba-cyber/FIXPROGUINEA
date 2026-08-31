@@ -2409,6 +2409,190 @@ def admin_dashboard():
         demandes_validation=demandes_validation,
         alertes=alertes,
     )
+# ===========================================================================
+# Dashboard admin v2 - pages abonnements / paiements / reclamations
+# ===========================================================================
+
+_PLAN_PRICE_MAX = 5_000_000
+
+
+@app.route("/admin/abonnements")
+@login_required
+@admin_required
+def admin_subscriptions():
+    """Liste des abonnements techniciens + gestion des plans."""
+    user = get_current_user()
+    flt = request.args.get("filter", "")
+    now = datetime.now(timezone.utc)
+    soon = (now + timedelta(days=7)).isoformat()
+
+    where, params = "1 = 1", []
+    if flt == "active":
+        where = "s.status = 'ACTIVE'"
+    elif flt == "expired":
+        where = "s.status = 'EXPIRED'"
+    elif flt == "expiring":
+        where, params = "s.status = 'ACTIVE' AND s.end_date IS NOT NULL AND s.end_date <= ?", [soon]
+    elif flt == "past_due":
+        where = "s.status = 'PAST_DUE'"
+    elif flt == "suspended":
+        where = "s.status = 'SUSPENDED'"
+
+    conn = get_db_connection()
+    try:
+        subs = conn.execute(
+            "SELECT s.id, s.status, s.start_date, s.end_date, s.auto_renew,"
+            " u.id AS tech_id, u.full_name AS tech_name, u.phone AS tech_phone, u.profession,"
+            " p.name AS plan_name, p.price_month"
+            " FROM technician_subscriptions s"
+            " JOIN users u ON u.id = s.technician_id"
+            " LEFT JOIN subscription_plans p ON p.id = s.plan_id"
+            " WHERE " + where +
+            " ORDER BY (s.end_date IS NULL), s.end_date ASC, s.created_at DESC LIMIT 300",
+            params).fetchall()
+        plans = conn.execute(
+            "SELECT p.*,"
+            " (SELECT COUNT(*) FROM technician_subscriptions s"
+            "  WHERE s.plan_id = p.id AND s.status = 'ACTIVE') AS subscribers"
+            " FROM subscription_plans p ORDER BY p.sort_order").fetchall()
+
+        def cnt(w, pr=()):
+            return conn.execute(
+                "SELECT COUNT(*) AS n FROM technician_subscriptions WHERE " + w, pr).fetchone()["n"]
+        counts = {
+            "all": cnt("1 = 1"),
+            "active": cnt("status = 'ACTIVE'"),
+            "expiring": cnt("status = 'ACTIVE' AND end_date IS NOT NULL AND end_date <= ?", (soon,)),
+            "expired": cnt("status = 'EXPIRED'"),
+            "past_due": cnt("status = 'PAST_DUE'"),
+        }
+        badges = _admin_sidebar_badges(conn, user["id"])
+    finally:
+        conn.close()
+    return render_template("admin_subscriptions.html", user=user, badges=badges,
+                           subs=subs, plans=plans, counts=counts, filter=flt)
+
+
+@app.route("/admin/abonnements/plans/<int:plan_id>", methods=["POST"])
+@login_required
+@admin_required
+@limiter.limit("60 per hour", methods=["POST"])
+def admin_update_plan(plan_id):
+    """Modification d'un plan d'abonnement (prix, fonctionnalites, activation)."""
+    user = get_current_user()
+    name = (request.form.get("name") or "").strip()
+    price = _to_int(request.form.get("price_month"), -1)
+    features = (request.form.get("features") or "").strip()
+    is_active = 1 if request.form.get("is_active") else 0
+    if not name or price < 0 or price > _PLAN_PRICE_MAX:
+        flash("Nom et prix valides obligatoires.", "error")
+        return redirect(url_for("admin_subscriptions"))
+    conn = get_db_connection()
+    try:
+        conn.execute(
+            "UPDATE subscription_plans SET name = ?, price_month = ?, features = ?,"
+            " is_active = ?, updated_at = ? WHERE id = ?",
+            (name, price, features, is_active, now_iso(), plan_id))
+        conn.commit()
+        log_admin_action(user["id"], user.get("email"), "update_plan",
+                         "subscription_plan", plan_id, "%s : %s GNF" % (name, price))
+        flash("Plan mis a jour.", "success")
+    finally:
+        conn.close()
+    return redirect(url_for("admin_subscriptions"))
+
+
+@app.route("/admin/abonnements/paiements")
+@login_required
+@admin_required
+def admin_subscription_payments():
+    """Historique des paiements d'abonnement."""
+    user = get_current_user()
+    flt = request.args.get("filter", "")
+    where, params = "1 = 1", []
+    if flt in ("paid", "pending", "failed", "refunded"):
+        where, params = "sp.status = ?", [flt]
+    conn = get_db_connection()
+    try:
+        pays = conn.execute(
+            "SELECT sp.id, sp.amount, sp.status, sp.paid_at, sp.created_at,"
+            " sp.payment_method, sp.transaction_reference,"
+            " u.full_name AS tech_name, u.phone AS tech_phone, p.name AS plan_name"
+            " FROM subscription_payments sp"
+            " LEFT JOIN users u ON u.id = sp.user_id"
+            " LEFT JOIN subscription_plans p ON p.id = sp.plan_id"
+            " WHERE " + where +
+            " ORDER BY COALESCE(sp.paid_at, sp.created_at) DESC LIMIT 300", params).fetchall()
+
+        def one(sql, pr=()):
+            return conn.execute(sql, pr).fetchone()["n"]
+        totals = {
+            "collected": int(conn.execute(
+                "SELECT COALESCE(SUM(amount), 0) AS n FROM subscription_payments"
+                " WHERE status = 'paid'").fetchone()["n"] or 0),
+            "all": one("SELECT COUNT(*) AS n FROM subscription_payments"),
+            "paid": one("SELECT COUNT(*) AS n FROM subscription_payments WHERE status = 'paid'"),
+            "pending": one("SELECT COUNT(*) AS n FROM subscription_payments WHERE status = 'pending'"),
+            "failed": one("SELECT COUNT(*) AS n FROM subscription_payments WHERE status = 'failed'"),
+        }
+        badges = _admin_sidebar_badges(conn, user["id"])
+    finally:
+        conn.close()
+    return render_template("admin_subscription_payments.html", user=user, badges=badges,
+                           pays=pays, totals=totals, filter=flt)
+
+
+_COMPLAINT_STATUSES = ("new", "in_progress", "resolved", "closed")
+
+
+@app.route("/admin/reclamations", methods=["GET", "POST"])
+@login_required
+@admin_required
+@limiter.limit("60 per hour", methods=["POST"])
+def admin_complaints():
+    """Suivi et traitement des reclamations."""
+    user = get_current_user()
+    conn = get_db_connection()
+    try:
+        if request.method == "POST":
+            cid = request.form.get("complaint_id")
+            new_status = request.form.get("status")
+            note = (request.form.get("note") or "").strip()
+            if new_status in _COMPLAINT_STATUSES and cid:
+                done = new_status in ("resolved", "closed")
+                conn.execute(
+                    "UPDATE complaints SET status = ?, resolution_note = ?,"
+                    " resolved_at = ?, resolved_by = ? WHERE id = ?",
+                    (new_status, note or None, now_iso() if done else None,
+                     user["id"] if done else None, cid))
+                conn.commit()
+                log_admin_action(user["id"], user.get("email"), "update_complaint",
+                                 "complaint", cid, new_status)
+                flash("Reclamation mise a jour.", "success")
+            return redirect(url_for("admin_complaints", filter=request.args.get("filter", "")))
+
+        flt = request.args.get("filter", "")
+        where = "1 = 1"
+        if flt in _COMPLAINT_STATUSES:
+            where = "c.status = '%s'" % flt
+        rows = conn.execute(
+            "SELECT c.*, cl.full_name AS client_name, cl.phone AS client_phone,"
+            " t.full_name AS tech_name"
+            " FROM complaints c"
+            " LEFT JOIN users cl ON cl.id = c.client_id"
+            " LEFT JOIN users t ON t.id = c.technician_id"
+            " WHERE " + where + " ORDER BY c.created_at DESC LIMIT 300").fetchall()
+        counts = {"all": conn.execute("SELECT COUNT(*) AS n FROM complaints").fetchone()["n"]}
+        for s in _COMPLAINT_STATUSES:
+            counts[s] = conn.execute(
+                "SELECT COUNT(*) AS n FROM complaints WHERE status = ?", (s,)).fetchone()["n"]
+        badges = _admin_sidebar_badges(conn, user["id"])
+    finally:
+        conn.close()
+    return render_template("admin_complaints.html", user=user, badges=badges,
+                           complaints=rows, counts=counts, filter=flt)
+
+
 @app.route("/admin/artisans", methods=["GET", "POST"])
 @login_required
 @admin_required
@@ -6277,10 +6461,62 @@ def _migrate_db():
                 conn.rollback()
             except Exception:
                 pass
+
+        # --- Compte administrateur (a partir des variables d'env) -----------
+        try:
+            _bootstrap_admin(conn)
+            conn.commit()
+        except Exception as e:
+            logger.warning("Bootstrap admin impossible: %s", e)
+            try:
+                conn.rollback()
+            except Exception:
+                pass
         finally:
             conn.close()
     except Exception as e:
         logger.warning("Connexion DB indisponible pour migration: %s", e)
+
+
+def _bootstrap_admin(conn):
+    """Cree / met a jour le compte administrateur a partir des variables
+    d'environnement ADMIN_EMAILS (1er email) et ADMIN_PASSWORD.
+
+    Les variables font foi : changer ADMIN_PASSWORD dans l'hebergeur puis
+    redeployer met a jour le mot de passe au demarrage suivant.
+    """
+    emails = app.config.get("ADMIN_EMAILS") or []
+    password = (app.config.get("ADMIN_PASSWORD") or "").strip()
+    if not emails or not password:
+        return
+
+    email = emails[0].strip().lower()
+    pw_hash = generate_password_hash(password)
+    has_role_col = "admin_role" in conn.table_columns("users")
+
+    existing = conn.execute(
+        "SELECT id FROM users WHERE email = ?", (email,)).fetchone()
+    if existing:
+        conn.execute(
+            "UPDATE users SET password_hash = ?, role = 'admin', is_active = 1,"
+            " is_verified = 1 WHERE id = ?", (pw_hash, existing["id"]))
+        if has_role_col:
+            conn.execute(
+                "UPDATE users SET admin_role = COALESCE(admin_role, 'owner') WHERE id = ?",
+                (existing["id"],))
+        logger.info("Compte admin mis a jour : %s", email)
+        return
+
+    phone = "+000" + "".join(ch for ch in email if ch.isdigit())[:8] or "+000000000"
+    cols = "email, phone, password_hash, role, full_name, is_verified, is_active"
+    vals = [email, phone, pw_hash, "admin", "Administrateur", 1, 1]
+    if has_role_col:
+        cols += ", admin_role"
+        vals.append("owner")
+    placeholders = ", ".join("?" for _ in vals)
+    conn.execute(
+        "INSERT INTO users (%s) VALUES (%s)" % (cols, placeholders), tuple(vals))
+    logger.info("Compte admin cree : %s", email)
 
 
 def _migrate_subscriptions(conn):

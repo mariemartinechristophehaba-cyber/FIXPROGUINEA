@@ -1,0 +1,98 @@
+{% extends 'admin_base.html' %}
+{% block title %}Abonnements - FixPro Admin{% endblock %}
+{% block body_class %}admin-dark{% endblock %}
+{% block admin_title %}Abonnements techniciens{% endblock %}
+{% block admin_subtitle %}Modele economique FixPro : abonnement mensuel des techniciens (aucun prelevement sur les interventions).{% endblock %}
+
+{% block extra_head %}
+<style>
+  .seg { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:18px; }
+  .seg a { padding:7px 14px; border-radius:999px; font-size:.82rem; font-weight:600;
+           background:var(--admin-card,#182338); color:var(--admin-muted,#94a3b8);
+           border:1px solid rgba(148,163,184,.18); text-decoration:none; }
+  .seg a.on { background:#2563eb; color:#fff; border-color:#2563eb; }
+  .panel { background:var(--admin-card,#182338); border:1px solid rgba(148,163,184,.14);
+           border-radius:16px; padding:20px; margin-bottom:22px; }
+  .panel h2 { font-size:1rem; margin:0 0 14px; }
+  table.grid { width:100%; border-collapse:collapse; font-size:.85rem; }
+  table.grid th, table.grid td { text-align:left; padding:10px 12px;
+           border-bottom:1px solid rgba(148,163,184,.12); }
+  table.grid th { color:var(--admin-muted,#94a3b8); font-weight:600; font-size:.78rem;
+           text-transform:uppercase; letter-spacing:.03em; }
+  .pill { display:inline-block; padding:3px 10px; border-radius:999px; font-size:.74rem; font-weight:700; }
+  .pill.ACTIVE { background:rgba(16,185,129,.16); color:#10b981; }
+  .pill.TRIAL { background:rgba(59,130,246,.16); color:#3b82f6; }
+  .pill.EXPIRED,.pill.CANCELLED { background:rgba(239,68,68,.16); color:#ef4444; }
+  .pill.PAST_DUE,.pill.SUSPENDED { background:rgba(245,158,11,.16); color:#f59e0b; }
+  .plans { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:16px; }
+  .plan { border:1px solid rgba(148,163,184,.18); border-radius:14px; padding:16px; }
+  .plan input, .plan textarea { width:100%; margin:4px 0 10px; padding:8px 10px; border-radius:8px;
+           background:rgba(15,23,42,.5); border:1px solid rgba(148,163,184,.25); color:inherit; font:inherit; }
+  .plan textarea { min-height:80px; resize:vertical; }
+  .plan label { font-size:.78rem; color:var(--admin-muted,#94a3b8); }
+  .plan .btn { background:#2563eb; color:#fff; border:0; border-radius:8px; padding:9px 14px;
+           font-weight:600; cursor:pointer; font-size:.83rem; }
+  .plan .sub { font-size:.78rem; color:var(--admin-muted,#94a3b8); margin-bottom:8px; }
+  .muted { color:var(--admin-muted,#94a3b8); }
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<div class="seg">
+  {% set segs = [('', 'Tous', counts.all), ('active','Actifs',counts.active),
+                 ('expiring','Expirent < 7j',counts.expiring), ('expired','Expires',counts.expired),
+                 ('past_due','Impayes',counts.past_due)] %}
+  {% for key, lbl, n in segs %}
+    <a class="{{ 'on' if filter == key }}" href="{{ url_for('admin_subscriptions', filter=key) }}">{{ lbl }} ({{ n }})</a>
+  {% endfor %}
+</div>
+
+<div class="panel">
+  <h2>Abonnements ({{ subs|length }})</h2>
+  {% if subs %}
+  <div style="overflow-x:auto">
+  <table class="grid">
+    <thead><tr><th>Technicien</th><th>Metier</th><th>Plan</th><th>Statut</th><th>Debut</th><th>Fin</th><th>Renouv.</th></tr></thead>
+    <tbody>
+    {% for s in subs %}
+      <tr>
+        <td>{{ s.tech_name or '-' }}<div class="muted">{{ s.tech_phone or '' }}</div></td>
+        <td>{{ s.profession or '-' }}</td>
+        <td>{{ s.plan_name or '-' }}{% if s.price_month %}<div class="muted">{{ '{:,}'.format(s.price_month).replace(',', ' ') }} GNF</div>{% endif %}</td>
+        <td><span class="pill {{ s.status }}">{{ s.status }}</span></td>
+        <td>{{ (s.start_date or '')[:10] }}</td>
+        <td>{{ (s.end_date or '')[:10] or '-' }}</td>
+        <td>{{ 'Oui' if s.auto_renew else 'Non' }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+  <p class="muted">Aucun abonnement pour ce filtre.</p>
+  {% endif %}
+</div>
+
+<div class="panel">
+  <h2>Plans d'abonnement</h2>
+  <div class="plans">
+    {% for p in plans %}
+    <form class="plan" method="post" action="{{ url_for('admin_update_plan', plan_id=p.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="sub">Code : {{ p.code }} &middot; {{ p.subscribers }} abonne(s) actif(s)</div>
+      <label>Nom</label>
+      <input type="text" name="name" value="{{ p.name }}" required maxlength="80">
+      <label>Prix mensuel (GNF)</label>
+      <input type="number" name="price_month" value="{{ p.price_month }}" min="0" max="5000000" required>
+      <label>Fonctionnalites (une par ligne)</label>
+      <textarea name="features">{{ p.features or '' }}</textarea>
+      <label style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+        <input type="checkbox" name="is_active" value="1" style="width:auto;margin:0" {{ 'checked' if p.is_active }}>
+        Plan actif
+      </label>
+      <button class="btn" type="submit">Enregistrer</button>
+    </form>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

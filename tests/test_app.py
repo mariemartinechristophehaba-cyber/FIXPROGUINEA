@@ -917,6 +917,79 @@ class AdminPanelTests(FixProTestCase):
             conn.close()
         self.assertEqual(codes, {"basic", "pro", "premium"})
 
+    def test_bootstrap_admin_creates_and_logs_in(self):
+        fixpro_app.app.config["ADMIN_EMAILS"] = ["patron@fixpro.gn"]
+        fixpro_app.app.config["ADMIN_PASSWORD"] = "FixPro-Test-1234"
+        try:
+            conn = db.connect(sqlite_path=self.db_path)
+            try:
+                conn.execute("ALTER TABLE users ADD COLUMN admin_role TEXT")
+                conn.commit()
+                fixpro_app._bootstrap_admin(conn)
+                conn.commit()
+            finally:
+                conn.close()
+            r = self.client.post("/admin/login", data={
+                "email": "patron@fixpro.gn", "password": "FixPro-Test-1234",
+            })
+            self.assertEqual(r.status_code, 302)
+            self.assertIn("/admin/unlock", r.headers["Location"])
+        finally:
+            fixpro_app.app.config["ADMIN_EMAILS"] = []
+            fixpro_app.app.config["ADMIN_PASSWORD"] = ""
+
+    def test_admin_subscription_pages_render(self):
+        self.login_admin()
+        for url in ("/admin/abonnements", "/admin/abonnements?filter=expiring",
+                    "/admin/abonnements/paiements", "/admin/reclamations"):
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200, url)
+            self.assertNotIn("commission", r.get_data(as_text=True).lower())
+
+    def test_admin_can_update_plan_price(self):
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            pid = conn.execute(
+                "SELECT id FROM subscription_plans WHERE code = 'basic'").fetchone()["id"]
+        finally:
+            conn.close()
+        self.login_admin()
+        r = self.client.post("/admin/abonnements/plans/%d" % pid, data={
+            "name": "Basic", "price_month": "75000", "features": "Test", "is_active": "1",
+        }, follow_redirects=True)
+        self.assertEqual(r.status_code, 200)
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            price = conn.execute(
+                "SELECT price_month FROM subscription_plans WHERE id = ?", (pid,)).fetchone()["price_month"]
+        finally:
+            conn.close()
+        self.assertEqual(price, 75000)
+
+    def test_admin_can_update_complaint_status(self):
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute(
+                "INSERT INTO complaints (client_id, subject, message, status)"
+                " VALUES (1, 'Test', 'Probleme', 'new')")
+            conn.commit()
+            cid = conn.execute("SELECT id FROM complaints").fetchone()["id"]
+        finally:
+            conn.close()
+        self.login_admin()
+        r = self.client.post("/admin/reclamations", data={
+            "complaint_id": cid, "status": "resolved", "note": "Regle",
+        }, follow_redirects=True)
+        self.assertEqual(r.status_code, 200)
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            row = conn.execute(
+                "SELECT status, resolution_note FROM complaints WHERE id = ?", (cid,)).fetchone()
+        finally:
+            conn.close()
+        self.assertEqual(row["status"], "resolved")
+        self.assertEqual(row["resolution_note"], "Regle")
+
     def test_admin_can_suspend_and_restore_artisan(self):
         self.register_artisan("artisan@example.com", phone="+224621111111")
         self.login_admin()

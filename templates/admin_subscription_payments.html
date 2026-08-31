@@ -1,0 +1,76 @@
+{% extends 'admin_base.html' %}
+{% block title %}Paiements d'abonnement - FixPro Admin{% endblock %}
+{% block body_class %}admin-dark{% endblock %}
+{% block admin_title %}Paiements d'abonnement{% endblock %}
+{% block admin_subtitle %}Encaissements des abonnements mensuels techniciens.{% endblock %}
+
+{% block extra_head %}
+<style>
+  .seg { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:18px; }
+  .seg a { padding:7px 14px; border-radius:999px; font-size:.82rem; font-weight:600;
+           background:var(--admin-card,#182338); color:var(--admin-muted,#94a3b8);
+           border:1px solid rgba(148,163,184,.18); text-decoration:none; }
+  .seg a.on { background:#2563eb; color:#fff; border-color:#2563eb; }
+  .kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:14px; margin-bottom:22px; }
+  .kpi { background:var(--admin-card,#182338); border:1px solid rgba(148,163,184,.14);
+         border-radius:14px; padding:16px; }
+  .kpi .v { font-size:1.5rem; font-weight:700; }
+  .kpi .l { font-size:.8rem; color:var(--admin-muted,#94a3b8); }
+  .panel { background:var(--admin-card,#182338); border:1px solid rgba(148,163,184,.14);
+           border-radius:16px; padding:20px; }
+  table.grid { width:100%; border-collapse:collapse; font-size:.85rem; }
+  table.grid th, table.grid td { text-align:left; padding:10px 12px;
+           border-bottom:1px solid rgba(148,163,184,.12); }
+  table.grid th { color:var(--admin-muted,#94a3b8); font-weight:600; font-size:.78rem;
+           text-transform:uppercase; letter-spacing:.03em; }
+  .pill { display:inline-block; padding:3px 10px; border-radius:999px; font-size:.74rem; font-weight:700; }
+  .pill.paid { background:rgba(16,185,129,.16); color:#10b981; }
+  .pill.pending { background:rgba(59,130,246,.16); color:#3b82f6; }
+  .pill.failed { background:rgba(239,68,68,.16); color:#ef4444; }
+  .pill.refunded { background:rgba(245,158,11,.16); color:#f59e0b; }
+  .muted { color:var(--admin-muted,#94a3b8); }
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<div class="kpis">
+  <div class="kpi"><div class="v">{{ '{:,}'.format(totals.collected).replace(',', ' ') }} GNF</div><div class="l">Total encaisse</div></div>
+  <div class="kpi"><div class="v">{{ totals.paid }}</div><div class="l">Paiements reussis</div></div>
+  <div class="kpi"><div class="v">{{ totals.pending }}</div><div class="l">En attente</div></div>
+  <div class="kpi"><div class="v">{{ totals.failed }}</div><div class="l">Echecs</div></div>
+</div>
+
+<div class="seg">
+  {% set segs = [('', 'Tous', totals.all), ('paid','Reussis',totals.paid),
+                 ('pending','En attente',totals.pending), ('failed','Echecs',totals.failed),
+                 ('refunded','Rembourses',0)] %}
+  {% for key, lbl, n in segs %}
+    <a class="{{ 'on' if filter == key }}" href="{{ url_for('admin_subscription_payments', filter=key) }}">{{ lbl }}{% if n %} ({{ n }}){% endif %}</a>
+  {% endfor %}
+</div>
+
+<div class="panel">
+  {% if pays %}
+  <div style="overflow-x:auto">
+  <table class="grid">
+    <thead><tr><th>Date</th><th>Technicien</th><th>Plan</th><th>Montant</th><th>Methode</th><th>Reference</th><th>Statut</th></tr></thead>
+    <tbody>
+    {% for p in pays %}
+      <tr>
+        <td>{{ (p.paid_at or p.created_at or '')[:16].replace('T', ' ') }}</td>
+        <td>{{ p.tech_name or '-' }}<div class="muted">{{ p.tech_phone or '' }}</div></td>
+        <td>{{ p.plan_name or '-' }}</td>
+        <td>{{ '{:,}'.format(p.amount or 0).replace(',', ' ') }} GNF</td>
+        <td>{{ p.payment_method or '-' }}</td>
+        <td class="muted">{{ p.transaction_reference or '-' }}</td>
+        <td><span class="pill {{ p.status }}">{{ p.status }}</span></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+  <p class="muted">Aucun paiement pour ce filtre.</p>
+  {% endif %}
+</div>
+{% endblock %}
