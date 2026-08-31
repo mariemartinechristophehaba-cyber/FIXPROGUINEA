@@ -917,6 +917,27 @@ class AdminPanelTests(FixProTestCase):
             conn.close()
         self.assertEqual(codes, {"basic", "pro", "premium"})
 
+    def test_bootstrap_admin_creates_and_logs_in(self):
+        fixpro_app.app.config["ADMIN_EMAILS"] = ["patron@fixpro.gn"]
+        fixpro_app.app.config["ADMIN_PASSWORD"] = "FixPro-Test-1234"
+        try:
+            conn = db.connect(sqlite_path=self.db_path)
+            try:
+                conn.execute("ALTER TABLE users ADD COLUMN admin_role TEXT")
+                conn.commit()
+                fixpro_app._bootstrap_admin(conn)
+                conn.commit()
+            finally:
+                conn.close()
+            r = self.client.post("/admin/login", data={
+                "email": "patron@fixpro.gn", "password": "FixPro-Test-1234",
+            })
+            self.assertEqual(r.status_code, 302)
+            self.assertIn("/admin/unlock", r.headers["Location"])
+        finally:
+            fixpro_app.app.config["ADMIN_EMAILS"] = []
+            fixpro_app.app.config["ADMIN_PASSWORD"] = ""
+
     def test_admin_subscription_pages_render(self):
         self.login_admin()
         for url in ("/admin/abonnements", "/admin/abonnements?filter=expiring",

@@ -6461,10 +6461,62 @@ def _migrate_db():
                 conn.rollback()
             except Exception:
                 pass
+
+        # --- Compte administrateur (a partir des variables d'env) -----------
+        try:
+            _bootstrap_admin(conn)
+            conn.commit()
+        except Exception as e:
+            logger.warning("Bootstrap admin impossible: %s", e)
+            try:
+                conn.rollback()
+            except Exception:
+                pass
         finally:
             conn.close()
     except Exception as e:
         logger.warning("Connexion DB indisponible pour migration: %s", e)
+
+
+def _bootstrap_admin(conn):
+    """Cree / met a jour le compte administrateur a partir des variables
+    d'environnement ADMIN_EMAILS (1er email) et ADMIN_PASSWORD.
+
+    Les variables font foi : changer ADMIN_PASSWORD dans l'hebergeur puis
+    redeployer met a jour le mot de passe au demarrage suivant.
+    """
+    emails = app.config.get("ADMIN_EMAILS") or []
+    password = (app.config.get("ADMIN_PASSWORD") or "").strip()
+    if not emails or not password:
+        return
+
+    email = emails[0].strip().lower()
+    pw_hash = generate_password_hash(password)
+    has_role_col = "admin_role" in conn.table_columns("users")
+
+    existing = conn.execute(
+        "SELECT id FROM users WHERE email = ?", (email,)).fetchone()
+    if existing:
+        conn.execute(
+            "UPDATE users SET password_hash = ?, role = 'admin', is_active = 1,"
+            " is_verified = 1 WHERE id = ?", (pw_hash, existing["id"]))
+        if has_role_col:
+            conn.execute(
+                "UPDATE users SET admin_role = COALESCE(admin_role, 'owner') WHERE id = ?",
+                (existing["id"],))
+        logger.info("Compte admin mis a jour : %s", email)
+        return
+
+    phone = "+000" + "".join(ch for ch in email if ch.isdigit())[:8] or "+000000000"
+    cols = "email, phone, password_hash, role, full_name, is_verified, is_active"
+    vals = [email, phone, pw_hash, "admin", "Administrateur", 1, 1]
+    if has_role_col:
+        cols += ", admin_role"
+        vals.append("owner")
+    placeholders = ", ".join("?" for _ in vals)
+    conn.execute(
+        "INSERT INTO users (%s) VALUES (%s)" % (cols, placeholders), tuple(vals))
+    logger.info("Compte admin cree : %s", email)
 
 
 def _migrate_subscriptions(conn):
