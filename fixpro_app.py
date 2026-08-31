@@ -1043,6 +1043,7 @@ def _persist_client_location(lat=None, lon=None, zone=None):
 
 
 @app.route("/api/location", methods=["POST"])
+@limiter.limit("30 per hour")
 def set_location():
     """Enregistre la position GPS du client en session (et dans son profil)."""
     try:
@@ -1070,6 +1071,7 @@ def set_location():
 
 
 @app.route("/api/location/zone", methods=["POST"])
+@limiter.limit("30 per hour")
 def set_location_zone():
     """Enregistre une localisation manuelle saisie par l'utilisateur."""
     try:
@@ -1137,7 +1139,10 @@ csrf.exempt(set_location_denied)
 def location_gate():
     """Ecran plein ecran demandant la position du client a l'entree de l'app."""
     nxt = request.args.get("next") or ""
-    if not nxt.startswith("/") or nxt.startswith("//"):
+    # Chemin interne uniquement : commence par "/", pas "//" ni "/\" (open
+    # redirect), et ne contient que des caracteres d'URL sans danger.
+    if (not nxt.startswith("/") or nxt.startswith(("//", "/\\"))
+            or not re.match(r"^/[A-Za-z0-9/_.\-?=&%]*$", nxt)):
         nxt = url_for("artisans_page")
     return render_template("location_gate.html",
                            quartiers=_CONAKRY_QUARTIERS, next=nxt)
