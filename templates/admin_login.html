@@ -35,23 +35,27 @@
       /* ---------- Panneau gauche : illustration ---------- */
       .brand-panel {
         position: relative;
-        flex: 0 0 auto;
-        /* garde des proportions proches de l'image (768x1024, ratio .75)
-           pour que 'cover' ne zoome quasiment pas */
-        width: min(46vw, 74vh);
-        min-width: 300px;
-        background-image: url("{{ url_for('static', filename='img/fixpro-admin-login-left-panel.png') }}");
-        background-size: cover;
-        background-position: center;
-        background-repeat: no-repeat;
-        background-color: var(--blue-night);
+        flex: 0 0 46%;
+        overflow: hidden;
+        /* 'auto 100%' : l'image remplit toute la hauteur sans etre zoomee,
+           le logo et les 4 atouts restent entiers */
+        background: var(--blue-night)
+          url("{{ url_for('static', filename='img/fixpro-admin-login-left-panel.png') }}")
+          left center / auto 100% no-repeat;
         /* bord droit convexe facon maquette */
-        clip-path: ellipse(128% 82% at 4% 50%);
+        clip-path: ellipse(120% 88% at 2% 50%);
+      }
+      /* fondu vers le bleu nuit a droite : courbe nette, pas de bord dur */
+      .brand-panel::before {
+        content: "";
+        position: absolute; top: 0; right: 0; bottom: 0; width: 240px;
+        background: linear-gradient(90deg, rgba(8, 26, 68, 0) 0%, var(--blue-night) 82%);
+        pointer-events: none;
       }
       .brand-panel::after {
         content: "";
         position: absolute; inset: 0;
-        background: radial-gradient(55% 40% at 40% 20%, rgba(70,140,255,.14), transparent 70%);
+        background: radial-gradient(50% 38% at 34% 20%, rgba(70,140,255,.13), transparent 70%);
         pointer-events: none;
       }
 
@@ -188,7 +192,7 @@
       /* ---------- Responsive ---------- */
       /* tablette : illustration plus etroite */
       @media (max-width: 1200px) {
-        .brand-panel { width: min(40vw, 62vh); min-width: 260px; }
+        .brand-panel { flex-basis: 40%; }
       }
       /* mobile / petite tablette : illustration masquee */
       @media (max-width: 900px) {
