@@ -3,191 +3,218 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>Connexion admin - FixPro</title>
+    <title>Connexion administrateur - FixPro</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <style>
       :root {
-        --blue: #1f6bff; --blue-deep: #0b3fb5; --blue-dark: #0a1a4a;
-        --ink: #14213d; --muted: #6b7a99; --line: #e4e9f2;
-        --panel-1: #0a1c5c; --panel-2: #123fb0;
+        --blue: #1f6bff;
+        --blue-strong: #0e46c8;
+        --blue-night: #0a1a4a;
+        --ink: #16213e;
+        --muted: #6a789a;
+        --line: #e5ebf5;
+        --surface: #f4f7fd;
+        --danger-bg: #fef2f2;
+        --danger-line: #fecdd3;
+        --danger-ink: #b42318;
       }
       * { box-sizing: border-box; margin: 0; padding: 0; }
       html, body { height: 100%; }
       body {
-        font-family: 'Inter', system-ui, sans-serif; color: var(--ink);
-        background: #eef3fb; display: flex; min-height: 100vh;
+        font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        color: var(--ink);
+        background: var(--surface);
+        -webkit-font-smoothing: antialiased;
       }
-      .split { display: flex; width: 100%; min-height: 100vh; }
 
-      /* ---- Panneau gauche : marque ---- */
+      .split { display: flex; min-height: 100vh; }
+
+      /* ---------- Panneau gauche : illustration ---------- */
       .brand-panel {
-        flex: 1 1 52%; position: relative; overflow: hidden;
-        background:
-          radial-gradient(1200px 600px at 15% 10%, rgba(64,132,255,.45), transparent 60%),
-          radial-gradient(900px 500px at 80% 90%, rgba(20,70,190,.55), transparent 55%),
-          linear-gradient(150deg, var(--panel-1), var(--panel-2));
-        color: #fff; padding: 64px 60px; display: flex; flex-direction: column; justify-content: center;
+        flex: 0 0 50%;
+        position: relative;
+        background-image: url("{{ url_for('static', filename='img/fixpro-admin-login-left-panel.png') }}");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-color: var(--blue-night);
       }
+      /* glow tres leger, ne denature pas l'image */
       .brand-panel::after {
-        content: ""; position: absolute; inset: 0 -40% 0 auto; width: 40%;
-        background: #eef3fb; border-radius: 50% 0 0 50%; transform: translateX(60%);
+        content: "";
+        position: absolute; inset: 0;
+        background: radial-gradient(60% 45% at 42% 22%, rgba(70,140,255,.16), transparent 70%);
+        pointer-events: none;
       }
-      .brand-inner { position: relative; z-index: 1; max-width: 460px; }
-      .logo-row { display: flex; align-items: center; gap: 16px; margin-bottom: 10px; }
-      .logo-mark {
-        width: 60px; height: 60px; border-radius: 16px; flex: none;
-        background: linear-gradient(160deg, #2f7bff, #0b3fb5);
-        display: grid; place-items: center; box-shadow: 0 0 32px rgba(60,130,255,.6);
-      }
-      .logo-mark svg { width: 34px; height: 34px; color: #fff; }
-      .logo-word { font-size: 40px; font-weight: 800; letter-spacing: -.02em; }
-      .logo-word span { color: #7db0ff; }
-      .tagline { font-size: 26px; font-weight: 700; line-height: 1.3; margin: 22px 0 18px; }
-      .tagline span { color: #7db0ff; }
-      .rule { width: 64px; height: 4px; border-radius: 4px; background: #4f92ff; margin-bottom: 30px; }
-      .features { display: grid; gap: 20px; }
-      .feature { display: flex; gap: 16px; align-items: flex-start; }
-      .feature .ico {
-        width: 46px; height: 46px; border-radius: 12px; flex: none;
-        background: rgba(255,255,255,.10); border: 1px solid rgba(255,255,255,.16);
-        display: grid; place-items: center;
-      }
-      .feature .ico svg { width: 22px; height: 22px; color: #9cc2ff; }
-      .feature h3 { font-size: 16px; font-weight: 700; }
-      .feature p { font-size: 13.5px; color: rgba(255,255,255,.72); margin-top: 2px; }
 
-      /* ---- Panneau droit : formulaire ---- */
+      /* ---------- Panneau droit : formulaire ---------- */
       .form-panel {
-        flex: 1 1 48%; display: flex; align-items: center; justify-content: center;
-        padding: 40px 32px;
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 48px 32px;
+        background: linear-gradient(180deg, #f6f9ff 0%, #eaf0fb 100%);
+        animation: panelIn .5s ease both;
       }
+
       .card {
-        width: 100%; max-width: 430px; background: #fff; border-radius: 24px;
-        padding: 40px 40px 28px; box-shadow: 0 30px 70px rgba(15,40,110,.14);
+        width: min(440px, 100%);
+        background: #fff;
+        border-radius: 24px;
+        padding: 44px 42px 30px;
+        box-shadow: 0 24px 64px rgba(16, 42, 110, .12), 0 2px 8px rgba(16, 42, 110, .06);
+        animation: cardIn .55s cubic-bezier(.2, .7, .2, 1) both;
+        animation-delay: .08s;
       }
+
       .badge {
-        display: inline-flex; align-items: center; gap: 8px; margin: 0 auto 18px;
-        padding: 7px 16px; border-radius: 999px; background: #e9f1ff; color: #1f5fe0;
-        font-size: 12px; font-weight: 700; letter-spacing: .12em;
+        display: flex; align-items: center; justify-content: center; gap: 9px;
+        width: max-content; margin: 0 auto 22px;
+        padding: 8px 18px;
+        background: #eaf1ff; color: #1f5fe0;
+        font-size: 12px; font-weight: 700; letter-spacing: .14em;
+        border-radius: 999px;
       }
-      .badge svg { width: 14px; height: 14px; }
+      .badge svg { width: 15px; height: 15px; }
+
       .card-head { text-align: center; }
-      .card-head .name { font-size: 32px; font-weight: 800; letter-spacing: -.02em; }
-      .card-head .name span { color: var(--blue); }
-      .card-head .dash { width: 46px; height: 3px; background: var(--blue); border-radius: 3px; margin: 8px auto 20px; }
-      .card-head h1 { font-size: 20px; font-weight: 700; line-height: 1.35; }
-      .card-head .sub { font-size: 13.5px; color: var(--muted); margin: 8px 0 26px; }
+      .card-head .name {
+        font-size: 34px; font-weight: 800; letter-spacing: -.02em; line-height: 1;
+      }
+      .card-head .name b { color: var(--blue); font-weight: 800; }
+      .card-head .dash {
+        width: 48px; height: 3px; border-radius: 3px;
+        background: var(--blue); margin: 10px auto 22px;
+      }
+      .card-head h1 { font-size: 21px; font-weight: 700; line-height: 1.35; }
+      .card-head .sub { font-size: 14px; color: var(--muted); margin: 9px 0 26px; }
 
-      .flash { padding: 12px 14px; border-radius: 10px; margin-bottom: 16px; font-size: 13px; font-weight: 500; }
-      .flash.error { background: #fef2f2; color: #b91c1c; }
-      .flash.success { background: #ecfdf5; color: #047857; }
+      /* ---------- Alerte d'erreur ---------- */
+      .alert {
+        display: flex; align-items: flex-start; gap: 11px;
+        background: var(--danger-bg);
+        border: 1px solid var(--danger-line);
+        color: var(--danger-ink);
+        padding: 13px 15px;
+        border-radius: 13px;
+        font-size: 13.5px; font-weight: 500; line-height: 1.45;
+        margin-bottom: 20px;
+        animation: alertIn .32s ease both;
+      }
+      .alert svg { width: 18px; height: 18px; flex: none; margin-top: 1px; }
 
-      .field { margin-bottom: 16px; }
-      .field label { display: block; font-size: 13.5px; font-weight: 600; margin-bottom: 7px; }
+      /* ---------- Champs ---------- */
+      .field { margin-bottom: 17px; }
+      .field label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; }
       .input-wrap { position: relative; }
-      .input-wrap > svg.lead {
+      .input-wrap > .lead {
         position: absolute; left: 15px; top: 50%; transform: translateY(-50%);
-        width: 18px; height: 18px; color: #9aa7c2; pointer-events: none;
+        width: 18px; height: 18px; color: #9aa7c4; pointer-events: none;
       }
       .input-wrap input {
-        width: 100%; height: 52px; border: 1.6px solid var(--line); border-radius: 12px;
-        padding: 0 44px; font-size: 14.5px; font-family: inherit; color: var(--ink);
-        background: #f8fafd; transition: border-color .15s, background .15s;
+        width: 100%; height: 52px;
+        border: 1.6px solid var(--line); border-radius: 13px;
+        padding: 0 46px;
+        font: inherit; font-size: 14.5px; color: var(--ink);
+        background: #f7f9fd;
+        transition: border-color .18s ease, background .18s ease, box-shadow .18s ease;
       }
-      .input-wrap input:focus { outline: none; border-color: var(--blue); background: #fff; }
+      .input-wrap input::placeholder { color: #a6b0c8; }
+      .input-wrap input:focus {
+        outline: none;
+        border-color: var(--blue);
+        background: #fff;
+        box-shadow: 0 0 0 4px rgba(31, 107, 255, .13);
+      }
       .toggle-pw {
-        position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
-        width: 32px; height: 32px; border: none; background: none; cursor: pointer;
-        color: #9aa7c2; display: grid; place-items: center;
+        position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+        width: 34px; height: 34px;
+        border: none; background: none; cursor: pointer;
+        color: #98a4c2; display: grid; place-items: center;
+        border-radius: 8px;
       }
+      .toggle-pw:hover { color: var(--blue); background: #eef3fe; }
       .toggle-pw svg { width: 19px; height: 19px; }
 
-      .row { display: flex; align-items: center; justify-content: space-between; margin: 14px 0 22px; font-size: 13px; }
-      .row label { display: flex; align-items: center; gap: 8px; color: var(--muted); cursor: pointer; }
-      .row input { width: 16px; height: 16px; accent-color: var(--blue); }
+      .row {
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 12px; margin: 15px 0 24px; font-size: 13.5px;
+      }
+      .row .remember { display: flex; align-items: center; gap: 9px; color: var(--muted); cursor: pointer; }
+      .row .remember input { width: 16px; height: 16px; accent-color: var(--blue); cursor: pointer; }
       .row a { color: var(--blue); font-weight: 600; text-decoration: none; }
       .row a:hover { text-decoration: underline; }
 
+      /* ---------- Bouton ---------- */
       .btn {
-        width: 100%; height: 54px; border: none; border-radius: 13px; cursor: pointer;
-        background: linear-gradient(180deg, #2f7bff, #0e46c8);
-        color: #fff; font-size: 16px; font-weight: 700; font-family: inherit;
+        position: relative;
+        width: 100%; height: 54px;
+        border: none; border-radius: 14px; cursor: pointer;
+        background: linear-gradient(180deg, #2f7bff, var(--blue-strong));
+        color: #fff; font: inherit; font-size: 16px; font-weight: 700;
         display: flex; align-items: center; justify-content: center; gap: 10px;
-        box-shadow: 0 14px 30px rgba(20,70,200,.32);
+        box-shadow: 0 12px 26px rgba(20, 70, 200, .30);
+        transition: filter .18s ease, box-shadow .18s ease, transform .06s ease;
       }
-      .btn:hover { filter: brightness(1.05); }
       .btn svg { width: 17px; height: 17px; }
+      .btn:hover { filter: brightness(1.06); box-shadow: 0 16px 34px rgba(20, 70, 200, .42); }
+      .btn:active { transform: translateY(1px); }
+      .btn:disabled, .btn[aria-busy="true"] { cursor: not-allowed; filter: saturate(.7) brightness(.98); box-shadow: none; }
+      .btn .spinner {
+        width: 18px; height: 18px; border-radius: 50%;
+        border: 2.5px solid rgba(255, 255, 255, .4); border-top-color: #fff;
+        animation: spin .7s linear infinite;
+        display: none;
+      }
+      .btn[aria-busy="true"] .spinner { display: block; }
+      .btn[aria-busy="true"] .btn-icon { display: none; }
 
       .card-foot {
         display: flex; align-items: center; justify-content: center; gap: 8px;
-        margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--line);
+        margin-top: 24px; padding-top: 18px;
+        border-top: 1px solid var(--line);
         font-size: 12.5px; color: var(--muted);
       }
       .card-foot svg { width: 14px; height: 14px; }
 
-      @media (max-width: 900px) {
+      /* ---------- Animations ---------- */
+      @keyframes panelIn { from { opacity: 0; } to { opacity: 1; } }
+      @keyframes cardIn { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+      @keyframes alertIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+      @keyframes spin { to { transform: rotate(360deg); } }
+
+      /* ---------- Responsive ---------- */
+      @media (max-width: 980px) {
         .brand-panel { display: none; }
-        .brand-panel::after { display: none; }
-        .form-panel { flex: 1; }
+        .form-panel { flex: 1; padding: 32px 20px; }
+      }
+      @media (max-width: 480px) {
+        .card { padding: 34px 22px 24px; border-radius: 20px; box-shadow: 0 12px 34px rgba(16, 42, 110, .12); }
+        .card-head .name { font-size: 30px; }
+        .card-head h1 { font-size: 19px; }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
       }
     </style>
   </head>
   <body>
     <div class="split">
-      <section class="brand-panel">
-        <div class="brand-inner">
-          <div class="logo-row">
-            <span class="logo-mark">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
-              </svg>
-            </span>
-            <span class="logo-word">Fix<span>Pro</span></span>
-          </div>
-          <p class="tagline">Le centre de controle<br />de votre <span>plateforme.</span></p>
-          <div class="rule"></div>
-
-          <div class="features">
-            <div class="feature">
-              <span class="ico">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-              </span>
-              <div><h3>Gerez vos professionnels</h3><p>Suivi, validation et performance</p></div>
-            </div>
-            <div class="feature">
-              <span class="ico">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
-              </span>
-              <div><h3>Interventions en temps reel</h3><p>Affectation automatique et suivi</p></div>
-            </div>
-            <div class="feature">
-              <span class="ico">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
-              </span>
-              <div><h3>Statistiques avancees</h3><p>Analyses claires et detaillees</p></div>
-            </div>
-            <div class="feature">
-              <span class="ico">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-              </span>
-              <div><h3>Securite maximale</h3><p>Vos donnees sont protegees</p></div>
-            </div>
-          </div>
-        </div>
-      </section>
+      <section class="brand-panel" role="img" aria-label="FixPro - Le centre de controle de votre plateforme"></section>
 
       <section class="form-panel">
         <div class="card">
-          <div style="text-align:center">
-            <span class="badge">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-              ADMINISTRATION
-            </span>
-          </div>
+          <span class="badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            ADMINISTRATION
+          </span>
+
           <div class="card-head">
-            <div class="name">Fix<span>Pro</span></div>
+            <div class="name">Fix<b>Pro</b></div>
             <div class="dash"></div>
             <h1>Connexion a votre espace administrateur</h1>
             <p class="sub">Accedez a votre tableau de bord</p>
@@ -196,19 +223,23 @@
           {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
               {% for category, message in messages %}
-                <div class="flash {{ category }}">{{ message }}</div>
+                <div class="alert" role="alert">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                  <span>{{ message }}</span>
+                </div>
               {% endfor %}
             {% endif %}
           {% endwith %}
 
-          <form method="post" novalidate>
+          <form method="post" novalidate id="loginForm">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
 
             <div class="field">
               <label for="email">Adresse e-mail</label>
               <div class="input-wrap">
                 <svg class="lead" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>
-                <input type="email" name="email" id="email" required autofocus autocomplete="username" placeholder="Entrez votre e-mail" />
+                <input type="email" name="email" id="email" required autofocus autocomplete="username"
+                       placeholder="Entrez votre e-mail" />
               </div>
             </div>
 
@@ -216,21 +247,23 @@
               <label for="password">Mot de passe</label>
               <div class="input-wrap">
                 <svg class="lead" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                <input type="password" name="password" id="password" required autocomplete="current-password" placeholder="Entrez votre mot de passe" />
-                <button type="button" class="toggle-pw" id="togglePw" aria-label="Afficher le mot de passe" onclick="togglePassword()">
+                <input type="password" name="password" id="password" required autocomplete="current-password"
+                       placeholder="Entrez votre mot de passe" />
+                <button type="button" class="toggle-pw" id="togglePw" aria-label="Afficher le mot de passe" aria-pressed="false">
                   <svg id="eyeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
                 </button>
               </div>
             </div>
 
             <div class="row">
-              <label><input type="checkbox" name="remember" value="1" /> Se souvenir de moi</label>
-              <a href="mailto:{{ config.ADMIN_EMAIL or 'support@fixpro.app' }}?subject=Reinitialisation%20mot%20de%20passe%20admin">Mot de passe oublie ?</a>
+              <label class="remember"><input type="checkbox" name="remember" value="1" /> Se souvenir de moi</label>
+              <a href="mailto:{{ config.ADMIN_EMAIL or 'support@fixpro.app' }}?subject=Reinitialisation%20du%20mot%20de%20passe%20administrateur">Mot de passe oublie ?</a>
             </div>
 
-            <button class="btn" type="submit">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-              Se connecter
+            <button class="btn" type="submit" id="submitBtn">
+              <span class="spinner" aria-hidden="true"></span>
+              <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <span id="btnLabel">Se connecter</span>
             </button>
           </form>
 
@@ -243,17 +276,30 @@
     </div>
 
     <script>
-      function togglePassword() {
-        var p = document.getElementById('password');
+      (function () {
+        var pw = document.getElementById('password');
+        var toggle = document.getElementById('togglePw');
         var eye = document.getElementById('eyeIcon');
-        if (p.type === 'password') {
-          p.type = 'text';
-          eye.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-10-8-10-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 10 8 10 8a18.5 18.5 0 0 1-2.16 3.19M1 1l22 22"/>';
-        } else {
-          p.type = 'password';
-          eye.innerHTML = '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/>';
-        }
-      }
+        var EYE = '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/>';
+        var EYE_OFF = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-10-8-10-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 10 8 10 8a18.5 18.5 0 0 1-2.16 3.19M1 1l22 22"/>';
+
+        toggle.addEventListener('click', function () {
+          var show = pw.type === 'password';
+          pw.type = show ? 'text' : 'password';
+          eye.innerHTML = show ? EYE_OFF : EYE;
+          toggle.setAttribute('aria-pressed', String(show));
+          toggle.setAttribute('aria-label', show ? 'Masquer le mot de passe' : 'Afficher le mot de passe');
+        });
+
+        var form = document.getElementById('loginForm');
+        var btn = document.getElementById('submitBtn');
+        var label = document.getElementById('btnLabel');
+        form.addEventListener('submit', function () {
+          btn.setAttribute('aria-busy', 'true');
+          btn.disabled = true;
+          label.textContent = 'Connexion en cours...';
+        });
+      })();
     </script>
   </body>
 </html>
