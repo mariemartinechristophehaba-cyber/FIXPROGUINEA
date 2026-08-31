@@ -473,3 +473,13 @@ CREATE TABLE IF NOT EXISTS complaints (
     resolution_note TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_complaints_status ON complaints(status);
+
+INSERT INTO subscription_plans (code, name, price_month, sort_order, features)
+SELECT 'basic', 'Basic', 50000, 1, E'Profil verifie\nApparait dans la recherche\nMessagerie avec les clients'
+WHERE NOT EXISTS (SELECT 1 FROM subscription_plans WHERE code = 'basic');
+INSERT INTO subscription_plans (code, name, price_month, sort_order, features)
+SELECT 'pro', 'Pro', 100000, 2, E'Tout Basic\nMise en avant dans la recherche\nStatistiques detaillees\nSupport prioritaire'
+WHERE NOT EXISTS (SELECT 1 FROM subscription_plans WHERE code = 'pro');
+INSERT INTO subscription_plans (code, name, price_month, sort_order, features)
+SELECT 'premium', 'Premium', 200000, 3, E'Tout Pro\nBadge Premium\nEn tete des resultats\nAccompagnement dedie'
+WHERE NOT EXISTS (SELECT 1 FROM subscription_plans WHERE code = 'premium');
