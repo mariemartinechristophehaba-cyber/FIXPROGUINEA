@@ -6,18 +6,11 @@ __pycache__
 
 # Node
 node_modules/
-admin-nextjs/node_modules/
-admin-nextjs/.next/
-admin-nextjs/dist/
-admin-nextjs/.vercel/
 
 # Flutter
 mobile/.dart_tool/
 mobile/build/
 mobile/.flutter-plugins*
-
-# Dossiers non necessaires au backend
-admin-nextjs/
 
 
 # Variables locales

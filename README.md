@@ -7,7 +7,7 @@ Plateforme de mise en relation entre clients et artisans qualifiés en Guinée.
 - **Code** : Python 3.12+ / Flask
 - **Base de donnees** : SQLite en local, Supabase (PostgreSQL) en production
 - **Deploiement** : Vercel (serverless) via le dossier `api/`
-- **Tableau de bord admin** : Next.js 14 + TypeScript + Tailwind dans `admin-nextjs/`
+- **Tableau de bord admin** : pages Flask (`/admin/*`) + API `/api/admin/*` — nouveau dashboard en cours
 - **CI/CD** : GitHub Actions (tests + deploiement automatique)
 - **Mobile** : application Flutter dans `mobile/`
 
@@ -34,30 +34,16 @@ python app.py
 
 Le site est alors accessible sur http://127.0.0.1:5000.
 
-## Tableau de bord admin (Next.js)
+## Tableau de bord admin
 
-Un nouveau dashboard admin moderne est disponible dans `admin-nextjs/`.
+L'ancien dashboard (`admin-nextjs/`) a ete retire ; un nouveau est en cours.
 
-```bash
-# Dossier du dashboard
-cd admin-nextjs
+En attendant, l'administration reste accessible via les pages Flask
+(`/admin/login`, `/admin/dashboard`, `/admin/artisans`, ...) et l'API JSON
+`/api/admin/*` (protegee par l'en-tete `X-API-Key`).
 
-# Installation
-npm install
-
-# Lancer en local
-npm run dev
-```
-
-Ouvrir <http://localhost:3000/admin>.
-
-L'application Flask redirige automatiquement `/admin/dashboard` vers ce dashboard via la variable `ADMIN_DASHBOARD_URL`.
-
-Pour desactiver la redirection en developpement :
-
-```text
-ADMIN_DASHBOARD_URL=http://localhost:3000/admin
-```
+Si `ADMIN_DASHBOARD_URL` pointe vers un dashboard externe, `/admin/dashboard`
+y redirige automatiquement ; sinon les pages Flask sont servies.
 
 ## Commandes d'administration
 
