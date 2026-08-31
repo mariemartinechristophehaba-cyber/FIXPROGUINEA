@@ -2389,17 +2389,28 @@ def admin_document(doc_id):
     finally:
         conn.close()
 
-    mime = doc["mime_type"] or "image/jpeg"
-    data = doc["content_base64"]
+    import html as _html
+    mime = (doc["mime_type"] or "image/jpeg").strip()
+    if mime not in ("image/jpeg", "image/jpg", "image/png", "application/pdf"):
+        mime = "image/jpeg"
+    data = doc["content_base64"] or ""
     if not data.startswith("data:"):
         data = f"data:{mime};base64,{data}"
+    elif not data.startswith(("data:image/", "data:application/pdf")):
+        return "Document invalide.", 400
 
+    # file_name est saisi par le technicien : il doit etre echappe.
+    name = _html.escape(doc["file_name"] or "document")
+    back = url_for('admin_artisan_detail', artisan_id=doc['technician_id'])
+    body = "<img src=\"%s\" style=\"max-width:100%%;max-height:100vh;\" alt=\"Document\" />" % data
+    if mime == "application/pdf":
+        body = "<iframe src=\"%s\" style=\"width:100vw;height:100vh;border:0;\"></iframe>" % data
     return f"""<!doctype html>
 <html lang="fr">
-<head><meta charset="utf-8"><title>Document {doc['file_name']}</title></head>
+<head><meta charset="utf-8"><title>Document {name}</title></head>
 <body style="margin:0;background:#000;display:grid;place-items:center;height:100vh;">
-  <img src="{data}" style="max-width:100%;max-height:100vh;" alt="Document" />
-  <a href="{url_for('admin_artisan_detail', artisan_id=doc['technician_id'])}" style="position:fixed;top:16px;left:16px;color:#fff;text-decoration:none;font-weight:700;">&larr; Retour</a>
+  {body}
+  <a href="{back}" style="position:fixed;top:16px;left:16px;color:#fff;text-decoration:none;font-weight:700;">&larr; Retour</a>
 </body>
 </html>"""
 
