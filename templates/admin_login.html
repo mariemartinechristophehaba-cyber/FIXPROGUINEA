@@ -11,11 +11,11 @@
       :root {
         --blue: #1f6bff;
         --blue-strong: #0e46c8;
-        --blue-night: #0a1a4a;
+        --blue-night: #081a44;
         --ink: #16213e;
         --muted: #6a789a;
         --line: #e5ebf5;
-        --surface: #f4f7fd;
+        --field-bg: #eef2fa;
         --danger-bg: #fef2f2;
         --danger-line: #fecdd3;
         --danger-ink: #b42318;
@@ -25,104 +25,105 @@
       body {
         font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
         color: var(--ink);
-        background: var(--surface);
+        background: #eaf0fb;
+        overflow-x: hidden;
         -webkit-font-smoothing: antialiased;
       }
 
-      .split { display: flex; min-height: 100vh; }
+      .split { display: flex; min-height: 100vh; width: 100%; }
 
       /* ---------- Panneau gauche : illustration ---------- */
       .brand-panel {
-        flex: 0 0 50%;
         position: relative;
+        flex: 0 0 auto;
+        /* garde des proportions proches de l'image (768x1024, ratio .75)
+           pour que 'cover' ne zoome quasiment pas */
+        width: min(46vw, 74vh);
+        min-width: 300px;
         background-image: url("{{ url_for('static', filename='img/fixpro-admin-login-left-panel.png') }}");
         background-size: cover;
         background-position: center;
         background-repeat: no-repeat;
         background-color: var(--blue-night);
+        /* bord droit convexe facon maquette */
+        clip-path: ellipse(128% 82% at 4% 50%);
       }
-      /* glow tres leger, ne denature pas l'image */
       .brand-panel::after {
         content: "";
         position: absolute; inset: 0;
-        background: radial-gradient(60% 45% at 42% 22%, rgba(70,140,255,.16), transparent 70%);
+        background: radial-gradient(55% 40% at 40% 20%, rgba(70,140,255,.14), transparent 70%);
         pointer-events: none;
       }
 
       /* ---------- Panneau droit : formulaire ---------- */
       .form-panel {
-        flex: 1;
+        flex: 1 1 auto;
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 48px 32px;
-        background: linear-gradient(180deg, #f6f9ff 0%, #eaf0fb 100%);
-        animation: panelIn .5s ease both;
+        padding: 40px 28px;
+        background: linear-gradient(180deg, #f6f9ff 0%, #e8eef9 100%);
+        animation: panelIn .45s ease both;
       }
 
       .card {
-        width: min(440px, 100%);
+        width: min(408px, 100%);
         background: #fff;
-        border-radius: 24px;
-        padding: 44px 42px 30px;
-        box-shadow: 0 24px 64px rgba(16, 42, 110, .12), 0 2px 8px rgba(16, 42, 110, .06);
-        animation: cardIn .55s cubic-bezier(.2, .7, .2, 1) both;
-        animation-delay: .08s;
+        border-radius: 22px;
+        padding: 38px 36px 24px;
+        box-shadow: 0 22px 55px rgba(16, 42, 110, .13), 0 2px 8px rgba(16, 42, 110, .05);
+        animation: cardIn .5s cubic-bezier(.2, .7, .2, 1) both;
+        animation-delay: .06s;
       }
 
       .badge {
-        display: flex; align-items: center; justify-content: center; gap: 9px;
-        width: max-content; margin: 0 auto 22px;
-        padding: 8px 18px;
-        background: #eaf1ff; color: #1f5fe0;
-        font-size: 12px; font-weight: 700; letter-spacing: .14em;
+        display: flex; align-items: center; justify-content: center; gap: 8px;
+        width: max-content; margin: 0 auto 18px;
+        padding: 7px 16px;
+        background: #e9f1ff; color: #1f5fe0;
+        font-size: 11.5px; font-weight: 700; letter-spacing: .13em;
         border-radius: 999px;
       }
-      .badge svg { width: 15px; height: 15px; }
+      .badge svg { width: 14px; height: 14px; }
 
       .card-head { text-align: center; }
-      .card-head .name {
-        font-size: 34px; font-weight: 800; letter-spacing: -.02em; line-height: 1;
-      }
+      .card-head .name { font-size: 30px; font-weight: 800; letter-spacing: -.02em; line-height: 1; }
       .card-head .name b { color: var(--blue); font-weight: 800; }
-      .card-head .dash {
-        width: 48px; height: 3px; border-radius: 3px;
-        background: var(--blue); margin: 10px auto 22px;
-      }
-      .card-head h1 { font-size: 21px; font-weight: 700; line-height: 1.35; }
-      .card-head .sub { font-size: 14px; color: var(--muted); margin: 9px 0 26px; }
+      .card-head .dash { width: 44px; height: 3px; border-radius: 3px; background: var(--blue); margin: 9px auto 18px; }
+      .card-head h1 { font-size: 19px; font-weight: 700; line-height: 1.35; }
+      .card-head .sub { font-size: 13.5px; color: var(--muted); margin: 8px 0 22px; }
 
       /* ---------- Alerte d'erreur ---------- */
       .alert {
-        display: flex; align-items: flex-start; gap: 11px;
+        display: flex; align-items: flex-start; gap: 10px;
         background: var(--danger-bg);
         border: 1px solid var(--danger-line);
         color: var(--danger-ink);
-        padding: 13px 15px;
-        border-radius: 13px;
-        font-size: 13.5px; font-weight: 500; line-height: 1.45;
-        margin-bottom: 20px;
-        animation: alertIn .32s ease both;
+        padding: 12px 14px;
+        border-radius: 12px;
+        font-size: 13px; font-weight: 500; line-height: 1.45;
+        margin-bottom: 18px;
+        animation: alertIn .3s ease both;
       }
-      .alert svg { width: 18px; height: 18px; flex: none; margin-top: 1px; }
+      .alert svg { width: 17px; height: 17px; flex: none; margin-top: 1px; }
 
       /* ---------- Champs ---------- */
-      .field { margin-bottom: 17px; }
-      .field label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+      .field { margin-bottom: 15px; }
+      .field label { display: block; font-size: 13.5px; font-weight: 600; margin-bottom: 7px; }
       .input-wrap { position: relative; }
       .input-wrap > .lead {
-        position: absolute; left: 15px; top: 50%; transform: translateY(-50%);
-        width: 18px; height: 18px; color: #9aa7c4; pointer-events: none;
+        position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+        width: 17px; height: 17px; color: #9aa7c4; pointer-events: none;
       }
       .input-wrap input {
-        width: 100%; height: 52px;
-        border: 1.6px solid var(--line); border-radius: 13px;
-        padding: 0 46px;
+        width: 100%; height: 50px;
+        border: 1.6px solid transparent; border-radius: 12px;
+        padding: 0 44px;
         font: inherit; font-size: 14.5px; color: var(--ink);
-        background: #f7f9fd;
-        transition: border-color .18s ease, background .18s ease, box-shadow .18s ease;
+        background: var(--field-bg);
+        transition: border-color .16s ease, background .16s ease, box-shadow .16s ease;
       }
-      .input-wrap input::placeholder { color: #a6b0c8; }
+      .input-wrap input::placeholder { color: #9aa6c0; }
       .input-wrap input:focus {
         outline: none;
         border-color: var(--blue);
@@ -130,73 +131,76 @@
         box-shadow: 0 0 0 4px rgba(31, 107, 255, .13);
       }
       .toggle-pw {
-        position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+        position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
         width: 34px; height: 34px;
         border: none; background: none; cursor: pointer;
-        color: #98a4c2; display: grid; place-items: center;
-        border-radius: 8px;
+        color: #96a2c0; display: grid; place-items: center; border-radius: 8px;
       }
-      .toggle-pw:hover { color: var(--blue); background: #eef3fe; }
-      .toggle-pw svg { width: 19px; height: 19px; }
+      .toggle-pw:hover { color: var(--blue); }
+      .toggle-pw svg { width: 18px; height: 18px; }
 
       .row {
         display: flex; align-items: center; justify-content: space-between;
-        gap: 12px; margin: 15px 0 24px; font-size: 13.5px;
+        gap: 12px; margin: 14px 0 20px; font-size: 13px;
       }
-      .row .remember { display: flex; align-items: center; gap: 9px; color: var(--muted); cursor: pointer; }
-      .row .remember input { width: 16px; height: 16px; accent-color: var(--blue); cursor: pointer; }
-      .row a { color: var(--blue); font-weight: 600; text-decoration: none; }
+      .row .remember { display: flex; align-items: center; gap: 8px; color: var(--muted); cursor: pointer; }
+      .row .remember input { width: 15px; height: 15px; accent-color: var(--blue); cursor: pointer; }
+      .row a { color: var(--blue); font-weight: 600; text-decoration: none; white-space: nowrap; }
       .row a:hover { text-decoration: underline; }
 
       /* ---------- Bouton ---------- */
       .btn {
         position: relative;
-        width: 100%; height: 54px;
-        border: none; border-radius: 14px; cursor: pointer;
+        width: 100%; height: 52px;
+        border: none; border-radius: 13px; cursor: pointer;
         background: linear-gradient(180deg, #2f7bff, var(--blue-strong));
-        color: #fff; font: inherit; font-size: 16px; font-weight: 700;
-        display: flex; align-items: center; justify-content: center; gap: 10px;
-        box-shadow: 0 12px 26px rgba(20, 70, 200, .30);
-        transition: filter .18s ease, box-shadow .18s ease, transform .06s ease;
+        color: #fff; font: inherit; font-size: 15.5px; font-weight: 700;
+        display: flex; align-items: center; justify-content: center; gap: 9px;
+        box-shadow: 0 11px 24px rgba(20, 70, 200, .30);
+        transition: filter .16s ease, box-shadow .16s ease, transform .06s ease;
       }
-      .btn svg { width: 17px; height: 17px; }
-      .btn:hover { filter: brightness(1.06); box-shadow: 0 16px 34px rgba(20, 70, 200, .42); }
+      .btn svg { width: 16px; height: 16px; }
+      .btn:hover { filter: brightness(1.06); box-shadow: 0 15px 32px rgba(20, 70, 200, .42); }
       .btn:active { transform: translateY(1px); }
       .btn:disabled, .btn[aria-busy="true"] { cursor: not-allowed; filter: saturate(.7) brightness(.98); box-shadow: none; }
       .btn .spinner {
-        width: 18px; height: 18px; border-radius: 50%;
+        width: 17px; height: 17px; border-radius: 50%;
         border: 2.5px solid rgba(255, 255, 255, .4); border-top-color: #fff;
-        animation: spin .7s linear infinite;
-        display: none;
+        animation: spin .7s linear infinite; display: none;
       }
       .btn[aria-busy="true"] .spinner { display: block; }
       .btn[aria-busy="true"] .btn-icon { display: none; }
 
       .card-foot {
-        display: flex; align-items: center; justify-content: center; gap: 8px;
-        margin-top: 24px; padding-top: 18px;
+        display: flex; align-items: center; justify-content: center; gap: 7px;
+        margin-top: 20px; padding-top: 16px;
         border-top: 1px solid var(--line);
-        font-size: 12.5px; color: var(--muted);
+        font-size: 12px; color: var(--muted); text-align: center;
       }
-      .card-foot svg { width: 14px; height: 14px; }
+      .card-foot svg { width: 13px; height: 13px; flex: none; }
 
       /* ---------- Animations ---------- */
       @keyframes panelIn { from { opacity: 0; } to { opacity: 1; } }
-      @keyframes cardIn { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+      @keyframes cardIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
       @keyframes alertIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
       @keyframes spin { to { transform: rotate(360deg); } }
 
       /* ---------- Responsive ---------- */
-      @media (max-width: 980px) {
+      /* tablette : illustration plus etroite */
+      @media (max-width: 1200px) {
+        .brand-panel { width: min(40vw, 62vh); min-width: 260px; }
+      }
+      /* mobile / petite tablette : illustration masquee */
+      @media (max-width: 900px) {
         .brand-panel { display: none; }
-        .form-panel { flex: 1; padding: 32px 20px; }
+        .form-panel { flex: 1; padding: 28px 18px; background: linear-gradient(180deg, #eef3fd, #e3ebf8); }
       }
-      @media (max-width: 480px) {
-        .card { padding: 34px 22px 24px; border-radius: 20px; box-shadow: 0 12px 34px rgba(16, 42, 110, .12); }
-        .card-head .name { font-size: 30px; }
-        .card-head h1 { font-size: 19px; }
+      @media (max-width: 420px) {
+        .card { padding: 30px 20px 20px; border-radius: 18px; box-shadow: 0 10px 30px rgba(16, 42, 110, .12); }
+        .card-head .name { font-size: 27px; }
+        .card-head h1 { font-size: 17.5px; }
+        .row { flex-wrap: wrap; }
       }
-
       @media (prefers-reduced-motion: reduce) {
         *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
       }
@@ -238,8 +242,7 @@
               <label for="email">Adresse e-mail</label>
               <div class="input-wrap">
                 <svg class="lead" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>
-                <input type="email" name="email" id="email" required autofocus autocomplete="username"
-                       placeholder="Entrez votre e-mail" />
+                <input type="email" name="email" id="email" required autofocus autocomplete="username" placeholder="Entrez votre e-mail" />
               </div>
             </div>
 
@@ -247,8 +250,7 @@
               <label for="password">Mot de passe</label>
               <div class="input-wrap">
                 <svg class="lead" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                <input type="password" name="password" id="password" required autocomplete="current-password"
-                       placeholder="Entrez votre mot de passe" />
+                <input type="password" name="password" id="password" required autocomplete="current-password" placeholder="Entrez votre mot de passe" />
                 <button type="button" class="toggle-pw" id="togglePw" aria-label="Afficher le mot de passe" aria-pressed="false">
                   <svg id="eyeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
                 </button>
@@ -282,7 +284,6 @@
         var eye = document.getElementById('eyeIcon');
         var EYE = '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/>';
         var EYE_OFF = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-10-8-10-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 10 8 10 8a18.5 18.5 0 0 1-2.16 3.19M1 1l22 22"/>';
-
         toggle.addEventListener('click', function () {
           var show = pw.type === 'password';
           pw.type = show ? 'text' : 'password';
@@ -290,7 +291,6 @@
           toggle.setAttribute('aria-pressed', String(show));
           toggle.setAttribute('aria-label', show ? 'Masquer le mot de passe' : 'Afficher le mot de passe');
         });
-
         var form = document.getElementById('loginForm');
         var btn = document.getElementById('submitBtn');
         var label = document.getElementById('btnLabel');
