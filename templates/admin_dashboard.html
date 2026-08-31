@@ -143,6 +143,36 @@
   </div>
 </section>
 
+{% if new_technician_requests %}
+<section class="card" style="margin-bottom: 20px;">
+  <div class="card-header">
+    <h3 class="card-title">Nouvelles demandes de techniciens <span class="card-badge">{{ new_technician_requests|length }}</span></h3>
+    <a class="card-link" href="{{ url_for('admin_artisans') }}">Voir tous les techniciens</a>
+  </div>
+  <div class="table-wrap">
+    <table class="table table-wide">
+      <thead>
+        <tr><th>Technicien</th><th>Metier</th><th>Ville</th><th>Statut</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for t in new_technician_requests %}
+        <tr>
+          <td>
+            <span class="avatar">{{ (t.full_name or '?')[0]|upper }}</span>
+            {{ t.full_name or '—' }}
+          </td>
+          <td>{{ t.profession or '—' }}</td>
+          <td>{{ t.city or '—' }}{% if t.quartier %} · {{ t.quartier }}{% endif %}</td>
+          <td><span class="tag tag-attente">En attente de verification</span></td>
+          <td><a class="btn-sm btn-primary" href="{{ url_for('admin_artisan_detail', artisan_id=t.id) }}">Ouvrir le dossier</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+
 <div class="row row-2">
   <div class="card">
     <div class="card-header">

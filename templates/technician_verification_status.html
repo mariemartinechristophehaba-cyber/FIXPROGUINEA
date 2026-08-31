@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+{% block title %}Vérification de votre profil - FixPro{% endblock %}
+{% block header %}{% endblock %}
+{% block footer %}{% endblock %}
+
+{% block extra_head %}
+<style>
+  .tv-wrap { max-width: 480px; margin: 0 auto; padding: 20px 16px 60px; }
+  .tv-hero {
+    background: linear-gradient(160deg, #1D4ED8 0%, #1E3A8A 100%);
+    color: #fff; border-radius: 20px; padding: 24px 20px;
+    text-align: center;
+  }
+  .tv-hero-ico {
+    width: 64px; height: 64px; border-radius: 50%;
+    background: rgba(255,255,255,.16); display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 12px;
+  }
+  .tv-hero h1 { margin: 0 0 6px; font-size: 20px; font-weight: 800; }
+  .tv-hero p { margin: 0; font-size: 13.5px; opacity: .9; line-height: 1.5; }
+  .tv-badge {
+    display: inline-block; margin-top: 12px; padding: 5px 12px; border-radius: 999px;
+    font-size: 12px; font-weight: 700; background: rgba(255,255,255,.2);
+  }
+  .tv-card {
+    background: #fff; border: 1px solid #E5E7EB; border-radius: 16px;
+    padding: 16px; margin-top: 16px;
+  }
+  .tv-card h2 { margin: 0 0 12px; font-size: 15px; font-weight: 700; color: #0F172A; }
+  .tv-check { display: flex; align-items: center; gap: 10px; padding: 8px 0; font-size: 14px; color: #0F172A; }
+  .tv-check .dot {
+    width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: #E2E8F0; color: #94A3B8;
+  }
+  .tv-check.ok .dot { background: #16A34A; color: #fff; }
+  .tv-doc {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 12px 0; border-bottom: 1px solid #F1F5F9;
+  }
+  .tv-doc:last-child { border-bottom: none; }
+  .tv-doc-name { font-size: 14px; font-weight: 600; color: #0F172A; }
+  .tv-doc-reason { font-size: 12px; color: #DC2626; margin-top: 2px; }
+  .tv-pill { font-size: 11px; font-weight: 700; padding: 4px 9px; border-radius: 7px; white-space: nowrap; }
+  .tv-pill.pending  { background: #FEF3C7; color: #B45309; }
+  .tv-pill.approved { background: #DCFCE7; color: #15803D; }
+  .tv-pill.rejected { background: #FEE2E2; color: #DC2626; }
+  .tv-pill.missing  { background: #F1F5F9; color: #64748B; }
+  .tv-resubmit label { display: block; font-size: 13px; font-weight: 600; margin: 12px 0 6px; color: #0F172A; }
+  .tv-resubmit input[type=file] { width: 100%; font-size: 13px; }
+  .tv-btn {
+    display: block; width: 100%; margin-top: 16px; padding: 14px; border: none;
+    border-radius: 12px; background: #1D4ED8; color: #fff; font-size: 15px; font-weight: 700;
+    text-align: center; text-decoration: none; cursor: pointer;
+  }
+  .tv-note { margin-top: 14px; font-size: 12.5px; color: #64748B; text-align: center; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="tv-wrap">
+  <div class="tv-hero">
+    <span class="tv-hero-ico">
+      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg>
+    </span>
+    <h1>Vérification de votre profil</h1>
+    <p>Vos informations et documents sont nécessaires pour valider votre profil professionnel FixPro.</p>
+    {% if status == 'PENDING_REVIEW' %}
+      <span class="tv-badge">Dossier en cours d'examen</span>
+    {% elif status == 'REVISION_REQUIRED' %}
+      <span class="tv-badge">À corriger</span>
+    {% elif status == 'REJECTED' %}
+      <span class="tv-badge">Dossier refusé</span>
+    {% endif %}
+  </div>
+
+  <div class="tv-card">
+    <h2>Votre dossier</h2>
+    <div class="tv-check {{ 'ok' if checklist.phone }}"><span class="dot">✓</span> Numéro renseigné</div>
+    <div class="tv-check {{ 'ok' if checklist.email }}"><span class="dot">✓</span> E-mail renseigné</div>
+    <div class="tv-check {{ 'ok' if checklist.identity }}"><span class="dot">✓</span> Pièce d'identité ajoutée</div>
+    <div class="tv-check {{ 'ok' if checklist.professional }}"><span class="dot">✓</span> Justificatif professionnel ajouté</div>
+  </div>
+
+  <div class="tv-card">
+    <h2>Documents</h2>
+    {% for doc in documents %}
+    <div class="tv-doc">
+      <div>
+        <div class="tv-doc-name">{{ doc.label }}</div>
+        {% if doc.status == 'rejected' and doc.rejection_reason %}
+        <div class="tv-doc-reason">{{ doc.rejection_reason }}</div>
+        {% endif %}
+      </div>
+      <span class="tv-pill {{ doc.status }}">
+        {%- if doc.status == 'approved' %}Validé
+        {%- elif doc.status == 'rejected' %}Refusé
+        {%- elif doc.status == 'missing' %}Manquant
+        {%- else %}En attente{% endif -%}
+      </span>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% if status == 'PENDING_REVIEW' %}
+  <p class="tv-note">Votre dossier est prêt à être examiné. L'équipe FixPro revient vers vous rapidement.</p>
+  {% endif %}
+
+  {% if can_resubmit %}
+  <form class="tv-card tv-resubmit" method="post"
+        action="{{ url_for('technician_documents_resubmit') }}"
+        onsubmit="return tvPrepare();">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+    <h2>Remplacer un document</h2>
+    <label>Pièce d'identité (JPG, PNG, PDF)</label>
+    <input type="file" id="tvIdentity" accept="image/*,application/pdf" />
+    <input type="hidden" name="identity_doc" id="tvIdentityData" />
+    <label>Justificatif professionnel (JPG, PNG, PDF)</label>
+    <input type="file" id="tvProfessional" accept="image/*,application/pdf" />
+    <input type="hidden" name="professional_doc" id="tvProfessionalData" />
+    <button type="submit" class="tv-btn">Renvoyer mes documents</button>
+  </form>
+  <script>
+    function tvReadFile(input, hidden, cb){
+      var f = input.files[0];
+      if (!f){ cb(); return; }
+      if (f.size > 5 * 1024 * 1024){ alert('Fichier trop volumineux (5 Mo max).'); cb(false); return; }
+      var r = new FileReader();
+      r.onload = function(e){ document.getElementById(hidden).value = e.target.result; cb(); };
+      r.readAsDataURL(f);
+    }
+    function tvPrepare(){
+      var id = document.getElementById('tvIdentity');
+      var pro = document.getElementById('tvProfessional');
+      if (!id.files[0] && !pro.files[0]){ alert('Sélectionnez au moins un document.'); return false; }
+      var pending = 0, done = 0;
+      function step(){ done++; if (done === pending) document.querySelector('.tv-resubmit').submit(); }
+      if (id.files[0]){ pending++; }
+      if (pro.files[0]){ pending++; }
+      if (id.files[0]) tvReadFile(id, 'tvIdentityData', step);
+      if (pro.files[0]) tvReadFile(pro, 'tvProfessionalData', step);
+      return false;
+    }
+  </script>
+  {% endif %}
+
+  <a class="tv-btn" href="{{ url_for('logout') }}" style="background:#fff;color:#1D4ED8;border:1.5px solid #1D4ED8;">Se déconnecter</a>
+</div>
+{% endblock %}
+
+{% block tabbar %}{% endblock %}

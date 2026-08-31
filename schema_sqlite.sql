@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS users (
     availability_status TEXT DEFAULT 'hors_ligne',
     available_days    TEXT,
     account_status    TEXT DEFAULT 'ACTIVE',
+    verification_status TEXT,
     estimated_delay TEXT,
     created_at      TEXT DEFAULT CURRENT_TIMESTAMP
 );
@@ -149,6 +150,10 @@ CREATE TABLE IF NOT EXISTS technician_documents (
     file_size       INTEGER,
     content_base64  TEXT,
     status          TEXT DEFAULT 'pending',
+    original_file_name TEXT,
+    rejection_reason TEXT,
+    reviewed_at     TEXT,
+    reviewed_by     INTEGER,
     created_at      TEXT DEFAULT CURRENT_TIMESTAMP
 );
 

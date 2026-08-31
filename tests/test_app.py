@@ -88,11 +88,14 @@ class FixProTestCase(unittest.TestCase):
             "full_name": name,
             "profession": "Plombier",
             "phone": phone,
+            "email": email,
+            "password": password,
             "address": "Conakry",
             "identity_doc": doc,
+            "professional_doc": doc,
         }, follow_redirects=True)
 
-        # Valide automatiquement l'artisan pour les tests.
+        # Valide automatiquement l'artisan pour les tests (equivalent d'une validation admin).
         conn = db.connect(sqlite_path=self.db_path)
         try:
             user = conn.execute(
@@ -100,8 +103,12 @@ class FixProTestCase(unittest.TestCase):
             if user:
                 conn.execute(
                     "UPDATE users SET is_verified = 1, is_active = 1, email = ?,"
+                    " verification_status = 'APPROVED',"
                     " password_hash = ?, availability_status = 'en_ligne' WHERE id = ?",
                     (email, fixpro_app.generate_password_hash(password), user["id"]))
+                conn.execute(
+                    "UPDATE technician_documents SET status = 'approved' WHERE technician_id = ?",
+                    (user["id"],))
                 conn.commit()
         finally:
             conn.close()
@@ -2322,6 +2329,184 @@ class MobileTechnicianSessionTests(FixProTestCase):
     def test_mobile_verify_missing_token_fails(self):
         response = self.client.get("/api/mobile/verify")
         self.assertEqual(response.status_code, 401)
+
+
+class TechnicianVerificationFlowTests(FixProTestCase):
+    """Verification obligatoire du technicien : docs, statut, dashboard admin, retour."""
+
+    DOC = ("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJ"
+           "AAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==")
+    PHONE = "624999888"
+    EMAIL = "verif.tech@example.com"
+    PASSWORD = "PassTech2026!"
+
+    def _admin(self):
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute(
+                "INSERT INTO users (email, phone, password_hash, role, full_name, is_verified, is_active)"
+                " VALUES (?, ?, ?, 'admin', ?, 1, 1)",
+                ("admin@fixpro.local", "+224000000000",
+                 fixpro_app.generate_password_hash("adminpass"), "Admin"))
+            conn.commit()
+            return conn.execute("SELECT id FROM users WHERE email = 'admin@fixpro.local'").fetchone()["id"]
+        finally:
+            conn.close()
+
+    def _login_admin(self, admin_id):
+        with self.client.session_transaction() as sess:
+            sess["user_id"] = admin_id
+            sess["admin_unlocked"] = True
+
+    def _register(self, identity=True, professional=True, password=PASSWORD, email=EMAIL, phone=PHONE):
+        data = {
+            "full_name": "Amadou Camara", "profession": "Plombier",
+            "phone": phone, "email": email, "password": password, "address": "Conakry",
+        }
+        if identity:
+            data["identity_doc"] = self.DOC
+        if professional:
+            data["professional_doc"] = self.DOC
+        return self.client.post("/register/artisan", data=data, follow_redirects=True)
+
+    def _tech(self):
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            return conn.execute(
+                "SELECT * FROM users WHERE role = 'technician' AND phone LIKE ?",
+                ("%" + self.PHONE[-6:],)).fetchone()
+        finally:
+            conn.close()
+
+    # -- Tests -------------------------------------------------------------
+
+    def test_A_no_documents_blocks_registration(self):
+        self._register(identity=False, professional=False)
+        self.assertIsNone(self._tech())
+
+    def test_B_identity_only_blocks_registration(self):
+        self._register(identity=True, professional=False)
+        self.assertIsNone(self._tech())
+
+    def test_C_both_documents_creates_pending_dossier(self):
+        self._register()
+        tech = self._tech()
+        self.assertIsNotNone(tech)
+        self.assertEqual(tech["verification_status"], "PENDING_REVIEW")
+        self.assertEqual(tech["is_verified"], 0)
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            docs = conn.execute(
+                "SELECT document_type, status FROM technician_documents WHERE technician_id = ?"
+                " ORDER BY document_type", (tech["id"],)).fetchall()
+        finally:
+            conn.close()
+        self.assertEqual([d["document_type"] for d in docs], ["identity", "professional"])
+        self.assertTrue(all(d["status"] == "pending" for d in docs))
+
+    def test_D_pending_technician_sees_waiting_screen_not_dashboard(self):
+        self._register()  # auto-connecte le technicien
+        resp = self.client.get("/technician/dashboard", follow_redirects=False)
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn("pending", (resp.location or "").lower())
+        page = self.client.get("/artisan-pending")
+        self.assertEqual(page.status_code, 200)
+        self.assertIn("examen", page.get_data(as_text=True).lower())
+
+    def test_D2_pending_technician_not_in_client_search(self):
+        self._register()
+        self.client.get("/logout")
+        self.register_client(phone="+224620000123")
+        self._set_client_location()
+        resp = self.client.get("/artisans")
+        self.assertNotIn("Amadou Camara", resp.get_data(as_text=True))
+
+    def test_E_admin_sees_dossier_in_dashboard_and_detail(self):
+        self._register()
+        self.client.get("/logout")
+        admin_id = self._admin()
+        self._login_admin(admin_id)
+        tech = self._tech()
+        dash = self.client.get("/admin/dashboard")
+        self.assertEqual(dash.status_code, 200)
+        self.assertIn("Nouvelles demandes de techniciens", dash.get_data(as_text=True))
+        detail = self.client.get(f"/admin/artisans/{tech['id']}")
+        self.assertEqual(detail.status_code, 200)
+        self.assertIn("Justificatif professionnel", detail.get_data(as_text=True))
+
+    def test_F_verify_blocked_until_documents_approved(self):
+        self._register()
+        self.client.get("/logout")
+        admin_id = self._admin()
+        self._login_admin(admin_id)
+        tech = self._tech()
+
+        # Verify avant approbation des documents -> refuse.
+        self.client.post("/admin/artisans", data={"action": "verify", "artisan_id": tech["id"]},
+                         follow_redirects=True)
+        self.assertEqual(self._tech()["verification_status"], "PENDING_REVIEW")
+
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            docs = conn.execute(
+                "SELECT id FROM technician_documents WHERE technician_id = ?", (tech["id"],)).fetchall()
+        finally:
+            conn.close()
+        for d in docs:
+            self.client.post(f"/admin/technicien/{tech['id']}/document/{d['id']}/review",
+                             data={"decision": "approve"}, follow_redirects=True)
+
+        self.client.post("/admin/artisans", data={"action": "verify", "artisan_id": tech["id"]},
+                         follow_redirects=True)
+        tech = self._tech()
+        self.assertEqual(tech["verification_status"], "APPROVED")
+        self.assertEqual(tech["is_verified"], 1)
+
+    def test_G_approved_technician_returns_straight_to_dashboard(self):
+        self._register()
+        self.client.get("/logout")
+        admin_id = self._admin()
+        self._login_admin(admin_id)
+        tech = self._tech()
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            for d in conn.execute("SELECT id FROM technician_documents WHERE technician_id = ?",
+                                  (tech["id"],)).fetchall():
+                self.client.post(f"/admin/technicien/{tech['id']}/document/{d['id']}/review",
+                                 data={"decision": "approve"}, follow_redirects=True)
+        finally:
+            conn.close()
+        self.client.post("/admin/artisans", data={"action": "verify", "artisan_id": tech["id"]},
+                         follow_redirects=True)
+        self.client.get("/logout")
+
+        resp = self.login(self.EMAIL, self.PASSWORD)
+        self.assertEqual(resp.status_code, 200)
+        dash = self.client.get("/technician/dashboard", follow_redirects=False)
+        self.assertEqual(dash.status_code, 200)
+
+    def test_document_reject_requires_reason(self):
+        self._register()
+        self.client.get("/logout")
+        admin_id = self._admin()
+        self._login_admin(admin_id)
+        tech = self._tech()
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            doc_id = conn.execute(
+                "SELECT id FROM technician_documents WHERE technician_id = ? LIMIT 1",
+                (tech["id"],)).fetchone()["id"]
+        finally:
+            conn.close()
+        self.client.post(f"/admin/technicien/{tech['id']}/document/{doc_id}/review",
+                         data={"decision": "reject"}, follow_redirects=True)
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            status = conn.execute(
+                "SELECT status FROM technician_documents WHERE id = ?", (doc_id,)).fetchone()["status"]
+        finally:
+            conn.close()
+        self.assertEqual(status, "pending")
 
 
 if __name__ == "__main__":

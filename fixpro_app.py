@@ -298,7 +298,8 @@ def check_artisan_verification():
     if not user_id:
         return None
     public_endpoints = {
-        "artisan_pending", "logout", "static", "login", "register",
+        "artisan_pending", "technician_verification", "technician_documents_resubmit",
+        "logout", "static", "login", "register",
         "register_artisan", "client_signup", "google_signup", "google_callback",
         "complete_profile", "contact_artisan", "health", "health-db", "index", "contact",
         "lia", "api_lia_chat",
@@ -1432,6 +1433,87 @@ def register():
     return render_template("choose_account.html")
 
 
+# --- Verification des techniciens -------------------------------------------
+
+VERIF_PENDING = "PENDING_REVIEW"
+VERIF_APPROVED = "APPROVED"
+VERIF_REJECTED = "REJECTED"
+VERIF_REVISION = "REVISION_REQUIRED"
+VERIF_BLOCKING = (VERIF_PENDING, VERIF_REJECTED, VERIF_REVISION)
+
+DOC_IDENTITY = "identity"
+DOC_PROFESSIONAL = "professional"
+REQUIRED_DOC_TYPES = (DOC_IDENTITY, DOC_PROFESSIONAL)
+
+
+def _store_technician_document(conn, store, tech_id, doc_type, data_uri, fallback_name):
+    """Televerse un document de verification et enregistre ses metadonnees.
+
+    Retourne None en cas de succes, un message d'erreur sinon.
+    """
+    if not data_uri:
+        return "Document manquant."
+    mime, ext, encoded = _parse_base64_file(data_uri)
+    if not encoded:
+        return "Format de document non valide (JPG, PNG ou PDF, 3 Mo max)."
+    try:
+        stored = store.upload(doc_type, data_uri)
+    except ValueError as exc:
+        return str(exc)
+    file_size = (len(encoded) * 3) // 4
+    conn.execute(
+        "INSERT INTO technician_documents (technician_id, document_type, file_name,"
+        " original_file_name, mime_type, file_size, content_base64, status)"
+        " VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')",
+        (tech_id, doc_type, f"{fallback_name}{ext}", f"{fallback_name}{ext}",
+         mime or "application/octet-stream", file_size, stored))
+    return None
+
+
+def _notify_admins_new_technician(conn, tech_id, full_name, profession, city):
+    """Previent tous les admins qu'un dossier technicien attend une verification."""
+    try:
+        admins = conn.execute("SELECT id FROM users WHERE role = 'admin'").fetchall()
+        for admin in admins:
+            create_notification(
+                admin["id"],
+                "Nouvelle demande de technicien",
+                f"{full_name} ({profession or 'metier non precise'}, {city or 'ville non precisee'})"
+                " a termine son dossier et attend une verification.",
+                "info",
+                f"technician:{tech_id}",
+                conn=conn)
+    except Exception:  # pragma: no cover - la notification ne doit jamais bloquer
+        logger.exception("Echec notification admins pour le technicien %s", tech_id)
+
+
+def _technician_documents_by_type(conn, tech_id):
+    """Retourne {document_type: derniere ligne} pour un technicien."""
+    rows = conn.execute(
+        "SELECT * FROM technician_documents WHERE technician_id = ? ORDER BY id",
+        (tech_id,)).fetchall()
+    latest = {}
+    for row in rows:
+        latest[row["document_type"]] = row
+    return latest
+
+
+def _technician_docs_all_approved(conn, tech_id):
+    """Vrai si les deux documents obligatoires existent et sont approuves."""
+    docs = _technician_documents_by_type(conn, tech_id)
+    return all(
+        docs.get(t) and (docs[t]["status"] or "").lower() == "approved"
+        for t in REQUIRED_DOC_TYPES)
+
+
+def _technician_has_documents(conn, tech_id):
+    """Vrai si le technicien a soumis au moins un document de verification."""
+    row = conn.execute(
+        "SELECT COUNT(*) AS n FROM technician_documents WHERE technician_id = ?",
+        (tech_id,)).fetchone()
+    return bool(row and row["n"])
+
+
 @app.route("/register/artisan", methods=["GET", "POST"])
 @app.route("/inscription/technicien", methods=["GET", "POST"])
 @limiter.limit("10 per hour", methods=["POST"])
@@ -1459,7 +1541,10 @@ def register_artisan():
         bio = request.form.get("bio", "").strip()
         address = request.form.get("address", "").strip()
         rayon = request.form.get("rayon", "").strip()
+        email = request.form.get("email", "").strip().lower()
+        account_password = request.form.get("password", "")
         identity_doc = request.form.get("identity_doc", "").strip()
+        professional_doc = request.form.get("professional_doc", "").strip()
         photo = request.form.get("photo", "").strip()
         portfolio_raw = request.form.get("portfolio", "").strip()
         hourly_rate = _to_float(request.form.get("hourly_rate", 0))
@@ -1484,13 +1569,30 @@ def register_artisan():
             flash("Veuillez remplir tous les champs obligatoires.", "error")
             return redirect(url_for("register_artisan"))
 
+        # Verification obligatoire (regle appliquee cote serveur, pas seulement dans l'UI).
+        if not email:
+            flash("Veuillez renseigner votre adresse e-mail.", "error")
+            return redirect(url_for("register_artisan"))
+        pwd_error = _validate_password_strength(account_password)
+        if pwd_error:
+            flash(pwd_error, "error")
+            return redirect(url_for("register_artisan"))
+        if not identity_doc:
+            flash("Veuillez importer votre piece d'identite pour continuer.", "error")
+            return redirect(url_for("register_artisan"))
+        if not professional_doc:
+            flash("Votre justificatif professionnel est obligatoire.", "error")
+            return redirect(url_for("register_artisan"))
+
         conn = get_db_connection()
         try:
             if conn.execute("SELECT id FROM users WHERE phone = ?", (phone,)).fetchone():
                 flash("Ce numéro de téléphone est déjà utilisé.", "error")
                 return redirect(url_for("register_artisan"))
+            if email and conn.execute("SELECT id FROM users WHERE email = ?", (email,)).fetchone():
+                flash("Cette adresse e-mail est déjà utilisée.", "error")
+                return redirect(url_for("register_artisan"))
 
-            temp_password = secrets.token_urlsafe(12)
             lat, lon = _geocode_zone(address, "")
 
             store = storage.get_storage()
@@ -1503,45 +1605,32 @@ def register_artisan():
                     return redirect(url_for("register_artisan"))
 
             conn.execute(
-                "INSERT INTO users (phone, password_hash, role, full_name, profession,"
+                "INSERT INTO users (phone, email, password_hash, role, full_name, profession,"
                 " skills, years_experience, bio, city, zone_intervention, latitude, longitude,"
-                " hourly_rate, is_verified, is_active, account_status, photo_url, availability_status, available_days)"
-                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (phone, generate_password_hash(temp_password), role,
+                " hourly_rate, is_verified, is_active, account_status, verification_status,"
+                " photo_url, availability_status, available_days)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (phone, email or None, generate_password_hash(account_password), role,
                  full_name, profession, specialite, experience, bio, address,
-                 rayon, lat, lon, hourly_rate, 1, 1, 'ACTIVE', photo_url, availability_status, available_days_str))
+                 rayon, lat, lon, hourly_rate, 0, 1, 'ACTIVE', VERIF_PENDING,
+                 photo_url, availability_status, available_days_str))
             conn.commit()
 
             artisan = conn.execute(
                 "SELECT id FROM users WHERE phone = ?", (phone,)).fetchone()
             artisan_id = artisan["id"]
 
-            if identity_doc:
-                try:
-                    id_url = store.upload("identite", identity_doc)
-                    mime, ext, _ = _parse_base64_file(identity_doc)
-                    conn.execute(
-                        "INSERT INTO technician_documents (technician_id, document_type,"
-                        " file_name, mime_type, content_base64)"
-                        " VALUES (?, ?, ?, ?, ?)",
-                        (artisan_id, "identity", f"identite{ext}", mime or "application/octet-stream", id_url))
-                except ValueError as exc:
-                    flash(f"Document invalide : {exc}", "error")
+            for doc_type, data_uri, name in (
+                (DOC_IDENTITY, identity_doc, "piece-identite"),
+                (DOC_PROFESSIONAL, professional_doc, "justificatif-pro"),
+            ):
+                err = _store_technician_document(conn, store, artisan_id, doc_type, data_uri, name)
+                if err:
+                    conn.rollback()
+                    conn.execute("DELETE FROM users WHERE id = ?", (artisan_id,))
+                    conn.commit()
+                    flash(f"Document invalide : {err}", "error")
                     return redirect(url_for("register_artisan"))
-
-            try:
-                portfolio = json.loads(portfolio_raw) if portfolio_raw else []
-            except Exception:
-                portfolio = []
-            for i, p in enumerate(portfolio[:5]):
-                try:
-                    p_url = store.upload(f"realisation-{i+1}", p)
-                except ValueError:
-                    continue
-                conn.execute(
-                    "INSERT INTO artisan_portfolio (artisan_id, photo_url, caption)"
-                    " VALUES (?, ?, ?)",
-                    (artisan_id, p_url, f"Realisation {i+1}"))
 
             services_ids = request.form.getlist("services")
             try:
@@ -1550,11 +1639,13 @@ def register_artisan():
                 conn.rollback()
                 flash(f"Services invalides : {exc}", "error")
                 return redirect(url_for("register_artisan"))
+
+            _notify_admins_new_technician(conn, artisan_id, full_name, profession, address)
             conn.commit()
         finally:
             conn.close()
 
-        flash("Bienvenue dans FixPro.", "success")
+        flash("Votre dossier est enregistré. Il est en cours de vérification par FixPro.", "success")
         session["user_id"] = artisan_id
         session.permanent = True
         return redirect(url_for("artisan_dashboard"))
@@ -1659,8 +1750,41 @@ def _finalize_artisan_registration(wizard):
 
 @app.route("/artisan-pending")
 def artisan_pending():
-    """Page d'attente affichee aux artisans non valides."""
-    return render_template("pending.html")
+    """Page de suivi de la verification du dossier technicien."""
+    user = get_current_user()
+    if not user or not _is_technician(user):
+        return redirect(url_for("login"))
+    if (user.get("verification_status") or "").upper() == VERIF_APPROVED or user.get("is_verified"):
+        return redirect(url_for("artisan_dashboard"))
+    return _render_technician_verification(user)
+
+
+def _render_technician_verification(user):
+    status = (user.get("verification_status") or "PENDING_REVIEW").upper()
+    conn = get_db_connection()
+    try:
+        docs = _technician_documents_by_type(conn, user["id"])
+    finally:
+        conn.close()
+    doc_rows = []
+    for dtype in REQUIRED_DOC_TYPES:
+        row = docs.get(dtype)
+        doc_rows.append({
+            "type": dtype,
+            "label": _DOC_LABELS[dtype],
+            "status": ((row["status"] if row else "missing") or "pending").lower(),
+            "rejection_reason": row["rejection_reason"] if row else None,
+        })
+    checklist = {
+        "phone": bool(user.get("phone")),
+        "email": bool(user.get("email")),
+        "identity": docs.get(DOC_IDENTITY) is not None,
+        "professional": docs.get(DOC_PROFESSIONAL) is not None,
+    }
+    return render_template("technician_verification_status.html",
+                           user=user, status=status, documents=doc_rows,
+                           checklist=checklist,
+                           can_resubmit=status in (VERIF_REJECTED, VERIF_REVISION))
 
 
 @app.route("/api/mobile/register", methods=["POST"])
@@ -1668,7 +1792,8 @@ def artisan_pending():
 def api_mobile_register():
     """Inscription artisan depuis l'application mobile (JSON)."""
     data = request.get_json(silent=True) or {}
-    required = ["first_name", "last_name", "phone", "password", "profession", "city", "quartier"]
+    required = ["first_name", "last_name", "phone", "password", "profession", "city", "quartier",
+                "email", "identity_doc", "diploma_doc"]
     missing = [f for f in required if not data.get(f)]
     if missing:
         return jsonify({"error": "Champs manquants", "missing": missing}), 400
@@ -1798,15 +1923,16 @@ def _finalize_artisan_registration_json(wizard):
         conn.execute(
             "INSERT INTO users (email, phone, password_hash, role, full_name, civility,"
             " profession, skills, city, quartier, zone_intervention, mobility,"
-            " years_experience, bio, hourly_rate, latitude, longitude, account_status, is_verified, is_active,"
+            " years_experience, bio, hourly_rate, latitude, longitude, account_status,"
+            " is_verified, is_active, verification_status,"
             " availability_status, available_days)"
-            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (wizard["email"], wizard["phone"], generate_password_hash(wizard["password"]),
              "technician", full_name, wizard["civility"], wizard["profession"],
              wizard["skills"], wizard["city"], wizard["quartier"],
              wizard["zone_intervention"], wizard["mobility"],
              wizard["years_experience"], wizard["bio"], 0, latitude, longitude,
-             "ACTIVE", 1, 1,
+             "ACTIVE", 0, 1, VERIF_PENDING,
              wizard.get("availability_status") or "hors_ligne",
              wizard.get("available_days") or ""))
 
@@ -1815,17 +1941,18 @@ def _finalize_artisan_registration_json(wizard):
         artisan_id = artisan["id"]
 
         for doc_type, field, name_field in [
-            ("identity", "identity_doc", "identity_doc_name"),
-            ("diploma", "diploma_doc", "diploma_doc_name"),
+            (DOC_IDENTITY, "identity_doc", "identity_doc_name"),
+            (DOC_PROFESSIONAL, "diploma_doc", "diploma_doc_name"),
         ]:
             mime, ext, encoded = _parse_base64_file(wizard.get(field, ""))
             if encoded:
                 file_name = (wizard.get(name_field, "") or f"{doc_type}{ext}").strip()
                 conn.execute(
                     "INSERT INTO technician_documents (technician_id, document_type,"
-                    " file_name, mime_type, content_base64)"
-                    " VALUES (?, ?, ?, ?, ?)",
-                    (artisan_id, doc_type, file_name, mime, encoded))
+                    " file_name, original_file_name, mime_type, file_size, content_base64, status)"
+                    " VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')",
+                    (artisan_id, doc_type, file_name, file_name, mime,
+                     (len(encoded) * 3) // 4, encoded))
 
         admins = conn.execute("SELECT id FROM users WHERE role = 'admin'").fetchall()
         for admin in admins:
@@ -2163,6 +2290,11 @@ def admin_dashboard():
             })
         recent_activities = recent_activities[:6]
 
+        new_technician_requests = conn.execute(
+            "SELECT id, full_name, profession, city, quartier, photo_url, created_at"
+            " FROM users WHERE role = 'technician' AND verification_status = ?"
+            " ORDER BY created_at DESC LIMIT 10", (VERIF_PENDING,)).fetchall()
+
     finally:
         conn.close()
 
@@ -2171,6 +2303,7 @@ def admin_dashboard():
                            pending_requests=pending_requests,
                            in_progress=in_progress,
                            available_artisans=available_artisans,
+                           new_technician_requests=new_technician_requests,
                            recent_activities=recent_activities)
 
 
@@ -2216,10 +2349,10 @@ def admin_artisans():
                 conn.execute(
                     "INSERT INTO users (email, phone, password_hash, role, full_name, profession,"
                     " city, zone_intervention, bio, years_experience, is_verified, is_active,"
-                    " account_status)"
-                    " VALUES (?, ?, ?, 'technician', ?, ?, ?, ?, ?, ?, 0, 0, 'PENDING')",
+                    " account_status, verification_status)"
+                    " VALUES (?, ?, ?, 'technician', ?, ?, ?, ?, ?, ?, 0, 0, 'PENDING', ?)",
                     (email, phone, generate_password_hash(temp_password), full_name,
-                     profession, city, zone, bio, int(years or 0)))
+                     profession, city, zone, bio, int(years or 0), VERIF_PENDING))
                 conn.commit()
                 new_id = conn.execute("SELECT id FROM users WHERE phone = ?", (phone,)).fetchone()["id"]
                 log_admin_action(user["id"], user["email"], "create_technician", "user", new_id,
@@ -2228,14 +2361,21 @@ def admin_artisans():
                 return redirect(url_for("admin_artisans"))
 
             artisan = conn.execute(
-                "SELECT id, role, full_name, email FROM users WHERE id = ? AND role IN ('artisan','technician')",
+                "SELECT id, role, full_name, email, account_status, verification_status"
+                " FROM users WHERE id = ? AND role IN ('artisan','technician')",
                 (artisan_id,)).fetchone()
             if not artisan:
                 flash("Technicien introuvable.", "error")
                 return redirect(url_for("admin_artisans"))
 
             if action == "verify":
-                if artisan["role"] == "technician":
+                if (artisan["role"] == "technician"
+                        and _technician_has_documents(conn, artisan_id)
+                        and not _technician_docs_all_approved(conn, artisan_id)):
+                    flash("Validez d'abord la pièce d'identité et le justificatif professionnel.", "error")
+                    return redirect(url_for("admin_artisan_detail", artisan_id=artisan_id))
+                already_active = (artisan["account_status"] or "").upper() == "ACTIVE"
+                if artisan["role"] == "technician" and not already_active:
                     _set_status("PENDING", 0)
                     token = _generate_activation_token(artisan["id"])
                     create_notification(
@@ -2247,11 +2387,36 @@ def admin_artisans():
                         conn=conn)
                 else:
                     _set_status("ACTIVE", 1)
-                conn.execute("UPDATE users SET is_verified = 1 WHERE id = ?", (artisan_id,))
+                    create_notification(
+                        artisan["id"],
+                        "Profil vérifié",
+                        "Félicitations, votre profil FixPro est vérifié. Vous pouvez recevoir des demandes.",
+                        "success",
+                        conn=conn)
+                conn.execute(
+                    "UPDATE users SET is_verified = 1, verification_status = ? WHERE id = ?",
+                    (VERIF_APPROVED, artisan_id))
                 conn.commit()
                 log_admin_action(user["id"], user["email"], "verify", "user", artisan_id,
-                                 reason or "Validation du profil artisan")
+                                 reason or "Validation du dossier technicien")
                 flash("Technicien valide.", "success")
+            elif action in ("reject_dossier", "revision_required"):
+                if not reason:
+                    flash("Merci d'indiquer le motif.", "error")
+                    return redirect(url_for("admin_artisan_detail", artisan_id=artisan_id))
+                new_status = VERIF_REJECTED if action == "reject_dossier" else VERIF_REVISION
+                conn.execute(
+                    "UPDATE users SET is_verified = 0, verification_status = ? WHERE id = ?",
+                    (new_status, artisan_id))
+                create_notification(
+                    artisan["id"],
+                    "Dossier à corriger" if new_status == VERIF_REVISION else "Dossier refusé",
+                    f"Motif : {reason}",
+                    "error",
+                    conn=conn)
+                conn.commit()
+                log_admin_action(user["id"], user["email"], action, "user", artisan_id, reason)
+                flash("Décision enregistrée.", "success")
             elif action == "approve":
                 _set_status("ACTIVE", 1)
                 conn.execute("UPDATE users SET is_verified = 1 WHERE id = ?", (artisan_id,))
@@ -2360,12 +2525,76 @@ def admin_artisan_detail(artisan_id):
             return redirect(url_for("admin_artisans"))
 
         documents = conn.execute(
-            "SELECT * FROM technician_documents WHERE technician_id = ?",
+            "SELECT * FROM technician_documents WHERE technician_id = ? ORDER BY document_type, id",
             (artisan_id,)).fetchall()
+        service_names = conn.execute(
+            "SELECT s.name FROM artisan_services a JOIN services s ON s.id = a.service_id"
+            " WHERE a.artisan_id = ? ORDER BY s.name", (artisan_id,)).fetchall()
+        history = conn.execute(
+            "SELECT * FROM admin_logs WHERE target_type = 'user' AND target_id = ?"
+            " AND action IN ('verify','doc_approve','doc_reject','reject_dossier','revision_required','create_technician')"
+            " ORDER BY id DESC LIMIT 30", (artisan_id,)).fetchall()
+        docs_all_approved = _technician_docs_all_approved(conn, artisan_id)
     finally:
         conn.close()
     return render_template("admin_artisan_detail.html", user=user,
-                           artisan=artisan, documents=documents)
+                           artisan=artisan, documents=documents,
+                           service_names=[r["name"] for r in service_names],
+                           history=history, docs_all_approved=docs_all_approved,
+                           doc_labels=_DOC_LABELS)
+
+
+@app.route("/admin/technicien/<int:tech_id>/document/<int:doc_id>/review", methods=["POST"])
+@login_required
+@admin_required
+@limiter.limit("120 per hour", methods=["POST"])
+def admin_technician_document_review(tech_id, doc_id):
+    """Accepte ou refuse un document de verification d'un technicien."""
+    admin = get_current_user()
+    decision = (request.form.get("decision") or "").strip()
+    reason = (request.form.get("reason") or "").strip()
+    if decision not in ("approve", "reject"):
+        flash("Action invalide.", "error")
+        return redirect(url_for("admin_artisan_detail", artisan_id=tech_id))
+    if decision == "reject" and not reason:
+        flash("Merci d'indiquer le motif du refus.", "error")
+        return redirect(url_for("admin_artisan_detail", artisan_id=tech_id))
+
+    conn = get_db_connection()
+    try:
+        doc = conn.execute(
+            "SELECT * FROM technician_documents WHERE id = ? AND technician_id = ?",
+            (doc_id, tech_id)).fetchone()
+        if not doc:
+            flash("Document introuvable.", "error")
+            return redirect(url_for("admin_artisan_detail", artisan_id=tech_id))
+
+        new_status = "approved" if decision == "approve" else "rejected"
+        conn.execute(
+            "UPDATE technician_documents SET status = ?, reviewed_at = ?, reviewed_by = ?,"
+            " rejection_reason = ? WHERE id = ?",
+            (new_status, now_iso(), admin["id"],
+             reason if decision == "reject" else None, doc_id))
+        if decision == "reject":
+            conn.execute(
+                "UPDATE users SET verification_status = ?, is_verified = 0 WHERE id = ?",
+                (VERIF_REVISION, tech_id))
+            create_notification(
+                tech_id,
+                "Document à corriger",
+                f"Votre {_DOC_LABELS.get(doc['document_type'], 'document')} a été refusé. Motif : {reason}",
+                "error", conn=conn)
+        conn.commit()
+        log_admin_action(admin["id"], admin["email"],
+                         "doc_approve" if decision == "approve" else "doc_reject",
+                         "user", tech_id,
+                         f"{_DOC_LABELS.get(doc['document_type'], doc['document_type'])}"
+                         + (f" — {reason}" if reason else ""))
+    finally:
+        conn.close()
+
+    flash("Document mis à jour.", "success")
+    return redirect(url_for("admin_artisan_detail", artisan_id=tech_id))
 
 
 @app.route("/admin/document/<int:doc_id>")
@@ -2389,12 +2618,16 @@ def admin_document(doc_id):
     if not data.startswith("data:"):
         data = f"data:{mime};base64,{data}"
 
+    back = url_for('admin_artisan_detail', artisan_id=doc['technician_id'])
+    viewer = (f'<iframe src="{data}" style="width:100vw;height:100vh;border:0;"></iframe>'
+              if "pdf" in mime
+              else f'<img src="{data}" style="max-width:100%;max-height:100vh;" alt="Document" />')
     return f"""<!doctype html>
 <html lang="fr">
 <head><meta charset="utf-8"><title>Document {doc['file_name']}</title></head>
 <body style="margin:0;background:#000;display:grid;place-items:center;height:100vh;">
-  <img src="{data}" style="max-width:100%;max-height:100vh;" alt="Document" />
-  <a href="{url_for('admin_artisan_detail', artisan_id=doc['technician_id'])}" style="position:fixed;top:16px;left:16px;color:#fff;text-decoration:none;font-weight:700;">&larr; Retour</a>
+  {viewer}
+  <a href="{back}" style="position:fixed;top:16px;left:16px;color:#fff;text-decoration:none;font-weight:700;">&larr; Retour</a>
 </body>
 </html>"""
 
@@ -3300,7 +3533,7 @@ def technician_activate():
         try:
             conn.execute(
                 "UPDATE users SET password_hash = ?, account_status = 'ACTIVE',"
-                " is_active = 1, is_verified = 1 WHERE id = ?",
+                " is_active = 1, is_verified = 1, verification_status = 'APPROVED' WHERE id = ?",
                 (generate_password_hash(password), user_id))
             conn.commit()
         finally:
@@ -3394,6 +3627,65 @@ def mobile_dashboard():
     return render_template("mobile_dashboard.html", user=get_current_user())
 
 
+_DOC_LABELS = {
+    DOC_IDENTITY: "Pièce d'identité",
+    DOC_PROFESSIONAL: "Justificatif professionnel",
+}
+
+
+@app.route("/technician/verification")
+@app.route("/technicien/verification")
+@login_required
+def technician_verification():
+    """Alias vers l'ecran de suivi de la verification."""
+    return redirect(url_for("artisan_pending"))
+
+
+@app.route("/technician/verification/resubmit", methods=["POST"])
+@app.route("/technicien/verification/resoumettre", methods=["POST"])
+@login_required
+def technician_documents_resubmit():
+    """Remplace un document refuse et repasse le dossier en attente de verification."""
+    user = get_current_user()
+    if not _is_technician(user):
+        return redirect(url_for("dashboard"))
+
+    conn = get_db_connection()
+    try:
+        store = storage.get_storage()
+        replaced = 0
+        for dtype in REQUIRED_DOC_TYPES:
+            data_uri = (request.form.get(f"{dtype}_doc") or "").strip()
+            if not data_uri:
+                continue
+            conn.execute(
+                "DELETE FROM technician_documents WHERE technician_id = ? AND document_type = ?",
+                (user["id"], dtype))
+            err = _store_technician_document(conn, store, user["id"], dtype, data_uri,
+                                             f"{dtype}-resoumis")
+            if err:
+                conn.rollback()
+                flash(f"Document invalide : {err}", "error")
+                return redirect(url_for("technician_verification"))
+            replaced += 1
+
+        if not replaced:
+            flash("Aucun document fourni.", "error")
+            return redirect(url_for("technician_verification"))
+
+        conn.execute(
+            "UPDATE users SET verification_status = ?, is_verified = 0 WHERE id = ?",
+            (VERIF_PENDING, user["id"]))
+        _notify_admins_new_technician(conn, user["id"], user.get("full_name"),
+                                      user.get("profession"), user.get("city"))
+        conn.commit()
+    finally:
+        conn.close()
+
+    flash("Vos documents ont été renvoyés. Votre dossier est de nouveau en cours de vérification.", "success")
+    return redirect(url_for("technician_verification"))
+
+
 @app.route("/dashboard/technicien")
 @app.route("/technician/dashboard")
 @login_required
@@ -3403,6 +3695,10 @@ def artisan_dashboard():
     if not _is_technician(user):
         flash("Cet espace est reserve aux techniciens.", "error")
         return redirect(url_for("dashboard"))
+
+    # Dossier de verification non finalise : ecran d'attente plutot que le tableau de bord.
+    if (user.get("verification_status") or "").upper() in VERIF_BLOCKING or not user.get("is_verified"):
+        return redirect(url_for("artisan_pending"))
 
     active_statuses = (MISSION_STATUS_ASSIGNED, MISSION_STATUS_ACCEPTED,
                        MISSION_STATUS_EN_ROUTE, MISSION_STATUS_ARRIVED,
@@ -5729,6 +6025,37 @@ def _migrate_db():
                 conn.commit()
             except Exception:
                 conn.rollback()
+            # Verification des techniciens : statut de dossier + metadonnees documents
+            try:
+                conn.execute("ALTER TABLE users ADD COLUMN verification_status TEXT")
+                conn.commit()
+            except Exception:
+                conn.rollback()
+            for _col, _type in (
+                ("original_file_name", "TEXT"),
+                ("reviewed_at", "TEXT"),
+                ("reviewed_by", "INTEGER"),
+                ("rejection_reason", "TEXT"),
+            ):
+                try:
+                    conn.execute(f"ALTER TABLE technician_documents ADD COLUMN {_col} {_type}")
+                    conn.commit()
+                except Exception:
+                    conn.rollback()
+            # Backfill du statut de verification pour les comptes existants
+            try:
+                conn.execute(
+                    "UPDATE users SET verification_status = 'APPROVED'"
+                    " WHERE role = 'technician' AND is_verified = 1"
+                    " AND (verification_status IS NULL OR verification_status = '')")
+                conn.execute(
+                    "UPDATE users SET verification_status = 'PENDING_REVIEW'"
+                    " WHERE role = 'technician' AND (is_verified = 0 OR is_verified IS NULL)"
+                    " AND (verification_status IS NULL OR verification_status = '')"
+                    " AND (account_status IS NULL OR account_status NOT IN ('DELETED', 'SUSPENDED'))")
+                conn.commit()
+            except Exception:
+                conn.rollback()
             # Normalisation des roles et statuts legacy
             try:
                 conn.execute("UPDATE users SET role = 'technician' WHERE role = 'artisan'")
@@ -5736,7 +6063,8 @@ def _migrate_db():
                     "UPDATE users SET account_status = 'ACTIVE' WHERE account_status IS NULL OR account_status = ''")
                 conn.execute(
                     "UPDATE users SET is_verified = 1, is_active = 1, account_status = 'ACTIVE'"
-                    " WHERE role = 'technician' AND (account_status IS NULL OR account_status != 'DELETED')")
+                    " WHERE role = 'technician' AND (account_status IS NULL OR account_status != 'DELETED')"
+                    " AND (verification_status IS NULL OR verification_status = 'APPROVED')")
                 conn.execute(
                     "UPDATE requests SET status = ? WHERE LOWER(status) IN ('pending','requested')",
                     (MISSION_STATUS_REQUESTED,))

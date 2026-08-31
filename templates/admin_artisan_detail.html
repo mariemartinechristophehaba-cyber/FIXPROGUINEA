@@ -2,22 +2,37 @@
 {% block title %}Dossier technicien - FixPro Admin{% endblock %}
 {% block admin_title %}Dossier technicien{% endblock %}
 
+{% set vstatus = (artisan.verification_status or '').upper() %}
+{% set vlabels = {
+  'PENDING_REVIEW': 'En attente de verification',
+  'APPROVED': 'Verifie',
+  'REJECTED': 'Refuse',
+  'REVISION_REQUIRED': 'Correction demandee'
+} %}
+
 {% block admin_content %}
 <div class="admin-card">
   <div class="admin-section-head">
     <h3>{{ artisan.full_name }}</h3>
-    <span class="badge {% if artisan.is_verified %}success{% else %}pending{% endif %}">
-      {% if artisan.is_verified %}Verifie{% else %}En attente{% endif %}
+    <span class="badge {% if vstatus == 'APPROVED' %}success{% elif vstatus in ('REJECTED',) %}failed{% else %}pending{% endif %}">
+      {{ vlabels.get(vstatus, 'En attente') }}
     </span>
   </div>
 
-  <div class="admin-detail-grid">
-    <div><span class="admin-detail-label">Email</span><span class="admin-detail-value">{{ artisan.email or '—' }}</span></div>
-    <div><span class="admin-detail-label">Telephone</span><span class="admin-detail-value">{{ artisan.phone }}</span></div>
-    <div><span class="admin-detail-label">Metier</span><span class="admin-detail-value">{{ artisan.profession or '—' }}</span></div>
-    <div><span class="admin-detail-label">Ville / Quartier</span><span class="admin-detail-value">{{ artisan.city or '—' }} {{ artisan.quartier or '' }}</span></div>
-    <div><span class="admin-detail-label">Zone d'intervention</span><span class="admin-detail-value">{{ artisan.zone_intervention or '—' }}</span></div>
-    <div><span class="admin-detail-label">Experience</span><span class="admin-detail-value">{{ artisan.years_experience or 0 }} an(s)</span></div>
+  <div class="admin-detail-grid" style="display:flex;gap:16px;align-items:flex-start;">
+    {% if artisan.photo_url %}
+    <img src="{{ artisan.photo_url }}" alt="" style="width:72px;height:72px;border-radius:50%;object-fit:cover;flex-shrink:0;" />
+    {% endif %}
+    <div class="admin-detail-grid" style="flex:1;">
+      <div><span class="admin-detail-label">Email</span><span class="admin-detail-value">{{ artisan.email or '—' }}</span></div>
+      <div><span class="admin-detail-label">Telephone</span><span class="admin-detail-value">{{ artisan.phone }}</span></div>
+      <div><span class="admin-detail-label">Metier</span><span class="admin-detail-value">{{ artisan.profession or '—' }}</span></div>
+      <div><span class="admin-detail-label">Ville / Quartier</span><span class="admin-detail-value">{{ artisan.city or '—' }} {{ artisan.quartier or '' }}</span></div>
+      <div><span class="admin-detail-label">Zone d'intervention</span><span class="admin-detail-value">{{ artisan.zone_intervention or '—' }}</span></div>
+      <div><span class="admin-detail-label">Services</span><span class="admin-detail-value">{{ service_names|join(', ') if service_names else '—' }}</span></div>
+      <div><span class="admin-detail-label">Experience</span><span class="admin-detail-value">{{ artisan.years_experience or 0 }} an(s)</span></div>
+      <div><span class="admin-detail-label">Inscription</span><span class="admin-detail-value">{{ (artisan.created_at or '—')|string|truncate(16, true, '') }}</span></div>
+    </div>
   </div>
 
   {% if artisan.bio %}
@@ -27,83 +42,74 @@
   </div>
   {% endif %}
 
-  <h4 style="margin: 24px 0 12px;">Documents</h4>
+  <h4 style="margin: 24px 0 12px;">Documents de verification</h4>
   <div class="admin-table-wrap">
     <table class="admin-table">
       <thead>
-        <tr>
-          <th>Type</th>
-          <th>Nom</th>
-          <th>Statut</th>
-          <th>Actions</th>
-        </tr>
+        <tr><th>Type</th><th>Nom</th><th>Statut</th><th>Motif</th><th>Actions</th></tr>
       </thead>
       <tbody>
         {% for doc in documents %}
         <tr>
-          <td>{{ 'Piece d\'identite' if doc.document_type == 'identity' else 'Diplome / Attestation' }}</td>
-          <td>{{ doc.file_name or 'Document' }}</td>
+          <td>{{ doc_labels.get(doc.document_type, doc.document_type) }}</td>
+          <td>{{ doc.original_file_name or doc.file_name or 'Document' }}</td>
           <td>
-            <span class="badge {% if doc.status == 'validated' %}success{% elif doc.status == 'rejected' %}failed{% else %}pending{% endif %}">
-              {{ doc.status }}
+            <span class="badge {% if doc.status == 'approved' %}success{% elif doc.status == 'rejected' %}failed{% else %}pending{% endif %}">
+              {% if doc.status == 'approved' %}Valide{% elif doc.status == 'rejected' %}Refuse{% else %}En attente{% endif %}
             </span>
           </td>
+          <td class="muted">{{ doc.rejection_reason or '—' }}</td>
           <td>
-            <a class="btn btn-soft btn-sm" href="#" data-doc-preview="{{ 'data:' ~ (doc.mime_type or 'image/jpeg') ~ ';base64,' ~ doc.content_base64 }}">Apercu</a>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+              <a class="btn btn-soft btn-sm" href="{{ url_for('admin_document', doc_id=doc.id) }}" target="_blank">Voir</a>
+              <form method="post" action="{{ url_for('admin_technician_document_review', tech_id=artisan.id, doc_id=doc.id) }}" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <button type="submit" name="decision" value="approve" class="btn btn-primary btn-sm">✓ Accepter</button>
+                <input type="text" name="reason" class="form-input" style="width:150px;" placeholder="Motif du refus" />
+                <button type="submit" name="decision" value="reject" class="btn btn-danger btn-sm">✕ Refuser</button>
+              </form>
+            </div>
           </td>
         </tr>
         {% else %}
-        <tr>
-          <td colspan="4" class="muted" style="text-align: center; padding: 24px;">Aucun document soumis.</td>
-        </tr>
+        <tr><td colspan="5" class="muted" style="text-align:center;padding:24px;">Aucun document soumis.</td></tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
 
-  <h4 style="margin: 24px 0 12px;">Actions</h4>
-  <form method="post" action="{{ url_for('admin_artisans') }}" class="admin-actions-form" style="display: flex; gap: 12px; flex-wrap: wrap;">
+  <h4 style="margin: 24px 0 12px;">Decision sur le dossier</h4>
+  <form method="post" action="{{ url_for('admin_artisans') }}" style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
     <input type="hidden" name="artisan_id" value="{{ artisan.id }}" />
-    {% if not artisan.is_verified %}
-    <input type="text" name="reason" class="form-input" style="flex: 1; min-width: 220px;" placeholder="Note de validation (optionnel)" />
-    <button type="submit" name="action" value="verify" class="btn btn-primary" onclick="return confirm('Valider ce technicien ?')">Valider</button>
-    <button type="submit" name="action" value="reject" class="btn btn-danger" onclick="return confirm('Refuser ce technicien ?')">Refuser</button>
-    {% else %}
-    {% if artisan.is_active %}
-    <button type="submit" name="action" value="suspend" class="btn btn-danger" onclick="return confirm('Suspendre ce technicien ?')">Suspendre</button>
-    {% else %}
-    <button type="submit" name="action" value="restore" class="btn btn-primary" onclick="return confirm('Reactiver ce technicien ?')">Reactiver</button>
-    {% endif %}
-    {% endif %}
+    <input type="text" name="reason" class="form-input" style="flex:1;min-width:220px;" placeholder="Motif (obligatoire pour un refus / une correction)" />
+    <button type="submit" name="action" value="verify" class="btn btn-primary"
+            {% if documents and not docs_all_approved %}disabled title="Validez d'abord les deux documents"{% endif %}
+            onclick="return confirm('Valider ce technicien ?')">Valider le technicien</button>
+    <button type="submit" name="action" value="revision_required" class="btn btn-soft"
+            onclick="return confirm('Demander une correction ?')">Demander une correction</button>
+    <button type="submit" name="action" value="reject_dossier" class="btn btn-danger"
+            onclick="return confirm('Refuser le dossier ?')">Refuser le dossier</button>
     <a class="btn btn-soft" href="{{ url_for('admin_artisans') }}">Retour</a>
   </form>
-</div>
 
-<div class="admin-modal" id="docPreviewModal" style="display: none;">
-  <div class="admin-modal-backdrop"></div>
-  <div class="admin-modal-content">
-    <img id="docPreviewImage" src="" alt="Apercu du document" />
-    <button type="button" class="admin-modal-close" id="docPreviewClose">Fermer</button>
+  <h4 style="margin: 24px 0 12px;">Historique de verification</h4>
+  <div class="admin-table-wrap">
+    <table class="admin-table">
+      <thead><tr><th>Date</th><th>Action</th><th>Admin</th><th>Detail</th></tr></thead>
+      <tbody>
+        {% for h in history %}
+        <tr>
+          <td>{{ (h.created_at or '—')|string|truncate(16, true, '') }}</td>
+          <td>{{ h.action }}</td>
+          <td>{{ h.admin_email or '—' }}</td>
+          <td class="muted">{{ h.details or '—' }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" class="muted" style="text-align:center;padding:16px;">Aucune action enregistree.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
 </div>
-
-<script>
-(function () {
-  const modal = document.getElementById('docPreviewModal');
-  const img = document.getElementById('docPreviewImage');
-  const close = document.getElementById('docPreviewClose');
-
-  document.querySelectorAll('[data-doc-preview]').forEach(function (link) {
-    link.addEventListener('click', function (e) {
-      e.preventDefault();
-      img.src = this.dataset.docPreview;
-      modal.style.display = 'flex';
-    });
-  });
-
-  close.addEventListener('click', function () { modal.style.display = 'none'; img.src = ''; });
-  modal.querySelector('.admin-modal-backdrop').addEventListener('click', function () { modal.style.display = 'none'; img.src = ''; });
-})();
-</script>
 {% endblock %}

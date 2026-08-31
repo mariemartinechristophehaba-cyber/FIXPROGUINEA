@@ -33,7 +33,7 @@
 {% endblock %}
 {% block footer %}{% endblock %}
 {% block extra_head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/fixpro-auth.css', v='23') }}" />
+<link rel="stylesheet" href="{{ url_for('static', filename='css/fixpro-auth.css', v='24') }}" />
 <style>
   .fa-service-grid { display: grid !important; grid-template-columns: 1fr 1fr !important; grid-auto-rows: 1fr !important; gap: 10px !important; margin-top: 8px !important; }
   .fa-service-card { display: flex !important; align-items: center !important; justify-content: space-between !important; gap: 8px !important; background: #fff !important; border: 1.5px solid #E5E7EB !important; border-radius: 14px !important; padding: 14px !important; min-height: 86px !important; height: 100% !important; overflow: hidden !important; cursor: pointer !important; transition: all .2s !important; }
@@ -207,6 +207,17 @@
               </span>
               <input id="email" class="fa-fb fa-fb-pad-left" type="email" name="email" placeholder="exemple@email.com" />
             </div>
+          </div>
+
+          <div class="fa-fg">
+            <label class="fa-fl" for="account_password">Mot de passe</label>
+            <div class="fa-input-wrap">
+              <span class="fa-input-icon fa-input-icon-left" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              </span>
+              <input id="account_password" class="fa-fb fa-fb-pad-left" type="password" name="password" required autocomplete="new-password" placeholder="8 caractères minimum" />
+            </div>
+            <p class="fa-help">Vous en aurez besoin pour vous reconnecter à votre espace technicien.</p>
           </div>
 
           <div class="fa-fg">
@@ -390,27 +401,37 @@
             </span>
           </label>
 
-          <h2 class="fa-section-h">Pièce d'identité</h2>
+          <h2 class="fa-section-h">Pièce d'identité <b style="color:#EF4444">*</b></h2>
           <p class="fa-section-sub">Ajoutez une photo claire et lisible de votre pièce d'identité valide.</p>
           <div class="fa-doc-drop" id="idDocBox">
             <span class="fa-doc-drop-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13"/><path d="m7 8 5-5 5 5"/><path d="M5 21h14a2 2 0 0 0 2-2v-4"/><path d="M3 15v4a2 2 0 0 0 2 2"/></svg></span>
             <div class="fa-doc-drop-title">Importer votre pièce d'identité</div>
             <div class="fa-doc-drop-sub">Formats acceptés : JPG, PNG, PDF (max. 5 Mo)</div>
           </div>
+          <p class="fa-doc-required" id="idDocRequired">Document obligatoire</p>
           <input type="file" id="idDocInput" accept="image/*,application/pdf" style="display:none;" />
           <input type="hidden" name="identity_doc" id="identityDocBase64" />
 
-          <h2 class="fa-section-h">Justificatif professionnel <span class="fa-optional">(facultatif)</span></h2>
-          <p class="fa-section-sub">Ajoutez tout document qui prouve votre expertise ou expérience.</p>
+          <h2 class="fa-section-h">Justificatif professionnel <b style="color:#EF4444">*</b></h2>
+          <p class="fa-section-sub">Ajoutez un document prouvant votre qualification ou votre expérience professionnelle.</p>
           <div class="fa-doc-drop" id="proofDocBox">
             <span class="fa-doc-drop-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13"/><path d="m7 8 5-5 5 5"/><path d="M5 21h14a2 2 0 0 0 2-2v-4"/><path d="M3 15v4a2 2 0 0 0 2 2"/></svg></span>
-            <div class="fa-doc-drop-title">Importer un document (facultatif)</div>
+            <div class="fa-doc-drop-title">Importer mon justificatif professionnel</div>
             <div class="fa-doc-drop-sub">Exemples : diplôme, certificat, attestation, carte professionnelle...</div>
           </div>
+          <p class="fa-doc-required" id="proofDocRequired">Document obligatoire</p>
           <input type="file" id="proofDocInput" accept="image/*,application/pdf" style="display:none;" />
-          <input type="hidden" name="portfolio" id="proofDocBase64" />
+          <input type="hidden" name="professional_doc" id="proofDocBase64" />
 
           <input type="hidden" name="availability" value="toujours" />
+
+          <div class="fa-verif-checklist" id="verifChecklist" aria-hidden="true">
+            <div class="fa-verif-row" data-key="phone"><span class="fa-verif-dot">✓</span> Numéro renseigné</div>
+            <div class="fa-verif-row" data-key="email"><span class="fa-verif-dot">✓</span> E-mail renseigné</div>
+            <div class="fa-verif-row" data-key="id"><span class="fa-verif-dot">✓</span> Pièce d'identité ajoutée</div>
+            <div class="fa-verif-row" data-key="proof"><span class="fa-verif-dot">✓</span> Justificatif professionnel ajouté</div>
+            <p class="fa-verif-ready" id="verifReady">Votre dossier est prêt à être examiné.</p>
+          </div>
 
           <div class="fa-info-box fa-info-green fa-info-rich" style="margin-top:18px;">
             <span class="fa-info-icon" aria-hidden="true" style="color:#059669;">
@@ -422,7 +443,7 @@
             </div>
           </div>
 
-          <button type="button" class="fa-btn fa-btn-primary" style="margin-top:8px;" onclick="if(validateStep3()) go(4)">Continuer <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+          <button type="button" id="step3Continue" class="fa-btn fa-btn-primary is-disabled" style="margin-top:8px;" disabled onclick="if(validateStep3()) go(4)">Continuer <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
           <button type="button" class="fa-btn fa-btn-outline-blue" style="margin-top:12px;" onclick="go(2)">Retour</button>
         </div>
 
@@ -624,20 +645,52 @@
     const ve = document.getElementById('verifEmail');
     if (vp && !vp.value) vp.value = (document.getElementById('phone')?.value || '').trim();
     if (ve && !ve.value) ve.value = (document.getElementById('email')?.value || '').trim();
+    updateStep3Continue();
+  }
+
+  function step3Conditions(){
+    const vp = (document.getElementById('verifPhone')?.value || '').trim();
+    const ve = document.getElementById('verifEmail');
+    return {
+      phone: vp.length >= 6,
+      email: !!ve && ve.value.trim().length > 3 && ve.checkValidity(),
+      id: !!(document.getElementById('identityDocBase64')?.value),
+      proof: !!(document.getElementById('proofDocBase64')?.value)
+    };
+  }
+
+  function updateStep3Continue(){
+    const c = step3Conditions();
+    const map = { phone: c.phone, email: c.email, id: c.id, proof: c.proof };
+    document.querySelectorAll('#verifChecklist .fa-verif-row').forEach(function(row){
+      row.classList.toggle('done', !!map[row.dataset.key]);
+    });
+    const cl = document.getElementById('verifChecklist');
+    if (cl) cl.setAttribute('aria-hidden', 'false');
+    const idReq = document.getElementById('idDocRequired');
+    if (idReq) idReq.style.display = c.id ? 'none' : 'block';
+    const prReq = document.getElementById('proofDocRequired');
+    if (prReq) prReq.style.display = c.proof ? 'none' : 'block';
+    const ready = document.getElementById('verifReady');
+    if (ready) ready.style.display = (c.phone && c.email && c.id && c.proof) ? 'block' : 'none';
+    const btn = document.getElementById('step3Continue');
+    if (btn){
+      const ok = c.phone && c.email && c.id && c.proof;
+      btn.disabled = !ok;
+      btn.classList.toggle('is-disabled', !ok);
+    }
   }
 
   function validateStep3(){
+    const c = step3Conditions();
     const vp = document.getElementById('verifPhone');
     const ve = document.getElementById('verifEmail');
-    if (vp){
-      if (!vp.value.trim()){ vp.reportValidity(); alert('Veuillez saisir votre numéro de téléphone.'); return false; }
-      document.getElementById('phone').value = vp.value.trim();
-    }
-    if (ve){
-      if (!ve.value.trim() || !ve.checkValidity()){ ve.reportValidity(); alert('Veuillez saisir une adresse e-mail valide.'); return false; }
-      const em = document.getElementById('email');
-      if (em) em.value = ve.value.trim();
-    }
+    if (!c.phone){ if (vp) vp.reportValidity(); alert('Veuillez saisir votre numéro de téléphone.'); return false; }
+    if (!c.email){ if (ve) ve.reportValidity(); alert('Veuillez saisir une adresse e-mail valide.'); return false; }
+    if (!c.id){ alert('Veuillez importer votre pièce d\'identité pour continuer.'); return false; }
+    if (!c.proof){ alert('Votre justificatif professionnel est obligatoire.'); return false; }
+    if (vp) document.getElementById('phone').value = vp.value.trim();
+    if (ve){ const em = document.getElementById('email'); if (em) em.value = ve.value.trim(); }
     const availability = document.querySelector('input[name="availability"]:checked')?.value;
     if (availability === 'certains_jours'){
       const checked = document.querySelectorAll('input[name="available_days"]:checked');
@@ -650,13 +703,17 @@
   }
 
   function validateStep1(){
-    const fields = ['first_name','last_name','phone','address'];
+    const fields = ['first_name','last_name','phone','account_password','address'];
     for (const id of fields){
       const el = document.getElementById(id);
       if (!el.value.trim() || !el.checkValidity()) {
         el.reportValidity();
         return false;
       }
+    }
+    if (document.getElementById('account_password').value.length < 8){
+      alert('Le mot de passe doit contenir au moins 8 caractères.');
+      return false;
     }
     const prenom = document.getElementById('first_name').value.trim();
     const nom = document.getElementById('last_name').value.trim();
@@ -695,11 +752,16 @@
         box.innerHTML = '<span class="fa-doc-drop-ico ok"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>'
           + '<div class="fa-doc-drop-title">' + okLabel + '</div>'
           + '<div class="fa-doc-drop-sub">Touchez pour changer</div>';
+        updateStep3Continue();
       });
     });
   }
   bindDocDrop('idDocBox', 'idDocInput', 'identityDocBase64', "Pièce d'identité ajoutée");
-  bindDocDrop('proofDocBox', 'proofDocInput', 'proofDocBase64', 'Document ajouté');
+  bindDocDrop('proofDocBox', 'proofDocInput', 'proofDocBase64', 'Justificatif professionnel ajouté');
+  ['verifPhone', 'verifEmail'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('input', updateStep3Continue);
+  });
 
   function selectJob(card){
     document.querySelectorAll('.fa-job-card, .fa-service-card').forEach(c => c.classList.remove('selected'));
