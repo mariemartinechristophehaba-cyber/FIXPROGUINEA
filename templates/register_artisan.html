@@ -449,27 +449,24 @@
 
         <div id="step4" style="display:none;">
           <div class="fa-success-head">
-            <div class="fa-success-confetti">
-              <span></span><span></span><span></span><span></span><span></span>
+            <div class="fa-success-circle fa-success-circle-blue" aria-hidden="true" style="background:#2563EB;">
+              <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4Z"/></svg>
             </div>
-            <div class="fa-success-circle" aria-hidden="true">
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            </div>
-            <h1 class="fa-title" style="text-align:center; margin-top:18px;">Félicitations !</h1>
-            <p class="fa-subtitle" style="text-align:center;">Votre profil est prêt à recevoir des missions.</p>
+            <h1 class="fa-title" style="text-align:center; margin-top:18px;">Dossier envoyé !</h1>
+            <p class="fa-subtitle" style="text-align:center;">Votre dossier est en cours de vérification par l'équipe FixPro.</p>
           </div>
 
-          <div class="fa-success-box">
+          <div class="fa-success-box" style="background:#EFF6FF; border-color:#BFDBFE; color:#1E3A8A;">
             <span class="fa-success-box-icon" aria-hidden="true">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12l2.5 2.5L16 9"/></svg>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
             </span>
             <div>
-              <h4 style="font-size:13px; margin:0 0 2px; color:#166534;">Vos informations ont été enregistrées avec succès.</h4>
-              <p style="font-size:12px; margin:0; color:#166534;">Vous pouvez maintenant accéder à votre espace et commencer à recevoir des demandes.</p>
+              <h4 style="font-size:13px; margin:0 0 2px; color:#1E3A8A;">Vos informations et documents ont bien été reçus.</h4>
+              <p style="font-size:12px; margin:0; color:#1E3A8A;">Vous recevrez une notification dès que votre profil sera validé.</p>
             </div>
           </div>
 
-          <h3 class="fa-confirm-title">Résumé de votre profil</h3>
+          <h3 class="fa-confirm-title">Récapitulatif de votre dossier</h3>
 
           <div class="fa-confirm-card">
             <div class="fa-confirm-header">
@@ -480,55 +477,48 @@
                 <h3 id="confirmName"></h3>
                 <p id="confirmProfession"></p>
               </div>
-              <span class="fa-confirm-check" aria-hidden="true">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              <span class="fa-confirm-check" aria-hidden="true" style="background:#F59E0B;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
               </span>
             </div>
 
             <div class="fa-confirm-row">
               <div class="fa-confirm-row-left">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                <span>Disponibilité</span>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18"/></svg>
+                <span>Pièce d'identité</span>
               </div>
-              <span class="fa-confirm-row-right" id="confirmAvailability"></span>
+              <span class="fa-confirm-row-right" id="confirmIdDoc">—</span>
             </div>
 
             <div class="fa-confirm-row">
               <div class="fa-confirm-row-left">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M9 16l2 2 4-4"/></svg>
-                <span>Jours disponibles</span>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 15l2 2 4-4"/></svg>
+                <span>Justificatif professionnel</span>
               </div>
-              <span class="fa-confirm-row-right" id="confirmDays"></span>
+              <span class="fa-confirm-row-right" id="confirmProofDoc">—</span>
             </div>
 
             <div class="fa-confirm-row">
               <div class="fa-confirm-row-left">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-                <span>Horaires</span>
+                <span>Statut</span>
               </div>
-              <span class="fa-confirm-row-right" id="confirmHours">08:00 - 18:00</span>
-            </div>
-
-            <div class="fa-confirm-row">
-              <div class="fa-confirm-row-left">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4z"/><path d="M6 1v3"/><path d="M10 1v3"/><path d="M14 1v3"/></svg>
-                <span>Pause</span>
-              </div>
-              <span class="fa-confirm-row-right" id="confirmPause">12:00 - 13:00</span>
+              <span class="fa-confirm-row-right" style="color:#B45309;"><span class="fa-confirm-dot" style="background:#F59E0B;"></span> En cours de vérification</span>
             </div>
           </div>
 
           <div class="fa-info-box" style="padding:10px 12px; margin:12px 0 14px; border-radius:12px;">
             <span class="fa-info-icon" aria-hidden="true">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
             </span>
             <div>
-              <h4 style="font-size:12px; margin:0 0 2px;">Vous pouvez modifier ces informations à tout moment depuis votre profil.</h4>
+              <h4 style="font-size:12px; margin:0 0 2px;">Prochaine étape</h4>
+              <p style="font-size:12px;">Un administrateur vérifie votre pièce d'identité et votre justificatif. Vous pourrez suivre l'avancement depuis votre espace.</p>
             </div>
           </div>
 
-          <button type="submit" class="fa-btn fa-btn-primary" style="margin-top:0;">Accéder à mon espace <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-left:6px;"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
-          <button type="submit" class="fa-btn fa-btn-outline" style="margin-top:12px; color:#2563EB;">Modifier plus tard</button>
+          <button type="submit" class="fa-btn fa-btn-primary" style="margin-top:0;">Envoyer mon dossier <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-left:6px;"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+          <button type="button" class="fa-btn fa-btn-outline-blue" style="margin-top:12px;" onclick="go(3)">Retour</button>
         </div>
       </form>
     </div>
@@ -799,15 +789,18 @@
   function updateConfirm(){
     const prenom = document.getElementById('first_name').value;
     const nom = document.getElementById('last_name').value;
-    const profession = document.getElementById('profession').value;
-    const availability = document.querySelector('input[name="availability"]:checked')?.value;
-    const days = Array.from(document.querySelectorAll('input[name="available_days"]:checked')).map(el => el.value);
-    document.getElementById('full_name').value = prenom + ' ' + nom;
-    document.getElementById('confirmName').textContent = prenom + ' ' + nom;
+    const profession = document.getElementById('specialite').value || document.getElementById('profession').value;
+    document.getElementById('full_name').value = (prenom + ' ' + nom).trim();
+    document.getElementById('confirmName').textContent = (prenom + ' ' + nom).trim();
     document.getElementById('confirmProfession').textContent = profession;
-    const availText = availability === 'toujours' ? 'Disponible toujours' : 'Disponible certains jours';
-    document.getElementById('confirmAvailability').innerHTML = '<span class="fa-confirm-dot"></span> ' + availText;
-    document.getElementById('confirmDays').textContent = availability === 'certains_jours' && days.length > 0 ? days.join(', ') : 'Tous les jours';
+    const idOk = !!(document.getElementById('identityDocBase64')?.value);
+    const proofOk = !!(document.getElementById('proofDocBase64')?.value);
+    document.getElementById('confirmIdDoc').innerHTML = idOk
+      ? '<span class="fa-confirm-dot" style="background:#16A34A;"></span> Jointe'
+      : '<span class="fa-confirm-dot" style="background:#EF4444;"></span> Manquante';
+    document.getElementById('confirmProofDoc').innerHTML = proofOk
+      ? '<span class="fa-confirm-dot" style="background:#16A34A;"></span> Joint'
+      : '<span class="fa-confirm-dot" style="background:#EF4444;"></span> Manquant';
   }
 
   function validateArtisan(){
