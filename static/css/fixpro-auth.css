@@ -1050,3 +1050,141 @@ body { margin: 0; }
   font-weight: 700;
   color: #15803D;
 }
+
+/* ============================================================
+   Etape 4 "Confirmation"
+   ============================================================ */
+.fa-done { text-align: center; padding-top: 8px; }
+.fa-done-badge {
+  position: relative;
+  width: 100%;
+  max-width: 260px;
+  height: 150px;
+  margin: 0 auto 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.fa-done-leaves { position: absolute; inset: 0; margin: auto; opacity: .7; }
+.fa-done-circle {
+  position: relative;
+  z-index: 2;
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  background: var(--fa-blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 14px 34px rgba(37, 99, 235, .32);
+}
+.fa-done-conf {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  z-index: 1;
+}
+.fa-done-conf-1 { top: 18%; left: 24%; background: #2563EB; transform: rotate(20deg); }
+.fa-done-conf-2 { top: 10%; right: 30%; background: #F59E0B; transform: rotate(-15deg); border-radius: 50%; }
+.fa-done-conf-3 { top: 44%; left: 14%; background: #22C55E; transform: rotate(35deg); }
+.fa-done-conf-4 { top: 30%; right: 16%; background: #EC4899; transform: rotate(-25deg); }
+.fa-done-conf-5 { bottom: 20%; right: 26%; background: #2563EB; border-radius: 50%; }
+
+.fa-done-title {
+  font-family: var(--fa-display);
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--fa-ink);
+  margin: 4px 0 6px;
+}
+.fa-done-lead {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--fa-blue);
+  margin: 0 0 10px;
+}
+.fa-done-text {
+  font-size: 14px;
+  color: var(--fa-slate);
+  line-height: 1.55;
+  margin: 0 auto 20px;
+  max-width: 320px;
+}
+
+.fa-done-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 14px;
+  text-align: left;
+}
+.fa-done-card h4 {
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--fa-ink);
+}
+.fa-done-card p {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--fa-slate);
+  line-height: 1.5;
+}
+.fa-done-card-info { background: var(--fa-blue-soft); }
+.fa-done-card-ico { flex-shrink: 0; margin-top: 2px; }
+
+.fa-done-card-status { background: #fff; border: 1px solid var(--fa-line); align-items: center; }
+.fa-done-status-ico {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #F59E0B;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.fa-done-status-label { display: block; font-size: 12.5px; color: var(--fa-slate); }
+.fa-done-status-value {
+  display: block;
+  font-size: 16px;
+  font-weight: 700;
+  color: #EA7A0C;
+  margin: 1px 0 4px;
+}
+
+.fa-done-help {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 14px;
+  border-radius: 14px;
+  background: var(--fa-blue-soft);
+  text-decoration: none;
+}
+.fa-done-help-ico {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.fa-done-help-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.fa-done-help-txt strong { font-size: 13.5px; color: var(--fa-ink); }
+.fa-done-help-txt span { font-size: 12px; color: var(--fa-slate); }
+.fa-done-help-link {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--fa-blue);
+}

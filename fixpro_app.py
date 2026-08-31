@@ -1648,6 +1648,8 @@ def register_artisan():
         flash("Votre dossier est enregistré. Il est en cours de vérification par FixPro.", "success")
         session["user_id"] = artisan_id
         session.permanent = True
+        if request.form.get("after_submit") == "home":
+            return redirect(url_for("index"))
         return redirect(url_for("artisan_dashboard"))
 
     return render_template("register_artisan.html", categories=categories, all_services=all_services)
