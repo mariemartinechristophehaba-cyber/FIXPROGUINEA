@@ -1043,6 +1043,7 @@ def _persist_client_location(lat=None, lon=None, zone=None):
 
 
 @app.route("/api/location", methods=["POST"])
+@limiter.limit("30 per hour")
 def set_location():
     """Enregistre la position GPS du client en session (et dans son profil)."""
     try:
@@ -1070,6 +1071,7 @@ def set_location():
 
 
 @app.route("/api/location/zone", methods=["POST"])
+@limiter.limit("30 per hour")
 def set_location_zone():
     """Enregistre une localisation manuelle saisie par l'utilisateur."""
     try:
@@ -1137,7 +1139,10 @@ csrf.exempt(set_location_denied)
 def location_gate():
     """Ecran plein ecran demandant la position du client a l'entree de l'app."""
     nxt = request.args.get("next") or ""
-    if not nxt.startswith("/") or nxt.startswith("//"):
+    # Chemin interne uniquement : commence par "/", pas "//" ni "/\" (open
+    # redirect), et ne contient que des caracteres d'URL sans danger.
+    if (not nxt.startswith("/") or nxt.startswith(("//", "/\\"))
+            or not re.match(r"^/[A-Za-z0-9/_.\-?=&%]*$", nxt)):
         nxt = url_for("artisans_page")
     return render_template("location_gate.html",
                            quartiers=_CONAKRY_QUARTIERS, next=nxt)
@@ -2384,17 +2389,28 @@ def admin_document(doc_id):
     finally:
         conn.close()
 
-    mime = doc["mime_type"] or "image/jpeg"
-    data = doc["content_base64"]
+    import html as _html
+    mime = (doc["mime_type"] or "image/jpeg").strip()
+    if mime not in ("image/jpeg", "image/jpg", "image/png", "application/pdf"):
+        mime = "image/jpeg"
+    data = doc["content_base64"] or ""
     if not data.startswith("data:"):
         data = f"data:{mime};base64,{data}"
+    elif not data.startswith(("data:image/", "data:application/pdf")):
+        return "Document invalide.", 400
 
+    # file_name est saisi par le technicien : il doit etre echappe.
+    name = _html.escape(doc["file_name"] or "document")
+    back = url_for('admin_artisan_detail', artisan_id=doc['technician_id'])
+    body = "<img src=\"%s\" style=\"max-width:100%%;max-height:100vh;\" alt=\"Document\" />" % data
+    if mime == "application/pdf":
+        body = "<iframe src=\"%s\" style=\"width:100vw;height:100vh;border:0;\"></iframe>" % data
     return f"""<!doctype html>
 <html lang="fr">
-<head><meta charset="utf-8"><title>Document {doc['file_name']}</title></head>
+<head><meta charset="utf-8"><title>Document {name}</title></head>
 <body style="margin:0;background:#000;display:grid;place-items:center;height:100vh;">
-  <img src="{data}" style="max-width:100%;max-height:100vh;" alt="Document" />
-  <a href="{url_for('admin_artisan_detail', artisan_id=doc['technician_id'])}" style="position:fixed;top:16px;left:16px;color:#fff;text-decoration:none;font-weight:700;">&larr; Retour</a>
+  {body}
+  <a href="{back}" style="position:fixed;top:16px;left:16px;color:#fff;text-decoration:none;font-weight:700;">&larr; Retour</a>
 </body>
 </html>"""
 
