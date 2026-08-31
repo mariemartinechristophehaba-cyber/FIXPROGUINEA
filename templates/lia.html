@@ -7,305 +7,301 @@
   <title>Lia - Assistante FixPro</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --primary: #155EEF;
-      --primary-dark: #1E3A8A;
-      --bg: #F1F5F9;
-      --bot: #fff;
-      --text: #0F172A;
-      --muted: #64748B;
-      --line: #E2E8F0;
-      --success: #22C55E;
+      --l-primary: #155EEF;
+      --l-primary-dark: #0F3DBB;
+      --l-bg: #EEF2F8;
+      --l-text: #0F172A;
+      --l-muted: #64748B;
+      --l-line: #E4EAF3;
+      --l-soft: #EEF4FF;
+      --l-green: #22C55E;
     }
     * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; height: 100%; }
-    body { font-family: 'Inter', sans-serif; background: #E2E8F0; color: var(--text); -webkit-font-smoothing: antialiased; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--l-bg); color: var(--l-text); -webkit-font-smoothing: antialiased;
+    }
     a { text-decoration: none; color: inherit; }
+    button { font-family: inherit; }
 
     .l-wrap {
-      position: relative;
-      max-width: 480px;
-      margin: 0 auto;
-      height: 100vh;
-      height: 100dvh;
-      display: flex;
-      flex-direction: column;
-      background: #fff;
-      overflow: hidden;
-      box-shadow: 0 0 40px rgba(0,0,0,.06);
+      display: flex; flex-direction: column;
+      height: 100vh; height: 100dvh; max-width: 640px; margin: 0 auto;
+      background: var(--l-bg);
     }
 
+    /* Header */
     .l-header {
-      background: var(--primary);
-      color: #fff;
-      padding: 12px 14px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      z-index: 10;
-      box-shadow: 0 2px 12px rgba(0,0,0,.08);
+      background: linear-gradient(160deg, #1F6BFF 0%, #1250D8 60%, #0F3DBB 100%);
+      color: #fff; flex-shrink: 0;
+      padding: 12px 14px; padding-top: calc(12px + env(safe-area-inset-top));
+      display: flex; align-items: center; gap: 12px;
     }
-    .l-back {
-      width: 38px; height: 38px; border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      background: rgba(255,255,255,.14); color: #fff;
-      transition: background .15s;
-    }
-    .l-back:hover { background: rgba(255,255,255,.22); }
-    .l-back svg { width: 20px; height: 20px; }
+    .l-back, .l-menu { display: flex; color: #fff; background: none; border: none; padding: 4px; cursor: pointer; flex-shrink: 0; }
+    .l-back svg, .l-menu svg { width: 22px; height: 22px; }
+    .l-menu { margin-left: auto; }
     .l-avatar {
-      width: 44px; height: 44px; border-radius: 50%;
-      background: #fff; display: flex; align-items: center; justify-content: center;
-      color: var(--primary); font-weight: 700; font-size: 19px;
-      border: 2px solid rgba(255,255,255,.3);
+      position: relative; width: 44px; height: 44px; border-radius: 50%;
+      background: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
-    .l-info { flex: 1; min-width: 0; }
-    .l-name { margin: 0; font-size: 16px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .l-status { font-size: 12px; opacity: .92; display: flex; align-items: center; gap: 5px; margin-top: 1px; }
-    .l-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); animation: l-pulse 2s infinite; }
-    @keyframes l-pulse {
-      0% { box-shadow: 0 0 0 0 rgba(34,197,94,.35); }
-      70% { box-shadow: 0 0 0 6px rgba(34,197,94,0); }
-      100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); }
+    .l-avatar svg { width: 26px; height: 26px; color: var(--l-primary); }
+    .l-avatar .dot {
+      position: absolute; bottom: 1px; right: 1px; width: 11px; height: 11px;
+      background: var(--l-green); border: 2px solid #fff; border-radius: 50%;
     }
-    .l-menu { width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; color: #fff; }
+    .l-info { min-width: 0; }
+    .l-name { font-size: 1.1rem; font-weight: 800; margin: 0; line-height: 1.15; }
+    .l-status { font-size: 0.75rem; margin: 2px 0 0; opacity: .95; display: flex; align-items: center; gap: 5px; }
+    .l-status .s-dot { width: 7px; height: 7px; background: #4ADE80; border-radius: 50%; }
 
+    /* Body */
     .l-body {
-      flex: 1;
-      overflow-y: auto;
-      padding: 14px 14px 150px;
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-      background: var(--bg);
+      flex: 1; overflow-y: auto; padding: 18px 14px 8px;
+      display: flex; flex-direction: column; gap: 14px;
     }
-    .l-empty {
-      text-align: center;
-      padding: 24px 12px;
-      color: var(--muted);
-      font-size: 14px;
-    }
-    .l-empty h2 { font-size: 17px; color: var(--text); margin: 0 0 6px; }
-    .l-empty p { margin: 0; }
-    .l-date {
-      text-align: center;
-      font-size: 11px;
-      color: var(--muted);
-      margin: 14px 0 8px;
-      font-weight: 500;
-    }
-    .l-msg { display: flex; margin-bottom: 4px; }
-    .l-user { justify-content: flex-end; }
-    .l-bot { justify-content: flex-start; }
-    .l-bubble {
-      max-width: 84%;
-      padding: 10px 13px;
-      border-radius: 18px;
-      font-size: 15px;
-      line-height: 1.4;
-      white-space: pre-wrap;
-      word-wrap: break-word;
-      overflow-wrap: anywhere;
-      position: relative;
-      box-shadow: 0 1px 2px rgba(0,0,0,.05);
-    }
-    .l-bot .l-bubble {
-      background: var(--bot);
-      color: var(--text);
-      border-bottom-left-radius: 4px;
-    }
-    .l-user .l-bubble {
-      background: var(--primary);
-      color: #fff;
-      border-bottom-right-radius: 4px;
-    }
-    .l-time {
-      font-size: 10px;
-      opacity: .78;
-      margin-top: 5px;
-      text-align: right;
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      gap: 4px;
-    }
-    .l-user .l-time { color: rgba(255,255,255,.85); }
-    .l-bot .l-time { color: var(--muted); }
-    .l-check { width: 14px; height: 14px; }
-    .l-user .l-check { stroke: #fff; }
 
-    .l-typing { display: flex; gap: 4px; padding: 8px 0; }
+    .l-msg { display: flex; gap: 8px; max-width: 86%; }
+    .l-msg.l-bot { align-self: flex-start; }
+    .l-msg.l-user { align-self: flex-end; flex-direction: row-reverse; }
+    .l-msg-ava {
+      width: 30px; height: 30px; border-radius: 50%; background: #fff; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; align-self: flex-start;
+      box-shadow: 0 2px 8px rgba(16,42,67,0.08);
+    }
+    .l-msg-ava svg { width: 18px; height: 18px; color: var(--l-primary); }
+    .l-msg.l-user .l-msg-ava { display: none; }
+    .l-bubble {
+      background: #fff; border-radius: 18px; padding: 12px 14px;
+      font-size: 0.92rem; line-height: 1.5; box-shadow: 0 4px 16px rgba(16,42,67,0.06);
+    }
+    .l-msg.l-bot .l-bubble { border-top-left-radius: 6px; }
+    .l-msg.l-user .l-bubble {
+      background: var(--l-primary); color: #fff; border-top-right-radius: 6px;
+      box-shadow: 0 6px 18px rgba(21,94,239,0.28);
+    }
+    .l-time { font-size: 0.68rem; color: var(--l-muted); margin-top: 5px; text-align: right; display: flex; align-items: center; justify-content: flex-end; gap: 3px; }
+    .l-msg.l-user .l-time { color: rgba(255,255,255,0.8); }
+    .l-check { width: 13px; height: 13px; }
+
     .l-typing span {
-      width: 7px; height: 7px; border-radius: 50%; background: var(--muted);
-      animation: l-bounce 1.4s infinite;
+      display: inline-block; width: 7px; height: 7px; margin: 0 2px; border-radius: 50%;
+      background: #9AA8BD; animation: lblink 1.2s infinite ease-in-out both;
     }
     .l-typing span:nth-child(2) { animation-delay: .2s; }
     .l-typing span:nth-child(3) { animation-delay: .4s; }
-    @keyframes l-bounce { 0%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-5px); } }
+    @keyframes lblink { 0%, 80%, 100% { opacity: .3; } 40% { opacity: 1; } }
 
-    .l-footer {
-      position: absolute;
-      bottom: 70px;
-      bottom: calc(70px + env(safe-area-inset-bottom));
-      left: 0; right: 0;
-      background: #fff;
-      border-top: 1px solid var(--line);
-      padding: 8px 12px 12px;
-      z-index: 20;
+    /* Welcome extras */
+    .l-card {
+      background: #fff; border-radius: 18px; padding: 16px;
+      box-shadow: 0 6px 20px rgba(16,42,67,0.06);
     }
+    .l-card h3 { font-size: 0.95rem; font-weight: 800; margin: 0 0 14px; }
+    .l-help {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+    }
+    .l-help button {
+      background: none; border: none; cursor: pointer; padding: 0;
+      display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center;
+      color: var(--l-text);
+    }
+    .l-help .ic {
+      width: 52px; height: 52px; border-radius: 50%; background: var(--l-soft); color: var(--l-primary);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .l-help .ic svg { width: 22px; height: 22px; }
+    .l-help span { font-size: 0.68rem; font-weight: 600; line-height: 1.25; }
+
+    .l-sugg-title { font-size: 1rem; font-weight: 800; margin: 6px 2px 0; }
+    .l-sugg { background: #fff; border-radius: 18px; overflow: hidden; box-shadow: 0 6px 20px rgba(16,42,67,0.06); }
+    .l-sugg button {
+      width: 100%; background: none; border: none; cursor: pointer;
+      display: flex; align-items: center; gap: 12px; padding: 15px 14px; text-align: left;
+      border-bottom: 1px solid var(--l-line); color: var(--l-text); font-size: 0.9rem; font-weight: 500;
+    }
+    .l-sugg button:last-child { border-bottom: none; }
+    .l-sugg .ic { width: 22px; height: 22px; color: var(--l-primary); flex-shrink: 0; display: flex; }
+    .l-sugg .txt { flex: 1; }
+    .l-sugg .chev { width: 18px; height: 18px; color: #94A3B8; flex-shrink: 0; }
+
+    /* Footer */
+    .l-footer { flex-shrink: 0; background: var(--l-bg); padding: 8px 0 0; }
     .l-quick {
-      display: flex;
-      gap: 8px;
-      overflow-x: auto;
-      padding-bottom: 8px;
-      margin-bottom: 6px;
-      -ms-overflow-style: none;
-      scrollbar-width: none;
+      display: flex; gap: 8px; overflow-x: auto; padding: 4px 14px 10px;
+      scrollbar-width: none; -webkit-overflow-scrolling: touch;
     }
     .l-quick::-webkit-scrollbar { display: none; }
     .l-chip {
-      white-space: nowrap;
-      padding: 7px 14px;
-      border-radius: 18px;
-      border: 1px solid var(--line);
-      background: #F8FAFC;
-      color: var(--text);
-      font-size: 13px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all .15s;
-      user-select: none;
+      flex: 0 0 auto; display: inline-flex; align-items: center; gap: 7px;
+      background: #fff; border: 1px solid var(--l-line); border-radius: 50px;
+      padding: 9px 15px; font-size: 0.8rem; font-weight: 600; color: var(--l-text); cursor: pointer;
+      box-shadow: 0 3px 10px rgba(16,42,67,0.05);
     }
-    .l-chip:hover { background: #F1F5F9; border-color: #CBD5E1; }
-    .l-form { display: flex; align-items: flex-end; gap: 8px; }
+    .l-chip svg { width: 15px; height: 15px; color: var(--l-primary); }
+
+    .l-form {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 14px calc(10px + env(safe-area-inset-bottom));
+      background: #fff; border-top: 1px solid var(--l-line);
+    }
+    .l-attach { background: none; border: none; padding: 4px; color: var(--l-muted); cursor: pointer; display: flex; flex-shrink: 0; }
+    .l-attach svg { width: 22px; height: 22px; }
     .l-input {
-      flex: 1;
-      border: 1px solid var(--line);
-      border-radius: 22px;
-      padding: 11px 16px;
-      font-size: 15px;
-      outline: none;
-      min-height: 46px;
-      max-height: 120px;
-      resize: none;
-      font-family: 'Inter', sans-serif;
-      line-height: 1.35;
-      background: #FAFAFA;
+      flex: 1; border: 1px solid var(--l-line); background: #F5F7FB; border-radius: 22px;
+      padding: 11px 16px; font-size: 0.9rem; resize: none; outline: none; max-height: 120px;
+      font-family: inherit; color: var(--l-text); line-height: 1.4;
     }
-    .l-input:focus { border-color: var(--primary); background: #fff; }
     .l-send {
-      width: 46px; height: 46px;
-      border: none; border-radius: 50%;
-      background: var(--primary); color: #fff;
-      display: flex; align-items: center; justify-content: center;
-      transition: transform .1s, background .15s;
-      flex-shrink: 0;
-      cursor: pointer;
+      width: 44px; height: 44px; flex-shrink: 0; border-radius: 50%; border: none;
+      background: var(--l-primary); color: #fff; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; box-shadow: 0 6px 16px rgba(21,94,239,0.32);
     }
-    .l-send:hover { background: var(--primary-dark); }
-    .l-send:disabled { background: #BFDBFE; cursor: default; }
-    .l-send:active:not(:disabled) { transform: scale(.95); }
+    .l-send:disabled { opacity: .45; box-shadow: none; }
+    .l-send svg { width: 20px; height: 20px; }
 
+    /* Bottom nav */
     .l-nav {
-      position: absolute;
-      bottom: 0; left: 0; right: 0;
-      z-index: 30;
-      background: #fff;
-      border-top: 1px solid var(--line);
-      display: flex;
-      justify-content: space-around;
-      align-items: center;
-      padding: 10px 0 16px;
-      padding-bottom: calc(16px + env(safe-area-inset-bottom));
+      flex-shrink: 0; background: #fff; border-top: 1px solid var(--l-line);
+      display: flex; justify-content: space-around;
+      padding: 8px 0 calc(10px + env(safe-area-inset-bottom));
     }
-    .l-nav a { display: flex; flex-direction: column; align-items: center; gap: 3px; color: var(--muted); font-size: 11px; padding: 4px 8px; }
-    .l-nav a.active { color: var(--primary); }
+    .l-nav a {
+      display: flex; flex-direction: column; align-items: center; gap: 3px;
+      color: var(--l-muted); font-size: 0.64rem; font-weight: 600; flex: 1;
+    }
     .l-nav a svg { width: 22px; height: 22px; }
-    .l-nav .l-plus {
-      position: relative; top: -18px;
-      width: 50px; height: 50px; border-radius: 50%;
-      background: var(--primary); color: #fff;
-      display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 4px 14px rgba(21,94,239,.35);
-    }
-    .l-nav .l-plus svg { width: 26px; height: 26px; }
-
-    @media (min-width: 768px) {
-      body { background: #E2E8F0; }
-      .l-wrap { max-width: 800px; border-radius: 0; overflow: hidden; }
-      .l-header { border-radius: 0; }
-      .l-back { display: none; }
-      .l-body { padding: 18px 24px 120px; }
-      .l-bubble { font-size: 16px; }
-      .l-footer {
-        left: 50%; right: auto; width: 100%; max-width: 800px;
-        transform: translateX(-50%);
-        bottom: 0; border: 1px solid var(--line); border-bottom: none;
-      }
-      .l-nav { display: none; }
-    }
+    .l-nav a.active { color: var(--l-primary); }
   </style>
 </head>
 <body>
   <div class="l-wrap">
     <header class="l-header">
-      <a href="{{ url_for('home') }}" class="l-back" aria-label="Retour">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      <a href="{{ url_for('artisan_dashboard') if nav_user and nav_user.role in ('technician','artisan') else url_for('index') }}" class="l-back" aria-label="Retour">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
       </a>
-      <div class="l-avatar">L</div>
+      <span class="l-avatar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="8" width="16" height="12" rx="3"/><path d="M12 4v4M9 2h6"/><circle cx="9" cy="14" r="1.2" fill="currentColor"/><circle cx="15" cy="14" r="1.2" fill="currentColor"/><path d="M2 13v3M22 13v3"/></svg>
+        <span class="dot"></span>
+      </span>
       <div class="l-info">
         <h1 class="l-name">Lia</h1>
-        <p class="l-status"><span class="l-dot"></span> Assistante FixPro en ligne</p>
+        <p class="l-status"><span class="s-dot"></span> Assistante FixPro en ligne</p>
       </div>
-      <div class="l-menu" aria-label="Menu">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
-      </div>
+      <button class="l-menu" type="button" aria-label="Menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+      </button>
     </header>
 
     <main class="l-body" id="l-body">
-      <div class="l-empty" id="l-empty">
-        <h2>Bonjour !</h2>
-        <p>Je suis Lia, votre assistante FixPro.<br>Comment puis-je vous aider aujourd'hui ?</p>
+      <div id="l-welcome">
+        <div class="l-msg l-bot">
+          <span class="l-msg-ava">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="8" width="16" height="12" rx="3"/><path d="M12 4v4M9 2h6"/><circle cx="9" cy="14" r="1.2" fill="currentColor"/><circle cx="15" cy="14" r="1.2" fill="currentColor"/></svg>
+          </span>
+          <div class="l-bubble">
+            <strong>Bonjour&nbsp;! 👋</strong><br>
+            Je suis Lia, votre assistante FixPro.<br>
+            Que puis-je faire pour vous aujourd'hui&nbsp;?
+            <div class="l-time" id="l-welcome-time"></div>
+          </div>
+        </div>
+
+        <div class="l-card" style="margin-top:14px;">
+          <h3>Je peux vous aider avec&nbsp;:</h3>
+          <div class="l-help">
+            <button type="button" data-text="Je cherche un professionnel">
+              <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span>
+              <span>Trouver un professionnel</span>
+            </button>
+            <button type="button" data-text="Je veux suivre une intervention">
+              <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>
+              <span>Suivre une intervention</span>
+            </button>
+            <button type="button" data-text="Montre-moi mes demandes">
+              <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 21l1.9-5.1A8.4 8.4 0 0 1 4 11.5a8.5 8.5 0 0 1 8.5-8.5A8.5 8.5 0 0 1 21 11.5z"/></svg></span>
+              <span>Mes demandes</span>
+            </button>
+            <button type="button" data-text="J'ai besoin d'aide et de support">
+              <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></span>
+              <span>Aide et support</span>
+            </button>
+          </div>
+        </div>
+
+        <h2 class="l-sugg-title">Suggestions populaires</h2>
+        <div class="l-sugg" style="margin-top:10px;">
+          <button type="button" data-text="J'ai une fuite d'eau, que faire ?">
+            <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/></svg></span>
+            <span class="txt">J'ai une fuite d'eau, que faire&nbsp;?</span>
+            <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+          </button>
+          <button type="button" data-text="J'ai besoin d'un électricien rapidement">
+            <span class="ic"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M13 2 4.5 13.5a.6.6 0 0 0 .5.9h5l-1 7.6 8.5-11.5a.6.6 0 0 0-.5-.9h-5z"/></svg></span>
+            <span class="txt">Besoin d'un électricien rapidement</span>
+            <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+          </button>
+          <button type="button" data-text="Mon climatiseur ne refroidit plus">
+            <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M4 5l16 14M20 5 4 19M2 12h20"/></svg></span>
+            <span class="txt">Mon climatiseur ne refroidit plus</span>
+            <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+          </button>
+        </div>
       </div>
     </main>
 
     <div class="l-footer" id="l-footer">
       <div class="l-quick" id="l-quick">
-        <span class="l-chip" data-text="Je cherche un plombier urgent">Plombier urgent</span>
-        <span class="l-chip" data-text="J'ai un problème électrique">Électricien</span>
-        <span class="l-chip" data-text="Devis pour une installation clim">Climatisation</span>
-        <span class="l-chip" data-text="Suivi de ma demande">Suivre ma demande</span>
-        <span class="l-chip" data-text="Parlez-moi de FixPro">Qu'est-ce que FixPro ?</span>
+        <span class="l-chip" data-text="Je cherche un plombier urgent">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/></svg>
+          Plombier urgent
+        </span>
+        <span class="l-chip" data-text="J'ai un problème électrique">
+          <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M13 2 4.5 13.5a.6.6 0 0 0 .5.9h5l-1 7.6 8.5-11.5a.6.6 0 0 0-.5-.9h-5z"/></svg>
+          Électricien
+        </span>
+        <span class="l-chip" data-text="Devis pour une installation de climatisation">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M4 5l16 14M20 5 4 19M2 12h20"/></svg>
+          Climatisation
+        </span>
+        <span class="l-chip" data-text="J'ai une autre demande">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>
+          Autre
+        </span>
       </div>
       <form class="l-form" id="l-form" onsubmit="return false;">
+        <button type="button" class="l-attach" aria-label="Joindre un fichier">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+        </button>
         <textarea class="l-input" id="l-input" placeholder="Écrivez votre message..." required rows="1" oninput="this.style.height='auto'; this.style.height=Math.min(this.scrollHeight,120)+'px';"></textarea>
         <button class="l-send" id="l-send" type="submit" aria-label="Envoyer" disabled>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
         </button>
       </form>
     </div>
 
     <nav class="l-nav">
       <a href="{{ url_for('artisan_dashboard') }}">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
         Accueil
       </a>
       <a href="{{ url_for('requests_list') }}">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M8.5 8H15.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M8.5 12H15.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M8.5 16H12.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2" stroke-width="1.8"/><path d="M8.5 8H15.5" stroke-width="1.8"/><path d="M8.5 12H15.5" stroke-width="1.8"/><path d="M8.5 16H12.5" stroke-width="1.8"/></svg>
         Demandes
       </a>
       <a href="{{ url_for('technician_interventions') }}">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
         Interventions
       </a>
       <a href="{{ url_for('client_messages') }}" class="active">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
         Messages
       </a>
       <a href="{{ url_for('profile') }}">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
         Profil
       </a>
     </nav>
@@ -316,47 +312,41 @@
     const form = document.getElementById('l-form');
     const ta = document.getElementById('l-input');
     const btn = document.getElementById('l-send');
-    const empty = document.getElementById('l-empty');
+    const welcome = document.getElementById('l-welcome');
     const quick = document.getElementById('l-quick');
 
     function scrollBottom() { if (b) b.scrollTop = b.scrollHeight; }
-
-    function time() {
-      return new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-    }
-
+    function time() { return new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }); }
     function escapeHtml(s) {
       return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
-    function formatText(text) {
-      return escapeHtml(text).replace(/\n/g, '<br>');
-    }
+    function formatText(t) { return escapeHtml(t).replace(/\n/g, '<br>'); }
+
+    var BOT_AVA = '<span class="l-msg-ava"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="8" width="16" height="12" rx="3"/><path d="M12 4v4M9 2h6"/><circle cx="9" cy="14" r="1.2" fill="currentColor"/><circle cx="15" cy="14" r="1.2" fill="currentColor"/></svg></span>';
 
     function append(role, text, when) {
-      if (empty) empty.style.display = 'none';
+      if (welcome) welcome.style.display = 'none';
       const row = document.createElement('div');
       row.className = 'l-msg ' + (role === 'user' ? 'l-user' : 'l-bot');
-      const isUser = role === 'user';
-      const check = isUser
+      const check = role === 'user'
         ? '<svg class="l-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>'
         : '';
-      row.innerHTML = '<div class="l-bubble">' + formatText(text) + '<div class="l-time">' + (when || time()) + check + '</div></div>';
+      row.innerHTML = (role === 'bot' ? BOT_AVA : '')
+        + '<div class="l-bubble">' + formatText(text) + '<div class="l-time">' + (when || time()) + check + '</div></div>';
       b.appendChild(row);
       scrollBottom();
     }
 
     function setTyping(show) {
-      let t = b.querySelector('.l-typing');
+      let t = b.querySelector('.l-typing-row');
       if (show) {
         if (t) return;
         t = document.createElement('div');
-        t.className = 'l-msg l-bot l-typing';
-        t.innerHTML = '<div class="l-bubble"><div class="l-typing"><span></span><span></span><span></span></div></div>';
+        t.className = 'l-msg l-bot l-typing-row';
+        t.innerHTML = BOT_AVA + '<div class="l-bubble"><span class="l-typing"><span></span><span></span><span></span></span></div>';
         b.appendChild(t);
         scrollBottom();
-      } else if (t) {
-        t.remove();
-      }
+      } else if (t) { t.remove(); }
     }
 
     function updateBtn() { btn.disabled = !ta.value.trim(); }
@@ -381,23 +371,19 @@
       }
     }
 
+    function sendText(t) { ta.value = t; updateBtn(); send(); }
+
     form.addEventListener('submit', (e) => { e.preventDefault(); send(); });
     ta.addEventListener('input', updateBtn);
-    ta.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); form.dispatchEvent(new Event('submit')); } });
+    ta.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } });
 
-    if (quick) {
-      quick.querySelectorAll('.l-chip').forEach(chip => {
-        chip.addEventListener('click', () => {
-          ta.value = chip.dataset.text;
-          updateBtn();
-          form.dispatchEvent(new Event('submit'));
-        });
-      });
-    }
+    document.querySelectorAll('[data-text]').forEach(el => {
+      el.addEventListener('click', () => sendText(el.dataset.text));
+    });
 
-    append('bot', 'Bonjour, je suis Lia, votre assistante FixPro. Que puis-je faire pour vous ?');
+    var wt = document.getElementById('l-welcome-time');
+    if (wt) wt.textContent = time();
     updateBtn();
-    scrollBottom();
   </script>
 </body>
 </html>
