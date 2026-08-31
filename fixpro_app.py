@@ -6211,10 +6211,99 @@ def _migrate_db():
                 conn.rollback()
             except Exception:
                 pass
+
+        # --- Abonnements techniciens (dashboard admin v2) -------------------
+        try:
+            _migrate_subscriptions(conn)
+            conn.commit()
+        except Exception as e:
+            logger.warning("Migration abonnements impossible: %s", e)
+            try:
+                conn.rollback()
+            except Exception:
+                pass
         finally:
             conn.close()
     except Exception as e:
         logger.warning("Connexion DB indisponible pour migration: %s", e)
+
+
+def _migrate_subscriptions(conn):
+    """Cree les tables d'abonnement et seme les 3 plans par defaut.
+
+    Compatible SQLite (dev/test) et PostgreSQL (prod).
+    """
+    pk = "SERIAL PRIMARY KEY" if conn.is_postgres else "INTEGER PRIMARY KEY AUTOINCREMENT"
+    ts = "TIMESTAMP" if conn.is_postgres else "TEXT"
+
+    if "admin_role" not in conn.table_columns("users"):
+        conn.execute("ALTER TABLE users ADD COLUMN admin_role TEXT")
+        conn.execute("UPDATE users SET admin_role = 'owner' WHERE role = 'admin'")
+
+    conn.execute(
+        f"CREATE TABLE IF NOT EXISTS subscription_plans ("
+        f" id {pk}, code TEXT NOT NULL UNIQUE, name TEXT NOT NULL,"
+        f" price_month INTEGER NOT NULL DEFAULT 0, currency TEXT NOT NULL DEFAULT 'GNF',"
+        f" features TEXT DEFAULT '', is_active INTEGER NOT NULL DEFAULT 1,"
+        f" sort_order INTEGER NOT NULL DEFAULT 0,"
+        f" created_at {ts} DEFAULT CURRENT_TIMESTAMP, updated_at {ts} DEFAULT CURRENT_TIMESTAMP)")
+
+    conn.execute(
+        f"CREATE TABLE IF NOT EXISTS technician_subscriptions ("
+        f" id {pk},"
+        f" technician_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,"
+        f" plan_id INTEGER REFERENCES subscription_plans(id) ON DELETE SET NULL,"
+        f" status TEXT NOT NULL DEFAULT 'TRIAL',"
+        f" start_date {ts} DEFAULT CURRENT_TIMESTAMP, end_date {ts},"
+        f" auto_renew INTEGER NOT NULL DEFAULT 1,"
+        f" created_at {ts} DEFAULT CURRENT_TIMESTAMP, updated_at {ts} DEFAULT CURRENT_TIMESTAMP)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_tech_subs_technician ON technician_subscriptions(technician_id)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_tech_subs_status ON technician_subscriptions(status)")
+
+    conn.execute(
+        f"CREATE TABLE IF NOT EXISTS subscription_payments ("
+        f" id {pk},"
+        f" user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,"
+        f" subscription_id INTEGER REFERENCES technician_subscriptions(id) ON DELETE SET NULL,"
+        f" plan_id INTEGER REFERENCES subscription_plans(id) ON DELETE SET NULL,"
+        f" amount INTEGER NOT NULL DEFAULT 0, currency TEXT NOT NULL DEFAULT 'GNF',"
+        f" payment_method TEXT DEFAULT 'orange_money', transaction_reference TEXT,"
+        f" status TEXT NOT NULL DEFAULT 'pending', paid_at {ts},"
+        f" period_start {ts}, period_end {ts},"
+        f" created_at {ts} DEFAULT CURRENT_TIMESTAMP)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_sub_payments_user ON subscription_payments(user_id)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_sub_payments_status ON subscription_payments(status)")
+
+    conn.execute(
+        f"CREATE TABLE IF NOT EXISTS complaints ("
+        f" id {pk},"
+        f" client_id INTEGER REFERENCES users(id) ON DELETE SET NULL,"
+        f" technician_id INTEGER REFERENCES users(id) ON DELETE SET NULL,"
+        f" request_id INTEGER REFERENCES requests(id) ON DELETE SET NULL,"
+        f" subject TEXT NOT NULL, message TEXT DEFAULT '',"
+        f" priority TEXT NOT NULL DEFAULT 'normal', status TEXT NOT NULL DEFAULT 'new',"
+        f" created_at {ts} DEFAULT CURRENT_TIMESTAMP, resolved_at {ts},"
+        f" resolved_by INTEGER REFERENCES users(id) ON DELETE SET NULL, resolution_note TEXT)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_complaints_status ON complaints(status)")
+
+    for code, name, price, order, features in _DEFAULT_PLANS:
+        exists = conn.execute(
+            "SELECT 1 FROM subscription_plans WHERE code = ?", (code,)).fetchone()
+        if not exists:
+            conn.execute(
+                "INSERT INTO subscription_plans (code, name, price_month, sort_order, features)"
+                " VALUES (?, ?, ?, ?, ?)",
+                (code, name, price, order, features))
+
+
+_DEFAULT_PLANS = [
+    ("basic", "Basic", 50000, 1,
+     "Profil verifie\nApparait dans la recherche\nMessagerie avec les clients"),
+    ("pro", "Pro", 100000, 2,
+     "Tout Basic\nMise en avant dans la recherche\nStatistiques detaillees\nSupport prioritaire"),
+    ("premium", "Premium", 200000, 3,
+     "Tout Pro\nBadge Premium\nEn tete des resultats\nAccompagnement dedie"),
+]
 
 
 @app.route("/admin/commissions")

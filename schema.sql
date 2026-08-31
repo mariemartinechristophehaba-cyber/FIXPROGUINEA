@@ -407,3 +407,69 @@ CREATE TABLE IF NOT EXISTS client_contact_events (
     details     TEXT,
     created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- ===========================================================================
+-- Abonnements techniciens (modele economique FixPro : abonnement mensuel,
+-- PAS de commission par intervention)
+-- ===========================================================================
+
+CREATE TABLE IF NOT EXISTS subscription_plans (
+    id          SERIAL PRIMARY KEY,
+    code        TEXT NOT NULL UNIQUE,
+    name        TEXT NOT NULL,
+    price_month INTEGER NOT NULL DEFAULT 0,
+    currency    TEXT NOT NULL DEFAULT 'GNF',
+    features    TEXT DEFAULT '',
+    is_active   INTEGER NOT NULL DEFAULT 1,
+    sort_order  INTEGER NOT NULL DEFAULT 0,
+    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS technician_subscriptions (
+    id            SERIAL PRIMARY KEY,
+    technician_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    plan_id       INTEGER REFERENCES subscription_plans(id) ON DELETE SET NULL,
+    status        TEXT NOT NULL DEFAULT 'TRIAL',
+    start_date    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    end_date      TIMESTAMP,
+    auto_renew    INTEGER NOT NULL DEFAULT 1,
+    created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_tech_subs_technician ON technician_subscriptions(technician_id);
+CREATE INDEX IF NOT EXISTS idx_tech_subs_status ON technician_subscriptions(status);
+
+CREATE TABLE IF NOT EXISTS subscription_payments (
+    id              SERIAL PRIMARY KEY,
+    user_id         INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    subscription_id INTEGER REFERENCES technician_subscriptions(id) ON DELETE SET NULL,
+    plan_id         INTEGER REFERENCES subscription_plans(id) ON DELETE SET NULL,
+    amount          INTEGER NOT NULL DEFAULT 0,
+    currency        TEXT NOT NULL DEFAULT 'GNF',
+    payment_method  TEXT DEFAULT 'orange_money',
+    transaction_reference TEXT,
+    status          TEXT NOT NULL DEFAULT 'pending',
+    paid_at         TIMESTAMP,
+    period_start    TIMESTAMP,
+    period_end      TIMESTAMP,
+    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_sub_payments_user ON subscription_payments(user_id);
+CREATE INDEX IF NOT EXISTS idx_sub_payments_status ON subscription_payments(status);
+
+CREATE TABLE IF NOT EXISTS complaints (
+    id              SERIAL PRIMARY KEY,
+    client_id       INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    technician_id   INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    request_id      INTEGER REFERENCES requests(id) ON DELETE SET NULL,
+    subject         TEXT NOT NULL,
+    message         TEXT DEFAULT '',
+    priority        TEXT NOT NULL DEFAULT 'normal',
+    status          TEXT NOT NULL DEFAULT 'new',
+    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    resolved_at     TIMESTAMP,
+    resolved_by     INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    resolution_note TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_complaints_status ON complaints(status);
