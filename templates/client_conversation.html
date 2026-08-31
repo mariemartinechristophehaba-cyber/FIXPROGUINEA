@@ -106,6 +106,12 @@
     catch (e) { return ts; }
   }
 
+  function escapeHtml(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
   function appendMessage(role, content, time, id, pending) {
     const div = document.createElement('div');
     div.className = 'm-msg ' + (role === 'client' ? 'm-client' : 'm-fixpro');
@@ -113,7 +119,7 @@
     if (pending) div.dataset.pending = '1';
     const t = pending ? time : formatTime(time);
     const check = role === 'client' ? '<span class="m-check">✓</span>' : '';
-    div.innerHTML = '<div class="m-bubble">' + content.replace(/\n/g, '<br>') + '<div class="m-time">' + t + check + '</div></div>';
+    div.innerHTML = '<div class="m-bubble">' + escapeHtml(content).replace(/\n/g, '<br>') + '<div class="m-time">' + escapeHtml(t) + check + '</div></div>';
     b.appendChild(div);
     scrollBottom();
     return div;
