@@ -24,7 +24,7 @@
 
 body { margin: 0; }
 
-.fa-page { min-height: 100vh; background: var(--fa-paper); font-family: var(--fa-font); color: var(--fa-ink); }
+.fa-page { min-height: 100vh; background: var(--fa-white); font-family: var(--fa-font); color: var(--fa-ink); }
 .fa-page.fa-has-bottom-nav { padding-bottom: 120px; }
 
 /* --- Appbar bleu --- */
@@ -183,14 +183,23 @@ body { margin: 0; }
 
 .fa-header > span:last-child { width: 40px; }
 
-/* --- Contenu --- */
-.fa-container { max-width: 420px; margin: 0 auto; padding: 28px 20px 120px; }
+/* --- Contenu ---
+   Mobile d'abord : le contenu occupe toute la largeur, sans marges laterales
+   ni carte flottante. La carte "flottante" (bords arrondis + ombre + marges)
+   n'apparait qu'a partir de 768px (tablette / bureau). */
+.fa-container {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0 0 110px;
+}
 
 .fa-card {
   background: var(--fa-white);
-  border-radius: var(--fa-radius);
-  padding: 32px 24px;
-  box-shadow: var(--fa-shadow);
+  border-radius: 0;
+  padding: 22px 16px 32px;
+  box-shadow: none;
+  min-height: calc(100dvh - 150px);
 }
 
 .fa-title { font-family: var(--fa-display); font-size: 24px; font-weight: 700; color: var(--fa-ink); margin: 0 0 8px; }
@@ -738,7 +747,14 @@ body { margin: 0; }
 .fa-service-card.selected .fa-service-radio { border-color: var(--fa-blue); background: var(--fa-blue); box-shadow: inset 0 0 0 3px #fff; }
 
 @media (min-width: 768px) {
-  .fa-container { padding-top: 48px; }
+  .fa-page { background: var(--fa-paper); }
+  .fa-container { max-width: 460px; margin: 0 auto; padding: 40px 20px 120px; }
+  .fa-card {
+    border-radius: var(--fa-radius);
+    padding: 32px 28px;
+    box-shadow: var(--fa-shadow);
+    min-height: 0;
+  }
   .fa-job-grid { grid-template-columns: repeat(3, 1fr); }
   .fa-choice-grid { grid-template-columns: repeat(2, 1fr); }
 }
@@ -765,7 +781,7 @@ body { margin: 0; }
   font-size: 13px;
 }
 
-.fa-container { padding-top: 18px; }
+.fa-card { margin-top: 0; }
 
 /* Encadré info avec illustration */
 .fa-info-rich { align-items: center; gap: 10px; padding: 12px 14px; }
