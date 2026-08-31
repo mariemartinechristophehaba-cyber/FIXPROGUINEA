@@ -68,6 +68,14 @@ class Config:
     # comme "de son secteur". Au-dela, il n'est pas affiche dans la recherche.
     LOCAL_RADIUS_KM = float(os.getenv("LOCAL_RADIUS_KM", "10"))
 
+    # Verification obligatoire des documents du technicien (piece d'identite +
+    # justificatif professionnel) avant acces au tableau de bord.
+    # OFF pendant les tests : l'inscription se termine sans documents et le
+    # technicien est valide automatiquement. Mettre TECH_VERIFICATION_ENABLED=true
+    # (variable d'environnement) pour reactiver le controle complet.
+    TECH_VERIFICATION_ENABLED = os.getenv(
+        "TECH_VERIFICATION_ENABLED", "false").strip().lower() in ("1", "true", "yes", "on")
+
     # Google OAuth (optionnel, pour le bouton "Continuer avec Google")
     GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "").strip()
     GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "").strip()

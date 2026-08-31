@@ -2360,6 +2360,14 @@ class TechnicianVerificationFlowTests(FixProTestCase):
     EMAIL = "verif.tech@example.com"
     PASSWORD = "PassTech2026!"
 
+    def setUp(self):
+        super().setUp()
+        fixpro_app.app.config["TECH_VERIFICATION_ENABLED"] = True
+
+    def tearDown(self):
+        fixpro_app.app.config["TECH_VERIFICATION_ENABLED"] = False
+        super().tearDown()
+
     def _admin(self):
         conn = db.connect(sqlite_path=self.db_path)
         try:
@@ -2502,6 +2510,16 @@ class TechnicianVerificationFlowTests(FixProTestCase):
 
         resp = self.login(self.EMAIL, self.PASSWORD)
         self.assertEqual(resp.status_code, 200)
+        dash = self.client.get("/technician/dashboard", follow_redirects=False)
+        self.assertEqual(dash.status_code, 200)
+
+    def test_verification_disabled_lets_technician_finish_without_documents(self):
+        fixpro_app.app.config["TECH_VERIFICATION_ENABLED"] = False
+        self._register(identity=False, professional=False)
+        tech = self._tech()
+        self.assertIsNotNone(tech)
+        self.assertEqual(tech["verification_status"], "APPROVED")
+        self.assertEqual(tech["is_verified"], 1)
         dash = self.client.get("/technician/dashboard", follow_redirects=False)
         self.assertEqual(dash.status_code, 200)
 

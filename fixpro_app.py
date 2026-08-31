@@ -45,6 +45,10 @@ config = get_config()
 ADMIN_DEMO = False
 app = Flask(__name__, static_folder="static", static_url_path="/static")
 app.config.from_object(config)
+# Cache navigateur/CDN pour les fichiers de /static (CSS, JS, images).
+# N'affecte que les reponses servies par Flask pour /static : aucune page
+# dynamique n'est mise en cache.
+app.config["SEND_FILE_MAX_AGE_DEFAULT"] = timedelta(days=30)
 _dotenv = dotenv_values(BASE_DIR / ".env")
 if _dotenv.get("DEV_ROLE"):
     app.config["DEV_ROLE"] = _dotenv.get("DEV_ROLE").lower()
@@ -294,6 +298,8 @@ oauth = OAuth(app)
 @app.before_request
 def check_artisan_verification():
     """Redirige les artisans non verifies vers la page d'attente."""
+    if not app.config.get("TECH_VERIFICATION_ENABLED"):
+        return None
     user_id = session.get("user_id")
     if not user_id:
         return None
@@ -323,8 +329,18 @@ def check_artisan_verification():
     return result
 
 
+_google_client_cache = []
+
+
 def _get_google_client():
-    """Enregistre le client Google OAuth si les identifiants sont presents."""
+    """Enregistre le client Google OAuth si les identifiants sont presents.
+
+    Le client est memorise apres le premier appel : `oauth.register` refait
+    sinon un appel reseau vers la metadata OpenID de Google a chaque fois.
+    """
+    if _google_client_cache:
+        return _google_client_cache[0]
+
     client_id = app.config.get("GOOGLE_CLIENT_ID")
     client_secret = app.config.get("GOOGLE_CLIENT_SECRET")
     redirect_uri = app.config.get("GOOGLE_REDIRECT_URI")
@@ -333,7 +349,7 @@ def _get_google_client():
         return None
 
     try:
-        return oauth.register(
+        client = oauth.register(
             name="google",
             client_id=client_id,
             client_secret=client_secret,
@@ -345,6 +361,9 @@ def _get_google_client():
         )
     except Exception:
         return None
+
+    _google_client_cache.append(client)
+    return client
 
 
 def now_iso():
@@ -1451,6 +1470,11 @@ DOC_PROFESSIONAL = "professional"
 REQUIRED_DOC_TYPES = (DOC_IDENTITY, DOC_PROFESSIONAL)
 
 
+def _verification_enabled():
+    """Vrai si la verification des documents technicien est active (voir config)."""
+    return bool(app.config.get("TECH_VERIFICATION_ENABLED"))
+
+
 def _store_technician_document(conn, store, tech_id, doc_type, data_uri, fallback_name):
     """Televerse un document de verification et enregistre ses metadonnees.
 
@@ -1574,7 +1598,8 @@ def register_artisan():
             flash("Veuillez remplir tous les champs obligatoires.", "error")
             return redirect(url_for("register_artisan"))
 
-        # Verification obligatoire (regle appliquee cote serveur, pas seulement dans l'UI).
+        verif_on = _verification_enabled()
+
         if not email:
             flash("Veuillez renseigner votre adresse e-mail.", "error")
             return redirect(url_for("register_artisan"))
@@ -1582,12 +1607,14 @@ def register_artisan():
         if pwd_error:
             flash(pwd_error, "error")
             return redirect(url_for("register_artisan"))
-        if not identity_doc:
-            flash("Veuillez importer votre piece d'identite pour continuer.", "error")
-            return redirect(url_for("register_artisan"))
-        if not professional_doc:
-            flash("Votre justificatif professionnel est obligatoire.", "error")
-            return redirect(url_for("register_artisan"))
+        # Documents obligatoires uniquement si la verification est active (garde serveur).
+        if verif_on:
+            if not identity_doc:
+                flash("Veuillez importer votre piece d'identite pour continuer.", "error")
+                return redirect(url_for("register_artisan"))
+            if not professional_doc:
+                flash("Votre justificatif professionnel est obligatoire.", "error")
+                return redirect(url_for("register_artisan"))
 
         conn = get_db_connection()
         try:
@@ -1617,7 +1644,9 @@ def register_artisan():
                 " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (phone, email or None, generate_password_hash(account_password), role,
                  full_name, profession, specialite, experience, bio, address,
-                 rayon, lat, lon, hourly_rate, 0, 1, 'ACTIVE', VERIF_PENDING,
+                 rayon, lat, lon, hourly_rate,
+                 0 if verif_on else 1, 1, 'ACTIVE',
+                 VERIF_PENDING if verif_on else VERIF_APPROVED,
                  photo_url, availability_status, available_days_str))
             conn.commit()
 
@@ -1629,6 +1658,8 @@ def register_artisan():
                 (DOC_IDENTITY, identity_doc, "piece-identite"),
                 (DOC_PROFESSIONAL, professional_doc, "justificatif-pro"),
             ):
+                if not data_uri:
+                    continue
                 err = _store_technician_document(conn, store, artisan_id, doc_type, data_uri, name)
                 if err:
                     conn.rollback()
@@ -1645,19 +1676,25 @@ def register_artisan():
                 flash(f"Services invalides : {exc}", "error")
                 return redirect(url_for("register_artisan"))
 
-            _notify_admins_new_technician(conn, artisan_id, full_name, profession, address)
+            if verif_on:
+                _notify_admins_new_technician(conn, artisan_id, full_name, profession, address)
             conn.commit()
         finally:
             conn.close()
 
-        flash("Votre dossier est enregistré. Il est en cours de vérification par FixPro.", "success")
+        if verif_on:
+            flash("Votre dossier est enregistré. Il est en cours de vérification par FixPro.", "success")
+        else:
+            flash("Bienvenue dans FixPro.", "success")
         session["user_id"] = artisan_id
         session.permanent = True
         if request.form.get("after_submit") == "home":
             return redirect(url_for("index"))
         return redirect(url_for("artisan_dashboard"))
 
-    return render_template("register_artisan.html", categories=categories, all_services=all_services)
+    return render_template("register_artisan.html", categories=categories,
+                           all_services=all_services,
+                           require_docs=_verification_enabled())
 
 
 def _send_admin_notification(subject, body):
@@ -1799,8 +1836,9 @@ def _render_technician_verification(user):
 def api_mobile_register():
     """Inscription artisan depuis l'application mobile (JSON)."""
     data = request.get_json(silent=True) or {}
-    required = ["first_name", "last_name", "phone", "password", "profession", "city", "quartier",
-                "email", "identity_doc", "diploma_doc"]
+    required = ["first_name", "last_name", "phone", "password", "profession", "city", "quartier", "email"]
+    if _verification_enabled():
+        required += ["identity_doc", "diploma_doc"]
     missing = [f for f in required if not data.get(f)]
     if missing:
         return jsonify({"error": "Champs manquants", "missing": missing}), 400
@@ -1939,7 +1977,9 @@ def _finalize_artisan_registration_json(wizard):
              wizard["skills"], wizard["city"], wizard["quartier"],
              wizard["zone_intervention"], wizard["mobility"],
              wizard["years_experience"], wizard["bio"], 0, latitude, longitude,
-             "ACTIVE", 0, 1, VERIF_PENDING,
+             "ACTIVE",
+             0 if _verification_enabled() else 1, 1,
+             VERIF_PENDING if _verification_enabled() else VERIF_APPROVED,
              wizard.get("availability_status") or "hors_ligne",
              wizard.get("available_days") or ""))
 
@@ -3711,7 +3751,9 @@ def artisan_dashboard():
         return redirect(url_for("dashboard"))
 
     # Dossier de verification non finalise : ecran d'attente plutot que le tableau de bord.
-    if (user.get("verification_status") or "").upper() in VERIF_BLOCKING or not user.get("is_verified"):
+    if _verification_enabled() and (
+            (user.get("verification_status") or "").upper() in VERIF_BLOCKING
+            or not user.get("is_verified")):
         return redirect(url_for("artisan_pending"))
 
     active_statuses = (MISSION_STATUS_ASSIGNED, MISSION_STATUS_ACCEPTED,
@@ -6075,10 +6117,13 @@ def _migrate_db():
                 conn.execute("UPDATE users SET role = 'technician' WHERE role = 'artisan'")
                 conn.execute(
                     "UPDATE users SET account_status = 'ACTIVE' WHERE account_status IS NULL OR account_status = ''")
+                _verif_guard = (
+                    " AND (verification_status IS NULL OR verification_status = 'APPROVED')"
+                    if app.config.get("TECH_VERIFICATION_ENABLED") else "")
                 conn.execute(
                     "UPDATE users SET is_verified = 1, is_active = 1, account_status = 'ACTIVE'"
                     " WHERE role = 'technician' AND (account_status IS NULL OR account_status != 'DELETED')"
-                    " AND (verification_status IS NULL OR verification_status = 'APPROVED')")
+                    + _verif_guard)
                 conn.execute(
                     "UPDATE requests SET status = ? WHERE LOWER(status) IN ('pending','requested')",
                     (MISSION_STATUS_REQUESTED,))
