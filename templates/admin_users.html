@@ -74,7 +74,7 @@
         <tr>
           <td>
             <div style="font-weight:700">{{ u.full_name or '(sans nom)' }}</div>
-            <div class="muted" style="font-size:.78rem">#{{ u.id }} &middot; {{ (u.created_at or '')[:10] }}</div>
+            <div class="muted" style="font-size:.78rem">#{{ u.id }} &middot; {{ (u.created_at|string)[:10] if u.created_at else '-' }}</div>
           </td>
           <td class="muted">{{ u.email or '-' }}<br>{{ u.phone or '' }}</td>
           <td><span class="pill role-{{ u.role }}">{{ u.role }}</span></td>

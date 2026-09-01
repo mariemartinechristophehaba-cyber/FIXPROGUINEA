@@ -60,8 +60,8 @@
         <td>{{ s.profession or '-' }}</td>
         <td>{{ s.plan_name or '-' }}{% if s.price_month %}<div class="muted">{{ '{:,}'.format(s.price_month).replace(',', ' ') }} GNF</div>{% endif %}</td>
         <td><span class="pill {{ s.status }}">{{ s.status }}</span></td>
-        <td>{{ (s.start_date or '')[:10] }}</td>
-        <td>{{ (s.end_date or '')[:10] or '-' }}</td>
+        <td>{{ (s.start_date|string)[:10] if s.start_date else '-' }}</td>
+        <td>{{ (s.end_date|string)[:10] if s.end_date else '-' }}</td>
         <td>{{ 'Oui' if s.auto_renew else 'Non' }}</td>
       </tr>
     {% endfor %}

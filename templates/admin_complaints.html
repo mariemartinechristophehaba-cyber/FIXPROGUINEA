@@ -48,7 +48,7 @@
   <div class="card">
     <h3>{{ c.subject }}</h3>
     <div class="meta">
-      #{{ c.id }} &middot; {{ (c.created_at or '')[:16].replace('T', ' ') }} &middot;
+      #{{ c.id }} &middot; {{ (c.created_at|string)[:16].replace('T', ' ') if c.created_at else '-' }} &middot;
       Client : {{ c.client_name or '-' }}{% if c.client_phone %} ({{ c.client_phone }}){% endif %}
       {% if c.tech_name %} &middot; Technicien : {{ c.tech_name }}{% endif %}
       {% if c.request_id %} &middot; Intervention #{{ c.request_id }}{% endif %}
