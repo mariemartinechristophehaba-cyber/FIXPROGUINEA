@@ -219,6 +219,22 @@
         });
         emptyEl.hidden = visible !== 0;
       });
+
+      // Tentative automatique a l'ouverture de l'ecran : si l'autorisation
+      // est deja accordee, la position est prise en silence et l'app s'ouvre
+      // sans que l'utilisateur touche un bouton. Sinon le navigateur affiche
+      // sa demande. En cas de refus/blocage, la liste des quartiers s'ouvre.
+      (function autoLocate() {
+        if (!navigator.geolocation) { showSheet(); return; }
+        var run = function () { allowBtn.click(); };
+        if (navigator.permissions && navigator.permissions.query) {
+          navigator.permissions.query({ name: 'geolocation' })
+            .then(function (s) { if (s.state === 'denied') { showSheet(); } else { run(); } })
+            .catch(run);
+        } else {
+          run();
+        }
+      })();
     })();
   </script>
 </body>
