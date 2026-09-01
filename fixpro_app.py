@@ -4874,6 +4874,30 @@ def artisan_detail(artisan_id):
             " ORDER BY s.name",
             (artisan_id,)).fetchall()
 
+        # Si le technicien n'a pas encore selectionne ses services, on affiche
+        # les services standards de SON metier (jamais ceux d'un autre metier).
+        services_are_standard = False
+        if not artisan_services:
+            _prof_key = {
+                "plombier": "%lombier%", "plomberie": "%lombier%",
+                "électricien": "%lectricien%", "electricien": "%lectricien%",
+                "electricite": "%lectricien%", "électricité": "%lectricien%",
+                "frigoriste": "%rigoriste%", "froid": "%rigoriste%",
+                "climatisation": "%rigoriste%",
+                "menuisier": "%enuisier%", "menuiserie": "%enuisier%",
+                "peintre": "%eintre%", "peinture": "%eintre%",
+                "chauffagiste": "%hauffagiste%",
+                "serrurier": "%errurier%", "serrurerie": "%errurier%",
+            }.get((artisan.get("profession") or "").strip().lower())
+            if _prof_key:
+                artisan_services = conn.execute(
+                    "SELECT DISTINCT s.name FROM services s"
+                    " JOIN service_categories sc ON sc.id = s.category_id"
+                    " WHERE s.is_active = 1 AND lower(sc.name) LIKE ?"
+                    " ORDER BY s.name",
+                    (_prof_key,)).fetchall()
+                services_are_standard = bool(artisan_services)
+
         # Avis
         reviews = conn.execute(
             "SELECT r.id, r.rating, r.comment, r.created_at, u.full_name AS client_name"
@@ -5133,6 +5157,7 @@ def artisan_detail(artisan_id):
                            review_bars_count=review_bars_count,
                            satisfaction_rate=satisfaction_rate,
                            artisan_services=artisan_services,
+                           services_are_standard=services_are_standard,
                            artisan_position=artisan_position,
                            zone_center=zone_center,
                            zones=zones)
