@@ -1,40 +1,105 @@
 {% extends 'base.html' %}
 {% block title %}Devenir technicien - FixPro Guinée{% endblock %}
 {% block header %}{% endblock %}
-{% block appbar %}
-<header class="fa-appbar">
-  <a href="{{ url_for('index') }}" class="fa-appbar-back" aria-label="Retour">
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-  </a>
-  <a href="{{ url_for('index') }}" class="fa-appbar-brand" aria-label="FixPro">
-    <span class="fa-appbar-mark">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/>
-        <path d="M14.5 8.5a2 2 0 0 1-2.6 2.6l-2.5 2.5-1.4-1.4 2.5-2.5a2 2 0 0 1 2.6-2.6l-1.2 1.2 1.1 1.1 1.2-1.2Z" fill="currentColor" stroke="none"/>
-      </svg>
-    </span>
-    FixPro
-  </a>
-  <div class="fa-appbar-actions">
-    <a href="{{ url_for('login') }}" class="fa-appbar-link">Connexion</a>
-    <button class="fa-appbar-burger" id="burgerBtn" type="button" aria-label="Menu">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M3 12h18M3 6h18M3 18h18"/>
-      </svg>
-    </button>
-  </div>
-</header>
-
-<nav class="mobile-nav" id="mobileNav">
-  <a class="mobile-link" href="{{ url_for('index') }}">Accueil</a>
-  <a class="mobile-link" href="{{ url_for('artisans_page') }}">Trouver un technicien</a>
-  <a class="mobile-link" href="{{ url_for('register', role='artisan') }}">S'inscrire en tant que technicien</a>
-</nav>
-{% endblock %}
+{% block appbar %}{% endblock %}
 {% block footer %}{% endblock %}
+{% block sidebar %}{% endblock %}
+{% block tabbar %}{% endblock %}
+{% block main_class %}fa-reg-page{% endblock %}
 {% block extra_head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/fixpro-auth.css', v='26') }}" />
 <style>
+  /* ============ Parcours d'inscription technicien : coquille autonome ============ */
+  main.page.fa-reg-page {
+    padding: 0 !important; margin: 0 !important; max-width: 100% !important;
+    height: 100dvh; min-height: 100dvh; overflow: hidden;
+    display: flex; flex-direction: column; background: #fff;
+  }
+  .fa-reg-flow { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+
+  .fa-reg-top {
+    flex: 0 0 auto; position: relative; text-align: center; color: #fff;
+    background: linear-gradient(160deg, #2b74ff 0%, #1f63f5 55%, #1550e0 100%);
+    border-radius: 0 0 24px 24px;
+    padding: 12px 16px 14px;
+    padding-top: calc(12px + env(safe-area-inset-top));
+  }
+  .fa-reg-back {
+    position: absolute; left: 14px; top: calc(12px + env(safe-area-inset-top));
+    width: 38px; height: 38px; border: none; border-radius: 12px;
+    background: #fff; color: #1f63f5; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,.12);
+  }
+  .fa-reg-back svg { width: 20px; height: 20px; }
+  .fa-reg-brand { display: flex; align-items: center; justify-content: center; gap: 9px; font-weight: 800; font-size: 23px; letter-spacing: .2px; }
+  .fa-reg-brand svg { width: 26px; height: 26px; }
+  .fa-reg-sub { margin: 2px 0 0; font-size: 13px; font-weight: 500; opacity: .92; }
+
+  .fa-reg-steps {
+    flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
+    gap: 5px; padding: 9px 22px 0;
+  }
+  .fa-reg-steps .c { width: 28px; height: 28px; }
+  .fa-reg-steps .c {
+    width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; background: #EDF0F5; color: #98A2B3;
+    transition: background .2s, color .2s;
+  }
+  .fa-reg-steps .c.active { background: #1f63f5; color: #fff; }
+  .fa-reg-steps .c.done { background: #D8E4FD; color: #1f63f5; }
+  .fa-reg-steps .bar { flex: 1 1 auto; max-width: 46px; height: 3px; border-radius: 3px; background: #E4E8EF; transition: background .2s; }
+  .fa-reg-steps .bar.done { background: #1f63f5; }
+  .fa-reg-steplabel { flex: 0 0 auto; text-align: center; font-size: 11px; color: #98A2B3; font-weight: 600; padding: 4px 22px 2px; margin: 0; }
+  .fa-reg-steplabel b { color: #0A1122; }
+
+  .fa-reg-form { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  .fa-reg-scroll {
+    flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
+    padding: 6px 18px 10px;
+  }
+  .fa-reg-scroll > div { display: flex; flex-direction: column; gap: 9px; }
+  .fa-reg-scroll .fa-fb, .fa-reg-scroll .fa-phone-row { height: 50px; }
+  .fa-reg-scroll .fa-fl { font-size: 12.5px; }
+  .fa-reg-scroll .fa-help { font-size: 11px; margin: 1px 0 0; line-height: 1.35; }
+  .fa-reg-scroll .fa-title { font-size: 19px; margin: 4px 0 2px; }
+  .fa-reg-scroll .fa-subtitle { font-size: 13px; margin: 0 0 6px; }
+  .fa-reg-scroll .fa-step-head-art { display: none; }
+  .fa-reg-scroll .fa-step-head { display: block; }
+
+  .fa-reg-actions {
+    flex: 0 0 auto; display: flex; flex-direction: column; gap: 8px;
+    padding: 9px 18px calc(10px + env(safe-area-inset-bottom));
+    background: #fff; border-top: 1px solid #EDF0F5;
+  }
+  .fa-reg-actions .fa-btn { margin: 0 !important; }
+  .fa-reg-actions #actions1, .fa-reg-actions #actions2,
+  .fa-reg-actions #actions3, .fa-reg-actions #actions4 { display: flex; flex-direction: column; gap: 8px; }
+
+  /* Champ Prénom / Nom compact en tête d'étape 1 */
+  .fa-name-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  /* Bouton oeil (mot de passe) */
+  .fa-eye {
+    position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; padding: 4px; color: #98A2B3; cursor: pointer; display: flex;
+  }
+  .fa-eye svg { width: 20px; height: 20px; }
+
+  .fa-reg-note {
+    display: flex; align-items: flex-start; gap: 9px;
+    background: #ECFDF5; border: 1px solid #A7F3D0; color: #065F46;
+    padding: 9px 11px; border-radius: 11px; font-size: 11.5px; line-height: 1.4;
+  }
+  .fa-reg-note svg { width: 16px; height: 16px; flex-shrink: 0; color: #059669; margin-top: 1px; }
+
+  @media (min-width: 768px) {
+    main.page.fa-reg-page { align-items: center; justify-content: flex-start; background: var(--fa-paper); }
+    .fa-reg-flow { max-width: 460px; width: 100%; margin: 24px auto; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 60px rgba(16,42,67,.12); background: #fff; height: auto; max-height: calc(100dvh - 48px); }
+    .fa-reg-top { border-radius: 0; }
+  }
+
+  /* ---- reprises specifiques etapes 2/3/4 (contenu existant) ---- */
   .fa-service-grid { display: grid !important; grid-template-columns: 1fr 1fr !important; grid-auto-rows: 1fr !important; gap: 10px !important; margin-top: 8px !important; }
   .fa-service-card { display: flex !important; align-items: center !important; justify-content: space-between !important; gap: 8px !important; background: #fff !important; border: 1.5px solid #E5E7EB !important; border-radius: 14px !important; padding: 14px !important; min-height: 86px !important; height: 100% !important; overflow: hidden !important; cursor: pointer !important; transition: all .2s !important; }
   .fa-service-card.selected { border-color: #2563EB !important; background: #EFF6FF !important; box-shadow: 0 0 0 1px #2563EB !important; }
@@ -44,512 +109,404 @@
   .fa-service-info { display: flex !important; flex-direction: column !important; justify-content: center !important; min-width: 0 !important; overflow: hidden !important; }
   .fa-service-title { font-size: 13px !important; font-weight: 700 !important; color: #0A1122 !important; margin-bottom: 2px !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
   .fa-service-desc { font-size: 11px !important; color: #6B7280 !important; line-height: 1.3 !important; display: -webkit-box !important; -webkit-box-orient: vertical !important; -webkit-line-clamp: 2 !important; overflow: hidden !important; }
-  .fa-service-radio { width: 18px !important; height: 18px !important; border-radius: 50% !important; border: 2px solid #E5E7EB !important; flex-shrink: 0 !important; margin-left: 6px !important; }
-  .fa-service-card.selected .fa-service-radio { border-color: #2563EB !important; background: #2563EB !important; box-shadow: inset 0 0 0 3px #fff !important; }
-
-  .fa-photo-card { display: flex !important; align-items: center !important; gap: 16px !important; padding: 16px !important; border: 1px solid #E5E7EB !important; border-radius: 16px !important; background: #fff !important; margin-bottom: 16px !important; }
-  .fa-photo-circle { position: relative !important; width: 120px !important; height: 120px !important; flex-shrink: 0 !important; }
-  .fa-photo-circle img { width: 100% !important; height: 100% !important; border-radius: 50% !important; object-fit: cover !important; border: 1px solid #E5E7EB !important; }
-  .fa-photo-cam { position: absolute !important; bottom: 4px !important; right: 4px !important; width: 32px !important; height: 32px !important; border-radius: 50% !important; background: #fff !important; color: #2563EB !important; border: 1px solid #E5E7EB !important; display: flex !important; align-items: center !important; justify-content: center !important; cursor: pointer !important; box-shadow: 0 2px 6px rgba(0,0,0,.1) !important; }
-  .fa-photo-card-body h3 { font-size: 16px !important; margin: 0 0 4px !important; }
-  .fa-photo-card-body p { font-size: 12px !important; color: #6B7280 !important; margin: 0 0 10px !important; }
-  .fa-btn-change-photo { display: inline-flex !important; align-items: center !important; gap: 6px !important; padding: 8px 14px !important; font-size: 13px !important; font-weight: 600 !important; color: #2563EB !important; border: 1.5px solid #2563EB !important; border-radius: 10px !important; background: #fff !important; cursor: pointer !important; }
-
-  .fa-avail-grid { display: flex !important; flex-direction: column !important; gap: 10px !important; margin-top: 8px !important; margin-bottom: 14px !important; }
-  .fa-avail-card { display: flex !important; align-items: center !important; gap: 12px !important; padding: 14px !important; border: 1.5px solid #E5E7EB !important; border-radius: 14px !important; background: #fff !important; cursor: pointer !important; }
-  .fa-avail-card.selected { border-color: #2563EB !important; background: #EFF6FF !important; }
-  .fa-avail-card input { width: 20px !important; height: 20px !important; accent-color: #2563EB !important; flex-shrink: 0 !important; }
-  .fa-avail-main { display: flex !important; flex-direction: column !important; gap: 2px !important; }
-  .fa-avail-title { font-weight: 600 !important; font-size: 14px !important; display: flex !important; align-items: center !important; gap: 8px !important; color: #0A1122 !important; }
-  .fa-avail-sub { font-size: 12px !important; color: #6B7280 !important; }
-  .fa-avail-pill { font-size: 10px !important; font-weight: 600 !important; color: #059669 !important; background: #D1FAE5 !important; padding: 3px 8px !important; border-radius: 20px !important; }
 
   .fa-days-grid2 { display: grid !important; grid-template-columns: repeat(4, 1fr) !important; gap: 6px !important; margin: 8px 0 14px !important; }
   .fa-day2 { display: flex !important; align-items: center !important; gap: 5px !important; padding: 8px 6px !important; border: 1px solid #E5E7EB !important; border-radius: 10px !important; font-size: 11px !important; cursor: pointer !important; background: #fff !important; color: #0A1122 !important; overflow: hidden !important; }
   .fa-day2 input { width: 15px !important; height: 15px !important; accent-color: #2563EB !important; flex-shrink: 0 !important; }
   .fa-day2 span { white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
   .fa-day2.selected { border-color: #2563EB !important; background: #EFF6FF !important; }
-
-  .fa-success-head { text-align: center !important; position: relative !important; margin-bottom: 18px !important; }
-  .fa-success-circle { width: 90px !important; height: 90px !important; border-radius: 50% !important; background: #16A34A !important; display: flex !important; align-items: center !important; justify-content: center !important; margin: 0 auto !important; box-shadow: 0 10px 30px rgba(22,163,74,.2) !important; }
-  .fa-success-confetti { position: absolute !important; top: 0 !important; left: 50% !important; width: 120px !important; height: 90px !important; transform: translateX(-50%) !important; pointer-events: none !important; }
-  .fa-success-confetti span { position: absolute !important; width: 6px !important; height: 6px !important; border-radius: 2px !important; }
-  .fa-success-confetti span:nth-child(1) { top: 10%; left: 20%; background: #F59E0B; transform: rotate(25deg); }
-  .fa-success-confetti span:nth-child(2) { top: 25%; right: 15%; background: #2563EB; transform: rotate(-20deg); }
-  .fa-success-confetti span:nth-child(3) { top: 60%; left: 10%; background: #10B981; transform: rotate(40deg); }
-  .fa-success-confetti span:nth-child(4) { top: 5%; right: 25%; background: #EF4444; transform: rotate(-35deg); }
-  .fa-success-confetti span:nth-child(5) { top: 70%; right: 10%; background: #F59E0B; transform: rotate(15deg); }
-  .fa-success-box { display: flex !important; align-items: flex-start !important; gap: 10px !important; background: #DCFCE7 !important; border: 1px solid #86EFAC !important; border-radius: 12px !important; padding: 12px !important; margin-bottom: 18px !important; color: #166534 !important; }
-  .fa-success-box-icon { flex-shrink: 0 !important; }
-  .fa-confirm-title { font-size: 15px !important; font-weight: 700 !important; color: #0A1122 !important; margin: 0 0 12px !important; }
-  .fa-confirm-card { border: 1px solid #E5E7EB !important; border-radius: 16px !important; background: #fff !important; overflow: hidden !important; margin-bottom: 12px !important; }
-  .fa-confirm-header { display: flex !important; align-items: center !important; gap: 12px !important; padding: 14px !important; border-bottom: 1px solid #E5E7EB !important; }
-  .fa-confirm-photo { width: 50px !important; height: 50px !important; border-radius: 50% !important; overflow: hidden !important; flex-shrink: 0 !important; }
-  .fa-confirm-photo img { width: 100% !important; height: 100% !important; object-fit: cover !important; }
-  .fa-confirm-header-info { flex: 1 !important; min-width: 0 !important; }
-  .fa-confirm-header-info h3 { margin: 0 0 2px !important; font-size: 15px !important; color: #0A1122 !important; }
-  .fa-confirm-header-info p { margin: 0 !important; font-size: 13px !important; color: #6B7280 !important; }
-  .fa-confirm-check { width: 22px !important; height: 22px !important; border-radius: 50% !important; background: #16A34A !important; display: flex !important; align-items: center !important; justify-content: center !important; flex-shrink: 0 !important; }
-  .fa-confirm-row { display: flex !important; align-items: center !important; justify-content: space-between !important; gap: 10px !important; padding: 12px 14px !important; border-bottom: 1px solid #F3F4F6 !important; font-size: 13px !important; }
-  .fa-confirm-row:last-child { border-bottom: none !important; }
-  .fa-confirm-row-left { display: flex !important; align-items: center !important; gap: 10px !important; color: #0A1122 !important; }
-  .fa-confirm-row-left svg { color: #2563EB !important; }
-  .fa-confirm-row-right { color: #0A1122 !important; font-weight: 500 !important; text-align: right !important; }
-  .fa-confirm-dot { display: inline-block !important; width: 8px !important; height: 8px !important; border-radius: 50% !important; background: #10B981 !important; margin-right: 4px !important; }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="fa-page fa-has-bottom-nav">
-  <div class="fa-container">
-    <div class="fa-card">
-      <div class="fa-stepper-dots" role="tablist" aria-label="Etapes d'inscription">
-        <div class="fa-step-line"><div class="fa-step-line-fill" id="pbar" style="width:0%"></div></div>
-        <div class="fa-step-item">
-          <div class="fa-step-dot active" id="sdot1" aria-current="step">1</div>
-          <span class="fa-step-label active" id="slab1">Parlons de vous</span>
+<div class="fa-reg-flow">
+  <header class="fa-reg-top">
+    <button type="button" class="fa-reg-back" id="regBack" aria-label="Retour">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+    </button>
+    <div class="fa-reg-brand">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="10" cy="10" r="6"/><path d="m21 21-6.2-6.2"/><path d="M8.2 8.2 6 10.4"/>
+      </svg>
+      FixPro
+    </div>
+    <p class="fa-reg-sub">Inscription professionnel</p>
+  </header>
+
+  <div class="fa-reg-steps" aria-hidden="true">
+    <span class="c active" id="sdot1">1</span>
+    <span class="bar" id="sbar1"></span>
+    <span class="c" id="sdot2">2</span>
+    <span class="bar" id="sbar2"></span>
+    <span class="c" id="sdot3">3</span>
+    <span class="bar" id="sbar3"></span>
+    <span class="c" id="sdot4">4</span>
+  </div>
+  <p class="fa-reg-steplabel" id="stepLabel"><b>Étape 1 / 4</b> · Informations personnelles</p>
+
+  <form method="post" class="fa-reg-form" id="artisanForm" onsubmit="return validateArtisan();">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+    <input type="hidden" name="role" value="{{ request.args.get('role', 'artisan') }}" />
+    <input type="hidden" name="full_name" id="full_name" />
+    <input type="hidden" name="photo" id="photoBase64" />
+
+    <div class="fa-reg-scroll" id="regScroll">
+
+      <!-- ================= ÉTAPE 1 ================= -->
+      <div id="step1">
+        <div class="fa-name-row">
+          <div class="fa-fg">
+            <label class="fa-fl" for="first_name">Prénom</label>
+            <div class="fa-input-wrap">
+              <span class="fa-input-icon fa-input-icon-left" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              </span>
+              <input id="first_name" class="fa-fb fa-fb-pad-left" type="text" name="first_name" required placeholder="Prénom" autocomplete="given-name" />
+            </div>
+          </div>
+          <div class="fa-fg">
+            <label class="fa-fl" for="last_name">Nom</label>
+            <div class="fa-input-wrap">
+              <span class="fa-input-icon fa-input-icon-left" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              </span>
+              <input id="last_name" class="fa-fb fa-fb-pad-left" type="text" name="last_name" required placeholder="Nom" autocomplete="family-name" />
+            </div>
+          </div>
         </div>
-        <div class="fa-step-item">
-          <div class="fa-step-dot" id="sdot2">2</div>
-          <span class="fa-step-label" id="slab2">Votre métier</span>
+
+        <div class="fa-fg">
+          <label class="fa-fl" for="phone">Numéro de téléphone</label>
+          <div class="fa-phone-row">
+            <span class="fa-phone-cc" aria-label="Indicatif Guinée +224">
+              <span class="fa-flag-gn" aria-hidden="true">
+                <svg width="18" height="13" viewBox="0 0 12 9"><rect width="4" height="9" fill="#CE1126"/><rect x="4" width="4" height="9" fill="#FCD116"/><rect x="8" width="4" height="9" fill="#009460"/></svg>
+              </span>
+              <span>+224</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </span>
+            <input id="phone" class="fa-phone-input" type="tel" name="phone" required inputmode="tel" placeholder="610 12 34 56" autocomplete="tel-national" />
+            <span class="fa-phone-ico" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92Z"/></svg>
+            </span>
+          </div>
         </div>
-        <div class="fa-step-item">
-          <div class="fa-step-dot" id="sdot3">3</div>
-          <span class="fa-step-label" id="slab3">Vérification</span>
+
+        <div class="fa-fg">
+          <label class="fa-fl" for="email">Adresse e-mail</label>
+          <div class="fa-input-wrap">
+            <span class="fa-input-icon fa-input-icon-left" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+            </span>
+            <input id="email" class="fa-fb fa-fb-pad-left" type="email" name="email" required placeholder="exemple@email.com" autocomplete="email" />
+          </div>
         </div>
-        <div class="fa-step-item">
-          <div class="fa-step-dot" id="sdot4">4</div>
-          <span class="fa-step-label" id="slab4">Confirmation</span>
+
+        <div class="fa-fg">
+          <label class="fa-fl" for="account_password">Mot de passe</label>
+          <div class="fa-input-wrap">
+            <span class="fa-input-icon fa-input-icon-left" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </span>
+            <input id="account_password" class="fa-fb fa-fb-pad-left fa-fb-pad-right" type="password" name="password" required autocomplete="new-password" placeholder="8 caractères minimum" />
+            <button type="button" class="fa-eye" id="pwToggle" aria-label="Afficher le mot de passe">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+          <p class="fa-help">Nécessaire pour vous reconnecter à votre espace.</p>
+        </div>
+
+        <div class="fa-fg">
+          <label class="fa-fl" for="address">Ville / Localisation</label>
+          <div class="fa-input-wrap">
+            <span class="fa-input-icon fa-input-icon-left" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
+            </span>
+            <input id="address" class="fa-fb fa-fb-pad-left fa-fb-pad-right" type="text" name="address" required placeholder="Votre ville ou quartier" />
+            <button type="button" class="fa-input-icon fa-input-icon-right" onclick="locateMe()" aria-label="Utiliser ma position">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="fa-fg">
+          <label class="fa-fl" for="quartier">Adresse complète <span class="fa-optional">(optionnel)</span></label>
+          <div class="fa-input-wrap">
+            <span class="fa-input-icon fa-input-icon-left" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 12h4"/><path d="M10 8h4"/><path d="M14 21v-3a2 2 0 0 0-4 0v3"/><path d="M6 10H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2"/><path d="M6 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16"/></svg>
+            </span>
+            <input id="quartier" class="fa-fb fa-fb-pad-left" type="text" name="quartier" placeholder="Votre adresse complète" />
+          </div>
+        </div>
+
+        <div class="fa-reg-note">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 12 15 16 10"/></svg>
+          <span>Vos informations sont sécurisées et ne seront jamais partagées sans votre autorisation.</span>
         </div>
       </div>
 
-      <form method="post" class="fa-form" id="artisanForm" onsubmit="return validateArtisan();">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-        <input type="hidden" name="role" value="{{ request.args.get('role', 'artisan') }}" />
-        <input type="hidden" name="full_name" id="full_name" />
-
-        <div id="step1">
-          <h1 class="fa-title">Parlons de vous</h1>
-          <p class="fa-subtitle">Commençons par mieux vous connaître.</p>
-
-          <div class="fa-info-box fa-info-rich">
-            <span class="fa-info-icon" aria-hidden="true">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-            </span>
-            <div class="fa-info-txt">
-              <h4>Informations importantes</h4>
-              <p>Ces informations nous permettront de créer votre profil et d'améliorer votre visibilité auprès des clients.</p>
-            </div>
-            <span class="fa-info-art" aria-hidden="true">
-              <svg width="52" height="52" viewBox="0 0 24 24" fill="none">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" fill="#2563EB"/>
-                <path d="m8.5 12 2.3 2.3L15.5 9.5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </span>
+      <!-- ================= ÉTAPE 2 ================= -->
+      <div id="step2" style="display:none;">
+        <div class="fa-step-head">
+          <div class="fa-step-head-txt">
+            <h1 class="fa-title">Votre métier</h1>
+            <p class="fa-subtitle">Sélectionnez votre domaine d'expertise.</p>
           </div>
-
-          <div class="fa-fg">
-            <span class="fa-fl">Photo de profil</span>
-            <div class="fa-photo-drop" id="step1PhotoBox">
-              <span class="fa-photo-drop-ico">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3Z"/><circle cx="12" cy="13" r="3.5"/></svg>
-              </span>
-              <div class="fa-photo-drop-title">Ajoutez une photo claire</div>
-              <div class="fa-photo-drop-sub">Format recommandé : JPG ou PNG (max. 5 Mo)</div>
-            </div>
-            <input type="file" id="photoInput" accept="image/*" style="display:none;" />
-            <input type="hidden" name="photo" id="photoBase64" />
-          </div>
-
-          <div class="fa-two-col" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-            <div class="fa-fg">
-              <label class="fa-fl" for="first_name">Prénom</label>
-              <div class="fa-input-wrap">
-                <span class="fa-input-icon fa-input-icon-left" aria-hidden="true">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                </span>
-                <input id="first_name" class="fa-fb fa-fb-pad-left" type="text" name="first_name" required placeholder="Votre prénom" />
-              </div>
-            </div>
-            <div class="fa-fg">
-              <label class="fa-fl" for="last_name">Nom</label>
-              <div class="fa-input-wrap">
-                <span class="fa-input-icon fa-input-icon-left" aria-hidden="true">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                </span>
-                <input id="last_name" class="fa-fb fa-fb-pad-left" type="text" name="last_name" required placeholder="Votre nom" />
-              </div>
-            </div>
-          </div>
-
-          <div class="fa-fg">
-            <label class="fa-fl" for="phone">Numéro de téléphone</label>
-            <div class="fa-phone-row">
-              <span class="fa-phone-cc" aria-label="Indicatif Guinée +224">
-                <span class="fa-flag-gn" aria-hidden="true">
-                  <svg width="18" height="13" viewBox="0 0 12 9"><rect width="4" height="9" fill="#CE1126"/><rect x="4" width="4" height="9" fill="#FCD116"/><rect x="8" width="4" height="9" fill="#009460"/></svg>
-                </span>
-                <span>+224</span>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-              </span>
-              <input id="phone" class="fa-phone-input" type="tel" name="phone" required inputmode="tel" placeholder="610 12 34 56" />
-              <span class="fa-phone-ico" aria-hidden="true">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92Z"/></svg>
-              </span>
-            </div>
-          </div>
-
-          <div class="fa-fg">
-            <label class="fa-fl" for="email">Adresse e-mail</label>
-            <div class="fa-input-wrap">
-              <span class="fa-input-icon fa-input-icon-left" aria-hidden="true">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
-              </span>
-              <input id="email" class="fa-fb fa-fb-pad-left" type="email" name="email" placeholder="exemple@email.com" />
-            </div>
-          </div>
-
-          <div class="fa-fg">
-            <label class="fa-fl" for="account_password">Mot de passe</label>
-            <div class="fa-input-wrap">
-              <span class="fa-input-icon fa-input-icon-left" aria-hidden="true">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-              </span>
-              <input id="account_password" class="fa-fb fa-fb-pad-left" type="password" name="password" required autocomplete="new-password" placeholder="8 caractères minimum" />
-            </div>
-            <p class="fa-help">Vous en aurez besoin pour vous reconnecter à votre espace technicien.</p>
-          </div>
-
-          <div class="fa-fg">
-            <label class="fa-fl" for="address">Ville / Localisation</label>
-            <div class="fa-input-wrap">
-              <span class="fa-input-icon fa-input-icon-left" aria-hidden="true">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
-              </span>
-              <input id="address" class="fa-fb fa-fb-pad-left fa-fb-pad-right" type="text" name="address" required placeholder="Votre ville ou quartier" />
-              <button type="button" class="fa-input-icon fa-input-icon-right" onclick="locateMe()" aria-label="Utiliser ma position">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="3"/></svg>
-              </button>
-            </div>
-          </div>
-
-          <div class="fa-fg" style="margin-top: 10px;">
-            <label class="fa-fl" for="quartier">Adresse complète <span class="fa-optional">(optionnel)</span></label>
-            <div class="fa-input-wrap">
-              <span class="fa-input-icon fa-input-icon-left" aria-hidden="true">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 12h4"/><path d="M10 8h4"/><path d="M14 21v-3a2 2 0 0 0-4 0v3"/><path d="M6 10H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2"/><path d="M6 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16"/></svg>
-              </span>
-              <input id="quartier" class="fa-fb fa-fb-pad-left" type="text" name="quartier" placeholder="Votre adresse complète" />
-            </div>
-          </div>
-
-          <div class="fa-info-box fa-info-green" style="background: #ECFDF5; border: 1px solid #A7F3D0; color: #065F46; padding: 10px 12px; margin: 12px 0 10px; border-radius: 12px;">
-            <span class="fa-info-icon" aria-hidden="true" style="color: #059669;">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 12 15 16 10"/></svg>
-            </span>
-            <div>
-              <p style="font-size: 12px;">Vos informations sont sécurisées et ne seront jamais partagées sans votre autorisation.</p>
-            </div>
-          </div>
-
-          <button type="button" class="fa-btn fa-btn-primary" onclick="if(validateStep1()) go(2)">Continuer <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
-          <button type="button" class="fa-btn fa-btn-outline-blue" style="margin-top:12px;" onclick="window.location.href='{{ url_for('register') }}'">Retour</button>
         </div>
 
-        <div id="step2" style="display:none;">
-          <div class="fa-step-head">
-            <div class="fa-step-head-txt">
-              <h1 class="fa-title">Votre métier</h1>
-              <p class="fa-subtitle">Sélectionnez votre domaine d'expertise.</p>
-            </div>
-            <span class="fa-step-head-art" aria-hidden="true">
-              <svg width="80" height="80" viewBox="0 0 64 64" fill="none">
-                <circle cx="32" cy="32" r="30" fill="#EEF3FF"/>
-                <!-- Tournevis -->
-                <g transform="rotate(24 41 20)">
-                  <rect x="37.5" y="4" width="7" height="12" rx="3.5" fill="#F5A623"/>
-                  <rect x="38.5" y="15" width="5" height="3" rx="1" fill="#D98B12"/>
-                  <rect x="39.5" y="17" width="3" height="15" rx="1.5" fill="#CBD5E1"/>
-                  <path d="M39.5 32h3l-1.5 3z" fill="#94A3B8"/>
-                </g>
-                <!-- Cle plate -->
-                <g transform="rotate(-14 24 22)">
-                  <path d="M20 6a6 6 0 0 0 2 11.7 6 6 0 0 0 4-1.2l1.6 1.6-6.4 6.4-1.6-1.6a2.5 2.5 0 0 1-3.5 0 2.5 2.5 0 0 1 0-3.5l1.6 1.6 6.4-6.4-1.6-1.6A6 6 0 0 0 26 4.5L22.7 7.8a1.6 1.6 0 0 1-2.3 0L20 6z" fill="#93C5FD"/>
-                </g>
-                <!-- Corps de la boite -->
-                <path d="M11 30h42v15.5a3.5 3.5 0 0 1-3.5 3.5H14.5A3.5 3.5 0 0 1 11 45.5z" fill="#2563EB"/>
-                <!-- Couvercle -->
-                <path d="M11 30l5.6-7A2.5 2.5 0 0 1 18.5 22h27a2.5 2.5 0 0 1 1.9.9L53 30z" fill="#1D4ED8"/>
-                <!-- Anse -->
-                <path d="M25 21.5V20a7 7 0 0 1 14 0v1.5" fill="none" stroke="#1D4ED8" stroke-width="4" stroke-linecap="round"/>
-                <!-- Loquet -->
-                <rect x="27.5" y="35" width="9" height="5.5" rx="1.5" fill="#BFD7FF"/>
-                <line x1="11" y1="37" x2="53" y2="37" stroke="#1D4ED8" stroke-width="1.5" opacity=".5"/>
-              </svg>
-            </span>
+        <div class="fa-info-box fa-info-rich">
+          <span class="fa-info-icon fa-info-icon-fill" aria-hidden="true">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10" fill="#2563EB"/><rect x="11" y="10" width="2" height="7" rx="1" fill="#fff"/><rect x="11" y="6.5" width="2" height="2" rx="1" fill="#fff"/></svg>
+          </span>
+          <div class="fa-info-txt">
+            <h4>Pourquoi cette information ?</h4>
+            <p>Cela nous aide à vous mettre en relation avec les bonnes demandes et clients.</p>
           </div>
-
-          <div class="fa-info-box fa-info-rich">
-            <span class="fa-info-icon fa-info-icon-fill" aria-hidden="true">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10" fill="#2563EB"/><rect x="11" y="10" width="2" height="7" rx="1" fill="#fff"/><rect x="11" y="6.5" width="2" height="2" rx="1" fill="#fff"/></svg>
-            </span>
-            <div class="fa-info-txt">
-              <h4>Pourquoi cette information ?</h4>
-              <p>Cela nous aide à vous mettre en relation avec les bonnes demandes et clients.</p>
-            </div>
-          </div>
-
-          <h2 class="fa-section-h">Choisissez votre domaine principal</h2>
-
-          <div class="fa-job-grid" role="listbox" aria-label="Domaines d'expertise">
-            <div class="fa-job-card" role="option" tabindex="0" data-profession="Plombier" data-specialite="Plomberie" onclick="selectJob(this)">
-              <span class="fa-job-ico"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 4.24 7 3c-.29 1.24-1.14 2.68-2.29 3.61S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z"/><path d="M12.56 6.6A11 11 0 0 0 14 3c.5 2.5 2 4.9 4 6.5s3 3.5 3 5.5a7 7 0 0 1-11.91 4.97"/></svg></span>
-              <div class="fa-job-title">Plomberie</div>
-              <div class="fa-job-desc">Installation, réparation et entretien sanitaire.</div>
-            </div>
-            <div class="fa-job-card" role="option" tabindex="0" data-profession="Électricien" data-specialite="Électricité" onclick="selectJob(this)">
-              <span class="fa-job-ico"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></svg></span>
-              <div class="fa-job-title">Électricité</div>
-              <div class="fa-job-desc">Installation et dépannage électrique.</div>
-            </div>
-            <div class="fa-job-card" role="option" tabindex="0" data-profession="Frigoriste" data-specialite="Climatisation" onclick="selectJob(this)">
-              <span class="fa-job-ico"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m10 20-1.25-2.5L6 18"/><path d="M10 4 8.75 6.5 6 6"/><path d="m14 20 1.25-2.5L18 18"/><path d="m14 4 1.25 2.5L18 6"/><path d="m17 21-3-6h-4"/><path d="m17 3-3 6 1.5 3"/><path d="M2 12h6.5L10 9"/><path d="m20 10-1.5 2 1.5 2"/><path d="M22 12h-6.5L14 15"/><path d="m4 10 1.5 2L4 14"/><path d="m7 21 3-6-1.5-3"/><path d="m7 3 3 6h4"/></svg></span>
-              <div class="fa-job-title">Froid &amp; Climatisation</div>
-              <div class="fa-job-desc">Installation, entretien et réparation.</div>
-            </div>
-            <div class="fa-job-card" role="option" tabindex="0" data-profession="Peintre" data-specialite="Peinture" onclick="selectJob(this)">
-              <span class="fa-job-ico"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="16" height="6" rx="2"/><path d="M10 16v-2a2 2 0 0 1 2-2h8a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="8" y="16" width="4" height="6" rx="1"/></svg></span>
-              <div class="fa-job-title">Peinture</div>
-              <div class="fa-job-desc">Peinture intérieure et extérieure.</div>
-            </div>
-            <div class="fa-job-card" role="option" tabindex="0" data-profession="Maçon" data-specialite="Maçonnerie" onclick="selectJob(this)">
-              <span class="fa-job-ico"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.3 21.7s7.9-2.8 10.2-5.1a3.6 3.6 0 0 0-5.1-5.1C5.1 13.8 2.3 21.7 2.3 21.7z"/><path d="m12 8 4-4 4 4-4 4"/><path d="m10.5 14 2 2"/></svg></span>
-              <div class="fa-job-title">Maçonnerie</div>
-              <div class="fa-job-desc">Construction, rénovation et travaux de maçonnerie.</div>
-            </div>
-            <div class="fa-job-card" role="option" tabindex="0" data-profession="Menuisier" data-specialite="Menuiserie" onclick="selectJob(this)">
-              <span class="fa-job-ico"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V6a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v14"/><path d="M2 20h20"/><path d="M14 12v.01"/></svg></span>
-              <div class="fa-job-title">Menuiserie</div>
-              <div class="fa-job-desc">Fabrication et réparation de meubles, portes, fenêtres.</div>
-            </div>
-          </div>
-
-          <input type="hidden" name="profession" id="profession" />
-          <input type="hidden" name="specialite" id="specialite" />
-          <input type="hidden" name="specialites" id="specialites" />
-
-          <div class="fa-info-box fa-info-green fa-info-rich" style="margin-top:18px;">
-            <span class="fa-info-icon" aria-hidden="true" style="color:#059669;">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 12 15 16 10"/></svg>
-            </span>
-            <div class="fa-info-txt">
-              <h4 style="color:#065F46;">Information</h4>
-              <p>Vous pourrez ajouter d'autres domaines d'expertise plus tard dans votre profil.</p>
-            </div>
-          </div>
-
-          <button type="button" class="fa-btn fa-btn-primary" style="margin-top:8px;" onclick="if(validateStep2()) go(3)">Continuer <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
-          <button type="button" class="fa-btn fa-btn-outline-blue" style="margin-top:12px;" onclick="go(1)">Retour</button>
         </div>
 
-        <div id="step3" style="display:none;">
-          <div class="fa-step-head">
-            <div class="fa-step-head-txt">
-              <h1 class="fa-title">Vérification de votre compte</h1>
-              <p class="fa-subtitle">Nous avons besoin de vérifier vos informations et documents pour garantir la sécurité et la qualité de notre plateforme.</p>
-            </div>
-            <span class="fa-step-head-art" aria-hidden="true">
-              <svg width="80" height="80" viewBox="0 0 64 64" fill="none">
-                <circle cx="32" cy="32" r="30" fill="#EEF3FF"/>
-                <rect x="28" y="24" width="26" height="20" rx="3" fill="#fff" stroke="#BFD3FF" stroke-width="1.5"/>
-                <circle cx="35" cy="31" r="3" fill="#BFD3FF"/>
-                <path d="M40 29h10M40 33h8M32 39h18" stroke="#BFD3FF" stroke-width="2" stroke-linecap="round"/>
-                <path d="M20 15l11 3v9c0 7-5.5 11-11 13-5.5-2-11-6-11-13v-9z" fill="#2563EB"/>
-                <path d="m15 28 3.5 3.5L26 24" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                <circle cx="50" cy="42" r="6" fill="#16A34A"/>
-                <path d="m47 42 2 2 4-4" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </span>
+        <h2 class="fa-section-h">Choisissez votre domaine principal</h2>
+
+        <div class="fa-job-grid" role="listbox" aria-label="Domaines d'expertise">
+          <div class="fa-job-card" role="option" tabindex="0" data-profession="Plombier" data-specialite="Plomberie" onclick="selectJob(this)">
+            <span class="fa-job-ico"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 4.24 7 3c-.29 1.24-1.14 2.68-2.29 3.61S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z"/><path d="M12.56 6.6A11 11 0 0 0 14 3c.5 2.5 2 4.9 4 6.5s3 3.5 3 5.5a7 7 0 0 1-11.91 4.97"/></svg></span>
+            <div class="fa-job-title">Plomberie</div>
+            <div class="fa-job-desc">Installation, réparation et entretien sanitaire.</div>
           </div>
-
-          <div class="fa-info-box fa-info-rich">
-            <span class="fa-info-icon fa-info-icon-fill" aria-hidden="true">
-              <svg width="14" height="14" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#2563EB"/><rect x="11" y="10" width="2" height="7" rx="1" fill="#fff"/><rect x="11" y="6.5" width="2" height="2" rx="1" fill="#fff"/></svg>
-            </span>
-            <div class="fa-info-txt">
-              <h4>Pourquoi cette vérification ?</h4>
-              <p>Elle nous permet de nous assurer que votre profil est authentique et que vous êtes un professionnel qualifié.</p>
-            </div>
+          <div class="fa-job-card" role="option" tabindex="0" data-profession="Électricien" data-specialite="Électricité" onclick="selectJob(this)">
+            <span class="fa-job-ico"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></svg></span>
+            <div class="fa-job-title">Électricité</div>
+            <div class="fa-job-desc">Installation et dépannage électrique.</div>
           </div>
-
-          <h2 class="fa-section-h">Informations de contact</h2>
-          <p class="fa-section-sub">Veuillez saisir vos informations de contact.</p>
-
-          <label class="fa-contact-field">
-            <span class="fa-contact-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92Z"/></svg></span>
-            <span class="fa-contact-body">
-              <span class="fa-contact-label">Numéro de téléphone <b>*</b></span>
-              <input id="verifPhone" type="tel" inputmode="tel" class="fa-contact-input" placeholder="+224 610 12 34 56" />
-            </span>
-          </label>
-
-          <label class="fa-contact-field">
-            <span class="fa-contact-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg></span>
-            <span class="fa-contact-body">
-              <span class="fa-contact-label">Adresse e-mail <b>*</b></span>
-              <input id="verifEmail" type="email" class="fa-contact-input" placeholder="exemple@email.com" />
-            </span>
-          </label>
-
-          <h2 class="fa-section-h">Pièce d'identité{% if require_docs %} <b style="color:#EF4444">*</b>{% else %} <span class="fa-optional">(optionnel)</span>{% endif %}</h2>
-          <p class="fa-section-sub">Ajoutez une photo claire et lisible de votre pièce d'identité valide.</p>
-          <div class="fa-doc-drop" id="idDocBox">
-            <span class="fa-doc-drop-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13"/><path d="m7 8 5-5 5 5"/><path d="M5 21h14a2 2 0 0 0 2-2v-4"/><path d="M3 15v4a2 2 0 0 0 2 2"/></svg></span>
-            <div class="fa-doc-drop-title">Importer votre pièce d'identité</div>
-            <div class="fa-doc-drop-sub">Formats acceptés : JPG, PNG, PDF (max. 5 Mo)</div>
+          <div class="fa-job-card" role="option" tabindex="0" data-profession="Frigoriste" data-specialite="Climatisation" onclick="selectJob(this)">
+            <span class="fa-job-ico"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m10 20-1.25-2.5L6 18"/><path d="M10 4 8.75 6.5 6 6"/><path d="m14 20 1.25-2.5L18 18"/><path d="m14 4 1.25 2.5L18 6"/><path d="m17 21-3-6h-4"/><path d="m17 3-3 6 1.5 3"/><path d="M2 12h6.5L10 9"/><path d="m20 10-1.5 2 1.5 2"/><path d="M22 12h-6.5L14 15"/><path d="m4 10 1.5 2L4 14"/><path d="m7 21 3-6-1.5-3"/><path d="m7 3 3 6h4"/></svg></span>
+            <div class="fa-job-title">Froid &amp; Climatisation</div>
+            <div class="fa-job-desc">Installation, entretien et réparation.</div>
           </div>
-          {% if require_docs %}<p class="fa-doc-required" id="idDocRequired">Document obligatoire</p>{% endif %}
-          <input type="file" id="idDocInput" accept="image/*,application/pdf" style="display:none;" />
-          <input type="hidden" name="identity_doc" id="identityDocBase64" />
-
-          <h2 class="fa-section-h">Justificatif professionnel{% if require_docs %} <b style="color:#EF4444">*</b>{% else %} <span class="fa-optional">(optionnel)</span>{% endif %}</h2>
-          <p class="fa-section-sub">Ajoutez un document prouvant votre qualification ou votre expérience professionnelle.</p>
-          <div class="fa-doc-drop" id="proofDocBox">
-            <span class="fa-doc-drop-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13"/><path d="m7 8 5-5 5 5"/><path d="M5 21h14a2 2 0 0 0 2-2v-4"/><path d="M3 15v4a2 2 0 0 0 2 2"/></svg></span>
-            <div class="fa-doc-drop-title">Importer mon justificatif professionnel</div>
-            <div class="fa-doc-drop-sub">Exemples : diplôme, certificat, attestation, carte professionnelle...</div>
+          <div class="fa-job-card" role="option" tabindex="0" data-profession="Peintre" data-specialite="Peinture" onclick="selectJob(this)">
+            <span class="fa-job-ico"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="16" height="6" rx="2"/><path d="M10 16v-2a2 2 0 0 1 2-2h8a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="8" y="16" width="4" height="6" rx="1"/></svg></span>
+            <div class="fa-job-title">Peinture</div>
+            <div class="fa-job-desc">Peinture intérieure et extérieure.</div>
           </div>
-          {% if require_docs %}<p class="fa-doc-required" id="proofDocRequired">Document obligatoire</p>{% endif %}
-          <input type="file" id="proofDocInput" accept="image/*,application/pdf" style="display:none;" />
-          <input type="hidden" name="professional_doc" id="proofDocBase64" />
-
-          <input type="hidden" name="availability" value="toujours" />
-
-          <div class="fa-verif-checklist" id="verifChecklist" aria-hidden="true">
-            <div class="fa-verif-row" data-key="phone"><span class="fa-verif-dot">✓</span> Numéro renseigné</div>
-            <div class="fa-verif-row" data-key="email"><span class="fa-verif-dot">✓</span> E-mail renseigné</div>
-            <div class="fa-verif-row" data-key="id"><span class="fa-verif-dot">✓</span> Pièce d'identité ajoutée</div>
-            <div class="fa-verif-row" data-key="proof"><span class="fa-verif-dot">✓</span> Justificatif professionnel ajouté</div>
-            <p class="fa-verif-ready" id="verifReady">Votre dossier est prêt à être examiné.</p>
+          <div class="fa-job-card" role="option" tabindex="0" data-profession="Maçon" data-specialite="Maçonnerie" onclick="selectJob(this)">
+            <span class="fa-job-ico"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.3 21.7s7.9-2.8 10.2-5.1a3.6 3.6 0 0 0-5.1-5.1C5.1 13.8 2.3 21.7 2.3 21.7z"/><path d="m12 8 4-4 4 4-4 4"/><path d="m10.5 14 2 2"/></svg></span>
+            <div class="fa-job-title">Maçonnerie</div>
+            <div class="fa-job-desc">Construction, rénovation et travaux de maçonnerie.</div>
           </div>
-
-          <div class="fa-info-box fa-info-green fa-info-rich" style="margin-top:18px;">
-            <span class="fa-info-icon" aria-hidden="true" style="color:#059669;">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 12 15 16 10"/></svg>
-            </span>
-            <div class="fa-info-txt">
-              <h4 style="color:#065F46;">Vos informations sont sécurisées</h4>
-              <p>Nous ne partageons jamais vos données personnelles et elles sont protégées à 100%.</p>
-            </div>
+          <div class="fa-job-card" role="option" tabindex="0" data-profession="Menuisier" data-specialite="Menuiserie" onclick="selectJob(this)">
+            <span class="fa-job-ico"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V6a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v14"/><path d="M2 20h20"/><path d="M14 12v.01"/></svg></span>
+            <div class="fa-job-title">Menuiserie</div>
+            <div class="fa-job-desc">Fabrication et réparation de meubles, portes, fenêtres.</div>
           </div>
-
-          <button type="button" id="step3Continue" class="fa-btn fa-btn-primary{% if require_docs %} is-disabled{% endif %}" style="margin-top:8px;"{% if require_docs %} disabled{% endif %} onclick="if(validateStep3()) go(4)">Continuer <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
-          <button type="button" class="fa-btn fa-btn-outline-blue" style="margin-top:12px;" onclick="go(2)">Retour</button>
         </div>
 
-        <div id="step4" style="display:none;">
-          <div class="fa-done">
-            <div class="fa-done-badge" aria-hidden="true">
-              <svg class="fa-done-leaves" width="220" height="150" viewBox="0 0 220 150" fill="none">
-                <path d="M20 120c25-10 45-32 52-60-28 4-50 26-52 60z" fill="#DCE6FB"/>
-                <path d="M200 120c-25-10-45-32-52-60 28 4 50 26 52 60z" fill="#DCE6FB"/>
-              </svg>
-              <span class="fa-done-conf fa-done-conf-1"></span>
-              <span class="fa-done-conf fa-done-conf-2"></span>
-              <span class="fa-done-conf fa-done-conf-3"></span>
-              <span class="fa-done-conf fa-done-conf-4"></span>
-              <span class="fa-done-conf fa-done-conf-5"></span>
-              <span class="fa-done-circle">
-                <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-              </span>
-            </div>
-            <h1 class="fa-done-title">Félicitations !</h1>
-            <p class="fa-done-lead">Votre inscription a bien été envoyée.</p>
-            <p class="fa-done-text">Merci d'avoir rejoint FixPro. Votre profil est maintenant enregistré{% if require_docs %} et sera examiné par notre équipe{% endif %}.</p>
+        <input type="hidden" name="profession" id="profession" />
+        <input type="hidden" name="specialite" id="specialite" />
+        <input type="hidden" name="specialites" id="specialites" />
+
+        <div class="fa-info-box fa-info-green fa-info-rich" style="margin-top:6px;">
+          <span class="fa-info-icon" aria-hidden="true" style="color:#059669;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 12 15 16 10"/></svg>
+          </span>
+          <div class="fa-info-txt">
+            <h4 style="color:#065F46;">Information</h4>
+            <p>Vous pourrez ajouter d'autres domaines d'expertise plus tard dans votre profil.</p>
           </div>
-
-          {% if require_docs %}
-          <div class="fa-done-card fa-done-card-info">
-            <span class="fa-done-card-ico" aria-hidden="true">
-              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><circle cx="10" cy="10" r="2.4"/><path d="M6.5 16.2a4 4 0 0 1 7 0"/><circle cx="15.5" cy="14.5" r="2.6"/><path d="m17.6 16.6 1.8 1.8"/></svg>
-            </span>
-            <div>
-              <h4>Vérification de votre profil</h4>
-              <p>Votre équipe va vérifier les informations fournies afin de garantir la qualité et la fiabilité des professionnels présents sur FixPro.</p>
-            </div>
-          </div>
-          {% endif %}
-
-          <div class="fa-done-card fa-done-card-status"{% if not require_docs %} style="background:#F0FDF4;border-color:#BBF7D0;"{% endif %}>
-            <span class="fa-done-status-ico" aria-hidden="true"{% if not require_docs %} style="background:#16A34A;"{% endif %}>
-              {% if require_docs %}
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
-              {% else %}
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-              {% endif %}
-            </span>
-            <div>
-              <span class="fa-done-status-label">Statut actuel</span>
-              <span class="fa-done-status-value"{% if not require_docs %} style="color:#15803D;"{% endif %}>{% if require_docs %}En cours de vérification{% else %}Profil actif{% endif %}</span>
-              <p>{% if require_docs %}Vous pourrez suivre l'état de votre inscription depuis votre profil.{% else %}Votre profil est enregistré. Vous pouvez accéder à votre espace technicien.{% endif %}</p>
-            </div>
-          </div>
-
-          <button type="submit" class="fa-btn fa-btn-primary" style="margin-top:16px;">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            Accéder à mon profil
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="margin-left:auto;"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-          </button>
-          <button type="submit" name="after_submit" value="home" class="fa-btn fa-btn-outline-blue" style="margin-top:12px;">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
-            Retour à l'accueil
-          </button>
-
-          <a class="fa-done-help" href="{{ url_for('contact') }}">
-            <span class="fa-done-help-ico" aria-hidden="true">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
-            </span>
-            <span class="fa-done-help-txt">
-              <strong>Une question ?</strong>
-              <span>Notre support est disponible pour vous accompagner.</span>
-            </span>
-            <span class="fa-done-help-link">Nous contacter
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-            </span>
-          </a>
         </div>
-      </form>
+      </div>
+
+      <!-- ================= ÉTAPE 3 ================= -->
+      <div id="step3" style="display:none;">
+        <div class="fa-step-head">
+          <div class="fa-step-head-txt">
+            <h1 class="fa-title">Vérification de votre compte</h1>
+            <p class="fa-subtitle">Nous avons besoin de vérifier vos informations et documents pour garantir la sécurité et la qualité de notre plateforme.</p>
+          </div>
+        </div>
+
+        <div class="fa-info-box fa-info-rich">
+          <span class="fa-info-icon fa-info-icon-fill" aria-hidden="true">
+            <svg width="14" height="14" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#2563EB"/><rect x="11" y="10" width="2" height="7" rx="1" fill="#fff"/><rect x="11" y="6.5" width="2" height="2" rx="1" fill="#fff"/></svg>
+          </span>
+          <div class="fa-info-txt">
+            <h4>Pourquoi cette vérification ?</h4>
+            <p>Elle nous permet de nous assurer que votre profil est authentique et que vous êtes un professionnel qualifié.</p>
+          </div>
+        </div>
+
+        <h2 class="fa-section-h">Informations de contact</h2>
+        <p class="fa-section-sub">Veuillez saisir vos informations de contact.</p>
+
+        <label class="fa-contact-field">
+          <span class="fa-contact-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92Z"/></svg></span>
+          <span class="fa-contact-body">
+            <span class="fa-contact-label">Numéro de téléphone <b>*</b></span>
+            <input id="verifPhone" type="tel" inputmode="tel" class="fa-contact-input" placeholder="+224 610 12 34 56" />
+          </span>
+        </label>
+
+        <label class="fa-contact-field">
+          <span class="fa-contact-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg></span>
+          <span class="fa-contact-body">
+            <span class="fa-contact-label">Adresse e-mail <b>*</b></span>
+            <input id="verifEmail" type="email" class="fa-contact-input" placeholder="exemple@email.com" />
+          </span>
+        </label>
+
+        <h2 class="fa-section-h">Pièce d'identité{% if require_docs %} <b style="color:#EF4444">*</b>{% else %} <span class="fa-optional">(optionnel)</span>{% endif %}</h2>
+        <p class="fa-section-sub">Ajoutez une photo claire et lisible de votre pièce d'identité valide.</p>
+        <div class="fa-doc-drop" id="idDocBox">
+          <span class="fa-doc-drop-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13"/><path d="m7 8 5-5 5 5"/><path d="M5 21h14a2 2 0 0 0 2-2v-4"/><path d="M3 15v4a2 2 0 0 0 2 2"/></svg></span>
+          <div class="fa-doc-drop-title">Importer votre pièce d'identité</div>
+          <div class="fa-doc-drop-sub">Formats acceptés : JPG, PNG, PDF (max. 5 Mo)</div>
+        </div>
+        {% if require_docs %}<p class="fa-doc-required" id="idDocRequired">Document obligatoire</p>{% endif %}
+        <input type="file" id="idDocInput" accept="image/*,application/pdf" style="display:none;" />
+        <input type="hidden" name="identity_doc" id="identityDocBase64" />
+
+        <h2 class="fa-section-h">Justificatif professionnel{% if require_docs %} <b style="color:#EF4444">*</b>{% else %} <span class="fa-optional">(optionnel)</span>{% endif %}</h2>
+        <p class="fa-section-sub">Ajoutez un document prouvant votre qualification ou votre expérience professionnelle.</p>
+        <div class="fa-doc-drop" id="proofDocBox">
+          <span class="fa-doc-drop-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13"/><path d="m7 8 5-5 5 5"/><path d="M5 21h14a2 2 0 0 0 2-2v-4"/><path d="M3 15v4a2 2 0 0 0 2 2"/></svg></span>
+          <div class="fa-doc-drop-title">Importer mon justificatif professionnel</div>
+          <div class="fa-doc-drop-sub">Exemples : diplôme, certificat, attestation, carte professionnelle...</div>
+        </div>
+        {% if require_docs %}<p class="fa-doc-required" id="proofDocRequired">Document obligatoire</p>{% endif %}
+        <input type="file" id="proofDocInput" accept="image/*,application/pdf" style="display:none;" />
+        <input type="hidden" name="professional_doc" id="proofDocBase64" />
+
+        <input type="hidden" name="availability" value="toujours" />
+
+        <div class="fa-verif-checklist" id="verifChecklist" aria-hidden="true">
+          <div class="fa-verif-row" data-key="phone"><span class="fa-verif-dot">✓</span> Numéro renseigné</div>
+          <div class="fa-verif-row" data-key="email"><span class="fa-verif-dot">✓</span> E-mail renseigné</div>
+          <div class="fa-verif-row" data-key="id"><span class="fa-verif-dot">✓</span> Pièce d'identité ajoutée</div>
+          <div class="fa-verif-row" data-key="proof"><span class="fa-verif-dot">✓</span> Justificatif professionnel ajouté</div>
+          <p class="fa-verif-ready" id="verifReady">Votre dossier est prêt à être examiné.</p>
+        </div>
+
+        <div class="fa-info-box fa-info-green fa-info-rich" style="margin-top:6px;">
+          <span class="fa-info-icon" aria-hidden="true" style="color:#059669;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 12 15 16 10"/></svg>
+          </span>
+          <div class="fa-info-txt">
+            <h4 style="color:#065F46;">Vos informations sont sécurisées</h4>
+            <p>Nous ne partageons jamais vos données personnelles et elles sont protégées à 100%.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= ÉTAPE 4 ================= -->
+      <div id="step4" style="display:none;">
+        <div class="fa-done">
+          <div class="fa-done-badge" aria-hidden="true">
+            <span class="fa-done-circle">
+              <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+            </span>
+          </div>
+          <h1 class="fa-done-title">Félicitations !</h1>
+          <p class="fa-done-lead">Votre inscription a bien été envoyée.</p>
+          <p class="fa-done-text">Merci d'avoir rejoint FixPro. Votre profil est maintenant enregistré{% if require_docs %} et sera examiné par notre équipe{% endif %}.</p>
+        </div>
+
+        {% if require_docs %}
+        <div class="fa-done-card fa-done-card-info">
+          <span class="fa-done-card-ico" aria-hidden="true">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><circle cx="10" cy="10" r="2.4"/><path d="M6.5 16.2a4 4 0 0 1 7 0"/><circle cx="15.5" cy="14.5" r="2.6"/><path d="m17.6 16.6 1.8 1.8"/></svg>
+          </span>
+          <div>
+            <h4>Vérification de votre profil</h4>
+            <p>Votre équipe va vérifier les informations fournies afin de garantir la qualité et la fiabilité des professionnels présents sur FixPro.</p>
+          </div>
+        </div>
+        {% endif %}
+
+        <div class="fa-done-card fa-done-card-status"{% if not require_docs %} style="background:#F0FDF4;border-color:#BBF7D0;"{% endif %}>
+          <span class="fa-done-status-ico" aria-hidden="true"{% if not require_docs %} style="background:#16A34A;"{% endif %}>
+            {% if require_docs %}
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+            {% else %}
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+            {% endif %}
+          </span>
+          <div>
+            <span class="fa-done-status-label">Statut actuel</span>
+            <span class="fa-done-status-value"{% if not require_docs %} style="color:#15803D;"{% endif %}>{% if require_docs %}En cours de vérification{% else %}Profil actif{% endif %}</span>
+            <p>{% if require_docs %}Vous pourrez suivre l'état de votre inscription depuis votre profil.{% else %}Votre profil est enregistré. Vous pouvez accéder à votre espace technicien.{% endif %}</p>
+          </div>
+        </div>
+
+        <a class="fa-done-help" href="{{ url_for('contact') }}">
+          <span class="fa-done-help-ico" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+          </span>
+          <span class="fa-done-help-txt">
+            <strong>Une question ?</strong>
+            <span>Notre support est disponible pour vous accompagner.</span>
+          </span>
+          <span class="fa-done-help-link">Nous contacter
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </span>
+        </a>
+      </div>
+
+    </div><!-- /.fa-reg-scroll -->
+
+    <div class="fa-reg-actions">
+      <div id="actions1">
+        <button type="button" class="fa-btn fa-btn-primary" onclick="if(validateStep1()) go(2)">Continuer <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+        <button type="button" class="fa-btn fa-btn-outline-blue" onclick="window.location.href='{{ url_for('register') }}'">Retour</button>
+      </div>
+      <div id="actions2" style="display:none;">
+        <button type="button" class="fa-btn fa-btn-primary" onclick="if(validateStep2()) go(3)">Continuer <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+        <button type="button" class="fa-btn fa-btn-outline-blue" onclick="go(1)">Retour</button>
+      </div>
+      <div id="actions3" style="display:none;">
+        <button type="button" id="step3Continue" class="fa-btn fa-btn-primary{% if require_docs %} is-disabled{% endif %}"{% if require_docs %} disabled{% endif %} onclick="if(validateStep3()) go(4)">Continuer <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+        <button type="button" class="fa-btn fa-btn-outline-blue" onclick="go(2)">Retour</button>
+      </div>
+      <div id="actions4" style="display:none;">
+        <button type="submit" class="fa-btn fa-btn-primary">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Accéder à mon profil
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="margin-left:auto;"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+        <button type="submit" name="after_submit" value="home" class="fa-btn fa-btn-outline-blue">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
+          Retour à l'accueil
+        </button>
+      </div>
     </div>
-  </div>
+  </form>
 </div>
 
-<nav class="fa-bottom-nav" aria-label="Navigation principale">
-  <a class="fa-bottom-tab" href="{{ url_for('index') }}" aria-label="Accueil">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
-    <span>Accueil</span>
-  </a>
-  <a class="fa-bottom-tab" href="{{ url_for('artisans_page') }}" aria-label="Recherche">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-    <span>Recherche</span>
-  </a>
-  <a class="fa-bottom-tab fa-bottom-tab-active" href="{{ url_for('request_new') }}" aria-label="Réserver">
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-    <span>Réserver</span>
-  </a>
-  <a class="fa-bottom-tab" href="{{ url_for('lia') }}" aria-label="Messages">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 21l1.9-5.1A8.4 8.4 0 0 1 4 11.5a8.5 8.5 0 0 1 8.5-8.5A8.5 8.5 0 0 1 21 11.5z"/></svg>
-    <span>Messages</span>
-  </a>
-  <a class="fa-bottom-tab" href="{{ url_for('profile') }}" aria-label="Profil">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
-    <span>Profil</span>
-  </a>
-</nav>
-
 <script>
-  document.getElementById('burgerBtn').addEventListener('click', function(){
-    document.getElementById('mobileNav').classList.toggle('open');
+  var STEP_LABELS = {
+    1: '<b>Étape 1 / 4</b> · Informations personnelles',
+    2: '<b>Étape 2 / 4</b> · Votre métier',
+    3: '<b>Étape 3 / 4</b> · Vérification',
+    4: '<b>Étape 4 / 4</b> · Confirmation'
+  };
+
+  document.getElementById('burgerBtn')?.addEventListener('click', function(){
+    document.getElementById('mobileNav')?.classList.toggle('open');
   });
+
+  document.getElementById('regBack')?.addEventListener('click', function(){
+    var visible = 1;
+    for (var i = 4; i >= 1; i--) {
+      if (document.getElementById('step' + i).style.display !== 'none') { visible = i; break; }
+    }
+    if (visible > 1) { go(visible - 1); }
+    else { window.location.href = "{{ url_for('register') }}"; }
+  });
+
+  var pwToggle = document.getElementById('pwToggle');
+  if (pwToggle) {
+    pwToggle.addEventListener('click', function(){
+      var f = document.getElementById('account_password');
+      f.type = f.type === 'password' ? 'text' : 'password';
+    });
+  }
 
   function compressImage(file, cb){
     if (!file) return;
@@ -588,27 +545,6 @@
       r.readAsDataURL(f);
     }
   }
-
-  function openPhotoSelect(){
-    document.getElementById('photoInput').click();
-  }
-
-  document.getElementById('step1PhotoBox')?.addEventListener('click', openPhotoSelect);
-  document.getElementById('photoPreviewWrap')?.addEventListener('click', openPhotoSelect);
-  document.getElementById('photoCam')?.addEventListener('click', (e)=>{ e.stopPropagation(); openPhotoSelect(); });
-  document.getElementById('photoChangeBtn')?.addEventListener('click', openPhotoSelect);
-  document.getElementById('photoInput')?.addEventListener('change', function(){
-    readFile(this, res=>{
-      document.getElementById('photoBase64').value = res;
-      const step1 = document.getElementById('step1PhotoBox');
-      step1.innerHTML = `<img class="fa-photo-drop-preview" src="${res}" alt="Aperçu" /><div class="fa-photo-drop-title">Photo ajoutée</div><div class="fa-photo-drop-sub">Touchez pour en changer</div>`;
-      step1.classList.add('has-photo');
-      const preview = document.getElementById('photoPreview');
-      if (preview) preview.src = res;
-      const confirm = document.getElementById('confirmPhoto');
-      if (confirm) confirm.src = res;
-    });
-  });
 
   function handleAvailability(){
     const val = document.querySelector('input[name="availability"]:checked')?.value;
@@ -696,7 +632,7 @@
   }
 
   function validateStep1(){
-    const fields = ['first_name','last_name','phone','account_password','address'];
+    const fields = ['first_name','last_name','phone','email','account_password','address'];
     for (const id of fields){
       const el = document.getElementById(id);
       if (!el.value.trim() || !el.checkValidity()) {
@@ -722,12 +658,19 @@
   function go(n){
     for (let i=1;i<=4;i++){
       document.getElementById('step'+i).style.display = i===n ? 'block' : 'none';
+      const act = document.getElementById('actions'+i);
+      if (act) act.style.display = i===n ? 'flex' : 'none';
       const dot = document.getElementById('sdot'+i);
-      const lab = document.getElementById('slab'+i);
-      if (dot) dot.className = 'fa-step-dot' + (i===n ? ' active' : i<n ? ' completed' : '');
-      if (lab) lab.className = 'fa-step-label' + (i===n ? ' active' : '');
+      if (dot) dot.className = 'c' + (i===n ? ' active' : i<n ? ' done' : '');
+      if (i < 4){
+        const bar = document.getElementById('sbar'+i);
+        if (bar) bar.className = 'bar' + (i < n ? ' done' : '');
+      }
     }
-    document.getElementById('pbar').style.width = ((n-1)*33.333) + '%';
+    const lbl = document.getElementById('stepLabel');
+    if (lbl && STEP_LABELS[n]) lbl.innerHTML = STEP_LABELS[n];
+    const sc = document.getElementById('regScroll');
+    if (sc) sc.scrollTop = 0;
     if (n === 3) { handleAvailability(); syncVerifContact(); }
     if (n === 4) { updateConfirm(); }
   }
