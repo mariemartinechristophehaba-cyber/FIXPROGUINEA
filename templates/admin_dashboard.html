@@ -1,14 +1,366 @@
 {% extends 'admin_base.html' %}
 {% block title %}Tableau de bord - FixPro Admin{% endblock %}
-{% block body_class %}admin-dark{% endblock %}
-{% block admin_title %}Tableau de bord{% endblock %}
+{% block admin_title %}Bonjour, {{ (user.full_name or 'Administrateur') if user else 'Administrateur' }} <span aria-hidden="true">&#128075;</span>{% endblock %}
+{% block admin_subtitle %}Voici un apercu de l'activite FixPro aujourd'hui.{% endblock %}
+
+{% block topbar_actions %}
+<div class="period">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+  <select id="periodSelect" aria-label="Periode">
+    <option value="today"{{ ' selected' if period == 'today' }}>Aujourd'hui</option>
+    <option value="7d"{{ ' selected' if period == '7d' }}>7 derniers jours</option>
+    <option value="30d"{{ ' selected' if period == '30d' }}>30 derniers jours</option>
+    <option value="month"{{ ' selected' if period == 'month' or not period }}>Ce mois</option>
+    <option value="year"{{ ' selected' if period == 'year' }}>Cette annee</option>
+  </select>
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+  .section-title { font-size: 1.05rem; font-weight: 800; margin: 26px 0 14px; }
+
+  /* ---- KPIs ---- */
+  .kpis { display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; }
+  .kpi { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 18px; display: block; transition: box-shadow .15s, transform .15s; }
+  .kpi:hover { box-shadow: 0 10px 26px rgba(20,40,90,.08); transform: translateY(-2px); }
+  .kpi-top { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .kpi-ic { width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center; flex: none; }
+  .kpi-ic svg { width: 19px; height: 19px; }
+  .kpi-label { font-size: .78rem; color: var(--muted); font-weight: 600; line-height: 1.25; }
+  .kpi-val { font-size: 1.7rem; font-weight: 800; letter-spacing: -.02em; }
+  .kpi-money { font-size: 1.25rem; }
+  .kpi-delta { margin-top: 8px; font-size: .76rem; font-weight: 700; display: flex; align-items: center; gap: 5px; }
+  .kpi-delta span { color: var(--muted); font-weight: 500; }
+  .kpi-delta.up { color: var(--green); }
+  .kpi-delta.down { color: var(--red); }
+  .kpi-delta.muted { color: var(--muted); font-weight: 600; }
+
+  .tone-blue { background: #eaf1ff; color: #2563eb; }
+  .tone-green { background: #e7f8f1; color: #059669; }
+  .tone-orange { background: #fef2e2; color: #d97706; }
+  .tone-amber { background: #fef7e0; color: #d97706; }
+  .tone-violet { background: #f2ecfe; color: #7c3aed; }
+  .tone-red { background: #fdecec; color: #dc2626; }
+
+  /* ---- Grilles de panneaux ---- */
+  .grid-3 { display: grid; grid-template-columns: 1.15fr .95fr .95fr; gap: 16px; margin-top: 16px; }
+  .panel { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 20px; min-width: 0; }
+  .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
+  .panel-head h2 { font-size: .98rem; font-weight: 800; }
+  .panel-head a, .panel-head .link { font-size: .8rem; font-weight: 700; color: var(--blue); }
+  .pill { font-size: .76rem; font-weight: 700; color: var(--muted); border: 1px solid var(--line); border-radius: 8px; padding: 5px 10px; }
+
+  .rev-big { font-size: 1.6rem; font-weight: 800; letter-spacing: -.02em; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .rev-big .delta { font-size: .8rem; font-weight: 700; }
+  .rev-big .delta.up { color: var(--green); }
+  .rev-big .delta.down { color: var(--red); }
+  .rev-sub { display: flex; justify-content: space-between; font-size: .76rem; color: var(--muted); margin: 4px 0 12px; }
+  .chart-box { position: relative; height: 170px; }
+
+  /* ---- Donut ---- */
+  .donut-wrap { position: relative; width: 190px; height: 190px; margin: 4px auto 14px; }
+  .donut-center { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
+  .donut-center b { display: block; font-size: 1.5rem; font-weight: 800; }
+  .donut-center span { font-size: .72rem; color: var(--muted); }
+  .legend { list-style: none; display: grid; gap: 10px; }
+  .legend li { display: flex; align-items: center; gap: 9px; font-size: .84rem; }
+  .legend li b { margin-left: auto; color: var(--muted); font-weight: 700; }
+  .legend .dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+  .dot-0 { background: #2563eb; } .dot-1 { background: #10b981; } .dot-2 { background: #f59e0b; }
+  .dot-3 { background: #8b5cf6; } .dot-4 { background: #ef4444; }
+
+  /* ---- Statut abos ---- */
+  .statut { list-style: none; display: grid; gap: 4px; }
+  .statut li { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: .85rem; }
+  .statut li:last-child { border: 0; }
+  .statut li .chip { margin-left: auto; font-size: .78rem; font-weight: 800; padding: 2px 9px; border-radius: 7px; }
+  .statut li .pct { color: var(--muted); font-weight: 700; font-size: .8rem; min-width: 38px; text-align: right; }
+  .statut li.total { font-weight: 800; padding-top: 12px; }
+  .statut li.total b { margin-left: auto; }
+
+  /* ---- Listes (paiements / interventions / validation) ---- */
+  .rows { list-style: none; display: grid; gap: 2px; }
+  .rows li { display: flex; align-items: center; gap: 11px; padding: 11px 0; border-bottom: 1px solid var(--line); }
+  .rows li:last-child { border: 0; }
+  .av { width: 38px; height: 38px; border-radius: 50%; flex: none; display: grid; place-items: center; font-weight: 700; font-size: .8rem; background: #eaf1ff; color: #2563eb; }
+  .av.sq { border-radius: 10px; background: #f1f5fb; color: var(--muted); }
+  .row-main { min-width: 0; flex: 1; }
+  .row-main .t { font-size: .86rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row-main .s { font-size: .76rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row-end { text-align: right; flex: none; }
+  .row-end .amt { font-size: .84rem; font-weight: 800; }
+  .row-end .time { font-size: .72rem; color: var(--muted); margin-top: 3px; }
+  .tag2 { display: inline-block; font-size: .72rem; font-weight: 700; padding: 3px 9px; border-radius: 999px; }
+  .tag2.green { background: #e7f8f1; color: #059669; }
+  .tag2.red { background: #fdecec; color: #dc2626; }
+  .tag2.amber { background: #fef7e0; color: #b45309; }
+  .tag2.blue { background: #eaf1ff; color: #2563eb; }
+  .tag2.grey { background: #f1f5fb; color: #64748b; }
+  .empty { color: var(--muted); font-size: .84rem; padding: 16px 0; }
+
+  /* ---- Alertes ---- */
+  .alerts { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; }
+  .alert-card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 18px; display: block; }
+  .alert-card:hover { box-shadow: 0 10px 26px rgba(20,40,90,.08); }
+  .alert-ic { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; margin-bottom: 12px; }
+  .alert-ic svg { width: 20px; height: 20px; }
+  .alert-label { font-size: .8rem; color: var(--muted); font-weight: 600; }
+  .alert-count { font-size: 1.7rem; font-weight: 800; margin: 2px 0 4px; }
+  .alert-sub { font-size: .74rem; color: var(--muted); }
+
+  @media (max-width: 1400px) { .kpis { grid-template-columns: repeat(3, 1fr); } .alerts { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 1200px) { .grid-3 { grid-template-columns: 1fr; } }
+  @media (max-width: 700px) { .kpis, .alerts { grid-template-columns: repeat(2, 1fr); } }
+</style>
+{% endblock %}
+
+{% macro kpi_icon(name) %}
+  {% if name == 'users' %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+  {% elif name == 'shield_check' %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+  {% elif name == 'clock' %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+  {% elif name == 'wallet' %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"/><path d="M4 6v12c0 1.1.9 2 2 2h14v-4"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></svg>
+  {% elif name == 'user_plus' %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+  {% else %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+  {% endif %}
+{% endmacro %}
+
+{% macro initials(name) %}{{ ((name or '?').split()[0][:1] ~ ((name or '?').split()[1][:1] if (name or '?').split()|length > 1 else ''))|upper }}{% endmacro %}
+
+{% macro pay_badge(status) %}
+  {% set s = (status or '')|lower %}
+  {% if s in ('paid', 'completed', 'succeeded') %}<span class="tag2 green">Paye</span>
+  {% elif s in ('failed', 'error') %}<span class="tag2 red">Echoue</span>
+  {% elif s in ('refunded',) %}<span class="tag2 amber">Rembourse</span>
+  {% else %}<span class="tag2 amber">En attente</span>{% endif %}
+{% endmacro %}
+
+{% macro interv_badge(status) %}
+  {% set s = (status or '')|lower %}
+  {% if s in ('completed', 'done', 'termine', 'terminee', 'closed') %}<span class="tag2 green">Terminee</span>
+  {% elif s in ('pending', 'new', 'planifiee', 'scheduled', 'assigned') %}<span class="tag2 blue">Planifiee</span>
+  {% elif s in ('cancelled', 'canceled', 'annulee') %}<span class="tag2 grey">Annulee</span>
+  {% else %}<span class="tag2 amber">En cours</span>{% endif %}
+{% endmacro %}
 
 {% block admin_content %}
-<!--
-  PLACEHOLDER - page videe avant refonte (nouvelle maquette a venir).
-  La route admin_dashboard() calcule toujours les donnees reelles (KPIs,
-  revenus, abonnements, paiements, interventions, alertes) et les passe au
-  template : rien a refaire cote back-end, seul le rendu ci-dessous change.
--->
-<p>Tableau de bord en cours de refonte.</p>
+<div class="kpis">
+  {% for k in kpis %}
+  <a class="kpi" href="{{ k.href or '#' }}">
+    <div class="kpi-top">
+      <span class="kpi-ic tone-{{ k.tone }}">{{ kpi_icon(k.icon) }}</span>
+      <span class="kpi-label">{{ k.label }}</span>
+    </div>
+    <div class="kpi-val{{ ' kpi-money' if k.money }}">{{ k.value|gnf if k.money else k.value }}</div>
+    {% if k.delta is not none %}
+      <div class="kpi-delta {{ 'up' if k.delta >= 0 else 'down' }}">
+        {{ '▲' if k.delta >= 0 else '▼' }} {{ k.delta|abs }}% <span>vs mois dernier</span>
+      </div>
+    {% elif k.sub %}
+      <div class="kpi-delta muted">{{ k.sub }}</div>
+    {% endif %}
+  </a>
+  {% endfor %}
+</div>
+
+<div class="grid-3">
+  <section class="panel">
+    <div class="panel-head">
+      <h2>Revenus des abonnements</h2>
+      <span class="pill">{{ period_label }}</span>
+    </div>
+    <div class="rev-big">
+      {{ revenue_total|gnf }}
+      {% if revenue_delta is not none %}
+        <span class="delta {{ 'up' if revenue_delta >= 0 else 'down' }}">{{ '▲' if revenue_delta >= 0 else '▼' }} {{ revenue_delta|abs }}%</span>
+      {% endif %}
+    </div>
+    <div class="rev-sub"><span>Total revenus abonnements</span><span>vs periode precedente</span></div>
+    <div class="chart-box"><canvas id="revChart"></canvas></div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><h2>Repartition des abonnements</h2></div>
+    <div class="donut-wrap">
+      <canvas id="planChart"></canvas>
+      <div class="donut-center"><b>{{ repartition_total }}</b><span>Total</span></div>
+    </div>
+    <ul class="legend">
+      {% for r in repartition %}
+      <li><span class="dot dot-{{ loop.index0 }}"></span> {{ r.name }}
+        <b>{{ (r.count / repartition_total * 100)|round|int if repartition_total else 0 }}% ({{ r.count }})</b></li>
+      {% endfor %}
+    </ul>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <h2>Statut des abonnements</h2>
+      <a href="{{ url_for('admin_subscriptions') }}">Voir tout</a>
+    </div>
+    <ul class="statut">
+      {% for s in statut_abos %}
+      <li>
+        <span>{{ s.label }}</span>
+        <b class="chip tone-{{ s.tone }}">{{ s.count }}</b>
+        <span class="pct">{{ s.pct }}%</span>
+      </li>
+      {% endfor %}
+      <li class="total"><span>Total</span><b>{{ statut_total }}</b><span class="pct">100%</span></li>
+    </ul>
+  </section>
+</div>
+
+<div class="grid-3">
+  <section class="panel">
+    <div class="panel-head">
+      <h2>Derniers paiements</h2>
+      <a href="{{ url_for('admin_subscription_payments') }}">Voir tout</a>
+    </div>
+    <ul class="rows">
+      {% for p in derniers_paiements %}
+      <li>
+        <span class="av">{{ initials(p.tech_name) }}</span>
+        <div class="row-main">
+          <div class="t">{{ p.tech_name or 'Technicien' }}</div>
+          <div class="s">{{ p.plan_name or 'Abonnement' }} - Mensuel</div>
+        </div>
+        <div class="row-end">
+          <div class="amt">{{ p.amount|gnf }}</div>
+          <div>{{ pay_badge(p.status) }}</div>
+          <div class="time">{{ (p.paid_at or p.created_at)|time_ago }}</div>
+        </div>
+      </li>
+      {% else %}
+      <li class="empty">Aucun paiement pour le moment.</li>
+      {% endfor %}
+    </ul>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <h2>Interventions recentes</h2>
+      <a href="{{ url_for('admin_requests') }}">Voir tout</a>
+    </div>
+    <ul class="rows">
+      {% for i in interventions_recentes %}
+      <li>
+        <span class="av sq"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span>
+        <div class="row-main">
+          <div class="t">{{ i.title or i.category or 'Intervention' }}</div>
+          <div class="s">{{ i.address or i.client_name or '-' }}</div>
+        </div>
+        <div class="row-end">
+          <div>{{ interv_badge(i.status) }}</div>
+          <div class="time">{{ i.created_at|time_ago }}</div>
+        </div>
+      </li>
+      {% else %}
+      <li class="empty">Aucune intervention recente.</li>
+      {% endfor %}
+    </ul>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <h2>Demandes de validation</h2>
+      <a href="{{ url_for('admin_artisans') }}">Voir tout</a>
+    </div>
+    <ul class="rows">
+      {% for d in demandes_validation %}
+      <li>
+        <span class="av">{{ initials(d.full_name) }}</span>
+        <div class="row-main">
+          <div class="t">{{ d.full_name or 'Technicien' }}</div>
+          <div class="s">Technicien {{ d.profession or '' }}</div>
+        </div>
+        <div class="row-end">
+          <div><span class="tag2 amber">En attente</span></div>
+          <div class="time">{{ d.created_at|time_ago }}</div>
+        </div>
+      </li>
+      {% else %}
+      <li class="empty">Aucune demande en attente.</li>
+      {% endfor %}
+    </ul>
+  </section>
+</div>
+
+<h2 class="section-title">Alertes importantes</h2>
+<div class="alerts">
+  {% for a in alertes %}
+  <a class="alert-card" href="{{ a.href or '#' }}">
+    <span class="alert-ic tone-{{ a.tone }}">
+      {% if a.tone == 'red' %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      {% elif a.tone in ('orange', 'amber') %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      {% elif a.tone == 'violet' %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      {% else %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg>
+      {% endif %}
+    </span>
+    <div class="alert-label">{{ a.label }}</div>
+    <div class="alert-count">{{ a.count }}</div>
+    <div class="alert-sub">{{ a.sub }}</div>
+  </a>
+  {% endfor %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script id="dash-data" type="application/json">{{ {
+  "revenue": revenue_series,
+  "plans": repartition|map(attribute='count')|list,
+  "planNames": repartition|map(attribute='name')|list
+} | tojson }}</script>
+<script>
+  (function () {
+    if (typeof Chart === 'undefined') return;
+    var data;
+    try { data = JSON.parse(document.getElementById('dash-data').textContent); }
+    catch (e) { return; }
+
+    var css = getComputedStyle(document.body);
+    var muted = (css.getPropertyValue('--muted') || '#64748b').trim();
+    var line = (css.getPropertyValue('--line') || '#e6ecf5').trim();
+
+    var rev = document.getElementById('revChart');
+    if (rev && data.revenue) {
+      var ctx = rev.getContext('2d');
+      var g = ctx.createLinearGradient(0, 0, 0, 170);
+      g.addColorStop(0, 'rgba(37,99,235,.28)');
+      g.addColorStop(1, 'rgba(37,99,235,0)');
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: data.revenue.map(function (p) { return (p.date || '').slice(5).replace('-', '/'); }),
+          datasets: [{
+            data: data.revenue.map(function (p) { return p.amount; }),
+            borderColor: '#2563eb', backgroundColor: g, fill: true,
+            tension: .35, borderWidth: 2, pointRadius: 2, pointBackgroundColor: '#2563eb'
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { display: false }, ticks: { color: muted, maxTicksLimit: 7, font: { size: 10 } } },
+            y: { grid: { color: line }, ticks: { color: muted, font: { size: 10 },
+              callback: function (v) { return v >= 1e6 ? (v / 1e6) + 'M' : (v >= 1e3 ? (v / 1e3) + 'k' : v); } } }
+          }
+        }
+      });
+    }
+
+    var plan = document.getElementById('planChart');
+    if (plan && data.plans && data.plans.some(function (n) { return n > 0; })) {
+      new Chart(plan.getContext('2d'), {
+        type: 'doughnut',
+        data: {
+          labels: data.planNames,
+          datasets: [{ data: data.plans, backgroundColor: ['#2563eb', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444'], borderWidth: 0 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, cutout: '72%', plugins: { legend: { display: false } } }
+      });
+    }
+  })();
+</script>
 {% endblock %}

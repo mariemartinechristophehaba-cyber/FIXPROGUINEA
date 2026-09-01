@@ -57,7 +57,9 @@
       .side-user .av { width: 36px; height: 36px; border-radius: 50%; background: var(--blue); color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 0.85rem; flex: none; }
       .side-user .nm { color: #fff; font-size: 0.82rem; font-weight: 600; }
       .side-user .rl { font-size: 0.68rem; }
-      .side-user .tag { display: inline-block; margin-top: 3px; background: rgba(37,99,235,0.2); color: #93b4fb; font-size: 0.6rem; font-weight: 700; padding: 1px 7px; border-radius: 6px; text-transform: uppercase; letter-spacing: .04em; }
+      .side-user .tag { display: inline-flex; align-items: center; gap: 5px; margin-top: 4px; background: rgba(37,99,235,0.2); color: #93b4fb; font-size: 0.62rem; font-weight: 700; padding: 2px 8px; border-radius: 6px; }
+      .side-user .tag.online { background: rgba(16,185,129,0.16); color: #34d399; }
+      .side-user .tag .d { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
       .logout { display: flex; align-items: center; gap: 10px; padding: 9px 10px; color: #f87171; border-radius: 8px; font-size: 0.84rem; font-weight: 600; }
       .logout:hover { background: rgba(239,68,68,0.12); }
 
@@ -112,7 +114,7 @@
           <div class="logo-mark">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
           </div>
-          <div class="logo-text">FixPro <small>Admin Dashboard</small></div>
+          <div class="logo-text">FixPro <small>ADMINISTRATION</small></div>
         </div>
 
         {% set b = badges if badges is defined else {} %}
@@ -148,7 +150,7 @@
             <div>
               <div class="nm">{{ user.full_name or 'Administrateur' if user else 'Administrateur' }}</div>
               <div class="rl">{{ user.email or 'admin@fixpro' if user else 'admin@fixpro' }}</div>
-              <span class="tag">{{ (user.admin_role or 'admin') if user else 'admin' }}</span>
+              <span class="tag online"><span class="d"></span>En ligne</span>
             </div>
           </div>
           <a class="logout" href="{{ url_for('admin_logout') }}">

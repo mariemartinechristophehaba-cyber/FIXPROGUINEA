@@ -6,106 +6,85 @@
     <title>Connexion administrateur - FixPro</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
     <style>
       :root {
-        --blue: #2f8bff;
-        --blue-strong: #1560e6;
-        --ink: #e9eefb;
-        --muted: #9fb0cc;
-        --danger-bg: rgba(239, 68, 68, .14);
-        --danger-line: rgba(239, 68, 68, .4);
-        --danger-ink: #ffb4b4;
+        --blue: #1f5be6;
+        --blue-deep: #1442c4;
+        --ink: #0f1a30;
+        --muted: #6a7891;
+        --line: #e3e9f4;
+        --field: #f4f7fc;
+        --danger-bg: #fdecec;
+        --danger-line: #f6cccc;
+        --danger-ink: #c02626;
       }
       * { box-sizing: border-box; margin: 0; padding: 0; }
       html, body { min-height: 100%; }
       body {
         font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
         color: var(--ink);
-        background: #05070f
-          url("{{ url_for('static', filename='img/fixpro-admin-login-bg.png') }}")
-          center center / cover no-repeat fixed;
+        background: linear-gradient(135deg, #eef3fc 0%, #e8eef8 55%, #eaf0fb 100%);
         -webkit-font-smoothing: antialiased;
-        display: flex;
         min-height: 100vh;
-      }
-      /* voile sombre fort : ne laisse que le lion en ambiance, supprime le
-         texte et la carte incrustes dans l'image (effet de "double") */
-      body::before {
-        content: "";
-        position: fixed; inset: 0;
-        background:
-          radial-gradient(46% 42% at 62% 20%, rgba(6, 9, 18, 0) 0%, rgba(6, 9, 18, .82) 78%),
-          linear-gradient(0deg, rgba(6, 9, 18, .76), rgba(6, 9, 18, .76));
-        pointer-events: none;
+        overflow-x: hidden;
+        display: flex; flex-direction: column;
       }
 
       .wrap {
-        position: relative;
-        width: 100%;
-        max-width: 1240px;
-        margin: auto;
-        padding: 48px 40px;
-        display: flex;
-        align-items: center;
-        gap: 56px;
+        flex: 1;
+        width: 100%; max-width: 1200px; margin: 0 auto;
+        padding: 40px 44px 24px;
+        display: flex; align-items: center; gap: 60px;
       }
 
-      /* ---------- Colonne gauche : marque ---------- */
-      .brand { flex: 1 1 0; min-width: 0; max-width: 520px; animation: fade .5s ease both; }
-      .brand .logo-row { display: flex; align-items: center; gap: 14px; }
-      .brand .logo-mark {
-        width: 54px; height: 54px; flex: none; border-radius: 15px;
-        background: linear-gradient(160deg, #3b90ff, #1257d6);
+      /* ---------- Colonne gauche ---------- */
+      .brand { flex: 1 1 0; min-width: 0; max-width: 520px; align-self: stretch; display: flex; flex-direction: column; animation: fade .5s ease both; }
+      .logo-row { display: flex; align-items: center; gap: 13px; margin-bottom: 34px; }
+      .logo-mark {
+        width: 52px; height: 52px; flex: none; border-radius: 14px;
+        background: linear-gradient(160deg, #2f74ff, #1543c9);
         display: grid; place-items: center;
-        box-shadow: 0 0 30px rgba(47, 139, 255, .5);
+        box-shadow: 0 10px 24px rgba(31, 91, 230, .32);
       }
-      .brand .logo-mark svg { width: 30px; height: 30px; color: #fff; }
-      .brand .logo-txt { line-height: 1; }
-      .brand .logo-txt .name { font-size: 38px; font-weight: 800; letter-spacing: -.02em; }
-      .brand .logo-txt .name b { color: var(--blue); font-weight: 800; }
-      .brand .logo-txt .sub { font-size: 12px; font-weight: 600; letter-spacing: .42em; color: var(--muted); margin-top: 6px; }
-      .brand .accent { width: 60px; height: 3px; border-radius: 3px; background: var(--blue); margin: 22px 0 20px; }
-      .brand .eyebrow { color: var(--blue); font-weight: 700; font-size: 14px; margin-bottom: 10px; }
-      .brand h1 { font-size: 40px; line-height: 1.12; font-weight: 800; letter-spacing: -.02em; }
+      .logo-mark svg { width: 28px; height: 28px; color: #fff; }
+      .logo-txt .name { font-size: 34px; font-weight: 800; letter-spacing: -.02em; line-height: 1; }
+      .logo-txt .name b { color: var(--blue); font-weight: 800; }
+      .logo-txt .sub { font-size: 11px; font-weight: 700; letter-spacing: .34em; color: var(--muted); margin-top: 5px; }
+
+      .brand h1 { font-size: 38px; line-height: 1.2; font-weight: 800; letter-spacing: -.02em; }
       .brand h1 span { color: var(--blue); }
-      .brand .lead { color: var(--muted); font-size: 15px; line-height: 1.6; margin: 18px 0 30px; }
+      .brand .accent { width: 46px; height: 4px; border-radius: 4px; background: var(--blue); margin: 22px 0 20px; }
+      .brand .lead { color: var(--muted); font-size: 15px; line-height: 1.65; max-width: 400px; }
 
-      .features { display: grid; gap: 18px; }
-      .feature { display: flex; gap: 15px; align-items: flex-start; }
-      .feature .ico {
-        width: 44px; height: 44px; flex: none; border-radius: 12px;
-        background: linear-gradient(160deg, rgba(59, 144, 255, .28), rgba(59, 144, 255, .12));
-        border: 1px solid rgba(120, 170, 255, .22);
-        display: grid; place-items: center;
+      .lion {
+        margin-top: auto; padding-top: 14px;
+        width: 100%; max-width: 520px;
       }
-      .feature .ico svg { width: 20px; height: 20px; color: #8fbaff; }
-      .feature h3 { font-size: 15px; font-weight: 700; }
-      .feature p { font-size: 13px; color: var(--muted); line-height: 1.5; margin-top: 3px; }
+      .lion img { width: 100%; height: auto; display: block; }
 
-      /* ---------- Carte de connexion ---------- */
+      /* ---------- Carte ---------- */
       .card {
-        flex: 0 0 430px;
-        background: linear-gradient(180deg, rgba(12, 18, 34, .975), rgba(8, 12, 24, .985));
-        border: 1px solid rgba(120, 170, 255, .22);
-        border-radius: 22px;
-        padding: 34px 34px 26px;
-        box-shadow: 0 30px 80px rgba(0, 0, 0, .6), inset 0 1px 0 rgba(255, 255, 255, .05);
-        backdrop-filter: blur(18px);
-        -webkit-backdrop-filter: blur(18px);
+        flex: 0 0 452px;
+        background: #fff;
+        border: 1px solid #eef2f9;
+        border-radius: 26px;
+        padding: 38px 40px 30px;
+        box-shadow: 0 30px 70px rgba(20, 45, 110, .12), 0 4px 14px rgba(20, 45, 110, .05);
         animation: cardIn .55s cubic-bezier(.2, .7, .2, 1) both;
       }
-      .card .badge {
-        display: flex; align-items: center; justify-content: center; gap: 8px;
-        width: max-content; margin: 0 auto 14px;
-        padding: 6px 15px; border-radius: 999px;
-        background: rgba(47, 139, 255, .14); color: #7db3ff;
-        font-size: 11px; font-weight: 700; letter-spacing: .13em;
+      .shield {
+        width: 74px; height: 74px; margin: 0 auto 20px;
+        border-radius: 50%; background: #fff;
+        border: 1px solid #eef2f9;
+        box-shadow: 0 8px 22px rgba(20, 45, 110, .12);
+        display: grid; place-items: center;
       }
-      .card .badge svg { width: 13px; height: 13px; }
-      .card h2 { text-align: center; font-size: 27px; font-weight: 800; }
-      .card .card-sub { text-align: center; font-size: 13px; color: var(--muted); margin: 7px 0 6px; }
-      .card .card-rule { width: 46px; height: 3px; background: var(--blue); border-radius: 3px; margin: 12px auto 22px; }
+      .shield svg { width: 40px; height: 40px; }
+      .card h2 { text-align: center; font-size: 27px; font-weight: 800; letter-spacing: -.01em; }
+      .card h2 span { color: var(--blue); }
+      .card .card-sub { text-align: center; font-size: 13.5px; color: var(--muted); margin: 8px 0 6px; }
+      .card .card-rule { width: 44px; height: 3px; background: var(--blue); border-radius: 3px; margin: 12px auto 24px; }
 
       .alert {
         display: flex; align-items: flex-start; gap: 10px;
@@ -116,111 +95,112 @@
       }
       .alert svg { width: 17px; height: 17px; flex: none; margin-top: 1px; }
 
-      .field { margin-bottom: 15px; }
-      .field label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 7px; }
+      .field { margin-bottom: 16px; }
+      .field label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 8px; }
       .input-wrap { position: relative; }
       .input-wrap > .lead-ic {
-        position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
-        width: 17px; height: 17px; color: #7f90b0; pointer-events: none;
+        position: absolute; left: 15px; top: 50%; transform: translateY(-50%);
+        width: 18px; height: 18px; color: #9aa7c0; pointer-events: none;
       }
       .input-wrap input {
-        width: 100%; height: 50px;
-        border: 1.5px solid rgba(255, 255, 255, .12); border-radius: 12px;
-        padding: 0 44px;
-        font: inherit; font-size: 14px; color: var(--ink);
-        background: rgba(255, 255, 255, .04);
+        width: 100%; height: 54px;
+        border: 1.6px solid var(--line); border-radius: 12px;
+        padding: 0 46px;
+        font: inherit; font-size: 14.5px; color: var(--ink);
+        background: var(--field);
         transition: border-color .16s ease, background .16s ease, box-shadow .16s ease;
       }
-      .input-wrap input::placeholder { color: #7a8aa8; }
+      .input-wrap input::placeholder { color: #9aa7c0; }
       .input-wrap input:focus {
-        outline: none; border-color: var(--blue);
-        background: rgba(255, 255, 255, .06);
-        box-shadow: 0 0 0 4px rgba(47, 139, 255, .18);
+        outline: none; border-color: var(--blue); background: #fff;
+        box-shadow: 0 0 0 4px rgba(31, 91, 230, .13);
       }
       .toggle-pw {
-        position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+        position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
         width: 34px; height: 34px; border: none; background: none; cursor: pointer;
-        color: #7f90b0; display: grid; place-items: center; border-radius: 8px;
+        color: #9aa7c0; display: grid; place-items: center; border-radius: 8px;
       }
-      .toggle-pw:hover { color: #a9c4ff; }
-      .toggle-pw svg { width: 18px; height: 18px; }
+      .toggle-pw:hover { color: var(--blue); }
+      .toggle-pw svg { width: 19px; height: 19px; }
 
       .row {
         display: flex; align-items: center; justify-content: space-between;
-        gap: 12px; margin: 14px 0 18px; font-size: 13px;
+        gap: 12px; margin: 14px 0 20px; font-size: 13.5px;
       }
-      .row .remember { display: flex; align-items: center; gap: 8px; color: var(--muted); cursor: pointer; }
-      .row .remember input { width: 15px; height: 15px; accent-color: var(--blue); cursor: pointer; }
-      .row a { color: #7db3ff; font-weight: 600; text-decoration: none; white-space: nowrap; }
+      .row .remember { display: flex; align-items: center; gap: 9px; color: var(--muted); cursor: pointer; }
+      .row .remember input { width: 16px; height: 16px; accent-color: var(--blue); cursor: pointer; }
+      .row a { color: var(--blue); font-weight: 600; text-decoration: none; white-space: nowrap; }
       .row a:hover { text-decoration: underline; }
 
       .btn {
         position: relative;
-        width: 100%; height: 52px; border: none; border-radius: 13px; cursor: pointer;
-        background: linear-gradient(180deg, #3b90ff, var(--blue-strong));
-        color: #fff; font: inherit; font-size: 15px; font-weight: 700;
-        display: flex; align-items: center; justify-content: center; gap: 9px;
-        box-shadow: 0 12px 26px rgba(21, 96, 230, .4);
+        width: 100%; height: 56px; border: none; border-radius: 13px; cursor: pointer;
+        background: linear-gradient(180deg, #2f6bf0, var(--blue-deep));
+        color: #fff; font: inherit; font-size: 15.5px; font-weight: 700;
+        display: flex; align-items: center; justify-content: center; gap: 10px;
+        box-shadow: 0 14px 28px rgba(20, 66, 196, .34);
         transition: filter .16s ease, box-shadow .16s ease, transform .06s ease;
       }
       .btn svg { width: 16px; height: 16px; }
-      .btn:hover { filter: brightness(1.08); box-shadow: 0 16px 34px rgba(21, 96, 230, .55); }
+      .btn:hover { filter: brightness(1.06); box-shadow: 0 18px 36px rgba(20, 66, 196, .46); }
       .btn:active { transform: translateY(1px); }
-      .btn:disabled, .btn[aria-busy="true"] { cursor: not-allowed; filter: saturate(.7) brightness(.9); box-shadow: none; }
-      .btn .spinner {
-        width: 17px; height: 17px; border-radius: 50%;
-        border: 2.5px solid rgba(255, 255, 255, .4); border-top-color: #fff;
-        animation: spin .7s linear infinite; display: none;
-      }
+      .btn:disabled, .btn[aria-busy="true"] { cursor: not-allowed; filter: saturate(.7) brightness(.95); box-shadow: none; }
+      .btn .spinner { width: 17px; height: 17px; border-radius: 50%; border: 2.5px solid rgba(255,255,255,.4); border-top-color: #fff; animation: spin .7s linear infinite; display: none; }
       .btn[aria-busy="true"] .spinner { display: block; }
       .btn[aria-busy="true"] .btn-icon { display: none; }
 
-      .or {
-        display: flex; align-items: center; gap: 12px;
-        margin: 18px 0; color: #6f7f9d; font-size: 12px; font-weight: 600; letter-spacing: .1em;
-      }
-      .or::before, .or::after { content: ""; flex: 1; height: 1px; background: rgba(255, 255, 255, .12); }
+      .or { display: flex; align-items: center; gap: 12px; margin: 18px 0; color: var(--muted); font-size: 12px; font-weight: 600; letter-spacing: .12em; }
+      .or::before, .or::after { content: ""; flex: 1; height: 1px; background: var(--line); }
 
       .btn-google {
-        width: 100%; height: 50px; border-radius: 13px; cursor: pointer;
-        background: rgba(255, 255, 255, .06); border: 1px solid rgba(255, 255, 255, .16);
-        color: var(--ink); font: inherit; font-size: 14.5px; font-weight: 600;
-        display: flex; align-items: center; justify-content: center; gap: 10px;
-        text-decoration: none;
-        transition: background .16s ease, border-color .16s ease;
+        width: 100%; height: 54px; border-radius: 13px; cursor: pointer;
+        background: #fff; border: 1.6px solid var(--line); color: var(--ink);
+        font: inherit; font-size: 14.5px; font-weight: 600;
+        display: flex; align-items: center; justify-content: center; gap: 11px;
+        text-decoration: none; transition: border-color .16s ease, background .16s ease;
       }
-      .btn-google:hover { background: rgba(255, 255, 255, .1); border-color: rgba(255, 255, 255, .28); }
+      .btn-google:hover { border-color: #cdd7e8; background: #fafbfe; }
       .btn-google svg { width: 18px; height: 18px; }
 
       .card-foot {
-        display: flex; align-items: center; justify-content: center; gap: 7px;
-        margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255, 255, 255, .1);
-        font-size: 12px; color: var(--muted);
+        display: flex; align-items: center; justify-content: center; gap: 8px;
+        margin-top: 22px; font-size: 12.5px; color: var(--muted);
       }
-      .card-foot svg { width: 13px; height: 13px; flex: none; }
+      .card-foot svg { width: 14px; height: 14px; flex: none; }
+
+      /* ---------- Bas de page : verset ---------- */
+      .scripture {
+        display: flex; align-items: center; justify-content: center; gap: 16px;
+        padding: 12px 20px 26px; flex-direction: column;
+      }
+      .scripture .crown svg { width: 22px; height: 22px; color: var(--blue); }
+      .scripture .line { display: flex; align-items: center; gap: 16px; }
+      .scripture .line::before, .scripture .line::after { content: ""; width: 46px; height: 2px; background: var(--blue); opacity: .55; }
+      .scripture .text { font-family: 'Great Vibes', cursive; font-size: 30px; color: var(--blue); line-height: 1; }
 
       @keyframes fade { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
       @keyframes cardIn { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
       @keyframes alertIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
       @keyframes spin { to { transform: rotate(360deg); } }
 
-      /* ---------- Responsive ---------- */
-      @media (max-width: 1080px) {
-        .wrap { gap: 36px; padding: 40px 28px; }
+      @media (max-width: 1020px) {
+        .wrap { gap: 40px; padding: 34px 28px 16px; }
         .brand h1 { font-size: 32px; }
       }
-      @media (max-width: 900px) {
-        body { display: block; }
-        .wrap { flex-direction: column; align-items: stretch; max-width: 460px; gap: 28px; padding: 32px 18px; }
-        .brand { max-width: none; text-align: left; }
-        .brand h1 { font-size: 28px; }
-        .card { flex: 1 1 auto; }
+      @media (max-width: 880px) {
+        .wrap { flex-direction: column; align-items: center; max-width: 480px; gap: 26px; padding: 30px 20px 12px; }
+        .brand { max-width: none; align-self: stretch; align-items: center; text-align: center; }
+        .brand .lead { max-width: none; }
+        .brand .accent { margin-left: auto; margin-right: auto; }
+        .lion { margin: 6px auto 0; max-width: 340px; }
+        .card { flex: 1 1 auto; width: 100%; }
       }
-      @media (max-width: 600px) {
-        .brand .features { display: none; }
-        .brand .lead { margin-bottom: 4px; }
-        .card { padding: 28px 20px 22px; }
-        .card h2 { font-size: 24px; }
+      @media (max-width: 480px) {
+        .card { padding: 30px 20px 24px; border-radius: 20px; }
+        .brand h1 { font-size: 26px; }
+        .lion { max-width: 280px; }
+        .scripture .text { font-size: 24px; }
+        .scripture .line::before, .scripture .line::after { width: 30px; }
       }
       @media (prefers-reduced-motion: reduce) {
         *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }
@@ -236,40 +216,24 @@
           </span>
           <span class="logo-txt">
             <span class="name">Fix<b>Pro</b></span>
-            <span class="sub">ADMINISTRATION</span>
+            <span class="sub">ADMIN DASHBOARD</span>
           </span>
         </div>
-        <div class="accent"></div>
-        <p class="eyebrow">Le centre de controle</p>
-        <h1>Prenez le controle total de votre <span>plateforme.</span></h1>
-        <p class="lead">Gerez vos techniciens, clients, abonnements, paiements, interventions et bien plus encore depuis un seul espace securise.</p>
 
-        <div class="features">
-          <div class="feature">
-            <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
-            <div><h3>Controle total</h3><p>Supervisez l'ensemble de votre activite en temps reel.</p></div>
-          </div>
-          <div class="feature">
-            <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg></span>
-            <div><h3>Statistiques avancees</h3><p>Des analyses detaillees pour prendre des decisions eclairees.</p></div>
-          </div>
-          <div class="feature">
-            <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></span>
-            <div><h3>Gestion simplifiee</h3><p>Abonnements, paiements et utilisateurs geres en toute simplicite.</p></div>
-          </div>
-          <div class="feature">
-            <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
-            <div><h3>Securite maximale</h3><p>Vos donnees sont protegees avec les meilleurs standards de securite.</p></div>
-          </div>
+        <h1>Le centre de controle de votre <span>plateforme.</span></h1>
+        <div class="accent"></div>
+        <p class="lead">Gerez vos techniciens, clients, abonnements, paiements, interventions et bien plus encore depuis un espace unique et securise.</p>
+
+        <div class="lion">
+          <img src="{{ url_for('static', filename='img/admin-login-lion.png') }}" alt="" />
         </div>
       </section>
 
       <section class="card">
-        <span class="badge">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-          ACCES ADMINISTRATEUR
-        </span>
-        <h2>Bienvenue !</h2>
+        <div class="shield">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M12 2 4 5v6c0 5.5 3.8 8.7 8 10 4.2-1.3 8-4.5 8-10V5l-8-3z" fill="#1f5be6"/><circle cx="12" cy="10" r="2.4" fill="#fff"/><path d="M7.6 16.4c.7-2 2.4-3 4.4-3s3.7 1 4.4 3c-1.2 1.1-2.8 1.8-4.4 2.3-1.6-.5-3.2-1.2-4.4-2.3z" fill="#fff"/></svg>
+        </div>
+        <h2>Bienvenue <span>Administrateur</span></h2>
         <p class="card-sub">Connectez-vous a votre espace FixPro</p>
         <div class="card-rule"></div>
 
@@ -327,9 +291,14 @@
 
         <div class="card-foot">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-          Acces securise &bull; FixPro Administration
+          Acces securise et protege
         </div>
       </section>
+    </div>
+
+    <div class="scripture">
+      <span class="crown"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 8l4 3 5-7 5 7 4-3-2 11H5L3 8z"/></svg></span>
+      <span class="line"><span class="text">Jesus Christ is the King</span></span>
     </div>
 
     <script>
