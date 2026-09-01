@@ -35,28 +35,13 @@
       /* ---------- Panneau gauche : illustration ---------- */
       .brand-panel {
         position: relative;
-        flex: 0 0 46%;
-        overflow: hidden;
-        /* 'auto 100%' : l'image remplit toute la hauteur sans etre zoomee,
-           le logo et les 4 atouts restent entiers */
+        flex: 0 0 auto;
+        width: min(44%, 780px);
+        /* la maquette EST l'image : sa courbe blanche fait la separation avec
+           la carte. Panneau dimensionne pour que l'image ne soit pas zoomee. */
         background: var(--blue-night)
           url("{{ url_for('static', filename='img/fixpro-admin-login-left-panel.png') }}")
-          left center / auto 100% no-repeat;
-        /* bord droit convexe facon maquette */
-        clip-path: ellipse(120% 88% at 2% 50%);
-      }
-      /* fondu vers le bleu nuit a droite : courbe nette, pas de bord dur */
-      .brand-panel::before {
-        content: "";
-        position: absolute; top: 0; right: 0; bottom: 0; width: 240px;
-        background: linear-gradient(90deg, rgba(8, 26, 68, 0) 0%, var(--blue-night) 82%);
-        pointer-events: none;
-      }
-      .brand-panel::after {
-        content: "";
-        position: absolute; inset: 0;
-        background: radial-gradient(50% 38% at 34% 20%, rgba(70,140,255,.13), transparent 70%);
-        pointer-events: none;
+          center / cover no-repeat;
       }
 
       /* ---------- Panneau droit : formulaire ---------- */
@@ -66,7 +51,7 @@
         align-items: center;
         justify-content: center;
         padding: 40px 28px;
-        background: linear-gradient(180deg, #f6f9ff 0%, #e8eef9 100%);
+        background: linear-gradient(120deg, #eaf0fd 0%, #eef3fb 45%, #e7edf8 100%);
         animation: panelIn .45s ease both;
       }
 
@@ -192,7 +177,7 @@
       /* ---------- Responsive ---------- */
       /* tablette : illustration plus etroite */
       @media (max-width: 1200px) {
-        .brand-panel { flex-basis: 40%; }
+        .brand-panel { width: 40%; }
       }
       /* mobile / petite tablette : illustration masquee */
       @media (max-width: 900px) {
