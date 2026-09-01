@@ -919,8 +919,6 @@ class AdminPanelTests(FixProTestCase):
         try:
             conn = db.connect(sqlite_path=self.db_path)
             try:
-                conn.execute("ALTER TABLE users ADD COLUMN admin_role TEXT")
-                conn.commit()
                 fixpro_app._bootstrap_admin(conn)
                 conn.commit()
             finally:
@@ -985,6 +983,95 @@ class AdminPanelTests(FixProTestCase):
             conn.close()
         self.assertEqual(row["status"], "resolved")
         self.assertEqual(row["resolution_note"], "Regle")
+
+    def _make_owner(self, uid=1):
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute("UPDATE users SET admin_role = 'owner' WHERE id = ?", (uid,))
+            conn.commit()
+        finally:
+            conn.close()
+
+    def test_admin_users_page_renders(self):
+        self.login_admin()
+        r = self.client.get("/admin/utilisateurs")
+        self.assertEqual(r.status_code, 200)
+        self.assertIn("Administrateurs", r.get_data(as_text=True))
+
+    def test_owner_can_grant_and_revoke_admin_role(self):
+        self._make_owner()
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute(
+                "INSERT INTO users (email, phone, password_hash, role, full_name, is_active)"
+                " VALUES ('mod@x.co', '+224690000001', 'x', 'client', 'Mod', 1)")
+            conn.commit()
+            tid = conn.execute("SELECT id FROM users WHERE email = 'mod@x.co'").fetchone()["id"]
+        finally:
+            conn.close()
+        self.login_admin()
+        self.client.post("/admin/utilisateurs", data={
+            "user_id": tid, "admin_role": "moderator"}, follow_redirects=True)
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            row = conn.execute("SELECT role, admin_role FROM users WHERE id = ?", (tid,)).fetchone()
+        finally:
+            conn.close()
+        self.assertEqual(row["admin_role"], "moderator")
+        self.assertEqual(row["role"], "admin")
+        # retrait
+        self.client.post("/admin/utilisateurs", data={
+            "user_id": tid, "admin_role": ""}, follow_redirects=True)
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            row = conn.execute("SELECT admin_role FROM users WHERE id = ?", (tid,)).fetchone()
+        finally:
+            conn.close()
+        self.assertIsNone(row["admin_role"])
+
+    def test_non_owner_cannot_change_roles(self):
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute("UPDATE users SET admin_role = 'moderator' WHERE id = 1")
+            conn.execute(
+                "INSERT INTO users (email, phone, password_hash, role, full_name, is_active)"
+                " VALUES ('v@x.co', '+224690000002', 'x', 'client', 'V', 1)")
+            conn.commit()
+            tid = conn.execute("SELECT id FROM users WHERE email = 'v@x.co'").fetchone()["id"]
+        finally:
+            conn.close()
+        self.login_admin()
+        self.client.post("/admin/utilisateurs", data={
+            "user_id": tid, "admin_role": "admin"}, follow_redirects=True)
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            row = conn.execute("SELECT admin_role FROM users WHERE id = ?", (tid,)).fetchone()
+        finally:
+            conn.close()
+        self.assertIsNone(row["admin_role"])
+
+    def test_due_subscription_expires_on_dashboard(self):
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute(
+                "INSERT INTO users (email, phone, password_hash, role, full_name, is_active, account_status)"
+                " VALUES ('t@x.co', '+224690000003', 'x', 'technician', 'T', 1, 'ACTIVE')")
+            tid = conn.execute("SELECT id FROM users WHERE email = 't@x.co'").fetchone()["id"]
+            conn.execute(
+                "INSERT INTO technician_subscriptions (technician_id, status, end_date)"
+                " VALUES (?, 'ACTIVE', '2000-01-01T00:00:00+00:00')", (tid,))
+            conn.commit()
+        finally:
+            conn.close()
+        self.login_admin()
+        self.client.get("/admin/dashboard")
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            st = conn.execute(
+                "SELECT status FROM technician_subscriptions WHERE technician_id = ?", (tid,)).fetchone()["status"]
+        finally:
+            conn.close()
+        self.assertEqual(st, "EXPIRED")
 
     def test_admin_can_suspend_and_restore_artisan(self):
         self.register_artisan("artisan@example.com", phone="+224621111111")

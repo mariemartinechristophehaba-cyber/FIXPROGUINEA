@@ -37,6 +37,7 @@ CREATE TABLE IF NOT EXISTS users (
     account_status    TEXT DEFAULT 'ACTIVE',
     verification_status TEXT,
     estimated_delay TEXT,
+    admin_role      TEXT,
     created_at      TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -236,6 +237,7 @@ ON CONFLICT (name) DO NOTHING;
 
 -- Migrations idempotentes pour les evolutions du schema
 ALTER TABLE users ADD COLUMN IF NOT EXISTS account_status TEXT DEFAULT 'ACTIVE';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS admin_role TEXT;
 
 ALTER TABLE requests ADD COLUMN IF NOT EXISTS reference TEXT;
 CREATE UNIQUE INDEX IF NOT EXISTS idx_requests_reference ON requests(reference);

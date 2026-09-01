@@ -2237,6 +2237,22 @@ def _mock_admin_dashboard_data():
     }
 
 
+def _expire_due_subscriptions(conn):
+    """Passe les abonnements ACTIVE dont end_date est depassee en EXPIRED.
+
+    Appele a l'ouverture du tableau de bord / de la page abonnements
+    (pas de vrai cron en serverless)."""
+    now_iso_ = datetime.now(timezone.utc).isoformat()
+    try:
+        conn.execute(
+            "UPDATE technician_subscriptions SET status = 'EXPIRED'"
+            " WHERE status = 'ACTIVE' AND end_date IS NOT NULL AND end_date < ?",
+            (now_iso_,))
+        conn.commit()
+    except Exception as exc:
+        logger.warning("Expiration abonnements impossible: %s", exc)
+
+
 def _period_bounds(period):
     """(debut_iso, libelle, debut_periode_precedente_iso) pour le selecteur."""
     now = datetime.now(timezone.utc)
@@ -2307,6 +2323,8 @@ def admin_dashboard():
 
     conn = get_db_connection()
     try:
+        _expire_due_subscriptions(conn)
+
         def scalar(sql, params=()):
             row = conn.execute(sql, params).fetchone()
             if not row:
@@ -2480,6 +2498,7 @@ def admin_subscriptions():
 
     conn = get_db_connection()
     try:
+        _expire_due_subscriptions(conn)
         subs = conn.execute(
             "SELECT s.id, s.status, s.start_date, s.end_date, s.auto_renew,"
             " u.id AS tech_id, u.full_name AS tech_name, u.phone AS tech_phone, u.profession,"
@@ -2631,6 +2650,80 @@ def admin_complaints():
         conn.close()
     return render_template("admin_complaints.html", user=user, badges=badges,
                            complaints=rows, counts=counts, filter=flt)
+
+
+_ADMIN_ROLES = ("owner", "admin", "moderator")
+
+
+@app.route("/admin/utilisateurs", methods=["GET", "POST"])
+@login_required
+@admin_required
+@limiter.limit("40 per hour", methods=["POST"])
+def admin_users():
+    """Liste des comptes + attribution des roles admin (owner uniquement)."""
+    user = get_current_user()
+    is_owner = (user.get("admin_role") or "") == "owner"
+    conn = get_db_connection()
+    try:
+        if request.method == "POST":
+            if not is_owner:
+                flash("Seul le proprietaire peut modifier les roles.", "error")
+                return redirect(url_for("admin_users"))
+            target_id = request.form.get("user_id")
+            new_role = request.form.get("admin_role") or ""
+            target = conn.execute(
+                "SELECT id, email, role, admin_role FROM users WHERE id = ?", (target_id,)).fetchone()
+            if not target:
+                flash("Compte introuvable.", "error")
+            elif str(target["id"]) == str(user["id"]):
+                flash("Vous ne pouvez pas modifier votre propre role.", "error")
+            elif new_role and new_role not in _ADMIN_ROLES:
+                flash("Role invalide.", "error")
+            else:
+                if new_role:
+                    conn.execute(
+                        "UPDATE users SET role = 'admin', admin_role = ?, is_active = 1 WHERE id = ?",
+                        (new_role, target["id"]))
+                    detail = "promu %s" % new_role
+                else:
+                    prev_role = 'technician' if target["role"] == 'technician' else 'client'
+                    conn.execute(
+                        "UPDATE users SET admin_role = NULL, role = ? WHERE id = ?",
+                        (prev_role if target["role"] == 'admin' else target["role"], target["id"]))
+                    detail = "acces admin retire"
+                conn.commit()
+                log_admin_action(user["id"], user.get("email"), "set_admin_role",
+                                 "user", target["id"], detail)
+                flash("Role mis a jour.", "success")
+            return redirect(url_for("admin_users"))
+
+        q = (request.args.get("q") or "").strip()
+        role_f = request.args.get("role", "")
+        where, params = "1 = 1", []
+        if q:
+            where += " AND (full_name LIKE ? OR email LIKE ? OR phone LIKE ?)"
+            params += ["%" + q + "%"] * 3
+        if role_f in ("admin", "technician", "client"):
+            where += " AND role = ?"
+            params.append(role_f)
+        rows = conn.execute(
+            "SELECT id, full_name, email, phone, role, admin_role, is_active, created_at"
+            " FROM users WHERE " + where +
+            " ORDER BY (admin_role IS NULL), role, created_at DESC LIMIT 300", params).fetchall()
+        counts = {
+            "admins": conn.execute(
+                "SELECT COUNT(*) AS n FROM users WHERE role = 'admin'").fetchone()["n"],
+            "techniciens": conn.execute(
+                "SELECT COUNT(*) AS n FROM users WHERE role = 'technician'").fetchone()["n"],
+            "clients": conn.execute(
+                "SELECT COUNT(*) AS n FROM users WHERE role = 'client'").fetchone()["n"],
+        }
+        badges = _admin_sidebar_badges(conn, user["id"])
+    finally:
+        conn.close()
+    return render_template("admin_users.html", user=user, badges=badges, rows=rows,
+                           counts=counts, is_owner=is_owner, roles=_ADMIN_ROLES,
+                           q=q, role_f=role_f)
 
 
 @app.route("/admin/artisans", methods=["GET", "POST"])
@@ -6569,7 +6662,9 @@ def _migrate_subscriptions(conn):
 
     if "admin_role" not in conn.table_columns("users"):
         conn.execute("ALTER TABLE users ADD COLUMN admin_role TEXT")
-        conn.execute("UPDATE users SET admin_role = 'owner' WHERE role = 'admin'")
+    # tout admin sans role admin defini devient 'owner' (retro-compat)
+    conn.execute("UPDATE users SET admin_role = 'owner'"
+                 " WHERE role = 'admin' AND (admin_role IS NULL OR admin_role = '')")
 
     conn.execute(
         f"CREATE TABLE IF NOT EXISTS subscription_plans ("

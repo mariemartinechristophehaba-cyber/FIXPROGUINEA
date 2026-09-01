@@ -1,0 +1,110 @@
+{% extends 'admin_base.html' %}
+{% block title %}Utilisateurs - FixPro Admin{% endblock %}
+{% block admin_title %}Utilisateurs{% endblock %}
+{% block admin_subtitle %}Comptes et attribution des roles d'administration.{% endblock %}
+
+{% block extra_head %}
+<style>
+  .u-kpis { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 18px; }
+  .u-kpi { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px 18px; }
+  .u-kpi b { font-size: 1.4rem; font-weight: 800; }
+  .u-kpi span { display: block; font-size: .78rem; color: var(--muted); }
+  .u-bar { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+  .u-bar form { display: flex; gap: 8px; }
+  .u-bar input, .u-bar select {
+    height: 40px; border: 1px solid var(--line); border-radius: 10px; padding: 0 12px;
+    font: inherit; font-size: .86rem; background: var(--card); color: var(--text);
+  }
+  .u-bar button { height: 40px; padding: 0 16px; border: 0; border-radius: 10px; background: var(--blue); color: #fff; font-weight: 700; cursor: pointer; }
+  .panel { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 8px 20px; }
+  table.grid { width: 100%; border-collapse: collapse; font-size: .86rem; }
+  table.grid th, table.grid td { text-align: left; padding: 12px 10px; border-bottom: 1px solid var(--line); }
+  table.grid th { color: var(--muted); font-weight: 600; font-size: .76rem; text-transform: uppercase; letter-spacing: .03em; }
+  table.grid tr:last-child td { border-bottom: 0; }
+  .pill { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: .72rem; font-weight: 700; }
+  .pill.role-admin { background: #eaf1ff; color: #1f5be6; }
+  .pill.role-technician { background: #e7f8f1; color: #059669; }
+  .pill.role-client { background: #f1f5fb; color: #64748b; }
+  .pill.owner { background: #f2ecfe; color: #7c3aed; }
+  .pill.admin { background: #eaf1ff; color: #1f5be6; }
+  .pill.moderator { background: #fef7e0; color: #b45309; }
+  .pill.off { background: #fdecec; color: #dc2626; }
+  .role-form { display: flex; gap: 8px; align-items: center; }
+  .role-form select { height: 34px; border: 1px solid var(--line); border-radius: 8px; padding: 0 8px; font: inherit; font-size: .82rem; background: var(--card); color: var(--text); }
+  .role-form button { height: 34px; padding: 0 12px; border: 0; border-radius: 8px; background: var(--blue); color: #fff; font-weight: 700; font-size: .8rem; cursor: pointer; }
+  .muted { color: var(--muted); }
+  .note { font-size: .82rem; color: var(--muted); margin-bottom: 14px; }
+</style>
+{% endblock %}
+
+{% block admin_content %}
+<div class="u-kpis">
+  <div class="u-kpi"><b>{{ counts.admins }}</b><span>Administrateurs</span></div>
+  <div class="u-kpi"><b>{{ counts.techniciens }}</b><span>Techniciens</span></div>
+  <div class="u-kpi"><b>{{ counts.clients }}</b><span>Clients</span></div>
+</div>
+
+{% if not is_owner %}
+<p class="note">Vous consultez cette page en lecture seule. Seul le proprietaire (owner) peut attribuer ou retirer des roles.</p>
+{% endif %}
+
+<div class="u-bar">
+  <form method="get">
+    <input type="text" name="q" value="{{ q }}" placeholder="Nom, e-mail, telephone" />
+    <select name="role">
+      <option value="">Tous les roles</option>
+      <option value="admin"{{ ' selected' if role_f == 'admin' }}>Admin</option>
+      <option value="technician"{{ ' selected' if role_f == 'technician' }}>Technicien</option>
+      <option value="client"{{ ' selected' if role_f == 'client' }}>Client</option>
+    </select>
+    <button type="submit">Filtrer</button>
+  </form>
+</div>
+
+<div class="panel">
+  <div style="overflow-x:auto">
+    <table class="grid">
+      <thead>
+        <tr><th>Compte</th><th>Contact</th><th>Type</th><th>Role admin</th><th>Statut</th>
+          {% if is_owner %}<th>Attribuer</th>{% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in rows %}
+        <tr>
+          <td>
+            <div style="font-weight:700">{{ u.full_name or '(sans nom)' }}</div>
+            <div class="muted" style="font-size:.78rem">#{{ u.id }} &middot; {{ (u.created_at or '')[:10] }}</div>
+          </td>
+          <td class="muted">{{ u.email or '-' }}<br>{{ u.phone or '' }}</td>
+          <td><span class="pill role-{{ u.role }}">{{ u.role }}</span></td>
+          <td>{% if u.admin_role %}<span class="pill {{ u.admin_role }}">{{ u.admin_role }}</span>{% else %}<span class="muted">-</span>{% endif %}</td>
+          <td>{% if u.is_active %}<span class="muted">Actif</span>{% else %}<span class="pill off">Inactif</span>{% endif %}</td>
+          {% if is_owner %}
+          <td>
+            {% if u.id == user.id %}
+              <span class="muted">Vous</span>
+            {% else %}
+              <form class="role-form" method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <input type="hidden" name="user_id" value="{{ u.id }}" />
+                <select name="admin_role">
+                  <option value="">Aucun (retirer)</option>
+                  {% for r in roles %}
+                  <option value="{{ r }}"{{ ' selected' if u.admin_role == r }}>{{ r }}</option>
+                  {% endfor %}
+                </select>
+                <button type="submit">OK</button>
+              </form>
+            {% endif %}
+          </td>
+          {% endif %}
+        </tr>
+        {% else %}
+        <tr><td colspan="6" class="muted" style="padding:20px 10px">Aucun compte pour ce filtre.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
