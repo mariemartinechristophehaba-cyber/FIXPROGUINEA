@@ -118,7 +118,7 @@
         </div>
 
         {% set b = badges if badges is defined else {} %}
-        {% set _live = ('admin_dashboard','admin_artisans','admin_clients','admin_requests','admin_payments','admin_messages','admin_reviews','admin_tickets','admin_settings','admin_activity','admin_contacts','admin_commissions','admin_subscriptions','admin_subscription_payments','admin_complaints') %}
+        {% set _live = ('admin_dashboard','admin_artisans','admin_clients','admin_requests','admin_payments','admin_messages','admin_reviews','admin_tickets','admin_settings','admin_activity','admin_contacts','admin_commissions','admin_subscriptions','admin_subscription_payments','admin_complaints','admin_users') %}
         {% macro navlink(endpoint, label, badge=0) %}
           <a class="{{ 'active' if request.endpoint == endpoint }}" href="{{ url_for(endpoint) if endpoint in _live else '#' }}"{% if endpoint not in _live %} data-soon="1"{% endif %}>
             {{ caller() }}

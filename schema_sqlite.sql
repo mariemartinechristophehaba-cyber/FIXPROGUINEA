@@ -37,6 +37,7 @@ CREATE TABLE IF NOT EXISTS users (
     account_status    TEXT DEFAULT 'ACTIVE',
     verification_status TEXT,
     estimated_delay TEXT,
+    admin_role      TEXT,
     created_at      TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
