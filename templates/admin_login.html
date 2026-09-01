@@ -6,152 +6,167 @@
     <title>Connexion administrateur - FixPro</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
     <style>
       :root {
-        --blue: #1f6bff;
-        --blue-strong: #0e46c8;
-        --blue-night: #081a44;
-        --ink: #16213e;
-        --muted: #6a789a;
-        --line: #e5ebf5;
-        --field-bg: #eef2fa;
-        --danger-bg: #fef2f2;
-        --danger-line: #fecdd3;
-        --danger-ink: #b42318;
+        --blue: #2f8bff;
+        --blue-strong: #1560e6;
+        --ink: #e9eefb;
+        --muted: #9fb0cc;
+        --danger-bg: rgba(239, 68, 68, .14);
+        --danger-line: rgba(239, 68, 68, .4);
+        --danger-ink: #ffb4b4;
       }
       * { box-sizing: border-box; margin: 0; padding: 0; }
-      html, body { height: 100%; }
+      html, body { min-height: 100%; }
       body {
         font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
         color: var(--ink);
-        background: #eaf0fb;
-        overflow-x: hidden;
+        background: #05070f
+          url("{{ url_for('static', filename='img/fixpro-admin-login-bg.png') }}")
+          center center / cover no-repeat fixed;
         -webkit-font-smoothing: antialiased;
+        display: flex;
+        min-height: 100vh;
+      }
+      /* voile sombre fort : ne laisse que le lion en ambiance, supprime le
+         texte et la carte incrustes dans l'image (effet de "double") */
+      body::before {
+        content: "";
+        position: fixed; inset: 0;
+        background:
+          radial-gradient(46% 42% at 62% 20%, rgba(6, 9, 18, 0) 0%, rgba(6, 9, 18, .82) 78%),
+          linear-gradient(0deg, rgba(6, 9, 18, .76), rgba(6, 9, 18, .76));
+        pointer-events: none;
       }
 
-      .split { display: flex; min-height: 100vh; width: 100%; }
-
-      /* ---------- Panneau gauche : illustration ---------- */
-      .brand-panel {
+      .wrap {
         position: relative;
-        flex: 0 0 auto;
-        width: min(44%, 780px);
-        /* la maquette EST l'image : sa courbe blanche fait la separation avec
-           la carte. Panneau dimensionne pour que l'image ne soit pas zoomee. */
-        background: var(--blue-night)
-          url("{{ url_for('static', filename='img/fixpro-admin-login-left-panel.png') }}")
-          center / cover no-repeat;
-      }
-
-      /* ---------- Panneau droit : formulaire ---------- */
-      .form-panel {
-        flex: 1 1 auto;
+        width: 100%;
+        max-width: 1240px;
+        margin: auto;
+        padding: 48px 40px;
         display: flex;
         align-items: center;
-        justify-content: center;
-        padding: 40px 28px;
-        background: linear-gradient(120deg, #eaf0fd 0%, #eef3fb 45%, #e7edf8 100%);
-        animation: panelIn .45s ease both;
+        gap: 56px;
       }
 
+      /* ---------- Colonne gauche : marque ---------- */
+      .brand { flex: 1 1 0; min-width: 0; max-width: 520px; animation: fade .5s ease both; }
+      .brand .logo-row { display: flex; align-items: center; gap: 14px; }
+      .brand .logo-mark {
+        width: 54px; height: 54px; flex: none; border-radius: 15px;
+        background: linear-gradient(160deg, #3b90ff, #1257d6);
+        display: grid; place-items: center;
+        box-shadow: 0 0 30px rgba(47, 139, 255, .5);
+      }
+      .brand .logo-mark svg { width: 30px; height: 30px; color: #fff; }
+      .brand .logo-txt { line-height: 1; }
+      .brand .logo-txt .name { font-size: 38px; font-weight: 800; letter-spacing: -.02em; }
+      .brand .logo-txt .name b { color: var(--blue); font-weight: 800; }
+      .brand .logo-txt .sub { font-size: 12px; font-weight: 600; letter-spacing: .42em; color: var(--muted); margin-top: 6px; }
+      .brand .accent { width: 60px; height: 3px; border-radius: 3px; background: var(--blue); margin: 22px 0 20px; }
+      .brand .eyebrow { color: var(--blue); font-weight: 700; font-size: 14px; margin-bottom: 10px; }
+      .brand h1 { font-size: 40px; line-height: 1.12; font-weight: 800; letter-spacing: -.02em; }
+      .brand h1 span { color: var(--blue); }
+      .brand .lead { color: var(--muted); font-size: 15px; line-height: 1.6; margin: 18px 0 30px; }
+
+      .features { display: grid; gap: 18px; }
+      .feature { display: flex; gap: 15px; align-items: flex-start; }
+      .feature .ico {
+        width: 44px; height: 44px; flex: none; border-radius: 12px;
+        background: linear-gradient(160deg, rgba(59, 144, 255, .28), rgba(59, 144, 255, .12));
+        border: 1px solid rgba(120, 170, 255, .22);
+        display: grid; place-items: center;
+      }
+      .feature .ico svg { width: 20px; height: 20px; color: #8fbaff; }
+      .feature h3 { font-size: 15px; font-weight: 700; }
+      .feature p { font-size: 13px; color: var(--muted); line-height: 1.5; margin-top: 3px; }
+
+      /* ---------- Carte de connexion ---------- */
       .card {
-        width: min(408px, 100%);
-        background: #fff;
+        flex: 0 0 430px;
+        background: linear-gradient(180deg, rgba(12, 18, 34, .975), rgba(8, 12, 24, .985));
+        border: 1px solid rgba(120, 170, 255, .22);
         border-radius: 22px;
-        padding: 38px 36px 24px;
-        box-shadow: 0 22px 55px rgba(16, 42, 110, .13), 0 2px 8px rgba(16, 42, 110, .05);
-        animation: cardIn .5s cubic-bezier(.2, .7, .2, 1) both;
-        animation-delay: .06s;
+        padding: 34px 34px 26px;
+        box-shadow: 0 30px 80px rgba(0, 0, 0, .6), inset 0 1px 0 rgba(255, 255, 255, .05);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+        animation: cardIn .55s cubic-bezier(.2, .7, .2, 1) both;
       }
-
-      .badge {
+      .card .badge {
         display: flex; align-items: center; justify-content: center; gap: 8px;
-        width: max-content; margin: 0 auto 18px;
-        padding: 7px 16px;
-        background: #e9f1ff; color: #1f5fe0;
-        font-size: 11.5px; font-weight: 700; letter-spacing: .13em;
-        border-radius: 999px;
+        width: max-content; margin: 0 auto 14px;
+        padding: 6px 15px; border-radius: 999px;
+        background: rgba(47, 139, 255, .14); color: #7db3ff;
+        font-size: 11px; font-weight: 700; letter-spacing: .13em;
       }
-      .badge svg { width: 14px; height: 14px; }
+      .card .badge svg { width: 13px; height: 13px; }
+      .card h2 { text-align: center; font-size: 27px; font-weight: 800; }
+      .card .card-sub { text-align: center; font-size: 13px; color: var(--muted); margin: 7px 0 6px; }
+      .card .card-rule { width: 46px; height: 3px; background: var(--blue); border-radius: 3px; margin: 12px auto 22px; }
 
-      .card-head { text-align: center; }
-      .card-head .name { font-size: 30px; font-weight: 800; letter-spacing: -.02em; line-height: 1; }
-      .card-head .name b { color: var(--blue); font-weight: 800; }
-      .card-head .dash { width: 44px; height: 3px; border-radius: 3px; background: var(--blue); margin: 9px auto 18px; }
-      .card-head h1 { font-size: 19px; font-weight: 700; line-height: 1.35; }
-      .card-head .sub { font-size: 13.5px; color: var(--muted); margin: 8px 0 22px; }
-
-      /* ---------- Alerte d'erreur ---------- */
       .alert {
         display: flex; align-items: flex-start; gap: 10px;
-        background: var(--danger-bg);
-        border: 1px solid var(--danger-line);
-        color: var(--danger-ink);
-        padding: 12px 14px;
-        border-radius: 12px;
-        font-size: 13px; font-weight: 500; line-height: 1.45;
-        margin-bottom: 18px;
+        background: var(--danger-bg); border: 1px solid var(--danger-line); color: var(--danger-ink);
+        padding: 12px 14px; border-radius: 12px;
+        font-size: 13px; font-weight: 500; line-height: 1.45; margin-bottom: 18px;
         animation: alertIn .3s ease both;
       }
       .alert svg { width: 17px; height: 17px; flex: none; margin-top: 1px; }
 
-      /* ---------- Champs ---------- */
       .field { margin-bottom: 15px; }
-      .field label { display: block; font-size: 13.5px; font-weight: 600; margin-bottom: 7px; }
+      .field label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 7px; }
       .input-wrap { position: relative; }
-      .input-wrap > .lead {
+      .input-wrap > .lead-ic {
         position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
-        width: 17px; height: 17px; color: #9aa7c4; pointer-events: none;
+        width: 17px; height: 17px; color: #7f90b0; pointer-events: none;
       }
       .input-wrap input {
         width: 100%; height: 50px;
-        border: 1.6px solid transparent; border-radius: 12px;
+        border: 1.5px solid rgba(255, 255, 255, .12); border-radius: 12px;
         padding: 0 44px;
-        font: inherit; font-size: 14.5px; color: var(--ink);
-        background: var(--field-bg);
+        font: inherit; font-size: 14px; color: var(--ink);
+        background: rgba(255, 255, 255, .04);
         transition: border-color .16s ease, background .16s ease, box-shadow .16s ease;
       }
-      .input-wrap input::placeholder { color: #9aa6c0; }
+      .input-wrap input::placeholder { color: #7a8aa8; }
       .input-wrap input:focus {
-        outline: none;
-        border-color: var(--blue);
-        background: #fff;
-        box-shadow: 0 0 0 4px rgba(31, 107, 255, .13);
+        outline: none; border-color: var(--blue);
+        background: rgba(255, 255, 255, .06);
+        box-shadow: 0 0 0 4px rgba(47, 139, 255, .18);
       }
       .toggle-pw {
         position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
-        width: 34px; height: 34px;
-        border: none; background: none; cursor: pointer;
-        color: #96a2c0; display: grid; place-items: center; border-radius: 8px;
+        width: 34px; height: 34px; border: none; background: none; cursor: pointer;
+        color: #7f90b0; display: grid; place-items: center; border-radius: 8px;
       }
-      .toggle-pw:hover { color: var(--blue); }
+      .toggle-pw:hover { color: #a9c4ff; }
       .toggle-pw svg { width: 18px; height: 18px; }
 
       .row {
         display: flex; align-items: center; justify-content: space-between;
-        gap: 12px; margin: 14px 0 20px; font-size: 13px;
+        gap: 12px; margin: 14px 0 18px; font-size: 13px;
       }
       .row .remember { display: flex; align-items: center; gap: 8px; color: var(--muted); cursor: pointer; }
       .row .remember input { width: 15px; height: 15px; accent-color: var(--blue); cursor: pointer; }
-      .row a { color: var(--blue); font-weight: 600; text-decoration: none; white-space: nowrap; }
+      .row a { color: #7db3ff; font-weight: 600; text-decoration: none; white-space: nowrap; }
       .row a:hover { text-decoration: underline; }
 
-      /* ---------- Bouton ---------- */
       .btn {
         position: relative;
-        width: 100%; height: 52px;
-        border: none; border-radius: 13px; cursor: pointer;
-        background: linear-gradient(180deg, #2f7bff, var(--blue-strong));
-        color: #fff; font: inherit; font-size: 15.5px; font-weight: 700;
+        width: 100%; height: 52px; border: none; border-radius: 13px; cursor: pointer;
+        background: linear-gradient(180deg, #3b90ff, var(--blue-strong));
+        color: #fff; font: inherit; font-size: 15px; font-weight: 700;
         display: flex; align-items: center; justify-content: center; gap: 9px;
-        box-shadow: 0 11px 24px rgba(20, 70, 200, .30);
+        box-shadow: 0 12px 26px rgba(21, 96, 230, .4);
         transition: filter .16s ease, box-shadow .16s ease, transform .06s ease;
       }
       .btn svg { width: 16px; height: 16px; }
-      .btn:hover { filter: brightness(1.06); box-shadow: 0 15px 32px rgba(20, 70, 200, .42); }
+      .btn:hover { filter: brightness(1.08); box-shadow: 0 16px 34px rgba(21, 96, 230, .55); }
       .btn:active { transform: translateY(1px); }
-      .btn:disabled, .btn[aria-busy="true"] { cursor: not-allowed; filter: saturate(.7) brightness(.98); box-shadow: none; }
+      .btn:disabled, .btn[aria-busy="true"] { cursor: not-allowed; filter: saturate(.7) brightness(.9); box-shadow: none; }
       .btn .spinner {
         width: 17px; height: 17px; border-radius: 50%;
         border: 2.5px solid rgba(255, 255, 255, .4); border-top-color: #fff;
@@ -160,108 +175,159 @@
       .btn[aria-busy="true"] .spinner { display: block; }
       .btn[aria-busy="true"] .btn-icon { display: none; }
 
+      .or {
+        display: flex; align-items: center; gap: 12px;
+        margin: 18px 0; color: #6f7f9d; font-size: 12px; font-weight: 600; letter-spacing: .1em;
+      }
+      .or::before, .or::after { content: ""; flex: 1; height: 1px; background: rgba(255, 255, 255, .12); }
+
+      .btn-google {
+        width: 100%; height: 50px; border-radius: 13px; cursor: pointer;
+        background: rgba(255, 255, 255, .06); border: 1px solid rgba(255, 255, 255, .16);
+        color: var(--ink); font: inherit; font-size: 14.5px; font-weight: 600;
+        display: flex; align-items: center; justify-content: center; gap: 10px;
+        text-decoration: none;
+        transition: background .16s ease, border-color .16s ease;
+      }
+      .btn-google:hover { background: rgba(255, 255, 255, .1); border-color: rgba(255, 255, 255, .28); }
+      .btn-google svg { width: 18px; height: 18px; }
+
       .card-foot {
         display: flex; align-items: center; justify-content: center; gap: 7px;
-        margin-top: 20px; padding-top: 16px;
-        border-top: 1px solid var(--line);
-        font-size: 12px; color: var(--muted); text-align: center;
+        margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255, 255, 255, .1);
+        font-size: 12px; color: var(--muted);
       }
       .card-foot svg { width: 13px; height: 13px; flex: none; }
 
-      /* ---------- Animations ---------- */
-      @keyframes panelIn { from { opacity: 0; } to { opacity: 1; } }
-      @keyframes cardIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
-      @keyframes alertIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+      @keyframes fade { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+      @keyframes cardIn { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+      @keyframes alertIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
       @keyframes spin { to { transform: rotate(360deg); } }
 
       /* ---------- Responsive ---------- */
-      /* tablette : illustration plus etroite */
-      @media (max-width: 1200px) {
-        .brand-panel { width: 40%; }
+      @media (max-width: 1080px) {
+        .wrap { gap: 36px; padding: 40px 28px; }
+        .brand h1 { font-size: 32px; }
       }
-      /* mobile / petite tablette : illustration masquee */
       @media (max-width: 900px) {
-        .brand-panel { display: none; }
-        .form-panel { flex: 1; padding: 28px 18px; background: linear-gradient(180deg, #eef3fd, #e3ebf8); }
+        body { display: block; }
+        .wrap { flex-direction: column; align-items: stretch; max-width: 460px; gap: 28px; padding: 32px 18px; }
+        .brand { max-width: none; text-align: left; }
+        .brand h1 { font-size: 28px; }
+        .card { flex: 1 1 auto; }
       }
-      @media (max-width: 420px) {
-        .card { padding: 30px 20px 20px; border-radius: 18px; box-shadow: 0 10px 30px rgba(16, 42, 110, .12); }
-        .card-head .name { font-size: 27px; }
-        .card-head h1 { font-size: 17.5px; }
-        .row { flex-wrap: wrap; }
+      @media (max-width: 600px) {
+        .brand .features { display: none; }
+        .brand .lead { margin-bottom: 4px; }
+        .card { padding: 28px 20px 22px; }
+        .card h2 { font-size: 24px; }
       }
       @media (prefers-reduced-motion: reduce) {
-        *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
+        *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }
       }
     </style>
   </head>
   <body>
-    <div class="split">
-      <section class="brand-panel" role="img" aria-label="FixPro - Le centre de controle de votre plateforme"></section>
-
-      <section class="form-panel">
-        <div class="card">
-          <span class="badge">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            ADMINISTRATION
+    <div class="wrap">
+      <section class="brand">
+        <div class="logo-row">
+          <span class="logo-mark">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
           </span>
+          <span class="logo-txt">
+            <span class="name">Fix<b>Pro</b></span>
+            <span class="sub">ADMINISTRATION</span>
+          </span>
+        </div>
+        <div class="accent"></div>
+        <p class="eyebrow">Le centre de controle</p>
+        <h1>Prenez le controle total de votre <span>plateforme.</span></h1>
+        <p class="lead">Gerez vos techniciens, clients, abonnements, paiements, interventions et bien plus encore depuis un seul espace securise.</p>
 
-          <div class="card-head">
-            <div class="name">Fix<b>Pro</b></div>
-            <div class="dash"></div>
-            <h1>Connexion a votre espace administrateur</h1>
-            <p class="sub">Accedez a votre tableau de bord</p>
+        <div class="features">
+          <div class="feature">
+            <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
+            <div><h3>Controle total</h3><p>Supervisez l'ensemble de votre activite en temps reel.</p></div>
+          </div>
+          <div class="feature">
+            <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg></span>
+            <div><h3>Statistiques avancees</h3><p>Des analyses detaillees pour prendre des decisions eclairees.</p></div>
+          </div>
+          <div class="feature">
+            <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></span>
+            <div><h3>Gestion simplifiee</h3><p>Abonnements, paiements et utilisateurs geres en toute simplicite.</p></div>
+          </div>
+          <div class="feature">
+            <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+            <div><h3>Securite maximale</h3><p>Vos donnees sont protegees avec les meilleurs standards de securite.</p></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <span class="badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          ACCES ADMINISTRATEUR
+        </span>
+        <h2>Bienvenue !</h2>
+        <p class="card-sub">Connectez-vous a votre espace FixPro</p>
+        <div class="card-rule"></div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert" role="alert">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                <span>{{ message }}</span>
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <form method="post" novalidate id="loginForm">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+          <div class="field">
+            <label for="email">Adresse e-mail</label>
+            <div class="input-wrap">
+              <svg class="lead-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>
+              <input type="email" name="email" id="email" required autofocus autocomplete="username" placeholder="Entrez votre adresse e-mail" />
+            </div>
           </div>
 
-          {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-              {% for category, message in messages %}
-                <div class="alert" role="alert">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                  <span>{{ message }}</span>
-                </div>
-              {% endfor %}
-            {% endif %}
-          {% endwith %}
-
-          <form method="post" novalidate id="loginForm">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-
-            <div class="field">
-              <label for="email">Adresse e-mail</label>
-              <div class="input-wrap">
-                <svg class="lead" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>
-                <input type="email" name="email" id="email" required autofocus autocomplete="username" placeholder="Entrez votre e-mail" />
-              </div>
+          <div class="field">
+            <label for="password">Mot de passe</label>
+            <div class="input-wrap">
+              <svg class="lead-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <input type="password" name="password" id="password" required autocomplete="current-password" placeholder="Entrez votre mot de passe" />
+              <button type="button" class="toggle-pw" id="togglePw" aria-label="Afficher le mot de passe" aria-pressed="false">
+                <svg id="eyeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
             </div>
-
-            <div class="field">
-              <label for="password">Mot de passe</label>
-              <div class="input-wrap">
-                <svg class="lead" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                <input type="password" name="password" id="password" required autocomplete="current-password" placeholder="Entrez votre mot de passe" />
-                <button type="button" class="toggle-pw" id="togglePw" aria-label="Afficher le mot de passe" aria-pressed="false">
-                  <svg id="eyeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
-                </button>
-              </div>
-            </div>
-
-            <div class="row">
-              <label class="remember"><input type="checkbox" name="remember" value="1" /> Se souvenir de moi</label>
-              <a href="mailto:{{ config.ADMIN_EMAIL or 'support@fixpro.app' }}?subject=Reinitialisation%20du%20mot%20de%20passe%20administrateur">Mot de passe oublie ?</a>
-            </div>
-
-            <button class="btn" type="submit" id="submitBtn">
-              <span class="spinner" aria-hidden="true"></span>
-              <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-              <span id="btnLabel">Se connecter</span>
-            </button>
-          </form>
-
-          <div class="card-foot">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            Acces securise &bull; FixPro Administration
           </div>
+
+          <div class="row">
+            <label class="remember"><input type="checkbox" name="remember" value="1" checked /> Se souvenir de moi</label>
+            <a href="mailto:{{ config.ADMIN_EMAIL or 'support@fixpro.app' }}?subject=Reinitialisation%20du%20mot%20de%20passe%20administrateur">Mot de passe oublie ?</a>
+          </div>
+
+          <button class="btn" type="submit" id="submitBtn">
+            <span class="spinner" aria-hidden="true"></span>
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <span id="btnLabel">Se connecter</span>
+          </button>
+        </form>
+
+        <div class="or">OU</div>
+
+        <a class="btn-google" href="{{ url_for('admin_google_login') }}">
+          <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.15-4.53H2.18v2.84A11 11 0 0 0 12 23z"/><path fill="#FBBC05" d="M5.85 14.1a6.6 6.6 0 0 1 0-4.2V7.06H2.18a11 11 0 0 0 0 9.88z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06L5.85 9.9C6.71 7.31 9.14 5.38 12 5.38z"/></svg>
+          Se connecter avec Google
+        </a>
+
+        <div class="card-foot">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Acces securise &bull; FixPro Administration
         </div>
       </section>
     </div>
