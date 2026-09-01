@@ -20,93 +20,110 @@
         --danger-ink: #c02626;
       }
       * { box-sizing: border-box; margin: 0; padding: 0; }
-      html, body { min-height: 100%; }
+      html, body { height: 100%; }
       body {
         font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
         color: var(--ink);
         background: linear-gradient(135deg, #eef3fc 0%, #e8eef8 55%, #eaf0fb 100%);
         -webkit-font-smoothing: antialiased;
-        min-height: 100vh;
-        overflow-x: hidden;
-        display: flex; flex-direction: column;
+        height: 100dvh;
+        overflow: hidden;                 /* page fixe : aucun scroll */
+        display: flex; align-items: center; justify-content: center;
       }
 
       .wrap {
-        flex: 1;
-        width: 100%; max-width: 1200px; margin: 0 auto;
-        padding: 40px 44px 24px;
-        display: flex; align-items: center; gap: 60px;
+        position: relative;
+        width: 100%; max-width: 1160px; height: 100%;
+        margin: 0 auto;
+        padding: clamp(16px, 3vh, 40px) clamp(20px, 4vw, 48px);
+        display: flex; align-items: center; gap: clamp(28px, 5vw, 60px);
       }
 
       /* ---------- Colonne gauche ---------- */
-      .brand { flex: 1 1 0; min-width: 0; max-width: 520px; align-self: stretch; display: flex; flex-direction: column; animation: fade .5s ease both; }
-      .logo-row { display: flex; align-items: center; gap: 13px; margin-bottom: 34px; }
+      .brand {
+        flex: 1 1 0; min-width: 0; max-width: 520px; align-self: stretch;
+        display: flex; flex-direction: column; justify-content: center;
+        position: relative;
+        animation: fade .5s ease both;
+      }
+      .logo-row { display: flex; align-items: center; gap: 13px; }
       .logo-mark {
-        width: 52px; height: 52px; flex: none; border-radius: 14px;
+        width: clamp(42px, 5vw, 52px); height: clamp(42px, 5vw, 52px); flex: none; border-radius: 14px;
         background: linear-gradient(160deg, #2f74ff, #1543c9);
         display: grid; place-items: center;
         box-shadow: 0 10px 24px rgba(31, 91, 230, .32);
       }
-      .logo-mark svg { width: 28px; height: 28px; color: #fff; }
-      .logo-txt .name { font-size: 34px; font-weight: 800; letter-spacing: -.02em; line-height: 1; }
+      .logo-mark svg { width: 55%; height: 55%; color: #fff; }
+      .logo-txt .name { font-size: clamp(26px, 3.2vw, 34px); font-weight: 800; letter-spacing: -.02em; line-height: 1; }
       .logo-txt .name b { color: var(--blue); font-weight: 800; }
-      .logo-txt .sub { font-size: 11px; font-weight: 700; letter-spacing: .34em; color: var(--muted); margin-top: 5px; }
+      .logo-txt .sub { font-size: 11px; font-weight: 700; letter-spacing: .32em; color: var(--muted); margin-top: 5px; }
 
-      .brand h1 { font-size: 38px; line-height: 1.2; font-weight: 800; letter-spacing: -.02em; }
+      /* verset : juste sous le logo, bloc coherent avec lui */
+      .scripture {
+        display: flex; align-items: center; gap: 9px;
+        margin: 12px 0 0; color: var(--blue);
+      }
+      .scripture svg { width: 15px; height: 15px; flex: none; }
+      .scripture .text { font-family: 'Great Vibes', cursive; font-size: clamp(17px, 2vw, 21px); line-height: 1; }
+
+      .brand h1 { font-size: clamp(24px, 3.4vw, 38px); line-height: 1.18; font-weight: 800; letter-spacing: -.02em; margin-top: clamp(20px, 4vh, 40px); }
       .brand h1 span { color: var(--blue); }
-      .brand .accent { width: 46px; height: 4px; border-radius: 4px; background: var(--blue); margin: 22px 0 20px; }
-      .brand .lead { color: var(--muted); font-size: 15px; line-height: 1.65; max-width: 400px; }
+      .brand .accent { width: 46px; height: 4px; border-radius: 4px; background: var(--blue); margin: clamp(14px, 2.4vh, 22px) 0 clamp(12px, 2vh, 20px); }
+      .brand .lead { color: var(--muted); font-size: clamp(13px, 1.4vw, 15px); line-height: 1.6; max-width: 400px; }
 
       .lion {
-        margin-top: auto; padding-top: 14px;
-        width: 100%; max-width: 520px;
+        margin-top: clamp(14px, 4vh, 40px);
+        width: 100%; max-width: 460px;
+        pointer-events: none;
       }
-      .lion img { width: 100%; height: auto; display: block; }
+      .lion img {
+        width: 100%; height: auto; display: block;
+        mix-blend-mode: multiply;        /* fond clair de l'image -> transparent */
+        opacity: .96;
+      }
 
       /* ---------- Carte ---------- */
       .card {
-        flex: 0 0 452px;
+        flex: 0 0 440px;
         background: #fff;
-        border: 1px solid #eef2f9;
-        border-radius: 26px;
-        padding: 38px 40px 30px;
+        border-radius: 24px;
+        padding: clamp(22px, 3.2vh, 34px) clamp(24px, 3vw, 38px) clamp(18px, 2.4vh, 26px);
         box-shadow: 0 30px 70px rgba(20, 45, 110, .12), 0 4px 14px rgba(20, 45, 110, .05);
         animation: cardIn .55s cubic-bezier(.2, .7, .2, 1) both;
       }
       .shield {
-        width: 74px; height: 74px; margin: 0 auto 20px;
-        border-radius: 50%; background: #fff;
-        border: 1px solid #eef2f9;
+        width: clamp(56px, 7vh, 68px); height: clamp(56px, 7vh, 68px); margin: 0 auto clamp(12px, 2vh, 18px);
+        border-radius: 50%; background: #fff; border: 1px solid #eef2f9;
         box-shadow: 0 8px 22px rgba(20, 45, 110, .12);
         display: grid; place-items: center;
       }
-      .shield svg { width: 40px; height: 40px; }
-      .card h2 { text-align: center; font-size: 27px; font-weight: 800; letter-spacing: -.01em; }
+      .shield svg { width: 55%; height: 55%; }
+      .card h2 { text-align: center; font-size: clamp(21px, 2.6vw, 26px); font-weight: 800; letter-spacing: -.01em; }
       .card h2 span { color: var(--blue); }
-      .card .card-sub { text-align: center; font-size: 13.5px; color: var(--muted); margin: 8px 0 6px; }
-      .card .card-rule { width: 44px; height: 3px; background: var(--blue); border-radius: 3px; margin: 12px auto 24px; }
+      .card .card-sub { text-align: center; font-size: 13px; color: var(--muted); margin: 6px 0 4px; }
+      .card .card-rule { width: 42px; height: 3px; background: var(--blue); border-radius: 3px; margin: 10px auto clamp(14px, 2.4vh, 22px); }
 
       .alert {
         display: flex; align-items: flex-start; gap: 10px;
         background: var(--danger-bg); border: 1px solid var(--danger-line); color: var(--danger-ink);
-        padding: 12px 14px; border-radius: 12px;
-        font-size: 13px; font-weight: 500; line-height: 1.45; margin-bottom: 18px;
+        padding: 11px 13px; border-radius: 12px;
+        font-size: 12.5px; font-weight: 500; line-height: 1.4; margin-bottom: 14px;
         animation: alertIn .3s ease both;
       }
-      .alert svg { width: 17px; height: 17px; flex: none; margin-top: 1px; }
+      .alert svg { width: 16px; height: 16px; flex: none; margin-top: 1px; }
 
-      .field { margin-bottom: 16px; }
-      .field label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 8px; }
+      .field { margin-bottom: clamp(10px, 1.6vh, 15px); }
+      .field label { display: block; font-size: 12.5px; font-weight: 700; margin-bottom: 6px; }
       .input-wrap { position: relative; }
       .input-wrap > .lead-ic {
         position: absolute; left: 15px; top: 50%; transform: translateY(-50%);
-        width: 18px; height: 18px; color: #9aa7c0; pointer-events: none;
+        width: 17px; height: 17px; color: #9aa7c0; pointer-events: none;
       }
       .input-wrap input {
-        width: 100%; height: 54px;
+        width: 100%; height: clamp(46px, 6vh, 52px);
         border: 1.6px solid var(--line); border-radius: 12px;
         padding: 0 46px;
-        font: inherit; font-size: 14.5px; color: var(--ink);
+        font: inherit; font-size: 14px; color: var(--ink);
         background: var(--field);
         transition: border-color .16s ease, background .16s ease, box-shadow .16s ease;
       }
@@ -125,7 +142,7 @@
 
       .row {
         display: flex; align-items: center; justify-content: space-between;
-        gap: 12px; margin: 14px 0 20px; font-size: 13.5px;
+        gap: 12px; margin: 12px 0 16px; font-size: 13px;
       }
       .row .remember { display: flex; align-items: center; gap: 9px; color: var(--muted); cursor: pointer; }
       .row .remember input { width: 16px; height: 16px; accent-color: var(--blue); cursor: pointer; }
@@ -134,9 +151,9 @@
 
       .btn {
         position: relative;
-        width: 100%; height: 56px; border: none; border-radius: 13px; cursor: pointer;
+        width: 100%; height: clamp(48px, 6.4vh, 54px); border: none; border-radius: 13px; cursor: pointer;
         background: linear-gradient(180deg, #2f6bf0, var(--blue-deep));
-        color: #fff; font: inherit; font-size: 15.5px; font-weight: 700;
+        color: #fff; font: inherit; font-size: 15px; font-weight: 700;
         display: flex; align-items: center; justify-content: center; gap: 10px;
         box-shadow: 0 14px 28px rgba(20, 66, 196, .34);
         transition: filter .16s ease, box-shadow .16s ease, transform .06s ease;
@@ -149,13 +166,13 @@
       .btn[aria-busy="true"] .spinner { display: block; }
       .btn[aria-busy="true"] .btn-icon { display: none; }
 
-      .or { display: flex; align-items: center; gap: 12px; margin: 18px 0; color: var(--muted); font-size: 12px; font-weight: 600; letter-spacing: .12em; }
+      .or { display: flex; align-items: center; gap: 12px; margin: clamp(12px, 2vh, 18px) 0; color: var(--muted); font-size: 12px; font-weight: 600; letter-spacing: .12em; }
       .or::before, .or::after { content: ""; flex: 1; height: 1px; background: var(--line); }
 
       .btn-google {
-        width: 100%; height: 54px; border-radius: 13px; cursor: pointer;
+        width: 100%; height: clamp(46px, 6vh, 52px); border-radius: 13px; cursor: pointer;
         background: #fff; border: 1.6px solid var(--line); color: var(--ink);
-        font: inherit; font-size: 14.5px; font-weight: 600;
+        font: inherit; font-size: 14px; font-weight: 600;
         display: flex; align-items: center; justify-content: center; gap: 11px;
         text-decoration: none; transition: border-color .16s ease, background .16s ease;
       }
@@ -164,43 +181,41 @@
 
       .card-foot {
         display: flex; align-items: center; justify-content: center; gap: 8px;
-        margin-top: 22px; font-size: 12.5px; color: var(--muted);
+        margin-top: clamp(12px, 2vh, 20px); font-size: 12px; color: var(--muted);
       }
       .card-foot svg { width: 14px; height: 14px; flex: none; }
-
-      /* ---------- Bas de page : verset ---------- */
-      .scripture {
-        display: flex; align-items: center; justify-content: center; gap: 16px;
-        padding: 12px 20px 26px; flex-direction: column;
-      }
-      .scripture .crown svg { width: 22px; height: 22px; color: var(--blue); }
-      .scripture .line { display: flex; align-items: center; gap: 16px; }
-      .scripture .line::before, .scripture .line::after { content: ""; width: 46px; height: 2px; background: var(--blue); opacity: .55; }
-      .scripture .text { font-family: 'Great Vibes', cursive; font-size: 30px; color: var(--blue); line-height: 1; }
 
       @keyframes fade { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
       @keyframes cardIn { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
       @keyframes alertIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
       @keyframes spin { to { transform: rotate(360deg); } }
 
-      @media (max-width: 1020px) {
-        .wrap { gap: 40px; padding: 34px 28px 16px; }
-        .brand h1 { font-size: 32px; }
-      }
+      /* ---------- Mobile : tout dans un seul ecran, aucun scroll ---------- */
       @media (max-width: 880px) {
-        .wrap { flex-direction: column; align-items: center; max-width: 480px; gap: 26px; padding: 30px 20px 12px; }
-        .brand { max-width: none; align-self: stretch; align-items: center; text-align: center; }
-        .brand .lead { max-width: none; }
-        .brand .accent { margin-left: auto; margin-right: auto; }
-        .lion { margin: 6px auto 0; max-width: 340px; }
-        .card { flex: 1 1 auto; width: 100%; }
+        .wrap {
+          flex-direction: column; align-items: center; justify-content: flex-start;
+          gap: 0; max-width: 440px; padding: clamp(14px, 3vh, 26px) 18px;
+          overflow: hidden;
+        }
+        .brand {
+          flex: none; width: 100%; max-width: none; align-self: auto;
+          align-items: center; text-align: center; justify-content: flex-start;
+        }
+        .logo-row { justify-content: center; }
+        .scripture { justify-content: center; }
+        .brand h1, .brand .accent, .brand .lead { display: none; }  /* pas de place sur un ecran */
+        .lion {
+          position: fixed; left: 50%; bottom: -4%; transform: translateX(-50%);
+          width: min(96vw, 460px); max-width: none; margin: 0; z-index: 0; opacity: .55;
+        }
+        .card {
+          position: relative; z-index: 1;
+          flex: none; width: 100%; margin-top: clamp(14px, 3vh, 24px);
+        }
       }
-      @media (max-width: 480px) {
-        .card { padding: 30px 20px 24px; border-radius: 20px; }
-        .brand h1 { font-size: 26px; }
-        .lion { max-width: 280px; }
-        .scripture .text { font-size: 24px; }
-        .scripture .line::before, .scripture .line::after { width: 30px; }
+      @media (max-width: 400px) {
+        .card { padding: 18px 18px 16px; border-radius: 20px; }
+        .card .card-rule { margin-bottom: 14px; }
       }
       @media (prefers-reduced-motion: reduce) {
         *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }
@@ -218,6 +233,11 @@
             <span class="name">Fix<b>Pro</b></span>
             <span class="sub">ADMIN DASHBOARD</span>
           </span>
+        </div>
+
+        <div class="scripture">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 8l4 3 5-7 5 7 4-3-2 11H5L3 8z"/></svg>
+          <span class="text">Jesus Christ is the King</span>
         </div>
 
         <h1>Le centre de controle de votre <span>plateforme.</span></h1>
@@ -294,11 +314,6 @@
           Acces securise et protege
         </div>
       </section>
-    </div>
-
-    <div class="scripture">
-      <span class="crown"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 8l4 3 5-7 5 7 4-3-2 11H5L3 8z"/></svg></span>
-      <span class="line"><span class="text">Jesus Christ is the King</span></span>
     </div>
 
     <script>
