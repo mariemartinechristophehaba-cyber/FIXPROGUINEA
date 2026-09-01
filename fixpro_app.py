@@ -5113,8 +5113,14 @@ def artisan_detail(artisan_id):
 
     client_zone = session.get("client_zone") or (user.get("city") if user else None)
 
-    # Une seule fiche technicien, dynamique, identique pour tous les metiers.
-    return render_template("artisan_detail.html",
+    # Les plombiers ont une fiche dediee ; les autres metiers gardent la fiche
+    # generique. Les DONNEES restent dynamiques et filtrees par artisan_id dans
+    # les deux cas (aucune donnee d'un autre technicien).
+    _prof = (artisan.get("profession") or "").strip().lower()
+    detail_template = ("artisan_detail_plombier.html"
+                       if _prof.startswith("plomb") else "artisan_detail.html")
+
+    return render_template(detail_template,
                            user=user,
                            client_zone=client_zone,
                            artisan=artisan,
