@@ -1615,6 +1615,21 @@ class TechnicianAccessTests(FixProTestCase):
             self.assertTrue(9.3 < lat < 9.9,
                             f"{quartier} -> lat {lat} hors de Conakry")
 
+    def test_manual_location_accepts_guinea_cities(self):
+        """La localisation manuelle couvre toute la Guinee, pas seulement
+        Conakry : les villes de la liste resolvent a leurs coordonnees."""
+        cases = {"Kankan": (10.0, 10.7, -9.6, -9.0),
+                 "Labe": (11.0, 11.6, -12.6, -12.0),
+                 "Nzerekore": (7.5, 8.1, -9.1, -8.5)}
+        for ville, (la_lo, la_hi, lo_lo, lo_hi) in cases.items():
+            r = self.client.post("/api/location/zone", json={"zone": ville})
+            self.assertEqual(r.status_code, 200, ville)
+            d = r.get_json()
+            self.assertTrue(d.get("ok"), ville)
+            self.assertTrue(la_lo < d["lat"] < la_hi and lo_lo < d["lon"] < lo_hi,
+                            f"{ville} -> {d.get('lat')},{d.get('lon')}")
+            self.assertEqual(d.get("zone"), ville)
+
     def test_location_endpoints_accept_post_without_csrf_token(self):
         """Les routes /api/location* acceptent un POST sans token CSRF
         (navigateur mobile / proxy de traduction sans header Referer)."""

@@ -101,6 +101,8 @@
     .q-item .q-pin { width: 32px; height: 32px; border-radius: 9px; background: var(--wash); color: var(--primary); display: flex; align-items: center; justify-content: center; flex: none; }
     .q-item .q-name { flex: 1; font-weight: 500; }
     .q-empty { text-align: center; color: var(--muted); font-size: 13px; padding: 30px 16px; }
+    .q-group { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+      color: var(--muted); padding: 14px 12px 6px; }
   </style>
 </head>
 <body data-location-gate>
@@ -117,7 +119,7 @@
       </div>
 
       <h1>Où êtes-vous ?</h1>
-      <p class="sub">FixPro affiche les techniciens vérifiés de votre quartier à Conakry. Activez votre position pour commencer.</p>
+      <p class="sub">FixPro affiche les techniciens vérifiés proches de vous, partout en Guinée. Activez votre position pour commencer.</p>
 
       <div class="actions">
         <p class="err" id="lg-err" role="alert"></p>
@@ -125,7 +127,7 @@
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="2.5" fill="currentColor" stroke="none"/></svg>
           <span id="lg-allow-label">Autoriser ma position</span>
         </button>
-        <button class="btn btn-ghost" id="lg-manual" type="button">Choisir mon quartier manuellement</button>
+        <button class="btn btn-ghost" id="lg-manual" type="button">Choisir ma ville / mon quartier</button>
         <div class="reassure">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
           <span>Votre position sert seulement à trouver un technicien proche. Elle n'est jamais partagée avec eux.</span>
@@ -139,20 +141,23 @@
       <button type="button" id="lg-sheet-close" aria-label="Retour">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
       </button>
-      <h2>Votre quartier</h2>
+      <h2>Votre ville / quartier</h2>
     </div>
     <div class="q-search">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-      <input type="text" id="lg-q-search" placeholder="Rechercher un quartier…" autocomplete="off" />
+      <input type="text" id="lg-q-search" placeholder="Rechercher une ville ou un quartier…" autocomplete="off" />
     </div>
     <div class="q-list" id="lg-q-list">
+      {% set _pin %}<span class="q-pin"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c-4.14 0-7.5 3.36-7.5 7.5 0 5.05 5.78 11.06 6.79 12.06.4.4 1.03.4 1.42 0C13.72 20.56 19.5 14.55 19.5 9.5 19.5 5.36 16.14 2 12 2Zm0 10a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5Z"/></svg></span>{% endset %}
+      <p class="q-group">Conakry — quartiers</p>
       {% for q in quartiers %}
-      <button class="q-item" type="button" data-zone="{{ q }}">
-        <span class="q-pin"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c-4.14 0-7.5 3.36-7.5 7.5 0 5.05 5.78 11.06 6.79 12.06.4.4 1.03.4 1.42 0C13.72 20.56 19.5 14.55 19.5 9.5 19.5 5.36 16.14 2 12 2Zm0 10a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5Z"/></svg></span>
-        <span class="q-name">{{ q }}</span>
-      </button>
+      <button class="q-item" type="button" data-zone="{{ q }}">{{ _pin }}<span class="q-name">{{ q }}</span></button>
       {% endfor %}
-      <p class="q-empty" id="lg-q-empty" hidden>Aucun quartier trouvé.</p>
+      <p class="q-group">Autres villes de Guinée</p>
+      {% for c in cities %}
+      <button class="q-item" type="button" data-zone="{{ c }}">{{ _pin }}<span class="q-name">{{ c }}</span></button>
+      {% endfor %}
+      <p class="q-empty" id="lg-q-empty" hidden>Aucun résultat.</p>
     </div>
   </div>
 
@@ -216,6 +221,9 @@
           var match = it.dataset.zone.toLowerCase().indexOf(term) !== -1;
           it.hidden = !match;
           if (match) visible++;
+        });
+        document.querySelectorAll('#lg-q-list .q-group').forEach(function (g) {
+          g.hidden = term.length > 0;
         });
         emptyEl.hidden = visible !== 0;
       });
