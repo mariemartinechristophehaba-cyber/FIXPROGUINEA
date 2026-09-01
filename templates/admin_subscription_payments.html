@@ -57,7 +57,7 @@
     <tbody>
     {% for p in pays %}
       <tr>
-        <td>{{ (p.paid_at or p.created_at or '')[:16].replace('T', ' ') }}</td>
+        <td>{{ ((p.paid_at or p.created_at)|string)[:16].replace('T', ' ') if (p.paid_at or p.created_at) else '-' }}</td>
         <td>{{ p.tech_name or '-' }}<div class="muted">{{ p.tech_phone or '' }}</div></td>
         <td>{{ p.plan_name or '-' }}</td>
         <td>{{ '{:,}'.format(p.amount or 0).replace(',', ' ') }} GNF</td>

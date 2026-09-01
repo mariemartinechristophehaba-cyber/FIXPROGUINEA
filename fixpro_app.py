@@ -2237,12 +2237,24 @@ def _mock_admin_dashboard_data():
     }
 
 
+def _ts(value=None):
+    """Horodatage 'YYYY-MM-DDTHH:MM:SS' sans fuseau ni microsecondes.
+
+    Format accepte a la fois par PostgreSQL (cast vers timestamp) et par la
+    comparaison lexicographique SQLite sur les colonnes TEXT."""
+    if value is None:
+        value = datetime.now(timezone.utc)
+    if hasattr(value, "isoformat"):
+        return value.replace(tzinfo=None, microsecond=0).isoformat()
+    return str(value).replace(" ", "T")[:19]
+
+
 def _expire_due_subscriptions(conn):
     """Passe les abonnements ACTIVE dont end_date est depassee en EXPIRED.
 
     Appele a l'ouverture du tableau de bord / de la page abonnements
     (pas de vrai cron en serverless)."""
-    now_iso_ = datetime.now(timezone.utc).isoformat()
+    now_iso_ = _ts()
     try:
         conn.execute(
             "UPDATE technician_subscriptions SET status = 'EXPIRED'"
@@ -2258,19 +2270,19 @@ def _period_bounds(period):
     now = datetime.now(timezone.utc)
     if period == "today":
         start = now.replace(hour=0, minute=0, second=0, microsecond=0)
-        return start.isoformat(), "Aujourd'hui", (start - timedelta(days=1)).isoformat()
+        return _ts(start), "Aujourd'hui", _ts(start - timedelta(days=1))
     if period == "7d":
         start = now - timedelta(days=7)
-        return start.isoformat(), "7 derniers jours", (start - timedelta(days=7)).isoformat()
+        return _ts(start), "7 derniers jours", _ts(start - timedelta(days=7))
     if period == "year":
         start = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
-        return start.isoformat(), "Cette annee", start.replace(year=start.year - 1).isoformat()
+        return _ts(start), "Cette annee", _ts(start.replace(year=start.year - 1))
     if period == "month":
         start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         prev = (start - timedelta(seconds=1)).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-        return start.isoformat(), "Ce mois", prev.isoformat()
+        return _ts(start), "Ce mois", _ts(prev)
     start = now - timedelta(days=30)
-    return start.isoformat(), "30 derniers jours", (start - timedelta(days=30)).isoformat()
+    return _ts(start), "30 derniers jours", _ts(start - timedelta(days=30))
 
 
 def _pct_delta(current, previous):
@@ -2318,8 +2330,8 @@ def admin_dashboard():
     start_iso, period_label, prev_start_iso = _period_bounds(period)
     now = datetime.now(timezone.utc)
     today = now.strftime("%Y-%m-%d")
-    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0).isoformat()
-    soon = (now + timedelta(days=7)).isoformat()
+    month_start = _ts(now.replace(day=1, hour=0, minute=0, second=0, microsecond=0))
+    soon = _ts(now + timedelta(days=7))
 
     conn = get_db_connection()
     try:
@@ -2377,10 +2389,13 @@ def admin_dashboard():
         ]
 
         rev_rows = conn.execute(
-            "SELECT SUBSTR(paid_at, 1, 10) AS jour, COALESCE(SUM(amount), 0) AS montant"
-            " FROM subscription_payments WHERE status = 'paid' AND paid_at >= ?"
-            " GROUP BY SUBSTR(paid_at, 1, 10) ORDER BY jour", (start_iso,)).fetchall()
-        revenue_series = [{"date": r["jour"], "amount": int(r["montant"] or 0)} for r in rev_rows]
+            "SELECT paid_at, amount FROM subscription_payments"
+            " WHERE status = 'paid' AND paid_at >= ? ORDER BY paid_at", (start_iso,)).fetchall()
+        _by_day = {}
+        for r in rev_rows:
+            jour = str(r["paid_at"])[:10]
+            _by_day[jour] = _by_day.get(jour, 0) + int(r["amount"] or 0)
+        revenue_series = [{"date": d, "amount": _by_day[d]} for d in sorted(_by_day)]
         revenue_total = sum(p["amount"] for p in revenue_series)
         revenue_prev = int(scalar(
             "SELECT COALESCE(SUM(amount), 0) AS s FROM subscription_payments"
@@ -2482,7 +2497,7 @@ def admin_subscriptions():
     user = get_current_user()
     flt = request.args.get("filter", "")
     now = datetime.now(timezone.utc)
-    soon = (now + timedelta(days=7)).isoformat()
+    soon = _ts(now + timedelta(days=7))
 
     where, params = "1 = 1", []
     if flt == "active":
