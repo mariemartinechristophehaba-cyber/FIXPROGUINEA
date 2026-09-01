@@ -27,6 +27,7 @@
         background: linear-gradient(135deg, #eef3fc 0%, #e8eef8 55%, #eaf0fb 100%);
         -webkit-font-smoothing: antialiased;
         min-height: 100vh;
+        overflow-x: hidden;
         display: flex; flex-direction: column;
       }
 
@@ -57,12 +58,10 @@
       .brand .lead { color: var(--muted); font-size: 15px; line-height: 1.65; max-width: 400px; }
 
       .lion {
-        margin-top: auto; padding-top: 26px;
-        width: 100%; max-width: 500px;
-        -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 20%);
-        mask-image: linear-gradient(180deg, transparent 0%, #000 20%);
+        margin-top: auto; padding-top: 14px;
+        width: 100%; max-width: 520px;
       }
-      .lion img { width: 100%; display: block; }
+      .lion img { width: 100%; height: auto; display: block; }
 
       /* ---------- Carte ---------- */
       .card {
@@ -189,15 +188,19 @@
         .brand h1 { font-size: 32px; }
       }
       @media (max-width: 880px) {
-        .wrap { flex-direction: column; align-items: stretch; max-width: 470px; gap: 26px; }
-        .brand { max-width: none; align-self: auto; }
-        .lion { display: none; }
-        .card { flex: 1 1 auto; }
+        .wrap { flex-direction: column; align-items: center; max-width: 480px; gap: 26px; padding: 30px 20px 12px; }
+        .brand { max-width: none; align-self: stretch; align-items: center; text-align: center; }
+        .brand .lead { max-width: none; }
+        .brand .accent { margin-left: auto; margin-right: auto; }
+        .lion { margin: 6px auto 0; max-width: 340px; }
+        .card { flex: 1 1 auto; width: 100%; }
       }
       @media (max-width: 480px) {
-        .card { padding: 30px 22px 24px; border-radius: 20px; }
-        .brand h1 { font-size: 27px; }
-        .scripture .text { font-size: 25px; }
+        .card { padding: 30px 20px 24px; border-radius: 20px; }
+        .brand h1 { font-size: 26px; }
+        .lion { max-width: 280px; }
+        .scripture .text { font-size: 24px; }
+        .scripture .line::before, .scripture .line::after { width: 30px; }
       }
       @media (prefers-reduced-motion: reduce) {
         *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }
