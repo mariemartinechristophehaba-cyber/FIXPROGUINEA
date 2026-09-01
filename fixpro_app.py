@@ -4865,8 +4865,6 @@ def artisan_detail(artisan_id):
         artisan = dict(artisan)
         artisan["gradient"] = _avatar_gradient(artisan["full_name"])
 
-        is_demo = False
-
         # Services reels du technicien
         artisan_services = conn.execute(
             "SELECT s.name"
@@ -4906,36 +4904,11 @@ def artisan_detail(artisan_id):
         else:
             satisfaction_rate = 0
 
-        # Surcharge demo
-        if is_demo:
-            artisan["full_name"] = demo_config["full_name"]
-            artisan["profession"] = demo_config["profession"]
-            member_since = demo_config["member_since"]
-            review_stats = {
-                "avg_rating": demo_config["rating"],
-                "count": demo_config["review_count"]
-            }
-            reviews = [
-                {"id": 1, "rating": 5, "comment": "Intervention rapide et travail très propre. Je recommande.", "created_at": "Il y a 2 jours", "client_name": "Aïssata K."},
-                {"id": 2, "rating": 5, "comment": "Très professionnel et ponctuel. Le problème a été réglé rapidement.", "created_at": "Il y a 5 jours", "client_name": "Karim B."},
-                {"id": 3, "rating": 4, "comment": "Bon travail, à recommander.", "created_at": "Il y a 1 semaine", "client_name": "Fatou C."}
-            ]
-            review_counts = {5: 108, 4: 16, 3: 3, 2: 1, 1: 0}
-            total = demo_config["review_count"]
-            review_bars = {k: round(v / total * 100, 1) for k, v in review_counts.items()}
-            review_bars_count = review_counts
-            satisfaction_rate = demo_config["satisfaction_rate"]
-            completed = demo_config["interventions"]
-            distance = demo_config["distance_km"]
-            artisan["experience"] = demo_config["experience"]
-            artisan["response_time"] = demo_config["response_time"]
-
         # Interventions realisees (status completed)
-        if not is_demo:
-            completed = conn.execute(
-                "SELECT COUNT(*) AS n FROM requests"
-                " WHERE artisan_id = ? AND status = 'completed'",
-                (artisan_id,)).fetchone()["n"]
+        completed = conn.execute(
+            "SELECT COUNT(*) AS n FROM requests"
+            " WHERE artisan_id = ? AND status = 'completed'",
+            (artisan_id,)).fetchone()["n"]
 
         # Documents verifies du technicien
         documents = conn.execute(
@@ -5113,9 +5086,8 @@ def artisan_detail(artisan_id):
                 return redirect(url_for("artisan_detail", artisan_id=artisan_id))
 
         # Date d'inscription lisible
-        if not is_demo:
-            member_since = (str(artisan["created_at"])[:7] if artisan["created_at"]
-                            else "Date inconnue")
+        member_since = (str(artisan["created_at"])[:7] if artisan["created_at"]
+                        else "Date inconnue")
 
         # Photos de realisations (table ignoree si non migree)
         try:
@@ -5140,6 +5112,8 @@ def artisan_detail(artisan_id):
         conn.close()
 
     client_zone = session.get("client_zone") or (user.get("city") if user else None)
+
+    # Une seule fiche technicien, dynamique, identique pour tous les metiers.
     return render_template("artisan_detail.html",
                            user=user,
                            client_zone=client_zone,
@@ -5156,7 +5130,6 @@ def artisan_detail(artisan_id):
                            review_bars=review_bars,
                            review_bars_count=review_bars_count,
                            satisfaction_rate=satisfaction_rate,
-                           is_demo=is_demo,
                            artisan_services=artisan_services,
                            artisan_position=artisan_position,
                            zone_center=zone_center,
