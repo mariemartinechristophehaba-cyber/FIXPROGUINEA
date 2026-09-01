@@ -58,13 +58,13 @@
       .logo-txt .name b { color: var(--blue); font-weight: 800; }
       .logo-txt .sub { font-size: 11px; font-weight: 700; letter-spacing: .32em; color: var(--muted); margin-top: 5px; }
 
-      /* verset : juste sous le logo, bloc coherent avec lui */
+      /* verset : dans la carte, juste sous "Bienvenue Administrateur" */
       .scripture {
-        display: flex; align-items: center; gap: 9px;
-        margin: 12px 0 0; color: var(--blue);
+        display: flex; align-items: center; justify-content: center; gap: 8px;
+        margin: 6px 0 2px; color: var(--blue);
       }
-      .scripture svg { width: 15px; height: 15px; flex: none; }
-      .scripture .text { font-family: 'Great Vibes', cursive; font-size: clamp(17px, 2vw, 21px); line-height: 1; }
+      .scripture svg { width: 13px; height: 13px; flex: none; }
+      .scripture .text { font-family: 'Great Vibes', cursive; font-size: 19px; line-height: 1; }
 
       .brand h1 { font-size: clamp(24px, 3.4vw, 38px); line-height: 1.18; font-weight: 800; letter-spacing: -.02em; margin-top: clamp(20px, 4vh, 40px); }
       .brand h1 span { color: var(--blue); }
@@ -76,11 +76,7 @@
         width: 100%; max-width: 460px;
         pointer-events: none;
       }
-      .lion img {
-        width: 100%; height: auto; display: block;
-        mix-blend-mode: multiply;        /* fond clair de l'image -> transparent */
-        opacity: .96;
-      }
+      .lion img { width: 100%; height: auto; display: block; }
 
       /* ---------- Carte ---------- */
       .card {
@@ -235,11 +231,6 @@
           </span>
         </div>
 
-        <div class="scripture">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 8l4 3 5-7 5 7 4-3-2 11H5L3 8z"/></svg>
-          <span class="text">Jesus Christ is the King</span>
-        </div>
-
         <h1>Le centre de controle de votre <span>plateforme.</span></h1>
         <div class="accent"></div>
         <p class="lead">Gerez vos techniciens, clients, abonnements, paiements, interventions et bien plus encore depuis un espace unique et securise.</p>
@@ -255,6 +246,10 @@
         </div>
         <h2>Bienvenue <span>Administrateur</span></h2>
         <p class="card-sub">Connectez-vous a votre espace FixPro</p>
+        <div class="scripture">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 8l4 3 5-7 5 7 4-3-2 11H5L3 8z"/></svg>
+          <span class="text">Jesus Christ is the King</span>
+        </div>
         <div class="card-rule"></div>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
