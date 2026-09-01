@@ -11,6 +11,7 @@
     <meta property="og:url" content="https://fixproguinea.vercel.app" />
     <meta name="theme-color" content="#0B0F1A" />
     <meta name="csrf-token" content="{{ csrf_token() }}" />
+    {% include '_pwa_head.html' %}
     <title>{% block title %}FixPro Guinee{% endblock %}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
