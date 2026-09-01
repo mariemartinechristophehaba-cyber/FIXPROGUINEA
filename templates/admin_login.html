@@ -29,13 +29,14 @@
         display: flex;
         min-height: 100vh;
       }
-      /* voile sombre : unifie le fond, cache le texte incruste de l'image */
+      /* voile sombre fort : ne laisse que le lion en ambiance, supprime le
+         texte et la carte incrustes dans l'image (effet de "double") */
       body::before {
         content: "";
         position: fixed; inset: 0;
         background:
-          linear-gradient(90deg, rgba(4, 7, 16, .94) 0%, rgba(4, 7, 16, .78) 42%, rgba(4, 7, 16, .28) 70%, rgba(4, 7, 16, .55) 100%),
-          radial-gradient(120% 80% at 50% 120%, rgba(4, 7, 16, .8), transparent 60%);
+          radial-gradient(46% 42% at 62% 20%, rgba(6, 9, 18, 0) 0%, rgba(6, 9, 18, .82) 78%),
+          linear-gradient(0deg, rgba(6, 9, 18, .76), rgba(6, 9, 18, .76));
         pointer-events: none;
       }
 
@@ -85,13 +86,13 @@
       /* ---------- Carte de connexion ---------- */
       .card {
         flex: 0 0 430px;
-        background: linear-gradient(180deg, rgba(13, 20, 38, .86), rgba(9, 14, 28, .9));
+        background: linear-gradient(180deg, rgba(12, 18, 34, .975), rgba(8, 12, 24, .985));
         border: 1px solid rgba(120, 170, 255, .22);
         border-radius: 22px;
         padding: 34px 34px 26px;
-        box-shadow: 0 30px 80px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(255, 255, 255, .05);
-        backdrop-filter: blur(14px);
-        -webkit-backdrop-filter: blur(14px);
+        box-shadow: 0 30px 80px rgba(0, 0, 0, .6), inset 0 1px 0 rgba(255, 255, 255, .05);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
         animation: cardIn .55s cubic-bezier(.2, .7, .2, 1) both;
       }
       .card .badge {
