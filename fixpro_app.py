@@ -87,6 +87,46 @@ def _format_dt_hm(value):
     return s
 
 
+@app.template_filter('time_ago')
+def _format_time_ago(value):
+    """Duree relative en francais : 'Il y a 2 h', 'Il y a 3 j'..."""
+    if not value:
+        return ''
+    try:
+        if hasattr(value, 'year'):
+            dt = value
+        else:
+            s = str(value).replace('T', ' ')[:19]
+            dt = datetime.strptime(s, '%Y-%m-%d %H:%M:%S')
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+    except (ValueError, TypeError):
+        return str(value)
+    delta = datetime.now(timezone.utc) - dt
+    secs = int(delta.total_seconds())
+    if secs < 60:
+        return "A l'instant"
+    if secs < 3600:
+        return "Il y a %d min" % (secs // 60)
+    if secs < 86400:
+        return "Il y a %d h" % (secs // 3600)
+    if secs < 2592000:
+        return "Il y a %d j" % (secs // 86400)
+    if secs < 31536000:
+        return "Il y a %d mois" % (secs // 2592000)
+    return "Il y a %d an%s" % (secs // 31536000, 's' if secs // 31536000 > 1 else '')
+
+
+@app.template_filter('gnf')
+def _format_gnf(value):
+    """Formate un entier en 'GNF 1 234 567'."""
+    try:
+        n = int(value or 0)
+    except (ValueError, TypeError):
+        n = 0
+    return "GNF " + format(n, ',').replace(',', ' ')
+
+
 _ratelimit_storage = app.config.get("RATELIMIT_STORAGE_URI", "memory://")
 if (_ratelimit_storage == "memory://"
         and app.config.get("FLASK_ENV") == "production"):
