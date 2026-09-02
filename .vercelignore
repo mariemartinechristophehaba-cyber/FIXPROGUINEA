@@ -6,6 +6,10 @@ __pycache__
 
 # Node
 node_modules/
+admin-nextjs/.next/
+admin-nextjs/node_modules/
+admin-nextjs/out/
+admin-nextjs/dist/
 
 # Flutter
 mobile/.dart_tool/

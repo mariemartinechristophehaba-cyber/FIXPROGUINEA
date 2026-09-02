@@ -498,6 +498,21 @@ def _bearer_token_user():
     return user if not reason else None
 
 
+def _safe_next_url(url):
+    """Retourne une URL de redirection locale ou vide pour eviter les open redirects."""
+    if not url:
+        return ""
+    if url.startswith('/') and not url.startswith('//'):
+        return url
+    try:
+        parsed = urllib.parse.urlparse(url)
+        if parsed.scheme in ('http', 'https') and parsed.netloc == request.host:
+            return url
+    except Exception:
+        pass
+    return ""
+
+
 def login_required(view_func):
     @wraps(view_func)
     def wrapper(*args, **kwargs):
@@ -507,7 +522,7 @@ def login_required(view_func):
             flash("Veuillez vous connecter pour acceder a cette page.", "error")
             next_login = (url_for("admin_login")
                           if request.endpoint and request.endpoint.startswith("admin")
-                          else url_for("login", next=request.url))
+                          else url_for("login", next=_safe_next_url(request.full_path)))
             return redirect(next_login)
         return view_func(*args, **kwargs)
 
@@ -1730,6 +1745,8 @@ def register_artisan():
         session.permanent = True
         if request.form.get("after_submit") == "home":
             return redirect(url_for("index"))
+        if verif_on:
+            return redirect(url_for("artisan_pending"))
         return redirect(url_for("artisan_dashboard"))
 
     return render_template("register_artisan.html", categories=categories,
@@ -3582,7 +3599,8 @@ def google_signup():
         flash("La connexion Google n'est pas encore configurée.", "error")
         return redirect(url_for("client_signup"))
 
-    session["google_next_url"] = request.args.get("next") or request.referrer or ""
+    session["google_next_url"] = _safe_next_url(
+        request.args.get("next") or request.referrer or "")
     redirect_uri = app.config.get("GOOGLE_REDIRECT_URI")
     return google_client.authorize_redirect(redirect_uri)
 
@@ -3612,7 +3630,7 @@ def google_callback():
         return redirect(url_for("client_signup"))
 
     conn = get_db_connection()
-    next_url = session.pop("google_next_url", "")
+    next_url = _safe_next_url(session.pop("google_next_url", ""))
     try:
         user = conn.execute(
             "SELECT * FROM users WHERE email = ?", (email,)).fetchone()
@@ -3680,7 +3698,7 @@ def complete_profile():
 
             new_user = conn.execute(
                 "SELECT * FROM users WHERE email = ?", (email,)).fetchone()
-            next_url = session.pop("google_next_url", "")
+            next_url = _safe_next_url(session.pop("google_next_url", ""))
             session.clear()
             session["user_id"] = new_user["id"]
             session.permanent = True
@@ -3779,7 +3797,8 @@ def _verify_mobile_token(token):
 @app.route("/login", methods=["GET", "POST"])
 @limiter.limit("20 per hour", methods=["POST"])
 def login():
-    next_url = request.args.get("next") or request.form.get("next") or ""
+    next_url = _safe_next_url(
+        request.args.get("next") or request.form.get("next") or "")
     if request.method == "POST":
         identifier = request.form.get("identifier", "").strip()
         password = request.form.get("password", "")
@@ -6766,7 +6785,7 @@ def _require_api_key():
     """
     key = app.config.get("ADMIN_API_KEY", "")
     if not key:
-        return jsonify({"error": "ADMIN_API_KEY non configuree"}), 500
+        return jsonify({"error": "ADMIN_API_KEY non configuree"}), 401
     header = request.headers.get("X-API-Key", "")
     if not secrets.compare_digest(str(header), str(key)):
         return jsonify({"error": "Non autorise"}), 401
