@@ -1,0 +1,307 @@
+{% extends 'base.html' %}
+{% block title %}Mon profil - FixPro{% endblock %}
+{% block header %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block tabbar %}{% endblock %}
+
+{% block extra_head %}
+<style>
+  :root { --db-blue:#2563EB; --db-blue-d:#1D4ED8; --db-ink:#0F172A; --db-mut:#64748B; }
+  body { background:#F4F6FB; }
+  .tp { max-width:560px; margin:0 auto; padding-bottom:110px; }
+
+  .tp-topbar { display:flex; align-items:center; justify-content:space-between; padding:14px 18px; background:#fff; border-bottom:1px solid #EEF1F6; position:sticky; top:0; z-index:20; }
+  .tp-logo { display:flex; align-items:center; gap:8px; font-size:20px; font-weight:800; color:var(--db-blue); }
+  .tp-topbar-right { display:flex; gap:12px; }
+  .tp-icobtn { position:relative; color:var(--db-ink); display:flex; }
+  .tp-icobtn .dot { position:absolute; top:-2px; right:-2px; width:9px; height:9px; border-radius:50%; background:#EF4444; border:2px solid #fff; }
+
+  .tp-head { padding:18px 18px 4px; }
+  .tp-head h1 { margin:0 0 3px; font-size:24px; font-weight:800; color:var(--db-ink); }
+  .tp-head p { margin:0; font-size:13.5px; color:var(--db-mut); }
+
+  .tp-card { background:#fff; border:1px solid #E7EBF2; border-radius:18px; margin:14px 16px 0; overflow:hidden; }
+  .tp-cover { height:120px; background:linear-gradient(120deg,#1E3A8A,#2563EB); position:relative; }
+  .tp-id { padding:0 18px 18px; margin-top:-44px; }
+  .tp-ava-wrap { position:relative; width:92px; height:92px; }
+  .tp-ava { width:92px; height:92px; border-radius:50%; object-fit:cover; border:4px solid #fff; background:#DBE6FF;
+    display:flex; align-items:center; justify-content:center; font-weight:800; font-size:30px; color:var(--db-blue-d); }
+  .tp-ava-cam { position:absolute; right:2px; bottom:2px; width:26px; height:26px; border-radius:50%; background:#0F172A; color:#fff;
+    display:flex; align-items:center; justify-content:center; border:2px solid #fff; }
+  .tp-id-row { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-top:10px; flex-wrap:wrap; }
+  .tp-name { font-size:20px; font-weight:800; color:var(--db-ink); display:flex; align-items:center; gap:6px; }
+  .tp-prof { font-size:14px; color:var(--db-mut); margin:2px 0 6px; }
+  .tp-meta { display:flex; flex-wrap:wrap; gap:14px; font-size:12.5px; color:var(--db-mut); margin-top:6px; }
+  .tp-meta span { display:flex; align-items:center; gap:5px; }
+  .tp-rate { display:flex; align-items:center; gap:5px; font-size:13px; font-weight:700; color:var(--db-ink); }
+  .tp-btn-o { display:inline-flex; align-items:center; gap:6px; padding:9px 15px; border-radius:10px; border:1px solid #C7D6F5;
+    background:#fff; color:var(--db-blue-d); font-size:13px; font-weight:700; cursor:pointer; text-decoration:none; }
+
+  .tp-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin:16px; background:#fff; border:1px solid #E7EBF2; border-radius:16px; padding:16px 8px; }
+  @media (max-width:440px){ .tp-stats { grid-template-columns:repeat(2,1fr); gap:14px 6px; } }
+  .tp-stat { text-align:center; }
+  .tp-stat-ico { width:36px; height:36px; border-radius:11px; background:#EEF4FF; color:var(--db-blue); display:flex; align-items:center; justify-content:center; margin:0 auto 6px; }
+  .tp-stat .n { font-size:18px; font-weight:800; color:var(--db-ink); }
+  .tp-stat .l { font-size:11px; color:var(--db-mut); line-height:1.3; }
+
+  .tp-sec { background:#fff; border:1px solid #E7EBF2; border-radius:16px; margin:14px 16px 0; padding:16px; }
+  .tp-sec-h { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .tp-sec-h h2 { margin:0; font-size:16px; font-weight:800; color:var(--db-ink); }
+  .tp-link { font-size:13px; font-weight:700; color:var(--db-blue); background:none; border:0; cursor:pointer; text-decoration:none; }
+  .tp-about { font-size:13.5px; line-height:1.6; color:#334155; margin:0; }
+
+  .tp-chips { display:flex; flex-wrap:wrap; gap:8px; }
+  .tp-chip { display:flex; align-items:center; gap:7px; padding:10px 12px; border:1px solid #E7EBF2; border-radius:12px; font-size:12.5px; font-weight:600; color:var(--db-ink); }
+  .tp-chip svg { color:var(--db-blue); }
+
+  .tp-gallery { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; }
+  .tp-shot { border:1px solid #E7EBF2; border-radius:14px; overflow:hidden; }
+  .tp-shot img { width:100%; height:120px; object-fit:cover; display:block; background:#EEF1F6; }
+  .tp-shot .cap { padding:8px 10px; font-size:12px; font-weight:600; color:var(--db-ink); }
+  .tp-shot .sub { padding:0 10px 9px; font-size:11px; color:var(--db-mut); }
+  .tp-empty { text-align:center; font-size:13px; color:var(--db-mut); padding:16px 8px; }
+
+  .tp-info { display:grid; grid-template-columns:1fr 1fr; gap:16px 14px; }
+  @media (max-width:440px){ .tp-info { grid-template-columns:1fr; } }
+  .tp-info-item { display:flex; gap:10px; }
+  .tp-info-ico { width:34px; height:34px; border-radius:10px; background:#EEF4FF; color:var(--db-blue); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .tp-info-l { font-size:11.5px; color:var(--db-mut); }
+  .tp-info-v { font-size:13px; font-weight:600; color:var(--db-ink); word-break:break-word; }
+
+  /* edit form */
+  .tp-edit { margin:14px 16px 0; background:#fff; border:1px solid #C7D6F5; border-radius:16px; padding:16px; }
+  .tp-edit label { display:block; font-size:12.5px; font-weight:700; color:var(--db-ink); margin:10px 0 4px; }
+  .tp-edit input, .tp-edit textarea { width:100%; padding:10px 12px; border:1px solid #E7EBF2; border-radius:10px; font-size:14px; font-family:inherit; }
+  .tp-edit textarea { min-height:80px; resize:vertical; }
+  .tp-edit-actions { display:flex; gap:10px; margin-top:14px; }
+  .tp-btn-p { flex:1; padding:12px; border-radius:10px; background:var(--db-blue-d); color:#fff; border:0; font-size:14px; font-weight:700; cursor:pointer; }
+  .tp-btn-c { padding:12px 16px; border-radius:10px; background:#fff; color:var(--db-mut); border:1px solid #E7EBF2; font-size:14px; font-weight:700; cursor:pointer; }
+
+  .db-tabbar { position:fixed; left:0; right:0; bottom:0; z-index:30; display:flex; justify-content:space-around; align-items:flex-end;
+    background:#fff; border-top:1px solid #E7EBF2; padding:8px 4px calc(8px + env(safe-area-inset-bottom)); }
+  .db-tab { display:flex; flex-direction:column; align-items:center; gap:3px; font-size:11px; font-weight:600; color:#94A3B8; text-decoration:none; }
+  .db-tab.active { color:var(--db-blue); }
+  .db-tab-fab { width:48px; height:48px; border-radius:50%; background:var(--db-blue-d); color:#fff; display:flex; align-items:center; justify-content:center;
+    margin-top:-14px; box-shadow:0 6px 16px rgba(37,99,235,.4); }
+</style>
+{% endblock %}
+
+{% block content %}
+{% set prof_label = user.profession or 'Technicien' %}
+{% set zone = user.zone_intervention or user.city or 'Conakry et environs' %}
+<div class="tp">
+
+  <div class="tp-topbar">
+    <span class="tp-logo">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+      FixPro
+    </span>
+    <div class="tp-topbar-right">
+      <a class="tp-icobtn" href="{{ url_for('notifications') }}" aria-label="Notifications">
+        <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        {% if unread_count %}<span class="dot"></span>{% endif %}
+      </a>
+      <a class="tp-icobtn" href="{{ url_for('logout') }}" aria-label="Déconnexion">
+        <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/></svg>
+      </a>
+    </div>
+  </div>
+
+  <div class="tp-head">
+    <h1>Mon profil</h1>
+    <p>Gérez vos informations et développez votre visibilité.</p>
+  </div>
+
+  <div class="tp-card">
+    <div class="tp-cover"></div>
+    <div class="tp-id">
+      <div class="tp-ava-wrap">
+        {% if user.photo_url %}
+        <img class="tp-ava" src="{{ user.photo_url }}" alt="">
+        {% else %}
+        <span class="tp-ava">{{ (user.full_name or 'T')[0]|upper }}</span>
+        {% endif %}
+        <span class="tp-ava-cam"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3Z"/><circle cx="12" cy="13" r="3"/></svg></span>
+      </div>
+      <div class="tp-id-row">
+        <div>
+          <div class="tp-name">
+            {{ user.full_name or 'Technicien' }}
+            {% if user.is_verified %}<svg width="18" height="18" viewBox="0 0 24 24" fill="#2563EB"><path d="m12 2 2.4 2.1 3.1-.5 1 3 3 1-.5 3.1L26 12l-2.1 2.4M12 2 9.6 4.1 6.5 3.6l-1 3-3 1 .5 3.1L2 12l2.1 2.4-.5 3.1 3 1 1 3 3.1-.5L12 22l2.4-2.1 3.1.5 1-3 3-1-.5-3.1L22 12" opacity="0"/><path d="M12 1.5 14.6 4l3.5-.3.8 3.4 3.1 1.6-1.6 3.1 1.6 3.1-3.1 1.6-.8 3.4-3.5-.3L12 22.5 9.4 20l-3.5.3-.8-3.4-3.1-1.6L3.6 12 2 8.9l3.1-1.6.8-3.4L9.4 4 12 1.5Z"/><path d="m8.5 12 2.3 2.3 4.7-4.6" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>{% endif %}
+          </div>
+          <div class="tp-prof">{{ prof_label }} professionnel</div>
+          <div class="tp-rate">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="#F59E0B"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            {{ '%.1f'|format(note_avg or 0) }} <span style="color:var(--db-mut);font-weight:500;">({{ note_count or 0 }} avis clients)</span>
+          </div>
+          <div class="tp-meta">
+            <span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>{{ user.city or 'Conakry' }}{% if user.quartier %}, {{ user.quartier }}{% endif %}</span>
+            <span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>{{ user.years_experience or 0 }} ans d'expérience</span>
+          </div>
+        </div>
+        <button type="button" class="tp-btn-o" id="tpEditToggle">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+          Modifier le profil
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="tp-stats">
+    <div class="tp-stat">
+      <span class="tp-stat-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+      <div class="n">{{ note_count or 0 }}</div><div class="l">Avis clients</div>
+    </div>
+    <div class="tp-stat">
+      <span class="tp-stat-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></span>
+      <div class="n">{{ services_count }}</div><div class="l">Services</div>
+    </div>
+    <div class="tp-stat">
+      <span class="tp-stat-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.5-3.5L9 20"/></svg></span>
+      <div class="n">{{ realisations_count }}</div><div class="l">Réalisations</div>
+    </div>
+    <div class="tp-stat">
+      <span class="tp-stat-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></span>
+      <div class="n">{{ calls_count }}</div><div class="l">Appels reçus<br>via FixPro</div>
+    </div>
+  </div>
+
+  <form class="tp-edit" id="tpEditForm" method="post" action="{{ url_for('profile') }}" hidden>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>Nom complet</label>
+    <input type="text" name="full_name" value="{{ user.full_name or '' }}">
+    <label>Métier</label>
+    <input type="text" name="profession" value="{{ user.profession or '' }}">
+    <label>Téléphone</label>
+    <input type="text" name="phone" value="{{ user.phone or '' }}">
+    <label>Ville</label>
+    <input type="text" name="city" value="{{ user.city or '' }}">
+    <label>Zone d'intervention</label>
+    <input type="text" name="zone_intervention" value="{{ user.zone_intervention or '' }}">
+    <label>Années d'expérience</label>
+    <input type="number" name="years_experience" min="0" value="{{ user.years_experience or 0 }}">
+    <label>Langues parlées</label>
+    <input type="text" name="skills" value="{{ user.skills or '' }}" placeholder="Français, Soussou...">
+    <label>À propos de moi</label>
+    <textarea name="bio">{{ user.bio or '' }}</textarea>
+    <div class="tp-edit-actions">
+      <button type="submit" class="tp-btn-p">Enregistrer</button>
+      <button type="button" class="tp-btn-c" id="tpEditCancel">Annuler</button>
+    </div>
+  </form>
+
+  <div class="tp-sec">
+    <div class="tp-sec-h">
+      <h2>À propos de moi</h2>
+      <button type="button" class="tp-link" onclick="document.getElementById('tpEditToggle').click()">Modifier</button>
+    </div>
+    <p class="tp-about">{{ user.bio or "Ajoutez une description de votre activité, votre expérience et vos points forts pour rassurer les clients." }}</p>
+  </div>
+
+  <div class="tp-sec">
+    <div class="tp-sec-h">
+      <h2>Mes services</h2>
+      <a class="tp-link" href="{{ url_for('artisan_dashboard') }}">Modifier les services</a>
+    </div>
+    {% if service_names %}
+    <div class="tp-chips">
+      {% for s in service_names %}
+      <span class="tp-chip">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        {{ s }}
+      </span>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="tp-empty">Aucun service renseigné pour le moment.</p>
+    {% endif %}
+  </div>
+
+  <div class="tp-sec">
+    <div class="tp-sec-h">
+      <h2>Mes réalisations</h2>
+      {% if portfolio %}<a class="tp-link" href="{{ url_for('artisan_detail', artisan_id=user.id) }}">Voir toutes</a>{% endif %}
+    </div>
+    {% if portfolio %}
+    <div class="tp-gallery">
+      {% for p in portfolio %}
+      <div class="tp-shot">
+        <img src="{{ p.photo_url }}" alt="" loading="lazy">
+        {% if p.caption %}<div class="cap">{{ p.caption }}</div>{% endif %}
+        <div class="sub">{{ p.created_at|time_ago }}</div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="tp-empty">Ajoutez des photos de vos chantiers (avant / après) pour mettre en valeur votre travail.</p>
+    {% endif %}
+  </div>
+
+  <div class="tp-sec">
+    <div class="tp-sec-h">
+      <h2>Informations professionnelles</h2>
+      <button type="button" class="tp-link" onclick="document.getElementById('tpEditToggle').click()">Modifier</button>
+    </div>
+    <div class="tp-info">
+      <div class="tp-info-item">
+        <span class="tp-info-ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41 13.42 20.6a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82Z"/><circle cx="7" cy="7" r="1.5"/></svg></span>
+        <div><div class="tp-info-l">Catégorie</div><div class="tp-info-v">{{ user.profession or '—' }}</div></div>
+      </div>
+      <div class="tp-info-item">
+        <span class="tp-info-ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg></span>
+        <div><div class="tp-info-l">E-mail</div><div class="tp-info-v">{{ user.email or '—' }}</div></div>
+      </div>
+      <div class="tp-info-item">
+        <span class="tp-info-ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></span>
+        <div><div class="tp-info-l">Téléphone</div><div class="tp-info-v">{{ user.phone or '—' }}</div></div>
+      </div>
+      <div class="tp-info-item">
+        <span class="tp-info-ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg></span>
+        <div><div class="tp-info-l">Langues</div><div class="tp-info-v">{{ user.skills or '—' }}</div></div>
+      </div>
+      <div class="tp-info-item">
+        <span class="tp-info-ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></span>
+        <div><div class="tp-info-l">Zone d'intervention</div><div class="tp-info-v">{{ zone }}</div></div>
+      </div>
+      <div class="tp-info-item">
+        <span class="tp-info-ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
+        <div><div class="tp-info-l">Disponibilité</div><div class="tp-info-v">{{ user.available_days or ('Disponible' if user.availability_status == 'en_ligne' else 'Non renseignée') }}</div></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<nav class="db-tabbar">
+  <a class="db-tab" href="{{ url_for('artisan_dashboard') }}">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9"/></svg>
+    <span>Accueil</span>
+  </a>
+  <a class="db-tab" href="{{ url_for('technician_calls') }}">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+    <span>Appels</span>
+  </a>
+  <a class="db-tab-fab" href="{{ url_for('profile') }}" onclick="document.getElementById('tpEditToggle').click();return false;" aria-label="Modifier">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+  </a>
+  <a class="db-tab" href="{{ url_for('artisan_dashboard') }}#dash-subscription">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+    <span>Abonnement</span>
+  </a>
+  <a class="db-tab active" href="{{ url_for('profile') }}">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
+    <span>Profil</span>
+  </a>
+</nav>
+
+<script>
+(function(){
+  var form = document.getElementById('tpEditForm');
+  var toggle = document.getElementById('tpEditToggle');
+  var cancel = document.getElementById('tpEditCancel');
+  function open(){ form.hidden = false; form.scrollIntoView({behavior:'smooth', block:'center'}); }
+  toggle.addEventListener('click', function(){ form.hidden ? open() : (form.hidden = true); });
+  cancel.addEventListener('click', function(){ form.hidden = true; });
+})();
+</script>
+{% endblock %}

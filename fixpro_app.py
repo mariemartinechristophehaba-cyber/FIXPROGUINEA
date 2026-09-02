@@ -4424,40 +4424,88 @@ def profile():
     if request.method == "POST":
         conn = get_db_connection()
         try:
-            conn.execute(
-                "UPDATE users SET full_name = ?, phone = ?, profession = ?,"
-                " city = ?, bio = ?, hourly_rate = ?, latitude = ?, longitude = ?"
-                " WHERE id = ?",
-                (request.form.get("full_name", "").strip(),
-                 request.form.get("phone", "").strip(),
-                 request.form.get("profession", "").strip(),
-                 request.form.get("city", "").strip(),
-                 request.form.get("bio", "").strip(),
-                 _to_float(request.form.get("hourly_rate")),
-                 _to_float(request.form.get("latitude")),
-                 _to_float(request.form.get("longitude")),
-                 user["id"]),
-            )
+            if _is_technician(user):
+                conn.execute(
+                    "UPDATE users SET full_name = ?, phone = ?, profession = ?,"
+                    " city = ?, zone_intervention = ?, years_experience = ?,"
+                    " skills = ?, bio = ? WHERE id = ?",
+                    (request.form.get("full_name", "").strip(),
+                     request.form.get("phone", "").strip(),
+                     request.form.get("profession", "").strip(),
+                     request.form.get("city", "").strip(),
+                     request.form.get("zone_intervention", "").strip(),
+                     _to_int(request.form.get("years_experience")),
+                     request.form.get("skills", "").strip(),
+                     request.form.get("bio", "").strip(),
+                     user["id"]),
+                )
+            else:
+                conn.execute(
+                    "UPDATE users SET full_name = ?, phone = ?, profession = ?,"
+                    " city = ?, bio = ?, hourly_rate = ?, latitude = ?, longitude = ?"
+                    " WHERE id = ?",
+                    (request.form.get("full_name", "").strip(),
+                     request.form.get("phone", "").strip(),
+                     request.form.get("profession", "").strip(),
+                     request.form.get("city", "").strip(),
+                     request.form.get("bio", "").strip(),
+                     _to_float(request.form.get("hourly_rate")),
+                     _to_float(request.form.get("latitude")),
+                     _to_float(request.form.get("longitude")),
+                     user["id"]),
+                )
             conn.commit()
             flash("Profil mis à jour.", "success")
         finally:
             conn.close()
         return redirect(url_for("profile"))
 
-    if user.get("role") == "artisan":
+    if _is_technician(user):
         conn = get_db_connection()
         try:
             unread_count = 0
             try:
-                row = conn.execute(
+                unread_count = conn.execute(
                     "SELECT COUNT(*) AS n FROM notifications WHERE user_id = ? AND is_read = 0",
-                    (user["id"],)).fetchone()
-                unread_count = row["n"]
+                    (user["id"],)).fetchone()["n"]
             except Exception:
+                conn.rollback()
                 unread_count = 0
+
+            note = conn.execute(
+                "SELECT COALESCE(AVG(rating), 0) AS avg, COUNT(*) AS cnt FROM reviews"
+                " WHERE artisan_id = ?", (user["id"],)).fetchone()
+
+            service_names = [r["name"] for r in conn.execute(
+                "SELECT s.name FROM artisan_services a JOIN services s ON s.id = a.service_id"
+                " WHERE a.artisan_id = ? ORDER BY s.name", (user["id"],)).fetchall()]
+
+            portfolio = []
+            try:
+                portfolio = conn.execute(
+                    "SELECT photo_url, caption, created_at FROM artisan_portfolio"
+                    " WHERE artisan_id = ? ORDER BY created_at DESC LIMIT 12",
+                    (user["id"],)).fetchall()
+            except Exception:
+                conn.rollback()
+                portfolio = []
+
+            calls_count = 0
+            try:
+                calls_count = conn.execute(
+                    "SELECT COUNT(*) AS n FROM client_contacts WHERE artisan_id = ?",
+                    (user["id"],)).fetchone()["n"]
+            except Exception:
+                conn.rollback()
+                calls_count = 0
         finally:
             conn.close()
-        return render_template("profile.html", user=user, unread_count=unread_count)
+        return render_template(
+            "technician_profile.html", user=user, unread_count=unread_count,
+            note_avg=note["avg"], note_count=note["cnt"],
+            service_names=service_names, portfolio=portfolio,
+            services_count=len(service_names), realisations_count=len(portfolio),
+            calls_count=calls_count)
 
     conn = get_db_connection()
     try:
