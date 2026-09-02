@@ -19,6 +19,24 @@
   .ts-head h1 { margin:0 0 4px; font-size:clamp(22px, 6vw, 28px); font-weight:800; color:var(--db-ink); }
   .ts-head p { margin:0; font-size:13.5px; color:var(--db-mut); }
 
+  /* abonnement en cours */
+  .ts-current { margin:16px 16px 0; border-radius:18px; padding:18px; border:1px solid #E7EBF2; background:#fff; }
+  .ts-current-top { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+  .ts-current h2 { margin:0; font-size:13px; font-weight:800; letter-spacing:.03em; text-transform:uppercase; color:var(--db-mut); }
+  .ts-state { display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:800; padding:4px 10px; border-radius:999px; }
+  .ts-state .d { width:8px; height:8px; border-radius:50%; }
+  .ts-state.ok   { background:#DCFCE7; color:#15803D; } .ts-state.ok .d   { background:#16A34A; }
+  .ts-state.warn { background:#FEF3C7; color:#B45309; } .ts-state.warn .d { background:#F59E0B; }
+  .ts-state.bad  { background:#FEE2E2; color:#DC2626; } .ts-state.bad .d  { background:#EF4444; }
+  .ts-current-plan { font-size:20px; font-weight:800; color:var(--db-ink); margin:10px 0 8px; }
+  .ts-current-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px 14px; }
+  .ts-current-grid .l { font-size:11.5px; color:var(--db-mut); }
+  .ts-current-grid .v { font-size:13.5px; font-weight:700; color:var(--db-ink); }
+  .ts-current-actions { display:flex; gap:10px; margin-top:16px; flex-wrap:wrap; }
+  .ts-current-actions a { flex:1 1 auto; min-width:140px; text-align:center; padding:12px; border-radius:11px; font-size:13.5px; font-weight:700; text-decoration:none; }
+  .ts-current-actions .primary { background:var(--db-blue-d); color:#fff; }
+  .ts-current-actions .ghost { background:#fff; border:1px solid #C7D6F5; color:var(--db-blue-d); }
+
   .ts-promo { margin:16px 16px 0; background:#EEF3FE; border:1px solid #DCE6FE; border-radius:16px; padding:16px; display:flex; align-items:center; gap:14px; }
   .ts-promo-ico { width:46px; height:46px; flex-shrink:0; color:var(--db-blue); }
   .ts-promo h3 { margin:0 0 3px; font-size:15px; font-weight:800; color:var(--db-ink); }
@@ -68,6 +86,20 @@
   .ts-pay span { font-size:12px; font-weight:700; color:#334155; padding:8px 12px; border:1px solid #E7EBF2; border-radius:10px; background:#F8FAFF; }
   .ts-pay-note { display:flex; align-items:center; gap:7px; margin-top:12px; font-size:12px; color:var(--db-mut); }
 
+  /* historique */
+  .ts-pay-row { display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid #F1F5F9; }
+  .ts-pay-row:last-child { border-bottom:0; padding-bottom:0; }
+  .ts-pay-row .info { flex:1; min-width:0; }
+  .ts-pay-row .info .t { font-size:13.5px; font-weight:700; color:var(--db-ink); }
+  .ts-pay-row .info .s { font-size:11.5px; color:var(--db-mut); }
+  .ts-pay-row .amt { font-size:13.5px; font-weight:800; color:var(--db-ink); white-space:nowrap; }
+  .ts-pay-pill { font-size:10.5px; font-weight:800; padding:3px 8px; border-radius:7px; white-space:nowrap; }
+  .ts-pay-pill.paid { background:#DCFCE7; color:#15803D; }
+  .ts-pay-pill.pending { background:#FEF3C7; color:#B45309; }
+  .ts-pay-pill.failed { background:#FEE2E2; color:#DC2626; }
+  .ts-pay-pill.refunded { background:#F1F5F9; color:#64748B; }
+  .ts-empty { font-size:13px; color:var(--db-mut); text-align:center; padding:8px 0 2px; }
+
   .ts-help { margin:16px 16px 0; background:#EEF4FF; border:1px solid #DBE6FF; border-radius:16px; padding:16px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
   .ts-help-ico { width:38px; height:38px; border-radius:50%; background:var(--db-blue); color:#fff; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
   .ts-help-txt { flex:1; min-width:160px; }
@@ -81,6 +113,7 @@
 {% endblock %}
 
 {% block content %}
+{% set has_sub = current is not none %}
 <div class="tc">
 
   <div class="ts-topbar">
@@ -102,9 +135,40 @@
     <p>Choisissez le plan qui vous convient pour développer votre activité.</p>
   </div>
 
+  {% if has_sub %}
+  <div class="ts-current">
+    <div class="ts-current-top">
+      <h2>Votre abonnement actuel</h2>
+      {% if status in ('ACTIVE', 'TRIAL') %}
+        <span class="ts-state ok"><span class="d"></span> Actif</span>
+      {% elif status == 'PAST_DUE' %}
+        <span class="ts-state warn"><span class="d"></span> En attente de paiement</span>
+      {% elif status == 'EXPIRED' %}
+        <span class="ts-state bad"><span class="d"></span> Expiré</span>
+      {% elif status == 'SUSPENDED' %}
+        <span class="ts-state bad"><span class="d"></span> Suspendu</span>
+      {% else %}
+        <span class="ts-state warn"><span class="d"></span> {{ status|capitalize }}</span>
+      {% endif %}
+    </div>
+    <div class="ts-current-plan">{{ current.plan_name or 'Abonnement FixPro' }}</div>
+    <div class="ts-current-grid">
+      <div><div class="l">Fréquence</div><div class="v">{{ frequency or 'Mensuel' }}</div></div>
+      <div><div class="l">{{ 'Prochaine échéance' if status in ('ACTIVE','TRIAL') else 'Échéance' }}</div>
+        <div class="v">{{ current.end_date|date_long_fr if current.end_date else '—' }}</div></div>
+    </div>
+    <div class="ts-current-actions">
+      <a class="ghost" href="{{ url_for('client_tickets') }}">Gérer mon abonnement</a>
+      {% if current_code %}
+      <a class="primary" href="{{ url_for('technician_subscription_checkout', plan=current_code, period='year' if frequency == 'Annuel' else 'month') }}">Renouveler</a>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
   <div class="ts-promo">
     <span class="ts-promo-ico">
-      <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a5 5 0 1 0 0-10 5 5 0 0 0 0 10Z"/><path d="m8.5 13-2 8 5.5-3 5.5 3-2-8"/><path d="m12 7 .9 1.8 2 .3-1.4 1.4.3 2-1.8-1-1.8 1 .3-2L9.1 9.1l2-.3L12 7Z" fill="currentColor"/></svg>
+      <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a5 5 0 1 0 0-10 5 5 0 0 0 0 10Z"/><path d="m8.5 13-2 8 5.5-3 5.5 3-2-8"/></svg>
     </span>
     <div>
       <h3>Développez votre activité avec FixPro</h3>
@@ -119,8 +183,8 @@
 
   <div class="ts-toggle-row">
     <div class="ts-toggle" id="tsToggle">
-      <button type="button" class="active" data-period="month">Mensuel <span class="save">-10%</span></button>
-      <button type="button" data-period="year">Annuel <span class="save">-10%</span></button>
+      <button type="button" class="active" data-period="month">Mensuel</button>
+      <button type="button" data-period="year">Annuel <span class="save">-{{ annual_discount }}%</span></button>
     </div>
     <span class="ts-toggle-hint">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
@@ -131,6 +195,7 @@
   <div class="ts-plans">
     {% for plan in plans %}
     {% set is_current = current_active and current_code == plan.code %}
+    {% set year_price = (plan.price_month * 12 * (100 - annual_discount) / 100)|round|int %}
     <div class="ts-plan {{ 'pop' if plan.popular }}">
       {% if plan.popular %}<span class="ts-plan-pop">Populaire</span>{% endif %}
       <div class="ts-plan-top">
@@ -149,7 +214,7 @@
 
       <div class="ts-plan-price"
            data-month="{{ '{:,}'.format(plan.price_month).replace(',', ' ') }} GNF"
-           data-year="{{ '{:,}'.format((plan.price_month * 12 * 0.9)|round|int).replace(',', ' ') }} GNF">
+           data-year="{{ '{:,}'.format(year_price).replace(',', ' ') }} GNF">
         {{ '{:,}'.format(plan.price_month).replace(',', ' ') }} GNF <small class="ts-per">/ mois</small>
       </div>
 
@@ -165,7 +230,8 @@
       {% if is_current %}
       <span class="ts-plan-btn current">Votre plan actuel</span>
       {% else %}
-      <a class="ts-plan-btn" href="{{ url_for('client_tickets') }}">Choisir ce plan</a>
+      <a class="ts-plan-btn ts-choose" data-plan="{{ plan.code }}"
+         href="{{ url_for('technician_subscription_checkout', plan=plan.code, period='month') }}">Choisir ce plan</a>
       {% endif %}
     </div>
     {% endfor %}
@@ -208,6 +274,29 @@
     </div>
   </div>
 
+  <div class="ts-card">
+    <h2>Historique des paiements</h2>
+    {% if payments %}
+      {% for p in payments %}
+      <div class="ts-pay-row">
+        <div class="info">
+          <div class="t">{{ p.plan_name }} · {{ p.frequency }}</div>
+          <div class="s">{{ p.date|date_long_fr }} · {{ p.method }}</div>
+        </div>
+        <span class="amt">{{ '{:,}'.format(p.amount or 0).replace(',', ' ') }} {{ p.currency }}</span>
+        <span class="ts-pay-pill {{ p.status }}">
+          {%- if p.status == 'paid' %}Payé
+          {%- elif p.status == 'failed' %}Échoué
+          {%- elif p.status == 'refunded' %}Remboursé
+          {%- else %}En attente{% endif -%}
+        </span>
+      </div>
+      {% endfor %}
+    {% else %}
+      <p class="ts-empty">Aucun paiement pour le moment.</p>
+    {% endif %}
+  </div>
+
   <div class="ts-help">
     <span class="ts-help-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></span>
     <div class="ts-help-txt">
@@ -248,16 +337,23 @@
 (function(){
   var toggle = document.getElementById('tsToggle');
   var btns = toggle.querySelectorAll('button');
+  var period = 'month';
+  function setUrlPeriod(url){
+    return url.replace(/([?&])period=(month|year)/, '$1period=' + period);
+  }
   btns.forEach(function(b){
     b.addEventListener('click', function(){
       btns.forEach(function(x){ x.classList.remove('active'); });
       b.classList.add('active');
-      var per = b.dataset.period;
+      period = b.dataset.period;
       document.querySelectorAll('.ts-plan-price').forEach(function(el){
         var main = el.childNodes[0];
         var per_el = el.querySelector('.ts-per');
-        main.textContent = (per === 'year' ? el.dataset.year : el.dataset.month) + ' ';
-        if (per_el) per_el.textContent = per === 'year' ? '/ an' : '/ mois';
+        main.textContent = (period === 'year' ? el.dataset.year : el.dataset.month) + ' ';
+        if (per_el) per_el.textContent = period === 'year' ? '/ an' : '/ mois';
+      });
+      document.querySelectorAll('.ts-choose').forEach(function(a){
+        a.href = setUrlPeriod(a.href);
       });
     });
   });
