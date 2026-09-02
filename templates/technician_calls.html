@@ -3,8 +3,10 @@
 {% block header %}{% endblock %}
 {% block footer %}{% endblock %}
 {% block tabbar %}{% endblock %}
+{% block sidebar %}{% include '_tech_sidebar.html' %}{% endblock %}
 
 {% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/tech-espace.css', v='1') }}">
 <style>
   :root { --db-blue:#2563EB; --db-blue-d:#1D4ED8; --db-ink:#0F172A; --db-mut:#64748B; }
   body { background:#F4F6FB; }
