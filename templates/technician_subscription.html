@@ -1,0 +1,271 @@
+{% extends 'base.html' %}
+{% block title %}Abonnement - FixPro{% endblock %}
+{% block header %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block tabbar %}{% endblock %}
+{% block sidebar %}{% include '_tech_sidebar.html' %}{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/tech-espace.css', v='3') }}">
+<style>
+  :root { --db-blue:#2563EB; --db-blue-d:#1D4ED8; --db-ink:#0F172A; --db-mut:#64748B; }
+
+  .ts-topbar { display:flex; align-items:center; justify-content:space-between; padding:14px 16px 6px; }
+  .ts-topbar .mid { display:flex; align-items:center; gap:8px; font-size:20px; font-weight:800; color:var(--db-blue); }
+  .ts-icobtn { width:40px; height:40px; border-radius:12px; border:1px solid #E7EBF2; background:#fff; display:flex; align-items:center; justify-content:center; color:var(--db-ink); position:relative; text-decoration:none; }
+  .ts-icobtn .dot { position:absolute; top:8px; right:8px; width:8px; height:8px; border-radius:50%; background:#EF4444; }
+
+  .ts-head { padding:6px 16px 4px; }
+  .ts-head h1 { margin:0 0 4px; font-size:clamp(22px, 6vw, 28px); font-weight:800; color:var(--db-ink); }
+  .ts-head p { margin:0; font-size:13.5px; color:var(--db-mut); }
+
+  .ts-promo { margin:16px 16px 0; background:#EEF3FE; border:1px solid #DCE6FE; border-radius:16px; padding:16px; display:flex; align-items:center; gap:14px; }
+  .ts-promo-ico { width:46px; height:46px; flex-shrink:0; color:var(--db-blue); }
+  .ts-promo h3 { margin:0 0 3px; font-size:15px; font-weight:800; color:var(--db-ink); }
+  .ts-promo p { margin:0; font-size:12.5px; color:#475569; }
+  .ts-promo-art { margin-left:auto; color:#9DB6F5; flex-shrink:0; }
+  @media (max-width:480px){ .ts-promo-art { display:none; } }
+
+  .ts-sec-title { margin:22px 16px 10px; font-size:18px; font-weight:800; color:var(--db-ink); }
+
+  .ts-toggle-row { display:flex; align-items:center; gap:12px; padding:0 16px; flex-wrap:wrap; }
+  .ts-toggle { display:inline-flex; background:#fff; border:1px solid #E7EBF2; border-radius:999px; padding:4px; }
+  .ts-toggle button { border:0; background:none; padding:9px 16px; border-radius:999px; font-size:13.5px; font-weight:700; color:var(--db-mut); cursor:pointer; display:inline-flex; align-items:center; gap:6px; }
+  .ts-toggle button.active { background:var(--db-blue-d); color:#fff; }
+  .ts-toggle .save { font-size:10.5px; font-weight:800; padding:2px 6px; border-radius:6px; background:#DCFCE7; color:#15803D; }
+  .ts-toggle button.active .save { background:rgba(255,255,255,.25); color:#fff; }
+  .ts-toggle-hint { display:flex; align-items:center; gap:6px; font-size:12px; color:var(--db-mut); }
+
+  .ts-plans { display:grid; grid-template-columns:1fr; gap:16px; padding:14px 16px 0; }
+  @media (min-width:720px){ .ts-plans { grid-template-columns:1fr 1fr; } }
+
+  .ts-plan { background:#fff; border:1px solid #E7EBF2; border-radius:18px; padding:20px; position:relative; display:flex; flex-direction:column; }
+  .ts-plan.pop { border:2px solid var(--db-blue); }
+  .ts-plan-pop { position:absolute; top:0; right:20px; transform:translateY(-50%); background:var(--db-blue-d); color:#fff; font-size:11px; font-weight:800; padding:4px 12px; border-radius:8px; }
+  .ts-plan-top { display:flex; align-items:flex-start; gap:12px; }
+  .ts-plan-ico { width:46px; height:46px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .ts-plan-ico.blue { background:#DBE6FF; color:var(--db-blue); }
+  .ts-plan-ico.gold { background:#FDE9B8; color:#B45309; }
+  .ts-plan-name { font-size:18px; font-weight:800; color:var(--db-ink); }
+  .ts-plan-desc { font-size:12.5px; color:var(--db-mut); line-height:1.45; margin-top:2px; }
+  .ts-plan-price { margin:16px 0 4px; font-size:23px; font-weight:800; color:var(--db-blue); }
+  .ts-plan-price small { font-size:13px; font-weight:600; color:var(--db-mut); }
+  .ts-feats { list-style:none; margin:14px 0 18px; padding:0; display:flex; flex-direction:column; gap:11px; }
+  .ts-feats li { display:flex; align-items:flex-start; gap:9px; font-size:13.5px; color:#334155; }
+  .ts-feats svg { flex-shrink:0; color:var(--db-blue); margin-top:1px; }
+  .ts-plan-btn { margin-top:auto; display:block; width:100%; text-align:center; padding:13px; border-radius:12px; font-size:14px; font-weight:700; text-decoration:none; cursor:pointer; border:1px solid var(--db-blue-d); background:var(--db-blue-d); color:#fff; }
+  .ts-plan-btn.current { background:#DCFCE7; border-color:#BBF7D0; color:#15803D; pointer-events:none; }
+
+  .ts-card { background:#fff; border:1px solid #E7EBF2; border-radius:16px; margin:16px 16px 0; padding:18px; }
+  .ts-card h2 { margin:0 0 14px; font-size:15px; font-weight:800; color:var(--db-ink); }
+  .ts-incl { display:grid; grid-template-columns:repeat(2,1fr); gap:16px 10px; }
+  @media (min-width:560px){ .ts-incl { grid-template-columns:repeat(4,1fr); } }
+  .ts-incl-item { text-align:center; }
+  .ts-incl-ico { width:44px; height:44px; border-radius:50%; background:#EEF4FF; color:var(--db-blue); display:flex; align-items:center; justify-content:center; margin:0 auto 8px; }
+  .ts-incl-item span { font-size:11.5px; color:#475569; line-height:1.35; }
+
+  .ts-pay { display:flex; flex-wrap:wrap; gap:8px; }
+  .ts-pay span { font-size:12px; font-weight:700; color:#334155; padding:8px 12px; border:1px solid #E7EBF2; border-radius:10px; background:#F8FAFF; }
+  .ts-pay-note { display:flex; align-items:center; gap:7px; margin-top:12px; font-size:12px; color:var(--db-mut); }
+
+  .ts-help { margin:16px 16px 0; background:#EEF4FF; border:1px solid #DBE6FF; border-radius:16px; padding:16px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .ts-help-ico { width:38px; height:38px; border-radius:50%; background:var(--db-blue); color:#fff; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .ts-help-txt { flex:1; min-width:160px; }
+  .ts-help-txt h3 { margin:0 0 2px; font-size:13.5px; font-weight:800; color:var(--db-ink); }
+  .ts-help-txt p { margin:0; font-size:12.5px; color:#475569; }
+  .ts-help a { display:inline-flex; align-items:center; gap:6px; padding:10px 14px; border-radius:10px; border:1px solid #C7D6F5; background:#fff; color:var(--db-blue-d); font-size:13px; font-weight:700; text-decoration:none; white-space:nowrap; }
+
+  .db-tab.active .tc-tab-ic { background:var(--db-blue-d); color:#fff; border-radius:50%; }
+  .tc-tab-ic { width:34px; height:34px; display:flex; align-items:center; justify-content:center; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="tc">
+
+  <div class="ts-topbar">
+    <button type="button" class="ts-icobtn" id="tcMenuBtn" aria-label="Retour">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+    </button>
+    <span class="mid">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+      FixPro
+    </span>
+    <a class="ts-icobtn" href="{{ url_for('notifications') }}" aria-label="Notifications">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      {% if unread_count %}<span class="dot"></span>{% endif %}
+    </a>
+  </div>
+
+  <div class="ts-head">
+    <h1>Abonnement</h1>
+    <p>Choisissez le plan qui vous convient pour développer votre activité.</p>
+  </div>
+
+  <div class="ts-promo">
+    <span class="ts-promo-ico">
+      <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a5 5 0 1 0 0-10 5 5 0 0 0 0 10Z"/><path d="m8.5 13-2 8 5.5-3 5.5 3-2-8"/><path d="m12 7 .9 1.8 2 .3-1.4 1.4.3 2-1.8-1-1.8 1 .3-2L9.1 9.1l2-.3L12 7Z" fill="currentColor"/></svg>
+    </span>
+    <div>
+      <h3>Développez votre activité avec FixPro</h3>
+      <p>Plus de visibilité, plus de clients, plus de revenus.</p>
+    </div>
+    <span class="ts-promo-art">
+      <svg width="70" height="54" viewBox="0 0 70 54" fill="none"><rect x="6" y="8" width="34" height="30" rx="4" fill="#C7D6F5"/><rect x="6" y="8" width="34" height="8" rx="4" fill="#8FA6F5"/><rect x="12" y="22" width="6" height="6" fill="#fff"/><rect x="22" y="22" width="6" height="6" fill="#fff"/><rect x="32" y="22" width="4" height="6" fill="#fff"/><rect x="46" y="30" width="5" height="12" rx="1" fill="#8FA6F5"/><rect x="54" y="24" width="5" height="18" rx="1" fill="#8FA6F5"/><rect x="62" y="18" width="5" height="24" rx="1" fill="#5B79F0"/></svg>
+    </span>
+  </div>
+
+  <h2 class="ts-sec-title">Nos formules</h2>
+
+  <div class="ts-toggle-row">
+    <div class="ts-toggle" id="tsToggle">
+      <button type="button" class="active" data-period="month">Mensuel <span class="save">-10%</span></button>
+      <button type="button" data-period="year">Annuel <span class="save">-10%</span></button>
+    </div>
+    <span class="ts-toggle-hint">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+      Économisez avec l'abonnement annuel
+    </span>
+  </div>
+
+  <div class="ts-plans">
+    {% for plan in plans %}
+    {% set is_current = current_active and current_code == plan.code %}
+    <div class="ts-plan {{ 'pop' if plan.popular }}">
+      {% if plan.popular %}<span class="ts-plan-pop">Populaire</span>{% endif %}
+      <div class="ts-plan-top">
+        <span class="ts-plan-ico {{ 'gold' if plan.icon == 'crown' else 'blue' }}">
+          {% if plan.icon == 'crown' %}
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 8 4.5 3L12 5l4.5 6L21 8l-2 11H5L3 8Z"/></svg>
+          {% else %}
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          {% endif %}
+        </span>
+        <div>
+          <div class="ts-plan-name">{{ plan.name }}</div>
+          <div class="ts-plan-desc">{{ plan.desc }}</div>
+        </div>
+      </div>
+
+      <div class="ts-plan-price"
+           data-month="{{ '{:,}'.format(plan.price_month).replace(',', ' ') }} GNF"
+           data-year="{{ '{:,}'.format((plan.price_month * 12 * 0.9)|round|int).replace(',', ' ') }} GNF">
+        {{ '{:,}'.format(plan.price_month).replace(',', ' ') }} GNF <small class="ts-per">/ mois</small>
+      </div>
+
+      <ul class="ts-feats">
+        {% for f in plan.features %}
+        <li>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m8 12 3 3 5-6"/></svg>
+          {{ f }}
+        </li>
+        {% endfor %}
+      </ul>
+
+      {% if is_current %}
+      <span class="ts-plan-btn current">Votre plan actuel</span>
+      {% else %}
+      <a class="ts-plan-btn" href="{{ url_for('client_tickets') }}">Choisir ce plan</a>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="ts-card">
+    <h2>Tous nos abonnements incluent</h2>
+    <div class="ts-incl">
+      <div class="ts-incl-item">
+        <span class="ts-incl-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg></span>
+        <span>Paiement<br>sécurisé</span>
+      </div>
+      <div class="ts-incl-item">
+        <span class="ts-incl-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg></span>
+        <span>Support<br>FixPro</span>
+      </div>
+      <div class="ts-incl-item">
+        <span class="ts-incl-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></span>
+        <span>Notifications<br>en temps réel</span>
+      </div>
+      <div class="ts-incl-item">
+        <span class="ts-incl-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+        <span>Sans engagement,<br>résiliez à tout moment</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="ts-card">
+    <h2>Moyens de paiement acceptés</h2>
+    <div class="ts-pay">
+      <span>Orange Money</span>
+      <span>MTN Mobile Money</span>
+      <span>Moov Money</span>
+      <span>VISA</span>
+      <span>Mastercard</span>
+    </div>
+    <div class="ts-pay-note">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      Vos paiements sont 100% sécurisés et cryptés.
+    </div>
+  </div>
+
+  <div class="ts-help">
+    <span class="ts-help-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></span>
+    <div class="ts-help-txt">
+      <h3>Besoin d'aide ?</h3>
+      <p>Notre équipe est disponible pour vous accompagner.</p>
+    </div>
+    <a href="{{ url_for('client_tickets') }}">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      Nous contacter
+    </a>
+  </div>
+
+</div>
+
+<nav class="db-tabbar">
+  <a class="db-tab" href="{{ url_for('artisan_dashboard') }}">
+    <span class="tc-tab-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9"/></svg></span>
+    <span>Accueil</span>
+  </a>
+  <a class="db-tab" href="{{ url_for('profile') }}">
+    <span class="tc-tab-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg></span>
+    <span>Profil</span>
+  </a>
+  <a class="db-tab-fab" href="{{ url_for('technician_calls') }}" aria-label="Appels">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+  </a>
+  <a class="db-tab active" href="{{ url_for('technician_subscription') }}">
+    <span class="tc-tab-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></span>
+    <span>Abonnement</span>
+  </a>
+  <a class="db-tab" href="{{ url_for('artisan_dashboard') }}#dash-reviews">
+    <span class="tc-tab-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></span>
+    <span>Avis</span>
+  </a>
+</nav>
+
+<script>
+(function(){
+  var toggle = document.getElementById('tsToggle');
+  var btns = toggle.querySelectorAll('button');
+  btns.forEach(function(b){
+    b.addEventListener('click', function(){
+      btns.forEach(function(x){ x.classList.remove('active'); });
+      b.classList.add('active');
+      var per = b.dataset.period;
+      document.querySelectorAll('.ts-plan-price').forEach(function(el){
+        var main = el.childNodes[0];
+        var per_el = el.querySelector('.ts-per');
+        main.textContent = (per === 'year' ? el.dataset.year : el.dataset.month) + ' ';
+        if (per_el) per_el.textContent = per === 'year' ? '/ an' : '/ mois';
+      });
+    });
+  });
+
+  var mb = document.getElementById('tcMenuBtn');
+  if (mb) mb.addEventListener('click', function(){
+    if (history.length > 1) history.back(); else location.href = "{{ url_for('artisan_dashboard') }}";
+  });
+})();
+</script>
+{% endblock %}
