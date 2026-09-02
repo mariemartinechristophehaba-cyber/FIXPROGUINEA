@@ -4538,6 +4538,7 @@ _SUB_PAYMENT_METHODS = [
     ("moov_money", "Moov Money"),
     ("visa", "Carte VISA"),
     ("mastercard", "Carte Mastercard"),
+    ("western_union", "Western Union"),
 ]
 
 
