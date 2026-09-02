@@ -9,6 +9,13 @@ admin-nextjs/node_modules/
 admin-nextjs/out/
 admin-nextjs/dist/
 admin-nextjs/.turbo/
+admin-nextjs/.env*
+
+# Flutter / mobile
+mobile/.dart_tool/
+mobile/build/
+mobile/.flutter-plugins*
+mobile/.flutter-plugins-dependencies
 
 # Bases de donnees locales
 *.db

@@ -76,16 +76,6 @@ _MODERATE = ["modere", "moyen", "assez", "beaucoup", "important", "rapidement", 
 
 _LOW = ["petit", "peu", "goutte", "leger", "normal", "pas urgent", "non urgent", "tranquille", "pas presse"]
 
-_EMOJIS = {
-    "joie": ["\U0001F60A", "\U0001F604"],
-    "rire": ["\U0001F602"],
-    "tristesse": ["\U0001F622", "\U0001F62D"],
-    "colere": ["\U0001F620", "\U0001F621"],
-    "inquietude": ["\U0001F61F"],
-    "amour": ["\u2764\ufe0f"],
-    "merci": ["\U0001F64F"],
-}
-
 _INTENT_KEYWORDS = {
     "greeting": ["bonjour", "salut", "hello", "coucou", "bonsoir", "bon matin", "bonne nuit", "yo", "hi", "hey", "bonjourr", "salutt"],
     "farewell": ["au revoir", "a bientot", "bonne nuit", "a demain", "bonne journee", "ciao", "bye", "bye bye", "a plus"],
@@ -208,17 +198,6 @@ def _detect_language(text):
 
 def _detect_emotion(text):
     text = _normalize(text)
-    emojis = text
-    if any(e in emojis for e in ["\U0001F622", "\U0001F62D", "\U0001F61F", "\U0001F614"]):
-        return "tristesse"
-    if any(e in emojis for e in ["\U0001F620", "\U0001F621", "\U0001F480", "\U0001F624"]):
-        return "colere"
-    if any(e in emojis for e in ["\U0001F602", "\U0001F923", "\U0001F606"]):
-        return "joie"
-    if any(e in emojis for e in ["\U0001F60A", "\U0001F604", "\u2764\ufe0f", "\U0001F618"]):
-        return "amour"
-    if any(e in emojis for e in ["\U0001F64F", "\U0001F64C"]):
-        return "remerciement"
     if "stress" in text or "triste" in text or "malheureux" in text or "inquiet" in text or "inquiete" in text:
         return "tristesse"
     if any(w in text for w in ["enerve", "enervee", "colere", "furieux", "furieuse", "rage", "frustre", "frustree"]):
@@ -347,66 +326,66 @@ def _pick_response(responses):
 def _greeting_response(lang="fr"):
     if lang == "en":
         return _pick_response([
-            "Hello \U0001F60A Welcome to FixPro! How can I help you today?",
-            "Hi there \U0001F60A I'm Lia, your FixPro assistant. How are you doing?",
-            "Hello \U0001F60A Nice to meet you at FixPro. What can I do for you?",
+            "Hello Welcome to FixPro! How can I help you today?",
+            "Hi there I'm Lia, your FixPro assistant. How are you doing?",
+            "Hello Nice to meet you at FixPro. What can I do for you?",
         ])
     return _pick_response([
-        "Bonjour \U0001F60A Bienvenue chez FixPro ! Comment puis-je vous aider ?",
-        "Salut \U0001F60A Je suis Lia, l'assistante de FixPro. Comment allez-vous ?",
-        "Bonjour \U0001F60A Heureuse de vous accueillir chez FixPro. Que puis-je faire pour vous ?",
+        "Bonjour Bienvenue chez FixPro ! Comment puis-je vous aider ?",
+        "Salut Je suis Lia, l'assistante de FixPro. Comment allez-vous ?",
+        "Bonjour Heureuse de vous accueillir chez FixPro. Que puis-je faire pour vous ?",
     ])
 
 
 def _farewell_response(lang="fr"):
     if lang == "en":
         return _pick_response([
-            "Goodbye \U0001F60A Take care!",
-            "See you soon \U0001F60A Have a great day!",
+            "Goodbye Take care!",
+            "See you soon Have a great day!",
         ])
     return _pick_response([
-        "Au revoir \U0001F60A Prenez soin de vous !",
-        "A bientot \U0001F60A Passez une excellente journee !",
-        "Bonne journee \U0001F60A N'hesitez pas a revenir si besoin.",
+        "Au revoir Prenez soin de vous !",
+        "A bientot Passez une excellente journee !",
+        "Bonne journee N'hesitez pas a revenir si besoin.",
     ])
 
 
 def _thanks_response(lang="fr"):
     if lang == "en":
         return _pick_response([
-            "You're welcome \U0001F64F Happy to help!",
-            "My pleasure \U0001F60A",
+            "You're welcome Happy to help!",
+            "My pleasure",
         ])
     return _pick_response([
-        "Avec plaisir \U0001F64F",
-        "Je vous en prie \U0001F60A",
-        "C'est avec plaisir \U0001F60A",
+        "Avec plaisir",
+        "Je vous en prie",
+        "C'est avec plaisir",
     ])
 
 
 def _apology_response(lang="fr"):
     if lang == "en":
         return _pick_response([
-            "No problem at all \U0001F60A",
-            "Don't worry \U0001F60A",
+            "No problem at all",
+            "Don't worry",
         ])
     return _pick_response([
-        "Aucun souci \U0001F60A",
-        "Vous ne me derangez pas du tout \U0001F60A",
-        "Pas de probleme \U0001F60A",
+        "Aucun souci",
+        "Vous ne me derangez pas du tout",
+        "Pas de probleme",
     ])
 
 
 def _small_talk_response(lang="fr"):
     if lang == "en":
         return _pick_response([
-            "I'm doing well, thank you \U0001F60A How about you?",
-            "Great \U0001F60A Ready to help. What's new with you?",
+            "I'm doing well, thank you How about you?",
+            "Great Ready to help. What's new with you?",
         ])
     return _pick_response([
-        "Je vais bien, merci \U0001F60A Et vous, comment ca va ?",
-        "Tres bien \U0001F60A Et de votre cote, tout va bien ?",
-        "Ca roule \U0001F602 Et vous, ca va ?",
+        "Je vais bien, merci Et vous, comment ca va ?",
+        "Tres bien Et de votre cote, tout va bien ?",
+        "Ca roule Et vous, ca va ?",
     ])
 
 
@@ -414,98 +393,98 @@ def _personal_ai_response(content, lang="fr"):
     nt = _normalize(content)
     if "marie" in nt or "mari" in nt or "amoureux" in nt or "femme" in nt or "petit ami" in nt or "celibataire" in nt:
         if lang == "en":
-            return "No \U0001F60A I don't have a personal or romantic life. I'm Lia, the AI assistant of FixPro."
-        return "Non \U0001F60A Je n'ai pas de vie sentimentale ni de famille. Je suis Lia, l'assistante IA de FixPro."
+            return "No I don't have a personal or romantic life. I'm Lia, the AI assistant of FixPro."
+        return "Non Je n'ai pas de vie sentimentale ni de famille. Je suis Lia, l'assistante IA de FixPro."
     if "dors" in nt or "sommeil" in nt:
         if lang == "en":
-            return "I don't sleep \U0001F604 I'm available whenever FixPro needs me."
-        return "Non \U0001F604 Je ne dors jamais. Je suis la quand FixPro a besoin de moi."
+            return "I don't sleep I'm available whenever FixPro needs me."
+        return "Non Je ne dors jamais. Je suis la quand FixPro a besoin de moi."
     if "mange" in nt or "bois" in nt or "nourriture" in nt:
         if lang == "en":
-            return "I don't eat or drink \U0001F60A I'm just an AI, but I can still chat with you."
-        return "Non \U0001F60A Je ne mange ni ne bois. Je suis une IA, mais je peux quand meme discuter avec vous."
+            return "I don't eat or drink I'm just an AI, but I can still chat with you."
+        return "Non Je ne mange ni ne bois. Je suis une IA, mais je peux quand meme discuter avec vous."
     if "vie" in nt or "ville" in nt or "habite" in nt:
         if lang == "en":
-            return "I don't live anywhere \U0001F60A I'm a virtual assistant. My home is FixPro."
-        return "Je n'habite nulle part \U0001F60A Je suis une assistante virtuelle, mon espace de travail, c'est FixPro."
+            return "I don't live anywhere I'm a virtual assistant. My home is FixPro."
+        return "Je n'habite nulle part Je suis une assistante virtuelle, mon espace de travail, c'est FixPro."
     if "vraie personne" in nt or "robot" in nt or "ia" in nt or "intelligence artificielle" in nt or "reelle" in nt:
         if lang == "en":
-            return "I'm not a real person \U0001F60A I'm Lia, an AI assistant made to help you with FixPro."
-        return "Non \U0001F60A Je ne suis pas une vraie personne. Je suis Lia, une assistante IA creee pour vous aider avec FixPro."
+            return "I'm not a real person I'm Lia, an AI assistant made to help you with FixPro."
+        return "Non Je ne suis pas une vraie personne. Je suis Lia, une assistante IA creee pour vous aider avec FixPro."
     if "create" in nt or "creat" in nt or "fabrique" in nt or "invente" in nt or "developpe" in nt:
         if lang == "en":
-            return "I was created by the FixPro team \U0001F60A They built me to help you find verified technicians."
-        return "J'ai ete creee par l'equipe de FixPro \U0001F60A pour vous aider a trouver des techniciens verifies."
+            return "I was created by the FixPro team They built me to help you find verified technicians."
+        return "J'ai ete creee par l'equipe de FixPro pour vous aider a trouver des techniciens verifies."
     if lang == "en":
-        return "I don't have a human life \U0001F60A I'm Lia, the AI assistant of FixPro. But I'm here to help you!"
-    return "Je n'ai pas de vie humaine \U0001F60A Je suis Lia, l'assistante IA de FixPro. Mais je suis la pour vous aider !"
+        return "I don't have a human life I'm Lia, the AI assistant of FixPro. But I'm here to help you!"
+    return "Je n'ai pas de vie humaine Je suis Lia, l'assistante IA de FixPro. Mais je suis la pour vous aider !"
 
 
 def _emotion_response(emotion, lang="fr"):
     if emotion == "tristesse":
         if lang == "en":
-            return "I'm sorry to hear that \U0001F61F I'm here if you want to talk or if you need help with something."
-        return "Je suis desolee d'entendre cela \U0001F61F Je suis la si vous voulez en parler ou si vous avez besoin d'aide."
+            return "I'm sorry to hear that I'm here if you want to talk or if you need help with something."
+        return "Je suis desolee d'entendre cela Je suis la si vous voulez en parler ou si vous avez besoin d'aide."
     if emotion == "colere":
         if lang == "en":
-            return "I understand it's frustrating \U0001F620 I'm here to help you find a solution."
-        return "Je comprends que ce soit frustrant \U0001F620 Je suis la pour vous aider a trouver une solution."
+            return "I understand it's frustrating I'm here to help you find a solution."
+        return "Je comprends que ce soit frustrant Je suis la pour vous aider a trouver une solution."
     if emotion == "joie":
         if lang == "en":
-            return "Great \U0001F602 Happy to hear that!"
-        return "Super \U0001F602 Je suis contente de l'entendre !"
+            return "Great Happy to hear that!"
+        return "Super Je suis contente de l'entendre !"
     if emotion == "amour":
         if lang == "en":
-            return "Thank you \u2764\ufe0f That's very kind."
-        return "Merci \u2764\ufe0f C'est tres gentil."
+            return "Thank you That's very kind."
+        return "Merci C'est tres gentil."
     if emotion == "remerciement":
         if lang == "en":
-            return "You're very welcome \U0001F64F"
-        return "Avec plaisir \U0001F64F"
+            return "You're very welcome"
+        return "Avec plaisir"
     if lang == "en":
-        return "I understand \U0001F60A I'm here for you."
-    return "Je comprends \U0001F60A Je suis la pour vous."
+        return "I understand I'm here for you."
+    return "Je comprends Je suis la pour vous."
 
 
 def _general_response(content, lang="fr"):
     nt = _normalize(content)
     if "internet" in nt:
         if lang == "en":
-            return "Internet is a global network connecting computers worldwide. \U0001F60A Do you need help with something at home?"
-        return "Internet est un reseau mondial qui connecte des ordinateurs partout dans le monde. \U0001F60A Si vous avez besoin d'un technicien, FixPro peut vous aider."
+            return "Internet is a global network connecting computers worldwide. Do you need help with something at home?"
+        return "Internet est un reseau mondial qui connecte des ordinateurs partout dans le monde. Si vous avez besoin d'un technicien, FixPro peut vous aider."
     if "facebook" in nt or "whatsapp" in nt:
         if lang == "en":
-            return "It's a well-known platform for communication and social networking. \U0001F60A Is there a home repair I can help you with?"
-        return "C'est une plateforme tres connue pour communiquer et partager. \U0001F60A Vous avez un probleme a la maison a regler ?"
+            return "It's a well-known platform for communication and social networking. Is there a home repair I can help you with?"
+        return "C'est une plateforme tres connue pour communiquer et partager. Vous avez un probleme a la maison a regler ?"
     if "climatisation" in nt and ("quoi" in nt or "defin" in nt or "what" in nt):
         if lang == "en":
-            return "Air conditioning is a system that cools indoor air. \U0001F60A If yours isn't working, I can help you find a technician."
-        return "La climatisation est un systeme qui rafraichit l'air interieur. \U0001F60A Si la votre ne marche plus, je peux vous aider a trouver un technicien."
+            return "Air conditioning is a system that cools indoor air. If yours isn't working, I can help you find a technician."
+        return "La climatisation est un systeme qui rafraichit l'air interieur. Si la votre ne marche plus, je peux vous aider a trouver un technicien."
     gemini = _call_gemini(content, lang=lang)
     if gemini:
         return gemini
     if lang == "en":
-        return "Good question \U0001F60A I can answer general things, and I'm here if you need help with FixPro."
-    return "Bonne question \U0001F60A Je peux repondre a des choses generales, et je suis la si vous avez besoin d'aide avec FixPro."
+        return "Good question I can answer general things, and I'm here if you need help with FixPro."
+    return "Bonne question Je peux repondre a des choses generales, et je suis la si vous avez besoin d'aide avec FixPro."
 
 
 def _fixpro_question_response(content, lang="fr"):
     nt = _normalize(content)
     if any(w in nt for w in ["prix", "tarif", "devis", "cout"]):
         if lang == "en":
-            return "Each technician sets their own prices and rates. FixPro shows you the details before you confirm. \U0001F60A"
-        return "Chaque technicien fixe ses propres tarifs. FixPro vous montre les details avant de confirmer. \U0001F60A"
+            return "Each technician sets their own prices and rates. FixPro shows you the details before you confirm."
+        return "Chaque technicien fixe ses propres tarifs. FixPro vous montre les details avant de confirmer."
     if "compte" in nt or "inscription" in nt or "connect" in nt or "login" in nt:
         if lang == "en":
-            return "You can create a client account directly on FixPro. Technicians register and go through a verification process. \U0001F60A"
-        return "Vous pouvez creer un compte client directement sur FixPro. Les techniciens s'inscrivent puis sont verifies. \U0001F60A"
+            return "You can create a client account directly on FixPro. Technicians register and go through a verification process."
+        return "Vous pouvez creer un compte client directement sur FixPro. Les techniciens s'inscrivent puis sont verifies."
     if "comment" in nt or "fonctionne" in nt or "comment ca marche" in nt:
         if lang == "en":
-            return _FIXPRO_INFO["en"] + " \U0001F60A"
-        return _FIXPRO_INFO["fr"] + " \U0001F60A"
+            return _FIXPRO_INFO["en"] + ""
+        return _FIXPRO_INFO["fr"] + ""
     if lang == "en":
-        return "FixPro connects you with verified technicians in Conakry. \U0001F60A How can I help you?"
-    return _FIXPRO_INFO["fr"] + " \U0001F60A"
+        return "FixPro connects you with verified technicians in Conakry. How can I help you?"
+    return _FIXPRO_INFO["fr"] + ""
 
 
 def _out_of_scope_response(content, lang="fr"):
@@ -513,20 +492,20 @@ def _out_of_scope_response(content, lang="fr"):
     if gemini:
         return gemini
     if lang == "en":
-        return "I don't have an answer for everything, but I'm here if you need help with FixPro \U0001F60A"
-    return "Je ne peux pas repondre a tout, mais je suis la si vous avez besoin d'aide avec FixPro \U0001F60A"
+        return "I don't have an answer for everything, but I'm here if you need help with FixPro"
+    return "Je ne peux pas repondre a tout, mais je suis la si vous avez besoin d'aide avec FixPro"
 
 
 def _confirmation_response(lang="fr"):
     if lang == "en":
-        return "Perfect \U0001F44C Let me know if you need anything else."
-    return "Parfait \U0001F44C N'hesitez pas si vous avez besoin d'autre chose."
+        return "Perfect Let me know if you need anything else."
+    return "Parfait N'hesitez pas si vous avez besoin d'autre chose."
 
 
 def _price_question_response(lang="fr"):
     if lang == "en":
-        return "The final price depends on the technician's diagnosis and estimate. FixPro shows you the estimate before you confirm. \U0001F60A"
-    return "Le prix final depend du diagnostic et du devis du technicien. FixPro vous montre l'estimation avant de confirmer. \U0001F60A"
+        return "The final price depends on the technician's diagnosis and estimate. FixPro shows you the estimate before you confirm."
+    return "Le prix final depend du diagnostic et du devis du technicien. FixPro vous montre l'estimation avant de confirmer."
 
 
 def _status_question_response(lang="fr"):

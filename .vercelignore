@@ -10,6 +10,7 @@ admin-nextjs/.next/
 admin-nextjs/node_modules/
 admin-nextjs/out/
 admin-nextjs/dist/
+admin-nextjs/.env*
 
 # Flutter
 mobile/.dart_tool/
