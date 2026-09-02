@@ -1,14 +1,67 @@
 /* ==========================================================================
-   Espace technicien - mise en page responsive partagee
-   (tableau de bord, Appels / Contacts, Mon profil)
-   Mobile-first : barre du haut + tabbar du bas.
-   >= 1000px : barre laterale fixe, tabbar masquee, contenu elargi.
+   Espace technicien - coquille responsive partagee
+   Pages : dashboard_artisan, technician_calls, technician_profile
+
+   Progression :
+     - base            : mobile, 1 colonne, barre du haut + tabbar du bas
+     - >= 700px         : colonne plus large (tablette), toujours tabbar
+     - >= 1024px        : barre laterale fixe, tabbar + topbars masquees
+     - >= 1440px        : contenu encore un peu plus large
    ========================================================================== */
 
-/* --- Barre laterale (masquee par defaut, mobile) --- */
+body { background: #F4F6FB; }
+
+/* --- Conteneur principal des pages (fluide) --- */
+.db, .tc, .tp {
+  width: 100%;
+  max-width: 620px;
+  margin: 0 auto;
+  padding-bottom: 92px;           /* place pour la tabbar */
+}
+
+/* --- Tabbar mobile (commune aux 3 pages) --- */
+.db-tabbar {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  z-index: 40;
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-end;
+  background: #fff;
+  border-top: 1px solid #E7EBF2;
+  padding: 8px 4px calc(8px + env(safe-area-inset-bottom));
+}
+.db-tab {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  font-size: 11px; font-weight: 600; color: #94A3B8; text-decoration: none;
+  flex: 1 1 0; min-width: 0;
+}
+.db-tab span:last-child {
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.db-tab.active { color: #2563EB; }
+.db-tab-fab {
+  width: 48px; height: 48px; border-radius: 50%;
+  background: #1D4ED8; color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  margin-top: -14px; box-shadow: 0 6px 16px rgba(37,99,235,.4);
+}
+.tc-tab-ic { width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; }
+.db-tab.active .tc-tab-ic { background: #1D4ED8; color: #fff; border-radius: 50%; }
+
+/* le bouton support flottant de base.html : au-dessus de la tabbar */
+.support-fab { bottom: calc(76px + env(safe-area-inset-bottom)) !important; }
+
+/* --- Barre laterale : masquee par defaut --- */
 .te-side { display: none; }
 
-@media (min-width: 1000px) {
+/* ==========================  >= 700px (tablette)  ========================== */
+@media (min-width: 700px) {
+  .db, .tc, .tp { max-width: 760px; }
+}
+
+/* ==========================  >= 1024px (desktop)  ========================== */
+@media (min-width: 1024px) {
 
   .te-side {
     display: flex;
@@ -22,7 +75,6 @@
     overflow-y: auto;
     z-index: 60;
   }
-
   .te-side-logo {
     display: flex; align-items: center; gap: 8px;
     font-size: 21px; font-weight: 800; color: #2563EB; text-decoration: none;
@@ -85,7 +137,7 @@
   }
   .te-side-logout:hover { background: #FEF2F2; color: #DC2626; }
 
-  /* --- Decale et elargit le contenu, masque la nav mobile --- */
+  /* Contenu decale a droite de la sidebar, nav mobile masquee */
   .app-wrap { margin-left: 264px; }
 
   .db-topbar, .tc-topbar, .tp-topbar { display: none !important; }
@@ -93,25 +145,21 @@
   .support-fab { display: none !important; }
 
   .db, .tc, .tp {
-    max-width: 1000px;
-    margin: 0 auto;
-    padding-left: 12px; padding-right: 12px;
+    max-width: 1120px;
+    padding-left: 16px; padding-right: 16px;
     padding-bottom: 48px;
   }
 
-  /* un peu d'air en haut puisque la barre du haut mobile disparait */
-  .db-hero, .tc-head, .tp-head { padding-top: 28px; }
+  /* un peu d'air en haut (plus de barre mobile) */
+  .db-hero, .tc-topbar + .tc-head, .tc-head, .tp-head { padding-top: 26px; }
 
-  /* grilles plus larges sur desktop */
+  /* grilles plus genereuses sur grand ecran */
   .db-quick { grid-template-columns: repeat(4, 1fr); }
   .tp-stats { grid-template-columns: repeat(4, 1fr); }
-  .tp-info { grid-template-columns: 1fr 1fr; }
-  .tc-list { max-width: 720px; }
+  .tp-info  { grid-template-columns: 1fr 1fr; }
 }
 
-/* --- Tres petits ecrans : evite les debordements --- */
-@media (max-width: 360px) {
-  .db-hero h1, .tc-head h1, .tp-head h1 { font-size: 21px; }
-  .db-grid, .db-quick { padding-left: 12px; padding-right: 12px; }
-  .db-card, .tp-sec, .tc-card { padding: 14px; }
+/* ==========================  >= 1440px  ========================== */
+@media (min-width: 1440px) {
+  .db, .tc, .tp { max-width: 1280px; }
 }

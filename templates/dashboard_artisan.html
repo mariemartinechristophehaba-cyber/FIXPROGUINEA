@@ -6,11 +6,9 @@
 {% block sidebar %}{% include '_tech_sidebar.html' %}{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/tech-espace.css', v='1') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/tech-espace.css', v='3') }}">
 <style>
   :root { --db-blue:#2563EB; --db-blue-d:#1D4ED8; --db-ink:#0F172A; --db-mut:#64748B; }
-  body { background:#F4F6FB; }
-  .db { max-width:520px; margin:0 auto; padding-bottom:96px; }
 
   .db-topbar {
     display:flex; align-items:center; justify-content:space-between;
@@ -55,7 +53,7 @@
   .db-status-menu button .d { width:9px; height:9px; border-radius:50%; }
 
   .db-grid { display:grid; grid-template-columns:1fr; gap:14px; padding:16px 18px 0; }
-  @media (min-width:520px){ .db-grid.two { grid-template-columns:1fr 1fr; } }
+  @media (min-width:760px){ .db-grid.two { grid-template-columns:1fr 1fr; } }
 
   .db-card { background:#fff; border:1px solid #E7EBF2; border-radius:18px; padding:18px; }
   .db-card-h { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
@@ -91,7 +89,7 @@
   .db-sec-head h2 { margin:0; font-size:17px; font-weight:800; color:var(--db-ink); }
 
   .db-quick { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; padding:0 18px; }
-  @media (min-width:460px){ .db-quick { grid-template-columns:repeat(4,1fr); } }
+  @media (min-width:620px){ .db-quick { grid-template-columns:repeat(4,1fr); } }
   .db-quick a {
     background:#fff; border:1px solid #E7EBF2; border-radius:16px; padding:16px 10px; text-align:center;
     text-decoration:none; color:var(--db-ink); display:flex; flex-direction:column; align-items:center; gap:8px;
@@ -125,13 +123,9 @@
   .db-reviews-note { background:#EEF4FF; border-radius:14px; padding:12px; display:flex; gap:10px; align-items:flex-start; font-size:12.5px; color:#334155; }
   .db-reviews-note .i { width:26px; height:26px; border-radius:50%; background:var(--db-blue); color:#fff; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
 
-  .db-tabbar {
-    position:fixed; left:0; right:0; bottom:0; z-index:30;
-    display:flex; justify-content:space-around; background:#fff; border-top:1px solid #E7EBF2;
-    padding:8px 4px calc(8px + env(safe-area-inset-bottom));
+  @media (max-width:360px){
+    .db-hero h1 { font-size:21px; }
   }
-  .db-tab { display:flex; flex-direction:column; align-items:center; gap:3px; font-size:11px; font-weight:600; color:#94A3B8; text-decoration:none; }
-  .db-tab.active { color:var(--db-blue); }
 </style>
 {% endblock %}
 
