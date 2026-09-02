@@ -4285,6 +4285,44 @@ def technician_contact_status(contact_id):
     return redirect(url_for("artisan_dashboard"))
 
 
+@app.route("/appels")
+@app.route("/dashboard/technicien/appels")
+@login_required
+def technician_calls():
+    """Liste des clients qui ont contacte le technicien (appels / contacts)."""
+    user = get_current_user()
+    if not _is_technician(user):
+        flash("Cet espace est reserve aux techniciens.", "error")
+        return redirect(url_for("dashboard"))
+
+    if _verification_enabled() and (
+            (user.get("verification_status") or "").upper() in VERIF_BLOCKING
+            or not user.get("is_verified")):
+        return redirect(url_for("artisan_pending"))
+
+    conn = get_db_connection()
+    try:
+        contacts = conn.execute(
+            "SELECT id, first_name, last_name, phone, status, source, created_at"
+            " FROM client_contacts WHERE artisan_id = ?"
+            " ORDER BY created_at DESC LIMIT 100",
+            (user["id"],)).fetchall()
+        new_contact_count = sum(1 for c in contacts if (c["status"] or "") == "nouveau")
+        unread_count = 0
+        try:
+            unread_count = conn.execute(
+                "SELECT COUNT(*) AS n FROM notifications WHERE user_id = ? AND is_read = 0",
+                (user["id"],)).fetchone()["n"]
+        except Exception:
+            conn.rollback()
+            unread_count = 0
+    finally:
+        conn.close()
+
+    return render_template("technician_calls.html", user=user, contacts=contacts,
+                           new_contact_count=new_contact_count, unread_count=unread_count)
+
+
 @app.route("/dashboard/technicien/contacts/json")
 @login_required
 def artisan_dashboard_contacts_json():
