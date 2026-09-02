@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}Appels / Contacts - FixPro{% endblock %}
+{% block title %}Appels & Contacts - FixPro{% endblock %}
 {% block header %}{% endblock %}
 {% block footer %}{% endblock %}
 {% block tabbar %}{% endblock %}
@@ -7,11 +7,278 @@
 
 {% block extra_head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/tech-espace.css', v='1') }}">
+<style>
+  :root { --db-blue:#2563EB; --db-blue-d:#1D4ED8; --db-ink:#0F172A; --db-mut:#64748B; }
+  body { background:#F4F6FB; }
+  .tc { max-width:560px; margin:0 auto; padding-bottom:96px; }
+
+  .tc-topbar { display:flex; align-items:center; justify-content:space-between; padding:14px 18px 6px; }
+  .tc-icobtn { width:40px; height:40px; border-radius:12px; border:1px solid #E7EBF2; background:#fff; display:flex; align-items:center; justify-content:center; color:var(--db-ink); position:relative; text-decoration:none; }
+  .tc-icobtn .dot { position:absolute; top:8px; right:8px; width:8px; height:8px; border-radius:50%; background:#EF4444; }
+
+  .tc-head { padding:6px 18px 4px; display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .tc-head h1 { margin:0 0 3px; font-size:26px; font-weight:800; color:var(--db-ink); line-height:1.15; }
+  .tc-head p { margin:0; font-size:13.5px; color:var(--db-mut); }
+  .tc-how { display:inline-flex; align-items:center; gap:7px; padding:9px 15px; border-radius:999px; background:#EEF4FF; color:var(--db-blue-d); font-size:13px; font-weight:700; text-decoration:none; white-space:nowrap; }
+
+  .tc-kpis { display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:14px 18px 6px; }
+  .tc-kpi { background:#fff; border:1px solid #E7EBF2; border-radius:16px; padding:14px; display:flex; align-items:center; gap:12px; }
+  .tc-kpi-ico { width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .tc-kpi-ico.blue { background:#EAF0FF; color:var(--db-blue); }
+  .tc-kpi-ico.red  { background:#FEECEC; color:#EF4444; }
+  .tc-kpi .n { font-size:22px; font-weight:800; color:var(--db-ink); line-height:1; }
+  .tc-kpi .l { font-size:12.5px; color:var(--db-mut); margin-top:3px; }
+
+  .tc-seg { display:flex; gap:10px; padding:8px 18px; }
+  .tc-seg button { flex:1; padding:13px; border-radius:12px; border:1px solid #E7EBF2; background:#fff; font-size:14px; font-weight:700; color:var(--db-mut); cursor:pointer; }
+  .tc-seg button.active { background:var(--db-blue-d); color:#fff; border-color:var(--db-blue-d); }
+
+  .tc-search { display:flex; gap:10px; padding:4px 18px 12px; }
+  .tc-search .box { flex:1; position:relative; }
+  .tc-search .box svg { position:absolute; left:13px; top:50%; transform:translateY(-50%); color:#94A3B8; }
+  .tc-search input { width:100%; padding:13px 13px 13px 40px; border-radius:12px; border:1px solid #E7EBF2; background:#fff; font-size:14px; }
+  .tc-filter { width:46px; border-radius:12px; border:1px solid #E7EBF2; background:#EEF4FF; color:var(--db-blue); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+
+  /* liste */
+  .tc-list { padding:0 18px; display:flex; flex-direction:column; gap:12px; }
+  .tc-card { background:#fff; border:1px solid #E7EBF2; border-radius:16px; padding:14px; display:flex; align-items:center; gap:12px; }
+  .tc-ava { width:50px; height:50px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:16px; color:#fff; }
+  .tc-main { flex:1; min-width:0; }
+  .tc-name-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .tc-name { font-size:15px; font-weight:800; color:var(--db-ink); }
+  .tc-badge { font-size:10.5px; font-weight:700; padding:3px 8px; border-radius:7px; background:#DCFCE7; color:#15803D; }
+  .tc-type { display:flex; align-items:center; gap:5px; font-size:12.5px; color:var(--db-mut); margin:3px 0 1px; }
+  .tc-type.miss { color:#DC2626; font-weight:600; }
+  .tc-time { font-size:12px; color:#94A3B8; }
+  .tc-call { display:flex; flex-direction:column; align-items:center; gap:2px; text-decoration:none; flex-shrink:0; }
+  .tc-call .ic { width:40px; height:40px; border-radius:50%; background:#EEF4FF; color:var(--db-blue); display:flex; align-items:center; justify-content:center; }
+  .tc-call span { font-size:11px; font-weight:700; color:var(--db-blue); }
+
+  /* etat vide */
+  .tc-empty-card { background:#fff; border:1px solid #E7EBF2; border-radius:18px; margin:0 18px; padding:26px 18px; }
+  .tc-empty-ill { display:block; margin:0 auto 14px; }
+  .tc-empty-card h2 { margin:0 0 8px; text-align:center; font-size:18px; font-weight:800; color:var(--db-ink); line-height:1.35; }
+  .tc-empty-card > p { margin:0 auto; text-align:center; font-size:13.5px; color:var(--db-mut); line-height:1.55; max-width:340px; }
+  .tc-info { display:flex; gap:12px; background:#EEF4FF; border-radius:14px; padding:14px; margin-top:20px; }
+  .tc-info .i { width:26px; height:26px; border-radius:50%; background:var(--db-blue); color:#fff; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .tc-info h3 { margin:0 0 3px; font-size:13.5px; font-weight:800; color:var(--db-ink); }
+  .tc-info p { margin:0; font-size:12.5px; color:#475569; line-height:1.5; }
+  .tc-cta { display:flex; gap:12px; align-items:center; background:#F8FAFF; border:1px solid #E7EBF2; border-radius:14px; padding:14px; margin-top:14px; flex-wrap:wrap; }
+  .tc-cta-ico { width:40px; height:40px; border-radius:50%; background:#EAF0FF; color:var(--db-blue); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .tc-cta-txt { flex:1; min-width:150px; }
+  .tc-cta-txt h3 { margin:0 0 3px; font-size:13.5px; font-weight:800; color:var(--db-ink); }
+  .tc-cta-txt p { margin:0; font-size:12.5px; color:#475569; line-height:1.5; }
+  .tc-cta button { display:inline-flex; align-items:center; gap:7px; padding:11px 15px; border-radius:10px; border:1px solid #C7D6F5; background:#fff; color:var(--db-blue-d); font-size:13px; font-weight:700; cursor:pointer; white-space:nowrap; }
+
+  .tc-noresult { text-align:center; padding:30px 16px; color:var(--db-mut); font-size:13.5px; }
+
+  .db-tabbar { position:fixed; left:0; right:0; bottom:0; z-index:30; display:flex; justify-content:space-around; background:#fff; border-top:1px solid #E7EBF2; padding:8px 4px calc(8px + env(safe-area-inset-bottom)); }
+  .db-tab { display:flex; flex-direction:column; align-items:center; gap:3px; font-size:11px; font-weight:600; color:#94A3B8; text-decoration:none; }
+  .db-tab.active { color:var(--db-blue); }
+  .db-tab.active .tc-tab-ic { background:var(--db-blue-d); color:#fff; border-radius:50%; }
+  .tc-tab-ic { width:34px; height:34px; display:flex; align-items:center; justify-content:center; }
+
+  @media (min-width:560px){
+    .tc-empty-card { padding:34px 34px; }
+  }
+</style>
 {% endblock %}
 
 {% block content %}
-{# Ancienne page Appels / Contacts supprimee - nouvelle maquette a implementer #}
-<div style="max-width:480px;margin:0 auto;padding:40px 20px;text-align:center;color:#64748B;">
-  <p>Nouvelle page Appels / Contacts en cours d'intégration.</p>
+{% set palette = ['#2563EB', '#7C3AED', '#0891B2', '#DB2777', '#D97706', '#059669'] %}
+<div class="tc">
+
+  <div class="tc-topbar">
+    <button type="button" class="tc-icobtn" id="tcMenuBtn" aria-label="Retour">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+    </button>
+    <a class="tc-icobtn" href="{{ url_for('notifications') }}" aria-label="Notifications">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      {% if unread_count %}<span class="dot"></span>{% endif %}
+    </a>
+  </div>
+
+  <div class="tc-head">
+    <div>
+      <h1>Appels &amp; Contacts</h1>
+      <p>Les clients qui vous ont contacté via FixPro</p>
+    </div>
+    <a class="tc-how" href="{{ url_for('client_static', page='how-it-works') }}">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+      Comment ça marche ?
+    </a>
+  </div>
+
+  <div class="tc-kpis">
+    <div class="tc-kpi">
+      <span class="tc-kpi-ico blue"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></span>
+      <div><div class="n">{{ today_count }}</div><div class="l">Appel aujourd'hui</div></div>
+    </div>
+    <div class="tc-kpi">
+      <span class="tc-kpi-ico red"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 2 6 6M22 2l-6 6"/><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></span>
+      <div><div class="n">{{ missed_count }}</div><div class="l">Appel manqué</div></div>
+    </div>
+  </div>
+
+  <div class="tc-seg">
+    <button type="button" class="active" data-filter="all">Tous</button>
+    <button type="button" data-filter="missed">Manqués{% if missed_count %} ({{ missed_count }}){% endif %}</button>
+  </div>
+
+  <div class="tc-search">
+    <div class="box">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input type="search" id="tcSearch" placeholder="Rechercher un contact...">
+    </div>
+    <span class="tc-filter">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 3H2l8 9.5V19l4 2v-8.5L22 3z"/></svg>
+    </span>
+  </div>
+
+  {% if contacts %}
+  <div class="tc-list" id="tcList">
+    {% for c in contacts %}
+    {% set missed = (c.status or '') == 'nouveau' %}
+    {% set full = (c.first_name ~ ' ' ~ c.last_name)|trim %}
+    <div class="tc-card" data-missed="{{ '1' if missed else '0' }}" data-name="{{ full|lower }} {{ c.phone }}">
+      <span class="tc-ava" style="background:{{ palette[loop.index0 % 6] }}">{{ (c.first_name or '?')[0]|upper }}{{ (c.last_name or '')[0]|upper }}</span>
+      <div class="tc-main">
+        <div class="tc-name-row">
+          <span class="tc-name">{{ full or 'Contact' }}</span>
+          {% if missed %}<span class="tc-badge">Nouveau contact</span>{% endif %}
+        </div>
+        <div class="tc-type {{ 'miss' if missed else '' }}">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            {% if missed %}<path d="M17 7 7 17M17 17H7V7"/>{% else %}<path d="M7 17 17 7M7 7h10v10"/>{% endif %}
+          </svg>
+          {{ 'Appel manqué' if missed else 'Appel entrant' }}
+        </div>
+        <div class="tc-time">{{ c.created_at|time_ago }}</div>
+      </div>
+      <a class="tc-call" href="tel:{{ c.phone }}" aria-label="Rappeler">
+        <span class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></span>
+        <span>Rappeler</span>
+      </a>
+    </div>
+    {% endfor %}
+    <div class="tc-noresult" id="tcNoResult" hidden>Aucun contact ne correspond à votre recherche.</div>
+  </div>
+  {% else %}
+  <div class="tc-empty-card">
+    <svg class="tc-empty-ill" width="150" height="130" viewBox="0 0 150 130" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="75" cy="72" rx="52" ry="46" fill="#EEF3FE"/>
+      <circle cx="34" cy="46" r="4" fill="#C7D6F5"/><circle cx="44" cy="52" r="3" fill="#C7D6F5"/>
+      <path d="M31 62c-4 0-7 3-7 7" stroke="#C7D6F5" stroke-width="3" stroke-linecap="round"/>
+      <rect x="55" y="34" width="46" height="74" rx="9" fill="#2F4FE0"/>
+      <rect x="60" y="40" width="36" height="62" rx="5" fill="#5B79F0"/>
+      <path d="M70 66c0-8 6-14 14-14" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+      <circle cx="70" cy="66" r="3" fill="#fff"/>
+      <rect x="94" y="58" width="34" height="22" rx="6" fill="#fff"/>
+      <path d="M100 65h20M100 71h14" stroke="#B9C8EE" stroke-width="3" stroke-linecap="round"/>
+      <path d="M108 40c10-2 22 2 28 10" stroke="#C7D6F5" stroke-width="2.5" stroke-dasharray="4 5" stroke-linecap="round"/>
+      <path d="m126 28 14 8-13 7 2-7-3-8Z" fill="#8FA6F5"/>
+    </svg>
+    <h2>Aucun client ne vous a encore contacté via FixPro.</h2>
+    <p>Lorsque des clients vous appellent via FixPro, leurs appels apparaîtront ici.</p>
+
+    <div class="tc-info">
+      <span class="i"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16v-5M12 8h.01"/></svg></span>
+      <div>
+        <h3>Important</h3>
+        <p>Les appels sont effectués directement entre vous et le client. FixPro ne participe pas à ces communications.</p>
+      </div>
+    </div>
+
+    <div class="tc-cta">
+      <span class="tc-cta-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M7 7h10v10"/></svg></span>
+      <div class="tc-cta-txt">
+        <h3>Restez disponible pour vos clients</h3>
+        <p>Activez vos notifications et gardez votre téléphone à portée pour ne manquer aucun appel.</p>
+      </div>
+      <button type="button" id="tcNotifBtn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        Activer les notifications
+      </button>
+    </div>
+  </div>
+  {% endif %}
+
 </div>
+
+<nav class="db-tabbar">
+  <a class="db-tab" href="{{ url_for('artisan_dashboard') }}">
+    <span class="tc-tab-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9"/></svg></span>
+    <span>Accueil</span>
+  </a>
+  <a class="db-tab" href="{{ url_for('profile') }}">
+    <span class="tc-tab-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg></span>
+    <span>Profil</span>
+  </a>
+  <a class="db-tab active" href="{{ url_for('technician_calls') }}">
+    <span class="tc-tab-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></span>
+    <span>Appels</span>
+  </a>
+  <a class="db-tab" href="{{ url_for('artisan_dashboard') }}#dash-subscription">
+    <span class="tc-tab-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></span>
+    <span>Abonnement</span>
+  </a>
+  <a class="db-tab" href="{{ url_for('artisan_dashboard') }}#dash-reviews">
+    <span class="tc-tab-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></span>
+    <span>Avis</span>
+  </a>
+</nav>
+
+<script>
+(function(){
+  var list = document.getElementById('tcList');
+  var seg = document.querySelectorAll('.tc-seg button');
+  var search = document.getElementById('tcSearch');
+  var filter = 'all';
+
+  if (list) {
+    var cards = Array.prototype.slice.call(list.querySelectorAll('.tc-card'));
+    var noRes = document.getElementById('tcNoResult');
+    var apply = function(){
+      var q = (search.value || '').trim().toLowerCase();
+      var visible = 0;
+      cards.forEach(function(c){
+        var okF = filter === 'all' || c.dataset.missed === '1';
+        var okQ = !q || (c.dataset.name || '').indexOf(q) !== -1;
+        var show = okF && okQ;
+        c.hidden = !show;
+        if (show) visible++;
+      });
+      if (noRes) noRes.hidden = visible !== 0;
+    };
+    seg.forEach(function(b){ b.addEventListener('click', function(){
+      seg.forEach(function(x){ x.classList.remove('active'); });
+      b.classList.add('active'); filter = b.dataset.filter; apply();
+    });});
+    search.addEventListener('input', apply);
+  } else {
+    seg.forEach(function(b){ b.addEventListener('click', function(){
+      seg.forEach(function(x){ x.classList.remove('active'); });
+      b.classList.add('active');
+    });});
+  }
+
+  var mb = document.getElementById('tcMenuBtn');
+  if (mb) mb.addEventListener('click', function(){
+    if (history.length > 1) history.back(); else location.href = "{{ url_for('artisan_dashboard') }}";
+  });
+
+  var nb = document.getElementById('tcNotifBtn');
+  if (nb) nb.addEventListener('click', function(){
+    if (!('Notification' in window)) { alert("Votre navigateur ne gère pas les notifications."); return; }
+    Notification.requestPermission().then(function(p){
+      if (p === 'granted') {
+        nb.textContent = 'Notifications activées';
+        try { new Notification('FixPro', { body: 'Vous serez prévenu des nouveaux appels clients.' }); } catch (e) {}
+      } else {
+        alert("Notifications non activées. Vous pouvez les autoriser dans les réglages de votre navigateur.");
+      }
+    });
+  });
+})();
+</script>
 {% endblock %}

@@ -4461,7 +4461,7 @@ def technician_contact_status(contact_id):
 @app.route("/dashboard/technicien/appels")
 @login_required
 def technician_calls():
-    """Page Appels / Contacts du technicien - a reimplementer (nouvelle maquette)."""
+    """Page Appels / Contacts du technicien : clients l'ayant contacte via FixPro."""
     user = get_current_user()
     if not _is_technician(user):
         flash("Cet espace est reserve aux techniciens.", "error")
@@ -4472,7 +4472,31 @@ def technician_calls():
             or not user.get("is_verified")):
         return redirect(url_for("artisan_pending"))
 
-    return render_template("technician_calls.html", user=user, unread_count=0)
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    conn = get_db_connection()
+    try:
+        contacts = conn.execute(
+            "SELECT id, first_name, last_name, phone, status, source, created_at"
+            " FROM client_contacts WHERE artisan_id = ?"
+            " ORDER BY created_at DESC LIMIT 100",
+            (user["id"],)).fetchall()
+        missed_count = sum(1 for c in contacts if (c["status"] or "") == "nouveau")
+        today_count = sum(1 for c in contacts
+                          if str(c["created_at"] or "").startswith(today))
+        unread_count = 0
+        try:
+            unread_count = conn.execute(
+                "SELECT COUNT(*) AS n FROM notifications WHERE user_id = ? AND is_read = 0",
+                (user["id"],)).fetchone()["n"]
+        except Exception:
+            conn.rollback()
+            unread_count = 0
+    finally:
+        conn.close()
+
+    return render_template("technician_calls.html", user=user, contacts=contacts,
+                           missed_count=missed_count, today_count=today_count,
+                           unread_count=unread_count)
 
 
 @app.route("/dashboard/technicien/contacts/json")
