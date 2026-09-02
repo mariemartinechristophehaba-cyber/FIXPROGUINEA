@@ -9,6 +9,8 @@ import io
 import os
 import re
 import uuid
+
+import requests
 from abc import ABC, abstractmethod
 from pathlib import Path
 
@@ -61,14 +63,10 @@ class Base64Storage(StorageProvider):
 
 
 class SupabaseStorage(StorageProvider):
-    """Stockage objet via Supabase Storage.
-
-    Placeholder : l'implementation reelle utilisera supabase-py
-    une fois les credentials et buckets configures.
-    """
+    """Stockage objet via l'API REST de Supabase Storage."""
 
     def __init__(self, url, key, bucket="fixpro-uploads"):
-        self.url = url
+        self.url = url.rstrip("/")
         self.key = key
         self.bucket = bucket
 
@@ -80,15 +78,40 @@ class SupabaseStorage(StorageProvider):
             raise ValueError("Fichier trop volumineux.")
 
         ext = self._ext(mime)
-        filename = f"{uuid.uuid4().hex}_{name}{ext}"
+        filename = f"{uuid.uuid4().hex}_{_safe_filename(name)}{ext}"
+        upload_url = f"{self.url}/storage/v1/object/{self.bucket}/{filename}"
 
-        # TODO : remplacer par appel supabase-py pour envoyer le fichier.
-        # Pour l'instant, retourne une URL stable signee fictive.
+        resp = requests.post(
+            upload_url,
+            headers={
+                "Authorization": f"Bearer {self.key}",
+                "Content-Type": mime,
+                "x-upsert": "true",
+            },
+            data=raw,
+            timeout=30,
+        )
+        if not resp.ok:
+            raise RuntimeError(
+                f"Echec de l'upload Supabase ({resp.status_code}): {resp.text}")
         return f"{self.url}/storage/v1/object/public/{self.bucket}/{filename}"
 
     def delete(self, url_or_path):
-        # TODO : appeler l'API Supabase pour supprimer.
-        return True
+        if not url_or_path:
+            return True
+        filename = self._filename_from_url(url_or_path)
+        if not filename:
+            return True
+        delete_url = f"{self.url}/storage/v1/object/{self.bucket}/{filename}"
+        try:
+            resp = requests.delete(
+                delete_url,
+                headers={"Authorization": f"Bearer {self.key}"},
+                timeout=30,
+            )
+            return resp.ok
+        except Exception:
+            return False
 
     @staticmethod
     def _ext(mime):
@@ -99,6 +122,16 @@ class SupabaseStorage(StorageProvider):
             "application/pdf": ".pdf",
         }
         return mapping.get(mime, "")
+
+    def _filename_from_url(self, url):
+        prefix = f"/storage/v1/object/public/{self.bucket}/"
+        if prefix in url:
+            return url.split(prefix, 1)[1]
+        return url.split("/")[-1]
+
+
+def _safe_filename(name):
+    return re.sub(r"[^a-zA-Z0-9_\-]", "_", name)
 
 
 def get_storage():
