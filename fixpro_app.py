@@ -205,6 +205,58 @@ _CONAKRY_QUARTIERS = {
     "Sangoyah": (9.5900, -13.6200),
 }
 
+# Principales villes / prefectures de Guinee (hors Conakry) : la localisation
+# n'est PAS limitee a Conakry. Coordonnees figees pour un fonctionnement hors
+# ligne ; le geocodage Nominatim (borne a la Guinee) prend le relais pour le
+# reste.
+_GUINEA_CITIES = {
+    "Kindia": (10.0560, -12.8650),
+    "Coyah": (9.7080, -13.3830),
+    "Dubreka": (9.7900, -13.5180),
+    "Forecariah": (9.4310, -13.0880),
+    "Boffa": (10.1830, -14.0330),
+    "Boke": (10.9400, -14.3000),
+    "Kamsar": (10.6500, -14.6100),
+    "Fria": (10.3670, -13.5830),
+    "Telimele": (10.9020, -13.0310),
+    "Gaoual": (11.7500, -13.2000),
+    "Koundara": (12.4830, -13.3000),
+    "Labe": (11.3180, -12.2830),
+    "Pita": (11.0830, -12.4000),
+    "Dalaba": (10.6850, -12.2480),
+    "Mamou": (10.3760, -12.0910),
+    "Tougue": (11.4430, -11.6660),
+    "Lelouma": (11.2190, -12.6340),
+    "Mali": (12.0880, -12.3090),
+    "Faranah": (10.0400, -10.7440),
+    "Dabola": (10.7490, -11.1080),
+    "Dinguiraye": (11.2980, -10.7260),
+    "Kissidougou": (9.1850, -10.1000),
+    "Kankan": (10.3850, -9.3060),
+    "Kouroussa": (10.6480, -9.8870),
+    "Siguiri": (11.4170, -9.1670),
+    "Mandiana": (10.6330, -8.6830),
+    "Kerouane": (9.2670, -9.0170),
+    "Nzerekore": (7.7560, -8.8180),
+    "Macenta": (8.5450, -9.4720),
+    "Gueckedou": (8.5640, -10.1300),
+    "Beyla": (8.6880, -8.6420),
+    "Lola": (7.8000, -8.5170),
+    "Yomou": (7.5690, -9.2590),
+}
+
+# Boite englobante approximative de la Republique de Guinee.
+_GUINEA_BOUNDS = (7.0, 12.85, -15.25, -7.50)  # lat_min, lat_max, lon_min, lon_max
+
+
+def _in_guinea(lat, lon):
+    """Vrai si les coordonnees tombent en Guinee (rejette les homonymes a
+    l'etranger renvoyes par le geocodeur)."""
+    if not _is_valid_coordinate(lat, lon):
+        return False
+    la_min, la_max, lo_min, lo_max = _GUINEA_BOUNDS
+    return la_min <= lat <= la_max and lo_min <= lon <= lo_max
+
 
 def _nearest_zone(lat, lon, max_km=15.0):
     """Retourne le quartier connu le plus proche d'une position GPS.
@@ -1121,6 +1173,14 @@ def set_location():
         session.pop("loc_gate_dismissed", None)
         zone = _nearest_zone(lat, lon)
         if not zone:
+            # Hors Conakry : ville de Guinee connue la plus proche (<= 40 km).
+            best, best_d = None, 40.0
+            for cname, (cla, clo) in _GUINEA_CITIES.items():
+                d = _haversine(lat, lon, cla, clo)
+                if d < best_d:
+                    best, best_d = cname, d
+            zone = best
+        if not zone:
             zone = _reverse_geocode(lat, lon) or "Ma position"
         session["client_zone"] = zone
         _persist_client_location(lat, lon, zone if zone != "Ma position" else None)
@@ -1141,22 +1201,25 @@ def set_location_zone():
             return jsonify({"ok": False, "error": "Zone vide"}), 400
         session["loc_permission"] = "manual"
 
-        # 1. Quartier de la liste FixPro : coordonnees figees, aucun geocodage
-        #    externe (sinon "Madina" -> Medine, Arabie Saoudite).
+        # 1. Quartier de Conakry ou ville de Guinee de la liste FixPro :
+        #    coordonnees figees, aucun geocodage externe (sinon "Madina"
+        #    -> Medine, Arabie Saoudite).
         coords = None
-        for name, xy in _CONAKRY_QUARTIERS.items():
-            if name.lower() == zone.lower():
-                coords, zone = xy, name
+        for table in (_CONAKRY_QUARTIERS, _GUINEA_CITIES):
+            for name, xy in table.items():
+                if name.lower() == zone.lower():
+                    coords, zone = xy, name
+                    break
+            if coords:
                 break
         # 2. Zone connue de _ARTISAN_GEOCODE.
         if not coords:
             coords = _zone_coordinate(zone)
-        # 3. Dernier recours : geocodage borne a Conakry (rejette les
-        #    homonymes a l'etranger).
+        # 3. Dernier recours : geocodage borne a la Guinee (tout le pays,
+        #    pas seulement Conakry ; rejette les homonymes a l'etranger).
         if not coords:
-            lat, lon, place = _geocode_query(zone + ", Conakry, Guinee")
-            if (lat is not None and lon is not None
-                    and _nearest_zone(lat, lon, max_km=60.0)):
+            lat, lon, place = _geocode_query(zone + ", Guinee")
+            if _in_guinea(lat, lon):
                 coords = (lat, lon)
                 if place:
                     zone = place
@@ -1205,7 +1268,8 @@ def location_gate():
             or not re.match(r"^/[A-Za-z0-9/_.\-?=&%]*$", nxt)):
         nxt = url_for("artisans_page")
     return render_template("location_gate.html",
-                           quartiers=_CONAKRY_QUARTIERS, next=nxt)
+                           quartiers=_CONAKRY_QUARTIERS,
+                           cities=sorted(_GUINEA_CITIES), next=nxt)
 
 
 # ---------------------------------------------------------------------------
