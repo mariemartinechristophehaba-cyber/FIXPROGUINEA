@@ -6,28 +6,32 @@
 {% block sidebar %}{% include '_tech_sidebar.html' %}{% endblock %}
 
 {% block extra_head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/tech-espace.css', v='1') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/tech-espace.css', v='3') }}">
 <style>
   :root { --db-blue:#2563EB; --db-blue-d:#1D4ED8; --db-ink:#0F172A; --db-mut:#64748B; }
-  body { background:#F4F6FB; }
-  .tc { max-width:560px; margin:0 auto; padding-bottom:96px; }
 
-  .tc-topbar { display:flex; align-items:center; justify-content:space-between; padding:14px 18px 6px; }
+  .tc-topbar { display:flex; align-items:center; justify-content:space-between; padding:14px 16px 6px; }
   .tc-icobtn { width:40px; height:40px; border-radius:12px; border:1px solid #E7EBF2; background:#fff; display:flex; align-items:center; justify-content:center; color:var(--db-ink); position:relative; text-decoration:none; }
   .tc-icobtn .dot { position:absolute; top:8px; right:8px; width:8px; height:8px; border-radius:50%; background:#EF4444; }
 
-  .tc-head { padding:6px 18px 4px; display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap; }
-  .tc-head h1 { margin:0 0 3px; font-size:26px; font-weight:800; color:var(--db-ink); line-height:1.15; }
+  .tc-head { padding:6px 16px 4px; display:flex; flex-direction:column; align-items:flex-start; gap:10px; }
+  .tc-head h1 { margin:0 0 3px; font-size:clamp(21px, 6vw, 27px); font-weight:800; color:var(--db-ink); line-height:1.15; }
   .tc-head p { margin:0; font-size:13.5px; color:var(--db-mut); }
   .tc-how { display:inline-flex; align-items:center; gap:7px; padding:9px 15px; border-radius:999px; background:#EEF4FF; color:var(--db-blue-d); font-size:13px; font-weight:700; text-decoration:none; white-space:nowrap; }
+  @media (min-width:600px){
+    .tc-head { flex-direction:row; align-items:center; justify-content:space-between; }
+  }
 
-  .tc-kpis { display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:14px 18px 6px; }
-  .tc-kpi { background:#fff; border:1px solid #E7EBF2; border-radius:16px; padding:14px; display:flex; align-items:center; gap:12px; }
-  .tc-kpi-ico { width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .tc-kpis { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:12px; padding:14px 16px 6px; }
+  .tc-kpi { background:#fff; border:1px solid #E7EBF2; border-radius:16px; padding:14px; display:flex; align-items:center; gap:12px; min-height:74px; }
+  .tc-kpi-ico { width:42px; height:42px; border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
   .tc-kpi-ico.blue { background:#EAF0FF; color:var(--db-blue); }
   .tc-kpi-ico.red  { background:#FEECEC; color:#EF4444; }
   .tc-kpi .n { font-size:22px; font-weight:800; color:var(--db-ink); line-height:1; }
-  .tc-kpi .l { font-size:12.5px; color:var(--db-mut); margin-top:3px; }
+  .tc-kpi .l { font-size:12px; line-height:1.3; color:var(--db-mut); margin-top:3px; }
+  @media (max-width:399px){
+    .tc-kpi { flex-direction:column; align-items:flex-start; gap:8px; min-height:0; }
+  }
 
   .tc-seg { display:flex; gap:10px; padding:8px 18px; }
   .tc-seg button { flex:1; padding:13px; border-radius:12px; border:1px solid #E7EBF2; background:#fff; font-size:14px; font-weight:700; color:var(--db-mut); cursor:pointer; }
@@ -72,14 +76,8 @@
 
   .tc-noresult { text-align:center; padding:30px 16px; color:var(--db-mut); font-size:13.5px; }
 
-  .db-tabbar { position:fixed; left:0; right:0; bottom:0; z-index:30; display:flex; justify-content:space-around; background:#fff; border-top:1px solid #E7EBF2; padding:8px 4px calc(8px + env(safe-area-inset-bottom)); }
-  .db-tab { display:flex; flex-direction:column; align-items:center; gap:3px; font-size:11px; font-weight:600; color:#94A3B8; text-decoration:none; }
-  .db-tab.active { color:var(--db-blue); }
-  .db-tab.active .tc-tab-ic { background:var(--db-blue-d); color:#fff; border-radius:50%; }
-  .tc-tab-ic { width:34px; height:34px; display:flex; align-items:center; justify-content:center; }
-
-  @media (min-width:560px){
-    .tc-empty-card { padding:34px 34px; }
+  @media (min-width:600px){
+    .tc-empty-card { padding:34px; }
   }
 </style>
 {% endblock %}
