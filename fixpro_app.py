@@ -4499,6 +4499,85 @@ def technician_calls():
                            unread_count=unread_count)
 
 
+_TECH_PLANS = [
+    {
+        "code": "pro", "name": "Pro", "icon": "star", "popular": False,
+        "desc": "Idéal pour les techniciens indépendants.",
+        "price_month": 150000,
+        "features": [
+            "Jusqu'à 20 demandes par mois",
+            "Profil professionnel",
+            "Accès aux appels clients",
+            "Messagerie intégrée",
+            "Gestion de vos interventions",
+            "Support standard",
+        ],
+    },
+    {
+        "code": "business", "name": "Business", "icon": "crown", "popular": True,
+        "desc": "Pour les professionnels qui veulent plus de visibilité.",
+        "price_month": 250000,
+        "features": [
+            "Demandes illimitées",
+            "Mise en avant en tête de liste",
+            "Profil premium",
+            "Messagerie intégrée",
+            "Statistiques avancées",
+            "Gestion de vos interventions",
+            "Support prioritaire",
+        ],
+    },
+]
+
+
+@app.route("/abonnement")
+@app.route("/dashboard/technicien/abonnement")
+@login_required
+def technician_subscription():
+    """Page Abonnement du technicien : formules et moyens de paiement."""
+    user = get_current_user()
+    if not _is_technician(user):
+        flash("Cet espace est reserve aux techniciens.", "error")
+        return redirect(url_for("dashboard"))
+
+    if _verification_enabled() and (
+            (user.get("verification_status") or "").upper() in VERIF_BLOCKING
+            or not user.get("is_verified")):
+        return redirect(url_for("artisan_pending"))
+
+    current = None
+    unread_count = 0
+    conn = get_db_connection()
+    try:
+        try:
+            current = conn.execute(
+                "SELECT s.status, s.end_date, p.code AS plan_code, p.name AS plan_name"
+                " FROM technician_subscriptions s"
+                " LEFT JOIN subscription_plans p ON p.id = s.plan_id"
+                " WHERE s.technician_id = ?"
+                " ORDER BY s.created_at DESC LIMIT 1",
+                (user["id"],)).fetchone()
+        except Exception:
+            conn.rollback()
+            current = None
+        try:
+            unread_count = conn.execute(
+                "SELECT COUNT(*) AS n FROM notifications WHERE user_id = ? AND is_read = 0",
+                (user["id"],)).fetchone()["n"]
+        except Exception:
+            conn.rollback()
+            unread_count = 0
+    finally:
+        conn.close()
+
+    current_code = (current["plan_code"] if current else None) or None
+    current_active = bool(current and (current["status"] or "").upper() in ("ACTIVE", "TRIAL"))
+
+    return render_template("technician_subscription.html", user=user,
+                           plans=_TECH_PLANS, current_code=current_code,
+                           current_active=current_active, unread_count=unread_count)
+
+
 @app.route("/dashboard/technicien/contacts/json")
 @login_required
 def artisan_dashboard_contacts_json():
