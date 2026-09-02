@@ -15,23 +15,83 @@
 {%- set exp = artisan.years_experience or 0 -%}
 {%- set svc_names = (artisan_services or []) | map(attribute='name') | list -%}
 {%- set skill_tags = (artisan.skills or '').replace(';', ',').split(',') | map('trim') | select | list -%}
+{%- set quality_tags = skill_tags if skill_tags else ['Rapide', 'Sérieux', 'Propre', 'Matériel professionnel'] -%}
 {%- set resp_delay = (artisan.estimated_delay or '').strip() -%}
-{%- macro svc_icon(name) -%}
-  {%- set n = (name or '') | lower -%}
-  {%- if 'fuite' in n or 'robinet' in n or 'tuyau' in n or 'sanitaire' in n or 'canalis' in n or 'chauffe' in n or 'plomb' in n or 'wc' in n or 'débou' in n or 'debou' in n -%}
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2s6 5.686 6 11a6 6 0 0 1-12 0c0-5.314 6-11 6-11z"/></svg>
-  {%- elif 'électr' in n or 'electr' in n or 'prise' in n or 'tableau' in n or 'éclair' in n or 'eclair' in n or 'led' in n or 'domot' in n or 'lumi' in n -%}
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-  {%- elif 'clim' in n or 'froid' in n or 'frigo' in n or 'réfrig' in n or 'refrig' in n or 'congel' in n or 'congél' in n -%}
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M4 5l16 14M20 5 4 19M2 12h20"/></svg>
-  {%- elif 'porte' in n or 'fenêtre' in n or 'fenetre' in n or 'placard' in n or 'meuble' in n or 'menuis' in n or 'cuisine' in n or 'escalier' in n or 'dressing' in n -%}
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="1"/><path d="M15 12h.01"/></svg>
-  {%- elif 'peint' in n or 'enduit' in n or 'rouleau' in n or 'pinceau' in n -%}
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 3H5a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2z"/><path d="M8 11v3a2 2 0 0 0 2 2h1v5h2v-5h1a2 2 0 0 0 2-2v-3"/></svg>
-  {%- elif 'mur' in n or 'brique' in n or 'maçon' in n or 'macon' in n or 'dalle' in n or 'béton' in n or 'beton' in n or 'crépi' in n -%}
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9h18M3 15h18M9 3v6M15 9v6M9 15v6"/></svg>
+{%- set mkey = prof|lower -%}
+{%- macro metier_icon() -%}
+  {%- if 'plomb' in mkey -%}
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2s6 5.686 6 11a6 6 0 0 1-12 0c0-5.314 6-11 6-11z"/></svg>
+  {%- elif 'électr' in mkey or 'electr' in mkey -%}
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 3 14h8l-1 8 11-13h-8z"/></svg>
+  {%- elif 'frigo' in mkey or 'froid' in mkey or 'clim' in mkey -%}
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M4 5l16 14M20 5 4 19M2 12h20"/></svg>
+  {%- elif 'menuis' in mkey -%}
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="1"/><path d="M15 12h.01"/></svg>
+  {%- elif 'peint' in mkey -%}
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 3H5a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2z"/><path d="M8 11v3a2 2 0 0 0 2 2h1v5h2v-5h1a2 2 0 0 0 2-2v-3"/></svg>
+  {%- elif 'maçon' in mkey or 'macon' in mkey -%}
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9h18M3 15h18M9 3v6M15 9v6M9 15v6"/></svg>
   {%- else -%}
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+  {%- endif -%}
+{%- endmacro -%}
+{%- macro svc_icon(name) -%}
+  {%- set n = (name or '') | lower -%}
+  {%- set S = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' -%}
+  {%- if 'débou' in n or 'debou' in n or 'ventouse' in n -%}
+    {{ S|safe }}<path d="M8 2h8l-1 6H9zM7 8h10M9 8v6a3 3 0 0 0 6 0V8M12 20v2"/></svg>
+  {%- elif 'wc' in n or 'toilette' in n or 'sanitaire' in n -%}
+    {{ S|safe }}<path d="M6 3v7a5 5 0 0 0 10 0V3M6 10h12M11 20v-2M9 22h6M13 20l3 2"/></svg>
+  {%- elif 'robinet' in n or 'mitigeur' in n -%}
+    {{ S|safe }}<path d="M3 9h6v3H3zM9 10h5a3 3 0 0 1 3 3v1M17 8V5M14 5h6M12 14v3a3 3 0 0 1-6 0"/></svg>
+  {%- elif 'chauffe' in n or 'ballon' in n or 'chaudi' in n or 'cumulus' in n -%}
+    {{ S|safe }}<rect x="7" y="2" width="10" height="16" rx="4"/><path d="M10 22v-2M14 22v-2M12 7v3"/></svg>
+  {%- elif 'recherche' in n or 'diagnostic' in n or 'détection' in n or 'detection' in n -%}
+    {{ S|safe }}<circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+  {%- elif 'fuite' in n or 'étanch' in n or 'etanch' in n -%}
+    {{ S|safe }}<path d="M12 2s6 5.686 6 11a6 6 0 0 1-12 0c0-5.314 6-11 6-11z"/></svg>
+  {%- elif 'tuyau' in n or 'canalis' in n or 'plomb' in n -%}
+    {{ S|safe }}<path d="M4 8h10a4 4 0 0 1 4 4v8M4 6v4M2 8h4M18 20h4M20 18v4"/></svg>
+  {%- elif 'prise' in n or 'interrupteur' in n -%}
+    {{ S|safe }}<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9v2M15 9v2M8 15h8"/></svg>
+  {%- elif 'tableau' in n or 'disjonct' in n or 'compteur' in n -%}
+    {{ S|safe }}<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 12h8M8 17h8"/></svg>
+  {%- elif 'éclair' in n or 'eclair' in n or 'led' in n or 'lumi' in n or 'ampoule' in n or 'lustre' in n -%}
+    {{ S|safe }}<path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.2 1 2h6c0-.8.4-1.5 1-2A7 7 0 0 0 12 2z"/></svg>
+  {%- elif 'domot' in n or 'connect' in n -%}
+    {{ S|safe }}<path d="M5 12.5 12 6l7 6.5M8 11v8h8v-8M12 15h.01"/></svg>
+  {%- elif 'électr' in n or 'electr' in n or 'courant' in n -%}
+    {{ S|safe }}<path d="M13 2 3 14h9l-1 8 10-12h-9z"/></svg>
+  {%- elif 'clim' in n -%}
+    {{ S|safe }}<rect x="2" y="4" width="20" height="9" rx="2"/><path d="M6 17c0 2-1 3-1 3M12 17c0 2-1 3-1 3M18 17c0 2-1 3-1 3"/></svg>
+  {%- elif 'réfrig' in n or 'refrig' in n or 'congel' in n or 'congél' in n or 'frigo' in n or 'froid' in n -%}
+    {{ S|safe }}<rect x="6" y="2" width="12" height="20" rx="2"/><path d="M6 10h12M10 5v2M10 13v3"/></svg>
+  {%- elif 'porte' in n and 'placard' not in n -%}
+    {{ S|safe }}<rect x="5" y="2" width="14" height="20" rx="1"/><path d="M15 12h.01"/></svg>
+  {%- elif 'fenêtre' in n or 'fenetre' in n or 'volet' in n -%}
+    {{ S|safe }}<rect x="3" y="3" width="18" height="18" rx="1"/><path d="M12 3v18M3 12h18"/></svg>
+  {%- elif 'placard' in n or 'dressing' in n or 'rangement' in n -%}
+    {{ S|safe }}<rect x="4" y="2" width="16" height="20" rx="1"/><path d="M12 2v20M9 11h.01M15 11h.01"/></svg>
+  {%- elif 'meuble' in n or 'plan de travail' in n or 'étag' in n or 'etag' in n -%}
+    {{ S|safe }}<path d="M4 8h16M4 8v11M20 8v11M4 19h16M8 8v4h8V8"/></svg>
+  {%- elif 'cuisine' in n -%}
+    {{ S|safe }}<path d="M4 3h16v7H4zM6 10v11M18 10v11M4 21h16M8 6h.01M12 6h.01"/></svg>
+  {%- elif 'escalier' in n -%}
+    {{ S|safe }}<path d="M3 21h4v-4h4v-4h4v-4h4V5"/></svg>
+  {%- elif 'menuis' in n or 'bois' in n -%}
+    {{ S|safe }}<rect x="5" y="2" width="14" height="20" rx="1"/><path d="M15 12h.01"/></svg>
+  {%- elif 'peint' in n or 'enduit' in n or 'rouleau' in n or 'ravalement' in n -%}
+    {{ S|safe }}<path d="M19 3H5a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2z"/><path d="M8 11v3a2 2 0 0 0 2 2h1v5h2v-5h1a2 2 0 0 0 2-2v-3"/></svg>
+  {%- elif 'pinceau' in n or 'finition' in n -%}
+    {{ S|safe }}<path d="M18 2 22 6 12 16l-4-4zM8 12l-4 4c-1 1-1 3 0 4s3 1 4 0l4-4"/></svg>
+  {%- elif 'mur' in n or 'brique' in n or 'maçon' in n or 'macon' in n or 'dalle' in n or 'béton' in n or 'beton' in n or 'crépi' in n or 'crepi' in n or 'parpaing' in n or 'chape' in n -%}
+    {{ S|safe }}<path d="M3 9h18M3 15h18M9 3v6M15 9v6M9 15v6"/></svg>
+  {%- elif 'serrure' in n or 'verrou' in n or 'porte' in n -%}
+    {{ S|safe }}<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4M12 15v2"/></svg>
+  {%- elif 'carrelage' in n or 'faïence' in n or 'faience' in n or 'sol' in n -%}
+    {{ S|safe }}<rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
+  {%- else -%}
+    {{ S|safe }}<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
   {%- endif -%}
 {%- endmacro -%}
 <!doctype html>
@@ -156,7 +216,7 @@
     }
     .pl-stat + .pl-stat { border-left: 1px solid var(--pl-line); }
     .pl-stat svg { width: 21px; height: 21px; color: var(--pl-primary); }
-    .pl-stat b { font-size: 0.92rem; font-weight: 800; line-height: 1.15; }
+    .pl-stat b { font-size: 0.92rem; font-weight: 800; line-height: 1.15; word-break: break-word; hyphens: auto; }
     .pl-stat span { font-size: 0.66rem; color: var(--pl-muted); line-height: 1.25; }
 
     /* ---------- Sections ---------- */
@@ -173,11 +233,13 @@
     .pl-sec-head a, .pl-sec-head .muted-note { color: var(--pl-primary); font-weight: 700; font-size: 0.84rem; white-space: nowrap; }
     .pl-sec-head .muted-note { color: var(--pl-muted); }
 
+    .pl-about { padding-right: 96px; }
     .pl-about p { margin: 0; color: #475569; font-size: 0.9rem; line-height: 1.6; }
     .pl-about .ghost {
-      position: absolute; right: -8px; top: 14px; width: 112px; height: 112px;
-      color: #DDE9FF; pointer-events: none;
+      position: absolute; right: 14px; top: 18px; width: 84px; height: 84px;
+      color: #E6EEFF; pointer-events: none;
     }
+    .pl-about .ghost svg { width: 100%; height: 100%; }
     .pl-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; position: relative; z-index: 2; }
     .pl-chip {
       display: inline-flex; align-items: center; gap: 6px;
@@ -240,6 +302,7 @@
       display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
     .pl-empty .ic svg { width: 17px; height: 17px; }
+    .pl-note { margin: 12px 0 0; font-size: 0.74rem; color: var(--pl-muted); }
 
     [hidden] { display: none !important; }
 
@@ -350,23 +413,21 @@
     </section>
 
     <section class="pl-section pl-about">
-      <svg class="ghost" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+      <span class="ghost">{{ metier_icon() }}</span>
       <h2>À propos</h2>
       {% if artisan.bio %}
       <p>{{ artisan.bio }}</p>
       {% else %}
       <p>Ce {{ prof|lower }} n'a pas encore rédigé sa présentation.</p>
       {% endif %}
-      {% if skill_tags %}
       <div class="pl-chips">
-        {% for tag in skill_tags[:8] %}
+        {% for tag in quality_tags[:8] %}
         <span class="pl-chip">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
           {{ tag }}
         </span>
         {% endfor %}
       </div>
-      {% endif %}
     </section>
 
     <section class="pl-section">
@@ -383,6 +444,9 @@
         </div>
         {% endfor %}
       </div>
+      {% if services_are_standard %}
+      <p class="pl-note">Services standards du métier — {{ artisan.full_name.split()[0] }} précisera bientôt les siens.</p>
+      {% endif %}
       {% else %}
       <div class="pl-empty">
         <span class="ic">{{ svc_icon(prof) }}</span>
