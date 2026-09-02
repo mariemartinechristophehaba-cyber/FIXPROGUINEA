@@ -1,0 +1,289 @@
+{% extends 'base.html' %}
+{% block title %}Avis clients - FixPro{% endblock %}
+{% block header %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block tabbar %}{% endblock %}
+{% block sidebar %}{% include '_tech_sidebar.html' %}{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/tech-espace.css', v='3') }}">
+<style>
+  :root { --db-blue:#2563EB; --db-blue-d:#1D4ED8; --db-ink:#0F172A; --db-mut:#64748B; --star:#F5A623; }
+
+  .rv-topbar { display:flex; align-items:center; justify-content:space-between; padding:14px 16px 6px; }
+  .rv-icobtn { width:40px; height:40px; border-radius:12px; border:1px solid #E7EBF2; background:#fff; display:flex; align-items:center; justify-content:center; color:var(--db-ink); position:relative; text-decoration:none; }
+  .rv-icobtn .dot { position:absolute; top:8px; right:8px; width:8px; height:8px; border-radius:50%; background:#EF4444; }
+
+  .rv-head { padding:6px 16px 4px; }
+  .rv-head h1 { margin:0 0 4px; font-size:clamp(22px, 6vw, 28px); font-weight:800; color:var(--db-ink); }
+  .rv-head p { margin:0; font-size:13.5px; color:var(--db-mut); }
+  .rv-demo { margin:8px 16px 0; font-size:12px; color:var(--db-mut); background:#EEF4FF; border:1px solid #DBE6FF; border-radius:10px; padding:8px 12px; }
+
+  .rv-summary { margin:14px 16px 0; background:#fff; border:1px solid #E7EBF2; border-radius:16px; padding:18px; display:flex; gap:18px; flex-wrap:wrap; }
+  .rv-score { text-align:center; flex:0 0 auto; min-width:120px; margin:0 auto; }
+  .rv-score .lbl { font-size:12px; color:var(--db-mut); }
+  .rv-score .num { font-size:40px; font-weight:800; color:var(--db-ink); line-height:1.1; }
+  .rv-score .stars { color:var(--star); font-size:16px; letter-spacing:1px; }
+  .rv-score .cnt { font-size:12px; color:var(--db-mut); margin-top:2px; }
+  .rv-bars { flex:1 1 220px; display:flex; flex-direction:column; gap:7px; justify-content:center; border-left:1px solid #F1F5F9; padding-left:18px; }
+  @media (max-width:520px){ .rv-bars { border-left:0; padding-left:0; border-top:1px solid #F1F5F9; padding-top:14px; } }
+  .rv-bar-row { display:flex; align-items:center; gap:10px; font-size:12px; color:var(--db-mut); }
+  .rv-bar-row .k { width:56px; flex-shrink:0; }
+  .rv-bar-track { flex:1; height:8px; border-radius:999px; background:#EEF1F6; overflow:hidden; }
+  .rv-bar-fill { height:100%; border-radius:999px; background:var(--db-blue); }
+  .rv-bar-row .c { width:26px; text-align:right; flex-shrink:0; color:var(--db-ink); font-weight:600; }
+
+  .rv-tiles { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; padding:14px 16px 0; }
+  @media (min-width:640px){ .rv-tiles { grid-template-columns:repeat(4,1fr); } }
+  .rv-tile { background:#fff; border:1px solid #E7EBF2; border-radius:14px; padding:14px; display:flex; align-items:center; gap:11px; }
+  .rv-tile-ico { width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .rv-tile-ico.blue { background:#E7EEFF; color:var(--db-blue); }
+  .rv-tile-ico.green { background:#DCFCE7; color:#16A34A; }
+  .rv-tile-ico.amber { background:#FEF3C7; color:#B45309; }
+  .rv-tile-ico.red { background:#FEE2E2; color:#DC2626; }
+  .rv-tile .n { font-size:19px; font-weight:800; color:var(--db-ink); line-height:1; }
+  .rv-tile .l { font-size:11.5px; color:var(--db-mut); margin-top:3px; }
+
+  .rv-search { display:flex; gap:10px; padding:14px 16px 10px; }
+  .rv-search .box { flex:1; position:relative; }
+  .rv-search .box svg { position:absolute; left:13px; top:50%; transform:translateY(-50%); color:#94A3B8; }
+  .rv-search input { width:100%; padding:13px 13px 13px 40px; border-radius:12px; border:1px solid #E7EBF2; background:#fff; font-size:14px; }
+  .rv-filter { display:inline-flex; align-items:center; gap:6px; padding:0 15px; border-radius:12px; border:1px solid #C7D6F5; background:#fff; color:var(--db-blue-d); font-size:13px; font-weight:700; cursor:pointer; white-space:nowrap; }
+
+  .rv-chips { display:flex; gap:8px; padding:0 16px 4px; flex-wrap:wrap; }
+  .rv-chips button { border:1px solid #E7EBF2; background:#fff; color:var(--db-mut); font-size:12px; font-weight:700; padding:7px 12px; border-radius:999px; cursor:pointer; }
+  .rv-chips button.active { background:var(--db-blue-d); color:#fff; border-color:var(--db-blue-d); }
+
+  .rv-list { padding:8px 16px 0; display:flex; flex-direction:column; gap:12px; }
+  .rv-card { background:#fff; border:1px solid #E7EBF2; border-radius:16px; padding:16px; }
+  .rv-card-top { display:flex; gap:12px; }
+  .rv-ava { width:46px; height:46px; border-radius:50%; flex-shrink:0; object-fit:cover; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:15px; color:#fff; }
+  .rv-card-main { flex:1; min-width:0; }
+  .rv-name { font-size:14.5px; font-weight:800; color:var(--db-ink); }
+  .rv-stars { color:var(--star); font-size:13px; letter-spacing:1px; margin-top:1px; }
+  .rv-date { font-size:11.5px; color:var(--db-mut); white-space:nowrap; flex-shrink:0; }
+  .rv-menu { background:none; border:0; color:#94A3B8; cursor:pointer; padding:0 2px; flex-shrink:0; align-self:flex-start; }
+  .rv-comment { font-size:13px; color:#334155; line-height:1.5; margin:10px 0 0; }
+  .rv-service { display:inline-block; margin-top:10px; font-size:11.5px; font-weight:700; color:var(--db-blue-d); background:#EEF4FF; padding:5px 10px; border-radius:8px; }
+  .rv-empty { text-align:center; color:var(--db-mut); font-size:13.5px; padding:26px 12px; }
+
+  .rv-more { display:flex; margin:16px auto 0; }
+  .rv-more button { display:inline-flex; align-items:center; gap:8px; margin:0 auto; padding:12px 20px; border-radius:12px; border:1px solid #C7D6F5; background:#fff; color:var(--db-blue-d); font-size:13.5px; font-weight:700; cursor:pointer; }
+
+  .rv-cta { margin:16px 16px 0; background:#EEF4FF; border:1px solid #DBE6FF; border-radius:16px; padding:16px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .rv-cta-ico { width:36px; height:36px; border-radius:50%; background:var(--db-blue); color:#fff; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .rv-cta-txt { flex:1; min-width:170px; }
+  .rv-cta-txt h3 { margin:0 0 2px; font-size:13.5px; font-weight:800; color:var(--db-ink); }
+  .rv-cta-txt p { margin:0; font-size:12.5px; color:#475569; }
+  .rv-cta a { display:inline-flex; align-items:center; gap:6px; padding:10px 14px; border-radius:10px; border:1px solid #C7D6F5; background:#fff; color:var(--db-blue-d); font-size:13px; font-weight:700; text-decoration:none; white-space:nowrap; }
+
+  .db-tab.active .tc-tab-ic { color:var(--db-blue); }
+  .tc-tab-ic { width:34px; height:34px; display:flex; align-items:center; justify-content:center; }
+</style>
+{% endblock %}
+
+{% block content %}
+{% set palette = ['#2563EB', '#7C3AED', '#0891B2', '#DB2777', '#D97706', '#059669'] %}
+{% macro stars(n) %}{% for i in range(5) %}{{ '★' if i < n else '☆' }}{% endfor %}{% endmacro %}
+<div class="tc">
+
+  <div class="rv-topbar">
+    <button type="button" class="rv-icobtn" id="tcMenuBtn" aria-label="Retour">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+    </button>
+    <a class="rv-icobtn" href="{{ url_for('notifications') }}" aria-label="Notifications">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      {% if unread_count %}<span class="dot"></span>{% endif %}
+    </a>
+  </div>
+
+  <div class="rv-head">
+    <h1>Avis clients</h1>
+    <p>Découvrez les avis et évaluations laissés par vos clients.</p>
+  </div>
+  {% if demo %}
+  <div class="rv-demo">Aperçu avec des avis d'exemple — vos vrais avis clients s'afficheront ici.</div>
+  {% endif %}
+
+  <div class="rv-summary">
+    <div class="rv-score">
+      <div class="lbl">Note moyenne</div>
+      <div class="num">{{ ('%.1f'|format(stats.avg or 0))|replace('.', ',') }}</div>
+      {% set full = (stats.avg or 0)|round(0, 'floor')|int %}
+      <div class="stars">{{ stars(full) }}</div>
+      <div class="cnt">({{ stats.count or 0 }} avis)</div>
+    </div>
+    <div class="rv-bars">
+      {% for s in [5, 4, 3, 2, 1] %}
+      {% set n = stats.breakdown.get(s, 0) %}
+      <div class="rv-bar-row">
+        <span class="k">{{ s }} étoile{{ 's' if s > 1 }}</span>
+        <span class="rv-bar-track"><span class="rv-bar-fill" style="width:{{ (n / stats.count * 100)|round(1) if stats.count else 0 }}%"></span></span>
+        <span class="c">{{ n }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="rv-tiles">
+    <div class="rv-tile">
+      <span class="rv-tile-ico blue"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><path d="M9 9h.01M15 9h.01"/></svg></span>
+      <div><div class="n">{{ stats.count or 0 }}</div><div class="l">Total avis</div></div>
+    </div>
+    <div class="rv-tile">
+      <span class="rv-tile-ico green"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10v12"/><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2h0a3.13 3.13 0 0 1 3 3.88Z"/></svg></span>
+      <div><div class="n">{{ stats.positifs or 0 }}</div><div class="l">Avis positifs</div></div>
+    </div>
+    <div class="rv-tile">
+      <span class="rv-tile-ico amber"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 15h8"/><path d="M9 9h.01M15 9h.01"/></svg></span>
+      <div><div class="n">{{ stats.neutres or 0 }}</div><div class="l">Avis neutres</div></div>
+    </div>
+    <div class="rv-tile">
+      <span class="rv-tile-ico red"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16 16s-1.5-2-4-2-4 2-4 2"/><path d="M9 9h.01M15 9h.01"/></svg></span>
+      <div><div class="n">{{ stats.negatifs or 0 }}</div><div class="l">Avis négatifs</div></div>
+    </div>
+  </div>
+
+  <div class="rv-search">
+    <div class="box">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input type="search" id="rvSearch" placeholder="Rechercher un avis...">
+    </div>
+    <button type="button" class="rv-filter" id="rvFilterBtn">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 3H2l8 9.5V19l4 2v-8.5L22 3z"/></svg>
+      Filtrer
+    </button>
+  </div>
+
+  <div class="rv-chips" id="rvChips" hidden>
+    <button type="button" class="active" data-min="0">Tous</button>
+    <button type="button" data-min="5">5 étoiles</button>
+    <button type="button" data-min="4">4 étoiles &amp; +</button>
+    <button type="button" data-min="3">3 étoiles</button>
+    <button type="button" data-max="2">2 étoiles &amp; -</button>
+  </div>
+
+  <div class="rv-list" id="rvList">
+    {% for r in reviews %}
+    <div class="rv-card" data-rating="{{ r.rating }}" data-text="{{ (r.name ~ ' ' ~ r.comment ~ ' ' ~ (r.service or ''))|lower }}">
+      <div class="rv-card-top">
+        {% if r.photo %}
+        <img class="rv-ava" src="{{ r.photo }}" alt="">
+        {% else %}
+        <span class="rv-ava" style="background:{{ palette[loop.index0 % 6] }}">{{ (r.name or '?')[0]|upper }}</span>
+        {% endif %}
+        <div class="rv-card-main">
+          <div style="display:flex; justify-content:space-between; gap:10px;">
+            <div>
+              <div class="rv-name">{{ r.name }}</div>
+              <div class="rv-stars">{{ stars(r.rating) }}</div>
+            </div>
+            <span class="rv-date">{{ r.date|date_month_fr }}</span>
+          </div>
+        </div>
+        <button type="button" class="rv-menu" aria-label="Options">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg>
+        </button>
+      </div>
+      {% if r.comment %}<p class="rv-comment">{{ r.comment }}</p>{% endif %}
+      {% if r.service %}<span class="rv-service">{{ r.service }}</span>{% endif %}
+    </div>
+    {% else %}
+    <div class="rv-empty">Vous n'avez pas encore reçu d'avis. Ils apparaîtront ici dès qu'un client vous évaluera.</div>
+    {% endfor %}
+    <div class="rv-empty" id="rvNoResult" hidden>Aucun avis ne correspond à votre recherche.</div>
+  </div>
+
+  {% if reviews|length > 4 %}
+  <div class="rv-more" id="rvMoreWrap">
+    <button type="button" id="rvMore">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+      Charger plus d'avis
+    </button>
+  </div>
+  {% endif %}
+
+  <div class="rv-cta">
+    <span class="rv-cta-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16v-5M12 8h.01"/></svg></span>
+    <div class="rv-cta-txt">
+      <h3>Votre avis compte !</h3>
+      <p>Encouragez vos clients satisfaits à laisser un avis sur votre service.</p>
+    </div>
+    <a href="{{ url_for('artisan_detail', artisan_id=user.id) }}">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="m16 6-4-4-4 4"/><path d="M12 2v13"/></svg>
+      Partager mon profil
+    </a>
+  </div>
+
+</div>
+
+<nav class="db-tabbar">
+  <a class="db-tab" href="{{ url_for('artisan_dashboard') }}">
+    <span class="tc-tab-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9"/></svg></span>
+    <span>Accueil</span>
+  </a>
+  <a class="db-tab" href="{{ url_for('profile') }}">
+    <span class="tc-tab-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg></span>
+    <span>Profil</span>
+  </a>
+  <a class="db-tab" href="{{ url_for('technician_calls') }}">
+    <span class="tc-tab-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></span>
+    <span>Appels</span>
+  </a>
+  <a class="db-tab" href="{{ url_for('technician_subscription') }}">
+    <span class="tc-tab-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></span>
+    <span>Abonnement</span>
+  </a>
+  <a class="db-tab active" href="{{ url_for('technician_reviews') }}">
+    <span class="tc-tab-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></span>
+    <span>Avis</span>
+  </a>
+</nav>
+
+<script>
+(function(){
+  var list = document.getElementById('rvList');
+  var cards = Array.prototype.slice.call(list.querySelectorAll('.rv-card'));
+  var noRes = document.getElementById('rvNoResult');
+  var search = document.getElementById('rvSearch');
+  var chips = document.getElementById('rvChips');
+  var filterBtn = document.getElementById('rvFilterBtn');
+  var moreBtn = document.getElementById('rvMore');
+  var moreWrap = document.getElementById('rvMoreWrap');
+  var shown = 4;
+  var minR = 0, maxR = 5;
+
+  function apply(){
+    var q = (search.value || '').trim().toLowerCase();
+    var matched = cards.filter(function(c){
+      var r = parseInt(c.dataset.rating, 10);
+      var okR = r >= minR && r <= maxR;
+      var okQ = !q || (c.dataset.text || '').indexOf(q) !== -1;
+      return okR && okQ;
+    });
+    var limited = (q || minR !== 0 || maxR !== 5) ? matched : matched.slice(0, shown);
+    cards.forEach(function(c){ c.hidden = limited.indexOf(c) === -1; });
+    if (noRes) noRes.hidden = matched.length !== 0;
+    if (moreWrap) moreWrap.hidden = !((!q && minR === 0 && maxR === 5) && shown < matched.length);
+  }
+  if (moreBtn) moreBtn.addEventListener('click', function(){ shown += 4; apply(); });
+  search.addEventListener('input', apply);
+  if (filterBtn) filterBtn.addEventListener('click', function(){ chips.hidden = !chips.hidden; });
+  if (chips) chips.querySelectorAll('button').forEach(function(b){
+    b.addEventListener('click', function(){
+      chips.querySelectorAll('button').forEach(function(x){ x.classList.remove('active'); });
+      b.classList.add('active');
+      if (b.dataset.max) { minR = 0; maxR = parseInt(b.dataset.max, 10); }
+      else { minR = parseInt(b.dataset.min, 10); maxR = 5; }
+      apply();
+    });
+  });
+  apply();
+
+  var mb = document.getElementById('tcMenuBtn');
+  if (mb) mb.addEventListener('click', function(){
+    if (history.length > 1) history.back(); else location.href = "{{ url_for('artisan_dashboard') }}";
+  });
+})();
+</script>
+{% endblock %}
