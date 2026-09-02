@@ -4943,26 +4943,44 @@ def artisans_page():
         client_lat = _to_float(session.get("client_lat"))
         client_lon = _to_float(session.get("client_lon"))
 
-    radius_km = app.config.get("LOCAL_RADIUS_KM", 10.0)
+    radius_km = app.config.get("LOCAL_RADIUS_KM", 15.0)
     location_active = _is_valid_coordinate(client_lat, client_lon)
+    client_zone = (session.get("client_zone")
+                   or _nearest_zone(client_lat, client_lon)
+                   or (user.get("city") if user else None))
 
-    if location_active:
-        # On ne garde QUE les techniciens du secteur du client (rayon
-        # LOCAL_RADIUS_KM), tries du plus proche au plus loin. Un client
-        # hors de Conakry n'aura donc aucun technicien affiche.
+    if location_active or client_zone:
+        # Couverture nationale : techniciens proches (GPS <= rayon) d'abord,
+        # puis ceux de la meme zone (ville/quartier), avec elargissement
+        # progressif pour ne jamais laisser une liste vide.
+        zkey = (client_zone or "").strip().lower()
         for a in artisans:
             a_lat = _to_float(a.get("latitude"))
             a_lon = _to_float(a.get("longitude"))
             a["distance"] = (_haversine(client_lat, client_lon, a_lat, a_lon)
-                             if _is_valid_coordinate(a_lat, a_lon) else None)
-        artisans = sorted(
-            [a for a in artisans
-             if a.get("distance") is not None and a["distance"] <= radius_km],
-            key=lambda a: a["distance"])
+                             if location_active and _is_valid_coordinate(a_lat, a_lon)
+                             else None)
+            haystack = " ".join(str(a.get(k) or "") for k in
+                                ("city", "quartier", "zone_intervention")).lower()
+            a["_zone_match"] = bool(zkey) and zkey in haystack
 
-    client_zone = (session.get("client_zone")
-                   or _nearest_zone(client_lat, client_lon)
-                   or (user.get("city") if user else None))
+        def _keep(a, r):
+            return (a["distance"] is not None and a["distance"] <= r) or a["_zone_match"]
+
+        kept = [a for a in artisans if _keep(a, radius_km)]
+        # Aucun technicien a proximite : on elargit (jamais de page vide).
+        for mult in (3, 8, 25):
+            if kept:
+                break
+            kept = [a for a in artisans if _keep(a, radius_km * mult)]
+        if not kept:
+            kept = list(artisans)
+
+        artisans = sorted(kept, key=lambda a: (
+            0 if (a["distance"] is not None and a["distance"] <= radius_km)
+            else (1 if a["_zone_match"] else 2),
+            a["distance"] if a["distance"] is not None else 9e9,
+        ))
     return render_template("artisans.html", artisans=artisans, user=user,
                            active_requests=active_requests, categories=categories,
                            category_filter=category,
