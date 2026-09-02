@@ -164,11 +164,11 @@ limiter = Limiter(
 # Coordonnees approximatives des quartiers/zones de Conakry utilisees
 # pour la geolocalisation des artisans a l'inscription.
 _ARTISAN_GEOCODE = {
-    "conakry": (9.6412, -13.5784),
+    "conakry": (9.5350, -13.6800),
     "kaloum": (9.5077, -13.7114),
     "dixinn": (9.5700, -13.6778),
-    "matam": (9.6472, -13.6333),
-    "matam centre": (9.6472, -13.6333),
+    "matam": (9.5310, -13.6520),
+    "matam centre": (9.5310, -13.6520),
     "nongo": (9.6200, -13.5800),
     "tombo": (9.4289, -13.5833),
     "cite chemin de fer": (9.5186, -13.7075),
@@ -296,6 +296,36 @@ def _nearest_zone(lat, lon, max_km=15.0):
     return best_name.capitalize() if (best_name and best_d <= max_km) else None
 
 
+_ALL_PLACES_CACHE = None
+
+
+def _all_places():
+    """Table combinee {nom: (lat, lon)} : quartiers de Conakry + villes/
+    prefectures de Guinee. Coordonnees verifiees."""
+    global _ALL_PLACES_CACHE
+    if _ALL_PLACES_CACHE is None:
+        d = {}
+        for name, xy in _GUINEA_CITIES.items():
+            d[name] = xy
+        for name, xy in _CONAKRY_QUARTIERS.items():
+            d[name] = xy
+        _ALL_PLACES_CACHE = d
+    return _ALL_PLACES_CACHE
+
+
+def _nearest_place(lat, lon, max_km=5.0):
+    """Nom du quartier / de la ville connue le plus proche (repli hors ligne
+    du geocodage inverse). Rien si aucun lieu connu dans le rayon."""
+    if not _is_valid_coordinate(lat, lon):
+        return None
+    best, best_d = None, float("inf")
+    for name, (zlat, zlon) in _all_places().items():
+        d = _haversine(lat, lon, zlat, zlon)
+        if d < best_d:
+            best, best_d = name, d
+    return best if (best and best_d <= max_km) else None
+
+
 def _zone_coordinate(zone_name):
     """Retourne les coordonnees (lat, lon) d'un quartier connu par son nom."""
     if not zone_name:
@@ -339,15 +369,33 @@ def _nominatim_request(url):
 
 
 def _extract_place_name(data):
-    """Extrait un libelle lisible (ville, quartier) depuis une reponse Nominatim."""
+    """Libelle precis d'une reponse Nominatim : 'Quartier, Ville' quand
+    possible, sinon 'Village, Prefecture', sinon la region."""
     if not data or not isinstance(data, dict):
         return None
     addr = data.get("address") or {}
-    city = addr.get("city") or addr.get("town") or addr.get("village") or addr.get("suburb") or addr.get("hamlet") or addr.get("county")
-    country = addr.get("country")
-    if city and country:
-        return f"{city}, {country}"
-    return city or data.get("display_name")
+    local = (addr.get("neighbourhood") or addr.get("suburb") or addr.get("quarter")
+             or addr.get("city_district") or addr.get("residential")
+             or addr.get("village") or addr.get("hamlet"))
+    city = (addr.get("city") or addr.get("town") or addr.get("municipality")
+            or addr.get("county"))
+    region = addr.get("state") or addr.get("region") or addr.get("state_district")
+    parts = []
+    if local:
+        parts.append(local)
+    if city and city != local:
+        parts.append(city)
+    if not parts and region:
+        parts.append(region)
+    if parts:
+        return ", ".join(parts[:2])
+    dn = data.get("display_name")
+    if dn:
+        bits = [b.strip() for b in dn.split(",") if b.strip()]
+        bits = [b for b in bits if b.lower() not in ("guinee", "guinea", "guinee-conakry")]
+        if bits:
+            return ", ".join(bits[:2])
+    return None
 
 
 def _reverse_geocode(lat, lon):
@@ -360,7 +408,7 @@ def _reverse_geocode(lat, lon):
         "format": "json",
         "addressdetails": 1,
         "accept-language": "fr",
-        "zoom": 18,
+        "zoom": 16,
     })
     data = _nominatim_request(f"https://nominatim.openstreetmap.org/reverse?{params}")
     return _extract_place_name(data)
@@ -1206,17 +1254,14 @@ def set_location():
         session["client_loc_at"] = datetime.now(timezone.utc).isoformat()
         session["loc_permission"] = "granted"
         session.pop("loc_gate_dismissed", None)
-        zone = _nearest_zone(lat, lon)
+        # Le lieu exact vient du geocodage inverse (couvre tous les
+        # quartiers / prefectures / regions de Guinee). Les tables locales
+        # ne servent que de repli si le reseau echoue.
+        zone = _reverse_geocode(lat, lon)
         if not zone:
-            # Hors Conakry : ville de Guinee connue la plus proche (<= 40 km).
-            best, best_d = None, 40.0
-            for cname, (cla, clo) in _GUINEA_CITIES.items():
-                d = _haversine(lat, lon, cla, clo)
-                if d < best_d:
-                    best, best_d = cname, d
-            zone = best
-        if not zone:
-            zone = _reverse_geocode(lat, lon) or "Ma position"
+            zone = (_nearest_place(lat, lon, max_km=4.0)
+                    or _nearest_place(lat, lon, max_km=45.0)
+                    or "Ma position")
         session["client_zone"] = zone
         _persist_client_location(lat, lon, zone if zone != "Ma position" else None)
         return jsonify({"ok": True, "zone": zone, "lat": lat, "lon": lon, "accuracy": accuracy})
@@ -5307,7 +5352,10 @@ def artisans_page():
         # Couverture nationale : techniciens proches (GPS <= rayon) d'abord,
         # puis ceux de la meme zone (ville/quartier), avec elargissement
         # progressif pour ne jamais laisser une liste vide.
-        zkey = (client_zone or "").strip().lower()
+        # Le libelle de zone peut etre "Quartier, Ville" : on teste chaque
+        # partie separement contre la ville / le quartier du technicien.
+        zparts = [p.strip().lower() for p in re.split(r"[,/]", client_zone or "")
+                  if len(p.strip()) >= 3]
         for a in artisans:
             a_lat = _to_float(a.get("latitude"))
             a_lon = _to_float(a.get("longitude"))
@@ -5316,7 +5364,7 @@ def artisans_page():
                              else None)
             haystack = " ".join(str(a.get(k) or "") for k in
                                 ("city", "quartier", "zone_intervention")).lower()
-            a["_zone_match"] = bool(zkey) and zkey in haystack
+            a["_zone_match"] = any(zp in haystack for zp in zparts)
 
         def _keep(a, r):
             return (a["distance"] is not None and a["distance"] <= r) or a["_zone_match"]

@@ -40,6 +40,17 @@ class FixProTestCase(unittest.TestCase):
         )
         fixpro_app.limiter.enabled = False
 
+        # Les tests ne doivent jamais appeler Nominatim (reseau) : on simule
+        # l'absence de reponse -> les routes retombent sur les tables locales.
+        # Un test qui veut exercer le geocodage inverse patche _reverse_geocode.
+        _orig_nominatim = fixpro_app._nominatim_request
+        fixpro_app._nominatim_request = lambda url: None
+        self.addCleanup(setattr, fixpro_app, "_nominatim_request", _orig_nominatim)
+        try:
+            fixpro_app._NOMINATIM_CACHE.clear()
+        except Exception:
+            pass
+
         conn = db.connect(sqlite_path=self.db_path)
         try:
             conn.executescript(
@@ -754,6 +765,27 @@ class GeolocationTests(FixProTestCase):
         self.assertEqual(response.status_code, 200)
         data = response.get_json()
         self.assertEqual(data["zone"], "Kaloum")
+
+    def test_gps_uses_reverse_geocode_exact_place(self):
+        """Le lieu exact vient du geocodage inverse (tous quartiers /
+        prefectures de Guinee), pas d'un rabattage sur une table courte."""
+        orig = fixpro_app._reverse_geocode
+        fixpro_app._reverse_geocode = lambda lat, lon: "Hamdallaye, Conakry"
+        try:
+            r = self.client.post("/api/location", json={
+                "lat": 9.5750, "lon": -13.6350, "accuracy": 20})
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.get_json()["zone"], "Hamdallaye, Conakry")
+        finally:
+            fixpro_app._reverse_geocode = orig
+
+    def test_gps_offline_falls_back_to_nearest_known_place(self):
+        """Sans reseau, on rabat sur le quartier connu le plus proche
+        (coordonnees verifiees), pas sur un lieu au hasard."""
+        r = self.client.post("/api/location", json={
+            "lat": 9.5380, "lon": -13.6670, "accuracy": 30})  # Madina
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.get_json()["zone"], "Madina")
 
     def test_client_manual_zone_updates_session(self):
         """La localisation manuelle persiste en session."""
