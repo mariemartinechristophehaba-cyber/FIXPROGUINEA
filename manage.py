@@ -126,6 +126,7 @@ def cmd_create_admin(config):
     """Cree un compte administrateur avec un mot de passe saisi a la main."""
     email = input("Email de l'administrateur : ").strip().lower()
     full_name = input("Nom complet : ").strip()
+    phone = input("Telephone : ").strip() or '+22400000000'
     password = getpass.getpass("Mot de passe (8 caracteres minimum) : ")
 
     if not email or not full_name:
@@ -142,9 +143,9 @@ def cmd_create_admin(config):
             print("ERREUR : cet email est deja utilise.")
             return 1
         conn.execute(
-            "INSERT INTO users (email, password_hash, role, full_name,"
-            " is_verified) VALUES (?, ?, 'admin', ?, 1)",
-            (email, generate_password_hash(password), full_name))
+            "INSERT INTO users (email, phone, password_hash, role, full_name,"
+            " is_verified) VALUES (?, ?, ?, 'admin', ?, 1)",
+            (email, phone, generate_password_hash(password), full_name))
         conn.commit()
     finally:
         conn.close()
@@ -162,7 +163,7 @@ def cmd_seed(config):
         conn.execute("DELETE FROM payments")
         conn.execute("DELETE FROM requests")
         conn.execute("DELETE FROM technician_documents")
-        conn.execute("DELETE FROM users WHERE role IN ('client', 'artisan')")
+        conn.execute("DELETE FROM users WHERE role IN ('client', 'technician')")
         conn.commit()
 
         # Client de demonstration
@@ -185,11 +186,11 @@ def cmd_seed(config):
                 " profession, city, quartier, latitude, longitude, is_verified, is_active)"
                 " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (f'demo-{phone}@fixpro.app', phone, generate_password_hash(phone.replace('+', '')),
-                 'artisan', name, profession, city, quartier, lat, lon, 1, 1))
+                 'technician', name, profession, city, quartier, lat, lon, 1, 1))
 
         # Recupere les IDs
         client = conn.execute("SELECT id FROM users WHERE role = 'client'").fetchone()
-        artisan_rows = conn.execute("SELECT id, profession FROM users WHERE role = 'artisan'").fetchall()
+        artisan_rows = conn.execute("SELECT id, profession FROM users WHERE role = 'technician'").fetchall()
 
         # Quatre demandes de demonstration
         requests = [
@@ -208,9 +209,10 @@ def cmd_seed(config):
                  amount, amount, f'{today} 10:00:00', f'{today} 10:00:00'))
 
         # Un paiement complet
+        completed_artisan_id = artisan_rows[2]["id"] if len(artisan_rows) > 2 else None
         req = conn.execute(
             "SELECT id, quote_amount FROM requests WHERE artisan_id = ? AND status = 'completed'",
-            (2,)).fetchone()
+            (completed_artisan_id,)).fetchone() if completed_artisan_id else None
         if req:
             conn.execute(
                 "INSERT INTO payments (request_id, amount, commission_amount, method, status, created_at)"

@@ -53,6 +53,7 @@
       </div>
 
       <form method="post" action="{{ url_for('technician_activate') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
         <input type="hidden" name="token" value="{{ token }}" />
         <div class="a-field">
           <label for="password">Nouveau mot de passe</label>

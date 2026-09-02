@@ -1,109 +1,300 @@
 {% extends 'base.html' %}
-{% block title %}Vérification de votre profil - FixPro{% endblock %}
+{% block title %}Votre espace professionnel - FixPro{% endblock %}
 {% block header %}{% endblock %}
 {% block footer %}{% endblock %}
+{% block tabbar %}{% endblock %}
 
 {% block extra_head %}
 <style>
-  .tv-wrap { max-width: 480px; margin: 0 auto; padding: 20px 16px 60px; }
-  .tv-hero {
-    background: linear-gradient(160deg, #1D4ED8 0%, #1E3A8A 100%);
-    color: #fff; border-radius: 20px; padding: 24px 20px;
-    text-align: center;
+  body { background: #F1F5F9; }
+  .tv-page { max-width: 480px; margin: 0 auto; padding-bottom: 40px; }
+
+  .tv-topbar {
+    background: linear-gradient(150deg, #1D4ED8 0%, #1E3A8A 100%);
+    color: #fff; padding: 16px 18px 20px;
+    display: flex; align-items: center; justify-content: space-between;
   }
-  .tv-hero-ico {
-    width: 64px; height: 64px; border-radius: 50%;
-    background: rgba(255,255,255,.16); display: flex; align-items: center; justify-content: center;
-    margin: 0 auto 12px;
-  }
-  .tv-hero h1 { margin: 0 0 6px; font-size: 20px; font-weight: 800; }
-  .tv-hero p { margin: 0; font-size: 13.5px; opacity: .9; line-height: 1.5; }
-  .tv-badge {
-    display: inline-block; margin-top: 12px; padding: 5px 12px; border-radius: 999px;
-    font-size: 12px; font-weight: 700; background: rgba(255,255,255,.2);
-  }
-  .tv-card {
-    background: #fff; border: 1px solid #E5E7EB; border-radius: 16px;
-    padding: 16px; margin-top: 16px;
-  }
-  .tv-card h2 { margin: 0 0 12px; font-size: 15px; font-weight: 700; color: #0F172A; }
-  .tv-check { display: flex; align-items: center; gap: 10px; padding: 8px 0; font-size: 14px; color: #0F172A; }
-  .tv-check .dot {
-    width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0;
+  .tv-topbar-brand { display: flex; align-items: center; gap: 10px; }
+  .tv-topbar-brand .mark {
+    width: 38px; height: 38px; border-radius: 11px; background: rgba(255,255,255,.16);
     display: flex; align-items: center; justify-content: center;
-    background: #E2E8F0; color: #94A3B8;
   }
-  .tv-check.ok .dot { background: #16A34A; color: #fff; }
-  .tv-doc {
-    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  .tv-topbar-brand strong { display: block; font-size: 17px; font-weight: 800; line-height: 1.1; }
+  .tv-topbar-brand span { font-size: 12px; opacity: .85; }
+  .tv-bell { position: relative; color: #fff; }
+  .tv-bell .badge {
+    position: absolute; top: -5px; right: -5px; min-width: 17px; height: 17px; padding: 0 4px;
+    border-radius: 999px; background: #EF4444; color: #fff; font-size: 10px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .tv-hero { text-align: center; padding: 26px 22px 10px; }
+  .tv-hero-ill {
+    width: 128px; height: 128px; margin: 0 auto 18px; border-radius: 50%;
+    background: radial-gradient(circle at 50% 45%, #E0ECFF 0%, #EEF4FF 70%, rgba(238,244,255,0) 100%);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .tv-hero h1 { margin: 0 0 10px; font-size: 24px; line-height: 1.25; font-weight: 800; color: #0F172A; }
+  .tv-hero h1 em { font-style: normal; color: #1D4ED8; display: block; }
+  .tv-hero p { margin: 0; font-size: 14px; line-height: 1.55; color: #64748B; }
+
+  .tv-card {
+    background: #fff; border: 1px solid #E7EBF0; border-radius: 16px;
+    padding: 16px; margin: 14px 16px 0;
+    box-shadow: 0 1px 2px rgba(15,23,42,.04);
+  }
+
+  .tv-status {
+    border-radius: 16px; padding: 16px; margin: 16px 16px 0;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .tv-status.pending  { background: #FEF6E7; border: 1px solid #FCE4B4; }
+  .tv-status.warn     { background: #FEF2F2; border: 1px solid #FECACA; }
+  .tv-status-txt { flex: 1; }
+  .tv-status-label {
+    font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
+    display: flex; align-items: center; gap: 6px; color: #B45309;
+  }
+  .tv-status.warn .tv-status-label { color: #DC2626; }
+  .tv-status-label::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+  .tv-status-value { font-size: 18px; font-weight: 800; color: #0F172A; margin: 3px 0 1px; }
+  .tv-status-sub { font-size: 13px; color: #64748B; }
+  .tv-status-ico {
+    width: 46px; height: 46px; border-radius: 50%; background: #fff; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 1px 3px rgba(180,83,9,.18);
+  }
+
+  /* Stepper */
+  .tv-steps { display: flex; align-items: flex-start; }
+  .tv-step { flex: 1; text-align: center; position: relative; }
+  .tv-step-dot {
+    width: 30px; height: 30px; border-radius: 50%; margin: 0 auto 8px;
+    display: flex; align-items: center; justify-content: center;
+    background: #E2E8F0; color: #94A3B8; position: relative; z-index: 2;
+  }
+  .tv-step.done .tv-step-dot { background: #1D4ED8; color: #fff; }
+  .tv-step.current .tv-step-dot { background: #fff; border: 3px solid #F59E0B; color: #F59E0B; }
+  .tv-step-line {
+    position: absolute; top: 15px; left: 50%; width: 100%; height: 2px; z-index: 1;
+    background: #E2E8F0;
+  }
+  .tv-step.done .tv-step-line { background: #1D4ED8; }
+  .tv-step.current .tv-step-line { background: #E2E8F0; border-top: 2px dashed #CBD5E1; height: 0; }
+  .tv-step:last-child .tv-step-line { display: none; }
+  .tv-step span { font-size: 11.5px; line-height: 1.3; color: #475569; display: block; }
+
+  .tv-card h2 { margin: 0 0 4px; font-size: 16px; font-weight: 800; color: #0F172A; }
+
+  .tv-row {
+    display: flex; align-items: center; gap: 12px;
     padding: 12px 0; border-bottom: 1px solid #F1F5F9;
   }
-  .tv-doc:last-child { border-bottom: none; }
-  .tv-doc-name { font-size: 14px; font-weight: 600; color: #0F172A; }
-  .tv-doc-reason { font-size: 12px; color: #DC2626; margin-top: 2px; }
-  .tv-pill { font-size: 11px; font-weight: 700; padding: 4px 9px; border-radius: 7px; white-space: nowrap; }
+  .tv-row:last-child { border-bottom: none; padding-bottom: 2px; }
+  .tv-row-ico {
+    width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
+    background: #EEF4FF; color: #1D4ED8;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .tv-row-name { flex: 1; font-size: 14px; font-weight: 600; color: #0F172A; }
+  .tv-row-reason { font-size: 12px; color: #DC2626; font-weight: 500; margin-top: 2px; }
+  .tv-tick {
+    width: 24px; height: 24px; border-radius: 50%; background: #16A34A; color: #fff; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .tv-tick.off { background: #E2E8F0; color: #94A3B8; }
+  .tv-pill { font-size: 11px; font-weight: 800; padding: 5px 10px; border-radius: 8px; white-space: nowrap; }
   .tv-pill.pending  { background: #FEF3C7; color: #B45309; }
-  .tv-pill.approved { background: #DCFCE7; color: #15803D; }
   .tv-pill.rejected { background: #FEE2E2; color: #DC2626; }
-  .tv-pill.missing  { background: #F1F5F9; color: #64748B; }
+  .tv-pill.revision { background: #FFEDD5; color: #C2410C; }
+
+  .tv-next {
+    background: #EEF4FF; border: 1px solid #DBE6FF; border-radius: 16px;
+    padding: 16px; margin: 16px 16px 0; display: flex; gap: 12px;
+  }
+  .tv-next-ico { flex-shrink: 0; color: #1D4ED8; }
+  .tv-next h3 { margin: 0 0 3px; font-size: 14px; font-weight: 800; color: #1E3A8A; }
+  .tv-next p { margin: 0; font-size: 13px; line-height: 1.5; color: #475569; }
+
+  .tv-actions { margin: 18px 16px 0; }
+  .tv-btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%; padding: 15px; border-radius: 14px; font-size: 15px; font-weight: 700;
+    text-decoration: none; cursor: pointer; border: 1.5px solid #1D4ED8;
+  }
+  .tv-btn-outline { background: #fff; color: #1D4ED8; }
+  .tv-btn-primary { background: #1D4ED8; color: #fff; margin-top: 10px; }
+
   .tv-resubmit label { display: block; font-size: 13px; font-weight: 600; margin: 12px 0 6px; color: #0F172A; }
   .tv-resubmit input[type=file] { width: 100%; font-size: 13px; }
-  .tv-btn {
-    display: block; width: 100%; margin-top: 16px; padding: 14px; border: none;
-    border-radius: 12px; background: #1D4ED8; color: #fff; font-size: 15px; font-weight: 700;
-    text-align: center; text-decoration: none; cursor: pointer;
-  }
-  .tv-note { margin-top: 14px; font-size: 12.5px; color: #64748B; text-align: center; }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="tv-wrap">
+{% set is_pending  = status == 'PENDING_REVIEW' %}
+{% set is_revision = status == 'REVISION_REQUIRED' %}
+{% set is_rejected = status == 'REJECTED' %}
+<div class="tv-page">
+
+  <div class="tv-topbar">
+    <div class="tv-topbar-brand">
+      <span class="mark">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+      </span>
+      <span class="tv-topbar-brand-txt">
+        <strong>FixPro</strong>
+        <span>Espace professionnel</span>
+      </span>
+    </div>
+    <a class="tv-bell" href="{{ url_for('notifications') }}" aria-label="Notifications">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      {% if unread_count %}<span class="badge">{{ unread_count }}</span>{% endif %}
+    </a>
+  </div>
+
   <div class="tv-hero">
-    <span class="tv-hero-ico">
-      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg>
-    </span>
-    <h1>Vérification de votre profil</h1>
-    <p>Vos informations et documents sont nécessaires pour valider votre profil professionnel FixPro.</p>
-    {% if status == 'PENDING_REVIEW' %}
-      <span class="tv-badge">Dossier en cours d'examen</span>
-    {% elif status == 'REVISION_REQUIRED' %}
-      <span class="tv-badge">À corriger</span>
-    {% elif status == 'REJECTED' %}
-      <span class="tv-badge">Dossier refusé</span>
+    <div class="tv-hero-ill">
+      <svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 3h6a1 1 0 0 1 1 1v1h1a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h1V4a1 1 0 0 1 1-1Z"/>
+        <path d="M9 3.5a1.5 1.5 0 0 0 0 3h6a1.5 1.5 0 0 0 0-3"/>
+        <path d="M8.5 12h4M8.5 15.5h7"/>
+        <circle cx="16.5" cy="16.5" r="4" fill="#fff"/>
+        <path d="M16.5 14.7v1.8l1.2 1.1"/>
+      </svg>
+    </div>
+    {% if is_rejected %}
+      <h1>Votre dossier <em>n'a pas été validé</em></h1>
+      <p>Certaines informations n'ont pas pu être vérifiées. Corrigez votre dossier ci-dessous pour relancer la vérification.</p>
+    {% elif is_revision %}
+      <h1>Votre dossier <em>doit être complété</em></h1>
+      <p>Il manque quelques éléments pour valider votre profil. Renvoyez les documents demandés ci-dessous.</p>
+    {% else %}
+      <h1>Votre espace professionnel <em>est en préparation</em></h1>
+      <p>Votre inscription a bien été enregistrée avec succès. Notre équipe FixPro procède à l'examen de votre dossier.</p>
     {% endif %}
+  </div>
+
+  {% if is_pending %}
+  <div class="tv-status pending">
+    <div class="tv-status-txt">
+      <span class="tv-status-label">Statut actuel</span>
+      <div class="tv-status-value">Validation en cours</div>
+      <div class="tv-status-sub">En attente de validation par FixPro</div>
+    </div>
+    <span class="tv-status-ico">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 22h14M5 2h14M17 22v-4.2a2 2 0 0 0-.6-1.4L12 12l-4.4 4.4a2 2 0 0 0-.6 1.4V22M7 2v4.2a2 2 0 0 0 .6 1.4L12 12l4.4-4.4A2 2 0 0 0 17 6.2V2"/></svg>
+    </span>
+  </div>
+  {% else %}
+  <div class="tv-status warn">
+    <div class="tv-status-txt">
+      <span class="tv-status-label">Statut actuel</span>
+      <div class="tv-status-value">{{ 'Dossier refusé' if is_rejected else 'Dossier à compléter' }}</div>
+      <div class="tv-status-sub">Une action de votre part est nécessaire</div>
+    </div>
+    <span class="tv-status-ico" style="box-shadow:0 1px 3px rgba(220,38,38,.18);">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>
+    </span>
+  </div>
+  {% endif %}
+
+  <div class="tv-card">
+    <div class="tv-steps">
+      <div class="tv-step done">
+        <div class="tv-step-line"></div>
+        <div class="tv-step-dot">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        </div>
+        <span>Inscription<br>complétée</span>
+      </div>
+      <div class="tv-step done">
+        <div class="tv-step-line"></div>
+        <div class="tv-step-dot">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        </div>
+        <span>Dossier<br>reçu</span>
+      </div>
+      <div class="tv-step current">
+        <div class="tv-step-line"></div>
+        <div class="tv-step-dot">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/></svg>
+        </div>
+        <span>Vérification<br>en cours</span>
+      </div>
+      <div class="tv-step">
+        <div class="tv-step-dot">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/></svg>
+        </div>
+        <span>Profil<br>actif</span>
+      </div>
+    </div>
   </div>
 
   <div class="tv-card">
     <h2>Votre dossier</h2>
-    <div class="tv-check {{ 'ok' if checklist.phone }}"><span class="dot">✓</span> Numéro renseigné</div>
-    <div class="tv-check {{ 'ok' if checklist.email }}"><span class="dot">✓</span> E-mail renseigné</div>
-    <div class="tv-check {{ 'ok' if checklist.identity }}"><span class="dot">✓</span> Pièce d'identité ajoutée</div>
-    <div class="tv-check {{ 'ok' if checklist.professional }}"><span class="dot">✓</span> Justificatif professionnel ajouté</div>
-  </div>
 
-  <div class="tv-card">
-    <h2>Documents</h2>
-    {% for doc in documents %}
-    <div class="tv-doc">
-      <div>
-        <div class="tv-doc-name">{{ doc.label }}</div>
-        {% if doc.status == 'rejected' and doc.rejection_reason %}
-        <div class="tv-doc-reason">{{ doc.rejection_reason }}</div>
-        {% endif %}
-      </div>
-      <span class="tv-pill {{ doc.status }}">
-        {%- if doc.status == 'approved' %}Validé
-        {%- elif doc.status == 'rejected' %}Refusé
-        {%- elif doc.status == 'missing' %}Manquant
-        {%- else %}En attente{% endif -%}
+    <div class="tv-row">
+      <span class="tv-row-ico">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
       </span>
+      <span class="tv-row-name">Informations personnelles</span>
+      <span class="tv-tick"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+    </div>
+
+    <div class="tv-row">
+      <span class="tv-row-ico">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      </span>
+      <span class="tv-row-name">Métier et services</span>
+      <span class="tv-tick"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+    </div>
+
+    {% for doc in documents %}
+    <div class="tv-row">
+      <span class="tv-row-ico">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M7 15h4"/></svg>
+      </span>
+      <span class="tv-row-name">
+        {{ doc.label }}
+        {% if doc.status == 'rejected' and doc.rejection_reason %}
+        <span class="tv-row-reason">{{ doc.rejection_reason }}</span>
+        {% endif %}
+      </span>
+      {% if doc.status == 'rejected' %}
+        <span class="tv-pill rejected">Refusé</span>
+      {% elif doc.status == 'missing' %}
+        <span class="tv-pill revision">Manquant</span>
+      {% else %}
+        <span class="tv-tick"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+      {% endif %}
     </div>
     {% endfor %}
+
+    <div class="tv-row">
+      <span class="tv-row-ico">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg>
+      </span>
+      <span class="tv-row-name">Vérification par l'administration</span>
+      {% if is_rejected %}
+        <span class="tv-pill rejected">Refusée</span>
+      {% elif is_revision %}
+        <span class="tv-pill revision">À corriger</span>
+      {% else %}
+        <span class="tv-pill pending">En cours</span>
+      {% endif %}
+    </div>
   </div>
 
-  {% if status == 'PENDING_REVIEW' %}
-  <p class="tv-note">Votre dossier est prêt à être examiné. L'équipe FixPro revient vers vous rapidement.</p>
+  {% if is_pending %}
+  <div class="tv-next">
+    <span class="tv-next-ico">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+    </span>
+    <div>
+      <h3>Que se passe-t-il ensuite ?</h3>
+      <p>Dès que votre dossier sera validé, vous pourrez accéder à votre tableau de bord et commencer à recevoir des missions.</p>
+    </div>
+  </div>
   {% endif %}
 
   {% if can_resubmit %}
@@ -111,14 +302,14 @@
         action="{{ url_for('technician_documents_resubmit') }}"
         onsubmit="return tvPrepare();">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-    <h2>Remplacer un document</h2>
+    <h2>Renvoyer un document</h2>
     <label>Pièce d'identité (JPG, PNG, PDF)</label>
     <input type="file" id="tvIdentity" accept="image/*,application/pdf" />
     <input type="hidden" name="identity_doc" id="tvIdentityData" />
     <label>Justificatif professionnel (JPG, PNG, PDF)</label>
     <input type="file" id="tvProfessional" accept="image/*,application/pdf" />
     <input type="hidden" name="professional_doc" id="tvProfessionalData" />
-    <button type="submit" class="tv-btn">Renvoyer mes documents</button>
+    <button type="submit" class="tv-btn tv-btn-primary" style="margin-top:16px;">Renvoyer mes documents</button>
   </form>
   <script>
     function tvReadFile(input, hidden, cb){
@@ -144,8 +335,13 @@
   </script>
   {% endif %}
 
-  <a class="tv-btn" href="{{ url_for('logout') }}" style="background:#fff;color:#1D4ED8;border:1.5px solid #1D4ED8;">Se déconnecter</a>
+  <div class="tv-actions">
+    <a class="tv-btn tv-btn-outline" href="{{ url_for('index') }}">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
+      Retour à l'accueil
+    </a>
+    <a class="tv-btn tv-btn-outline" href="{{ url_for('logout') }}" style="border-color:#CBD5E1;color:#64748B;margin-top:10px;">Se déconnecter</a>
+  </div>
+
 </div>
 {% endblock %}
-
-{% block tabbar %}{% endblock %}

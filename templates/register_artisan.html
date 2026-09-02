@@ -219,7 +219,7 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>
             </button>
           </div>
-          <p class="fa-help">Nécessaire pour vous reconnecter à votre espace.</p>
+          <p class="fa-help">8 caractères min., avec au moins une majuscule, une minuscule et un chiffre.</p>
         </div>
 
         <div class="fa-fg">
@@ -650,10 +650,14 @@
         return false;
       }
     }
-    if (document.getElementById('account_password').value.length < 8){
+    const pw = document.getElementById('account_password').value;
+    if (pw.length < 8){
       alert('Le mot de passe doit contenir au moins 8 caractères.');
       return false;
     }
+    if (!/[A-Z]/.test(pw)){ alert('Le mot de passe doit contenir au moins une majuscule.'); return false; }
+    if (!/[a-z]/.test(pw)){ alert('Le mot de passe doit contenir au moins une minuscule.'); return false; }
+    if (!/[0-9]/.test(pw)){ alert('Le mot de passe doit contenir au moins un chiffre.'); return false; }
     const prenom = document.getElementById('first_name').value.trim();
     const nom = document.getElementById('last_name').value.trim();
     document.getElementById('full_name').value = prenom + ' ' + nom;

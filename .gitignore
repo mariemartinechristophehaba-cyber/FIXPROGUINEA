@@ -3,6 +3,13 @@
 .env.*
 !.env.example
 
+# Next.js / admin dashboard
+admin-nextjs/.next/
+admin-nextjs/node_modules/
+admin-nextjs/out/
+admin-nextjs/dist/
+admin-nextjs/.turbo/
+
 # Bases de donnees locales
 *.db
 *.sqlite

@@ -87,6 +87,26 @@ def _format_dt_hm(value):
     return s
 
 
+@app.template_filter('date_long_fr')
+def _format_date_long_fr(value):
+    """Affiche une date au format '30 sept. 2026'."""
+    if not value:
+        return ''
+    mois = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.',
+            'août', 'sept.', 'oct.', 'nov.', 'déc.']
+    try:
+        if hasattr(value, 'year'):
+            dt = value
+        else:
+            dt = datetime.strptime(str(value).replace('T', ' ')[:19], '%Y-%m-%d %H:%M:%S')
+    except (ValueError, TypeError):
+        try:
+            dt = datetime.strptime(str(value)[:10], '%Y-%m-%d')
+        except (ValueError, TypeError):
+            return str(value)
+    return "%d %s %d" % (dt.day, mois[dt.month - 1], dt.year)
+
+
 @app.template_filter('time_ago')
 def _format_time_ago(value):
     """Duree relative en francais : 'Il y a 2 h', 'Il y a 3 j'..."""
@@ -550,6 +570,21 @@ def _bearer_token_user():
     return user if not reason else None
 
 
+def _safe_next_url(url):
+    """Retourne une URL de redirection locale ou vide pour eviter les open redirects."""
+    if not url:
+        return ""
+    if url.startswith('/') and not url.startswith('//'):
+        return url
+    try:
+        parsed = urllib.parse.urlparse(url)
+        if parsed.scheme in ('http', 'https') and parsed.netloc == request.host:
+            return url
+    except Exception:
+        pass
+    return ""
+
+
 def login_required(view_func):
     @wraps(view_func)
     def wrapper(*args, **kwargs):
@@ -559,7 +594,7 @@ def login_required(view_func):
             flash("Veuillez vous connecter pour acceder a cette page.", "error")
             next_login = (url_for("admin_login")
                           if request.endpoint and request.endpoint.startswith("admin")
-                          else url_for("login", next=request.url))
+                          else url_for("login", next=_safe_next_url(request.full_path)))
             return redirect(next_login)
         return view_func(*args, **kwargs)
 
@@ -1794,6 +1829,8 @@ def register_artisan():
         session.permanent = True
         if request.form.get("after_submit") == "home":
             return redirect(url_for("index"))
+        if verif_on:
+            return redirect(url_for("artisan_pending"))
         return redirect(url_for("artisan_dashboard"))
 
     return render_template("register_artisan.html", categories=categories,
@@ -3754,7 +3791,8 @@ def google_signup():
         flash("La connexion Google n'est pas encore configurée.", "error")
         return redirect(url_for("client_signup"))
 
-    session["google_next_url"] = request.args.get("next") or request.referrer or ""
+    session["google_next_url"] = _safe_next_url(
+        request.args.get("next") or request.referrer or "")
     redirect_uri = app.config.get("GOOGLE_REDIRECT_URI")
     return google_client.authorize_redirect(redirect_uri)
 
@@ -3784,7 +3822,7 @@ def google_callback():
         return redirect(url_for("client_signup"))
 
     conn = get_db_connection()
-    next_url = session.pop("google_next_url", "")
+    next_url = _safe_next_url(session.pop("google_next_url", ""))
     try:
         user = conn.execute(
             "SELECT * FROM users WHERE email = ?", (email,)).fetchone()
@@ -3852,7 +3890,7 @@ def complete_profile():
 
             new_user = conn.execute(
                 "SELECT * FROM users WHERE email = ?", (email,)).fetchone()
-            next_url = session.pop("google_next_url", "")
+            next_url = _safe_next_url(session.pop("google_next_url", ""))
             session.clear()
             session["user_id"] = new_user["id"]
             session.permanent = True
@@ -3951,7 +3989,8 @@ def _verify_mobile_token(token):
 @app.route("/login", methods=["GET", "POST"])
 @limiter.limit("20 per hour", methods=["POST"])
 def login():
-    next_url = request.args.get("next") or request.form.get("next") or ""
+    next_url = _safe_next_url(
+        request.args.get("next") or request.form.get("next") or "")
     if request.method == "POST":
         identifier = request.form.get("identifier", "").strip()
         password = request.form.get("password", "")
@@ -4318,6 +4357,40 @@ def artisan_dashboard():
         services_disponibles = _services_for_category(conn, user["profession"] or "")
         artisan_services_ids = _artisan_service_ids(conn, user["id"])
 
+        # Abonnement en cours du technicien (le plus recent).
+        subscription = None
+        try:
+            subscription = conn.execute(
+                "SELECT s.status, s.end_date, s.auto_renew,"
+                " p.name AS plan_name, p.code AS plan_code, p.price_month, p.currency"
+                " FROM technician_subscriptions s"
+                " LEFT JOIN subscription_plans p ON p.id = s.plan_id"
+                " WHERE s.technician_id = ?"
+                " ORDER BY s.created_at DESC LIMIT 1",
+                (user["id"],)).fetchone()
+        except Exception:
+            conn.rollback()
+            subscription = None
+
+        # Repartition des notes (1 a 5 etoiles).
+        rating_breakdown = {i: 0 for i in range(1, 6)}
+        try:
+            for r in conn.execute(
+                    "SELECT rating, COUNT(*) AS n FROM reviews"
+                    " WHERE artisan_id = ? GROUP BY rating", (user["id"],)).fetchall():
+                rating_breakdown[int(r["rating"])] = r["n"]
+        except Exception:
+            conn.rollback()
+
+        realisations_count = 0
+        try:
+            realisations_count = conn.execute(
+                "SELECT COUNT(*) AS n FROM artisan_portfolio WHERE artisan_id = ?",
+                (user["id"],)).fetchone()["n"]
+        except Exception:
+            conn.rollback()
+            realisations_count = 0
+
     finally:
         conn.close()
 
@@ -4333,7 +4406,11 @@ def artisan_dashboard():
         contacts=contacts,
         new_contact_count=new_contact_count,
         services_disponibles=services_disponibles,
-        artisan_services_ids=artisan_services_ids)
+        artisan_services_ids=artisan_services_ids,
+        subscription=subscription,
+        rating_breakdown=rating_breakdown,
+        realisations_count=realisations_count,
+        services_count=len(artisan_services_ids or []))
     response = make_response(html)
     response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
     response.headers['Pragma'] = 'no-cache'
@@ -6940,7 +7017,7 @@ def _require_api_key():
     """
     key = app.config.get("ADMIN_API_KEY", "")
     if not key:
-        return jsonify({"error": "ADMIN_API_KEY non configuree"}), 500
+        return jsonify({"error": "ADMIN_API_KEY non configuree"}), 401
     header = request.headers.get("X-API-Key", "")
     if not secrets.compare_digest(str(header), str(key)):
         return jsonify({"error": "Non autorise"}), 401

@@ -1,537 +1,379 @@
-<!doctype html>
-<html lang="fr">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#2563EB" />
-  {% include '_pwa_head.html' %}
-  <title>Tableau de bord - Technicien</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <style>
-    * { box-sizing: border-box; }
-    html, body { margin: 0; padding: 0; }
-    body { font-family: 'Inter', sans-serif; background: #F3F4F6; color: #111827; -webkit-font-smoothing: antialiased; }
-    a { text-decoration: none; color: inherit; }
-    button, select { font-family: inherit; }
+{% extends 'base.html' %}
+{% block title %}Tableau de bord - FixPro{% endblock %}
+{% block header %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block tabbar %}{% endblock %}
 
-    .t-wrap { max-width: 480px; margin: 0 auto; min-height: 100vh; background: #F3F4F6; padding-bottom: 88px; }
+{% block extra_head %}
+<style>
+  :root { --db-blue:#2563EB; --db-blue-d:#1D4ED8; --db-ink:#0F172A; --db-mut:#64748B; }
+  body { background:#F4F6FB; }
+  .db { max-width:520px; margin:0 auto; padding-bottom:96px; }
 
-    .t-header {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 14px 18px; background: #fff; color: #2563EB;
-    }
-    .t-logo { font-weight: 800; font-size: 20px; display: flex; align-items: center; gap: 6px; }
-    .t-logo-dot { width: 8px; height: 8px; border-radius: 50%; background: #22C55E; }
-    .t-bell { position: relative; color: #111827; padding: 4px; }
-    .t-bell svg { width: 24px; height: 24px; }
-    .t-badge {
-      position: absolute; top: -3px; right: -3px; min-width: 18px; height: 18px;
-      background: #EF4444; color: #fff; font-size: 10px; font-weight: 700;
-      border-radius: 50%; display: flex; align-items: center; justify-content: center; padding: 0 4px;
-    }
+  .db-topbar {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 18px; background:#fff; border-bottom:1px solid #EEF1F6;
+    position:sticky; top:0; z-index:20;
+  }
+  .db-logo { display:flex; align-items:center; gap:8px; font-size:20px; font-weight:800; color:var(--db-blue); }
+  .db-logo svg { display:block; }
+  .db-topbar-right { display:flex; align-items:center; gap:14px; }
+  .db-bell { position:relative; color:var(--db-ink); display:flex; }
+  .db-bell .dot { position:absolute; top:-2px; right:-2px; width:9px; height:9px; border-radius:50%; background:#EF4444; border:2px solid #fff; }
+  .db-ava-sm { width:34px; height:34px; border-radius:50%; object-fit:cover; background:#DBE6FF; display:flex; align-items:center; justify-content:center; color:var(--db-blue-d); font-weight:700; font-size:14px; }
 
-    .t-hero {
-      background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
-      margin: 0 16px 16px; border-radius: 24px; padding: 22px 18px;
-      color: #fff; position: relative;
-    }
-    .t-profile { display: flex; align-items: center; gap: 14px; }
-    .t-avatar-wrap { position: relative; flex-shrink: 0; }
-    .t-avatar { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; border: 3px solid #fff; }
-    .t-avatar-dot { position: absolute; bottom: 2px; right: 2px; width: 16px; height: 16px; border-radius: 50%; background: #22C55E; border: 2px solid #fff; }
-    .t-profile-info { flex: 1; min-width: 0; }
-    .t-greeting { margin: 0 0 4px; font-size: 17px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
-    .t-greeting svg { width: 16px; height: 16px; flex-shrink: 0; }
-    .t-job { margin: 0 0 8px; font-size: 13px; opacity: .9; }
-    .t-status-select {
-      padding: 5px 24px 5px 10px; border: none; border-radius: 16px;
-      font-size: 12px; font-weight: 600; color: #166534; background: #DCFCE7;
-      appearance: none; -webkit-appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23166534' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-      background-repeat: no-repeat; background-position: right 7px center;
-    }
-    .t-rating { text-align: right; }
-    .t-rating-value { font-size: 18px; font-weight: 800; display: flex; align-items: center; justify-content: flex-end; gap: 4px; }
-    .t-rating-value svg { width: 18px; height: 18px; color: #FBBF24; fill: #FBBF24; }
-    .t-rating-label { font-size: 11px; opacity: .85; }
+  .db-hero { padding:20px 18px 6px; display:flex; gap:14px; align-items:flex-start; }
+  .db-hero-txt { flex:1; min-width:0; }
+  .db-hero h1 { margin:0 0 3px; font-size:24px; font-weight:800; color:var(--db-ink); line-height:1.2; }
+  .db-hero-sub { margin:0 0 12px; font-size:14px; color:var(--db-mut); }
+  .db-hero-actions { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  .db-chip {
+    display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:999px;
+    font-size:13px; font-weight:700;
+  }
+  .db-chip .d { width:8px; height:8px; border-radius:50%; }
+  .db-chip.on   { background:#DCFCE7; color:#15803D; } .db-chip.on .d   { background:#16A34A; }
+  .db-chip.busy { background:#FEF3C7; color:#B45309; } .db-chip.busy .d { background:#F59E0B; }
+  .db-chip.off  { background:#F1F5F9; color:#64748B; } .db-chip.off .d  { background:#94A3B8; }
+  .db-btn-ghost {
+    display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:999px;
+    font-size:13px; font-weight:700; color:var(--db-blue-d); background:#fff;
+    border:1px solid #C7D6F5; cursor:pointer;
+  }
+  .db-hero-ava { width:76px; height:76px; border-radius:50%; object-fit:cover; flex-shrink:0;
+    background:#DBE6FF; display:flex; align-items:center; justify-content:center; color:var(--db-blue-d); font-weight:800; font-size:26px;
+    border:3px solid #fff; box-shadow:0 2px 10px rgba(37,99,235,.18); }
 
-    .t-main { padding: 0 16px; }
-    .t-section { margin: 18px 0 10px; font-size: 15px; font-weight: 700; color: #111827; }
+  .db-status-menu { margin:10px 18px 0; background:#fff; border:1px solid #E7EBF2; border-radius:14px; overflow:hidden; }
+  .db-status-menu button {
+    display:flex; width:100%; align-items:center; gap:10px; padding:13px 16px; background:none; border:0;
+    border-bottom:1px solid #F1F5F9; font-size:14px; font-weight:600; color:var(--db-ink); cursor:pointer; text-align:left;
+  }
+  .db-status-menu button:last-child { border-bottom:0; }
+  .db-status-menu button .d { width:9px; height:9px; border-radius:50%; }
 
-    .t-card { background: #fff; border-radius: 18px; padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 12px rgba(0,0,0,.04); }
+  .db-grid { display:grid; grid-template-columns:1fr; gap:14px; padding:16px 18px 0; }
+  @media (min-width:520px){ .db-grid.two { grid-template-columns:1fr 1fr; } }
 
-    .t-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-    .t-stat { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; }
-    .t-stat-icon { width: 46px; height: 46px; border-radius: 16px; display: flex; align-items: center; justify-content: center; }
-    .t-stat-icon svg { width: 22px; height: 22px; }
-    .t-stat-num { font-size: 15px; font-weight: 800; color: #111827; line-height: 1.1; }
-    .t-stat-label { font-size: 9px; color: #6B7280; line-height: 1.2; }
+  .db-card { background:#fff; border:1px solid #E7EBF2; border-radius:18px; padding:18px; }
+  .db-card-h { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  .db-card-h h2 { margin:0; font-size:15px; font-weight:800; color:var(--db-ink); }
+  .db-link { font-size:13px; font-weight:700; color:var(--db-blue); text-decoration:none; display:inline-flex; align-items:center; gap:4px; }
 
-    .t-mission-list { display: flex; flex-direction: column; gap: 12px; }
-    .t-mission {
-      display: flex; align-items: flex-start; gap: 12px;
-      padding: 14px; border: 1px solid #E5E7EB; border-radius: 16px; background: #fff;
-    }
-    .t-mission-icon { width: 44px; height: 44px; border-radius: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-    .t-mission-icon svg { width: 24px; height: 24px; }
-    .t-mission-body { flex: 1; min-width: 0; }
-    .t-mission-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
-    .t-mission-ref { font-size: 14px; font-weight: 700; color: #111827; }
-    .t-mission-urgency { font-size: 10px; font-weight: 700; padding: 4px 8px; border-radius: 12px; }
-    .t-mission-title { font-size: 13px; color: #374151; margin: 0 0 6px; }
-    .t-mission-meta { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #6B7280; margin-bottom: 4px; }
-    .t-mission-meta svg { width: 14px; height: 14px; color: #9CA3AF; }
-    .t-mission-bottom { display: flex; align-items: center; justify-content: space-between; }
-    .t-mission-price { font-size: 14px; font-weight: 700; }
-    .t-mission-status { font-size: 12px; font-weight: 600; }
-    .t-mission-arrow { color: #9CA3AF; }
+  .db-sub-top { display:flex; align-items:center; gap:12px; margin-bottom:10px; }
+  .db-sub-ico { width:44px; height:44px; border-radius:50%; background:#E7EEFF; color:var(--db-blue); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .db-sub-name { font-size:18px; font-weight:800; color:var(--db-ink); }
+  .db-sub-desc { font-size:12.5px; color:var(--db-mut); }
+  .db-badge { font-size:11px; font-weight:800; padding:4px 9px; border-radius:7px; }
+  .db-badge.ok { background:#DCFCE7; color:#15803D; } .db-badge.no { background:#F1F5F9; color:#64748B; }
+  .db-sub-exp-l { font-size:12px; color:var(--db-mut); margin-top:6px; }
+  .db-sub-exp-v { font-size:16px; font-weight:800; color:var(--db-ink); text-transform:uppercase; }
+  .db-btn-primary {
+    display:flex; align-items:center; justify-content:center; gap:8px; width:100%; margin-top:12px;
+    padding:13px; border-radius:12px; background:var(--db-blue-d); color:#fff; font-size:14px; font-weight:700;
+    text-decoration:none; border:0; cursor:pointer;
+  }
+  .db-card-foot { margin-top:12px; padding-top:12px; border-top:1px solid #F1F5F9; }
 
-    .t-btn-link {
-      display: flex; align-items: center; justify-content: space-between;
-      width: 100%; padding: 12px 0; color: #2563EB; font-size: 13px; font-weight: 600;
-      background: none; border: none; cursor: pointer;
-    }
+  .db-rate-big { display:flex; align-items:center; gap:8px; }
+  .db-rate-big .v { font-size:26px; font-weight:800; color:var(--db-ink); }
+  .db-rate-sub { font-size:12.5px; color:var(--db-mut); margin-top:2px; }
+  .db-profile-stats { display:flex; gap:8px; margin-top:14px; }
+  .db-pstat { flex:1; text-align:center; }
+  .db-pstat-ico { width:34px; height:34px; border-radius:10px; background:#EEF4FF; color:var(--db-blue); display:flex; align-items:center; justify-content:center; margin:0 auto 6px; }
+  .db-pstat .n { font-size:16px; font-weight:800; color:var(--db-ink); }
+  .db-pstat .l { font-size:11px; color:var(--db-mut); }
 
-    .t-next {
-      background: linear-gradient(135deg, #1E40AF 0%, #2563EB 100%);
-      border-radius: 20px; padding: 18px; color: #fff;
-    }
-    .t-next-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
-    .t-next-icon { width: 46px; height: 46px; border-radius: 50%; background: rgba(255,255,255,.15); display: flex; align-items: center; justify-content: center; }
-    .t-next-icon svg { width: 24px; height: 24px; color: #fff; }
-    .t-next-title { flex: 1; }
-    .t-next-title h4 { margin: 0 0 2px; font-size: 15px; font-weight: 700; }
-    .t-next-title p { margin: 0; font-size: 13px; opacity: .9; }
-    .t-next-urgency { font-size: 10px; font-weight: 700; padding: 4px 8px; border-radius: 12px; background: rgba(255,255,255,.2); }
-    .t-next-meta { font-size: 13px; opacity: .9; display: flex; align-items: center; gap: 6px; margin-bottom: 14px; }
-    .t-next-meta svg { width: 16px; height: 16px; }
-    .t-next-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .t-next-btn { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 12px; border-radius: 12px; font-size: 13px; font-weight: 600; border: none; cursor: pointer; }
-    .t-next-btn-white { background: #fff; color: #2563EB; }
-    .t-next-btn-ghost { background: rgba(255,255,255,.15); color: #fff; }
+  .db-sec-title { margin:22px 18px 10px; font-size:17px; font-weight:800; color:var(--db-ink); }
+  .db-sec-head { display:flex; align-items:center; justify-content:space-between; margin:22px 18px 10px; }
+  .db-sec-head h2 { margin:0; font-size:17px; font-weight:800; color:var(--db-ink); }
 
-    .t-nav {
-      position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
-      max-width: 480px; margin: 0 auto;
-      background: #fff; border-top: 1px solid #E5E7EB;
-      display: flex; justify-content: space-around; align-items: center;
-      padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
-    }
-    .t-nav a { display: flex; flex-direction: column; align-items: center; gap: 3px; color: #9CA3AF; font-size: 11px; padding: 4px 8px; position: relative; }
-    .t-nav a.active { color: #2563EB; }
-    .t-nav a svg { width: 22px; height: 22px; }
-    .t-nav .t-badge {
-      position: absolute; top: -2px; right: 2px; min-width: 16px; height: 16px;
-      background: #EF4444; color: #fff; font-size: 9px; font-weight: 700;
-      border-radius: 50%; display: flex; align-items: center; justify-content: center; padding: 0 3px;
-    }
+  .db-quick { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; padding:0 18px; }
+  @media (min-width:460px){ .db-quick { grid-template-columns:repeat(4,1fr); } }
+  .db-quick a {
+    background:#fff; border:1px solid #E7EBF2; border-radius:16px; padding:16px 10px; text-align:center;
+    text-decoration:none; color:var(--db-ink); display:flex; flex-direction:column; align-items:center; gap:8px;
+  }
+  .db-quick a svg { color:var(--db-blue); }
+  .db-quick a span { font-size:12.5px; font-weight:600; line-height:1.3; }
 
-    .u-coming { background: #DCFCE7; color: #166534; }
-    .u-coming svg { color: #16A34A; }
-    .u-demand { background: #FEF3C7; color: #B45309; }
-    .u-demand svg { color: #D97706; }
-    .u-progress { background: #DBEAFE; color: #1D4ED8; }
-    .u-progress svg { color: #2563EB; }
-    .u-wallet { background: #E0E7FF; color: #4F46E5; }
-    .u-wallet svg { color: #4F46E5; }
-    .s-waiting { color: #F97316; }
-    .s-confirmed { color: #16A34A; }
-    .s-pending { color: #2563EB; }
+  .db-list { margin:0 18px; background:#fff; border:1px solid #E7EBF2; border-radius:18px; overflow:hidden; }
+  .db-item { display:flex; align-items:center; gap:12px; padding:14px 16px; border-bottom:1px solid #F1F5F9; }
+  .db-item:last-child { border-bottom:0; }
+  .db-item-ico { width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; background:#EAF7EF; color:#16A34A; }
+  .db-item-ico.v2 { background:#EEF4FF; color:var(--db-blue); } .db-item-ico.v3 { background:#F3EEFF; color:#7C3AED; }
+  .db-item-main { flex:1; min-width:0; }
+  .db-item-name { font-size:14px; font-weight:700; color:var(--db-ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .db-item-sub { font-size:12px; color:var(--db-mut); }
+  .db-item-time { text-align:right; font-size:12px; color:var(--db-mut); line-height:1.5; flex-shrink:0; }
+  .db-call { width:38px; height:38px; border-radius:50%; background:#EAF7EF; color:#16A34A; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .db-empty { padding:22px 16px; text-align:center; font-size:13px; color:var(--db-mut); }
 
-    .t-empty { text-align: center; padding: 24px 10px; }
-    .t-empty p { margin: 0; color: #6B7280; font-size: 13px; }
+  .db-reviews-body { display:flex; gap:16px; flex-wrap:wrap; align-items:flex-start; }
+  .db-reviews-score { text-align:center; flex-shrink:0; }
+  .db-reviews-score .v { font-size:34px; font-weight:800; color:var(--db-ink); }
+  .db-reviews-score .stars { color:#F59E0B; letter-spacing:1px; font-size:15px; }
+  .db-reviews-score .l { font-size:11.5px; color:var(--db-mut); margin-top:2px; }
+  .db-bars { flex:1; min-width:170px; }
+  .db-bar-row { display:flex; align-items:center; gap:8px; font-size:12px; color:var(--db-mut); margin:3px 0; }
+  .db-bar-row .k { display:flex; align-items:center; gap:2px; width:26px; }
+  .db-bar-track { flex:1; height:8px; border-radius:999px; background:#EEF1F6; overflow:hidden; }
+  .db-bar-fill { height:100%; border-radius:999px; background:var(--db-blue); }
+  .db-bar-row .c { width:24px; text-align:right; }
+  .db-reviews-note { background:#EEF4FF; border-radius:14px; padding:12px; display:flex; gap:10px; align-items:flex-start; font-size:12.5px; color:#334155; }
+  .db-reviews-note .i { width:26px; height:26px; border-radius:50%; background:var(--db-blue); color:#fff; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
 
-    @media (min-width: 1024px) {
-      .t-wrap { max-width: 1200px; padding: 0 24px 40px; }
-      .t-nav { display: none; }
-      .t-header { padding: 20px 0; }
-      .t-hero { margin: 0 0 24px; border-radius: 28px; padding: 28px 24px; }
-      .t-main { padding: 0; }
-      .t-mission-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
-      .t-mission { height: 100%; box-sizing: border-box; }
-      .t-next { max-width: 600px; }
-      .t-section { font-size: 17px; }
-    }
-    @media (min-width: 1400px) {
-      .t-wrap { max-width: 1400px; padding: 0 40px 60px; }
-      .t-mission-list { grid-template-columns: repeat(3, 1fr); gap: 20px; }
-      .t-hero { padding: 32px 32px; }
-      .t-header { padding: 24px 0; }
-      .t-main { display: grid; grid-template-columns: 1fr 360px; gap: 24px; align-items: start; }
-      .t-main > .t-section:first-of-type,
-      .t-main > .t-card.t-stats,
-      .t-main > .t-section:nth-of-type(2),
-      .t-main > .t-mission-list,
-      .t-main > .t-empty,
-      .t-main > .t-btn-link { grid-column: 1; }
-      .t-main > .t-section:nth-of-type(3),
-      .t-main > .t-next { grid-column: 2; grid-row: 1 / span 4; }
-      .t-next { max-width: none; width: 100%; box-sizing: border-box; }
-    }
-  </style>
-</head>
-<body>
-  <div class="t-wrap">
-    <header class="t-header">
-      <div class="t-logo">
-        FixPro
-        <span class="t-logo-dot"></span>
-      </div>
-      <a href="{{ url_for('notifications') }}" class="t-bell" aria-label="Notifications">
+  .db-tabbar {
+    position:fixed; left:0; right:0; bottom:0; z-index:30;
+    display:flex; justify-content:space-around; background:#fff; border-top:1px solid #E7EBF2;
+    padding:8px 4px calc(8px + env(safe-area-inset-bottom));
+  }
+  .db-tab { display:flex; flex-direction:column; align-items:center; gap:3px; font-size:11px; font-weight:600; color:#94A3B8; text-decoration:none; }
+  .db-tab.active { color:var(--db-blue); }
+</style>
+{% endblock %}
+
+{% block content %}
+{% set prenom = (user.full_name or 'Technicien').split(' ')[0] %}
+{% set av = (user.availability_status or 'hors_ligne') %}
+{% set sub_active = subscription and (subscription.status or '')|upper in ['ACTIVE', 'TRIAL'] %}
+<div class="db">
+
+  <div class="db-topbar">
+    <span class="db-logo">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+      FixPro
+    </span>
+    <div class="db-topbar-right">
+      <a class="db-bell" href="{{ url_for('notifications') }}" aria-label="Notifications">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-        {% if unread_count %}<span class="t-badge">{{ unread_count }}</span>{% endif %}
+        {% if unread_count %}<span class="dot"></span>{% endif %}
       </a>
-    </header>
+      {% if user.photo_url %}
+      <a href="{{ url_for('profile') }}"><img class="db-ava-sm" src="{{ user.photo_url }}" alt=""></a>
+      {% else %}
+      <a href="{{ url_for('profile') }}" class="db-ava-sm">{{ prenom[0]|upper }}</a>
+      {% endif %}
+    </div>
+  </div>
 
-    <div class="t-hero">
-      <div class="t-profile">
-        <div class="t-avatar-wrap">
-          <img class="t-avatar" src="{{ user.photo_url or url_for('static', filename='img/fixpro-avatar.png') }}" alt="" />
-          <span class="t-avatar-dot"></span>
+  <div class="db-hero">
+    <div class="db-hero-txt">
+      <h1>Bonjour, {{ prenom }} !&nbsp;👋</h1>
+      <p class="db-hero-sub">{{ (user.profession or 'Technicien') }} professionnel</p>
+      <div class="db-hero-actions">
+        {% if av == 'en_ligne' %}
+          <span class="db-chip on"><span class="d"></span> Disponible</span>
+        {% elif av == 'occupe' %}
+          <span class="db-chip busy"><span class="d"></span> En intervention</span>
+        {% else %}
+          <span class="db-chip off"><span class="d"></span> Hors ligne</span>
+        {% endif %}
+        <button type="button" class="db-btn-ghost" id="dbStatusToggle">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+          Modifier le statut
+        </button>
+      </div>
+    </div>
+    {% if user.photo_url %}
+    <img class="db-hero-ava" src="{{ user.photo_url }}" alt="">
+    {% else %}
+    <span class="db-hero-ava">{{ prenom[0]|upper }}</span>
+    {% endif %}
+  </div>
+
+  <div class="db-status-menu" id="dbStatusMenu" hidden data-url="{{ url_for('api_technicien_status') }}">
+    <button type="button" data-status="en_ligne"><span class="d" style="background:#16A34A"></span> Disponible</button>
+    <button type="button" data-status="occupe"><span class="d" style="background:#F59E0B"></span> En intervention</button>
+    <button type="button" data-status="hors_ligne"><span class="d" style="background:#94A3B8"></span> Hors ligne</button>
+  </div>
+
+  <div class="db-grid two">
+    <!-- Mon abonnement -->
+    <div class="db-card" id="dash-subscription">
+      <div class="db-card-h"><h2>Mon abonnement</h2></div>
+      <div class="db-sub-top">
+        <span class="db-sub-ico">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 8 4.5 3L12 5l4.5 6L21 8l-2 11H5L3 8Z"/></svg>
+        </span>
+        <div style="flex:1;">
+          <div class="db-sub-name">{{ subscription.plan_name if subscription and subscription.plan_name else 'Plan Standard' }}</div>
+          <div class="db-sub-desc">{{ 'Votre abonnement est actif.' if sub_active else 'Aucun abonnement actif pour le moment.' }}</div>
         </div>
-        <div class="t-profile-info">
-          <span style="display:none">Bienvenue</span>
-          <h2 class="t-greeting">Bonjour, {{ (user.full_name or 'Ibrahim').split(' ')[0] }} ! <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FBBF24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 4px;"><path d="M18 11V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0"/><path d="M14 10V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v3a8 8 0 0 1-4 12h-9a6 6 0 0 1-6-6v-5a4 4 0 0 1 4-4h3"/></svg></h2>
-          <p class="t-job">Technicien {{ user.profession or '' }}</p>
-          <select class="t-status-select" id="statusSelect" data-csrf="{{ csrf_token() }}">
-            <option value="en_ligne" {% if user.availability_status == 'en_ligne' %}selected{% endif %}>Disponible</option>
-            <option value="occupe" {% if user.availability_status == 'occupe' %}selected{% endif %}>En intervention</option>
-            <option value="hors_ligne" {% if user.availability_status == 'hors_ligne' %}selected{% endif %}>Hors ligne</option>
-          </select>
-        </div>
-        <div class="t-rating">
-          <div class="t-rating-value">
-            {{ "%.1f"|format(stats.note_avg|default(0)|float) }}
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="#FBBF24" stroke="#FBBF24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-          </div>
-          <div class="t-rating-label">{{ stats.note_count|default(0) }} avis</div>
-        </div>
+        <span class="db-badge {{ 'ok' if sub_active else 'no' }}">{{ 'Actif' if sub_active else 'Inactif' }}</span>
+      </div>
+      {% if subscription and subscription.end_date %}
+      <div class="db-sub-exp-l">{{ 'Expire le' if sub_active else 'Expiré le' }}</div>
+      <div class="db-sub-exp-v">{{ subscription.end_date|date_long_fr }}</div>
+      {% endif %}
+      <a class="db-btn-primary" href="{{ url_for('client_tickets') }}">
+        {{ 'Renouveler' if sub_active else 'Activer un abonnement' }}
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </a>
+      <div class="db-card-foot">
+        <a class="db-link" href="{{ url_for('client_tickets') }}">Voir les détails
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        </a>
       </div>
     </div>
 
-    <main class="t-main">
-      <h3 class="t-section">Votre activité aujourd'hui</h3>
-      <div class="t-card t-stats">
-        <div class="t-stat">
-          <div class="t-stat-icon u-coming">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          </div>
-          <div class="t-stat-num">{{ stats.a_venir|default(0) }}</div>
-          <div class="t-stat-label">Interventions à venir</div>
-        </div>
-        <div class="t-stat">
-          <div class="t-stat-icon u-demand">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M9 14h6M9 17h4"/></svg>
-          </div>
-          <div class="t-stat-num">{{ stats.nouvelles|default(0) }}</div>
-          <div class="t-stat-label">Nouvelles demandes</div>
-        </div>
-        <div class="t-stat">
-          <div class="t-stat-icon u-progress">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-          </div>
-          <div class="t-stat-num">{{ stats.assignees|default(0) }}</div>
-          <div class="t-stat-label">Intervention en cours</div>
-        </div>
-        <div class="t-stat">
-          <div class="t-stat-icon u-wallet">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M21 7H5C3.89543 7 3 7.89543 3 9V17C3 18.1046 3.89543 19 5 19H21C21.5523 19 22 18.5523 22 18V8C22 7.44772 21.5523 7 21 7Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M16 4H7C5.89543 4 5 4.89543 5 6V7H18V6C18 4.89543 17.1046 4 16 4Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-              <circle cx="17" cy="13" r="1.5" fill="currentColor"/>
-            </svg>
-          </div>
-          <div class="t-stat-num">{{ "{:,.0f}".format(stats.revenus|default(0)|int).replace(",", " ") }}</div>
-          <div class="t-stat-label">Revenus aujourd'hui</div>
-        </div>
-      </div>
-
-      <h3 class="t-section">
-        Nouveaux contacts
-        {% if new_contact_count|default(0) > 0 %}<span id="contactBadge" style="background:#EF4444;color:#fff;font-size:12px;border-radius:10px;padding:2px 8px;margin-left:8px;">{{ new_contact_count }}</span>{% else %}<span id="contactBadge" style="display:none;"></span>{% endif %}
-      </h3>
-      <div id="contactsSection">
-      {% if contacts %}
-      <div id="contactList" class="t-mission-list">
-        {% for c in contacts %}
-        <div class="t-mission" style="align-items:center;">
-          <div class="t-mission-icon u-normal" style="background:#EEF4FF;color:#155EEF;">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          </div>
-          <div class="t-mission-body">
-            <div class="t-mission-top">
-              <span class="t-mission-title">{{ c.first_name }} {{ c.last_name }}</span>
-              <span class="t-mission-urgency u-normal">{{ c.status|replace('_', ' ')|capitalize }}</span>
-            </div>
-            <div class="t-mission-meta">{{ c.phone }}</div>
-            <div class="t-mission-bottom" style="gap:10px;flex-wrap:wrap;align-items:center;">
-              <span class="t-mission-status s-waiting">{{ (c.created_at|string)[:16] }}</span>
-              <a href="tel:{{ c.phone }}" style="color:#155EEF;font-weight:700;font-size:13px;display:flex;align-items:center;gap:4px;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.62 9.5a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                Appeler
-              </a>
-              <form method="post" action="{{ url_for('technician_contact_status', contact_id=c.id) }}" style="display:flex;align-items:center;gap:6px;">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                <select name="status" onchange="this.form.submit()" style="border:1px solid #DEE5F0;border-radius:8px;padding:6px 8px;font-size:13px;color:#0F172A;background:#fff;">
-                  <option value="contacte" {% if c.status == 'contacte' %}selected{% endif %}>Contacte</option>
-                  <option value="intervention_demandee" {% if c.status == 'intervention_demandee' %}selected{% endif %}>Intervention</option>
-                  <option value="intervention_confirmee" {% if c.status == 'intervention_confirmee' %}selected{% endif %}>Confirmee</option>
-                  <option value="intervention_terminee" {% if c.status == 'intervention_terminee' %}selected{% endif %}>Terminee</option>
-                  <option value="cloture" {% if c.status == 'cloture' %}selected{% endif %}>Cloture</option>
-                </select>
-              </form>
-            </div>
-          </div>
-        </div>
-        {% endfor %}
-      </div>
-      {% else %}
-      <div id="noContacts" class="t-empty" style="padding:20px;background:#F9FAFB;border-radius:12px;text-align:center;color:#64748B;font-size:14px;">Aucun contact recent</div>
-      {% endif %}
-      </div>
-
-      <h3 class="t-section">Mes interventions</h3>
-      {% if missions %}
-      <div class="t-mission-list">
-        {% for m in missions[:3] %}
-        <a href="{{ url_for('artisan_mission', request_id=m.id) }}" class="t-mission">
-          {% if 'électric' in m.category|lower %}
-          <div class="t-mission-icon u-urgent"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
-          {% elif 'climat' in m.category|lower %}
-          <div class="t-mission-icon u-normal"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M9 8a5 5 0 1 0 6 0"/><path d="M12 12a4 4 0 0 0 0 8 4 4 0 0 0 0-8"/></svg></div>
-          {% elif 'plomb' in m.category|lower %}
-          <div class="t-mission-icon u-high"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a4 4 0 0 0 4 4h1a4 4 0 0 0 0-8h-1a4 4 0 0 0-4 4v5a4 4 0 0 0 4 4h1"/><path d="M14 13a4 4 0 0 0-4-4H9a4 4 0 0 0 0 8h1a4 4 0 0 0 4-4V7a4 4 0 0 0-4-4H9"/></svg></div>
-          {% elif 'réfrig' in m.category|lower %}
-          <div class="t-mission-icon u-normal"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2" ry="2"/><line x1="8" y1="7" x2="8" y2="7.01"/><line x1="8" y1="11" x2="8" y2="11.01"/></svg></div>
-          {% else %}
-          <div class="t-mission-icon u-low"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></div>
-          {% endif %}
-          <div class="t-mission-body">
-            <div class="t-mission-top">
-              <span class="t-mission-ref">Intervention #{{ m.reference or 'FP-' + '%05d'|format(m.id) }}</span>
-              <span class="t-mission-urgency
-                {% if m.urgency == 'urgent' %}u-urgent
-                {% elif m.urgency == 'haute' %}u-high
-                {% elif m.urgency == 'modere' %}u-high
-                {% else %}u-normal{% endif %}
-              ">
-                {% if m.urgency == 'urgent' %}Urgente{% elif m.urgency == 'haute' %}Haute{% elif m.urgency == 'modere' %}Moyenne{% else %}Normale{% endif %}
-              </span>
-            </div>
-            <p class="t-mission-title">{{ m.title }}</p>
-            <div class="t-mission-meta">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-              {{ m.address or 'Conakry' }}
-            </div>
-            <div class="t-mission-bottom">
-              <span class="t-mission-price" style="color:{% if m.urgency == 'urgent' %}#B91C1C{% elif m.urgency == 'haute' %}#D97706{% elif m.urgency == 'modere' %}#D97706{% else %}#2563EB{% endif %};">{{ "{:,.0f}".format(m.estimated_price|default(0)|int).replace(",", " ") }} GNF</span>
-              <span class="t-mission-status
-                {% if m.status == 'completed' %}s-confirmed
-                {% elif m.status in ['in_progress','arrived','en_route'] %}s-confirmed
-                {% else %}s-waiting{% endif %}
-              ">
-                {% if m.status == 'completed' %}Terminée
-                {% elif m.status in ['in_progress','arrived','en_route'] %}Confirmée
-                {% else %}En attente{% endif %}
-              </span>
-            </div>
-          </div>
-          <span class="t-mission-arrow">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-          </span>
+    <!-- Mon profil -->
+    <div class="db-card">
+      <div class="db-card-h">
+        <h2>Mon profil</h2>
+        <a class="db-link" href="{{ url_for('profile') }}">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+          Modifier
         </a>
-        {% endfor %}
       </div>
-      <a href="{{ url_for('requests_list') }}" class="t-btn-link">
-        Voir toutes mes interventions
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-      </a>
-      {% else %}
-      <div class="t-empty"><p>Aucune intervention pour le moment.</p></div>
-      {% endif %}
-
-      {% if active_mission %}
-      <h3 class="t-section">Prochaine intervention</h3>
-      <div class="t-next">
-        <div class="t-next-header">
-          <div class="t-next-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-          </div>
-          <div class="t-next-title">
-            <h4>Intervention #{{ active_mission.reference or 'FP-' + '%05d'|format(active_mission.id) }}</h4>
-            <p>{{ active_mission.title }}</p>
-          </div>
-          <span class="t-next-urgency">{% if active_mission.urgency == 'urgent' %}Urgente{% elif active_mission.urgency == 'haute' %}Haute{% else %}Moyenne{% endif %}</span>
+      <div class="db-rate-big">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="#F59E0B" stroke="#F59E0B" stroke-width="1"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        <span class="v">{{ '%.1f'|format(stats.note_avg or 0) }}</span>
+      </div>
+      <div class="db-rate-sub">Basé sur {{ stats.note_count or 0 }} avis</div>
+      <div class="db-profile-stats">
+        <div class="db-pstat">
+          <span class="db-pstat-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+          <div class="n">{{ stats.note_count or 0 }}</div><div class="l">Avis clients</div>
         </div>
-        <div class="t-next-meta">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-          {{ active_mission.address or 'Conakry' }}
+        <div class="db-pstat">
+          <span class="db-pstat-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></span>
+          <div class="n">{{ services_count }}</div><div class="l">Services</div>
         </div>
-        <div class="t-next-meta">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          {{ active_mission.requested_time or 'Aujourd\'hui, 10:30' }}
-        </div>
-        <div class="t-next-meta">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
-          {{ "{:,.0f}".format(active_mission.estimated_price|default(0)|int).replace(",", " ") }} GNF
-        </div>
-        <div class="t-next-actions">
-          <button class="t-next-btn t-next-btn-white">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
-            Itineraire
-          </button>
-          <a href="{{ url_for('artisan_mission', request_id=active_mission.id) }}" class="t-next-btn t-next-btn-ghost">Voir l'intervention</a>
+        <div class="db-pstat">
+          <span class="db-pstat-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.5-3.5L9 20"/></svg></span>
+          <div class="n">{{ realisations_count }}</div><div class="l">Réalisations</div>
         </div>
       </div>
-      {% endif %}
-    </main>
-
-    <nav class="t-nav">
-      <a class="active" href="{{ url_for('artisan_dashboard') }}">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
-        Accueil
-      </a>
-      <a href="{{ url_for('requests_list') }}">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M9 14h6M9 17h4"/></svg>
-        Demandes
-      </a>
-      <a href="{{ url_for('technician_interventions') }}">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-        Interventions
-      </a>
-      <a href="{{ url_for('client_messages') }}">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 21l1.9-5.1A8.4 8.4 0 0 1 4 11.5a8.5 8.5 0 0 1 8.5-8.5A8.5 8.5 0 0 1 21 11.5z"/></svg>
-        Messages
-        {% if unread_count %}<span class="t-badge">{{ unread_count }}</span>{% endif %}
-      </a>
-      <a href="{{ url_for('profile') }}">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
-        Profil
-      </a>
-    </nav>
+      <div class="db-card-foot">
+        <a class="db-link" href="{{ url_for('artisan_detail', artisan_id=user.id) }}">Voir mon profil public
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        </a>
+      </div>
+    </div>
   </div>
 
-  <script>
-    (function() {
-      const select = document.getElementById('statusSelect');
-      if (!select) return;
-      select.addEventListener('change', function() {
-        const form = new FormData();
-        form.append('status', select.value);
-        form.append('csrf_token', select.dataset.csrf);
-        fetch('/api/technicien/status', { method: 'POST', body: form })
-          .then(r => r.json())
-          .then(data => { if (data.ok) location.reload(); })
-          .catch(() => {});
-      });
-    })();
-  </script>
+  <!-- Actions rapides -->
+  <h2 class="db-sec-title">Actions rapides</h2>
+  <div class="db-quick">
+    <a href="#" id="dbStatusToggle2">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+      <span>Gérer mon statut</span>
+    </a>
+    <a href="{{ url_for('profile') }}">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+      <span>Modifier mon profil</span>
+    </a>
+    <a href="{{ url_for('profile') }}">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.5-3.5L9 20"/></svg>
+      <span>Ajouter une réalisation</span>
+    </a>
+    <a href="{{ url_for('client_tickets') }}">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
+      <span>Besoin d'aide&nbsp;?</span>
+    </a>
+  </div>
 
-  <script>
-    (function() {
-      const statusLabels = {
-        'nouveau': 'Nouveau',
-        'contacte': 'Contacte',
-        'intervention_demandee': 'Intervention',
-        'intervention_confirmee': 'Confirmee',
-        'intervention_terminee': 'Terminee',
-        'cloture': 'Cloture'
-      };
+  <!-- Derniers contacts -->
+  <div class="db-sec-head" id="dash-contacts">
+    <h2>Derniers contacts</h2>
+    <a class="db-link" href="{{ url_for('profile') }}">Voir tout</a>
+  </div>
+  <div class="db-list">
+    {% for c in contacts[:4] %}
+    <div class="db-item">
+      <span class="db-item-ico {{ 'v2' if loop.index0 == 1 else 'v3' if loop.index0 == 2 else '' }}">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+      </span>
+      <div class="db-item-main">
+        <div class="db-item-name">{{ c.first_name }} {{ c.last_name }}</div>
+        <div class="db-item-sub">Appel entrant</div>
+      </div>
+      <div class="db-item-time">{{ c.created_at|time_ago }}</div>
+      <a class="db-call" href="tel:{{ c.phone }}" aria-label="Appeler">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+      </a>
+    </div>
+    {% else %}
+    <div class="db-empty">Aucun contact récent.</div>
+    {% endfor %}
+  </div>
 
-      const csrf = (document.querySelector('input[name="csrf_token"]') || {}).value
-                 || (document.getElementById('statusSelect') || {}).dataset?.csrf
-                 || '';
+  <!-- Avis clients -->
+  <div class="db-sec-head" id="dash-reviews">
+    <h2>Avis clients</h2>
+    <a class="db-link" href="{{ url_for('artisan_detail', artisan_id=user.id) }}">Voir tout</a>
+  </div>
+  <div class="db-list" style="padding:18px;">
+    {% set total_avis = stats.note_count or 0 %}
+    <div class="db-reviews-body">
+      <div class="db-reviews-score">
+        <div class="v">{{ '%.1f'|format(stats.note_avg or 0) }}</div>
+        {% set full = (stats.note_avg or 0)|round(0, 'floor')|int %}
+        <div class="stars">{% for i in range(5) %}{{ '★' if i < full else '☆' }}{% endfor %}</div>
+        <div class="l">Basé sur {{ total_avis }} avis</div>
+      </div>
+      <div class="db-bars">
+        {% for star in [5, 4, 3, 2, 1] %}
+        {% set n = rating_breakdown.get(star, 0) %}
+        <div class="db-bar-row">
+          <span class="k">{{ star }} <svg width="10" height="10" viewBox="0 0 24 24" fill="#F59E0B"><path d="m12 2 3 6 6 1-4.5 4.4 1 6.6L12 17l-5.5 3 1-6.6L3 9l6-1z"/></svg></span>
+          <span class="db-bar-track"><span class="db-bar-fill" style="width:{{ (n / total_avis * 100)|round(1) if total_avis else 0 }}%"></span></span>
+          <span class="c">{{ n }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% if total_avis %}
+      <div class="db-reviews-note">
+        <span class="i"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+        <span>{{ 'Vos clients sont satisfaits de vos services. Continuez ainsi !' if (stats.note_avg or 0) >= 4 else 'Continuez à soigner vos interventions pour améliorer votre note.' }}</span>
+      </div>
+      {% endif %}
+    </div>
+  </div>
 
-      function escapeHtml(s) {
-        return String(s == null ? '' : s)
-          .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-          .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-      }
+</div>
 
-      function phoneHtml(phone) {
-        const p = escapeHtml(String(phone || '').replace(/[^\d+ ]/g, ''));
-        return `<a href="tel:${p.replace(/ /g, '')}" style="color:#155EEF;font-weight:700;font-size:13px;display:flex;align-items:center;gap:4px;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.62 9.5a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-          Appeler
-        </a>`;
-      }
+<nav class="db-tabbar">
+  <a class="db-tab active" href="{{ url_for('artisan_dashboard') }}">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9"/></svg>
+    <span>Accueil</span>
+  </a>
+  <a class="db-tab" href="{{ url_for('profile') }}">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
+    <span>Profil</span>
+  </a>
+  <a class="db-tab" href="#dash-contacts">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+    <span>Appels</span>
+  </a>
+  <a class="db-tab" href="#dash-subscription">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+    <span>Abonnement</span>
+  </a>
+  <a class="db-tab" href="#dash-reviews">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+    <span>Avis</span>
+  </a>
+</nav>
 
-      function statusForm(contact) {
-        const options = ['contacte','intervention_demandee','intervention_confirmee','intervention_terminee','cloture']
-          .map(s => `<option value="${s}" ${contact.status === s ? 'selected' : ''}>${statusLabels[s]}</option>`).join('');
-        return `<form method="post" action="/dashboard/technicien/contact/${contact.id}/status" style="display:flex;align-items:center;gap:6px;">
-          <input type="hidden" name="csrf_token" value="${csrf}" />
-          <select name="status" onchange="this.form.submit()" style="border:1px solid #DEE5F0;border-radius:8px;padding:6px 8px;font-size:13px;color:#0F172A;background:#fff;">
-            ${options}
-          </select>
-        </form>`;
-      }
-
-      function renderContact(c) {
-        return `<div class="t-mission" style="align-items:center;">
-          <div class="t-mission-icon u-normal" style="background:#EEF4FF;color:#155EEF;">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          </div>
-          <div class="t-mission-body">
-            <div class="t-mission-top">
-              <span class="t-mission-title">${escapeHtml(c.first_name)} ${escapeHtml(c.last_name)}</span>
-              <span class="t-mission-urgency u-normal">${escapeHtml(String(c.status || 'nouveau').replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()))}</span>
-            </div>
-            <div class="t-mission-meta">${escapeHtml(c.phone)}</div>
-            <div class="t-mission-bottom" style="gap:10px;flex-wrap:wrap;align-items:center;">
-              <span class="t-mission-status s-waiting">${c.created_at ? c.created_at.slice(0,16) : ''}</span>
-              ${phoneHtml(c.phone)}
-              ${statusForm(c)}
-            </div>
-          </div>
-        </div>`;
-      }
-
-      function renderList(contacts) {
-        const section = document.getElementById('contactsSection');
-        if (!section) return;
-        if (!contacts.length) {
-          section.innerHTML = '<div id="noContacts" class="t-empty" style="padding:20px;background:#F9FAFB;border-radius:12px;text-align:center;color:#64748B;font-size:14px;">Aucun contact recent</div>';
-          return;
-        }
-        section.innerHTML = '<div id="contactList" class="t-mission-list">' + contacts.map(renderContact).join('') + '</div>';
-      }
-
-      function updateBadge(newCount) {
-        const badge = document.getElementById('contactBadge');
-        if (!badge) return;
-        if (newCount > 0) {
-          badge.textContent = newCount;
-          badge.style.display = 'inline-block';
-        } else {
-          badge.style.display = 'none';
-        }
-      }
-
-      let lastCount = parseInt(document.getElementById('contactBadge')?.textContent || '0') || 0;
-
-      function check() {
-        fetch('/dashboard/technicien/contacts/json', {credentials: 'same-origin'})
-          .then(r => r.json())
-          .then(data => {
-            if (!data.ok) return;
-            const current = data.contacts.length;
-            const newCount = data.new_count || 0;
-            updateBadge(newCount);
-            renderList(data.contacts);
-            if (current > lastCount) {
-              const diff = current - lastCount;
-              alert(`${diff} nouveau(x) contact(s) !`);
-            }
-            lastCount = current;
-          })
-          .catch(() => {});
-      }
-
-      setInterval(check, 10000);
-    })();
-  </script>
-</body>
-</html>
+<script>
+(function(){
+  var menu = document.getElementById('dbStatusMenu');
+  function toggle(e){ if(e) e.preventDefault(); menu.hidden = !menu.hidden; }
+  var t1 = document.getElementById('dbStatusToggle');
+  var t2 = document.getElementById('dbStatusToggle2');
+  if (t1) t1.addEventListener('click', toggle);
+  if (t2) t2.addEventListener('click', toggle);
+  menu.querySelectorAll('button').forEach(function(b){
+    b.addEventListener('click', function(){
+      var body = new FormData(); body.append('status', b.dataset.status);
+      fetch(menu.dataset.url, { method:'POST', body: body, credentials:'same-origin' })
+        .then(function(r){ return r.json(); })
+        .then(function(d){ if (d && d.ok) location.reload(); else alert((d && d.error) || 'Erreur'); })
+        .catch(function(){ alert('Connexion impossible.'); });
+    });
+  });
+})();
+</script>
+{% endblock %}
