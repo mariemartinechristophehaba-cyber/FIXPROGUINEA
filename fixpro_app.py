@@ -4501,7 +4501,7 @@ def technician_calls():
 
 _TECH_PLANS = [
     {
-        "code": "pro", "name": "Pro", "icon": "star", "popular": False,
+        "code": "tech_pro", "name": "Pro", "icon": "star", "popular": False,
         "desc": "Idéal pour les techniciens indépendants.",
         "price_month": 150000,
         "features": [
@@ -4514,7 +4514,7 @@ _TECH_PLANS = [
         ],
     },
     {
-        "code": "business", "name": "Business", "icon": "crown", "popular": True,
+        "code": "tech_business", "name": "Business", "icon": "crown", "popular": True,
         "desc": "Pour les professionnels qui veulent plus de visibilité.",
         "price_month": 250000,
         "features": [
@@ -4529,12 +4529,73 @@ _TECH_PLANS = [
     },
 ]
 
+# Reduction appliquee sur l'engagement annuel.
+_TECH_ANNUAL_DISCOUNT = 0.10
+
+_SUB_PAYMENT_METHODS = [
+    ("orange_money", "Orange Money"),
+    ("mtn_mobile_money", "MTN Mobile Money"),
+    ("moov_money", "Moov Money"),
+    ("visa", "Carte VISA"),
+    ("mastercard", "Carte Mastercard"),
+]
+
+
+def _tech_plan_by_code(code):
+    for p in _TECH_PLANS:
+        if p["code"] == code:
+            return p
+    return None
+
+
+def _tech_plan_amount(plan, period):
+    """Montant a payer selon la periode ('month' ou 'year')."""
+    if period == "year":
+        return int(round(plan["price_month"] * 12 * (1 - _TECH_ANNUAL_DISCOUNT)))
+    return int(plan["price_month"])
+
+
+def _ensure_tech_plan_row(conn, code):
+    """Cree/actualise la ligne subscription_plans correspondant a un plan technicien."""
+    plan = _tech_plan_by_code(code)
+    if not plan:
+        return None
+    feats = "\n".join(plan["features"])
+    row = conn.execute("SELECT id FROM subscription_plans WHERE code = ?", (code,)).fetchone()
+    if row:
+        conn.execute(
+            "UPDATE subscription_plans SET name = ?, price_month = ?, features = ?, is_active = 1"
+            " WHERE id = ?",
+            (plan["name"], plan["price_month"], feats, row["id"]))
+        return row["id"]
+    order = 10 if code == "tech_pro" else 11
+    conn.execute(
+        "INSERT INTO subscription_plans (code, name, price_month, features, is_active, sort_order)"
+        " VALUES (?, ?, ?, ?, 1, ?)",
+        (code, plan["name"], plan["price_month"], feats, order))
+    got = conn.execute("SELECT id FROM subscription_plans WHERE code = ?", (code,)).fetchone()
+    return got["id"] if got else None
+
+
+def _sub_frequency(start, end):
+    """Deduit 'Annuel' / 'Mensuel' de l'ecart entre deux dates."""
+    try:
+        s = start if hasattr(start, "year") else datetime.strptime(str(start)[:10], "%Y-%m-%d")
+        e = end if hasattr(end, "year") else datetime.strptime(str(end)[:10], "%Y-%m-%d")
+        return "Annuel" if (e - s).days > 300 else "Mensuel"
+    except (ValueError, TypeError):
+        return "Mensuel"
+
+
+_SUB_ACTIVE_STATUSES = ("ACTIVE", "TRIAL")
+_SUB_WARN_STATUSES = ("PAST_DUE", "EXPIRED", "SUSPENDED")
+
 
 @app.route("/abonnement")
 @app.route("/dashboard/technicien/abonnement")
 @login_required
 def technician_subscription():
-    """Page Abonnement du technicien : formules et moyens de paiement."""
+    """Page Abonnement du technicien : formule en cours, formules et paiements."""
     user = get_current_user()
     if not _is_technician(user):
         flash("Cet espace est reserve aux techniciens.", "error")
@@ -4546,12 +4607,14 @@ def technician_subscription():
         return redirect(url_for("artisan_pending"))
 
     current = None
+    payments = []
     unread_count = 0
     conn = get_db_connection()
     try:
         try:
             current = conn.execute(
-                "SELECT s.status, s.end_date, p.code AS plan_code, p.name AS plan_name"
+                "SELECT s.status, s.start_date, s.end_date, s.auto_renew,"
+                " p.code AS plan_code, p.name AS plan_name"
                 " FROM technician_subscriptions s"
                 " LEFT JOIN subscription_plans p ON p.id = s.plan_id"
                 " WHERE s.technician_id = ?"
@@ -4560,6 +4623,19 @@ def technician_subscription():
         except Exception:
             conn.rollback()
             current = None
+        try:
+            payments = conn.execute(
+                "SELECT sp.amount, sp.currency, sp.status, sp.payment_method,"
+                " sp.paid_at, sp.created_at, sp.period_start, sp.period_end,"
+                " p.name AS plan_name"
+                " FROM subscription_payments sp"
+                " LEFT JOIN subscription_plans p ON p.id = sp.plan_id"
+                " WHERE sp.user_id = ?"
+                " ORDER BY COALESCE(sp.paid_at, sp.created_at) DESC LIMIT 20",
+                (user["id"],)).fetchall()
+        except Exception:
+            conn.rollback()
+            payments = []
         try:
             unread_count = conn.execute(
                 "SELECT COUNT(*) AS n FROM notifications WHERE user_id = ? AND is_read = 0",
@@ -4571,11 +4647,119 @@ def technician_subscription():
         conn.close()
 
     current_code = (current["plan_code"] if current else None) or None
-    current_active = bool(current and (current["status"] or "").upper() in ("ACTIVE", "TRIAL"))
+    status = (current["status"] or "").upper() if current else None
+    current_active = status in _SUB_ACTIVE_STATUSES
+    frequency = _sub_frequency(current["start_date"], current["end_date"]) if current else None
+
+    payments_view = []
+    for p in payments:
+        freq = _sub_frequency(p["period_start"], p["period_end"]) if p["period_start"] else "Mensuel"
+        payments_view.append({
+            "plan_name": p["plan_name"] or "Abonnement",
+            "amount": p["amount"], "currency": p["currency"] or "GNF",
+            "status": (p["status"] or "pending").lower(),
+            "method": dict(_SUB_PAYMENT_METHODS).get(p["payment_method"], p["payment_method"] or "—"),
+            "date": p["paid_at"] or p["created_at"],
+            "frequency": freq,
+        })
 
     return render_template("technician_subscription.html", user=user,
-                           plans=_TECH_PLANS, current_code=current_code,
-                           current_active=current_active, unread_count=unread_count)
+                           plans=_TECH_PLANS, annual_discount=int(_TECH_ANNUAL_DISCOUNT * 100),
+                           current=current, current_code=current_code, status=status,
+                           current_active=current_active, frequency=frequency,
+                           payments=payments_view, unread_count=unread_count)
+
+
+@app.route("/abonnement/paiement", methods=["GET", "POST"])
+@app.route("/dashboard/technicien/abonnement/paiement", methods=["GET", "POST"])
+@login_required
+@limiter.limit("20 per hour", methods=["POST"])
+def technician_subscription_checkout():
+    """Recapitulatif + choix du moyen de paiement pour un abonnement technicien."""
+    user = get_current_user()
+    if not _is_technician(user):
+        flash("Cet espace est reserve aux techniciens.", "error")
+        return redirect(url_for("dashboard"))
+
+    if _verification_enabled() and (
+            (user.get("verification_status") or "").upper() in VERIF_BLOCKING
+            or not user.get("is_verified")):
+        return redirect(url_for("artisan_pending"))
+
+    code = (request.values.get("plan") or "").strip()
+    period = (request.values.get("period") or "month").strip()
+    if period not in ("month", "year"):
+        period = "month"
+    plan = _tech_plan_by_code(code)
+    if not plan:
+        flash("Formule inconnue.", "error")
+        return redirect(url_for("technician_subscription"))
+
+    amount = _tech_plan_amount(plan, period)
+
+    if request.method == "POST":
+        method = (request.form.get("payment_method") or "").strip()
+        if method not in dict(_SUB_PAYMENT_METHODS):
+            flash("Choisissez un moyen de paiement.", "error")
+            return redirect(url_for("technician_subscription_checkout", plan=code, period=period))
+
+        now = datetime.now(timezone.utc)
+        period_end = now + timedelta(days=365 if period == "year" else 30)
+        ref = "SUB-%s-%s-%s" % (code.upper(), period[:1].upper(), now.strftime("%Y%m%d%H%M%S"))
+        conn = get_db_connection()
+        try:
+            plan_id = _ensure_tech_plan_row(conn, code)
+            existing = conn.execute(
+                "SELECT id FROM technician_subscriptions WHERE technician_id = ?"
+                " ORDER BY created_at DESC LIMIT 1", (user["id"],)).fetchone()
+            if existing:
+                conn.execute(
+                    "UPDATE technician_subscriptions SET plan_id = ?, status = 'PAST_DUE',"
+                    " start_date = ?, end_date = ?, auto_renew = 1, updated_at = CURRENT_TIMESTAMP"
+                    " WHERE id = ?",
+                    (plan_id, now.strftime("%Y-%m-%d %H:%M:%S"),
+                     period_end.strftime("%Y-%m-%d %H:%M:%S"), existing["id"]))
+                sub_id = existing["id"]
+            else:
+                conn.execute(
+                    "INSERT INTO technician_subscriptions"
+                    " (technician_id, plan_id, status, start_date, end_date, auto_renew)"
+                    " VALUES (?, ?, 'PAST_DUE', ?, ?, 1)",
+                    (user["id"], plan_id, now.strftime("%Y-%m-%d %H:%M:%S"),
+                     period_end.strftime("%Y-%m-%d %H:%M:%S")))
+                sub_id = conn.execute(
+                    "SELECT id FROM technician_subscriptions WHERE technician_id = ?"
+                    " ORDER BY created_at DESC LIMIT 1", (user["id"],)).fetchone()["id"]
+            conn.execute(
+                "INSERT INTO subscription_payments"
+                " (user_id, subscription_id, plan_id, amount, currency, payment_method,"
+                "  transaction_reference, status, period_start, period_end)"
+                " VALUES (?, ?, ?, ?, 'GNF', ?, ?, 'pending', ?, ?)",
+                (user["id"], sub_id, plan_id, amount, method, ref,
+                 now.strftime("%Y-%m-%d %H:%M:%S"), period_end.strftime("%Y-%m-%d %H:%M:%S")))
+            conn.commit()
+        finally:
+            conn.close()
+
+        flash("Votre demande d'abonnement %s (%s) a bien été enregistrée. "
+              "Elle sera activée dès la confirmation du paiement."
+              % (plan["name"], "annuel" if period == "year" else "mensuel"), "success")
+        return redirect(url_for("technician_subscription"))
+
+    unread_count = 0
+    conn = get_db_connection()
+    try:
+        unread_count = conn.execute(
+            "SELECT COUNT(*) AS n FROM notifications WHERE user_id = ? AND is_read = 0",
+            (user["id"],)).fetchone()["n"]
+    except Exception:
+        conn.rollback()
+    finally:
+        conn.close()
+
+    return render_template("technician_subscription_checkout.html", user=user,
+                           plan=plan, period=period, amount=amount,
+                           methods=_SUB_PAYMENT_METHODS, unread_count=unread_count)
 
 
 @app.route("/dashboard/technicien/contacts/json")
