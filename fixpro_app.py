@@ -107,6 +107,26 @@ def _format_date_long_fr(value):
     return "%d %s %d" % (dt.day, mois[dt.month - 1], dt.year)
 
 
+@app.template_filter('date_month_fr')
+def _format_date_month_fr(value):
+    """Affiche une date au format '28 Avril 2024'."""
+    if not value:
+        return ''
+    mois = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet',
+            'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre']
+    try:
+        if hasattr(value, 'year'):
+            dt = value
+        else:
+            dt = datetime.strptime(str(value).replace('T', ' ')[:19], '%Y-%m-%d %H:%M:%S')
+    except (ValueError, TypeError):
+        try:
+            dt = datetime.strptime(str(value)[:10], '%Y-%m-%d')
+        except (ValueError, TypeError):
+            return str(value)
+    return "%d %s %d" % (dt.day, mois[dt.month - 1], dt.year)
+
+
 @app.template_filter('time_ago')
 def _format_time_ago(value):
     """Duree relative en francais : 'Il y a 2 h', 'Il y a 3 j'..."""
@@ -4589,6 +4609,111 @@ def technician_subscription_checkout():
     return render_template("technician_subscription_checkout.html", user=user,
                            plan=plan, period=period, amount=amount,
                            methods=_SUB_PAYMENT_METHODS, unread_count=unread_count)
+
+
+_DEMO_REVIEWS = [
+    {"name": "Mamadou Diallo", "rating": 5, "date": "2024-04-28",
+     "comment": "Travail très professionnel, rapide et efficace. Je suis vraiment satisfait du service.",
+     "service": "Installation électrique"},
+    {"name": "Aïssatou Camara", "rating": 5, "date": "2024-04-25",
+     "comment": "Très bon service ! Il est arrivé à l'heure et a résolu mon problème rapidement.",
+     "service": "Dépannage électrique"},
+    {"name": "Alhassane Bah", "rating": 4, "date": "2024-04-21",
+     "comment": "Bon travail, soigneux et à l'écoute. Je recommande sans hésiter.",
+     "service": "Réparation courant faible"},
+    {"name": "Sékou Kaba", "rating": 5, "date": "2024-04-18",
+     "comment": "Excellent technicien, très compétent. Service au top !",
+     "service": "Mise aux normes"},
+    {"name": "Fatoumata Barry", "rating": 5, "date": "2024-04-12",
+     "comment": "Intervention nickel, tarif honnête. Merci beaucoup.",
+     "service": "Installation électrique"},
+    {"name": "Ibrahima Sow", "rating": 4, "date": "2024-04-05",
+     "comment": "Sérieux et ponctuel. Rien à redire.",
+     "service": "Dépannage électrique"},
+]
+
+_DEMO_REVIEW_STATS = {
+    "avg": 4.8, "count": 128,
+    "breakdown": {5: 98, 4: 21, 3: 6, 2: 2, 1: 1},
+    "positifs": 124, "neutres": 3, "negatifs": 1,
+}
+
+
+@app.route("/avis")
+@app.route("/dashboard/technicien/avis")
+@login_required
+def technician_reviews():
+    """Page Avis clients du technicien : note globale, repartition et liste."""
+    user = get_current_user()
+    if not _is_technician(user):
+        flash("Cet espace est reserve aux techniciens.", "error")
+        return redirect(url_for("dashboard"))
+
+    if _verification_enabled() and (
+            (user.get("verification_status") or "").upper() in VERIF_BLOCKING
+            or not user.get("is_verified")):
+        return redirect(url_for("artisan_pending"))
+
+    rows = []
+    unread_count = 0
+    conn = get_db_connection()
+    try:
+        try:
+            rows = conn.execute(
+                "SELECT r.rating, r.comment, r.created_at,"
+                " u.full_name AS client_name, u.photo_url AS client_photo,"
+                " req.service AS service, req.category AS category, req.title AS title"
+                " FROM reviews r"
+                " JOIN users u ON u.id = r.client_id"
+                " LEFT JOIN requests req ON req.id = r.request_id"
+                " WHERE r.artisan_id = ?"
+                " ORDER BY r.created_at DESC LIMIT 200",
+                (user["id"],)).fetchall()
+        except Exception:
+            conn.rollback()
+            rows = []
+        try:
+            unread_count = conn.execute(
+                "SELECT COUNT(*) AS n FROM notifications WHERE user_id = ? AND is_read = 0",
+                (user["id"],)).fetchone()["n"]
+        except Exception:
+            conn.rollback()
+            unread_count = 0
+    finally:
+        conn.close()
+
+    demo = not rows
+    if demo:
+        reviews = [dict(r) for r in _DEMO_REVIEWS]
+        stats = dict(_DEMO_REVIEW_STATS)
+    else:
+        reviews = []
+        breakdown = {i: 0 for i in range(1, 6)}
+        total_rating = 0
+        for r in rows:
+            rating = int(r["rating"] or 0)
+            breakdown[rating] = breakdown.get(rating, 0) + 1
+            total_rating += rating
+            reviews.append({
+                "name": r["client_name"] or "Client",
+                "rating": rating,
+                "date": r["created_at"],
+                "comment": r["comment"] or "",
+                "service": r["service"] or r["category"] or r["title"] or "",
+                "photo": r["client_photo"],
+            })
+        count = len(rows)
+        stats = {
+            "avg": round(total_rating / count, 1) if count else 0,
+            "count": count,
+            "breakdown": breakdown,
+            "positifs": sum(1 for r in rows if int(r["rating"] or 0) >= 4),
+            "neutres": sum(1 for r in rows if int(r["rating"] or 0) == 3),
+            "negatifs": sum(1 for r in rows if int(r["rating"] or 0) <= 2),
+        }
+
+    return render_template("technician_reviews.html", user=user, reviews=reviews,
+                           stats=stats, demo=demo, unread_count=unread_count)
 
 
 @app.route("/dashboard/technicien/contacts/json")
