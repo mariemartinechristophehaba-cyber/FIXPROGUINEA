@@ -87,6 +87,26 @@ def _format_dt_hm(value):
     return s
 
 
+@app.template_filter('date_long_fr')
+def _format_date_long_fr(value):
+    """Affiche une date au format '30 sept. 2026'."""
+    if not value:
+        return ''
+    mois = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.',
+            'août', 'sept.', 'oct.', 'nov.', 'déc.']
+    try:
+        if hasattr(value, 'year'):
+            dt = value
+        else:
+            dt = datetime.strptime(str(value).replace('T', ' ')[:19], '%Y-%m-%d %H:%M:%S')
+    except (ValueError, TypeError):
+        try:
+            dt = datetime.strptime(str(value)[:10], '%Y-%m-%d')
+        except (ValueError, TypeError):
+            return str(value)
+    return "%d %s %d" % (dt.day, mois[dt.month - 1], dt.year)
+
+
 @app.template_filter('time_ago')
 def _format_time_ago(value):
     """Duree relative en francais : 'Il y a 2 h', 'Il y a 3 j'..."""
@@ -4165,6 +4185,40 @@ def artisan_dashboard():
         services_disponibles = _services_for_category(conn, user["profession"] or "")
         artisan_services_ids = _artisan_service_ids(conn, user["id"])
 
+        # Abonnement en cours du technicien (le plus recent).
+        subscription = None
+        try:
+            subscription = conn.execute(
+                "SELECT s.status, s.end_date, s.auto_renew,"
+                " p.name AS plan_name, p.code AS plan_code, p.price_month, p.currency"
+                " FROM technician_subscriptions s"
+                " LEFT JOIN subscription_plans p ON p.id = s.plan_id"
+                " WHERE s.technician_id = ?"
+                " ORDER BY s.created_at DESC LIMIT 1",
+                (user["id"],)).fetchone()
+        except Exception:
+            conn.rollback()
+            subscription = None
+
+        # Repartition des notes (1 a 5 etoiles).
+        rating_breakdown = {i: 0 for i in range(1, 6)}
+        try:
+            for r in conn.execute(
+                    "SELECT rating, COUNT(*) AS n FROM reviews"
+                    " WHERE artisan_id = ? GROUP BY rating", (user["id"],)).fetchall():
+                rating_breakdown[int(r["rating"])] = r["n"]
+        except Exception:
+            conn.rollback()
+
+        realisations_count = 0
+        try:
+            realisations_count = conn.execute(
+                "SELECT COUNT(*) AS n FROM artisan_portfolio WHERE artisan_id = ?",
+                (user["id"],)).fetchone()["n"]
+        except Exception:
+            conn.rollback()
+            realisations_count = 0
+
     finally:
         conn.close()
 
@@ -4180,7 +4234,11 @@ def artisan_dashboard():
         contacts=contacts,
         new_contact_count=new_contact_count,
         services_disponibles=services_disponibles,
-        artisan_services_ids=artisan_services_ids)
+        artisan_services_ids=artisan_services_ids,
+        subscription=subscription,
+        rating_breakdown=rating_breakdown,
+        realisations_count=realisations_count,
+        services_count=len(artisan_services_ids or []))
     response = make_response(html)
     response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
     response.headers['Pragma'] = 'no-cache'

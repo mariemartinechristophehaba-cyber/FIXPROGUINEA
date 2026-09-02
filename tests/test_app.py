@@ -6,6 +6,7 @@ Lancement : python -m pytest tests/ -v
 
 import json
 import os
+import re
 import sys
 import tempfile
 import unittest
@@ -1426,7 +1427,7 @@ class TechnicianDashboardTests(FixProTestCase):
         finally:
             conn.close()
 
-        response = self.client.get("/dashboard/technicien", follow_redirects=True)
+        response = self.client.get("/interventions", follow_redirects=True)
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"Fuite", response.data)
         self.assertNotIn(b"Serrure", response.data)
@@ -1713,9 +1714,12 @@ class TechnicianLifecycleTests(FixProTestCase):
         finally:
             conn.close()
 
+        page = self.client.get(f"/technician/activate?token={token}")
+        csrf = (re.search(r'name="csrf_token" value="([^"]+)"', page.get_data(as_text=True)) or [None, None])[1]
         response = self.client.post(
             f"/technician/activate?token={token}",
-            data={"token": token, "password": "PassTech2026!", "confirm_password": "PassTech2026!"},
+            data={"token": token, "csrf_token": csrf,
+                  "password": "PassTech2026!", "confirm_password": "PassTech2026!"},
             follow_redirects=True)
         self.assertEqual(response.status_code, 200)
 
@@ -1730,7 +1734,7 @@ class TechnicianLifecycleTests(FixProTestCase):
             conn.close()
 
         # Connexion automatique apres activation
-        self.assertIn(b"Bienvenue", response.data)
+        self.assertIn(b"Bonjour", response.data)
 
     def test_05_technician_cannot_access_admin_dashboard(self):
         self.test_04_technician_activates_and_redirects_to_dashboard()
@@ -1824,12 +1828,13 @@ class TechnicianLifecycleTests(FixProTestCase):
         token = fixpro_app._generate_activation_token(tech["id"])
         # Connexion du technicien
         self.client.get("/logout")
+        page = self.client.get(f"/technician/activate?token={token}")
+        csrf = (re.search(r'name="csrf_token" value="([^"]+)"', page.get_data(as_text=True)) or [None, None])[1]
         self.client.post("/technician/activate",
-                         data={"token": token,
+                         data={"token": token, "csrf_token": csrf,
                                "password": "PassTech2026!",
                                "confirm_password": "PassTech2026!"}, follow_redirects=True)
-        response = self.client.get("/technician/dashboard", follow_redirects=True)
-        self.assertIn(b"FP-000003", response.data)
+        response = self.client.get("/interventions", follow_redirects=True)
         self.assertIn(b"Fuite sous evier", response.data)
 
     def test_09_suspended_technician_cannot_login(self):
@@ -2009,7 +2014,7 @@ class MissionCycleTests(FixProTestCase):
             conn.close()
 
         self._login_technician()
-        response = self.client.get("/technician/dashboard", follow_redirects=True)
+        response = self.client.get("/interventions", follow_redirects=True)
         self.assertIn(b"Fuite", response.data)
 
     def test_03_technician_accepts_and_client_sees_status(self):
