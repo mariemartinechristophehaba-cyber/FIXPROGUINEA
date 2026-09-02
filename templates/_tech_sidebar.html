@@ -1,0 +1,69 @@
+{# Barre laterale de l'espace technicien - visible uniquement sur grand ecran (>=1000px).
+   Necessite : user, unread_count. Etat actif deduit de request.endpoint. #}
+{% set _ep = request.endpoint %}
+<aside class="te-side">
+  <a class="te-side-logo" href="{{ url_for('artisan_dashboard') }}">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+    <span>Fix<em>Pro</em></span>
+  </a>
+
+  <div class="te-side-me">
+    {% if user.photo_url %}
+    <img class="te-side-ava" src="{{ user.photo_url }}" alt="">
+    {% else %}
+    <span class="te-side-ava">{{ (user.full_name or 'T')[0]|upper }}</span>
+    {% endif %}
+    <div class="te-side-name">{{ user.full_name or 'Technicien' }}</div>
+    <div class="te-side-prof">{{ (user.profession or 'Technicien') }} professionnel</div>
+    {% if user.availability_status == 'en_ligne' %}
+      <span class="te-side-status on"><span class="d"></span> Disponible</span>
+    {% elif user.availability_status == 'occupe' %}
+      <span class="te-side-status busy"><span class="d"></span> En intervention</span>
+    {% else %}
+      <span class="te-side-status off"><span class="d"></span> Hors ligne</span>
+    {% endif %}
+  </div>
+
+  <nav class="te-side-nav">
+    <a href="{{ url_for('artisan_dashboard') }}" class="{{ 'active' if _ep == 'artisan_dashboard' }}">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9"/></svg>
+      Accueil
+    </a>
+    <a href="{{ url_for('profile') }}" class="{{ 'active' if _ep == 'profile' }}">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
+      Profil
+    </a>
+    <a href="{{ url_for('technician_calls') }}" class="{{ 'active' if _ep == 'technician_calls' }}">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+      Appels / Contacts
+    </a>
+    <a href="{{ url_for('artisan_dashboard') }}#dash-subscription">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+      Abonnement
+    </a>
+    <a href="{{ url_for('artisan_dashboard') }}#dash-reviews">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      Avis clients
+    </a>
+    <a href="{{ url_for('notifications') }}" class="{{ 'active' if _ep == 'notifications' }}">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      Notifications
+      {% if unread_count %}<span class="te-side-badge">{{ unread_count }}</span>{% endif %}
+    </a>
+    <a href="{{ url_for('client_tickets') }}" class="{{ 'active' if _ep in ('client_tickets', 'ticket_detail') }}">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
+      Aide
+    </a>
+  </nav>
+
+  <div class="te-side-promo">
+    <strong>Développez votre activité avec FixPro</strong>
+    <span>Plus de visibilité, plus de clients.</span>
+    <a href="{{ url_for('artisan_detail', artisan_id=user.id) }}">En savoir plus</a>
+  </div>
+
+  <a class="te-side-logout" href="{{ url_for('logout') }}">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/></svg>
+    Déconnexion
+  </a>
+</aside>
