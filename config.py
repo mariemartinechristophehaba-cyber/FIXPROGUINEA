@@ -66,7 +66,9 @@ class Config:
 
     # Rayon (km) autour du client dans lequel un technicien est considere
     # comme "de son secteur". Au-dela, il n'est pas affiche dans la recherche.
-    LOCAL_RADIUS_KM = float(os.getenv("LOCAL_RADIUS_KM", "10"))
+    # Rayon "proche" pour l'affichage des techniciens geolocalises. Au-dela,
+    # un elargissement progressif evite les listes vides (couverture nationale).
+    LOCAL_RADIUS_KM = float(os.getenv("LOCAL_RADIUS_KM", "15"))
 
     # Verification obligatoire des documents du technicien (piece d'identite +
     # justificatif professionnel) avant acces au tableau de bord.

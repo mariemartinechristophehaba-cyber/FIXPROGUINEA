@@ -1666,6 +1666,24 @@ class TechnicianAccessTests(FixProTestCase):
         self.assertIn("Proche Kaloum", body)
         self.assertNotIn("Loin Ratoma", body)
 
+    def test_technician_without_gps_shown_by_zone_name(self):
+        """Couverture nationale : un technicien sans coordonnees GPS mais
+        rattache a la meme ville que le client (ex. Kankan) est affiche."""
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute(
+                "INSERT INTO users (phone, password_hash, role, full_name,"
+                " profession, city, quartier, is_verified, is_active,"
+                " account_status, availability_status)"
+                " VALUES ('+224690111222', 'x', 'technician', 'Plombier Kankan',"
+                " 'Plombier', 'Kankan', 'Kankan', 1, 1, 'ACTIVE', 'en_ligne')")
+            conn.commit()
+        finally:
+            conn.close()
+        self._set_client_location(lat=10.385, lon=-9.306, zone="Kankan")
+        body = self.client.get("/artisans").data.decode("utf-8", "replace")
+        self.assertIn("Plombier Kankan", body)
+
     def test_technician_is_redirected_to_dashboard(self):
         self.register_artisan("t1@example.com", phone="+224621111111", name="T1 Diallo")
         conn = db.connect(sqlite_path=self.db_path)
