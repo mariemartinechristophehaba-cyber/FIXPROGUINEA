@@ -747,16 +747,37 @@ class GeolocationTests(FixProTestCase):
         response = self.client.get("/api/technicien/1/position")
         self.assertEqual(response.status_code, 404)
 
-    def test_client_location_outside_conakry_no_wanindara(self):
-        """Une position au Ghana ne doit plus retomber sur Wanindara."""
+    def test_client_location_outside_guinea_rejected(self):
+        """Une position hors de Guinee (Ghana) est refusee proprement,
+        jamais rabattue sur un quartier de Conakry."""
         response = self.client.post("/api/location", json={
             "lat": 5.6, "lon": -0.18, "accuracy": 1000})
-        self.assertEqual(response.status_code, 200)
-        data = response.get_json()
-        self.assertEqual(data["ok"], True)
-        self.assertIsNotNone(data["zone"])
-        self.assertNotIn("wanindara", data["zone"].lower())
-        self.assertNotIn("conakry", data["zone"].lower())
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(response.get_json()["ok"])
+
+    def test_location_rejects_bad_coordinates(self):
+        """NaN, hors bornes, non numerique, (0,0) -> 400, jamais de crash."""
+        for payload in ({"lat": "nan", "lon": -13.7},
+                        {"lat": 1e9, "lon": -13.7},
+                        {"lat": 9.5, "lon": "abc"},
+                        {"lat": 0, "lon": 0},
+                        {"lat": 200, "lon": -400},
+                        ["not", "a", "dict"]):
+            r = self.client.post("/api/location", json=payload)
+            self.assertEqual(r.status_code, 400, payload)
+
+    def test_location_zone_rejects_junk(self):
+        """Libelle de zone trop long / avec caracteres suspects -> 400."""
+        for z in ("x" * 200, "<script>", "'; DROP TABLE users;--", "a", ""):
+            r = self.client.post("/api/location/zone", json={"zone": z})
+            self.assertEqual(r.status_code, 400, z)
+
+    def test_location_rejects_foreign_origin(self):
+        """Un Origin explicitement etranger est rejete (anti-CSRF sur les
+        endpoints exemptes)."""
+        r = self.client.post("/api/location", json={"lat": 9.5, "lon": -13.7},
+                             headers={"Origin": "https://evil.example.com"})
+        self.assertEqual(r.status_code, 403)
 
     def test_client_location_conakry_returns_zone(self):
         """Une position a Kaloum retourne bien le quartier Kaloum."""

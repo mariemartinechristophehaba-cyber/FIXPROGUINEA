@@ -298,22 +298,17 @@ def _in_guinea(lat, lon):
     return la_min <= lat <= la_max and lo_min <= lon <= lo_max
 
 
-def _nearest_zone(lat, lon, max_km=15.0):
-    """Retourne le quartier connu le plus proche d'une position GPS.
+# Boite englobante de l'agglomeration de Conakry : sert a savoir si un
+# client geolocalise est "en ville" (tri strict par distance) ou non.
+_CONAKRY_BOUNDS = (9.38, 9.80, -13.78, -13.46)
 
-    Si aucun quartier connu n'est dans le rayon (15 km par defaut),
-    la position est hors de Conakry : on ne retombe pas sur un quartier
-    fixe de Conakry.
-    """
+
+def _in_conakry(lat, lon):
     if not _is_valid_coordinate(lat, lon):
-        return None
-    best_name, best_d = None, float("inf")
-    for name, (zlat, zlon) in _ARTISAN_GEOCODE.items():
-        d = _haversine(lat, lon, zlat, zlon)
-        if d < best_d:
-            best_d = d
-            best_name = name
-    return best_name.capitalize() if (best_name and best_d <= max_km) else None
+        return False
+    la1, la2, lo1, lo2 = _CONAKRY_BOUNDS
+    lat, lon = float(lat), float(lon)
+    return la1 <= lat <= la2 and lo1 <= lon <= lo2
 
 
 _ALL_PLACES_CACHE = None
@@ -347,24 +342,33 @@ def _nearest_place(lat, lon, max_km=5.0):
 
 
 def _zone_coordinate(zone_name):
-    """Retourne les coordonnees (lat, lon) d'un quartier connu par son nom."""
+    """Coordonnees (lat, lon) d'un lieu connu par son nom. Tables verifiees
+    (_all_places) d'abord, table historique _ARTISAN_GEOCODE en complement."""
     if not zone_name:
         return None
-    key = zone_name.strip().lower()
+    key = str(zone_name).strip().lower()
+    if not key:
+        return None
+    for name, xy in _all_places().items():
+        if name.lower() == key:
+            return xy
     return _ARTISAN_GEOCODE.get(key)
 
 
 _NOMINATIM_CACHE = {}
 _NOMINATIM_CACHE_MAX = 512
+_NOMINATIM_HOST = "https://nominatim.openstreetmap.org/"
+_NOMINATIM_MAX_BYTES = 262144  # 256 Ko : une reponse legitime est bien plus petite
 
 
 def _nominatim_request(url):
-    """Appelle Nominatim avec un User-Agent identifiable.
+    """Appelle Nominatim (host verrouille), lecture bornee, resultats caches.
 
-    Les reponses sont mises en cache en memoire : les memes coordonnees ou
-    requetes reviennent souvent et l'usage intensif de Nominatim est contraire
-    a ses conditions d'utilisation.
+    Ne suit aucune redirection hors du domaine, ne lit pas plus de 256 Ko,
+    et n'echoue jamais bruyamment : renvoie None des qu'un doute existe.
     """
+    if not isinstance(url, str) or not url.startswith(_NOMINATIM_HOST):
+        return None
     if url in _NOMINATIM_CACHE:
         return _NOMINATIM_CACHE[url]
 
@@ -377,7 +381,15 @@ def _nominatim_request(url):
     )
     try:
         with urllib.request.urlopen(req, timeout=6) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
+            if getattr(resp, "status", 200) != 200:
+                return None
+            if not resp.geturl().startswith(_NOMINATIM_HOST):
+                return None
+            raw = resp.read(_NOMINATIM_MAX_BYTES + 1)
+        if len(raw) > _NOMINATIM_MAX_BYTES:
+            logger.warning("Reponse Nominatim trop volumineuse, ignoree.")
+            return None
+        data = json.loads(raw.decode("utf-8", "replace"))
     except Exception as e:
         logger.warning("Erreur Nominatim : %s", e)
         return None
@@ -386,6 +398,20 @@ def _nominatim_request(url):
         _NOMINATIM_CACHE.clear()
     _NOMINATIM_CACHE[url] = data
     return data
+
+
+def _same_origin_ok():
+    """Endpoints exemptes de CSRF : on tolere l'absence d'en-tete Origin
+    (navigateur mobile / proxy de traduction) mais on rejette un Origin
+    explicitement etranger."""
+    origin = request.headers.get("Origin")
+    if not origin:
+        return True
+    try:
+        host = urllib.parse.urlparse(origin).netloc.lower()
+    except Exception:
+        return False
+    return bool(host) and host == (request.host or "").lower()
 
 
 def _extract_place_name(data):
@@ -423,8 +449,8 @@ def _reverse_geocode(lat, lon):
     if not _is_valid_coordinate(lat, lon):
         return None
     params = urllib.parse.urlencode({
-        "lat": lat,
-        "lon": lon,
+        "lat": round(float(lat), 3),
+        "lon": round(float(lon), 3),
         "format": "json",
         "addressdetails": 1,
         "accept-language": "fr",
@@ -556,25 +582,24 @@ def _geocode_zone(city, quartier):
     Cherche d'abord le quartier, puis la ville. Si aucun trouve,
     renvoie (None, None) pour ne pas inventer de fausses coordonnees.
     """
-    key = (quartier or "").strip().lower()
-    if key and key in _ARTISAN_GEOCODE:
-        return _ARTISAN_GEOCODE[key]
-
-    city_key = (city or "").strip().lower()
-    if city_key and city_key in _ARTISAN_GEOCODE:
-        return _ARTISAN_GEOCODE[city_key]
-
+    for raw in (quartier, city):
+        hit = _zone_coordinate(raw)
+        if hit:
+            return hit
     return None, None
 
 
 def _is_valid_coordinate(lat, lon):
-    """Exclut les coordonnees non renseignees (0, 0) par defaut."""
-    if lat is None or lon is None:
-        return False
+    """Coordonnees exploitables : finies, dans les bornes terrestres, et pas
+    le (0, 0) par defaut. Rejette NaN / Infini / hors [-90,90]x[-180,180]."""
     try:
         lat = float(lat)
         lon = float(lon)
     except (TypeError, ValueError):
+        return False
+    if not (math.isfinite(lat) and math.isfinite(lon)):
+        return False
+    if not (-90.0 <= lat <= 90.0 and -180.0 <= lon <= 180.0):
         return False
     return not (abs(lat) < 0.01 and abs(lon) < 0.01)
 
@@ -1206,7 +1231,7 @@ def index():
         if client_lat is None or client_lon is None:
             client_lat = _to_float(session.get("client_lat"))
             client_lon = _to_float(session.get("client_lon"))
-        client_in_conakry = _is_valid_coordinate(client_lat, client_lon) and _nearest_zone(client_lat, client_lon, max_km=50.0) is not None
+        client_in_conakry = _in_conakry(client_lat, client_lon)
         if client_in_conakry:
             for a in artisans:
                 a_lat = _to_float(a.get("latitude"))
@@ -1242,7 +1267,7 @@ def _persist_client_location(lat=None, lon=None, zone=None):
         params += [float(lat), float(lon)]
     if zone:
         sets.append("quartier = ?")
-        params.append(zone)
+        params.append(str(zone)[:80])
     if not sets:
         return
     params.append(user_id)
@@ -1257,21 +1282,38 @@ def _persist_client_location(lat=None, lon=None, zone=None):
         conn.close()
 
 
+# ===========================================================================
+# LOCALISATION CLIENT - audit securite 2026-09-03.
+# Regles (couvertes par tests/test_app.py, classe GeolocationTests) :
+#  - toute coordonnee est validee : finie, dans [-90,90]x[-180,180], en Guinee
+#    (_is_valid_coordinate + _in_guinea) ; NaN/Infini/hors-bornes -> 400.
+#  - le libelle manuel est borne (<=80) et filtre (_ZONE_NAME_RE).
+#  - endpoints exemptes de CSRF : _same_origin_ok() rejette un Origin etranger.
+#  - _nominatim_request : host verrouille, lecture <=256 Ko, jamais d'exception.
+#  - le lieu vient du geocodage inverse (tous quartiers/prefectures de Guinee) ;
+#    les tables locales ne servent que de repli hors ligne.
+# Ne pas relacher ces controles sans mettre a jour les tests.
+# ===========================================================================
 @app.route("/api/location", methods=["POST"])
 @limiter.limit("30 per hour")
 def set_location():
     """Enregistre la position GPS du client en session (et dans son profil)."""
+    if not _same_origin_ok():
+        return jsonify({"ok": False, "error": "Origine refusee"}), 403
     try:
-        data = request.get_json(force=True, silent=True) or {}
-        lat = _to_float(data.get("lat"))
-        lon = _to_float(data.get("lon"))
-        accuracy = _to_float(data.get("accuracy"), 0.0)
-        if lat == 0.0 or lon == 0.0:
-            return jsonify({"ok": False, "error": "Coordonnees invalides"}), 400
+        data = request.get_json(force=True, silent=True)
+        if not isinstance(data, dict):
+            return jsonify({"ok": False, "error": "Payload invalide"}), 400
+        lat = _to_float(data.get("lat"), None)
+        lon = _to_float(data.get("lon"), None)
+        if not _is_valid_coordinate(lat, lon) or not _in_guinea(lat, lon):
+            return jsonify({"ok": False, "error": "Coordonnees hors zone de service"}), 400
+        lat, lon = round(float(lat), 6), round(float(lon), 6)
+        accuracy = max(0.0, min(_to_float(data.get("accuracy"), 0.0), 100000.0))
         session["client_lat"] = lat
         session["client_lon"] = lon
         session["client_loc_accuracy"] = accuracy
-        session["client_loc_at"] = datetime.now(timezone.utc).isoformat()
+        session["client_loc_at"] = _ts()
         session["loc_permission"] = "granted"
         session.pop("loc_gate_dismissed", None)
         # Le lieu exact vient du geocodage inverse (couvre tous les
@@ -1290,15 +1332,23 @@ def set_location():
         return jsonify({"ok": False, "error": "Position non enregistree."}), 500
 
 
+_ZONE_NAME_RE = re.compile(r"\A[\w .,'\-]{2,60}\Z", re.UNICODE)
+
+
 @app.route("/api/location/zone", methods=["POST"])
 @limiter.limit("30 per hour")
 def set_location_zone():
     """Enregistre une localisation manuelle saisie par l'utilisateur."""
+    if not _same_origin_ok():
+        return jsonify({"ok": False, "error": "Origine refusee"}), 403
     try:
-        data = request.get_json(force=True, silent=True) or {}
-        zone = (data.get("zone") or "").strip()
-        if not zone:
-            return jsonify({"ok": False, "error": "Zone vide"}), 400
+        data = request.get_json(force=True, silent=True)
+        if not isinstance(data, dict):
+            return jsonify({"ok": False, "error": "Payload invalide"}), 400
+        raw_zone = str(data.get("zone") or "")
+        zone = " ".join(raw_zone.split())
+        if len(raw_zone) > 80 or not zone or not _ZONE_NAME_RE.match(zone):
+            return jsonify({"ok": False, "error": "Zone invalide"}), 400
         session["loc_permission"] = "manual"
 
         # 1. Quartier de Conakry ou ville de Guinee de la liste FixPro :
@@ -1342,8 +1392,11 @@ def set_location_zone():
 
 
 @app.route("/api/location/denied", methods=["POST"])
+@limiter.limit("60 per hour")
 def set_location_denied():
     """Marque la permission GPS comme refusee."""
+    if not _same_origin_ok():
+        return jsonify({"ok": False}), 403
     session["loc_permission"] = "denied"
     return jsonify({"ok": True})
 
@@ -1364,8 +1417,9 @@ def location_gate():
     nxt = request.args.get("next") or ""
     # Chemin interne uniquement : commence par "/", pas "//" ni "/\" (open
     # redirect), et ne contient que des caracteres d'URL sans danger.
-    if (not nxt.startswith("/") or nxt.startswith(("//", "/\\"))
-            or not re.match(r"^/[A-Za-z0-9/_.\-?=&%]*$", nxt)):
+    if (len(nxt) > 512 or not nxt.startswith("/")
+            or nxt.startswith(("//", "/\\"))
+            or not re.match(r"\A/[A-Za-z0-9/_.\-?=&%]*\Z", nxt)):
         nxt = url_for("artisans_page")
     return render_template("location_gate.html",
                            quartiers=_CONAKRY_QUARTIERS,
@@ -1462,7 +1516,7 @@ def home():
         if client_lat is None or client_lon is None:
             client_lat = _to_float(session.get("client_lat"))
             client_lon = _to_float(session.get("client_lon"))
-        client_in_conakry = _is_valid_coordinate(client_lat, client_lon) and _nearest_zone(client_lat, client_lon, max_km=50.0) is not None
+        client_in_conakry = _in_conakry(client_lat, client_lon)
         if client_in_conakry:
             for a in artisans:
                 a_lat = _to_float(a.get("latitude"))
@@ -5282,6 +5336,12 @@ import math
 
 
 def _haversine(lat1, lon1, lat2, lon2):
+    try:
+        lat1, lon1, lat2, lon2 = float(lat1), float(lon1), float(lat2), float(lon2)
+    except (TypeError, ValueError):
+        return float("inf")
+    if not all(math.isfinite(v) for v in (lat1, lon1, lat2, lon2)):
+        return float("inf")
     R = 6371
     phi1 = math.radians(lat1)
     phi2 = math.radians(lat2)
@@ -5470,7 +5530,7 @@ def artisans_page():
     radius_km = app.config.get("LOCAL_RADIUS_KM", 15.0)
     location_active = _is_valid_coordinate(client_lat, client_lon)
     client_zone = (session.get("client_zone")
-                   or _nearest_zone(client_lat, client_lon)
+                   or _nearest_place(client_lat, client_lon, max_km=8.0)
                    or (user.get("city") if user else None))
 
     if location_active or client_zone:
@@ -5570,9 +5630,7 @@ def api_techniciens():
         finally:
             conn.close()
 
-        client_in_conakry = (
-            _is_valid_coordinate(client_lat, client_lon)
-            and _nearest_zone(client_lat, client_lon, max_km=50.0) is not None)
+        client_in_conakry = _in_conakry(client_lat, client_lon)
         if client_in_conakry:
             for a in artisans:
                 a_lat = _to_float(a.get("latitude"))
