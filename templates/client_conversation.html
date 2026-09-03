@@ -713,7 +713,13 @@
     { urls: 'stun:global.stun.twilio.com:3478' }
   ] };
   let pc = null, localStream = null, callActive = false, isCaller = false;
-  let sigAfter = 0, pendingOffer = null, sigTimer = null;
+  let sigAfter = 0, pendingOffer = null, iceQueue = [];
+
+  function drainIce() {
+    if (!pc || !pc.remoteDescription) return;
+    const q = iceQueue; iceQueue = [];
+    q.forEach(c => pc.addIceCandidate(new RTCIceCandidate(c)).catch(() => {}));
+  }
 
   function openCallUI(state, incoming) {
     callBox.classList.add('on'); callActive = true;
@@ -721,7 +727,7 @@
     btnAccept.hidden = !incoming;
   }
   function closeCallUI() {
-    callBox.classList.remove('on'); callActive = false; isCaller = false; pendingOffer = null;
+    callBox.classList.remove('on'); callActive = false; isCaller = false; pendingOffer = null; iceQueue = [];
     btnAccept.hidden = true;
     if (pc) { try { pc.close(); } catch (e) {} pc = null; }
     if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
@@ -763,6 +769,7 @@
     try {
       newPc(); await getMedia();
       await pc.setRemoteDescription(new RTCSessionDescription(pendingOffer));
+      drainIce();
       const ans = await pc.createAnswer(); await pc.setLocalDescription(ans);
       await sendSig('answer', JSON.stringify(ans));
       await sendSig('accept', '');
@@ -807,9 +814,11 @@
       pendingOffer = JSON.parse(s.payload);
       if (!callActive) openCallUI(PEER_NAME + ' vous appelle…', true);
     } else if (s.kind === 'answer') {
-      if (pc) { try { await pc.setRemoteDescription(new RTCSessionDescription(JSON.parse(s.payload))); callState.textContent = 'Connexion…'; } catch (e) {} }
+      if (pc) { try { await pc.setRemoteDescription(new RTCSessionDescription(JSON.parse(s.payload))); callState.textContent = 'Connexion…'; drainIce(); } catch (e) {} }
     } else if (s.kind === 'ice') {
-      if (pc) { try { await pc.addIceCandidate(new RTCIceCandidate(JSON.parse(s.payload))); } catch (e) {} }
+      const cand = JSON.parse(s.payload);
+      if (pc && pc.remoteDescription) { try { await pc.addIceCandidate(new RTCIceCandidate(cand)); } catch (e) {} }
+      else { iceQueue.push(cand); }
     } else if (s.kind === 'decline') {
       toast(PEER_NAME + ' a refusé l’appel.'); closeCallUI();
     } else if (s.kind === 'hangup') {
