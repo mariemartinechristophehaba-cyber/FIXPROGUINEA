@@ -4306,216 +4306,19 @@ def artisan_dashboard():
             or not user.get("is_verified")):
         return redirect(url_for("artisan_pending"))
 
-    active_statuses = (MISSION_STATUS_ASSIGNED, MISSION_STATUS_ACCEPTED,
-                       MISSION_STATUS_EN_ROUTE, MISSION_STATUS_ARRIVED,
-                       MISSION_STATUS_IN_PROGRESS, "quote_proposed", "quote_accepted")
-
+    # Ancien tableau de bord retire - nouvelle maquette a integrer.
+    unread_count = 0
     conn = get_db_connection()
     try:
-        nouvelles = conn.execute(
-            "SELECT COUNT(*) AS n FROM requests"
-            " WHERE artisan_id = ? AND status = ?",
-            (user["id"], MISSION_STATUS_ASSIGNED)).fetchone()["n"]
-
-        assignees = conn.execute(
-            "SELECT COUNT(*) AS n FROM requests"
-            " WHERE artisan_id = ? AND status IN (?, ?, ?, ?, ?, ?, ?)",
-            (user["id"],) + active_statuses).fetchone()["n"]
-
-        urgentes = conn.execute(
-            "SELECT COUNT(*) AS n FROM requests"
-            " WHERE artisan_id = ? AND status IN (?, ?, ?, ?, ?, ?, ?) AND urgency = 'urgent'",
-            (user["id"],) + active_statuses).fetchone()["n"]
-
-        a_venir = conn.execute(
-            "SELECT COUNT(*) AS n FROM requests"
-            " WHERE artisan_id = ? AND status IN (?, ?, ?, ?, ?, ?, ?) AND urgency != 'urgent'",
-            (user["id"],) + active_statuses).fetchone()["n"]
-
-        terminees = conn.execute(
-            "SELECT COUNT(*) AS n FROM requests"
-            " WHERE artisan_id = ? AND status = ?",
-            (user["id"], MISSION_STATUS_COMPLETED)).fetchone()["n"]
-
-        revenus = conn.execute(
-            "SELECT COALESCE(SUM(amount - commission_amount), 0) AS total"
-            " FROM payments"
-            " WHERE request_id IN (SELECT id FROM requests WHERE artisan_id = ?) AND status = 'success'",
-            (user["id"],)).fetchone()["total"]
-
-        note = conn.execute(
-            "SELECT COALESCE(AVG(rating), 0) AS avg, COUNT(*) AS cnt FROM reviews"
-            " WHERE artisan_id = ?", (user["id"],)).fetchone()
-
-        active_mission = conn.execute("""
-            SELECT r.id, r.reference, r.title, r.category, r.address, r.urgency, r.status,
-                   r.description, r.latitude, r.longitude, r.requested_time, r.estimated_price,
-                   u.full_name AS client_name, u.phone AS client_phone
-            FROM requests r
-            JOIN users u ON u.id = r.client_id
-            WHERE r.artisan_id = ? AND r.status IN (?, ?, ?, ?, ?, ?, ?)
-            ORDER BY
-                CASE r.urgency WHEN 'urgent' THEN 0 WHEN 'haute' THEN 1 WHEN 'modere' THEN 2 ELSE 3 END,
-                r.updated_at DESC
-            LIMIT 1
-        """, (user["id"],) + active_statuses).fetchone()
-
-        missions = conn.execute("""
-            SELECT r.id, r.reference, r.title, r.category, r.address, r.urgency, r.status,
-                   r.created_at, r.estimated_price, u.full_name AS client_name
-            FROM requests r
-            JOIN users u ON u.id = r.client_id
-            WHERE r.artisan_id = ?
-            ORDER BY
-                CASE r.urgency WHEN 'urgent' THEN 0 WHEN 'haute' THEN 1 WHEN 'modere' THEN 2 ELSE 3 END,
-                r.updated_at DESC
-            LIMIT 20
-        """, (user["id"],)).fetchall()
-
-        missions_historique = conn.execute("""
-            SELECT r.id, r.reference, r.title, r.category, r.address, r.urgency, r.status,
-                   r.created_at, u.full_name AS client_name
-            FROM requests r
-            JOIN users u ON u.id = r.client_id
-            WHERE r.artisan_id = ? AND status IN (?, ?, ?)
-            ORDER BY r.updated_at DESC
-            LIMIT 20
-        """, (user["id"], MISSION_STATUS_COMPLETED, MISSION_STATUS_REFUSED, MISSION_STATUS_CANCELLED)).fetchall()
-
-        avis = conn.execute(
-            "SELECT r.rating, r.comment, r.created_at, u.full_name"
-            " FROM reviews r"
-            " JOIN users u ON u.id = r.client_id"
-            " WHERE r.artisan_id = ? ORDER BY r.created_at DESC LIMIT 5",
-            (user["id"],)).fetchall()
-
-        contacts = conn.execute(
-            "SELECT id, first_name, last_name, phone, status, created_at"
-            " FROM client_contacts WHERE artisan_id = ?"
-            " ORDER BY created_at DESC LIMIT 20",
-            (user["id"],)).fetchall()
-
-        new_contact_count = 0
-        try:
-            new_contact_count = conn.execute(
-                "SELECT COUNT(*) AS n FROM client_contacts"
-                " WHERE artisan_id = ? AND status = 'nouveau'",
-                (user["id"],)).fetchone()["n"]
-        except Exception:
-            new_contact_count = 0
-
-        unread_count = 0
-        try:
-            row = conn.execute(
-                "SELECT COUNT(*) AS n FROM notifications WHERE user_id = ? AND is_read = 0",
-                (user["id"],)).fetchone()
-            unread_count = row["n"]
-        except Exception:
-            conn.rollback()
-            unread_count = 0
-
-        services_disponibles = _services_for_category(conn, user["profession"] or "")
-        artisan_services_ids = _artisan_service_ids(conn, user["id"])
-
-        # Abonnement en cours du technicien (le plus recent).
-        subscription = None
-        try:
-            subscription = conn.execute(
-                "SELECT s.status, s.end_date, s.auto_renew,"
-                " p.name AS plan_name, p.code AS plan_code, p.price_month, p.currency"
-                " FROM technician_subscriptions s"
-                " LEFT JOIN subscription_plans p ON p.id = s.plan_id"
-                " WHERE s.technician_id = ?"
-                " ORDER BY s.created_at DESC LIMIT 1",
-                (user["id"],)).fetchone()
-        except Exception:
-            conn.rollback()
-            subscription = None
-
-        # Repartition des notes (1 a 5 etoiles).
-        rating_breakdown = {i: 0 for i in range(1, 6)}
-        try:
-            for r in conn.execute(
-                    "SELECT rating, COUNT(*) AS n FROM reviews"
-                    " WHERE artisan_id = ? GROUP BY rating", (user["id"],)).fetchall():
-                rating_breakdown[int(r["rating"])] = r["n"]
-        except Exception:
-            conn.rollback()
-
-        realisations_count = 0
-        try:
-            realisations_count = conn.execute(
-                "SELECT COUNT(*) AS n FROM artisan_portfolio WHERE artisan_id = ?",
-                (user["id"],)).fetchone()["n"]
-        except Exception:
-            conn.rollback()
-            realisations_count = 0
-
+        unread_count = conn.execute(
+            "SELECT COUNT(*) AS n FROM notifications WHERE user_id = ? AND is_read = 0",
+            (user["id"],)).fetchone()["n"]
+    except Exception:
+        conn.rollback()
     finally:
         conn.close()
 
-    html = render_template(
-        "dashboard_artisan.html", user=user,
-        stats={"nouvelles": nouvelles, "assignees": assignees,
-               "urgentes": urgentes, "a_venir": a_venir,
-               "terminees": terminees, "revenus": revenus,
-               "note_avg": note["avg"], "note_count": note["cnt"]},
-        active_mission=active_mission, missions=missions,
-        historique=missions_historique, avis=avis,
-        unread_count=unread_count,
-        contacts=contacts,
-        new_contact_count=new_contact_count,
-        services_disponibles=services_disponibles,
-        artisan_services_ids=artisan_services_ids,
-        subscription=subscription,
-        rating_breakdown=rating_breakdown,
-        realisations_count=realisations_count,
-        services_count=len(artisan_services_ids or []))
-    response = make_response(html)
-    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
-    response.headers['Pragma'] = 'no-cache'
-    response.headers['Expires'] = '0'
-    return response
-
-
-@app.route("/dashboard/technicien/contact/<int:contact_id>/status", methods=["POST"])
-@login_required
-def technician_contact_status(contact_id):
-    """Met a jour le statut d'un contact client par le technicien."""
-    user = get_current_user()
-    if not _is_technician(user):
-        flash("Cet espace est reserve aux techniciens.", "error")
-        return redirect(url_for("dashboard"))
-
-    new_status = request.form.get("status", "").strip()
-    if new_status not in ("contacte", "intervention_demandee", "intervention_confirmee",
-                          "intervention_terminee", "cloture"):
-        flash("Statut invalide.", "error")
-        return redirect(url_for("artisan_dashboard"))
-
-    conn = get_db_connection()
-    try:
-        contact = conn.execute(
-            "SELECT id, artisan_id, status FROM client_contacts WHERE id = ?",
-            (contact_id,)).fetchone()
-        if not contact or contact["artisan_id"] != user["id"]:
-            flash("Contact introuvable ou non autorise.", "error")
-            return redirect(url_for("artisan_dashboard"))
-
-        conn.execute(
-            "UPDATE client_contacts SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
-            (new_status, contact_id))
-        conn.execute(
-            "INSERT INTO client_contact_events (contact_id, event_type, details)"
-            " VALUES (?, ?, ?)",
-            (contact_id, "status_change",
-             f"Statut technicien : {contact['status']} -> {new_status}"))
-        conn.commit()
-        flash("Statut mis a jour.", "success")
-    finally:
-        conn.close()
-    return redirect(url_for("artisan_dashboard"))
-
+    return render_template("dashboard_artisan.html", user=user, unread_count=unread_count)
 
 @app.route("/appels")
 @app.route("/dashboard/technicien/appels")
@@ -4928,58 +4731,6 @@ def technician_reviews():
                            stats=stats, demo=demo, unread_count=unread_count)
 
 
-@app.route("/dashboard/technicien/contacts/json")
-@login_required
-def artisan_dashboard_contacts_json():
-    """API JSON : retourne les contacts du technicien connecte."""
-    user = get_current_user()
-    if not _is_technician(user):
-        return jsonify({"ok": False, "error": "Reserve aux techniciens"}), 403
-    conn = get_db_connection()
-    try:
-        contacts = conn.execute(
-            "SELECT id, first_name, last_name, phone, status, created_at"
-            " FROM client_contacts WHERE artisan_id = ?"
-            " ORDER BY created_at DESC LIMIT 20",
-            (user["id"],)).fetchall()
-        new_count = conn.execute(
-            "SELECT COUNT(*) AS n FROM client_contacts"
-            " WHERE artisan_id = ? AND status = 'nouveau'",
-            (user["id"],)).fetchone()["n"]
-        unread_notif = conn.execute(
-            "SELECT COUNT(*) AS n FROM notifications WHERE user_id = ? AND is_read = 0",
-            (user["id"],)).fetchone()["n"]
-    finally:
-        conn.close()
-    return jsonify({
-        "ok": True,
-        "contacts": [dict(c) for c in contacts],
-        "new_count": new_count,
-        "unread_notif": unread_notif
-    })
-
-
-@app.route("/dashboard/technicien/services", methods=["POST"])
-@login_required
-def update_artisan_services():
-    """Mise a jour des services du technicien connecte."""
-    user = get_current_user()
-    if not _is_technician(user):
-        flash("Cet espace est reserve aux techniciens.", "error")
-        return redirect(url_for("dashboard"))
-    services_ids = request.form.getlist("services")
-    conn = get_db_connection()
-    try:
-        _save_artisan_services(conn, user["id"], services_ids)
-        conn.commit()
-        flash("Services mis a jour.", "success")
-    except ValueError as exc:
-        flash(f"Erreur : {exc}", "error")
-    finally:
-        conn.close()
-    return redirect(url_for("artisan_dashboard"))
-
-
 @app.route("/payments")
 @login_required
 def payments():
@@ -5301,15 +5052,6 @@ def _services_for_category(conn, category_name):
         " WHERE c.name = ? AND s.is_active = 1"
         " ORDER BY s.name",
         (category_name,)).fetchall()
-
-
-def _artisan_service_ids(conn, artisan_id):
-    """Identifiants des services associes a un artisan."""
-    rows = conn.execute(
-        "SELECT service_id FROM artisan_services WHERE artisan_id = ?",
-        (artisan_id,)).fetchall()
-    return {r["service_id"] for r in rows}
-
 
 def _save_artisan_services(conn, artisan_id, service_ids):
     """Remplace les services d'un artisan apres validation du domaine."""
