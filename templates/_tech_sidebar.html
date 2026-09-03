@@ -1,11 +1,22 @@
-{# Barre laterale de l'espace technicien - visible uniquement sur grand ecran (>=1000px).
+{# Menu lateral de l'espace technicien.
+   - < 1024px : tiroir (off-canvas) ouvert par tout bouton [data-tech-menu]
+   - >= 1024px : barre laterale fixe
    Necessite : user, unread_count. Etat actif deduit de request.endpoint. #}
 {% set _ep = request.endpoint %}
-<aside class="te-side">
-  <a class="te-side-logo" href="{{ url_for('artisan_dashboard') }}">
-    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-    <span>Fix<em>Pro</em></span>
-  </a>
+{% set _av = user.availability_status or 'hors_ligne' %}
+
+<div class="te-overlay" data-tech-menu-close></div>
+
+<aside class="te-side" id="teSide" aria-label="Menu technicien">
+  <div class="te-side-head">
+    <a class="te-side-logo" href="{{ url_for('artisan_dashboard') }}">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+      <span>Fix<em>Pro</em></span>
+    </a>
+    <button type="button" class="te-side-x" data-tech-menu-close aria-label="Fermer">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+  </div>
 
   <div class="te-side-me">
     {% if user.photo_url %}
@@ -13,57 +24,103 @@
     {% else %}
     <span class="te-side-ava">{{ (user.full_name or 'T')[0]|upper }}</span>
     {% endif %}
-    <div class="te-side-name">{{ user.full_name or 'Technicien' }}</div>
-    <div class="te-side-prof">{{ (user.profession or 'Technicien') }} professionnel</div>
-    {% if user.availability_status == 'en_ligne' %}
-      <span class="te-side-status on"><span class="d"></span> Disponible</span>
-    {% elif user.availability_status == 'occupe' %}
-      <span class="te-side-status busy"><span class="d"></span> En intervention</span>
-    {% else %}
-      <span class="te-side-status off"><span class="d"></span> Hors ligne</span>
-    {% endif %}
+    <div>
+      <div class="te-side-name">{{ user.full_name or 'Technicien' }}</div>
+      <div class="te-side-prof">{{ (user.profession or 'Technicien') }} professionnel</div>
+      {% if _av == 'en_ligne' %}
+        <span class="te-side-status on"><span class="d"></span> Disponible</span>
+      {% elif _av == 'occupe' %}
+        <span class="te-side-status busy"><span class="d"></span> En intervention</span>
+      {% else %}
+        <span class="te-side-status off"><span class="d"></span> Hors ligne</span>
+      {% endif %}
+    </div>
   </div>
 
+  <div class="te-side-group">Menu principal</div>
   <nav class="te-side-nav">
     <a href="{{ url_for('artisan_dashboard') }}" class="{{ 'active' if _ep == 'artisan_dashboard' }}">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9"/></svg>
-      Accueil
+      <span class="txt">Accueil technicien</span>
+      <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
     </a>
     <a href="{{ url_for('profile') }}" class="{{ 'active' if _ep == 'profile' }}">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
-      Profil
+      <span class="txt">Mon profil</span>
+      <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
     </a>
     <a href="{{ url_for('technician_calls') }}" class="{{ 'active' if _ep == 'technician_calls' }}">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-      Appels / Contacts
+      <span class="txt">Appels / Contacts</span>
+      <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
     </a>
     <a href="{{ url_for('technician_subscription') }}" class="{{ 'active' if _ep == 'technician_subscription' }}">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-      Abonnement
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+      <span class="txt">Abonnement</span>
+      <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
     </a>
     <a href="{{ url_for('technician_reviews') }}" class="{{ 'active' if _ep == 'technician_reviews' }}">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-      Avis clients
-    </a>
-    <a href="{{ url_for('notifications') }}" class="{{ 'active' if _ep == 'notifications' }}">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-      Notifications
-      {% if unread_count %}<span class="te-side-badge">{{ unread_count }}</span>{% endif %}
-    </a>
-    <a href="{{ url_for('client_tickets') }}" class="{{ 'active' if _ep in ('client_tickets', 'ticket_detail') }}">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
-      Aide
+      <span class="txt">Avis clients</span>
+      <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
     </a>
   </nav>
 
-  <div class="te-side-promo">
-    <strong>Développez votre activité avec FixPro</strong>
-    <span>Plus de visibilité, plus de clients.</span>
-    <a href="{{ url_for('artisan_detail', artisan_id=user.id) }}">En savoir plus</a>
-  </div>
+  <div class="te-side-group">FixPro</div>
+  <nav class="te-side-nav">
+    <a href="{{ url_for('index') }}">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20"/></svg>
+      <span class="txt">Accueil FixPro<small>Retour à l'accueil de l'application</small></span>
+      <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+    </a>
+    <a href="{{ url_for('notifications') }}" class="{{ 'active' if _ep == 'notifications' }}">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      <span class="txt">Notifications</span>
+      {% if unread_count %}<span class="te-side-badge">{{ unread_count }}</span>{% endif %}
+      <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+    </a>
+    <a href="{{ url_for('profile') }}">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2Z"/><circle cx="12" cy="12" r="3"/></svg>
+      <span class="txt">Paramètres</span>
+      <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+    </a>
+    <a href="{{ url_for('client_tickets') }}" class="{{ 'active' if _ep in ('client_tickets', 'ticket_detail') }}">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+      <span class="txt">Aide</span>
+      <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+    </a>
+  </nav>
+
+  <div class="te-side-sep"></div>
 
   <a class="te-side-logout" href="{{ url_for('logout') }}">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/></svg>
-    Déconnexion
+    <span class="txt">Déconnexion</span>
+    <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="color:#FCA5A5"><path d="m9 18 6-6-6-6"/></svg>
   </a>
+
+  <div class="te-side-card">
+    <span class="te-side-card-ico">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg>
+    </span>
+    <span><strong>FixPro</strong>Plus de clients. Plus de missions. Plus de succès.</span>
+  </div>
 </aside>
+
+<script>
+(function(){
+  var side = document.getElementById('teSide');
+  if (!side || side.dataset.wired) return;
+  side.dataset.wired = '1';
+  var ov = document.querySelector('.te-overlay');
+  function open(){ side.classList.add('open'); if (ov) ov.classList.add('open'); document.body.style.overflow = 'hidden'; }
+  function close(){ side.classList.remove('open'); if (ov) ov.classList.remove('open'); document.body.style.overflow = ''; }
+  document.querySelectorAll('[data-tech-menu]').forEach(function(b){
+    b.addEventListener('click', function(e){ e.preventDefault(); open(); });
+  });
+  document.querySelectorAll('[data-tech-menu-close]').forEach(function(b){
+    b.addEventListener('click', close);
+  });
+  document.addEventListener('keydown', function(e){ if (e.key === 'Escape') close(); });
+})();
+</script>

@@ -88,7 +88,7 @@
 <div class="tc">
 
   <div class="rv-topbar">
-    <button type="button" class="rv-icobtn" id="tcMenuBtn" aria-label="Retour">
+    <button type="button" class="rv-icobtn" data-tech-menu aria-label="Menu">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
     </button>
     <a class="rv-icobtn" href="{{ url_for('notifications') }}" aria-label="Notifications">
@@ -279,11 +279,6 @@
     });
   });
   apply();
-
-  var mb = document.getElementById('tcMenuBtn');
-  if (mb) mb.addEventListener('click', function(){
-    if (history.length > 1) history.back(); else location.href = "{{ url_for('artisan_dashboard') }}";
-  });
 })();
 </script>
 {% endblock %}
