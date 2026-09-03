@@ -1,12 +1,13 @@
 /* ==========================================================================
    Espace technicien - coquille responsive partagee
-   Pages : dashboard_artisan, technician_calls, technician_profile
+   Pages : dashboard_artisan, technician_calls, technician_profile,
+           technician_subscription (+ checkout), technician_reviews
 
-   Progression :
-     - base            : mobile, 1 colonne, barre du haut + tabbar du bas
-     - >= 700px         : colonne plus large (tablette), toujours tabbar
-     - >= 1024px        : barre laterale fixe, tabbar + topbars masquees
-     - >= 1440px        : contenu encore un peu plus large
+     - base     : mobile, 1 colonne, barre du haut + tabbar du bas ; menu
+                  lateral en tiroir (off-canvas) ouvert par le hamburger
+     - >= 700px : colonne plus large (tablette)
+     - >= 1024px: barre laterale fixe, tabbar + topbars masquees
+     - >= 1440px: contenu un peu plus large
    ========================================================================== */
 
 body { background: #F4F6FB; }
@@ -19,7 +20,7 @@ body { background: #F4F6FB; }
   padding-bottom: 92px;           /* place pour la tabbar */
 }
 
-/* --- Tabbar mobile (commune aux 3 pages) --- */
+/* --- Tabbar mobile --- */
 .db-tabbar {
   position: fixed;
   left: 0; right: 0; bottom: 0;
@@ -49,11 +50,101 @@ body { background: #F4F6FB; }
 .tc-tab-ic { width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; }
 .db-tab.active .tc-tab-ic { background: #1D4ED8; color: #fff; border-radius: 50%; }
 
-/* le bouton support flottant de base.html : au-dessus de la tabbar */
 .support-fab { bottom: calc(76px + env(safe-area-inset-bottom)) !important; }
 
-/* --- Barre laterale : masquee par defaut --- */
-.te-side { display: none; }
+/* ==========================================================================
+   Menu lateral / tiroir
+   ========================================================================== */
+.te-overlay {
+  position: fixed; inset: 0; background: rgba(15,23,42,.45);
+  z-index: 79; opacity: 0; visibility: hidden;
+  transition: opacity .2s ease, visibility .2s ease;
+}
+.te-overlay.open { opacity: 1; visibility: visible; }
+
+.te-side {
+  position: fixed; top: 0; left: 0; bottom: 0;
+  width: min(86vw, 330px);
+  background: #fff; z-index: 80;
+  display: flex; flex-direction: column;
+  padding: 14px 14px calc(16px + env(safe-area-inset-bottom));
+  overflow-y: auto;
+  transform: translateX(-100%);
+  transition: transform .25s ease;
+  box-shadow: 0 0 40px rgba(15,23,42,.16);
+}
+.te-side.open { transform: translateX(0); }
+
+.te-side-head { display: flex; align-items: center; justify-content: space-between; padding: 4px 6px 6px; }
+.te-side-logo {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 21px; font-weight: 800; color: #2563EB; text-decoration: none;
+}
+.te-side-logo em { font-style: normal; }
+.te-side-x {
+  width: 34px; height: 34px; border: 0; background: none; color: #0F172A;
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+
+.te-side-me {
+  display: flex; align-items: center; gap: 12px;
+  background: #F5F7FC; border: 1px solid #EDF0F7; border-radius: 14px;
+  padding: 12px; margin: 8px 0 12px;
+}
+.te-side-me.centered { flex-direction: column; text-align: center; }
+.te-side-ava {
+  width: 52px; height: 52px; border-radius: 50%; object-fit: cover; flex-shrink: 0;
+  background: #DBE6FF; color: #1D4ED8; font-weight: 800; font-size: 18px;
+  display: flex; align-items: center; justify-content: center;
+}
+.te-side-me.centered .te-side-ava { width: 84px; height: 84px; font-size: 28px; border: 3px solid #fff; box-shadow: 0 2px 10px rgba(37,99,235,.15); }
+.te-side-name { font-size: 15px; font-weight: 800; color: #0F172A; }
+.te-side-prof { font-size: 12px; color: #64748B; margin: 1px 0 5px; }
+.te-side-status { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; }
+.te-side-status .d { width: 7px; height: 7px; border-radius: 50%; }
+.te-side-status.on   { color: #15803D; } .te-side-status.on .d   { background: #16A34A; }
+.te-side-status.busy { color: #B45309; } .te-side-status.busy .d { background: #F59E0B; }
+.te-side-status.off  { color: #64748B; } .te-side-status.off .d  { background: #94A3B8; }
+
+.te-side-group {
+  font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
+  color: #2563EB; padding: 12px 12px 6px;
+}
+.te-side-nav { display: flex; flex-direction: column; gap: 2px; }
+.te-side-nav a {
+  display: flex; align-items: center; gap: 13px;
+  padding: 12px; border-radius: 12px;
+  font-size: 14px; font-weight: 600; color: #334155; text-decoration: none;
+}
+.te-side-nav a:hover { background: #F4F6FB; color: #0F172A; }
+.te-side-nav a.active { background: #EEF3FF; color: #1D4ED8; }
+.te-side-nav a.active svg { color: #1D4ED8; }
+.te-side-nav a svg { flex-shrink: 0; }
+.te-side-nav a .txt { flex: 1; min-width: 0; }
+.te-side-nav a .txt small { display: block; font-size: 11px; font-weight: 500; color: #94A3B8; }
+.te-side-nav a .chev { color: #CBD5E1; flex-shrink: 0; }
+.te-side-badge {
+  background: #EF4444; color: #fff;
+  font-size: 11px; font-weight: 700; min-width: 18px; height: 18px; padding: 0 5px;
+  border-radius: 999px; display: flex; align-items: center; justify-content: center;
+}
+
+.te-side-sep { height: 1px; background: #EDF0F7; margin: 10px 6px; }
+
+.te-side-logout {
+  display: flex; align-items: center; gap: 13px;
+  padding: 12px; border-radius: 12px;
+  font-size: 14px; font-weight: 700; color: #DC2626; text-decoration: none;
+}
+.te-side-logout:hover { background: #FEF2F2; }
+
+.te-side-card {
+  margin: 12px 4px 0; padding: 14px; border-radius: 14px;
+  background: #EEF3FF; display: flex; gap: 11px; align-items: flex-start;
+}
+.te-side-card-ico { width: 34px; height: 34px; border-radius: 10px; background: #DBE6FF; color: #1D4ED8; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.te-side-card strong { display: block; font-size: 13px; font-weight: 800; color: #0F172A; }
+.te-side-card span { font-size: 12px; color: #475569; line-height: 1.4; }
 
 /* ==========================  >= 700px (tablette)  ========================== */
 @media (min-width: 700px) {
@@ -62,83 +153,18 @@ body { background: #F4F6FB; }
 
 /* ==========================  >= 1024px (desktop)  ========================== */
 @media (min-width: 1024px) {
+  .te-overlay { display: none !important; }
 
   .te-side {
-    display: flex;
-    flex-direction: column;
-    position: fixed;
-    top: 0; left: 0; bottom: 0;
-    width: 264px;
-    background: #fff;
+    transform: none !important;
+    width: 272px;
+    box-shadow: none;
     border-right: 1px solid #E7EBF2;
-    padding: 22px 16px 18px;
-    overflow-y: auto;
-    z-index: 60;
+    padding: 20px 14px 18px;
   }
-  .te-side-logo {
-    display: flex; align-items: center; gap: 8px;
-    font-size: 21px; font-weight: 800; color: #2563EB; text-decoration: none;
-    padding: 0 6px 4px;
-  }
-  .te-side-logo em { font-style: normal; }
+  .te-side-x { display: none; }
 
-  .te-side-me {
-    display: flex; flex-direction: column; align-items: center; text-align: center;
-    padding: 18px 8px 16px; border-bottom: 1px solid #F1F5F9; margin-bottom: 10px;
-  }
-  .te-side-ava {
-    width: 84px; height: 84px; border-radius: 50%; object-fit: cover;
-    background: #DBE6FF; color: #1D4ED8; font-weight: 800; font-size: 28px;
-    display: flex; align-items: center; justify-content: center; margin-bottom: 10px;
-    border: 3px solid #fff; box-shadow: 0 2px 10px rgba(37,99,235,.15);
-  }
-  .te-side-name { font-size: 16px; font-weight: 800; color: #0F172A; }
-  .te-side-prof { font-size: 12.5px; color: #64748B; margin: 1px 0 8px; }
-  .te-side-status {
-    display: inline-flex; align-items: center; gap: 6px;
-    font-size: 12px; font-weight: 700; padding: 5px 12px; border-radius: 999px;
-  }
-  .te-side-status .d { width: 7px; height: 7px; border-radius: 50%; }
-  .te-side-status.on   { background: #DCFCE7; color: #15803D; } .te-side-status.on .d   { background: #16A34A; }
-  .te-side-status.busy { background: #FEF3C7; color: #B45309; } .te-side-status.busy .d { background: #F59E0B; }
-  .te-side-status.off  { background: #F1F5F9; color: #64748B; } .te-side-status.off .d  { background: #94A3B8; }
-
-  .te-side-nav { display: flex; flex-direction: column; gap: 2px; }
-  .te-side-nav a {
-    display: flex; align-items: center; gap: 12px;
-    padding: 11px 12px; border-radius: 11px;
-    font-size: 14px; font-weight: 600; color: #475569; text-decoration: none;
-  }
-  .te-side-nav a:hover { background: #F4F6FB; color: #0F172A; }
-  .te-side-nav a.active { background: #2563EB; color: #fff; }
-  .te-side-nav a.active svg { color: #fff; }
-  .te-side-badge {
-    margin-left: auto; background: #EF4444; color: #fff;
-    font-size: 11px; font-weight: 700; min-width: 18px; height: 18px; padding: 0 5px;
-    border-radius: 999px; display: flex; align-items: center; justify-content: center;
-  }
-
-  .te-side-promo {
-    margin: 16px 4px; padding: 16px; border-radius: 14px;
-    background: linear-gradient(160deg, #2563EB, #1E3A8A); color: #fff;
-    display: flex; flex-direction: column; gap: 4px;
-  }
-  .te-side-promo strong { font-size: 14px; font-weight: 800; line-height: 1.3; }
-  .te-side-promo span { font-size: 12px; opacity: .9; }
-  .te-side-promo a {
-    margin-top: 8px; align-self: flex-start; background: #fff; color: #1D4ED8;
-    font-size: 12.5px; font-weight: 700; padding: 7px 14px; border-radius: 8px; text-decoration: none;
-  }
-
-  .te-side-logout {
-    margin-top: auto; display: flex; align-items: center; gap: 12px;
-    padding: 11px 12px; border-radius: 11px;
-    font-size: 14px; font-weight: 600; color: #64748B; text-decoration: none;
-  }
-  .te-side-logout:hover { background: #FEF2F2; color: #DC2626; }
-
-  /* Contenu decale a droite de la sidebar, nav mobile masquee */
-  .app-wrap { margin-left: 264px; }
+  .app-wrap { margin-left: 272px; }
 
   .db-topbar, .tc-topbar, .tp-topbar { display: none !important; }
   .db-tabbar { display: none !important; }
@@ -150,10 +176,8 @@ body { background: #F4F6FB; }
     padding-bottom: 48px;
   }
 
-  /* un peu d'air en haut (plus de barre mobile) */
-  .db-hero, .tc-topbar + .tc-head, .tc-head, .tp-head { padding-top: 26px; }
+  .db-hero, .tc-head, .tp-head { padding-top: 26px; }
 
-  /* grilles plus genereuses sur grand ecran */
   .db-quick { grid-template-columns: repeat(4, 1fr); }
   .tp-stats { grid-template-columns: repeat(4, 1fr); }
   .tp-info  { grid-template-columns: 1fr 1fr; }

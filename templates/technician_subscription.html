@@ -155,7 +155,7 @@
 <div class="tc">
 
   <div class="ts-topbar">
-    <button type="button" class="ts-icobtn" id="tcMenuBtn" aria-label="Retour">
+    <button type="button" class="ts-icobtn" data-tech-menu aria-label="Menu">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
     </button>
     <span class="mid">
@@ -395,11 +395,6 @@
         a.href = setUrlPeriod(a.href);
       });
     });
-  });
-
-  var mb = document.getElementById('tcMenuBtn');
-  if (mb) mb.addEventListener('click', function(){
-    if (history.length > 1) history.back(); else location.href = "{{ url_for('artisan_dashboard') }}";
   });
 })();
 </script>

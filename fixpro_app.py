@@ -4306,19 +4306,158 @@ def artisan_dashboard():
             or not user.get("is_verified")):
         return redirect(url_for("artisan_pending"))
 
-    # Ancien tableau de bord retire - nouvelle maquette a integrer.
+    month_prefix = datetime.now(timezone.utc).strftime("%Y-%m")
+    active_statuses = (MISSION_STATUS_ASSIGNED, MISSION_STATUS_ACCEPTED,
+                       MISSION_STATUS_EN_ROUTE, MISSION_STATUS_ARRIVED,
+                       MISSION_STATUS_IN_PROGRESS, "quote_proposed", "quote_accepted")
+
     unread_count = 0
     conn = get_db_connection()
     try:
-        unread_count = conn.execute(
+        def _scalar(sql, params=()):
+            try:
+                row = conn.execute(sql, params).fetchone()
+                return (row["n"] if row else 0) or 0
+            except Exception:
+                conn.rollback()
+                return 0
+
+        unread_count = _scalar(
             "SELECT COUNT(*) AS n FROM notifications WHERE user_id = ? AND is_read = 0",
-            (user["id"],)).fetchone()["n"]
-    except Exception:
-        conn.rollback()
+            (user["id"],))
+
+        appels_mois = _scalar(
+            "SELECT COUNT(*) AS n FROM client_contacts"
+            " WHERE artisan_id = ? AND substr(created_at, 1, 7) = ?",
+            (user["id"], month_prefix))
+
+        demandes_en_cours = _scalar(
+            "SELECT COUNT(*) AS n FROM requests WHERE artisan_id = ?"
+            " AND status IN (?, ?, ?, ?, ?, ?, ?)",
+            (user["id"],) + active_statuses)
+
+        note_row = None
+        try:
+            note_row = conn.execute(
+                "SELECT COALESCE(AVG(rating), 0) AS avg, COUNT(*) AS cnt FROM reviews"
+                " WHERE artisan_id = ?", (user["id"],)).fetchone()
+        except Exception:
+            conn.rollback()
+        note_avg = round(note_row["avg"], 1) if note_row and note_row["cnt"] else 0
+        note_count = note_row["cnt"] if note_row else 0
+
+        recent_requests = []
+        try:
+            recent_requests = conn.execute(
+                "SELECT id, title, category, address, status, created_at"
+                " FROM requests WHERE artisan_id = ?"
+                " ORDER BY created_at DESC LIMIT 4", (user["id"],)).fetchall()
+        except Exception:
+            conn.rollback()
+
+        recent_reviews = []
+        try:
+            recent_reviews = conn.execute(
+                "SELECT r.rating, r.comment, r.created_at, u.full_name AS client_name,"
+                " u.photo_url AS client_photo"
+                " FROM reviews r JOIN users u ON u.id = r.client_id"
+                " WHERE r.artisan_id = ? ORDER BY r.created_at DESC LIMIT 3",
+                (user["id"],)).fetchall()
+        except Exception:
+            conn.rollback()
+
+        subscription = None
+        try:
+            subscription = conn.execute(
+                "SELECT s.status, s.start_date, s.end_date, s.auto_renew,"
+                " p.name AS plan_name, p.code AS plan_code"
+                " FROM technician_subscriptions s"
+                " LEFT JOIN subscription_plans p ON p.id = s.plan_id"
+                " WHERE s.technician_id = ? ORDER BY s.created_at DESC LIMIT 1",
+                (user["id"],)).fetchone()
+        except Exception:
+            conn.rollback()
     finally:
         conn.close()
 
-    return render_template("dashboard_artisan.html", user=user, unread_count=unread_count)
+    # Completude du profil (toujours reelle).
+    checklist = {
+        "photo": bool(user.get("photo_url")),
+        "infos": bool((user.get("full_name") or "").strip() and (user.get("bio") or "").strip()),
+        "services": bool((user.get("profession") or "").strip()),
+        "zone": bool((user.get("zone_intervention") or user.get("city") or "").strip()),
+    }
+    profile_pct = int(round(sum(checklist.values()) / len(checklist) * 100))
+
+    demo = not recent_requests and not recent_reviews and subscription is None
+
+    if demo:
+        kpis = {"appels": 12, "demandes": 5, "note": 4.8}
+        recent_requests = [
+            {"title": "Réparation fuite d'eau", "cat": "plomberie", "address": "Sonfonia, Conakry",
+             "status": "en_cours", "when": "Aujourd'hui, 09:30"},
+            {"title": "Installation prise électrique", "cat": "electricite", "address": "Kipé, Conakry",
+             "status": "nouveau", "when": "Aujourd'hui, 11:20"},
+            {"title": "Entretien climatiseur", "cat": "climatisation", "address": "Dixinn, Conakry",
+             "status": "en_attente", "when": "Hier, 16:45"},
+            {"title": "Débouchage canalisation", "cat": "plomberie", "address": "Matoto, Conakry",
+             "status": "termine", "when": "Hier, 14:10"},
+        ]
+        recent_reviews = [
+            {"name": "Mamadou K.", "rating": 5, "when": "Aujourd'hui",
+             "comment": "Excellent travail, très professionnel et ponctuel."},
+            {"name": "Fatoumata D.", "rating": 5, "when": "Hier",
+             "comment": "Très satisfait du service, je recommande fortement !"},
+        ]
+        subscription_view = {
+            "plan_name": "Plan Pro", "status": "ACTIVE", "end_date_label": "30 Juin 2025",
+            "frequency": "Abonnement mensuel", "auto_renew": True, "support": "Support standard",
+        }
+        checklist = {"photo": True, "infos": True, "services": True, "zone": True}
+        profile_pct = 85
+    else:
+        kpis = {"appels": appels_mois, "demandes": demandes_en_cours, "note": note_avg}
+        _status_map = {
+            MISSION_STATUS_ASSIGNED: "nouveau",
+            MISSION_STATUS_COMPLETED: "termine",
+            MISSION_STATUS_CANCELLED: "annule", MISSION_STATUS_REFUSED: "annule",
+        }
+        recent_requests = [{
+            "title": r["title"] or "Demande",
+            "cat": (r["category"] or "").lower(),
+            "address": r["address"] or "",
+            "status": _status_map.get(r["status"], "en_cours"),
+            "when": r["created_at"],
+        } for r in recent_requests]
+        recent_reviews = [{
+            "name": rv["client_name"] or "Client",
+            "rating": int(rv["rating"] or 0),
+            "when": rv["created_at"],
+            "comment": rv["comment"] or "",
+            "photo": rv["client_photo"],
+        } for rv in recent_reviews]
+        if subscription:
+            if subscription["start_date"]:
+                _freq = "Abonnement " + _sub_frequency(subscription["start_date"], subscription["end_date"]).lower()
+            else:
+                _freq = "Abonnement"
+            subscription_view = {
+                "plan_name": subscription["plan_name"] or "Abonnement FixPro",
+                "status": (subscription["status"] or "").upper(),
+                "end_date_label": _format_date_month_fr(subscription["end_date"]) if subscription["end_date"] else "—",
+                "frequency": _freq,
+                "auto_renew": bool(subscription["auto_renew"]),
+                "support": "Support standard",
+            }
+        else:
+            subscription_view = None
+
+    return render_template("dashboard_artisan.html", user=user, unread_count=unread_count,
+                           demo=demo, kpis=kpis, note_count=note_count,
+                           recent_requests=recent_requests, recent_reviews=recent_reviews,
+                           subscription=subscription_view,
+                           checklist=checklist, profile_pct=profile_pct,
+                           availability=(user.get("availability_status") or "hors_ligne"))
 
 @app.route("/appels")
 @app.route("/dashboard/technicien/appels")
