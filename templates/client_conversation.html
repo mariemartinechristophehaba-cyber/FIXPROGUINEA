@@ -44,38 +44,59 @@
   @media (max-width: 380px) { .m-bubble { font-size: 14px; } .m-input { font-size: 16px; } }
 </style>
 <div class="m-wrap">
+  {% set cp = counterpart %}
+  {% set cp_online = cp and cp.availability_status in ('disponible', 'en_ligne', 'actif') %}
   <div class="m-header">
-    <a href="{% if artisan %}{{ url_for('artisan_detail', artisan_id=artisan.id) }}{% else %}javascript:history.back(){% endif %}" class="m-back" aria-label="Retour">←</a>
+    <a href="{% if is_direct and me_role == 'artisan' %}{{ url_for('client_messages') }}{% elif artisan %}{{ url_for('artisan_detail', artisan_id=artisan.id) }}{% else %}javascript:history.back(){% endif %}" class="m-back" aria-label="Retour">←</a>
     <div class="m-avatar">
-      <img src="{{ url_for('static', filename='img/icon-wrench.svg') }}" alt="FixPro" width="24" height="24" />
+      {% if cp and cp.photo_url %}
+        <img src="{{ cp.photo_url }}" alt="{{ cp.full_name }}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />
+      {% elif cp %}
+        <span style="font-weight:700;">{{ (cp.full_name or '?')[0]|upper }}</span>
+      {% else %}
+        <img src="{{ url_for('static', filename='img/icon-wrench.svg') }}" alt="FixPro" width="24" height="24" />
+      {% endif %}
     </div>
     <div class="m-info">
-      <div class="m-name">FixPro</div>
-      <div class="m-status"><span class="m-dot"></span> En ligne</div>
+      <div class="m-name">
+        {{ cp.full_name if cp else 'FixPro' }}
+        {% if cp and cp.is_verified %}<svg width="14" height="14" viewBox="0 0 24 24" fill="#155eef" stroke="#fff" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m8 12 3 3 5-6" fill="none" stroke="#fff"/></svg>{% endif %}
+      </div>
+      <div class="m-status">
+        {% if cp %}
+          {% if cp_online %}<span class="m-dot"></span> {{ cp.profession or 'Technicien' }} · En ligne
+          {% else %}<span class="m-dot" style="background:#94a3b8;animation:none;"></span> {{ cp.profession or 'Technicien' }} · Hors ligne{% endif %}
+        {% else %}<span class="m-dot"></span> En ligne{% endif %}
+      </div>
     </div>
+    {% if cp and cp.phone %}
+    <a href="tel:{{ cp.phone }}" class="m-back" aria-label="Appeler">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.81.36 1.6.7 2.34a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.74-1.27a2 2 0 0 1 2.11-.45c.74.34 1.53.57 2.34.7A2 2 0 0 1 22 16.92z"/></svg>
+    </a>
+    {% endif %}
   </div>
   <div class="m-body" id="m-body">
     {% if messages %}
+      {% set mine_role = me_role if is_direct else 'client' %}
       {% for m in messages %}
-      <div class="m-msg {{ 'm-client' if m.sender_role == 'client' else 'm-fixpro' }}">
+      <div class="m-msg {{ 'm-client' if m.sender_role == mine_role else 'm-fixpro' }}">
         <div class="m-bubble">
           {{ m.content }}
           <div class="m-time">
             {{ m.created_at | dt_hm }}
-            {% if m.sender_role == 'client' %}<span class="m-check">{% if m.is_read %}✓✓{% else %}✓{% endif %}</span>{% endif %}
+            {% if m.sender_role == mine_role %}<span class="m-check">{% if m.is_read %}✓✓{% else %}✓{% endif %}</span>{% endif %}
           </div>
         </div>
       </div>
       {% endfor %}
     {% else %}
       <div class="m-empty">
+        {% if is_direct and counterpart %}
+        <h2>{{ counterpart.full_name }}</h2>
+        <p>Écrivez votre premier message{% if me_role == 'client' %} à ce technicien{% else %} à ce client{% endif %}.</p>
+        {% else %}
         <h2>Assistance FixPro</h2>
         <p>Écrivez votre demande pour commencer.</p>
-        {% if artisan %}
-        <div class="m-artisan">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#155eef" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          Technicien concerné : {{ artisan.full_name }} ({{ artisan.profession or 'Technicien' }})
-        </div>
         {% endif %}
       </div>
     {% endif %}
@@ -87,6 +108,9 @@
   </form>
 </div>
 <script>
+  const MINE_ROLE = {{ (me_role if is_direct else 'client') | tojson }};
+  const IS_DIRECT = {{ is_direct | tojson }};
+  const PEER_NAME = {{ (counterpart.full_name if counterpart else 'FixPro') | tojson }};
   const b = document.getElementById('m-body');
   const form = document.querySelector('.m-footer');
   const ta = document.getElementById('m-content');
@@ -114,11 +138,11 @@
 
   function appendMessage(role, content, time, id, pending) {
     const div = document.createElement('div');
-    div.className = 'm-msg ' + (role === 'client' ? 'm-client' : 'm-fixpro');
+    div.className = 'm-msg ' + (role === MINE_ROLE ? 'm-client' : 'm-fixpro');
     if (id) div.dataset.msgId = id;
     if (pending) div.dataset.pending = '1';
     const t = pending ? time : formatTime(time);
-    const check = role === 'client' ? '<span class="m-check">✓</span>' : '';
+    const check = role === MINE_ROLE ? '<span class="m-check">✓</span>' : '';
     div.innerHTML = '<div class="m-bubble">' + escapeHtml(content).replace(/\n/g, '<br>') + '<div class="m-time">' + escapeHtml(t) + check + '</div></div>';
     b.appendChild(div);
     scrollBottom();
@@ -126,12 +150,13 @@
   }
 
   function setTyping(show) {
+    if (IS_DIRECT) return;
     let typing = b.querySelector('.m-typing');
     if (show) {
       if (typing) return;
       typing = document.createElement('div');
       typing.className = 'm-msg m-fixpro m-typing';
-      typing.innerHTML = '<div class="m-bubble"><div class="typing"><span></span><span></span><span></span></div><div class="m-time">FixPro écrit...</div></div>';
+      typing.innerHTML = '<div class="m-bubble"><div class="typing"><span></span><span></span><span></span></div><div class="m-time">' + escapeHtml(PEER_NAME) + ' écrit...</div></div>';
       b.appendChild(typing);
       scrollBottom();
     } else if (typing) {
@@ -158,7 +183,7 @@
     if (!content || sending) return false;
     sending = true;
     updateBtn();
-    appendMessage('client', content, 'maintenant', null, true);
+    appendMessage(MINE_ROLE, content, 'maintenant', null, true);
     ta.value = '';
     ta.style.height = 'auto';
     ta.style.overflowY = 'hidden';

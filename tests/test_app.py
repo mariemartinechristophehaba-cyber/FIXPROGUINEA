@@ -648,15 +648,55 @@ class MessagingTests(FixProTestCase):
 
         conn = db.connect(sqlite_path=self.db_path)
         try:
+            # Conversation directe client <-> technicien : aucune reponse IA.
             msgs = conn.execute(
                 "SELECT * FROM conversation_messages WHERE conversation_id = ? ORDER BY id",
                 (conv_id,)).fetchall()
-            self.assertEqual(len(msgs), 3)
+            self.assertEqual(len(msgs), 1)
             self.assertEqual(msgs[0]["sender_role"], "client")
             self.assertEqual(msgs[0]["content"], "Mon climatiseur ne refroidit plus.")
-            self.assertEqual(msgs[2]["sender_role"], "system")
+            conv = conn.execute(
+                "SELECT status FROM conversations WHERE id = ?", (conv_id,)).fetchone()
+            self.assertEqual(conv["status"], "direct")
         finally:
             conn.close()
+
+    def test_technician_replies_in_direct_conversation(self):
+        self.register_artisan("artisan@example.com", phone="+224621111111")
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            artisan = conn.execute(
+                "SELECT id FROM users WHERE phone = ?", ("+224621111111",)).fetchone()
+        finally:
+            conn.close()
+
+        self.client.get("/logout")
+        self.register_client(phone="+224610000009")
+        self.login("+224610000009")
+        r1 = self.client.get(f"/messages/artisan/{artisan['id']}", follow_redirects=True)
+        conv_id = int(r1.request.path.split("/")[-1])
+        self.client.post(f"/messages/{conv_id}", data={"content": "Bonjour, etes-vous disponible"})
+
+        self.client.get("/logout")
+        self.login("+224621111111")
+        r2 = self.client.get(f"/messages/{conv_id}")
+        self.assertEqual(r2.status_code, 200)
+        self.assertIn("etes-vous disponible", r2.data.decode("utf-8", "replace"))
+        self.client.post(f"/messages/{conv_id}", data={"content": "Oui cet apres-midi"})
+
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            msgs = conn.execute(
+                "SELECT sender_role, content FROM conversation_messages"
+                " WHERE conversation_id = ? ORDER BY id", (conv_id,)).fetchall()
+            self.assertEqual([m["sender_role"] for m in msgs], ["client", "artisan"])
+        finally:
+            conn.close()
+
+        self.client.get("/logout")
+        self.login("+224610000009")
+        r3 = self.client.get(f"/messages/{conv_id}")
+        self.assertIn("cet apres-midi", r3.data.decode("utf-8", "replace"))
 
 
 class GeolocationTests(FixProTestCase):
