@@ -26,8 +26,9 @@ from functools import wraps
 from authlib.integrations.flask_client import OAuth
 from abc import ABC, abstractmethod
 from email_validator import EmailNotValidError, validate_email
-from flask import (Flask, flash, g, jsonify, make_response, redirect,
-                   render_template, request, session, url_for)
+from flask import (Flask, flash, g, has_request_context, jsonify,
+                   make_response, redirect, render_template, request,
+                   session, url_for)
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_cors import CORS
@@ -494,16 +495,13 @@ def check_artisan_verification():
         return None
     if getattr(g, "_artisan_verification_done", False):
         return g._artisan_verification_result
-    conn = get_db_connection()
-    try:
-        user = conn.execute(
-            "SELECT role, is_verified FROM users WHERE id = ?", (user_id,)).fetchone()
-        if user and _is_technician(user) and not user["is_verified"]:
-            result = redirect(url_for("artisan_pending"))
-        else:
-            result = None
-    finally:
-        conn.close()
+    # Reutilise l'utilisateur deja charge et mis en cache par get_current_user
+    # (evite une requete SQL supplementaire a chaque page authentifiee).
+    user = get_current_user()
+    if user and _is_technician(user) and not user["is_verified"]:
+        result = redirect(url_for("artisan_pending"))
+    else:
+        result = None
     g._artisan_verification_done = True
     g._artisan_verification_result = result
     return result
@@ -579,12 +577,87 @@ def _is_valid_coordinate(lat, lon):
     return not (abs(lat) < 0.01 and abs(lon) < 0.01)
 
 
-def get_db_connection():
-    """Ouvre une connexion vers la base configuree pour cet environnement."""
+def _open_raw_connection():
     return db.connect(
         database_url=app.config.get("DATABASE_URL", ""),
         sqlite_path=app.config.get("SQLITE_PATH", "fixpro.db"),
     )
+
+
+class _RequestConnection:
+    """Proxy renvoye pendant une requete HTTP.
+
+    Toutes les operations sont deleguees a une unique connexion reelle
+    partagee sur toute la requete : ouvrir une connexion PostgreSQL coute
+    ~50-200 ms (handshake TLS), et l'ancien code en ouvrait 2 a 4 par page.
+    `close()` est neutralise ; la vraie fermeture a lieu dans
+    `teardown_request`. `commit()` / `rollback()` restent effectifs, donc le
+    comportement transactionnel du code appelant est inchange.
+    """
+
+    __slots__ = ("_raw",)
+
+    def __init__(self, raw):
+        object.__setattr__(self, "_raw", raw)
+
+    def __getattr__(self, name):
+        return getattr(object.__getattribute__(self, "_raw"), name)
+
+    def __setattr__(self, name, value):
+        setattr(object.__getattribute__(self, "_raw"), name, value)
+
+    def close(self):
+        # Fermee une seule fois, en fin de requete (teardown_request).
+        pass
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        raw = object.__getattribute__(self, "_raw")
+        if exc_type is None:
+            raw.commit()
+        else:
+            raw.rollback()
+        return False
+
+
+def get_db_connection():
+    """Connexion vers la base configuree pour cet environnement.
+
+    Dans une requete HTTP : une seule connexion reelle est ouverte puis
+    reutilisee (voir `_RequestConnection`). Hors requete (scripts, tests,
+    taches) : une connexion dediee, a fermer par l'appelant.
+    """
+    if not has_request_context():
+        return _open_raw_connection()
+    proxy = getattr(g, "_db_proxy", None)
+    if proxy is None:
+        raw = _open_raw_connection()
+        g._db_raw = raw
+        proxy = _RequestConnection(raw)
+        g._db_proxy = proxy
+    return proxy
+
+
+@app.teardown_request
+def _close_request_connection(exc):
+    """Ferme l'unique connexion de la requete (rollback de tout residu)."""
+    raw = g.pop("_db_raw", None)
+    g.pop("_db_proxy", None)
+    if raw is None:
+        return
+    try:
+        # Le code applicatif valide explicitement chaque ecriture ; ici on ne
+        # fait que jeter ce qui n'a pas ete valide, comme le faisait la
+        # fermeture d'une connexion par appel.
+        raw.rollback()
+    except Exception:
+        pass
+    try:
+        raw.close()
+    except Exception:
+        pass
 
 
 # ---------------------------------------------------------------------------
