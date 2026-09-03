@@ -1227,17 +1227,6 @@ def is_prohibited_message(content):
     return any(phrase in normalized for phrase in _FORBIDDEN_PHRASES)
 
 
-def calculate_distance(lat1, lon1, lat2, lon2):
-    """Distance orthodromique en kilometres entre deux points GPS."""
-    radius = 6371
-    lat1_rad, lat2_rad = math.radians(lat1), math.radians(lat2)
-    delta_lat = lat2_rad - lat1_rad
-    delta_lon = math.radians(lon2) - math.radians(lon1)
-    a = (math.sin(delta_lat / 2) ** 2
-         + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(delta_lon / 2) ** 2)
-    return radius * 2 * math.asin(math.sqrt(a))
-
-
 # ---------------------------------------------------------------------------
 # Pages publiques
 # ---------------------------------------------------------------------------
@@ -2054,77 +2043,6 @@ def _send_admin_notification(subject, body):
         logger.exception("Echec envoi notification admin : %s", exc)
 
 
-def _finalize_artisan_registration(wizard):
-    """Inscrit l'artisan et ses documents, puis redirige vers l'attente."""
-    required = ["first_name", "last_name", "phone", "email", "identity_doc",
-                "profession", "city", "quartier", "diploma_doc"]
-    for field in required:
-        if not wizard.get(field):
-            flash("Certaines informations sont manquantes. Veuillez recommencer.", "error")
-            return redirect(url_for("register_artisan"))
-
-    conn = get_db_connection()
-    try:
-        if conn.execute("SELECT id FROM users WHERE phone = ?", (wizard["phone"],)).fetchone():
-            flash("Ce numero de telephone est deja utilise.", "error")
-            return redirect(url_for("register_artisan"))
-
-        full_name = f"{wizard['civility']} {wizard['first_name']} {wizard['last_name']}".strip()
-        # Mot de passe temporaire aleatoire ; l'artisan le recoit par email si SMTP configure.
-        temp_password = secrets.token_urlsafe(12)
-        password = temp_password
-        latitude, longitude = _geocode_zone(wizard["city"], wizard["quartier"])
-
-        conn.execute(
-            "INSERT INTO users (email, phone, password_hash, role, full_name, civility,"
-            " profession, skills, city, quartier, zone_intervention, mobility,"
-            " years_experience, bio, hourly_rate, latitude, longitude, is_verified, is_active)"
-            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            (wizard["email"], wizard["phone"], generate_password_hash(password),
-             "technician", full_name, wizard["civility"], wizard["profession"],
-             wizard["skills"], wizard["city"], wizard["quartier"],
-             wizard["zone_intervention"], wizard["mobility"],
-             wizard["years_experience"], wizard["bio"], 0, latitude, longitude, 1, 1))
-        conn.commit()
-
-        artisan = conn.execute(
-            "SELECT id FROM users WHERE phone = ?", (wizard["phone"],)).fetchone()
-        artisan_id = artisan["id"]
-
-        for doc_type, field, name_field in [
-            ("identity", "identity_doc", "identity_doc_name"),
-            ("diploma", "diploma_doc", "diploma_doc_name"),
-        ]:
-            mime, ext, encoded = _parse_base64_file(wizard.get(field, ""))
-            if encoded:
-                file_name = (wizard.get(name_field, "") or f"{doc_type}{ext}").strip()
-                conn.execute(
-                    "INSERT INTO technician_documents (technician_id, document_type,"
-                    " file_name, mime_type, content_base64)"
-                    " VALUES (?, ?, ?, ?, ?)",
-                    (artisan_id, doc_type, file_name, mime, encoded))
-        conn.commit()
-    except Exception as exc:  # pragma: no cover - aide au debug en production
-        logger.exception("Echec de l'inscription artisan : %s", exc)
-        flash("Une erreur est survenue lors de l'inscription. Veuillez reessayer ou contacter le support.", "error")
-        return redirect(url_for("register_artisan"))
-    finally:
-        conn.close()
-
-    session.pop("artisan_wizard", None)
-    _send_admin_notification(
-        f"[FixPro] Nouvelle inscription artisan : {full_name}",
-        f"Un nouvel artisan s'est inscrit sur FixPro.\n\n"
-        f"Nom : {full_name}\n"
-        f"Metier : {wizard.get('profession', 'Non precise')}\n"
-        f"Telephone : {wizard.get('phone', '')}\n"
-        f"Ville : {wizard.get('city', '')}\n"
-        f"Quartier : {wizard.get('quartier', '')}\n\n"
-        f"Connectez-vous au tableau de bord pour valider son inscription.")
-    flash("Votre demande d'inscription a bien ete recue. L'equipe FixPro va verifier vos informations.", "success")
-    return redirect(url_for("artisan_pending"))
-
-
 @app.route("/artisan-pending")
 def artisan_pending():
     """Page de suivi de la verification du dossier technicien."""
@@ -2478,56 +2396,6 @@ def admin_google_callback():
 def admin_root():
     """Racine admin redirige vers le tableau de bord Flask."""
     return redirect(url_for("admin_dashboard"))
-
-
-def _mock_admin_dashboard_data():
-    """Donnees fictives pour visualiser le dashboard admin."""
-    return {
-        "stats": {
-            "pending_requests": 6,
-            "pending_requests_delta": 2,
-            "available_artisans": 8,
-            "interventions_in_progress": 4,
-            "interventions_delta": 1,
-            "today_commission": 25000,
-            "today_commission_delta": 12,
-        },
-        "financial": {
-            "today_paid": 250000,
-            "today_commission": 25000,
-            "today_paid_to_artisans": 225000,
-        },
-        "pending_requests": [
-            {"id": 1048, "reference": "#1048", "client_name": "Mamadou Diallo", "client_phone": "623 45 67 89", "service": "Depannage climatisation", "category": "Climatisation", "city": "Cocody", "quartier": "Riviera 3", "requested_date": "Aujourd'hui", "requested_time": "14:00"},
-            {"id": 1049, "reference": "#1049", "client_name": "Fatou Camara", "client_phone": "628 11 22 33", "service": "Plomberie", "category": "Plomberie", "city": "Riviera", "quartier": "Riviera 2", "requested_date": "Aujourd'hui", "requested_time": "15:30"},
-            {"id": 1050, "reference": "#1050", "client_name": "Ibrahima Sylla", "client_phone": "620 98 76 54", "service": "Electricite", "category": "Electricite", "city": "Angre", "quartier": "7eme tranche", "requested_date": "Aujourd'hui", "requested_time": "17:00"},
-            {"id": 1051, "reference": "#1051", "client_name": "Aissatou Diallo", "client_phone": "621 33 22 11", "service": "Climatisation", "category": "Climatisation", "city": "Marcory", "quartier": "Kipe Centre", "requested_date": "Demain", "requested_time": "09:00"},
-            {"id": 1052, "reference": "#1052", "client_name": "Mariam Conde", "client_phone": "622 77 88 99", "service": "Plomberie", "category": "Plomberie", "city": "Plateau", "quartier": "Centre", "requested_date": "Demain", "requested_time": "10:30"},
-            {"id": 1053, "reference": "#1053", "client_name": "Karim Bah", "client_phone": "625 55 44 33", "service": "Electricite", "category": "Electricite", "city": "Deux-Plateaux", "quartier": "Centre", "requested_date": "Demain", "requested_time": "14:00"},
-        ],
-        "in_progress": [
-            {"id": 1039, "reference": "#1039", "client_name": "Aissata K.", "artisan_name": "Ousmane Sylla", "service": "Depannage climatisation", "status_label": "En cours"},
-            {"id": 1040, "reference": "#1040", "client_name": "Karim B.", "artisan_name": "Fatoumata Camara", "service": "Installation electrique", "status_label": "Diagnostic"},
-            {"id": 1041, "reference": "#1041", "client_name": "Mariam C.", "artisan_name": "Ibrahim Sory", "service": "Reparation plomberie", "status_label": "En cours"},
-            {"id": 1042, "reference": "#1042", "client_name": "Mamadou D.", "artisan_name": "Kadiatou Barry", "service": "Entretien climatisation", "status_label": "En cours"},
-        ],
-        "available_artisans": [
-            {"id": 1, "full_name": "Ousmane Sylla", "profession": "Frigoriste", "avg_rating": 4.9, "interventions": 89, "distance": "1,8"},
-            {"id": 2, "full_name": "Kadiatou Barry", "profession": "Frigoriste", "avg_rating": 4.8, "interventions": 64, "distance": "2,4"},
-            {"id": 3, "full_name": "Fatoumata Camara", "profession": "Electricienne", "avg_rating": 4.7, "interventions": 52, "distance": "2,7"},
-            {"id": 4, "full_name": "Ibrahim Sory", "profession": "Plombier", "avg_rating": 4.9, "interventions": 71, "distance": "3,0"},
-            {"id": 5, "full_name": "Lamine Camara", "profession": "Serrurier", "avg_rating": 4.8, "interventions": 43, "distance": "3,6"},
-            {"id": 6, "full_name": "Mamadou Diallo", "profession": "Chauffagiste", "avg_rating": 4.6, "interventions": 38, "distance": "3,9"},
-        ],
-        "recent_activities": [
-            {"title": "Nouvelle demande", "meta": "Mamadou Diallo a envoye une demande de depannage climatisation.", "time": "Il y a 5 min", "color": "#ef4444", "icon": "file_plus"},
-            {"title": "Intervention acceptee", "meta": "Ousmane Sylla a accepte l'intervention #1039.", "time": "Il y a 12 min", "color": "#10b981", "icon": "user_check"},
-            {"title": "Paiement recu", "meta": "Paiement de 50 000 GNF recu pour l'intervention #1038.", "time": "Il y a 20 min", "color": "#8b5cf6", "icon": "credit_card"},
-            {"title": "Intervention terminee", "meta": "Ibrahim Sory a termine l'intervention #1037.", "time": "Il y a 35 min", "color": "#10b981", "icon": "check_circle"},
-            {"title": "Avis laisse", "meta": "Aissata K. a laisse un avis 5 etoiles.", "time": "Il y a 1 h", "color": "#f59e0b", "icon": "star"},
-            {"title": "Intervention en cours", "meta": "Mission #1036 en cours d'intervention.", "time": "Il y a 1 h 30", "color": "#f59e0b", "icon": "clock"},
-        ],
-    }
 
 
 def _ts(value=None):
@@ -3968,7 +3836,7 @@ def client_signup():
             session["user_id"] = new_user["id"]
             session.permanent = True
             flash("Bienvenue dans FixPro.", "success")
-            return redirect(url_for("accueil"))
+            return redirect(url_for("index"))
         finally:
             conn.close()
 
@@ -6353,29 +6221,6 @@ def client_tickets():
     return render_template("tickets.html", tickets=tickets, user=user)
 
 
-@app.route("/admin/tickets")
-@login_required
-@admin_required
-def admin_tickets_list():
-    """Dashboard admin : liste de tous les tickets de support."""
-    conn = get_db_connection()
-    try:
-        tickets = conn.execute(
-            "SELECT t.*, c.full_name AS client_name,"
-            " last.content AS last_message, last.created_at AS last_message_at"
-            " FROM admin_tickets t"
-            " JOIN users c ON c.id = t.client_id"
-            " LEFT JOIN ("
-            "   SELECT m.ticket_id, m.content, m.created_at"
-            "   FROM admin_messages m"
-            "   WHERE m.id IN (SELECT MAX(id) FROM admin_messages GROUP BY ticket_id)"
-            " ) last ON last.ticket_id = t.id"
-            " ORDER BY t.updated_at DESC").fetchall()
-    finally:
-        conn.close()
-    return render_template("admin_tickets.html", tickets=tickets)
-
-
 @app.route("/tickets/<int:ticket_id>/close", methods=["POST"])
 @login_required
 def ticket_close(ticket_id):
@@ -6397,7 +6242,7 @@ def ticket_close(ticket_id):
     finally:
         conn.close()
     if user["role"] == "admin":
-        return redirect(url_for("admin_tickets_list"))
+        return redirect(url_for("admin_tickets"))
     return redirect(url_for("client_tickets"))
 
 
@@ -8454,7 +8299,6 @@ def api_lia_chat():
     return jsonify({"reply": reply})
 
 csrf.exempt(api_lia_chat)
-
 
 
 _CATEGORY_PROFESSION = {
