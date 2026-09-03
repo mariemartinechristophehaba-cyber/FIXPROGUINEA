@@ -762,7 +762,7 @@ body { margin: 0; }
 /* ============================================================
    Etape 1 "Parlons de vous" - refonte maquette
    ============================================================ */
-.fa-appbar { position: relative; padding: 14px 16px; padding-top: calc(14px + env(safe-area-inset-top)); }
+.fa-appbar { position: relative; padding: 14px 16px; padding-top: calc(24px + env(safe-area-inset-top)); }
 .fa-appbar-back {
   width: 40px; height: 40px; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
