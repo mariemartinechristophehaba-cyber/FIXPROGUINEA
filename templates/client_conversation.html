@@ -1,226 +1,362 @@
 {% extends 'base.html' %}
-{% block title %}{{ conversation.subject or 'Assistance FixPro' }}{% endblock %}
+{% block title %}{{ (counterpart.full_name if counterpart else conversation.subject) or 'Assistance FixPro' }}{% endblock %}
 {% block extra_head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/fixpro-auth.css', v='26') }}" />{% endblock %}
 {% block header %}{% endblock %}
 {% block footer %}{% endblock %}
 {% block content %}
+{% set cp = counterpart %}
+{% set cp_online = cp and cp.availability_status in ('disponible', 'en_ligne', 'actif') %}
+{% set mine_role = me_role if is_direct else 'client' %}
+{% set peer_name = cp.full_name if cp else 'FixPro' %}
 <style>
-  :root { --m-primary: #155eef; --m-primary-dark: #1146b8; --m-bg: #f5f7fa; --m-white: #fff; --m-ink: #0a1122; --m-ink-2: #64748b; --m-line: #e2e8f0; --m-radius: 18px; }
-  .m-wrap { position: fixed; inset: 0; background: var(--m-bg); display: flex; flex-direction: column; z-index: 100; font-family: var(--f-font, 'Inter', sans-serif); }
-  .m-header { background: var(--m-white); border-bottom: 1px solid var(--m-line); padding: 10px 14px; display: flex; align-items: center; gap: 10px; box-shadow: 0 1px 4px rgba(0,0,0,.04); }
-  .m-back { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--m-ink); text-decoration: none; background: var(--m-bg); font-size: 22px; -webkit-tap-highlight-color: transparent; }
-  .m-back:active { background: #e2e8f0; }
-  .m-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--m-white); display: flex; align-items: center; justify-content: center; color: var(--m-primary); border: 1px solid var(--m-line); overflow: hidden; }
-  .m-avatar img { width: 24px; height: 24px; object-fit: contain; }
-  .m-info { flex: 1; }
-  .m-name { font-weight: 700; font-size: 15px; color: var(--m-ink); display: flex; align-items: center; gap: 5px; }
-  .m-status { font-size: 12px; color: var(--m-ink-2); display: flex; align-items: center; gap: 4px; }
-  .m-dot { width: 8px; height: 8px; border-radius: 50%; background: #10b981; animation: m-pulse 2s infinite; }
-  @keyframes m-pulse { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,.4); } 70% { box-shadow: 0 0 0 5px rgba(16,185,129,0); } 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); } }
-  .m-body { flex: 1; overflow-y: auto; padding: 14px; -webkit-overflow-scrolling: touch; padding-bottom: 90px; }
-  .m-empty { text-align: center; color: var(--m-ink-2); padding: 40px 20px; }
-  .m-empty h2 { font-size: 18px; font-weight: 700; color: var(--m-ink); margin: 0 0 6px; }
-  .m-empty p { font-size: 14px; margin: 0 0 18px; }
-  .m-empty .m-artisan { display: inline-flex; align-items: center; gap: 8px; background: var(--m-white); border: 1px solid var(--m-line); border-radius: 24px; padding: 8px 14px; font-size: 13px; color: var(--m-ink); }
-  .m-msg { display: flex; margin-bottom: 10px; }
-  .m-client { justify-content: flex-end; }
-  .m-fixpro { justify-content: flex-start; }
-  .m-bubble { max-width: 82%; width: fit-content; padding: 9px 13px; border-radius: var(--m-radius); font-size: 15px; line-height: 1.4; white-space: pre-wrap; }
-  .m-fixpro .m-bubble { background: var(--m-white); color: var(--m-ink); border-bottom-left-radius: 4px; box-shadow: 0 1px 4px rgba(0,0,0,.04); }
-  .m-client .m-bubble { background: var(--m-primary); color: #fff; border-bottom-right-radius: 4px; }
-  .m-time { font-size: 10px; color: var(--m-ink-2); margin-top: 2px; text-align: right; display: flex; align-items: center; justify-content: flex-end; gap: 4px; }
-  .m-client .m-time { color: rgba(255,255,255,.8); }
-  .m-check { font-size: 9px; opacity: .8; }
-  .m-footer { position: fixed; bottom: 0; left: 0; right: 0; background: var(--m-white); border-top: 1px solid var(--m-line); padding: 10px 12px; padding-bottom: calc(10px + env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 8px; z-index: 101; }
-  .m-input { flex: 1; border: 1px solid var(--m-line); border-radius: 22px; padding: 10px 14px; font-size: 15px; line-height: 1.4; outline: none; min-height: 40px; max-height: 120px; resize: none; box-sizing: border-box; overflow-y: hidden; }
-  .m-send { width: 44px; height: 44px; border: none; border-radius: 50%; background: var(--m-primary); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 18px; transition: transform .1s; }
-  .m-send:disabled { opacity: .4; }
-  .m-send:active { transform: scale(.95); }
-  .typing { display: flex; gap: 4px; padding: 10px 13px; }
-  .typing span { width: 7px; height: 7px; border-radius: 50%; background: var(--m-ink-2); animation: m-bounce 1.4s infinite; }
-  .typing span:nth-child(2) { animation-delay: 0.2s; }
-  .typing span:nth-child(3) { animation-delay: 0.4s; }
-  @keyframes m-bounce { 0%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-5px); } }
-  @media (max-width: 380px) { .m-bubble { font-size: 14px; } .m-input { font-size: 16px; } }
+  :root {
+    --c-blue: #2563EB; --c-blue-d: #1D4ED8; --c-bg: #EEF2FB; --c-white: #fff;
+    --c-ink: #0F172A; --c-mut: #64748B; --c-line: #E2E8F0;
+  }
+  .c-wrap { position: fixed; inset: 0; display: flex; flex-direction: column;
+    background: var(--c-bg); z-index: 100; font-family: var(--f-font, 'Inter', sans-serif); }
+
+  /* ---------- Header ---------- */
+  .c-head {
+    background: linear-gradient(160deg, var(--c-blue) 0%, var(--c-blue-d) 100%);
+    color: #fff; padding: calc(10px + env(safe-area-inset-top)) 14px 16px;
+    border-radius: 0 0 22px 22px; box-shadow: 0 6px 18px rgba(29,78,216,.28);
+    display: flex; align-items: center; gap: 12px;
+  }
+  .c-iconbtn {
+    flex: 0 0 auto; width: 40px; height: 40px; border-radius: 50%;
+    border: 1.5px solid rgba(255,255,255,.45); background: rgba(255,255,255,.08);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; text-decoration: none; -webkit-tap-highlight-color: transparent;
+  }
+  .c-iconbtn:active { background: rgba(255,255,255,.22); }
+  .c-avatar {
+    flex: 0 0 auto; position: relative; width: 46px; height: 46px; border-radius: 50%;
+    overflow: visible; border: 2px solid rgba(255,255,255,.7);
+  }
+  .c-avatar img, .c-avatar .c-ph {
+    width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block;
+    background: #fff; color: var(--c-blue); font-weight: 800;
+    display: flex; align-items: center; justify-content: center; font-size: 18px;
+  }
+  .c-avatar .c-dot {
+    position: absolute; right: -1px; bottom: -1px; width: 12px; height: 12px;
+    border-radius: 50%; border: 2px solid var(--c-blue-d); background: #22C55E;
+  }
+  .c-avatar .c-dot.off { background: #94A3B8; }
+  .c-id { flex: 1; min-width: 0; }
+  .c-name { display: flex; align-items: center; gap: 5px; font-weight: 800; font-size: 17px; }
+  .c-name span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .c-job { font-size: 12.5px; opacity: .92; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .c-pres { display: flex; align-items: center; gap: 5px; font-size: 12px; opacity: .95; margin-top: 1px; }
+  .c-pres i { width: 7px; height: 7px; border-radius: 50%; background: #22C55E; display: inline-block; }
+  .c-pres i.off { background: #CBD5E1; }
+  .c-actions { flex: 0 0 auto; display: flex; gap: 8px; }
+  .c-act { display: flex; flex-direction: column; align-items: center; gap: 3px; color: #fff; text-decoration: none; }
+  .c-act span { font-size: 10px; opacity: .9; }
+  @media (max-width: 400px) { .c-act span { display: none; } .c-actions { gap: 6px; } }
+
+  /* ---------- Body ---------- */
+  .c-body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
+    padding: 14px 14px 96px; }
+  .c-secure {
+    display: flex; align-items: center; gap: 12px; background: var(--c-white);
+    border-radius: 14px; padding: 12px 14px; box-shadow: 0 2px 10px rgba(15,23,42,.06);
+    margin-bottom: 16px;
+  }
+  .c-secure .ic { flex: 0 0 auto; width: 38px; height: 38px; border-radius: 11px;
+    background: #EAF0FF; color: var(--c-blue); display: flex; align-items: center; justify-content: center; }
+  .c-secure .tx { flex: 1; min-width: 0; }
+  .c-secure b { display: block; font-size: 13.5px; color: var(--c-ink); }
+  .c-secure p { margin: 2px 0 0; font-size: 12px; color: var(--c-mut); line-height: 1.35; }
+  .c-secure .chev { color: #CBD5E1; flex: 0 0 auto; }
+
+  .c-daysep { display: flex; align-items: center; gap: 10px; margin: 6px 0 14px; }
+  .c-daysep::before, .c-daysep::after { content: ""; flex: 1; height: 1px; background: var(--c-line); }
+  .c-daysep span { font-size: 11.5px; color: var(--c-mut); background: #E4E9F5;
+    padding: 4px 12px; border-radius: 999px; }
+
+  .c-row { display: flex; align-items: flex-end; gap: 8px; margin-bottom: 10px; }
+  .c-row.me { justify-content: flex-end; }
+  .c-row .c-mini { flex: 0 0 auto; width: 28px; height: 28px; border-radius: 50%; overflow: hidden;
+    background: #DCE6FF; color: var(--c-blue); font-weight: 700; font-size: 12px;
+    display: flex; align-items: center; justify-content: center; }
+  .c-row .c-mini img { width: 100%; height: 100%; object-fit: cover; }
+  .c-bubble { max-width: 78%; padding: 10px 14px; font-size: 15px; line-height: 1.45;
+    white-space: pre-wrap; word-wrap: break-word; position: relative; }
+  .c-row.them .c-bubble { background: var(--c-white); color: var(--c-ink);
+    border-radius: 16px 16px 16px 4px; box-shadow: 0 2px 8px rgba(15,23,42,.07); }
+  .c-row.me .c-bubble { background: var(--c-blue); color: #fff;
+    border-radius: 16px 16px 4px 16px; }
+  .c-meta { display: flex; align-items: center; justify-content: flex-end; gap: 4px;
+    font-size: 10.5px; margin-top: 4px; color: var(--c-mut); }
+  .c-row.me .c-meta { color: rgba(255,255,255,.85); }
+  .c-check svg { display: block; }
+
+  .c-typing { display: flex; gap: 4px; padding: 12px 15px; }
+  .c-typing i { width: 7px; height: 7px; border-radius: 50%; background: #94A3B8;
+    animation: c-bounce 1.4s infinite; }
+  .c-typing i:nth-child(2) { animation-delay: .2s; }
+  .c-typing i:nth-child(3) { animation-delay: .4s; }
+  @keyframes c-bounce { 0%,80%,100% { transform: translateY(0); } 40% { transform: translateY(-5px); } }
+
+  .c-empty { text-align: center; color: var(--c-mut); padding: 48px 24px; }
+  .c-empty h2 { margin: 0 0 6px; font-size: 17px; color: var(--c-ink); font-weight: 800; }
+  .c-empty p { margin: 0; font-size: 13.5px; }
+
+  /* ---------- Footer ---------- */
+  .c-foot { position: fixed; left: 0; right: 0; bottom: 0; z-index: 101;
+    background: var(--c-white); border-top: 1px solid var(--c-line);
+    padding: 9px 10px; padding-bottom: calc(9px + env(safe-area-inset-bottom));
+    display: flex; align-items: center; gap: 8px; }
+  .c-plus { flex: 0 0 auto; width: 40px; height: 40px; border: none; border-radius: 50%;
+    background: var(--c-blue); color: #fff; display: flex; align-items: center; justify-content: center; }
+  .c-field { flex: 1; display: flex; align-items: center; gap: 6px;
+    background: #F1F5FB; border: 1px solid var(--c-line); border-radius: 22px; padding: 4px 8px 4px 14px; }
+  .c-field textarea { flex: 1; border: none; background: transparent; outline: none; resize: none;
+    font-size: 15px; line-height: 1.4; padding: 7px 0; max-height: 110px; font-family: inherit;
+    color: var(--c-ink); }
+  .c-field .tool { flex: 0 0 auto; width: 30px; height: 30px; border: none; background: transparent;
+    color: var(--c-mut); display: flex; align-items: center; justify-content: center; }
+  .c-send { flex: 0 0 auto; width: 42px; height: 42px; border: none; border-radius: 50%;
+    background: var(--c-blue); color: #fff; display: flex; align-items: center; justify-content: center;
+    transition: transform .1s; }
+  .c-send:disabled { opacity: .45; }
+  .c-send:active { transform: scale(.94); }
+  @media (max-width: 360px) { .c-field .tool.opt { display: none; } }
 </style>
-<div class="m-wrap">
-  <div class="m-header">
-    <a href="{% if artisan %}{{ url_for('artisan_detail', artisan_id=artisan.id) }}{% else %}javascript:history.back(){% endif %}" class="m-back" aria-label="Retour">←</a>
-    <div class="m-avatar">
-      <img src="{{ url_for('static', filename='img/icon-wrench.svg') }}" alt="FixPro" width="24" height="24" />
+
+<div class="c-wrap">
+  <header class="c-head">
+    <a href="{% if is_direct and me_role == 'artisan' %}{{ url_for('client_messages') }}{% elif cp %}{{ url_for('artisan_detail', artisan_id=cp.id) }}{% else %}{{ url_for('client_messages') }}{% endif %}"
+       class="c-iconbtn" aria-label="Retour">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+    </a>
+    <div class="c-avatar">
+      {% if cp and cp.photo_url %}<img src="{{ cp.photo_url }}" alt="{{ peer_name }}" />
+      {% elif cp %}<span class="c-ph">{{ (cp.full_name or '?')[0]|upper }}</span>
+      {% else %}<img src="{{ url_for('static', filename='img/icon-wrench.svg') }}" alt="FixPro" />{% endif %}
+      <span class="c-dot {{ '' if (not cp or cp_online) else 'off' }}"></span>
     </div>
-    <div class="m-info">
-      <div class="m-name">FixPro</div>
-      <div class="m-status"><span class="m-dot"></span> En ligne</div>
+    <div class="c-id">
+      <div class="c-name">
+        <span>{{ peer_name }}</span>
+        {% if cp and cp.is_verified %}
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="#fff"><path d="m9.6 16.2-3.75-3.75 1.4-1.4 2.35 2.34 6.15-6.14 1.4 1.4z" fill="#2563EB"/><circle cx="12" cy="12" r="11" fill="none" stroke="#fff" stroke-width="0"/><path d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5z" fill="#fff"/><path d="m10.6 15.6-3.2-3.2 1.4-1.4 1.8 1.79 4.6-4.6 1.4 1.42z" fill="#2563EB"/></svg>
+        {% endif %}
+      </div>
+      {% if cp and cp.profession %}<div class="c-job">{{ cp.profession }}{% if cp.role in ('artisan','technician') %} professionnel{% endif %}</div>{% endif %}
+      <div class="c-pres">
+        {% if not cp or cp_online %}<i></i> En ligne{% else %}<i class="off"></i> Hors ligne{% endif %}
+      </div>
     </div>
-  </div>
-  <div class="m-body" id="m-body">
+    <div class="c-actions">
+      <a class="c-act" href="{% if cp and cp.phone %}tel:{{ cp.phone }}{% else %}#{% endif %}" aria-label="Appel">
+        <span class="c-iconbtn"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg></span>
+        <span>Appel</span>
+      </a>
+      <a class="c-act" href="{% if cp and cp.phone %}tel:{{ cp.phone }}{% else %}#{% endif %}" aria-label="Vidéo">
+        <span class="c-iconbtn"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m23 7-7 5 7 5z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></span>
+        <span>Vidéo</span>
+      </a>
+      <button type="button" class="c-act" id="c-more" aria-label="Plus">
+        <span class="c-iconbtn"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></span>
+        <span>Plus</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="c-body" id="c-body">
+    <div class="c-secure">
+      <span class="ic"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="M9 12h6M12 9v6"/></svg></span>
+      <span class="tx">
+        <b>Conversation sécurisée</b>
+        <p>Vos messages sont privés et protégés.</p>
+      </span>
+      <span class="chev"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+    </div>
+
     {% if messages %}
+      {% set ns = namespace(day='') %}
       {% for m in messages %}
-      <div class="m-msg {{ 'm-client' if m.sender_role == 'client' else 'm-fixpro' }}">
-        <div class="m-bubble">
-          {{ m.content }}
-          <div class="m-time">
-            {{ m.created_at | dt_hm }}
-            {% if m.sender_role == 'client' %}<span class="m-check">{% if m.is_read %}✓✓{% else %}✓{% endif %}</span>{% endif %}
+        {% set d = (m.created_at | string)[:10] %}
+        {% if d != ns.day %}
+          {% set ns.day = d %}
+          <div class="c-daysep"><span>{{ m.created_at | day_label }}</span></div>
+        {% endif %}
+        {% set is_me = m.sender_role == mine_role %}
+        <div class="c-row {{ 'me' if is_me else 'them' }}">
+          {% if not is_me %}
+          <span class="c-mini">
+            {% if cp and cp.photo_url %}<img src="{{ cp.photo_url }}" alt="" />
+            {% else %}{{ (m.sender_name or peer_name or '?')[0]|upper }}{% endif %}
+          </span>
+          {% endif %}
+          <div class="c-bubble">
+            {{ m.content }}
+            <div class="c-meta">
+              {{ m.created_at | dt_hm }}
+              {% if is_me %}<span class="c-check">
+                {% if m.is_read %}<svg width="15" height="11" viewBox="0 0 16 11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 5.5 4.5 9 11 2M6 8l1 1 6.5-7"/></svg>
+                {% else %}<svg width="11" height="9" viewBox="0 0 12 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4.5 4.5 8 11 1"/></svg>{% endif %}
+              </span>{% endif %}
+            </div>
           </div>
         </div>
-      </div>
       {% endfor %}
     {% else %}
-      <div class="m-empty">
-        <h2>Assistance FixPro</h2>
-        <p>Écrivez votre demande pour commencer.</p>
-        {% if artisan %}
-        <div class="m-artisan">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#155eef" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          Technicien concerné : {{ artisan.full_name }} ({{ artisan.profession or 'Technicien' }})
-        </div>
-        {% endif %}
+      <div class="c-empty">
+        <h2>{{ peer_name }}</h2>
+        <p>
+          {% if is_direct and me_role == 'artisan' %}Écrivez votre premier message à ce client.
+          {% elif is_direct %}Écrivez votre premier message à ce technicien.
+          {% else %}Écrivez votre demande pour commencer.{% endif %}
+        </p>
       </div>
     {% endif %}
   </div>
-  <form class="m-footer" method="post" onsubmit="return handleSend();">
-    <input type="hidden" name="csrf_token" id="m-csrf" value="{{ csrf_token() }}" />
-    <textarea class="m-input" id="m-content" name="content" placeholder="Écrire un message..." required rows="1" oninput="this.style.height='auto'; const m=120; const h=Math.min(this.scrollHeight, m); this.style.height=h+'px'; this.style.overflowY = this.scrollHeight > m ? 'auto' : 'hidden';"></textarea>
-    <button type="submit" class="m-send" id="m-send" aria-label="Envoyer" disabled>→</button>
+
+  <form class="c-foot" method="post" id="c-form">
+    <input type="hidden" name="csrf_token" id="c-csrf" value="{{ csrf_token() }}" />
+    <button type="button" class="c-plus" aria-label="Ajouter" id="c-attach">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+    <div class="c-field">
+      <textarea id="c-input" name="content" rows="1" placeholder="Écrire un message..." required></textarea>
+      {% if cp and cp.phone %}<a class="tool opt" href="tel:{{ cp.phone }}" aria-label="Appeler"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg></a>{% endif %}
+      <button type="button" class="tool opt" aria-label="Vocal" id="c-mic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v4"/></svg></button>
+      <button type="button" class="tool" aria-label="Photo" id="c-cam"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></button>
+      <button type="button" class="tool opt" aria-label="Pièce jointe" id="c-file"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg></button>
+    </div>
+    <button type="submit" class="c-send" id="c-send" aria-label="Envoyer" disabled>
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M3.4 20.4 21 12 3.4 3.6 3 10l12 2-12 2z"/></svg>
+    </button>
   </form>
 </div>
+
 <script>
-  const b = document.getElementById('m-body');
-  const form = document.querySelector('.m-footer');
-  const ta = document.getElementById('m-content');
-  const btn = document.getElementById('m-send');
-  const csrf = document.getElementById('m-csrf');
+  const MINE_ROLE = {{ mine_role | tojson }};
+  const IS_DIRECT = {{ is_direct | tojson }};
+  const PEER_NAME = {{ peer_name | tojson }};
+  const PEER_INITIAL = PEER_NAME.charAt(0).toUpperCase();
+  const PEER_PHOTO = {{ (cp.photo_url if cp else '') | tojson }};
+
+  const body = document.getElementById('c-body');
+  const form = document.getElementById('c-form');
+  const input = document.getElementById('c-input');
+  const sendBtn = document.getElementById('c-send');
+  const csrf = document.getElementById('c-csrf');
   let sending = false;
 
-  function scrollBottom() {
-    if (!b) return;
-    requestAnimationFrame(() => { b.scrollTop = b.scrollHeight; });
-  }
-  if (b) scrollBottom();
+  function scrollBottom() { requestAnimationFrame(() => { body.scrollTop = body.scrollHeight; }); }
+  scrollBottom();
 
-  function formatTime(ts) {
-    if (!ts) return '';
-    try { return new Date(ts).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }); }
-    catch (e) { return ts; }
-  }
-
-  function escapeHtml(s) {
+  function esc(s) {
     return String(s == null ? '' : s)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
+  function fmtTime(ts) {
+    if (!ts) return '';
+    try { return new Date(ts).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }); }
+    catch (e) { return String(ts).slice(11, 16); }
+  }
 
-  function appendMessage(role, content, time, id, pending) {
-    const div = document.createElement('div');
-    div.className = 'm-msg ' + (role === 'client' ? 'm-client' : 'm-fixpro');
-    if (id) div.dataset.msgId = id;
-    if (pending) div.dataset.pending = '1';
-    const t = pending ? time : formatTime(time);
-    const check = role === 'client' ? '<span class="m-check">✓</span>' : '';
-    div.innerHTML = '<div class="m-bubble">' + escapeHtml(content).replace(/\n/g, '<br>') + '<div class="m-time">' + escapeHtml(t) + check + '</div></div>';
-    b.appendChild(div);
+  function addMessage(role, content, time, id, pending) {
+    const emptyBox = body.querySelector('.c-empty');
+    if (emptyBox) emptyBox.remove();
+    const me = role === MINE_ROLE;
+    const row = document.createElement('div');
+    row.className = 'c-row ' + (me ? 'me' : 'them');
+    if (id) row.dataset.msgId = id;
+    if (pending) row.dataset.pending = '1';
+    const mini = me ? '' : ('<span class="c-mini">' +
+      (PEER_PHOTO ? '<img src="' + esc(PEER_PHOTO) + '" alt="" />' : esc(PEER_INITIAL)) + '</span>');
+    const tick = me ? '<span class="c-check"><svg width="11" height="9" viewBox="0 0 12 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4.5 4.5 8 11 1"/></svg></span>' : '';
+    row.innerHTML = mini + '<div class="c-bubble">' + esc(content).replace(/\n/g, '<br>') +
+      '<div class="c-meta">' + esc(pending ? 'maintenant' : fmtTime(time)) + tick + '</div></div>';
+    body.appendChild(row);
     scrollBottom();
-    return div;
+    return row;
   }
 
   function setTyping(show) {
-    let typing = b.querySelector('.m-typing');
+    if (IS_DIRECT) return;
+    let t = body.querySelector('.c-typing-row');
     if (show) {
-      if (typing) return;
-      typing = document.createElement('div');
-      typing.className = 'm-msg m-fixpro m-typing';
-      typing.innerHTML = '<div class="m-bubble"><div class="typing"><span></span><span></span><span></span></div><div class="m-time">FixPro écrit...</div></div>';
-      b.appendChild(typing);
+      if (t) return;
+      t = document.createElement('div');
+      t.className = 'c-row them c-typing-row';
+      t.innerHTML = '<span class="c-mini">' + esc(PEER_INITIAL) + '</span>' +
+        '<div class="c-bubble"><div class="c-typing"><i></i><i></i><i></i></div></div>';
+      body.appendChild(t);
       scrollBottom();
-    } else if (typing) {
-      typing.remove();
-    }
+    } else if (t) { t.remove(); }
   }
 
-  function updateBtn() {
-    btn.disabled = sending || !ta.value.trim();
-    btn.innerHTML = sending ? '...' : '→';
+  function refreshBtn() {
+    sendBtn.disabled = sending || !input.value.trim();
   }
-
-  ta.addEventListener('input', updateBtn);
-  ta.addEventListener('keydown', e => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      form.dispatchEvent(new Event('submit'));
-    }
+  input.addEventListener('input', () => {
+    input.style.height = 'auto';
+    input.style.height = Math.min(input.scrollHeight, 110) + 'px';
+    refreshBtn();
+  });
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); }
   });
 
-  async function handleSend(ev) {
-    ev.preventDefault();
-    const content = ta.value.trim();
-    if (!content || sending) return false;
-    sending = true;
-    updateBtn();
-    appendMessage('client', content, 'maintenant', null, true);
-    ta.value = '';
-    ta.style.height = 'auto';
-    ta.style.overflowY = 'hidden';
-    ta.dispatchEvent(new Event('input'));
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const content = input.value.trim();
+    if (!content || sending) return;
+    sending = true; refreshBtn();
+    addMessage(MINE_ROLE, content, null, null, true);
+    input.value = ''; input.style.height = 'auto';
     setTyping(true);
     try {
       const fd = new FormData();
       fd.append('content', content);
       fd.append('csrf_token', csrf.value);
-      const r = await fetch(form.action || window.location.pathname, {
-        method: 'POST',
-        body: fd,
-        headers: {'X-Requested-With': 'XMLHttpRequest'}
+      const r = await fetch(window.location.pathname, {
+        method: 'POST', body: fd, headers: { 'X-Requested-With': 'XMLHttpRequest' }
       });
-      if (!r.ok) throw new Error('Erreur serveur');
+      if (!r.ok) throw new Error('http ' + r.status);
       const data = await r.json();
       if (data.ok && data.messages) {
-        b.querySelectorAll('.m-msg[data-pending="1"]').forEach(el => el.remove());
-        const existingIds = new Set(Array.from(b.querySelectorAll('.m-msg[data-msg-id]')).map(el => el.dataset.msgId));
+        body.querySelectorAll('.c-row[data-pending="1"]').forEach(el => el.remove());
+        const known = new Set(Array.from(body.querySelectorAll('.c-row[data-msg-id]')).map(el => el.dataset.msgId));
         data.messages.forEach(m => {
-          if (!existingIds.has(String(m.id))) {
-            appendMessage(m.sender_role, m.content, m.created_at, m.id);
-          }
+          if (!known.has(String(m.id))) addMessage(m.sender_role, m.content, m.created_at, m.id);
         });
-      } else {
-        throw new Error(data.error || 'Réponse invalide');
       }
-    } catch (e) {
-      console.error(e);
-      alert('Une erreur est survenue. Veuillez réessayer.');
+    } catch (err) {
+      console.error(err);
+      alert('Message non envoyé. Réessayez.');
     } finally {
-      sending = false;
-      setTyping(false);
-      updateBtn();
-      ta.focus();
+      sending = false; setTyping(false); refreshBtn(); input.focus();
     }
-    return false;
-  }
+  });
 
-  if (form) form.addEventListener('submit', handleSend);
-
-  async function pollMessages() {
+  async function poll() {
     try {
-      const r = await fetch(window.location.pathname, {
-        headers: {'X-Requested-With': 'XMLHttpRequest'}
-      });
+      const r = await fetch(window.location.pathname, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
       if (!r.ok) return;
       const data = await r.json();
-      if (data.ok && data.messages) {
-        const existingIds = new Set(Array.from(b.querySelectorAll('.m-msg[data-msg-id]')).map(el => el.dataset.msgId));
-        data.messages.forEach(m => {
-          if (!existingIds.has(String(m.id))) {
-            appendMessage(m.sender_role, m.content, m.created_at, m.id);
-          }
-        });
-      }
-    } catch (e) {
-      console.error(e);
-    }
+      if (!data.ok || !data.messages) return;
+      const known = new Set(Array.from(body.querySelectorAll('.c-row[data-msg-id]')).map(el => el.dataset.msgId));
+      data.messages.forEach(m => {
+        if (!known.has(String(m.id))) addMessage(m.sender_role, m.content, m.created_at, m.id);
+      });
+    } catch (e) { /* silencieux */ }
   }
-  setInterval(pollMessages, 4000);
+  setInterval(poll, 4000);
 
-  updateBtn();
+  ['c-attach', 'c-mic', 'c-cam', 'c-file', 'c-more'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('click', () => input.focus());
+  });
+
+  refreshBtn();
 </script>
 {% endblock %}

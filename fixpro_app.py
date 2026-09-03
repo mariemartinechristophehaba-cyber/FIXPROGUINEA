@@ -89,6 +89,27 @@ def _format_dt_hm(value):
     return s
 
 
+@app.template_filter('day_label')
+def _format_day_label(value):
+    """Etiquette de separateur de jour : 'Aujourd'hui', 'Hier' ou 'JJ/MM/AAAA'."""
+    if not value:
+        return ''
+    s = str(value)
+    try:
+        d = datetime.fromisoformat(s.replace('Z', '+00:00')).date()
+    except ValueError:
+        try:
+            d = datetime.strptime(s[:10], '%Y-%m-%d').date()
+        except ValueError:
+            return s[:10]
+    today = datetime.now(timezone.utc).date()
+    if d == today:
+        return "Aujourd'hui"
+    if (today - d).days == 1:
+        return "Hier"
+    return d.strftime('%d/%m/%Y')
+
+
 @app.template_filter('date_long_fr')
 def _format_date_long_fr(value):
     """Affiche une date au format '30 sept. 2026'."""
@@ -8052,25 +8073,46 @@ def client_messages():
     user = get_current_user()
     if not user:
         return redirect(url_for("lia"))
+    viewer_tech = _is_technician(user)
+    my_role = "artisan" if viewer_tech else "client"
     conn = get_db_connection()
     try:
-        conversations = conn.execute(
+        rows = conn.execute(
             "SELECT c.id, c.subject, c.status, c.created_at, c.updated_at,"
+            " c.client_id, c.artisan_id,"
             " (SELECT content FROM conversation_messages WHERE conversation_id = c.id"
-            " ORDER BY created_at DESC LIMIT 1) AS last_message,"
+            "  AND sender_role != 'system' ORDER BY created_at DESC LIMIT 1) AS last_message,"
+            " (SELECT created_at FROM conversation_messages WHERE conversation_id = c.id"
+            "  AND sender_role != 'system' ORDER BY created_at DESC LIMIT 1) AS last_at,"
+            " cl.full_name AS client_name, cl.photo_url AS client_photo,"
+            " ar.full_name AS artisan_name, ar.photo_url AS artisan_photo,"
+            " ar.profession AS artisan_profession,"
             " COALESCE(unread.n, 0) AS unread"
             " FROM conversations c"
+            " LEFT JOIN users cl ON cl.id = c.client_id"
+            " LEFT JOIN users ar ON ar.id = c.artisan_id"
             " LEFT JOIN ("
             "   SELECT conversation_id, COUNT(*) AS n"
             "   FROM conversation_messages"
-            "   WHERE sender_role != 'client' AND is_read = 0"
+            "   WHERE sender_role <> ? AND is_read = 0"
             "   GROUP BY conversation_id"
             " ) unread ON unread.conversation_id = c.id"
             " WHERE c.client_id = ? OR c.artisan_id = ?"
             " ORDER BY c.updated_at DESC",
-            (user["id"], user["id"])).fetchall()
+            (my_role, user["id"], user["id"])).fetchall()
     finally:
         conn.close()
+    conversations = []
+    for c in (dict(r) for r in rows):
+        if viewer_tech and c["artisan_id"] == user["id"]:
+            c["peer_name"] = c["client_name"] or "Client"
+            c["peer_photo"] = c["client_photo"]
+            c["peer_sub"] = "Client"
+        else:
+            c["peer_name"] = c["artisan_name"] or c["subject"] or "FixPro"
+            c["peer_photo"] = c["artisan_photo"]
+            c["peer_sub"] = c["artisan_profession"] or ("Technicien" if c["artisan_id"] else "Assistance FixPro")
+        conversations.append(c)
     unread_count = sum(c.get("unread", 0) or 0 for c in conversations)
     return render_template("client_messages.html", conversations=conversations, user=user,
                            unread_count=unread_count)
@@ -8289,9 +8331,15 @@ def client_conversation(conversation_id):
     try:
         conv = conn.execute(
             "SELECT * FROM conversations WHERE id = ?", (conversation_id,)).fetchone()
-        if not conv or conv["client_id"] != user["id"]:
+        is_participant = conv and (
+            conv["client_id"] == user["id"] or conv.get("artisan_id") == user["id"])
+        if not conv or not is_participant:
             flash("Conversation introuvable.", "error")
             return redirect(url_for("client_messages"))
+        # Conversation directe client <-> technicien (bouton "Message" du profil).
+        viewer_is_tech = _is_technician(user) and conv.get("artisan_id") == user["id"]
+        is_direct = bool(conv.get("artisan_id")) and conv["status"] == "direct"
+        me_role = "artisan" if viewer_is_tech else "client"
         if request.method == "POST":
             status = conv["status"]
             ready = False
@@ -8303,9 +8351,18 @@ def client_conversation(conversation_id):
                     "INSERT INTO conversation_messages"
                     " (conversation_id, sender_id, sender_role, content)"
                     " VALUES (?, ?, ?, ?)",
-                    (conversation_id, user["id"], "client", content))
+                    (conversation_id, user["id"], me_role, content))
 
-                if conv["status"] != "admin_active":
+                if is_direct:
+                    other_role = "artisan" if me_role == "client" else "client"
+                    conn.execute(
+                        "UPDATE conversation_messages SET is_read = 1"
+                        " WHERE conversation_id = ? AND sender_role = ?",
+                        (conversation_id, other_role))
+                    conn.execute(
+                        "UPDATE conversations SET updated_at = ? WHERE id = ?",
+                        (datetime.now(timezone.utc).isoformat(), conversation_id))
+                elif conv["status"] != "admin_active":
                     collected = _get_collected_from_messages(conn, conversation_id)
                     if not collected.get("location") and session.get("client_zone"):
                         collected["location"] = session["client_zone"]
@@ -8410,15 +8467,20 @@ def client_conversation(conversation_id):
             " WHERE m.conversation_id = ? AND m.sender_role != 'system'"
             " ORDER BY m.created_at ASC",
             (conversation_id,)).fetchall()
+        read_roles = ["admin"]
+        if is_direct:
+            read_roles.append("artisan" if me_role == "client" else "client")
         conn.execute(
             "UPDATE conversation_messages SET is_read = 1"
-            " WHERE conversation_id = ? AND sender_role = 'admin'",
-            (conversation_id,))
+            " WHERE conversation_id = ? AND sender_role IN (%s)"
+            % ",".join("?" * len(read_roles)),
+            (conversation_id, *read_roles))
         conn.commit()
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return jsonify({
                 "ok": True,
                 "conversation": dict(conv),
+                "me_role": me_role,
                 "messages": [
                     {"id": m["id"], "content": m["content"], "sender_role": m["sender_role"],
                      "created_at": m["created_at"], "sender_name": m["sender_name"]}
@@ -8430,9 +8492,65 @@ def client_conversation(conversation_id):
             artisan = conn.execute(
                 "SELECT id, full_name, profession, photo_url FROM users WHERE id = ?",
                 (conv["artisan_id"],)).fetchone()
+        counterpart = None
+        if is_direct:
+            other_id = conv["client_id"] if viewer_is_tech else conv.get("artisan_id")
+            if other_id:
+                counterpart = conn.execute(
+                    "SELECT id, full_name, profession, photo_url, is_verified,"
+                    " availability_status, phone, role FROM users WHERE id = ?",
+                    (other_id,)).fetchone()
     finally:
         conn.close()
-    return render_template("client_conversation.html", conversation=conv, messages=messages, user=user, artisan=artisan)
+    return render_template("client_conversation.html", conversation=conv, messages=messages,
+                           user=user, artisan=artisan, counterpart=counterpart,
+                           is_direct=is_direct, me_role=me_role)
+
+
+@app.route("/messages/technicien/<int:artisan_id>", methods=["GET"])
+@login_required
+@limiter.limit("30 per hour")
+def client_message_artisan(artisan_id):
+    """Ouvre (ou cree) la conversation directe entre le client et CE technicien.
+
+    Cible du bouton "Message" sur le profil technicien : jamais l'assistant IA,
+    jamais l'administration -- un dialogue 1-a-1 avec le technicien affiche.
+    """
+    user = get_current_user()
+    conn = get_db_connection()
+    try:
+        artisan = conn.execute(
+            "SELECT id, full_name FROM users WHERE id = ?"
+            " AND role IN ('artisan', 'technician')",
+            (artisan_id,)).fetchone()
+        if not artisan:
+            flash("Technicien introuvable.", "error")
+            return redirect(url_for("artisans_page"))
+        if user["id"] == artisan_id:
+            flash("Vous ne pouvez pas vous ecrire a vous-meme.", "error")
+            return redirect(url_for("artisan_detail", artisan_id=artisan_id))
+
+        now_iso = datetime.now(timezone.utc).isoformat()
+        conv = conn.execute(
+            "SELECT id, status FROM conversations"
+            " WHERE client_id = ? AND artisan_id = ?",
+            (user["id"], artisan_id)).fetchone()
+        if not conv:
+            conv_id = _insert_id(
+                conn,
+                "INSERT INTO conversations (client_id, artisan_id, subject, status, updated_at)"
+                " VALUES (?, ?, ?, 'direct', ?)",
+                (user["id"], artisan_id, artisan["full_name"], now_iso))
+        else:
+            conv_id = conv["id"]
+            if conv["status"] != "direct":
+                conn.execute(
+                    "UPDATE conversations SET status = 'direct', updated_at = ?"
+                    " WHERE id = ?", (now_iso, conv_id))
+        conn.commit()
+    finally:
+        conn.close()
+    return redirect(url_for("client_conversation", conversation_id=conv_id))
 
 
 @app.route("/admin/messages")

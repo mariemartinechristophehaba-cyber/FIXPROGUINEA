@@ -594,6 +594,71 @@ class MessagingTests(FixProTestCase):
         r = self.client.get(f"/messages/{conv_id}")
         self.assertEqual(r.status_code, 302)
 
+    def _make_artisan_id(self, phone="+224621111111"):
+        self.register_artisan("artisan@example.com", phone=phone)
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            return conn.execute(
+                "SELECT id FROM users WHERE phone = ?", (phone,)).fetchone()["id"]
+        finally:
+            conn.close()
+
+    def test_profile_message_opens_direct_conversation_no_ai(self):
+        artisan_id = self._make_artisan_id()
+        self.client.get("/logout")
+        self.register_client(phone="+224610000010")
+        self.login("+224610000010")
+
+        r = self.client.get(f"/messages/technicien/{artisan_id}", follow_redirects=True)
+        self.assertEqual(r.status_code, 200)
+        conv_id = int(r.request.path.split("/")[-1])
+
+        self.client.post(f"/messages/{conv_id}",
+                         data={"content": "Bonjour, etes-vous disponible"})
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conv = conn.execute(
+                "SELECT client_id, artisan_id, status FROM conversations WHERE id = ?",
+                (conv_id,)).fetchone()
+            self.assertEqual(conv["artisan_id"], artisan_id)
+            self.assertEqual(conv["status"], "direct")
+            msgs = conn.execute(
+                "SELECT sender_role FROM conversation_messages WHERE conversation_id = ?",
+                (conv_id,)).fetchall()
+            self.assertEqual([m["sender_role"] for m in msgs], ["client"])
+        finally:
+            conn.close()
+
+    def test_technician_and_client_exchange_direct_messages(self):
+        artisan_id = self._make_artisan_id()
+        self.client.get("/logout")
+        self.register_client(phone="+224610000011")
+        self.login("+224610000011")
+        r = self.client.get(f"/messages/technicien/{artisan_id}", follow_redirects=True)
+        conv_id = int(r.request.path.split("/")[-1])
+        self.client.post(f"/messages/{conv_id}", data={"content": "un souci electrique"})
+
+        self.client.get("/logout")
+        self.login("+224621111111")
+        r2 = self.client.get(f"/messages/{conv_id}")
+        self.assertEqual(r2.status_code, 200)
+        self.assertIn("un souci electrique", r2.data.decode("utf-8", "replace"))
+        self.client.post(f"/messages/{conv_id}", data={"content": "je passe cet apres-midi"})
+
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            msgs = conn.execute(
+                "SELECT sender_role FROM conversation_messages"
+                " WHERE conversation_id = ? ORDER BY id", (conv_id,)).fetchall()
+            self.assertEqual([m["sender_role"] for m in msgs], ["client", "artisan"])
+        finally:
+            conn.close()
+
+        self.client.get("/logout")
+        self.login("+224610000011")
+        r3 = self.client.get(f"/messages/{conv_id}")
+        self.assertIn("cet apres-midi", r3.data.decode("utf-8", "replace"))
+
 
 class GeolocationTests(FixProTestCase):
     """Geolocalisation temps reel des techniciens."""
