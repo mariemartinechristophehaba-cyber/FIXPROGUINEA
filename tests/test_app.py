@@ -659,6 +659,104 @@ class MessagingTests(FixProTestCase):
         r3 = self.client.get(f"/messages/{conv_id}")
         self.assertIn("cet apres-midi", r3.data.decode("utf-8", "replace"))
 
+    def _open_direct(self, client_phone="+224610000012"):
+        artisan_id = self._make_artisan_id()
+        self.client.get("/logout")
+        self.register_client(phone=client_phone)
+        self.login(client_phone)
+        r = self.client.get(f"/messages/technicien/{artisan_id}", follow_redirects=True)
+        return artisan_id, int(r.request.path.split("/")[-1])
+
+    def test_image_message_is_stored_with_attachment(self):
+        _, conv_id = self._open_direct()
+        px = ("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJ"
+              "AAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==")
+        r = self.client.post(f"/messages/{conv_id}",
+                             data={"content": "voici la photo", "message_type": "image",
+                                   "attachment": px, "attachment_name": "p.png"},
+                             headers={"X-Requested-With": "XMLHttpRequest"})
+        self.assertEqual(r.status_code, 200)
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            m = conn.execute(
+                "SELECT message_type, attachment_url, content FROM conversation_messages"
+                " WHERE conversation_id = ? ORDER BY id DESC LIMIT 1", (conv_id,)).fetchone()
+        finally:
+            conn.close()
+        self.assertEqual(m["message_type"], "image")
+        self.assertTrue(m["attachment_url"])
+
+    def test_voice_message_stored(self):
+        _, conv_id = self._open_direct("+224610000013")
+        audio = "data:audio/webm;base64,QQ=="
+        r = self.client.post(f"/messages/{conv_id}",
+                             data={"message_type": "audio", "attachment": audio,
+                                   "attachment_name": "v.webm", "duration_ms": "3200"},
+                             headers={"X-Requested-With": "XMLHttpRequest"})
+        self.assertEqual(r.status_code, 200)
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            m = conn.execute(
+                "SELECT message_type, duration_ms FROM conversation_messages"
+                " WHERE conversation_id = ? ORDER BY id DESC LIMIT 1", (conv_id,)).fetchone()
+        finally:
+            conn.close()
+        self.assertEqual(m["message_type"], "audio")
+        self.assertEqual(m["duration_ms"], 3200)
+
+    def test_block_prevents_sending(self):
+        artisan_id, conv_id = self._open_direct("+224610000014")
+        r = self.client.post(f"/messages/{conv_id}/block", data={"action": "block"})
+        self.assertTrue(r.get_json()["blocked"])
+        r2 = self.client.post(f"/messages/{conv_id}", data={"content": "hello"},
+                              headers={"X-Requested-With": "XMLHttpRequest"})
+        self.assertEqual(r2.status_code, 403)
+        self.client.post(f"/messages/{conv_id}/block", data={"action": "unblock"})
+        r3 = self.client.post(f"/messages/{conv_id}", data={"content": "hello again"},
+                              headers={"X-Requested-With": "XMLHttpRequest"})
+        self.assertEqual(r3.status_code, 200)
+
+    def test_mute_report_and_delete(self):
+        _, conv_id = self._open_direct("+224610000015")
+        r = self.client.post(f"/messages/{conv_id}/prefs", data={"muted": "1"})
+        self.assertTrue(r.get_json()["muted"])
+        r = self.client.post(f"/messages/{conv_id}/report",
+                             data={"reason": "spam", "details": "pub"})
+        self.assertTrue(r.get_json()["ok"])
+        r = self.client.post(f"/messages/{conv_id}/delete", data={})
+        self.assertTrue(r.get_json()["ok"])
+        lst = self.client.get("/messages")
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            rep = conn.execute("SELECT reason FROM conversation_reports").fetchone()
+            pref = conn.execute(
+                "SELECT deleted_at FROM conversation_prefs WHERE conversation_id = ?",
+                (conv_id,)).fetchone()
+        finally:
+            conn.close()
+        self.assertEqual(rep["reason"], "spam")
+        self.assertIsNotNone(pref["deleted_at"])
+
+    def test_call_signal_roundtrip(self):
+        artisan_id, conv_id = self._open_direct("+224610000016")
+        r = self.client.post(f"/messages/{conv_id}/call/signal",
+                             data={"kind": "ring", "payload": ""})
+        self.assertTrue(r.get_json()["ok"])
+        self.client.get("/logout")
+        self.login("+224621111111")
+        poll = self.client.get(f"/messages/{conv_id}/call/poll?after=0").get_json()
+        self.assertEqual(len(poll["signals"]), 1)
+        self.assertEqual(poll["signals"][0]["kind"], "ring")
+
+    def test_outsider_cannot_signal_call(self):
+        artisan_id, conv_id = self._open_direct("+224610000017")
+        self.client.get("/logout")
+        self.register_client(phone="+224610000018")
+        self.login("+224610000018")
+        r = self.client.post(f"/messages/{conv_id}/call/signal",
+                             data={"kind": "ring"})
+        self.assertEqual(r.status_code, 404)
+
 
 class GeolocationTests(FixProTestCase):
     """Geolocalisation temps reel des techniciens."""
