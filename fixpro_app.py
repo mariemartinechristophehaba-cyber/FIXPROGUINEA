@@ -2465,32 +2465,6 @@ def _expire_due_subscriptions(conn):
         logger.warning("Expiration abonnements impossible: %s", exc)
 
 
-def _period_bounds(period):
-    """(debut_iso, libelle, debut_periode_precedente_iso) pour le selecteur."""
-    now = datetime.now(timezone.utc)
-    if period == "today":
-        start = now.replace(hour=0, minute=0, second=0, microsecond=0)
-        return _ts(start), "Aujourd'hui", _ts(start - timedelta(days=1))
-    if period == "7d":
-        start = now - timedelta(days=7)
-        return _ts(start), "7 derniers jours", _ts(start - timedelta(days=7))
-    if period == "year":
-        start = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
-        return _ts(start), "Cette annee", _ts(start.replace(year=start.year - 1))
-    if period == "month":
-        start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-        prev = (start - timedelta(seconds=1)).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-        return _ts(start), "Ce mois", _ts(prev)
-    start = now - timedelta(days=30)
-    return _ts(start), "30 derniers jours", _ts(start - timedelta(days=30))
-
-
-def _pct_delta(current, previous):
-    if not previous:
-        return None
-    return round((current - previous) / previous * 100, 1)
-
-
 def _safe_url(endpoint, **kw):
     """url_for tolerant : renvoie '#' si la route n'existe pas encore."""
     try:
@@ -2516,172 +2490,26 @@ def _admin_sidebar_badges(conn, admin_id):
     }
 
 
-_INTERVENTION_ACTIVE = (
-    "assigned", "accepted", "en_route", "on_the_way", "arrived", "in_progress")
-
-
 @app.route("/admin/dashboard")
 @login_required
 @admin_required
 def admin_dashboard():
-    """Tableau de bord admin : abonnements, paiements, activite, alertes."""
-    user = get_current_user()
-    period = request.args.get("period", "month")
-    start_iso, period_label, prev_start_iso = _period_bounds(period)
-    now = datetime.now(timezone.utc)
-    today = now.strftime("%Y-%m-%d")
-    month_start = _ts(now.replace(day=1, hour=0, minute=0, second=0, microsecond=0))
-    soon = _ts(now + timedelta(days=7))
+    """Tableau de bord admin - en cours de refonte (nouvelle maquette a venir).
 
+    Le rendu est un placeholder : la sidebar et l'expiration automatique des
+    abonnements restent actives.
+    """
+    user = get_current_user()
     conn = get_db_connection()
     try:
         _expire_due_subscriptions(conn)
-
-        def scalar(sql, params=()):
-            row = conn.execute(sql, params).fetchone()
-            if not row:
-                return 0
-            return list(row.values())[0]
-
-        tech_actifs = scalar(
-            "SELECT COUNT(*) AS n FROM users WHERE role = 'technician'"
-            " AND is_active = 1 AND account_status = 'ACTIVE'")
-        tech_actifs_prev = scalar(
-            "SELECT COUNT(*) AS n FROM users WHERE role = 'technician'"
-            " AND is_active = 1 AND account_status = 'ACTIVE' AND created_at < ?", (start_iso,))
-        abos_actifs = scalar(
-            "SELECT COUNT(*) AS n FROM technician_subscriptions WHERE status = 'ACTIVE'")
-        abos_expires = scalar(
-            "SELECT COUNT(*) AS n FROM technician_subscriptions WHERE status = 'EXPIRED'")
-        paiements_mois = int(scalar(
-            "SELECT COALESCE(SUM(amount), 0) AS s FROM subscription_payments"
-            " WHERE status = 'paid' AND paid_at >= ?", (month_start,)) or 0)
-        paiements_mois_prev = int(scalar(
-            "SELECT COALESCE(SUM(amount), 0) AS s FROM subscription_payments"
-            " WHERE status = 'paid' AND paid_at >= ? AND paid_at < ?",
-            (prev_start_iso, start_iso)) or 0)
-        nouveaux_clients = scalar(
-            "SELECT COUNT(*) AS n FROM users WHERE role = 'client' AND created_at >= ?", (start_iso,))
-        nouveaux_clients_prev = scalar(
-            "SELECT COUNT(*) AS n FROM users WHERE role = 'client'"
-            " AND created_at >= ? AND created_at < ?", (prev_start_iso, start_iso))
-        interventions_cours = scalar(
-            "SELECT COUNT(*) AS n FROM requests WHERE LOWER(status) IN (%s)"
-            % ",".join("?" for _ in _INTERVENTION_ACTIVE), _INTERVENTION_ACTIVE)
-
-        kpis = [
-            {"label": "Techniciens actifs", "value": tech_actifs,
-             "delta": _pct_delta(tech_actifs, tech_actifs_prev), "icon": "users", "tone": "blue",
-             "href": _safe_url("admin_artisans")},
-            {"label": "Abonnements actifs", "value": abos_actifs, "delta": None,
-             "icon": "shield_check", "tone": "green", "href": _safe_url("admin_subscriptions")},
-            {"label": "Abonnements expires", "value": abos_expires, "delta": None,
-             "icon": "clock", "tone": "orange", "sub": "A renouveler",
-             "href": _safe_url("admin_subscriptions", filter="expired")},
-            {"label": "Paiements ce mois", "value": paiements_mois,
-             "delta": _pct_delta(paiements_mois, paiements_mois_prev), "icon": "wallet",
-             "tone": "violet", "money": True, "href": _safe_url("admin_subscription_payments")},
-            {"label": "Nouveaux clients", "value": nouveaux_clients,
-             "delta": _pct_delta(nouveaux_clients, nouveaux_clients_prev), "icon": "user_plus",
-             "tone": "blue", "href": _safe_url("admin_clients")},
-            {"label": "Interventions en cours", "value": interventions_cours, "delta": None,
-             "icon": "wrench", "tone": "red", "href": _safe_url("admin_requests")},
-        ]
-
-        rev_rows = conn.execute(
-            "SELECT paid_at, amount FROM subscription_payments"
-            " WHERE status = 'paid' AND paid_at >= ? ORDER BY paid_at", (start_iso,)).fetchall()
-        _by_day = {}
-        for r in rev_rows:
-            jour = str(r["paid_at"])[:10]
-            _by_day[jour] = _by_day.get(jour, 0) + int(r["amount"] or 0)
-        revenue_series = [{"date": d, "amount": _by_day[d]} for d in sorted(_by_day)]
-        revenue_total = sum(p["amount"] for p in revenue_series)
-        revenue_prev = int(scalar(
-            "SELECT COALESCE(SUM(amount), 0) AS s FROM subscription_payments"
-            " WHERE status = 'paid' AND paid_at >= ? AND paid_at < ?",
-            (prev_start_iso, start_iso)) or 0)
-
-        plan_rows = conn.execute(
-            "SELECT p.name, p.code, COUNT(s.id) AS n FROM subscription_plans p"
-            " LEFT JOIN technician_subscriptions s ON s.plan_id = p.id AND s.status = 'ACTIVE'"
-            " WHERE p.is_active = 1 GROUP BY p.id ORDER BY p.sort_order").fetchall()
-        repartition = [{"name": r["name"], "code": r["code"], "count": r["n"]} for r in plan_rows]
-        repartition_total = sum(r["count"] for r in repartition)
-
-        def sub_count(where, params=()):
-            return scalar("SELECT COUNT(*) AS n FROM technician_subscriptions WHERE " + where, params)
-        s_actifs = sub_count("status = 'ACTIVE'")
-        s_expirant = sub_count("status = 'ACTIVE' AND end_date IS NOT NULL AND end_date <= ?", (soon,))
-        s_expires = sub_count("status = 'EXPIRED'")
-        s_impayes = sub_count("status = 'PAST_DUE'")
-        s_total = (s_actifs + s_expires + s_impayes + sub_count("status = 'SUSPENDED'")
-                   + sub_count("status IN ('TRIAL', 'CANCELLED')"))
-        statut_abos = [
-            {"label": "Actifs", "count": s_actifs, "tone": "green"},
-            {"label": "Expirant bientot (7 jours)", "count": s_expirant, "tone": "orange"},
-            {"label": "Expires", "count": s_expires, "tone": "red"},
-            {"label": "Impayes", "count": s_impayes, "tone": "violet"},
-        ]
-        for s in statut_abos:
-            s["pct"] = round(s["count"] / s_total * 100) if s_total else 0
-
-        derniers_paiements = conn.execute(
-            "SELECT sp.amount, sp.status, sp.paid_at, sp.created_at, sp.payment_method,"
-            " u.full_name AS tech_name, pl.name AS plan_name"
-            " FROM subscription_payments sp"
-            " LEFT JOIN users u ON u.id = sp.user_id"
-            " LEFT JOIN subscription_plans pl ON pl.id = sp.plan_id"
-            " ORDER BY COALESCE(sp.paid_at, sp.created_at) DESC LIMIT 5").fetchall()
-
-        interventions_recentes = conn.execute(
-            "SELECT r.id, r.title, r.category, r.status, r.address, r.created_at,"
-            " c.full_name AS client_name, a.full_name AS tech_name FROM requests r"
-            " LEFT JOIN users c ON c.id = r.client_id"
-            " LEFT JOIN users a ON a.id = r.artisan_id"
-            " ORDER BY r.created_at DESC LIMIT 5").fetchall()
-
-        demandes_validation = conn.execute(
-            "SELECT id, full_name, profession, city, quartier, photo_url, created_at"
-            " FROM users WHERE role = 'technician' AND verification_status = ?"
-            " ORDER BY created_at DESC LIMIT 6", (VERIF_PENDING,)).fetchall()
-
-        alertes = [
-            {"label": "Paiements echoues", "count": scalar(
-                "SELECT COUNT(*) AS n FROM subscription_payments WHERE status = 'failed'"),
-             "tone": "red", "sub": "Necessitent une action",
-             "href": _safe_url("admin_subscription_payments", filter="failed")},
-            {"label": "Abonnements expires", "count": s_expires, "tone": "orange",
-             "sub": "Necessitent une action", "href": _safe_url("admin_subscriptions", filter="expired")},
-            {"label": "Abonnements expirant bientot", "count": s_expirant, "tone": "amber",
-             "sub": "Dans les 7 prochains jours", "href": _safe_url("admin_subscriptions", filter="expiring")},
-            {"label": "Techniciens en attente", "count": scalar(
-                "SELECT COUNT(*) AS n FROM users WHERE role = 'technician' AND verification_status = ?",
-                (VERIF_PENDING,)),
-             "tone": "blue", "sub": "Demandes a valider", "href": _safe_url("admin_artisans", filter="pending")},
-            {"label": "Reclamations ouvertes", "count": scalar(
-                "SELECT COUNT(*) AS n FROM complaints WHERE status IN ('new', 'in_progress')"),
-             "tone": "violet", "sub": "En attente de traitement", "href": _safe_url("admin_complaints")},
-        ]
-
         badges = _admin_sidebar_badges(conn, user["id"])
     finally:
         conn.close()
+    return render_template("admin_dashboard.html", user=user,
+                           active="dashboard", badges=badges)
 
-    return render_template(
-        "admin_dashboard.html",
-        user=user, active="dashboard", badges=badges,
-        period=period, period_label=period_label, today=today,
-        kpis=kpis,
-        revenue_series=revenue_series, revenue_total=revenue_total,
-        revenue_delta=_pct_delta(revenue_total, revenue_prev),
-        repartition=repartition, repartition_total=repartition_total,
-        statut_abos=statut_abos, statut_total=s_total,
-        derniers_paiements=derniers_paiements,
-        interventions_recentes=interventions_recentes,
-        demandes_validation=demandes_validation,
-        alertes=alertes,
-    )
+
 # ===========================================================================
 # Dashboard admin v2 - pages abonnements / paiements / reclamations
 # ===========================================================================
