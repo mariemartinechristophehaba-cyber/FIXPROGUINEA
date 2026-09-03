@@ -8054,41 +8054,21 @@ def client_messages():
         return redirect(url_for("lia"))
     conn = get_db_connection()
     try:
-        viewer_tech = _is_technician(user)
-        my_role = "artisan" if viewer_tech else "client"
         conversations = conn.execute(
             "SELECT c.id, c.subject, c.status, c.created_at, c.updated_at,"
-            " c.client_id, c.artisan_id,"
             " (SELECT content FROM conversation_messages WHERE conversation_id = c.id"
-            " AND sender_role != 'system' ORDER BY created_at DESC LIMIT 1) AS last_message,"
-            " (SELECT created_at FROM conversation_messages WHERE conversation_id = c.id"
-            " AND sender_role != 'system' ORDER BY created_at DESC LIMIT 1) AS last_at,"
-            " cl.full_name AS client_name, cl.photo_url AS client_photo,"
-            " ar.full_name AS artisan_name, ar.photo_url AS artisan_photo,"
-            " ar.profession AS artisan_profession,"
+            " ORDER BY created_at DESC LIMIT 1) AS last_message,"
             " COALESCE(unread.n, 0) AS unread"
             " FROM conversations c"
-            " LEFT JOIN users cl ON cl.id = c.client_id"
-            " LEFT JOIN users ar ON ar.id = c.artisan_id"
             " LEFT JOIN ("
             "   SELECT conversation_id, COUNT(*) AS n"
             "   FROM conversation_messages"
-            "   WHERE sender_role <> ? AND is_read = 0"
+            "   WHERE sender_role != 'client' AND is_read = 0"
             "   GROUP BY conversation_id"
             " ) unread ON unread.conversation_id = c.id"
             " WHERE c.client_id = ? OR c.artisan_id = ?"
             " ORDER BY c.updated_at DESC",
-            (my_role, user["id"], user["id"])).fetchall()
-        conversations = [dict(c) for c in conversations]
-        for c in conversations:
-            if viewer_tech and c["artisan_id"] == user["id"]:
-                c["peer_name"] = c["client_name"] or "Client"
-                c["peer_photo"] = c["client_photo"]
-                c["peer_sub"] = "Client"
-            else:
-                c["peer_name"] = c["artisan_name"] or c["subject"] or "FixPro"
-                c["peer_photo"] = c["artisan_photo"]
-                c["peer_sub"] = c["artisan_profession"] or ("Assistance FixPro" if not c["artisan_id"] else "Technicien")
+            (user["id"], user["id"])).fetchall()
     finally:
         conn.close()
     unread_count = sum(c.get("unread", 0) or 0 for c in conversations)
@@ -8309,15 +8289,9 @@ def client_conversation(conversation_id):
     try:
         conv = conn.execute(
             "SELECT * FROM conversations WHERE id = ?", (conversation_id,)).fetchone()
-        is_participant = conv and (
-            conv["client_id"] == user["id"] or conv.get("artisan_id") == user["id"])
-        if not conv or not is_participant:
+        if not conv or conv["client_id"] != user["id"]:
             flash("Conversation introuvable.", "error")
             return redirect(url_for("client_messages"))
-        # Conversation directe client <-> technicien (bouton "Message" du profil).
-        viewer_is_tech = _is_technician(user) and conv.get("artisan_id") == user["id"]
-        is_direct = bool(conv.get("artisan_id")) and conv["status"] == "direct"
-        me_role = "artisan" if viewer_is_tech else "client"
         if request.method == "POST":
             status = conv["status"]
             ready = False
@@ -8329,19 +8303,9 @@ def client_conversation(conversation_id):
                     "INSERT INTO conversation_messages"
                     " (conversation_id, sender_id, sender_role, content)"
                     " VALUES (?, ?, ?, ?)",
-                    (conversation_id, user["id"], me_role, content))
+                    (conversation_id, user["id"], "client", content))
 
-                if is_direct:
-                    # Pas d'IA : le message part directement vers l'autre participant.
-                    other_role = "artisan" if me_role == "client" else "client"
-                    conn.execute(
-                        "UPDATE conversation_messages SET is_read = 1"
-                        " WHERE conversation_id = ? AND sender_role = ?",
-                        (conversation_id, other_role))
-                    conn.execute(
-                        "UPDATE conversations SET updated_at = ? WHERE id = ?",
-                        (datetime.now(timezone.utc).isoformat(), conversation_id))
-                elif conv["status"] != "admin_active":
+                if conv["status"] != "admin_active":
                     collected = _get_collected_from_messages(conn, conversation_id)
                     if not collected.get("location") and session.get("client_zone"):
                         collected["location"] = session["client_zone"]
@@ -8446,14 +8410,10 @@ def client_conversation(conversation_id):
             " WHERE m.conversation_id = ? AND m.sender_role != 'system'"
             " ORDER BY m.created_at ASC",
             (conversation_id,)).fetchall()
-        read_roles = ["admin"]
-        if is_direct:
-            read_roles.append("artisan" if me_role == "client" else "client")
         conn.execute(
             "UPDATE conversation_messages SET is_read = 1"
-            " WHERE conversation_id = ? AND sender_role IN (%s)"
-            % ",".join("?" * len(read_roles)),
-            (conversation_id, *read_roles))
+            " WHERE conversation_id = ? AND sender_role = 'admin'",
+            (conversation_id,))
         conn.commit()
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return jsonify({
@@ -8468,96 +8428,11 @@ def client_conversation(conversation_id):
         artisan = None
         if conv.get("artisan_id"):
             artisan = conn.execute(
-                "SELECT id, full_name, profession, photo_url, is_verified,"
-                " availability_status, phone FROM users WHERE id = ?",
+                "SELECT id, full_name, profession, photo_url FROM users WHERE id = ?",
                 (conv["artisan_id"],)).fetchone()
-        counterpart = None
-        if is_direct:
-            other_id = conv["client_id"] if viewer_is_tech else conv.get("artisan_id")
-            if other_id:
-                counterpart = conn.execute(
-                    "SELECT id, full_name, profession, photo_url, is_verified,"
-                    " availability_status, phone, role FROM users WHERE id = ?",
-                    (other_id,)).fetchone()
     finally:
         conn.close()
-    return render_template("client_conversation.html", conversation=conv, messages=messages,
-                           user=user, artisan=artisan, counterpart=counterpart,
-                           is_direct=is_direct, me_role=me_role)
-
-
-def _get_or_create_guest_user(conn):
-    """Cree ou recupere un utilisateur visiteur anonyme."""
-    guest_id = session.get("guest_user_id")
-    if guest_id:
-        user = conn.execute("SELECT * FROM users WHERE id = ?", (guest_id,)).fetchone()
-        if user:
-            session["user_id"] = user["id"]
-            return user
-    guest_phone = f"guest-{secrets.token_hex(8)}"
-    user_id = _insert_id(
-        conn,
-        "INSERT INTO users (email, phone, password_hash, role, full_name, city)"
-        " VALUES (?, ?, ?, ?, ?, ?)",
-        (None, guest_phone, generate_password_hash(secrets.token_urlsafe(16)),
-         "client", "Visiteur", "Conakry"))
-    user = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
-    session["guest_user_id"] = user_id
-    session["user_id"] = user_id
-    session.permanent = True
-    return user
-
-
-@app.route("/messages/artisan/<int:artisan_id>", methods=["GET"])
-@limiter.limit("15 per hour")
-def client_message_artisan(artisan_id):
-    """Ouvre directement la messagerie FixPro sans inscription.
-
-    Cette route cree un compte visiteur anonyme et une conversation : elle est
-    donc limitee en debit pour empecher un robot de gonfler la table users.
-    """
-    conn = get_db_connection()
-    try:
-        artisan = conn.execute(
-            "SELECT id, full_name, profession FROM users WHERE id = ? AND role IN ('artisan','technician')",
-            (artisan_id,)).fetchone()
-        if not artisan:
-            flash("Technicien introuvable.", "error")
-            return redirect(url_for("artisans_page"))
-
-        user = get_current_user()
-        if not user:
-            user = _get_or_create_guest_user(conn)
-
-        if user["role"] != "client":
-            flash("Cet espace est reserve aux clients.", "error")
-            return redirect(url_for("artisans_page"))
-
-        conv = conn.execute(
-            "SELECT id, status FROM conversations WHERE client_id = ? AND artisan_id = ?",
-            (user["id"], artisan_id)).fetchone()
-        now_iso = datetime.now(timezone.utc).isoformat()
-        if not conv:
-            conv_id = _insert_id(
-                conn,
-                "INSERT INTO conversations (client_id, artisan_id, subject, status)"
-                " VALUES (?, ?, ?, ?)",
-                (user["id"], artisan_id, artisan["full_name"], 'direct'))
-            conn.execute(
-                "UPDATE conversations SET updated_at = ? WHERE id = ?",
-                (now_iso, conv_id))
-            conn.commit()
-        else:
-            conv_id = conv["id"]
-            if conv["status"] != "direct":
-                # Ancienne conversation orientee IA : on la bascule en dialogue direct.
-                conn.execute(
-                    "UPDATE conversations SET status = 'direct', updated_at = ? WHERE id = ?",
-                    (now_iso, conv_id))
-                conn.commit()
-    finally:
-        conn.close()
-    return redirect(url_for("client_conversation", conversation_id=conv_id))
+    return render_template("client_conversation.html", conversation=conv, messages=messages, user=user, artisan=artisan)
 
 
 @app.route("/admin/messages")
