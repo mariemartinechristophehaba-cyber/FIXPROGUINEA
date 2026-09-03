@@ -46,9 +46,10 @@ ADMIN_DEMO = False
 app = Flask(__name__, static_folder="static", static_url_path="/static")
 app.config.from_object(config)
 # Cache navigateur/CDN pour les fichiers de /static (CSS, JS, images).
-# N'affecte que les reponses servies par Flask pour /static : aucune page
-# dynamique n'est mise en cache.
-app.config["SEND_FILE_MAX_AGE_DEFAULT"] = timedelta(days=30)
+# 1 h : assez pour accelerer la navigation d'une meme session, assez court
+# pour qu'une mise a jour de style/manifest se propage vite (pas de blocage
+# sur un ancien fichier en cache).
+app.config["SEND_FILE_MAX_AGE_DEFAULT"] = timedelta(hours=1)
 _dotenv = dotenv_values(BASE_DIR / ".env")
 if _dotenv.get("DEV_ROLE"):
     app.config["DEV_ROLE"] = _dotenv.get("DEV_ROLE").lower()

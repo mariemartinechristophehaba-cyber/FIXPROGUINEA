@@ -64,6 +64,12 @@
     padding-top: calc(14px + env(safe-area-inset-top));
     overflow: visible;
   }
+  /* App installee (mode plein ecran) : la barre d'etat du telephone recouvre
+     le haut de la page. On garantit un espace suffisant meme si l'appareil
+     ne renseigne pas env(safe-area-inset-top). */
+  @media (display-mode: standalone), (display-mode: fullscreen), (display-mode: minimal-ui) {
+    .hp-header { padding-top: calc(34px + env(safe-area-inset-top)); }
+  }
   .hp-header-top {
     position: relative; z-index: 20;
     max-width: 1100px; margin: 0 auto;
