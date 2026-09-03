@@ -61,6 +61,23 @@ class Config:
     HOST = os.getenv("HOST", "127.0.0.1")
     PORT = int(os.getenv("PORT", "5000"))
 
+    # Appel video (WebRTC) : serveurs ICE.
+    # STUN suffit sur la plupart des reseaux ; un serveur TURN est requis pour
+    # traverser les NAT symetriques (beaucoup de reseaux mobiles).
+    # Option A - TURN statique :
+    #   TURN_URLS="turn:host:3478?transport=udp,turn:host:3478?transport=tcp"
+    #   TURN_USERNAME=... TURN_CREDENTIAL=...
+    # Option B - Twilio Network Traversal Service (jetons ephemeres) :
+    #   TWILIO_ACCOUNT_SID=... TWILIO_AUTH_TOKEN=...
+    STUN_URLS = os.getenv(
+        "STUN_URLS",
+        "stun:stun.l.google.com:19302,stun:global.stun.twilio.com:3478").strip()
+    TURN_URLS = os.getenv("TURN_URLS", "").strip()
+    TURN_USERNAME = os.getenv("TURN_USERNAME", "").strip()
+    TURN_CREDENTIAL = os.getenv("TURN_CREDENTIAL", "").strip()
+    TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID", "").strip()
+    TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN", "").strip()
+
     # Commission preleve par la plateforme sur chaque intervention
     FIXPRO_COMMISSION_RATE = float(os.getenv("FIXPRO_COMMISSION_RATE", "0.10"))
 

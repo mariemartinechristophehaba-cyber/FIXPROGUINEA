@@ -748,6 +748,27 @@ class MessagingTests(FixProTestCase):
         self.assertEqual(len(poll["signals"]), 1)
         self.assertEqual(poll["signals"][0]["kind"], "ring")
 
+    def test_call_ice_endpoint(self):
+        _, conv_id = self._open_direct("+224610000019")
+        d = self.client.get(f"/messages/{conv_id}/call/ice").get_json()
+        self.assertTrue(d["ok"])
+        self.assertTrue(any("stun:" in (s.get("urls") or "") for s in d["iceServers"]))
+
+        import fixpro_app
+        fixpro_app._ice_cache["servers"] = None
+        fixpro_app.app.config["TURN_URLS"] = "turn:turn.example.com:3478"
+        fixpro_app.app.config["TURN_USERNAME"] = "u"
+        fixpro_app.app.config["TURN_CREDENTIAL"] = "p"
+        try:
+            d = self.client.get(f"/messages/{conv_id}/call/ice").get_json()
+            self.assertTrue(any(
+                s.get("username") == "u" and "turn:turn.example.com:3478" in s.get("urls", [])
+                for s in d["iceServers"]))
+        finally:
+            fixpro_app.app.config["TURN_URLS"] = ""
+            fixpro_app.app.config["TURN_USERNAME"] = ""
+            fixpro_app._ice_cache["servers"] = None
+
     def test_outsider_cannot_signal_call(self):
         artisan_id, conv_id = self._open_direct("+224610000017")
         self.client.get("/logout")

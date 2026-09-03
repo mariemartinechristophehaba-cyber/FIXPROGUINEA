@@ -8938,6 +8938,74 @@ def call_poll(conversation_id):
     })
 
 
+_ice_cache = {"servers": None, "exp": 0.0}
+
+
+def _ice_servers():
+    """Construit la liste des serveurs ICE (STUN + TURN) selon la config.
+
+    Priorite : jetons ephemeres Twilio si configures, sinon TURN statique.
+    Resultat mis en cache jusqu'a expiration.
+    """
+    now = datetime.now(timezone.utc).timestamp()
+    if _ice_cache["servers"] is not None and _ice_cache["exp"] > now:
+        return _ice_cache["servers"]
+
+    servers = [{"urls": u.strip()}
+               for u in (app.config.get("STUN_URLS") or "").split(",") if u.strip()]
+    ttl = 3300
+
+    sid = app.config.get("TWILIO_ACCOUNT_SID")
+    tok = app.config.get("TWILIO_AUTH_TOKEN")
+    if sid and tok:
+        try:
+            import requests
+            resp = requests.post(
+                f"https://api.twilio.com/2010-04-01/Accounts/{sid}/Tokens.json",
+                auth=(sid, tok), timeout=6)
+            if resp.ok:
+                data = resp.json()
+                raw = data.get("ice_servers") or data.get("iceServers") or []
+                norm = []
+                for s in raw:
+                    entry = {k: v for k, v in s.items() if k != "url"}
+                    entry["urls"] = s.get("urls") or s.get("url")
+                    if entry.get("urls"):
+                        norm.append(entry)
+                if norm:
+                    servers = norm
+                ttl = max(int(data.get("ttl") or 3600) - 120, 300)
+        except Exception as e:
+            logger.warning("Twilio NTS indisponible: %s", e)
+
+    turn = (app.config.get("TURN_URLS") or "").strip()
+    if turn:
+        entry = {"urls": [x.strip() for x in turn.split(",") if x.strip()]}
+        if app.config.get("TURN_USERNAME"):
+            entry["username"] = app.config["TURN_USERNAME"]
+            entry["credential"] = app.config.get("TURN_CREDENTIAL", "")
+        servers.append(entry)
+
+    _ice_cache["servers"] = servers
+    _ice_cache["exp"] = now + ttl
+    return servers
+
+
+@app.route("/messages/<int:conversation_id>/call/ice", methods=["GET"])
+@login_required
+def call_ice(conversation_id):
+    """Fournit les serveurs ICE (STUN/TURN) pour l'appel video."""
+    user = get_current_user()
+    conn = get_db_connection()
+    try:
+        conv, _ = _conv_guard(conn, conversation_id, user)
+    finally:
+        conn.close()
+    if not conv:
+        return jsonify({"ok": False, "error": "Conversation introuvable."}), 404
+    return jsonify({"ok": True, "iceServers": _ice_servers()})
+
+
 @app.route("/admin/messages")
 @login_required
 @admin_required

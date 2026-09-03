@@ -708,10 +708,22 @@
   const localV = document.getElementById('c-local');
   const callState = document.getElementById('c-call-state');
   const btnAccept = document.getElementById('c-call-accept');
-  const RTC_CONF = { iceServers: [
+  let RTC_CONF = { iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:global.stun.twilio.com:3478' }
   ] };
+  let iceLoaded = false;
+  async function loadIce() {
+    if (iceLoaded) return;
+    try {
+      const r = await fetch(U('/call/ice'), { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+      if (r.ok) {
+        const d = await r.json();
+        if (d.ok && Array.isArray(d.iceServers) && d.iceServers.length) RTC_CONF = { iceServers: d.iceServers };
+      }
+    } catch (e) {}
+    iceLoaded = true;
+  }
   let pc = null, localStream = null, callActive = false, isCaller = false;
   let sigAfter = 0, pendingOffer = null, iceQueue = [];
 
@@ -757,7 +769,7 @@
     isCaller = true;
     openCallUI('Appel de ' + PEER_NAME + '…', false);
     try {
-      newPc(); await getMedia();
+      await loadIce(); newPc(); await getMedia();
       await sendSig('ring', '');
       const offer = await pc.createOffer(); await pc.setLocalDescription(offer);
       await sendSig('offer', JSON.stringify(offer));
@@ -767,7 +779,7 @@
     btnAccept.hidden = true;
     callState.textContent = 'Connexion…';
     try {
-      newPc(); await getMedia();
+      await loadIce(); newPc(); await getMedia();
       await pc.setRemoteDescription(new RTCSessionDescription(pendingOffer));
       drainIce();
       const ans = await pc.createAnswer(); await pc.setLocalDescription(ans);
@@ -809,8 +821,10 @@
   }
   async function handleSignal(s) {
     if (s.kind === 'ring') {
+      loadIce();
       if (!callActive) openCallUI(PEER_NAME + ' vous appelle…', true);
     } else if (s.kind === 'offer') {
+      loadIce();
       pendingOffer = JSON.parse(s.payload);
       if (!callActive) openCallUI(PEER_NAME + ' vous appelle…', true);
     } else if (s.kind === 'answer') {
