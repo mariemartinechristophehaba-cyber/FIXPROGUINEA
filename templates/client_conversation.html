@@ -238,7 +238,7 @@
       {% set ns = namespace(day='') %}
       {% for m in messages %}
         {% set d = (m.created_at | string)[:10] %}
-        {% if d != ns.day %}{% set ns.day = d %}<div class="c-daysep"><span>{{ m.created_at | day_label }}</span></div>{% endif %}
+        {% if d != ns.day %}{% set ns.day = d %}<div class="c-daysep" data-day="{{ d }}"><span>{{ m.created_at | day_label }}</span></div>{% endif %}
         {% set is_me = m.sender_role == mine_role %}
         <div class="c-row {{ 'me' if is_me else 'them' }}" data-msg-id="{{ m.id }}">
           {% if not is_me %}<span class="c-mini">{% if cp and cp.photo_url %}<img src="{{ cp.photo_url }}" alt="" />{% else %}{{ (m.sender_name or peer_name or '?')[0]|upper }}{% endif %}</span>{% endif %}
@@ -316,6 +316,32 @@
   const sendBtn = document.getElementById('c-send');
   let sending = false, pendingAttach = null;   // {type, dataUri, name, durationMs}
 
+  // Repere de date (Aujourd'hui / Hier / JJ-MM-AAAA) : doit se comporter EXACTEMENT
+  // comme le rendu serveur, y compris pour un message tout juste envoye ou recu
+  // par le polling -- sinon le separateur "Aujourd'hui" n'apparaitrait qu'apres
+  // un rechargement complet de la page, ce qui donne l'impression a tort que la
+  // conversation "change" entre l'envoi et le retour.
+  let lastDay = (() => {
+    const seps = body.querySelectorAll('.c-daysep[data-day]');
+    return seps.length ? seps[seps.length - 1].dataset.day : null;
+  })();
+  function dayLabelJS(dayKey) {
+    const d = new Date(dayKey + 'T00:00:00');
+    const strip = x => new Date(x.getFullYear(), x.getMonth(), x.getDate());
+    const diff = Math.round((strip(new Date()) - strip(d)) / 86400000);
+    if (diff === 0) return "Aujourd'hui";
+    if (diff === 1) return 'Hier';
+    return String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0') + '/' + d.getFullYear();
+  }
+  function ensureDaySep(dayKey) {
+    if (!dayKey || dayKey === lastDay) return;
+    lastDay = dayKey;
+    const sep = document.createElement('div');
+    sep.className = 'c-daysep'; sep.dataset.day = dayKey;
+    sep.innerHTML = '<span>' + dayLabelJS(dayKey) + '</span>';
+    body.appendChild(sep);
+  }
+
   const esc = s => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
     .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
   const fmtTime = ts => { try { return new Date(ts).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}); }
@@ -381,6 +407,8 @@
   }
   function addMessage(m, pending) {
     const box = body.querySelector('.c-empty'); if (box) box.remove();
+    const day = pending ? new Date().toISOString().slice(0, 10) : String(m.created_at || '').slice(0, 10);
+    ensureDaySep(day);
     const me = m.sender_role === MINE_ROLE;
     const row = document.createElement('div');
     row.className = 'c-row ' + (me ? 'me' : 'them');
