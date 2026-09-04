@@ -156,16 +156,27 @@
   .c-attmenu button:last-child { border-bottom: 0; }
   .c-attmenu button svg { color: var(--c-blue); }
 
-  .c-rec { flex: 1; display: flex; align-items: center; gap: 10px; background: #FEF2F2; border-radius: 22px;
-    padding: 7px 12px; }
-  .c-rec .pulse { width: 10px; height: 10px; border-radius: 50%; background: #EF4444; animation: c-pulse 1.2s infinite; }
+  .c-rec { flex: 1 1 0%; min-width: 0; overflow: hidden; display: flex; align-items: center; gap: 6px;
+    background: #FEF2F2; border-radius: 20px; padding: 6px 10px; }
+  .c-rec .pulse { flex: 0 0 auto; width: 9px; height: 9px; border-radius: 50%; background: #EF4444;
+    animation: c-pulse 1.2s infinite; }
   @keyframes c-pulse { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
-  .c-rec .t { font-size: 14px; font-weight: 700; color: #B91C1C; font-variant-numeric: tabular-nums; }
-  .c-rec .sp { flex: 1; }
-  .c-rec button { border: 0; background: none; color: var(--c-mut); font-size: 13px; font-weight: 700; cursor: pointer; }
-  .c-preview { flex: 1; display: flex; align-items: center; gap: 8px; background: #F1F5FB; border-radius: 22px; padding: 5px 8px; }
-  .c-preview audio { flex: 1; height: 36px; }
-  .c-preview button { border: 0; background: none; color: var(--c-mut); font-weight: 700; font-size: 13px; cursor: pointer; }
+  .c-rec .t { flex: 0 0 auto; font-size: 13.5px; font-weight: 700; color: #B91C1C;
+    font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .c-rec .sp { flex: 1 1 auto; min-width: 4px; }
+  .c-rec button { flex: 0 0 auto; border: 0; background: none; color: var(--c-mut); font-size: 12.5px;
+    font-weight: 700; cursor: pointer; white-space: nowrap; padding: 4px 2px; }
+  .c-rec button:active { color: var(--c-ink); }
+  .c-preview { flex: 1 1 0%; min-width: 0; overflow: hidden; display: flex; align-items: center; gap: 6px;
+    background: #F1F5FB; border-radius: 20px; padding: 4px 8px; }
+  .c-preview audio { flex: 1 1 auto; min-width: 0; height: 34px; }
+  .c-preview button { flex: 0 0 auto; border: 0; background: none; color: var(--c-mut); font-weight: 700;
+    font-size: 13px; cursor: pointer; padding: 4px 6px; }
+  @media (max-width: 360px) {
+    .c-rec { gap: 4px; padding: 6px 8px; }
+    .c-rec .t { font-size: 12.5px; }
+    .c-rec button { font-size: 11.5px; }
+  }
 
   .c-overlay { position: fixed; inset: 0; z-index: 200; background: rgba(2,6,23,.6); display: flex;
     align-items: center; justify-content: center; padding: 20px; }
