@@ -931,6 +931,56 @@ body {
   padding: 0 6px;
 }
 
+/* --- Bloc "Mon espace professionnel" (statut d'inscription technicien) --- */
+.f-pro-block {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  margin: 0 4px 16px;
+  border-radius: 16px;
+  border: 1px solid transparent;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.f-pro-block:active { transform: scale(.99); }
+.f-pro-ico {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.f-pro-body { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.f-pro-title { font-size: 14.5px; font-weight: 800; color: var(--f-text); line-height: 1.3; }
+.f-pro-sub { font-size: 12.5px; color: var(--f-text-2); margin: 2px 0 8px; line-height: 1.4; }
+.f-pro-pill {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+.f-pro-pill .d { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.f-pro-chev { align-self: center; flex-shrink: 0; color: #CBD5E1; }
+
+.f-pro-block.ok { background: #EAFBF1; border-color: #CFF3DE; }
+.f-pro-block.ok .f-pro-ico { background: #16A34A; color: #fff; }
+.f-pro-block.ok .f-pro-pill { background: #16A34A; color: #fff; }
+
+.f-pro-block.pending { background: #FFF8EB; border-color: #FBE7BE; }
+.f-pro-block.pending .f-pro-ico { background: #F59E0B; color: #fff; }
+.f-pro-block.pending .f-pro-pill { background: #FEF3C7; color: #B45309; }
+
+.f-pro-block.rejected { background: #F8FAFC; border-color: #E2E8F0; }
+.f-pro-block.rejected .f-pro-ico { background: #94A3B8; color: #fff; }
+.f-pro-block.rejected .f-pro-pill { background: #F1F5F9; color: #475569; }
+
 .f-drawer-loc { cursor: pointer; }
 .f-drawer-refresh {
   background: var(--f-white);

@@ -45,6 +45,43 @@
   </header>
 
   <div class="f-drawer-body">
+    {% set _tech_role = nav_user and nav_user.role in ('artisan', 'technician') %}
+    {% if _tech_role %}
+    {% set _vstatus = (nav_user.verification_status or 'PENDING_REVIEW')|upper %}
+    {% set _approved = _vstatus == 'APPROVED' or nav_user.is_verified %}
+    {% if _approved %}
+    <a href="{{ url_for('artisan_dashboard') }}" class="f-pro-block ok">
+      <span class="f-pro-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><circle cx="9" cy="7" r="4"/></svg></span>
+      <span class="f-pro-body">
+        <span class="f-pro-title">Accéder à mon espace professionnel</span>
+        <span class="f-pro-sub">Votre compte technicien est validé.</span>
+        <span class="f-pro-pill"><span class="d"></span> Technicien validé</span>
+      </span>
+      <svg class="f-pro-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+    </a>
+    {% elif _vstatus == 'REJECTED' %}
+    <a href="{{ url_for('artisan_pending') }}" class="f-pro-block rejected">
+      <span class="f-pro-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M9 15h6M9 11h3"/></svg></span>
+      <span class="f-pro-body">
+        <span class="f-pro-title">Voir mon inscription</span>
+        <span class="f-pro-sub">Votre demande n'a pas été validée.</span>
+        <span class="f-pro-pill"><span class="d"></span> Non validée</span>
+      </span>
+      <svg class="f-pro-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+    </a>
+    {% else %}
+    <a href="{{ url_for('artisan_pending') }}" class="f-pro-block pending">
+      <span class="f-pro-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
+      <span class="f-pro-body">
+        <span class="f-pro-title">Suivi de mon inscription</span>
+        <span class="f-pro-sub">Votre dossier est en cours de vérification par FixPro.</span>
+        <span class="f-pro-pill"><span class="d"></span> Validation en cours</span>
+      </span>
+      <svg class="f-pro-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+    </a>
+    {% endif %}
+    {% endif %}
+
     <section class="f-drawer-section">
       <h2 class="f-drawer-section-title">Navigation</h2>
       <a href="{{ url_for('index') }}" class="f-drawer-item {{ 'active' if request.endpoint == 'index' }}">
