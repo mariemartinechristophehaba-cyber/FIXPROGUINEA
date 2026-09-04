@@ -1,226 +1,698 @@
 {% extends 'base.html' %}
-{% block title %}{{ conversation.subject or 'Assistance FixPro' }}{% endblock %}
+{% block title %}{{ (counterpart.full_name if counterpart else conversation.subject) or 'Assistance FixPro' }}{% endblock %}
 {% block extra_head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/fixpro-auth.css', v='26') }}" />{% endblock %}
 {% block header %}{% endblock %}
 {% block footer %}{% endblock %}
 {% block content %}
+{% set cp = counterpart %}
+{% set cp_online = cp and cp.availability_status in ('disponible', 'en_ligne', 'actif') %}
+{% set mine_role = me_role if is_direct else 'client' %}
+{% set peer_name = (cp.full_name if cp else 'FixPro') %}
 <style>
-  :root { --m-primary: #155eef; --m-primary-dark: #1146b8; --m-bg: #f5f7fa; --m-white: #fff; --m-ink: #0a1122; --m-ink-2: #64748b; --m-line: #e2e8f0; --m-radius: 18px; }
-  .m-wrap { position: fixed; inset: 0; background: var(--m-bg); display: flex; flex-direction: column; z-index: 100; font-family: var(--f-font, 'Inter', sans-serif); }
-  .m-header { background: var(--m-white); border-bottom: 1px solid var(--m-line); padding: 10px 14px; display: flex; align-items: center; gap: 10px; box-shadow: 0 1px 4px rgba(0,0,0,.04); }
-  .m-back { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--m-ink); text-decoration: none; background: var(--m-bg); font-size: 22px; -webkit-tap-highlight-color: transparent; }
-  .m-back:active { background: #e2e8f0; }
-  .m-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--m-white); display: flex; align-items: center; justify-content: center; color: var(--m-primary); border: 1px solid var(--m-line); overflow: hidden; }
-  .m-avatar img { width: 24px; height: 24px; object-fit: contain; }
-  .m-info { flex: 1; }
-  .m-name { font-weight: 700; font-size: 15px; color: var(--m-ink); display: flex; align-items: center; gap: 5px; }
-  .m-status { font-size: 12px; color: var(--m-ink-2); display: flex; align-items: center; gap: 4px; }
-  .m-dot { width: 8px; height: 8px; border-radius: 50%; background: #10b981; animation: m-pulse 2s infinite; }
-  @keyframes m-pulse { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,.4); } 70% { box-shadow: 0 0 0 5px rgba(16,185,129,0); } 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); } }
-  .m-body { flex: 1; overflow-y: auto; padding: 14px; -webkit-overflow-scrolling: touch; padding-bottom: 90px; }
-  .m-empty { text-align: center; color: var(--m-ink-2); padding: 40px 20px; }
-  .m-empty h2 { font-size: 18px; font-weight: 700; color: var(--m-ink); margin: 0 0 6px; }
-  .m-empty p { font-size: 14px; margin: 0 0 18px; }
-  .m-empty .m-artisan { display: inline-flex; align-items: center; gap: 8px; background: var(--m-white); border: 1px solid var(--m-line); border-radius: 24px; padding: 8px 14px; font-size: 13px; color: var(--m-ink); }
-  .m-msg { display: flex; margin-bottom: 10px; }
-  .m-client { justify-content: flex-end; }
-  .m-fixpro { justify-content: flex-start; }
-  .m-bubble { max-width: 82%; width: fit-content; padding: 9px 13px; border-radius: var(--m-radius); font-size: 15px; line-height: 1.4; white-space: pre-wrap; }
-  .m-fixpro .m-bubble { background: var(--m-white); color: var(--m-ink); border-bottom-left-radius: 4px; box-shadow: 0 1px 4px rgba(0,0,0,.04); }
-  .m-client .m-bubble { background: var(--m-primary); color: #fff; border-bottom-right-radius: 4px; }
-  .m-time { font-size: 10px; color: var(--m-ink-2); margin-top: 2px; text-align: right; display: flex; align-items: center; justify-content: flex-end; gap: 4px; }
-  .m-client .m-time { color: rgba(255,255,255,.8); }
-  .m-check { font-size: 9px; opacity: .8; }
-  .m-footer { position: fixed; bottom: 0; left: 0; right: 0; background: var(--m-white); border-top: 1px solid var(--m-line); padding: 10px 12px; padding-bottom: calc(10px + env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 8px; z-index: 101; }
-  .m-input { flex: 1; border: 1px solid var(--m-line); border-radius: 22px; padding: 10px 14px; font-size: 15px; line-height: 1.4; outline: none; min-height: 40px; max-height: 120px; resize: none; box-sizing: border-box; overflow-y: hidden; }
-  .m-send { width: 44px; height: 44px; border: none; border-radius: 50%; background: var(--m-primary); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 18px; transition: transform .1s; }
-  .m-send:disabled { opacity: .4; }
-  .m-send:active { transform: scale(.95); }
-  .typing { display: flex; gap: 4px; padding: 10px 13px; }
-  .typing span { width: 7px; height: 7px; border-radius: 50%; background: var(--m-ink-2); animation: m-bounce 1.4s infinite; }
-  .typing span:nth-child(2) { animation-delay: 0.2s; }
-  .typing span:nth-child(3) { animation-delay: 0.4s; }
-  @keyframes m-bounce { 0%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-5px); } }
-  @media (max-width: 380px) { .m-bubble { font-size: 14px; } .m-input { font-size: 16px; } }
+  :root {
+    --c-blue: #2563EB; --c-blue-d: #1D4ED8; --c-bg: #EEF2FB; --c-white: #fff;
+    --c-ink: #0F172A; --c-mut: #64748B; --c-line: #E2E8F0;
+  }
+  .c-wrap { position: fixed; inset: 0; display: flex; flex-direction: column;
+    background: var(--c-bg); z-index: 100; font-family: var(--f-font, 'Inter', sans-serif); }
+
+  .c-head { background: linear-gradient(160deg, var(--c-blue) 0%, var(--c-blue-d) 100%);
+    color: #fff; padding: calc(10px + env(safe-area-inset-top)) 14px 16px;
+    border-radius: 0 0 22px 22px; box-shadow: 0 6px 18px rgba(29,78,216,.28);
+    display: flex; align-items: center; gap: 12px; position: relative; z-index: 5; }
+  .c-iconbtn { flex: 0 0 auto; width: 40px; height: 40px; border-radius: 50%;
+    border: 1.5px solid rgba(255,255,255,.45); background: rgba(255,255,255,.08);
+    display: flex; align-items: center; justify-content: center; color: #fff;
+    text-decoration: none; -webkit-tap-highlight-color: transparent; cursor: pointer; }
+  .c-iconbtn:active { background: rgba(255,255,255,.22); }
+  .c-avatar { flex: 0 0 auto; position: relative; width: 46px; height: 46px; border-radius: 50%;
+    border: 2px solid rgba(255,255,255,.7); }
+  .c-avatar img, .c-avatar .c-ph { width: 100%; height: 100%; border-radius: 50%; object-fit: cover;
+    display: flex; align-items: center; justify-content: center; background: #fff; color: var(--c-blue);
+    font-weight: 800; font-size: 18px; }
+  .c-avatar .c-dot { position: absolute; right: -1px; bottom: -1px; width: 12px; height: 12px;
+    border-radius: 50%; border: 2px solid var(--c-blue-d); background: #22C55E; }
+  .c-avatar .c-dot.off { background: #94A3B8; }
+  .c-id { flex: 1; min-width: 0; }
+  .c-name { display: flex; align-items: center; gap: 5px; font-weight: 800; font-size: 17px; }
+  .c-name span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .c-job { font-size: 12.5px; opacity: .92; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .c-pres { display: flex; align-items: center; gap: 5px; font-size: 12px; opacity: .95; margin-top: 1px; }
+  .c-pres i { width: 7px; height: 7px; border-radius: 50%; background: #22C55E; display: inline-block; }
+  .c-pres i.off { background: #CBD5E1; }
+  .c-actions { flex: 0 0 auto; display: flex; gap: 8px; }
+  .c-act { display: flex; flex-direction: column; align-items: center; gap: 3px; color: #fff;
+    text-decoration: none; background: none; border: 0; cursor: pointer; }
+  .c-act span { font-size: 10px; opacity: .9; }
+  @media (max-width: 400px) { .c-act span { display: none; } .c-actions { gap: 6px; } }
+
+  .c-menu { position: absolute; top: calc(100% - 6px); right: 12px; background: #fff; color: var(--c-ink);
+    border-radius: 14px; box-shadow: 0 12px 34px rgba(15,23,42,.22); overflow: hidden; min-width: 232px;
+    z-index: 30; }
+  .c-menu button { display: flex; width: 100%; align-items: center; gap: 11px; padding: 12px 15px;
+    background: none; border: 0; border-bottom: 1px solid #F1F5F9; font-size: 13.5px; font-weight: 600;
+    color: var(--c-ink); text-align: left; cursor: pointer; }
+  .c-menu button:last-child { border-bottom: 0; }
+  .c-menu button.danger { color: #DC2626; }
+  .c-menu button svg { flex: 0 0 auto; color: var(--c-mut); }
+  .c-menu button.danger svg { color: #DC2626; }
+
+  .c-search { background: #fff; border: 1px solid var(--c-line); border-radius: 16px;
+    margin: 12px 14px 2px; padding: 8px 10px;
+    display: flex; align-items: center; gap: 8px; position: relative; z-index: 4;
+    box-shadow: 0 4px 14px rgba(15,23,42,.06); }
+  .c-search input { flex: 1; border: 1px solid var(--c-line); border-radius: 18px; padding: 9px 13px;
+    font-size: 14px; outline: none; min-width: 0; }
+  .c-search button { flex: 0 0 auto; border: 0; background: #EEF2FB; width: 34px; height: 34px; border-radius: 10px;
+    color: var(--c-mut); font-size: 13px; cursor: pointer; }
+  .c-search .cnt { font-size: 12px; color: var(--c-mut); min-width: 40px; text-align: center; }
+  mark { background: #FDE68A; color: inherit; border-radius: 3px; }
+  mark.on { background: #F59E0B; color: #fff; }
+
+  .c-body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 14px 14px 12px; }
+  .c-secure { display: flex; align-items: center; gap: 12px; background: var(--c-white); border-radius: 14px;
+    padding: 12px 14px; box-shadow: 0 2px 10px rgba(15,23,42,.06); margin-bottom: 16px; }
+  .c-secure .ic { flex: 0 0 auto; width: 38px; height: 38px; border-radius: 11px; background: #EAF0FF;
+    color: var(--c-blue); display: flex; align-items: center; justify-content: center; }
+  .c-secure b { display: block; font-size: 13.5px; }
+  .c-secure p { margin: 2px 0 0; font-size: 12px; color: var(--c-mut); line-height: 1.35; }
+
+  .c-daysep { display: flex; align-items: center; gap: 10px; margin: 6px 0 14px; }
+  .c-daysep::before, .c-daysep::after { content: ""; flex: 1; height: 1px; background: var(--c-line); }
+  .c-daysep span { font-size: 11.5px; color: var(--c-mut); background: #E4E9F5; padding: 4px 12px; border-radius: 999px; }
+
+  .c-row { display: flex; align-items: flex-end; gap: 8px; margin-bottom: 10px; }
+  .c-row.me { justify-content: flex-end; }
+  .c-row .c-mini { flex: 0 0 auto; width: 28px; height: 28px; border-radius: 50%; overflow: hidden;
+    background: #DCE6FF; color: var(--c-blue); font-weight: 700; font-size: 12px; display: flex;
+    align-items: center; justify-content: center; }
+  .c-row .c-mini img { width: 100%; height: 100%; object-fit: cover; }
+  .c-bubble { max-width: 78%; padding: 10px 14px; font-size: 15px; line-height: 1.45; white-space: pre-wrap;
+    word-wrap: break-word; overflow-wrap: anywhere; }
+  .c-row.them .c-bubble { background: var(--c-white); color: var(--c-ink); border-radius: 16px 16px 16px 4px;
+    box-shadow: 0 2px 8px rgba(15,23,42,.07); }
+  .c-row.me .c-bubble { background: var(--c-blue); color: #fff; border-radius: 16px 16px 4px 16px; }
+  .c-bubble.media { padding: 6px; }
+  .c-bubble img.att { display: block; max-width: 240px; width: 100%; border-radius: 11px; }
+  .c-bubble .filecard { display: flex; align-items: center; gap: 10px; padding: 8px 10px; min-width: 190px; }
+  .c-row.them .filecard { background: #F1F5FB; border-radius: 10px; }
+  .c-row.me .filecard { background: rgba(255,255,255,.16); border-radius: 10px; }
+  .c-bubble .filecard .fi { flex: 0 0 auto; }
+  .c-bubble .filecard .fn { font-size: 13px; font-weight: 600; word-break: break-all; }
+  .c-bubble audio { display: block; width: 232px; max-width: 60vw; height: 40px; }
+  .c-cap { margin-top: 6px; padding: 0 6px; font-size: 14px; }
+  .c-meta { display: flex; align-items: center; justify-content: flex-end; gap: 4px; font-size: 10.5px;
+    margin-top: 4px; color: var(--c-mut); }
+  .c-row.me .c-meta { color: rgba(255,255,255,.85); }
+  .c-tick.read { color: #7DD3FC; }
+  .c-row.me .c-tick.read { color: #93C5FD; }
+
+  .c-typing i { width: 7px; height: 7px; border-radius: 50%; background: #94A3B8; display: inline-block;
+    margin: 0 2px; animation: c-bounce 1.4s infinite; }
+  .c-typing i:nth-child(2) { animation-delay: .2s; } .c-typing i:nth-child(3) { animation-delay: .4s; }
+  @keyframes c-bounce { 0%,80%,100% { transform: translateY(0); } 40% { transform: translateY(-5px); } }
+
+  .c-empty { text-align: center; color: var(--c-mut); padding: 48px 24px; }
+  .c-empty h2 { margin: 0 0 6px; font-size: 17px; color: var(--c-ink); font-weight: 800; }
+  .c-empty p { margin: 0; font-size: 13.5px; }
+  .c-blockbar { margin: 6px 14px 0; background: #FEF2F2; color: #B91C1C; border-radius: 12px;
+    padding: 10px 14px; font-size: 12.5px; text-align: center; }
+
+  .c-foot { position: relative; background: var(--c-white); border-top: 1px solid var(--c-line);
+    padding: 9px 10px; padding-bottom: calc(9px + env(safe-area-inset-bottom));
+    display: flex; align-items: center; gap: 8px; }
+  .c-plus, .c-send { flex: 0 0 auto; width: 40px; height: 40px; border: none; border-radius: 50%;
+    background: var(--c-blue); color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+  .c-send:disabled { opacity: .45; }
+  .c-field { flex: 1; display: flex; align-items: center; gap: 2px; background: #F1F5FB;
+    border: 1px solid var(--c-line); border-radius: 22px; padding: 3px 6px 3px 14px; min-width: 0; }
+  .c-field textarea { flex: 1; min-width: 0; border: none; background: transparent; outline: none; resize: none;
+    font-size: 15px; line-height: 1.4; padding: 7px 0; max-height: 110px; font-family: inherit; color: var(--c-ink); }
+  .c-field .tool { flex: 0 0 auto; width: 30px; height: 30px; border: none; background: transparent;
+    color: var(--c-mut); display: flex; align-items: center; justify-content: center; cursor: pointer;
+    -webkit-tap-highlight-color: transparent; }
+  .c-field .tool:active { color: var(--c-blue); }
+  @media (max-width: 340px) { .c-plus, .c-send { width: 38px; height: 38px; } .c-field .tool { width: 27px; } }
+
+  .c-attmenu { position: absolute; left: 10px; bottom: calc(100% + 8px); background: #fff; border-radius: 14px;
+    box-shadow: 0 12px 34px rgba(15,23,42,.2); overflow: hidden; z-index: 20; }
+  .c-attmenu button { display: flex; align-items: center; gap: 11px; width: 100%; padding: 12px 16px;
+    background: none; border: 0; border-bottom: 1px solid #F1F5F9; font-size: 13.5px; font-weight: 600;
+    color: var(--c-ink); cursor: pointer; }
+  .c-attmenu button:last-child { border-bottom: 0; }
+  .c-attmenu button svg { color: var(--c-blue); }
+
+  .c-rec { flex: 1; display: flex; align-items: center; gap: 10px; background: #FEF2F2; border-radius: 22px;
+    padding: 7px 12px; }
+  .c-rec .pulse { width: 10px; height: 10px; border-radius: 50%; background: #EF4444; animation: c-pulse 1.2s infinite; }
+  @keyframes c-pulse { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
+  .c-rec .t { font-size: 14px; font-weight: 700; color: #B91C1C; font-variant-numeric: tabular-nums; }
+  .c-rec .sp { flex: 1; }
+  .c-rec button { border: 0; background: none; color: var(--c-mut); font-size: 13px; font-weight: 700; cursor: pointer; }
+  .c-preview { flex: 1; display: flex; align-items: center; gap: 8px; background: #F1F5FB; border-radius: 22px; padding: 5px 8px; }
+  .c-preview audio { flex: 1; height: 36px; }
+  .c-preview button { border: 0; background: none; color: var(--c-mut); font-weight: 700; font-size: 13px; cursor: pointer; }
+
+  .c-overlay { position: fixed; inset: 0; z-index: 200; background: rgba(2,6,23,.6); display: flex;
+    align-items: center; justify-content: center; padding: 20px; }
+  .c-sheet { background: #fff; border-radius: 18px; width: 100%; max-width: 380px; padding: 20px; }
+  .c-sheet h3 { margin: 0 0 6px; font-size: 16px; }
+  .c-sheet p { margin: 0 0 16px; font-size: 13.5px; color: var(--c-mut); }
+  .c-sheet .btns { display: flex; gap: 10px; justify-content: flex-end; }
+  .c-sheet .btns button { border: 0; border-radius: 10px; padding: 10px 16px; font-size: 13.5px; font-weight: 700; cursor: pointer; }
+  .c-sheet .btns .ghost { background: #F1F5F9; color: var(--c-ink); }
+  .c-sheet .btns .primary { background: var(--c-blue); color: #fff; }
+  .c-sheet .btns .danger { background: #DC2626; color: #fff; }
+  .c-sheet select, .c-sheet textarea { width: 100%; border: 1px solid var(--c-line); border-radius: 10px;
+    padding: 9px 11px; font-size: 13.5px; margin-bottom: 10px; font-family: inherit; }
+  .c-sheet label { font-size: 12px; font-weight: 600; color: var(--c-mut); display: block; margin-bottom: 4px; }
 </style>
-<div class="m-wrap">
-  <div class="m-header">
-    <a href="{% if artisan %}{{ url_for('artisan_detail', artisan_id=artisan.id) }}{% else %}javascript:history.back(){% endif %}" class="m-back" aria-label="Retour">←</a>
-    <div class="m-avatar">
-      <img src="{{ url_for('static', filename='img/icon-wrench.svg') }}" alt="FixPro" width="24" height="24" />
+
+<div class="c-wrap">
+  <header class="c-head">
+    <a href="{% if is_direct and me_role == 'artisan' %}{{ url_for('client_messages') }}{% elif cp %}{{ url_for('artisan_detail', artisan_id=cp.id) }}{% else %}{{ url_for('client_messages') }}{% endif %}" class="c-iconbtn" aria-label="Retour">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+    </a>
+    <div class="c-avatar">
+      {% if cp and cp.photo_url %}<img src="{{ cp.photo_url }}" alt="{{ peer_name }}" />
+      {% elif cp %}<span class="c-ph">{{ (cp.full_name or '?')[0]|upper }}</span>
+      {% else %}<img src="{{ url_for('static', filename='img/icon-wrench.svg') }}" alt="FixPro" />{% endif %}
+      <span class="c-dot {{ '' if (not cp or cp_online) else 'off' }}"></span>
     </div>
-    <div class="m-info">
-      <div class="m-name">FixPro</div>
-      <div class="m-status"><span class="m-dot"></span> En ligne</div>
+    <div class="c-id">
+      <div class="c-name">
+        <span>{{ peer_name }}</span>
+        {% if cp and cp.is_verified %}<svg width="15" height="15" viewBox="0 0 24 24" fill="#fff"><path d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5z"/><path d="m10.6 15.6-3.2-3.2 1.4-1.4 1.8 1.79 4.6-4.6 1.4 1.42z" fill="#2563EB"/></svg>{% endif %}
+      </div>
+      {% if cp and cp.profession %}<div class="c-job">{{ cp.profession }}{% if cp.role in ('artisan','technician') %} professionnel{% endif %}</div>{% endif %}
+      <div class="c-pres">{% if not cp or cp_online %}<i></i> En ligne{% else %}<i class="off"></i> Hors ligne{% endif %}</div>
     </div>
+    <div class="c-actions">
+      <a class="c-act" href="{% if cp and cp.phone %}tel:{{ cp.phone }}{% else %}#{% endif %}" aria-label="Appel" id="c-call-audio">
+        <span class="c-iconbtn"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg></span>
+        <span>Appel</span>
+      </a>
+      <button type="button" class="c-act" aria-label="Plus" id="c-more">
+        <span class="c-iconbtn"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></span>
+        <span>Plus</span>
+      </button>
+    </div>
+
+    <div class="c-menu" id="c-menu" hidden>
+      {% if cp and cp.role in ('artisan','technician') %}
+      <button type="button" data-act="profile"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg> Voir le profil</button>
+      {% endif %}
+      <button type="button" data-act="search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg> Rechercher dans la conversation</button>
+      <button type="button" data-act="mute"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> <span id="c-mute-label">Désactiver les notifications</span></button>
+      {% if is_direct %}
+      <button type="button" data-act="report"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15V3M4 3h12l-2 4 2 4H4"/></svg> Signaler</button>
+      <button type="button" class="danger" data-act="block"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/></svg> <span id="c-block-label">Bloquer</span></button>
+      {% endif %}
+      <button type="button" class="danger" data-act="delete"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg> Supprimer la conversation</button>
+    </div>
+  </header>
+
+  <div class="c-search" id="c-search" hidden>
+    <input type="search" id="c-search-input" placeholder="Rechercher dans la conversation..." />
+    <span class="cnt" id="c-search-cnt">0/0</span>
+    <button type="button" id="c-search-prev" aria-label="Précédent">▲</button>
+    <button type="button" id="c-search-next" aria-label="Suivant">▼</button>
+    <button type="button" id="c-search-close" aria-label="Fermer">✕</button>
   </div>
-  <div class="m-body" id="m-body">
+
+  <div class="c-body" id="c-body">
+    <div class="c-secure">
+      <span class="ic"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="M9 12h6M12 9v6"/></svg></span>
+      <span class="tx"><b>Conversation sécurisée</b><p>Vos messages sont privés et protégés.</p></span>
+    </div>
     {% if messages %}
+      {% set ns = namespace(day='') %}
       {% for m in messages %}
-      <div class="m-msg {{ 'm-client' if m.sender_role == 'client' else 'm-fixpro' }}">
-        <div class="m-bubble">
-          {{ m.content }}
-          <div class="m-time">
-            {{ m.created_at | dt_hm }}
-            {% if m.sender_role == 'client' %}<span class="m-check">{% if m.is_read %}✓✓{% else %}✓{% endif %}</span>{% endif %}
+        {% set d = (m.created_at | string)[:10] %}
+        {% if d != ns.day %}{% set ns.day = d %}<div class="c-daysep"><span>{{ m.created_at | day_label }}</span></div>{% endif %}
+        {% set is_me = m.sender_role == mine_role %}
+        <div class="c-row {{ 'me' if is_me else 'them' }}" data-msg-id="{{ m.id }}">
+          {% if not is_me %}<span class="c-mini">{% if cp and cp.photo_url %}<img src="{{ cp.photo_url }}" alt="" />{% else %}{{ (m.sender_name or peer_name or '?')[0]|upper }}{% endif %}</span>{% endif %}
+          <div class="c-bubble {{ 'media' if m.message_type in ('image','audio','file') }}">
+            {% if m.message_type == 'image' and m.attachment_url %}
+              <img class="att" src="{{ m.attachment_url }}" alt="{{ m.attachment_name or 'image' }}" loading="lazy" />
+              {% if m.content %}<div class="c-cap">{{ m.content }}</div>{% endif %}
+            {% elif m.message_type == 'audio' and m.attachment_url %}
+              <audio controls preload="none" src="{{ m.attachment_url }}"></audio>
+            {% elif m.message_type == 'file' and m.attachment_url %}
+              <a class="filecard" href="{{ m.attachment_url }}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;">
+                <span class="fi"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg></span>
+                <span class="fn">{{ m.attachment_name or 'Document' }}</span>
+              </a>
+              {% if m.content %}<div class="c-cap">{{ m.content }}</div>{% endif %}
+            {% else %}
+              {{ m.content }}
+            {% endif %}
+            <div class="c-meta">
+              {{ m.created_at | dt_hm }}
+              {% if is_me %}<span class="c-tick {{ 'read' if m.is_read }}">{% if m.is_read or m.is_delivered %}✓✓{% else %}✓{% endif %}</span>{% endif %}
+            </div>
           </div>
         </div>
-      </div>
       {% endfor %}
     {% else %}
-      <div class="m-empty">
-        <h2>Assistance FixPro</h2>
-        <p>Écrivez votre demande pour commencer.</p>
-        {% if artisan %}
-        <div class="m-artisan">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#155eef" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          Technicien concerné : {{ artisan.full_name }} ({{ artisan.profession or 'Technicien' }})
-        </div>
-        {% endif %}
+      <div class="c-empty">
+        <h2>{{ peer_name }}</h2>
+        <p>{% if is_direct and me_role == 'artisan' %}Écrivez votre premier message à ce client.{% elif is_direct %}Écrivez votre premier message à ce technicien.{% else %}Écrivez votre demande pour commencer.{% endif %}</p>
       </div>
     {% endif %}
   </div>
-  <form class="m-footer" method="post" onsubmit="return handleSend();">
-    <input type="hidden" name="csrf_token" id="m-csrf" value="{{ csrf_token() }}" />
-    <textarea class="m-input" id="m-content" name="content" placeholder="Écrire un message..." required rows="1" oninput="this.style.height='auto'; const m=120; const h=Math.min(this.scrollHeight, m); this.style.height=h+'px'; this.style.overflowY = this.scrollHeight > m ? 'auto' : 'hidden';"></textarea>
-    <button type="submit" class="m-send" id="m-send" aria-label="Envoyer" disabled>→</button>
+
+  <div class="c-blockbar" id="c-blockbar" {% if not (blocked_by_me or blocked_by_them) %}hidden{% endif %}>
+    {% if blocked_by_me %}Vous avez bloqué {{ peer_name }}. Débloquez pour échanger à nouveau.
+    {% else %}Vous ne pouvez plus envoyer de message dans cette conversation.{% endif %}
+  </div>
+
+  <form class="c-foot" method="post" id="c-form" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" id="c-csrf" value="{{ csrf_token() }}" />
+    <button type="button" class="c-plus" aria-label="Ajouter" id="c-attach">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+
+    <div class="c-attmenu" id="c-attmenu" hidden>
+      <button type="button" id="c-pick-photo"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></svg> Photo</button>
+      <button type="button" id="c-pick-camera"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg> Caméra</button>
+      <button type="button" id="c-pick-doc"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg> Document</button>
+    </div>
+    <input type="file" id="c-in-photo" accept="image/*" hidden />
+    <input type="file" id="c-in-camera" accept="image/*" capture="environment" hidden />
+    <input type="file" id="c-in-doc" accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,application/pdf" hidden />
+
+    <div class="c-field" id="c-field">
+      <textarea id="c-input" name="content" rows="1" placeholder="Écrire un message..."></textarea>
+      <button type="button" class="tool" aria-label="Message vocal" id="c-mic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v4"/></svg></button>
+      <button type="button" class="tool" aria-label="Caméra" id="c-cam"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></button>
+      <button type="button" class="tool" aria-label="Pièce jointe" id="c-clip"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg></button>
+    </div>
+
+    <div class="c-rec" id="c-rec" hidden>
+      <span class="pulse"></span><span class="t" id="c-rec-time">0:00</span><span class="sp"></span>
+      <button type="button" id="c-rec-cancel">Annuler</button>
+      <button type="button" id="c-rec-stop">Arrêter</button>
+    </div>
+    <div class="c-preview" id="c-preview" hidden>
+      <button type="button" id="c-prev-del" aria-label="Supprimer">✕</button>
+      <audio id="c-prev-audio" controls></audio>
+    </div>
+
+    <button type="submit" class="c-send" id="c-send" aria-label="Envoyer" disabled>
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M3.4 20.4 21 12 3.4 3.6 3 10l12 2-12 2z"/></svg>
+    </button>
   </form>
 </div>
+
+<div id="c-modal-root"></div>
+
 <script>
-  const b = document.getElementById('m-body');
-  const form = document.querySelector('.m-footer');
-  const ta = document.getElementById('m-content');
-  const btn = document.getElementById('m-send');
-  const csrf = document.getElementById('m-csrf');
-  let sending = false;
+  const CID = {{ conversation.id | tojson }};
+  const PEER_PROFILE_URL = {{ (url_for('artisan_detail', artisan_id=cp.id) if (cp and cp.role in ('artisan','technician')) else '') | tojson }};
+  const MINE_ROLE = {{ mine_role | tojson }};
+  const IS_DIRECT = {{ is_direct | tojson }};
+  const PEER_NAME = {{ peer_name | tojson }};
+  const PEER_INITIAL = PEER_NAME.charAt(0).toUpperCase();
+  const PEER_PHOTO = {{ (cp.photo_url if cp else '') | tojson }};
+  let MUTED = {{ muted | default(false) | tojson }};
+  let BLOCKED_ME = {{ blocked_by_me | default(false) | tojson }};
+  let BLOCKED_THEM = {{ blocked_by_them | default(false) | tojson }};
+  const CSRF = document.getElementById('c-csrf').value;
+  const U = (p) => '/messages/' + CID + p;
 
-  function scrollBottom() {
-    if (!b) return;
-    requestAnimationFrame(() => { b.scrollTop = b.scrollHeight; });
+  const body = document.getElementById('c-body');
+  const form = document.getElementById('c-form');
+  const input = document.getElementById('c-input');
+  const sendBtn = document.getElementById('c-send');
+  let sending = false, pendingAttach = null;   // {type, dataUri, name, durationMs}
+
+  const esc = s => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  const fmtTime = ts => { try { return new Date(ts).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}); }
+    catch(e){ return String(ts).slice(11,16); } };
+  const scrollBottom = () => requestAnimationFrame(() => { body.scrollTop = body.scrollHeight; });
+  scrollBottom();
+
+  async function api(path, data) {
+    const fd = new FormData();
+    fd.append('csrf_token', CSRF);
+    for (const k in (data || {})) fd.append(k, data[k]);
+    const r = await fetch(U(path), { method: 'POST', body: fd,
+      headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': CSRF } });
+    let j = {}; try { j = await r.json(); } catch (e) {}
+    if (!r.ok) throw Object.assign(new Error(j.error || ('HTTP ' + r.status)), { data: j });
+    return j;
   }
-  if (b) scrollBottom();
 
-  function formatTime(ts) {
-    if (!ts) return '';
-    try { return new Date(ts).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }); }
-    catch (e) { return ts; }
+  /* ---------- rendu des messages ---------- */
+  function bubbleInner(m) {
+    const t = m.message_type || 'text';
+    if (t === 'image' && m.attachment_url)
+      return '<img class="att" src="' + esc(m.attachment_url) + '" alt="image" />' +
+        (m.content ? '<div class="c-cap">' + esc(m.content) + '</div>' : '');
+    if (t === 'audio' && m.attachment_url)
+      return '<audio controls preload="none" src="' + esc(m.attachment_url) + '"></audio>';
+    if (t === 'file' && m.attachment_url)
+      return '<a class="filecard" href="' + esc(m.attachment_url) + '" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;">' +
+        '<span class="fi"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg></span>' +
+        '<span class="fn">' + esc(m.attachment_name || 'Document') + '</span></a>' +
+        (m.content ? '<div class="c-cap">' + esc(m.content) + '</div>' : '');
+    return esc(m.content).replace(/\n/g, '<br>');
   }
-
-  function escapeHtml(s) {
-    return String(s == null ? '' : s)
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-  }
-
-  function appendMessage(role, content, time, id, pending) {
-    const div = document.createElement('div');
-    div.className = 'm-msg ' + (role === 'client' ? 'm-client' : 'm-fixpro');
-    if (id) div.dataset.msgId = id;
-    if (pending) div.dataset.pending = '1';
-    const t = pending ? time : formatTime(time);
-    const check = role === 'client' ? '<span class="m-check">✓</span>' : '';
-    div.innerHTML = '<div class="m-bubble">' + escapeHtml(content).replace(/\n/g, '<br>') + '<div class="m-time">' + escapeHtml(t) + check + '</div></div>';
-    b.appendChild(div);
-    scrollBottom();
-    return div;
-  }
-
-  function setTyping(show) {
-    let typing = b.querySelector('.m-typing');
-    if (show) {
-      if (typing) return;
-      typing = document.createElement('div');
-      typing.className = 'm-msg m-fixpro m-typing';
-      typing.innerHTML = '<div class="m-bubble"><div class="typing"><span></span><span></span><span></span></div><div class="m-time">FixPro écrit...</div></div>';
-      b.appendChild(typing);
-      scrollBottom();
-    } else if (typing) {
-      typing.remove();
+  function addMessage(m, pending) {
+    const box = body.querySelector('.c-empty'); if (box) box.remove();
+    const me = m.sender_role === MINE_ROLE;
+    const row = document.createElement('div');
+    row.className = 'c-row ' + (me ? 'me' : 'them');
+    if (m.id) row.dataset.msgId = m.id;
+    if (pending) row.dataset.pending = '1';
+    const media = ['image','audio','file'].includes(m.message_type) ? ' media' : '';
+    const mini = me ? '' : ('<span class="c-mini">' +
+      (PEER_PHOTO ? '<img src="' + esc(PEER_PHOTO) + '" alt="" />' : esc(PEER_INITIAL)) + '</span>');
+    let tick = '';
+    if (me) {
+      const cls = m.is_read ? 'c-tick read' : 'c-tick';
+      tick = '<span class="' + cls + '">' + ((m.is_read || m.is_delivered) ? '✓✓' : '✓') + '</span>';
     }
+    row.innerHTML = mini + '<div class="c-bubble' + media + '">' + bubbleInner(m) +
+      '<div class="c-meta">' + esc(pending ? 'maintenant' : fmtTime(m.created_at)) + tick + '</div></div>';
+    body.appendChild(row); scrollBottom();
+    return row;
+  }
+  function upsert(list) {
+    const known = new Set([...body.querySelectorAll('.c-row[data-msg-id]')].map(e => e.dataset.msgId));
+    list.forEach(m => {
+      if (known.has(String(m.id))) {
+        const r = body.querySelector('.c-row[data-msg-id="' + m.id + '"] .c-tick');
+        if (r && m.sender_role === MINE_ROLE) {
+          r.textContent = (m.is_read || m.is_delivered) ? '✓✓' : '✓';
+          r.className = m.is_read ? 'c-tick read' : 'c-tick';
+        }
+      } else { addMessage(m); }
+    });
   }
 
-  function updateBtn() {
-    btn.disabled = sending || !ta.value.trim();
-    btn.innerHTML = sending ? '...' : '→';
-  }
-
-  ta.addEventListener('input', updateBtn);
-  ta.addEventListener('keydown', e => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      form.dispatchEvent(new Event('submit'));
-    }
+  /* ---------- champ + envoi ---------- */
+  function refreshBtn() { sendBtn.disabled = sending || (!input.value.trim() && !pendingAttach); }
+  input.addEventListener('input', () => {
+    input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 110) + 'px'; refreshBtn();
+  });
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); }
   });
 
-  async function handleSend(ev) {
-    ev.preventDefault();
-    const content = ta.value.trim();
-    if (!content || sending) return false;
-    sending = true;
-    updateBtn();
-    appendMessage('client', content, 'maintenant', null, true);
-    ta.value = '';
-    ta.style.height = 'auto';
-    ta.style.overflowY = 'hidden';
-    ta.dispatchEvent(new Event('input'));
-    setTyping(true);
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    if (sending) return;
+    if (BLOCKED_ME || BLOCKED_THEM) { toast(BLOCKED_ME ? 'Vous avez bloqué cet utilisateur.' : 'Conversation bloquée.'); return; }
+    const text = input.value.trim();
+    const att = pendingAttach;
+    if (!text && !att) return;
+    sending = true; refreshBtn();
+    const optimistic = { sender_role: MINE_ROLE, content: text,
+      message_type: att ? att.type : 'text', attachment_url: att ? att.dataUri : null,
+      attachment_name: att ? att.name : null };
+    addMessage(optimistic, true);
+    input.value = ''; input.style.height = 'auto';
     try {
-      const fd = new FormData();
-      fd.append('content', content);
-      fd.append('csrf_token', csrf.value);
-      const r = await fetch(form.action || window.location.pathname, {
-        method: 'POST',
-        body: fd,
-        headers: {'X-Requested-With': 'XMLHttpRequest'}
-      });
-      if (!r.ok) throw new Error('Erreur serveur');
-      const data = await r.json();
-      if (data.ok && data.messages) {
-        b.querySelectorAll('.m-msg[data-pending="1"]').forEach(el => el.remove());
-        const existingIds = new Set(Array.from(b.querySelectorAll('.m-msg[data-msg-id]')).map(el => el.dataset.msgId));
-        data.messages.forEach(m => {
-          if (!existingIds.has(String(m.id))) {
-            appendMessage(m.sender_role, m.content, m.created_at, m.id);
-          }
-        });
-      } else {
-        throw new Error(data.error || 'Réponse invalide');
-      }
-    } catch (e) {
-      console.error(e);
-      alert('Une erreur est survenue. Veuillez réessayer.');
-    } finally {
-      sending = false;
-      setTyping(false);
-      updateBtn();
-      ta.focus();
-    }
-    return false;
-  }
+      const data = { content: text };
+      if (att) { data.message_type = att.type; data.attachment = att.dataUri;
+        data.attachment_name = att.name || ''; if (att.durationMs) data.duration_ms = att.durationMs; }
+      const res = await api('', data);
+      body.querySelectorAll('.c-row[data-pending="1"]').forEach(el => el.remove());
+      if (res.messages) upsert(res.messages);
+      clearAttach();
+    } catch (err) {
+      body.querySelectorAll('.c-row[data-pending="1"]').forEach(el => el.remove());
+      toast(err.message || 'Message non envoyé.');
+      if (err.data && err.data.blocked) { BLOCKED_ME = true; renderBlockBar(); }
+    } finally { sending = false; refreshBtn(); }
+  });
 
-  if (form) form.addEventListener('submit', handleSend);
-
-  async function pollMessages() {
+  /* ---------- polling messages ---------- */
+  async function poll() {
     try {
-      const r = await fetch(window.location.pathname, {
-        headers: {'X-Requested-With': 'XMLHttpRequest'}
-      });
+      const r = await fetch(U(''), { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
       if (!r.ok) return;
-      const data = await r.json();
-      if (data.ok && data.messages) {
-        const existingIds = new Set(Array.from(b.querySelectorAll('.m-msg[data-msg-id]')).map(el => el.dataset.msgId));
-        data.messages.forEach(m => {
-          if (!existingIds.has(String(m.id))) {
-            appendMessage(m.sender_role, m.content, m.created_at, m.id);
-          }
-        });
-      }
-    } catch (e) {
-      console.error(e);
-    }
+      const d = await r.json();
+      if (!d.ok) return;
+      if (typeof d.blocked_by_them === 'boolean' && d.blocked_by_them !== BLOCKED_THEM) { BLOCKED_THEM = d.blocked_by_them; renderBlockBar(); }
+      if (d.messages) upsert(d.messages);
+    } catch (e) {}
   }
-  setInterval(pollMessages, 4000);
+  setInterval(poll, 4000);
 
-  updateBtn();
+  /* ---------- pieces jointes ---------- */
+  const attach = document.getElementById('c-attach');
+  const attmenu = document.getElementById('c-attmenu');
+  attach.addEventListener('click', e => { e.stopPropagation(); attmenu.hidden = !attmenu.hidden; });
+  document.getElementById('c-cam').addEventListener('click', () => document.getElementById('c-in-camera').click());
+  document.getElementById('c-clip').addEventListener('click', () => document.getElementById('c-in-doc').click());
+  document.getElementById('c-pick-photo').addEventListener('click', () => { attmenu.hidden = true; document.getElementById('c-in-photo').click(); });
+  document.getElementById('c-pick-camera').addEventListener('click', () => { attmenu.hidden = true; document.getElementById('c-in-camera').click(); });
+  document.getElementById('c-pick-doc').addEventListener('click', () => { attmenu.hidden = true; document.getElementById('c-in-doc').click(); });
+
+  function readFile(file) { return new Promise((res, rej) => {
+    const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = rej; fr.readAsDataURL(file);
+  }); }
+  async function downscale(dataUri, max) {
+    return new Promise(res => {
+      const img = new Image();
+      img.onload = () => {
+        let { width: w, height: h } = img;
+        if (Math.max(w, h) <= max) return res(dataUri);
+        if (w > h) { h = Math.round(h * max / w); w = max; } else { w = Math.round(w * max / h); h = max; }
+        const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+        cv.getContext('2d').drawImage(img, 0, 0, w, h);
+        res(cv.toDataURL('image/jpeg', 0.85));
+      };
+      img.onerror = () => res(dataUri);
+      img.src = dataUri;
+    });
+  }
+  async function handleImage(file) {
+    if (!file) return;
+    let uri = await readFile(file);
+    uri = await downscale(uri, 1600);
+    setAttach({ type: 'image', dataUri: uri, name: file.name || 'photo.jpg' });
+  }
+  document.getElementById('c-in-photo').addEventListener('change', e => handleImage(e.target.files[0]));
+  document.getElementById('c-in-camera').addEventListener('change', e => handleImage(e.target.files[0]));
+  document.getElementById('c-in-doc').addEventListener('change', async e => {
+    const f = e.target.files[0]; if (!f) return;
+    if (f.size > 15 * 1024 * 1024) { toast('Document trop volumineux (max 15 Mo).'); return; }
+    setAttach({ type: 'file', dataUri: await readFile(f), name: f.name || 'document' });
+  });
+  function setAttach(a) {
+    pendingAttach = a;
+    const prev = document.getElementById('c-preview');
+    const fld = document.getElementById('c-field');
+    if (a.type === 'audio') {
+      fld.hidden = true; prev.hidden = false;
+    } else {
+      prev.hidden = true; fld.hidden = false;
+      input.placeholder = a.type === 'image' ? '📷 Photo prête — ajoutez une légende'
+        : '📄 ' + (a.name || 'Document') + ' prêt';
+    }
+    refreshBtn();
+  }
+  function clearAttach() {
+    pendingAttach = null; input.placeholder = 'Écrire un message...';
+    document.getElementById('c-preview').hidden = true;
+    document.getElementById('c-field').hidden = false;
+    document.getElementById('c-rec').hidden = true;
+    refreshBtn();
+  }
+
+  /* ---------- messages vocaux ---------- */
+  const mic = document.getElementById('c-mic');
+  const recBar = document.getElementById('c-rec');
+  const field = document.getElementById('c-field');
+  const preview = document.getElementById('c-preview');
+  const prevAudio = document.getElementById('c-prev-audio');
+  let mediaRec = null, chunks = [], recTimer = null, recStart = 0;
+
+  mic.addEventListener('click', async () => {
+    if (!navigator.mediaDevices || !window.MediaRecorder) { toast('Enregistrement non supporté sur cet appareil.'); return; }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      chunks = [];
+      const mime = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' :
+        (MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' : '');
+      mediaRec = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+      mediaRec.ondataavailable = ev => { if (ev.data.size) chunks.push(ev.data); };
+      mediaRec.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop());
+        clearInterval(recTimer);
+        recBar.hidden = true;
+        let gotAudio = false;
+        if (!recBar.dataset.cancelled) {
+          const blob = new Blob(chunks, { type: chunks[0] ? chunks[0].type : 'audio/webm' });
+          if (blob.size > 12 * 1024 * 1024) { toast('Message vocal trop long.'); }
+          else {
+            const uri = await readFile(blob);
+            const dur = Date.now() - recStart;
+            prevAudio.src = URL.createObjectURL(blob);
+            setAttach({ type: 'audio', dataUri: uri, name: 'vocal.webm', durationMs: dur });
+            gotAudio = true;
+          }
+        }
+        if (!gotAudio) { field.hidden = false; }
+        delete recBar.dataset.cancelled;
+      };
+      mediaRec.start();
+      recStart = Date.now();
+      recBar.hidden = false; field.hidden = true; preview.hidden = true;
+      recTimer = setInterval(() => {
+        const s = Math.floor((Date.now() - recStart) / 1000);
+        document.getElementById('c-rec-time').textContent = Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+        if (s >= 300) document.getElementById('c-rec-stop').click();
+      }, 250);
+    } catch (e) { toast('Micro indisponible. Autorisez l’accès au microphone.'); }
+  });
+  document.getElementById('c-rec-stop').addEventListener('click', () => { if (mediaRec && mediaRec.state !== 'inactive') mediaRec.stop(); });
+  document.getElementById('c-rec-cancel').addEventListener('click', () => {
+    if (mediaRec && mediaRec.state !== 'inactive') { recBar.dataset.cancelled = '1'; mediaRec.stop(); }
+    clearAttach();
+  });
+  document.getElementById('c-prev-del').addEventListener('click', () => { prevAudio.pause(); clearAttach(); });
+
+  /* ---------- menu ⋮ ---------- */
+  const more = document.getElementById('c-more');
+  const menu = document.getElementById('c-menu');
+  more.addEventListener('click', e => { e.stopPropagation(); menu.hidden = !menu.hidden; syncMenu(); });
+  document.addEventListener('click', () => { menu.hidden = true; attmenu.hidden = true; });
+  function syncMenu() {
+    const ml = document.getElementById('c-mute-label');
+    if (ml) ml.textContent = MUTED ? 'Activer les notifications' : 'Désactiver les notifications';
+    const bl = document.getElementById('c-block-label');
+    if (bl) bl.textContent = BLOCKED_ME ? 'Débloquer' : 'Bloquer';
+  }
+  menu.addEventListener('click', async e => {
+    const b = e.target.closest('button'); if (!b) return;
+    menu.hidden = true;
+    const act = b.dataset.act;
+    if (act === 'profile') { if (PEER_PROFILE_URL) location.href = PEER_PROFILE_URL; }
+    else if (act === 'search') openSearch();
+    else if (act === 'mute') {
+      try { const r = await api('/prefs', { muted: MUTED ? '0' : '1' }); MUTED = r.muted; syncMenu();
+        toast(MUTED ? 'Notifications désactivées.' : 'Notifications activées.'); } catch (x) { toast('Action impossible.'); }
+    }
+    else if (act === 'report') openReport();
+    else if (act === 'block') {
+      if (BLOCKED_ME) { try { await api('/block', { action: 'unblock' }); BLOCKED_ME = false; renderBlockBar(); toast('Utilisateur débloqué.'); } catch (x) { toast('Action impossible.'); } }
+      else confirmSheet('Bloquer ' + PEER_NAME + ' ?', 'Vous ne recevrez plus ses messages ni ses appels.', 'Bloquer', async () => {
+        try { await api('/block', { action: 'block' }); BLOCKED_ME = true; renderBlockBar(); toast(PEER_NAME + ' est bloqué.'); } catch (x) { toast('Action impossible.'); }
+      });
+    }
+    else if (act === 'delete') confirmSheet('Supprimer la conversation ?', 'Elle disparaîtra de votre liste. Un nouveau message la fera réapparaître.', 'Supprimer', async () => {
+      try { const r = await api('/delete', {}); location.href = r.redirect || '{{ url_for("client_messages") }}'; } catch (x) { toast('Suppression impossible.'); }
+    });
+  });
+  function renderBlockBar() {
+    const bar = document.getElementById('c-blockbar');
+    if (BLOCKED_ME || BLOCKED_THEM) {
+      bar.hidden = false;
+      bar.textContent = BLOCKED_ME ? ('Vous avez bloqué ' + PEER_NAME + '. Débloquez pour échanger à nouveau.')
+        : 'Vous ne pouvez plus envoyer de message dans cette conversation.';
+    } else bar.hidden = true;
+    syncMenu(); refreshBtn();
+  }
+
+  /* ---------- recherche ---------- */
+  const sBar = document.getElementById('c-search');
+  const sInput = document.getElementById('c-search-input');
+  let sHits = [], sIdx = -1;
+  function openSearch() { sBar.hidden = false; sInput.focus(); }
+  document.getElementById('c-search-close').addEventListener('click', () => { sBar.hidden = true; clearMarks(); });
+  function clearMarks() {
+    body.querySelectorAll('.c-bubble').forEach(b => {
+      b.querySelectorAll('mark').forEach(m => { const t = document.createTextNode(m.textContent); m.replaceWith(t); });
+      b.normalize();
+    });
+    sHits = []; sIdx = -1; document.getElementById('c-search-cnt').textContent = '0/0';
+  }
+  function runSearch() {
+    clearMarks();
+    const q = sInput.value.trim(); if (q.length < 2) return;
+    const rx = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+    body.querySelectorAll('.c-row').forEach(row => {
+      const cap = row.querySelector('.c-cap') || (row.querySelector('.c-bubble:not(.media)') ? row.querySelector('.c-bubble') : null);
+      if (!cap) return;
+      const walker = document.createTreeWalker(cap, NodeFilter.SHOW_TEXT);
+      const texts = []; let n; while ((n = walker.nextNode())) if (!n.parentElement.closest('.c-meta')) texts.push(n);
+      texts.forEach(tn => {
+        if (!rx.test(tn.textContent)) return;
+        rx.lastIndex = 0;
+        const frag = document.createDocumentFragment(); let last = 0, mm;
+        while ((mm = rx.exec(tn.textContent))) {
+          frag.append(document.createTextNode(tn.textContent.slice(last, mm.index)));
+          const mk = document.createElement('mark'); mk.textContent = mm[0]; frag.append(mk); sHits.push(mk);
+          last = mm.index + mm[0].length;
+          if (mm.index === rx.lastIndex) rx.lastIndex++;
+        }
+        frag.append(document.createTextNode(tn.textContent.slice(last)));
+        tn.replaceWith(frag);
+      });
+    });
+    if (sHits.length) { sIdx = 0; focusHit(); }
+    document.getElementById('c-search-cnt').textContent = (sHits.length ? sIdx + 1 : 0) + '/' + sHits.length;
+  }
+  function focusHit() {
+    sHits.forEach(m => m.classList.remove('on'));
+    const m = sHits[sIdx]; if (!m) return;
+    m.classList.add('on'); m.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    document.getElementById('c-search-cnt').textContent = (sIdx + 1) + '/' + sHits.length;
+  }
+  sInput.addEventListener('input', () => { clearTimeout(sInput._t); sInput._t = setTimeout(runSearch, 200); });
+  document.getElementById('c-search-next').addEventListener('click', () => { if (sHits.length) { sIdx = (sIdx + 1) % sHits.length; focusHit(); } });
+  document.getElementById('c-search-prev').addEventListener('click', () => { if (sHits.length) { sIdx = (sIdx - 1 + sHits.length) % sHits.length; focusHit(); } });
+
+  /* ---------- signalement / confirmations / toast ---------- */
+  const modalRoot = document.getElementById('c-modal-root');
+  function closeModal() { modalRoot.innerHTML = ''; }
+  function confirmSheet(title, text, okLabel, onOk) {
+    modalRoot.innerHTML =
+      '<div class="c-overlay"><div class="c-sheet"><h3>' + esc(title) + '</h3><p>' + esc(text) + '</p>' +
+      '<div class="btns"><button class="ghost" data-x>Annuler</button><button class="danger" data-ok>' + esc(okLabel) + '</button></div></div></div>';
+    modalRoot.querySelector('[data-x]').onclick = closeModal;
+    modalRoot.querySelector('.c-overlay').onclick = e => { if (e.target.classList.contains('c-overlay')) closeModal(); };
+    modalRoot.querySelector('[data-ok]').onclick = () => { closeModal(); onOk(); };
+  }
+  function openReport() {
+    modalRoot.innerHTML =
+      '<div class="c-overlay"><div class="c-sheet"><h3>Signaler</h3>' +
+      '<label>Motif</label><select id="rp-reason">' +
+      '<option value="spam">Spam / publicité</option><option value="harcelement">Harcèlement</option>' +
+      '<option value="arnaque">Tentative d’arnaque</option><option value="inapproprie">Contenu inapproprié</option>' +
+      '<option value="autre">Autre</option></select>' +
+      '<label>Détails (facultatif)</label><textarea id="rp-details" rows="3"></textarea>' +
+      '<div class="btns"><button class="ghost" data-x>Annuler</button><button class="primary" data-ok>Envoyer</button></div></div></div>';
+    modalRoot.querySelector('[data-x]').onclick = closeModal;
+    modalRoot.querySelector('.c-overlay').onclick = e => { if (e.target.classList.contains('c-overlay')) closeModal(); };
+    modalRoot.querySelector('[data-ok]').onclick = async () => {
+      const reason = modalRoot.querySelector('#rp-reason').value;
+      const details = modalRoot.querySelector('#rp-details').value;
+      closeModal();
+      try { await api('/report', { reason, details }); toast('Signalement envoyé. Merci.'); } catch (x) { toast('Envoi impossible.'); }
+    };
+  }
+  let toastT = null;
+  function toast(msg) {
+    let el = document.getElementById('c-toast');
+    if (!el) { el = document.createElement('div'); el.id = 'c-toast';
+      el.style.cssText = 'position:fixed;left:50%;bottom:84px;transform:translateX(-50%);background:#0F172A;color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;z-index:300;max-width:90%;text-align:center';
+      document.body.appendChild(el); }
+    el.textContent = msg; el.style.opacity = '1';
+    clearTimeout(toastT); toastT = setTimeout(() => { el.style.opacity = '0'; }, 2600);
+  }
+  renderBlockBar();
+
+  /* ---------- bouton Appel (numero reel du technicien) ---------- */
+  document.getElementById('c-call-audio').addEventListener('click', e => {
+    {% if not (cp and cp.phone) %}e.preventDefault(); toast('Numéro du technicien indisponible.');{% endif %}
+  });
 </script>
 {% endblock %}

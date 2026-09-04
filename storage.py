@@ -27,6 +27,23 @@ class StorageProvider(ABC):
         """Supprime un fichier a partir de son URL/path."""
 
 
+# Types de fichiers acceptes dans la messagerie et les fiches.
+MIME_EXT = {
+    "image/jpeg": ".jpg", "image/jpg": ".jpg", "image/png": ".png",
+    "image/webp": ".webp", "image/gif": ".gif", "image/heic": ".heic",
+    "application/pdf": ".pdf",
+    "application/msword": ".doc",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ".docx",
+    "application/vnd.ms-excel": ".xls",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": ".xlsx",
+    "text/plain": ".txt",
+    "audio/webm": ".webm", "audio/ogg": ".ogg", "audio/mpeg": ".mp3",
+    "audio/mp4": ".m4a", "audio/aac": ".aac", "audio/wav": ".wav",
+    "audio/x-m4a": ".m4a",
+}
+ALLOWED_MIME = set(MIME_EXT)
+
+
 def _parse_data_uri(data_uri):
     if not data_uri or not data_uri.startswith("data:"):
         return None, None
@@ -53,8 +70,7 @@ class Base64Storage(StorageProvider):
             raise ValueError("Format de fichier invalide.")
         if len(raw) > max_size:
             raise ValueError("Fichier trop volumineux.")
-        allowed = {"image/jpeg", "image/png", "image/webp", "application/pdf"}
-        if mime not in allowed:
+        if mime not in ALLOWED_MIME:
             raise ValueError("Type de fichier non autorise.")
         return data_uri
 
@@ -76,6 +92,8 @@ class SupabaseStorage(StorageProvider):
             raise ValueError("Format de fichier invalide.")
         if len(raw) > max_size:
             raise ValueError("Fichier trop volumineux.")
+        if mime not in ALLOWED_MIME:
+            raise ValueError("Type de fichier non autorise.")
 
         ext = self._ext(mime)
         filename = f"{uuid.uuid4().hex}_{_safe_filename(name)}{ext}"
@@ -115,13 +133,7 @@ class SupabaseStorage(StorageProvider):
 
     @staticmethod
     def _ext(mime):
-        mapping = {
-            "image/jpeg": ".jpg",
-            "image/png": ".png",
-            "image/webp": ".webp",
-            "application/pdf": ".pdf",
-        }
-        return mapping.get(mime, "")
+        return MIME_EXT.get(mime, "")
 
     def _filename_from_url(self, url):
         prefix = f"/storage/v1/object/public/{self.bucket}/"

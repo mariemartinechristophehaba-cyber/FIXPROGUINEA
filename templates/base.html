@@ -20,7 +20,7 @@
     {% block extra_head %}{% endblock %}
   </head>
   {% set is_admin_route = request.endpoint and request.endpoint.startswith('admin') %}
-  {% set chat_view = request.endpoint in ('client_conversation', 'client_message_new') %}
+  {% set chat_view = request.endpoint in ('client_conversation', 'client_message_new', 'client_message_artisan') %}
   <body class="{% if not nav_user or request.endpoint in ('index', 'ticket_detail') %} no-tabbar{% endif %}{% if request.endpoint == 'dashboard' or is_admin_route or chat_view %} no-sidebar{% endif %}{% if request.endpoint == 'index' %} landing{% endif %}{% if is_admin_route %} admin-page{% endif %}{% if chat_view %} chat-view{% endif %}">
 
     {% block header %}{% endblock %}

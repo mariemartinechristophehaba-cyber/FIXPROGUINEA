@@ -594,6 +594,149 @@ class MessagingTests(FixProTestCase):
         r = self.client.get(f"/messages/{conv_id}")
         self.assertEqual(r.status_code, 302)
 
+    def _make_artisan_id(self, phone="+224621111111"):
+        self.register_artisan("artisan@example.com", phone=phone)
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            return conn.execute(
+                "SELECT id FROM users WHERE phone = ?", (phone,)).fetchone()["id"]
+        finally:
+            conn.close()
+
+    def test_profile_message_opens_direct_conversation_no_ai(self):
+        artisan_id = self._make_artisan_id()
+        self.client.get("/logout")
+        self.register_client(phone="+224610000010")
+        self.login("+224610000010")
+
+        r = self.client.get(f"/messages/technicien/{artisan_id}", follow_redirects=True)
+        self.assertEqual(r.status_code, 200)
+        conv_id = int(r.request.path.split("/")[-1])
+
+        self.client.post(f"/messages/{conv_id}",
+                         data={"content": "Bonjour, etes-vous disponible"})
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conv = conn.execute(
+                "SELECT client_id, artisan_id, status FROM conversations WHERE id = ?",
+                (conv_id,)).fetchone()
+            self.assertEqual(conv["artisan_id"], artisan_id)
+            self.assertEqual(conv["status"], "direct")
+            msgs = conn.execute(
+                "SELECT sender_role FROM conversation_messages WHERE conversation_id = ?",
+                (conv_id,)).fetchall()
+            self.assertEqual([m["sender_role"] for m in msgs], ["client"])
+        finally:
+            conn.close()
+
+    def test_technician_and_client_exchange_direct_messages(self):
+        artisan_id = self._make_artisan_id()
+        self.client.get("/logout")
+        self.register_client(phone="+224610000011")
+        self.login("+224610000011")
+        r = self.client.get(f"/messages/technicien/{artisan_id}", follow_redirects=True)
+        conv_id = int(r.request.path.split("/")[-1])
+        self.client.post(f"/messages/{conv_id}", data={"content": "un souci electrique"})
+
+        self.client.get("/logout")
+        self.login("+224621111111")
+        r2 = self.client.get(f"/messages/{conv_id}")
+        self.assertEqual(r2.status_code, 200)
+        self.assertIn("un souci electrique", r2.data.decode("utf-8", "replace"))
+        self.client.post(f"/messages/{conv_id}", data={"content": "je passe cet apres-midi"})
+
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            msgs = conn.execute(
+                "SELECT sender_role FROM conversation_messages"
+                " WHERE conversation_id = ? ORDER BY id", (conv_id,)).fetchall()
+            self.assertEqual([m["sender_role"] for m in msgs], ["client", "artisan"])
+        finally:
+            conn.close()
+
+        self.client.get("/logout")
+        self.login("+224610000011")
+        r3 = self.client.get(f"/messages/{conv_id}")
+        self.assertIn("cet apres-midi", r3.data.decode("utf-8", "replace"))
+
+    def _open_direct(self, client_phone="+224610000012"):
+        artisan_id = self._make_artisan_id()
+        self.client.get("/logout")
+        self.register_client(phone=client_phone)
+        self.login(client_phone)
+        r = self.client.get(f"/messages/technicien/{artisan_id}", follow_redirects=True)
+        return artisan_id, int(r.request.path.split("/")[-1])
+
+    def test_image_message_is_stored_with_attachment(self):
+        _, conv_id = self._open_direct()
+        px = ("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJ"
+              "AAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==")
+        r = self.client.post(f"/messages/{conv_id}",
+                             data={"content": "voici la photo", "message_type": "image",
+                                   "attachment": px, "attachment_name": "p.png"},
+                             headers={"X-Requested-With": "XMLHttpRequest"})
+        self.assertEqual(r.status_code, 200)
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            m = conn.execute(
+                "SELECT message_type, attachment_url, content FROM conversation_messages"
+                " WHERE conversation_id = ? ORDER BY id DESC LIMIT 1", (conv_id,)).fetchone()
+        finally:
+            conn.close()
+        self.assertEqual(m["message_type"], "image")
+        self.assertTrue(m["attachment_url"])
+
+    def test_voice_message_stored(self):
+        _, conv_id = self._open_direct("+224610000013")
+        audio = "data:audio/webm;base64,QQ=="
+        r = self.client.post(f"/messages/{conv_id}",
+                             data={"message_type": "audio", "attachment": audio,
+                                   "attachment_name": "v.webm", "duration_ms": "3200"},
+                             headers={"X-Requested-With": "XMLHttpRequest"})
+        self.assertEqual(r.status_code, 200)
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            m = conn.execute(
+                "SELECT message_type, duration_ms FROM conversation_messages"
+                " WHERE conversation_id = ? ORDER BY id DESC LIMIT 1", (conv_id,)).fetchone()
+        finally:
+            conn.close()
+        self.assertEqual(m["message_type"], "audio")
+        self.assertEqual(m["duration_ms"], 3200)
+
+    def test_block_prevents_sending(self):
+        artisan_id, conv_id = self._open_direct("+224610000014")
+        r = self.client.post(f"/messages/{conv_id}/block", data={"action": "block"})
+        self.assertTrue(r.get_json()["blocked"])
+        r2 = self.client.post(f"/messages/{conv_id}", data={"content": "hello"},
+                              headers={"X-Requested-With": "XMLHttpRequest"})
+        self.assertEqual(r2.status_code, 403)
+        self.client.post(f"/messages/{conv_id}/block", data={"action": "unblock"})
+        r3 = self.client.post(f"/messages/{conv_id}", data={"content": "hello again"},
+                              headers={"X-Requested-With": "XMLHttpRequest"})
+        self.assertEqual(r3.status_code, 200)
+
+    def test_mute_report_and_delete(self):
+        _, conv_id = self._open_direct("+224610000015")
+        r = self.client.post(f"/messages/{conv_id}/prefs", data={"muted": "1"})
+        self.assertTrue(r.get_json()["muted"])
+        r = self.client.post(f"/messages/{conv_id}/report",
+                             data={"reason": "spam", "details": "pub"})
+        self.assertTrue(r.get_json()["ok"])
+        r = self.client.post(f"/messages/{conv_id}/delete", data={})
+        self.assertTrue(r.get_json()["ok"])
+        lst = self.client.get("/messages")
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            rep = conn.execute("SELECT reason FROM conversation_reports").fetchone()
+            pref = conn.execute(
+                "SELECT deleted_at FROM conversation_prefs WHERE conversation_id = ?",
+                (conv_id,)).fetchone()
+        finally:
+            conn.close()
+        self.assertEqual(rep["reason"], "spam")
+        self.assertIsNotNone(pref["deleted_at"])
+
 
 class GeolocationTests(FixProTestCase):
     """Geolocalisation temps reel des techniciens."""

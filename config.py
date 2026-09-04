@@ -104,10 +104,10 @@ class Config:
     # limites ne s'appliquent jamais. Fournir alors une URL Redis / Upstash.
     RATELIMIT_STORAGE_URI = os.getenv("RATELIMIT_STORAGE_URI", "memory://").strip()
 
-    # Taille maximale d'une requete (8 Mo) : les documents envoyes sont des
-    # data URI base64 plafonnes a ~3 Mo cote _parse_base64_file. Empeche un
-    # POST geant de saturer la memoire de la fonction serverless.
-    MAX_CONTENT_LENGTH = int(os.getenv("MAX_CONTENT_LENGTH", str(8 * 1024 * 1024)))
+    # Taille maximale d'une requete (24 Mo) : couvre les pieces jointes de la
+    # messagerie (photo, document, message vocal) envoyees en data URI base64
+    # (~1.33x la taille du fichier). Empeche un POST geant de saturer la memoire.
+    MAX_CONTENT_LENGTH = int(os.getenv("MAX_CONTENT_LENGTH", str(24 * 1024 * 1024)))
 
     # Securite des sessions
     SECRET_KEY = os.getenv("SECRET_KEY", "").strip()
