@@ -341,7 +341,7 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 14px 20px;
-  padding-top: calc(24px + env(safe-area-inset-top));
+  padding-top: calc(34px + env(safe-area-inset-top));
   background: var(--f-primary);
   color: var(--f-white);
   position: sticky;
@@ -1031,7 +1031,7 @@ img, svg, video, picture, canvas, iframe, embed, object {
   justify-content: space-between;
   gap: 8px;
   padding: 10px 14px;
-  padding-top: calc(22px + env(safe-area-inset-top));
+  padding-top: calc(32px + env(safe-area-inset-top));
   background: var(--f-white);
   border-bottom: 1px solid var(--f-line);
 }

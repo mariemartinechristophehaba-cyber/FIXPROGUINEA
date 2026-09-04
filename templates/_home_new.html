@@ -61,14 +61,14 @@
     background: linear-gradient(160deg, #1F6BFF 0%, #1250D8 55%, #0F3DBB 100%);
     color: #fff;
     padding: 14px 16px 58px;
-    padding-top: calc(24px + env(safe-area-inset-top));
+    padding-top: calc(34px + env(safe-area-inset-top));
     overflow: visible;
   }
   /* App installee (mode plein ecran) : la barre d'etat du telephone recouvre
      le haut de la page. On garantit un espace suffisant meme si l'appareil
      ne renseigne pas env(safe-area-inset-top). */
   @media (display-mode: standalone), (display-mode: fullscreen), (display-mode: minimal-ui) {
-    .hp-header { padding-top: calc(38px + env(safe-area-inset-top)); }
+    .hp-header { padding-top: calc(48px + env(safe-area-inset-top)); }
   }
   .hp-header-top {
     position: relative; z-index: 20;
