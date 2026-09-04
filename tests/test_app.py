@@ -680,6 +680,19 @@ class MessagingTests(FixProTestCase):
             conn.close()
         self.assertEqual(m["content"], "Bonjour\n\nfin")
 
+    def test_text_bubble_html_has_no_stray_whitespace(self):
+        """La bulle utilise white-space:pre-wrap : tout espace/saut de ligne
+        du TEMPLATE (pas du contenu) s'y afficherait comme un vrai blanc visible
+        et gonflerait la bulle. Non-regression du bug 'bulle geante'."""
+        artisan_id, conv_id = self._open_direct("+224610000021")
+        self.client.post(f"/messages/{conv_id}", data={"content": "Bonjour"})
+        r = self.client.get(f"/messages/{conv_id}")
+        html = r.data.decode("utf-8", "replace")
+        i = html.index('<div class="c-bubble')
+        i = html.index('>', i) + 1
+        j = html.index('<div class="c-meta">', i)
+        self.assertEqual(html[i:j], "Bonjour")
+
     def test_image_message_is_stored_with_attachment(self):
         _, conv_id = self._open_direct()
         px = ("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJ"
