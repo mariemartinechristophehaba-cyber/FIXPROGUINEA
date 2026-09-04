@@ -16,9 +16,10 @@
     --c-safe-bot: env(safe-area-inset-bottom, 0px);
   }
   [hidden] { display: none !important; }
-  .c-wrap { position: fixed; inset: 0; display: flex; flex-direction: column;
+  html, body { overflow-x: hidden; max-width: 100%; }
+  .c-wrap { position: fixed; top: 0; left: 0; right: 0; display: flex; flex-direction: column;
     background: var(--c-bg); z-index: 100; font-family: var(--f-font, 'Inter', sans-serif);
-    height: 100dvh; overflow: hidden; }
+    height: 100dvh; max-width: 100vw; overflow: hidden; }
 
   .c-head { background: linear-gradient(160deg, var(--c-blue) 0%, var(--c-blue-d) 100%);
     color: #fff; padding: calc(14px + var(--c-safe-top)) 12px 16px;
@@ -100,9 +101,9 @@
   .c-row.them .c-bubble { background: var(--c-white); color: var(--c-ink); border-radius: 16px 16px 16px 4px;
     box-shadow: 0 2px 8px rgba(15,23,42,.07); }
   .c-row.me .c-bubble { background: var(--c-blue); color: #fff; border-radius: 16px 16px 4px 16px; }
-  .c-bubble.media { padding: 6px; }
-  .c-bubble img.att { display: block; width: 100%; max-width: 260px; max-height: 320px;
-    min-height: 80px; object-fit: cover; border-radius: 12px; background: #E2E8F0; }
+  .c-bubble.media { max-width: min(75vw, 320px); padding: 4px; }
+  .c-bubble img.att { display: block; width: auto; height: auto; max-width: 100%; max-height: 42vh;
+    object-fit: contain; border-radius: 12px; background: #E2E8F0; }
   .c-bubble .filecard { display: flex; align-items: center; gap: 10px; padding: 8px 10px; min-width: 190px; }
   .c-row.them .filecard { background: #F1F5FB; border-radius: 10px; }
   .c-row.me .filecard { background: rgba(255,255,255,.16); border-radius: 10px; }
@@ -327,15 +328,25 @@
   const scrollBottom = () => requestAnimationFrame(() => { body.scrollTop = body.scrollHeight; });
   scrollBottom();
 
-  /* ---------- clavier mobile : garder la barre de saisie au-dessus ---------- */
+  /* ---------- clavier mobile : garder la barre de saisie au-dessus ----------
+     .c-wrap a une hauteur fixe (100dvh) : sur certains navigateurs Android
+     cette valeur ne se recalcule pas quand le clavier s'ouvre, ce qui laisse
+     le composer "sous" le clavier. On pilote donc explicitement la hauteur
+     (et le decalage haut) via visualViewport, la seule source fiable de la
+     zone reellement visible. Se reinitialise tout seul a la fermeture du
+     clavier -> aucun etat residuel. */
   const wrap = document.querySelector('.c-wrap');
+  let wasKeyboardOpen = false;
   if (window.visualViewport) {
     const vv = window.visualViewport;
     const onResize = () => {
-      const offset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
-      wrap.style.bottom = offset + 'px';
+      wrap.style.height = vv.height + 'px';
+      wrap.style.top = vv.offsetTop + 'px';
+      const keyboardOpen = vv.height < window.innerHeight * 0.75;
+      if (keyboardOpen !== wasKeyboardOpen) { wasKeyboardOpen = keyboardOpen; scrollBottom(); }
       scrollBottom();
     };
+    onResize();
     vv.addEventListener('resize', onResize);
     vv.addEventListener('scroll', onResize);
   }
@@ -400,7 +411,7 @@
   /* ---------- champ + envoi ---------- */
   function refreshBtn() { sendBtn.disabled = sending || (!input.value.trim() && !pendingAttach); }
   input.addEventListener('input', () => {
-    input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 110) + 'px'; refreshBtn();
+    input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 104) + 'px'; refreshBtn();
   });
   input.addEventListener('keydown', e => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); }
