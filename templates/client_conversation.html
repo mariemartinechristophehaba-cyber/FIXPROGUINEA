@@ -78,7 +78,7 @@
   mark.on { background: #F59E0B; color: #fff; }
 
   .c-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden;
-    -webkit-overflow-scrolling: touch; padding: 14px 14px 12px; }
+    -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain; padding: 14px 14px 12px; }
   .c-secure { display: flex; align-items: center; gap: 12px; background: var(--c-white); border-radius: 14px;
     padding: 12px 14px; box-shadow: 0 2px 10px rgba(15,23,42,.06); margin-bottom: 16px; }
   .c-secure .ic { flex: 0 0 auto; width: 38px; height: 38px; border-radius: 11px; background: #EAF0FF;
@@ -96,8 +96,9 @@
     background: #DCE6FF; color: var(--c-blue); font-weight: 700; font-size: 12px; display: flex;
     align-items: center; justify-content: center; }
   .c-row .c-mini img { width: 100%; height: 100%; object-fit: cover; }
-  .c-bubble { max-width: 78%; padding: 10px 14px; font-size: 15px; line-height: 1.45; white-space: pre-wrap;
-    word-wrap: break-word; overflow-wrap: anywhere; max-height: 55vh; overflow-y: auto; overflow-x: hidden; }
+  .c-bubble { box-sizing: border-box; max-width: 78%; padding: 10px 14px; font-size: 15px; line-height: 1.45;
+    white-space: pre-wrap; word-wrap: break-word; overflow-wrap: anywhere;
+    max-height: 55vh; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; }
   .c-row.them .c-bubble { background: var(--c-white); color: var(--c-ink); border-radius: 16px 16px 16px 4px;
     box-shadow: 0 2px 8px rgba(15,23,42,.07); }
   .c-row.me .c-bubble { background: var(--c-blue); color: #fff; border-radius: 16px 16px 4px 16px; }
@@ -136,9 +137,10 @@
     cursor: pointer; -webkit-tap-highlight-color: transparent; }
   .c-send:disabled { opacity: .45; }
   .c-field { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 0; background: #F1F5FB;
-    border: 1px solid var(--c-line); border-radius: 20px; padding: 2px 4px 2px 12px; }
-  .c-field textarea { flex: 1 1 auto; min-width: 0; width: 100%; border: none; background: transparent;
-    outline: none; resize: none; font-size: 15px; line-height: 1.35; padding: 8px 0; max-height: 104px;
+    border: 1px solid var(--c-line); border-radius: 20px; padding: 2px 4px 2px 12px; box-sizing: border-box; }
+  .c-field textarea { box-sizing: border-box; flex: 1 1 auto; min-width: 0; width: 100%; border: none;
+    background: transparent; outline: none; resize: none; font-size: 15px; line-height: 1.35; padding: 8px 0;
+    min-height: 20px; max-height: 104px; overflow-y: auto; overscroll-behavior: contain;
     font-family: inherit; color: var(--c-ink); }
   .c-field .tool { flex: 0 0 auto; width: 30px; height: 34px; border: none; background: transparent;
     color: var(--c-mut); display: flex; align-items: center; justify-content: center; cursor: pointer;
