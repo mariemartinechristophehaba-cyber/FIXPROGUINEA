@@ -97,7 +97,7 @@
     align-items: center; justify-content: center; }
   .c-row .c-mini img { width: 100%; height: 100%; object-fit: cover; }
   .c-bubble { max-width: 78%; padding: 10px 14px; font-size: 15px; line-height: 1.45; white-space: pre-wrap;
-    word-wrap: break-word; overflow-wrap: anywhere; }
+    word-wrap: break-word; overflow-wrap: anywhere; max-height: 55vh; overflow-y: auto; overflow-x: hidden; }
   .c-row.them .c-bubble { background: var(--c-white); color: var(--c-ink); border-radius: 16px 16px 16px 4px;
     box-shadow: 0 2px 8px rgba(15,23,42,.07); }
   .c-row.me .c-bubble { background: var(--c-blue); color: #fff; border-radius: 16px 16px 4px 16px; }
@@ -328,6 +328,15 @@
   const scrollBottom = () => requestAnimationFrame(() => { body.scrollTop = body.scrollHeight; });
   scrollBottom();
 
+  /* ---------- retour depuis le cache navigateur (bfcache) ----------
+     Quand on quitte la conversation puis qu'on y revient avec le bouton
+     Retour du telephone/navigateur, certains navigateurs mobiles restaurent
+     la page telle qu'elle etait figee (DOM + styles inline geles a cet
+     instant, ex. hauteur ajustee pour le clavier) au lieu de la recharger.
+     On force donc un rechargement propre dans ce cas precis pour repartir
+     d'un etat garanti normal (composer, bulles, clavier). */
+  window.addEventListener('pageshow', ev => { if (ev.persisted) location.reload(); });
+
   /* ---------- clavier mobile : garder la barre de saisie au-dessus ----------
      .c-wrap a une hauteur fixe (100dvh) : sur certains navigateurs Android
      cette valeur ne se recalcule pas quand le clavier s'ouvre, ce qui laisse
@@ -421,7 +430,7 @@
     e.preventDefault();
     if (sending) return;
     if (BLOCKED_ME || BLOCKED_THEM) { toast(BLOCKED_ME ? 'Vous avez bloqué cet utilisateur.' : 'Conversation bloquée.'); return; }
-    const text = input.value.trim();
+    const text = input.value.trim().replace(/\n{3,}/g, '\n\n');
     const att = pendingAttach;
     if (!text && !att) return;
     sending = true; refreshBtn();

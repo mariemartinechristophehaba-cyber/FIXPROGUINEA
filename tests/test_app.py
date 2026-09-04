@@ -667,6 +667,19 @@ class MessagingTests(FixProTestCase):
         r = self.client.get(f"/messages/technicien/{artisan_id}", follow_redirects=True)
         return artisan_id, int(r.request.path.split("/")[-1])
 
+    def test_message_content_collapses_excessive_blank_lines(self):
+        _, conv_id = self._open_direct("+224610000020")
+        content = "Bonjour" + ("\n" * 40) + "fin"
+        self.client.post(f"/messages/{conv_id}", data={"content": content})
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            m = conn.execute(
+                "SELECT content FROM conversation_messages"
+                " WHERE conversation_id = ? ORDER BY id DESC LIMIT 1", (conv_id,)).fetchone()
+        finally:
+            conn.close()
+        self.assertEqual(m["content"], "Bonjour\n\nfin")
+
     def test_image_message_is_stored_with_attachment(self):
         _, conv_id = self._open_direct()
         px = ("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJ"

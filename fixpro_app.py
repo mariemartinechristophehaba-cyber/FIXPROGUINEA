@@ -8304,6 +8304,9 @@ def client_conversation(conversation_id):
             ready = False
             is_xhr = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
             content = (request.form.get("content") or "").strip()
+            # Empeche un contenu truffe de sauts de ligne (clavier/voix Android,
+            # copier-coller) de gonfler artificiellement la hauteur de la bulle.
+            content = re.sub(r'\n{3,}', '\n\n', content)
             mtype = (request.form.get("message_type") or "text").strip()
             attachment = request.form.get("attachment") or ""
             attachment_name = (request.form.get("attachment_name") or "").strip()[:180]
