@@ -603,6 +603,31 @@ class MessagingTests(FixProTestCase):
         finally:
             conn.close()
 
+    def test_guest_can_message_artisan_without_registering(self):
+        artisan_id = self._make_artisan_id("+224621111112")
+        self.client.get("/logout")
+        r = self.client.get(f"/messages/technicien/{artisan_id}", follow_redirects=True)
+        self.assertEqual(r.status_code, 200)
+        # Pas redirige vers la connexion : un compte visiteur a ete cree a la volee.
+        self.assertNotIn("connecter pour acceder", r.data.decode("utf-8", "replace"))
+        conv_id = int(r.request.path.split("/")[-1])
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conv = conn.execute(
+                "SELECT client_id, artisan_id, status FROM conversations WHERE id = ?",
+                (conv_id,)).fetchone()
+            self.assertEqual(conv["artisan_id"], artisan_id)
+            self.assertEqual(conv["status"], "direct")
+            guest = conn.execute(
+                "SELECT role, full_name FROM users WHERE id = ?", (conv["client_id"],)).fetchone()
+            self.assertEqual(guest["role"], "client")
+            self.assertEqual(guest["full_name"], "Visiteur")
+        finally:
+            conn.close()
+        # meme session -> meme conversation, pas un nouveau visiteur a chaque fois
+        r2 = self.client.get(f"/messages/technicien/{artisan_id}", follow_redirects=True)
+        self.assertEqual(int(r2.request.path.split("/")[-1]), conv_id)
+
     def test_profile_message_opens_direct_conversation_no_ai(self):
         artisan_id = self._make_artisan_id()
         self.client.get("/logout")

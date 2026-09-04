@@ -8524,16 +8524,38 @@ def client_conversation(conversation_id):
                            blocked_by_me=blocked_by_me, blocked_by_them=blocked_by_them)
 
 
+def _get_or_create_guest_user(conn):
+    """Cree ou recupere un utilisateur visiteur anonyme (messagerie sans inscription)."""
+    guest_id = session.get("guest_user_id")
+    if guest_id:
+        user = conn.execute("SELECT * FROM users WHERE id = ?", (guest_id,)).fetchone()
+        if user:
+            session["user_id"] = user["id"]
+            return user
+    guest_phone = f"guest-{secrets.token_hex(8)}"
+    user_id = _insert_id(
+        conn,
+        "INSERT INTO users (email, phone, password_hash, role, full_name, city)"
+        " VALUES (?, ?, ?, ?, ?, ?)",
+        (None, guest_phone, generate_password_hash(secrets.token_urlsafe(16)),
+         "client", "Visiteur", "Conakry"))
+    user = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+    session["guest_user_id"] = user_id
+    session["user_id"] = user_id
+    session.permanent = True
+    return user
+
+
 @app.route("/messages/technicien/<int:artisan_id>", methods=["GET"])
-@login_required
-@limiter.limit("30 per hour")
+@limiter.limit("15 per hour")
 def client_message_artisan(artisan_id):
     """Ouvre (ou cree) la conversation directe entre le client et CE technicien.
 
     Cible du bouton "Message" sur le profil technicien : jamais l'assistant IA,
     jamais l'administration -- un dialogue 1-a-1 avec le technicien affiche.
+    Accessible sans inscription : un compte visiteur anonyme est cree a la
+    volee (limite en debit pour empecher un robot de gonfler la table users).
     """
-    user = get_current_user()
     conn = get_db_connection()
     try:
         artisan = conn.execute(
@@ -8542,6 +8564,13 @@ def client_message_artisan(artisan_id):
             (artisan_id,)).fetchone()
         if not artisan:
             flash("Technicien introuvable.", "error")
+            return redirect(url_for("artisans_page"))
+
+        user = get_current_user()
+        if not user:
+            user = _get_or_create_guest_user(conn)
+        if user["role"] != "client":
+            flash("Cet espace est reserve aux clients.", "error")
             return redirect(url_for("artisans_page"))
         if user["id"] == artisan_id:
             flash("Vous ne pouvez pas vous ecrire a vous-meme.", "error")
