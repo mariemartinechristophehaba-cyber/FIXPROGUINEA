@@ -89,27 +89,6 @@ def _format_dt_hm(value):
     return s
 
 
-@app.template_filter('day_label')
-def _format_day_label(value):
-    """Etiquette de separateur de jour : 'Aujourd'hui', 'Hier' ou 'JJ/MM/AAAA'."""
-    if not value:
-        return ''
-    s = str(value)
-    try:
-        d = datetime.fromisoformat(s.replace('Z', '+00:00')).date()
-    except ValueError:
-        try:
-            d = datetime.strptime(s[:10], '%Y-%m-%d').date()
-        except ValueError:
-            return s[:10]
-    today = datetime.now(timezone.utc).date()
-    if d == today:
-        return "Aujourd'hui"
-    if (today - d).days == 1:
-        return "Hier"
-    return d.strftime('%d/%m/%Y')
-
-
 @app.template_filter('date_long_fr')
 def _format_date_long_fr(value):
     """Affiche une date au format '30 sept. 2026'."""
@@ -1192,23 +1171,6 @@ def inject_layout_context():
         connected = get_current_user()
     except Exception:
         connected = None
-
-    messages_unread = 0
-    if connected and connected.get("role") != "admin":
-        _my_role = "artisan" if connected.get("role") in ("artisan", "technician") else "client"
-        conn = get_db_connection()
-        try:
-            row = conn.execute(
-                "SELECT COUNT(*) AS n FROM conversation_messages m"
-                " JOIN conversations c ON c.id = m.conversation_id"
-                " WHERE (c.client_id = ? OR c.artisan_id = ?)"
-                " AND m.is_read = 0 AND m.sender_role <> ? AND m.sender_role <> 'system'",
-                (connected["id"], connected["id"], _my_role)).fetchone()
-            messages_unread = (row["n"] if row else 0) or 0
-        except Exception:
-            conn.rollback()
-        finally:
-            conn.close()
 
     stats = {}
     if connected and connected.get("role") == "admin":
@@ -7020,16 +6982,6 @@ def _migrate_db():
             except Exception:
                 pass
 
-        try:
-            _migrate_messaging(conn)
-            conn.commit()
-        except Exception as e:
-            logger.warning("Migration messagerie impossible: %s", e)
-            try:
-                conn.rollback()
-            except Exception:
-                pass
-
         # --- Compte administrateur (a partir des variables d'env) -----------
         try:
             _bootstrap_admin(conn)
@@ -7155,69 +7107,6 @@ def _migrate_subscriptions(conn):
                 "INSERT INTO subscription_plans (code, name, price_month, sort_order, features)"
                 " VALUES (?, ?, ?, ?, ?)",
                 (code, name, price, order, features))
-
-
-def _migrate_messaging(conn):
-    """Colonnes et tables pour la messagerie riche client <-> technicien.
-
-    Pieces jointes, messages vocaux, statuts de message, mute/blocage/
-    signalement par conversation, signalisation d'appel video (WebRTC).
-    Compatible SQLite et PostgreSQL.
-    """
-    pk = "SERIAL PRIMARY KEY" if conn.is_postgres else "INTEGER PRIMARY KEY AUTOINCREMENT"
-    ts = "TIMESTAMP" if conn.is_postgres else "TEXT"
-
-    msg_cols = conn.table_columns("conversation_messages")
-    for col, ddl in (
-        ("message_type", "message_type TEXT DEFAULT 'text'"),
-        ("attachment_url", "attachment_url TEXT"),
-        ("attachment_name", "attachment_name TEXT"),
-        ("duration_ms", "duration_ms INTEGER"),
-        ("is_delivered", "is_delivered INTEGER DEFAULT 0"),
-    ):
-        if col not in msg_cols:
-            try:
-                conn.execute(f"ALTER TABLE conversation_messages ADD COLUMN {ddl}")
-                conn.commit()
-            except Exception:
-                conn.rollback()
-
-    conn.execute(
-        f"CREATE TABLE IF NOT EXISTS conversation_prefs ("
-        f" user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,"
-        f" conversation_id INTEGER NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,"
-        f" muted INTEGER NOT NULL DEFAULT 0,"
-        f" deleted_at {ts},"
-        f" PRIMARY KEY (user_id, conversation_id))")
-
-    conn.execute(
-        f"CREATE TABLE IF NOT EXISTS user_blocks ("
-        f" blocker_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,"
-        f" blocked_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,"
-        f" created_at {ts} DEFAULT CURRENT_TIMESTAMP,"
-        f" PRIMARY KEY (blocker_id, blocked_id))")
-
-    conn.execute(
-        f"CREATE TABLE IF NOT EXISTS conversation_reports ("
-        f" id {pk},"
-        f" conversation_id INTEGER REFERENCES conversations(id) ON DELETE SET NULL,"
-        f" reporter_id INTEGER REFERENCES users(id) ON DELETE SET NULL,"
-        f" reported_id INTEGER REFERENCES users(id) ON DELETE SET NULL,"
-        f" reason TEXT NOT NULL DEFAULT '', details TEXT DEFAULT '',"
-        f" status TEXT NOT NULL DEFAULT 'new',"
-        f" created_at {ts} DEFAULT CURRENT_TIMESTAMP)")
-    conn.execute("CREATE INDEX IF NOT EXISTS idx_conv_reports_status ON conversation_reports(status)")
-
-    conn.execute(
-        f"CREATE TABLE IF NOT EXISTS call_signals ("
-        f" id {pk},"
-        f" conversation_id INTEGER NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,"
-        f" from_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,"
-        f" to_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,"
-        f" kind TEXT NOT NULL, payload TEXT DEFAULT '',"
-        f" created_at {ts} DEFAULT CURRENT_TIMESTAMP)")
-    conn.execute("CREATE INDEX IF NOT EXISTS idx_call_signals_to ON call_signals(conversation_id, to_id, id)")
-    conn.commit()
 
 
 _DEFAULT_PLANS = [
@@ -7991,53 +7880,25 @@ def client_messages():
     user = get_current_user()
     if not user:
         return redirect(url_for("lia"))
-    viewer_tech = _is_technician(user)
-    my_role = "artisan" if viewer_tech else "client"
     conn = get_db_connection()
     try:
-        rows = conn.execute(
+        conversations = conn.execute(
             "SELECT c.id, c.subject, c.status, c.created_at, c.updated_at,"
-            " c.client_id, c.artisan_id,"
             " (SELECT content FROM conversation_messages WHERE conversation_id = c.id"
-            "  AND sender_role != 'system' ORDER BY created_at DESC, id DESC LIMIT 1) AS last_message,"
-            " (SELECT message_type FROM conversation_messages WHERE conversation_id = c.id"
-            "  AND sender_role != 'system' ORDER BY created_at DESC, id DESC LIMIT 1) AS last_type,"
-            " (SELECT created_at FROM conversation_messages WHERE conversation_id = c.id"
-            "  AND sender_role != 'system' ORDER BY created_at DESC, id DESC LIMIT 1) AS last_at,"
-            " cl.full_name AS client_name, cl.photo_url AS client_photo,"
-            " ar.full_name AS artisan_name, ar.photo_url AS artisan_photo,"
-            " ar.profession AS artisan_profession,"
+            " ORDER BY created_at DESC LIMIT 1) AS last_message,"
             " COALESCE(unread.n, 0) AS unread"
             " FROM conversations c"
-            " LEFT JOIN users cl ON cl.id = c.client_id"
-            " LEFT JOIN users ar ON ar.id = c.artisan_id"
             " LEFT JOIN ("
             "   SELECT conversation_id, COUNT(*) AS n"
             "   FROM conversation_messages"
-            "   WHERE sender_role <> ? AND is_read = 0"
+            "   WHERE sender_role != 'client' AND is_read = 0"
             "   GROUP BY conversation_id"
             " ) unread ON unread.conversation_id = c.id"
-            " LEFT JOIN conversation_prefs p ON p.conversation_id = c.id AND p.user_id = ?"
-            " WHERE (c.client_id = ? OR c.artisan_id = ?) AND p.deleted_at IS NULL"
+            " WHERE c.client_id = ? OR c.artisan_id = ?"
             " ORDER BY c.updated_at DESC",
-            (my_role, user["id"], user["id"], user["id"])).fetchall()
+            (user["id"], user["id"])).fetchall()
     finally:
         conn.close()
-    _type_label = {"image": "\U0001F4F7 Photo", "audio": "\U0001F3A4 Message vocal",
-                   "file": "\U0001F4C4 Document"}
-    conversations = []
-    for c in (dict(r) for r in rows):
-        if viewer_tech and c["artisan_id"] == user["id"]:
-            c["peer_name"] = c["client_name"] or "Client"
-            c["peer_photo"] = c["client_photo"]
-            c["peer_sub"] = "Client"
-        else:
-            c["peer_name"] = c["artisan_name"] or c["subject"] or "FixPro"
-            c["peer_photo"] = c["artisan_photo"]
-            c["peer_sub"] = c["artisan_profession"] or ("Technicien" if c["artisan_id"] else "Assistance FixPro")
-        if not (c.get("last_message") or "").strip() and c.get("last_type") in _type_label:
-            c["last_message"] = _type_label[c["last_type"]]
-        conversations.append(c)
     unread_count = sum(c.get("unread", 0) or 0 for c in conversations)
     return render_template("client_messages.html", conversations=conversations, user=user,
                            unread_count=unread_count)
@@ -8247,135 +8108,32 @@ def _save_collected_in_messages(conn, conversation_id, sender_id, collected):
         (conversation_id, sender_id, "system", payload))
 
 
-_MSG_MEDIA_TYPES = ("image", "file", "audio")
-_ATTACH_MAX = {"image": 8 * 1024 * 1024, "file": 15 * 1024 * 1024, "audio": 12 * 1024 * 1024}
-
-
-def _block_state(conn, a_id, b_id):
-    """Retourne (i_blocked_them, they_blocked_me) entre deux utilisateurs."""
-    rows = conn.execute(
-        "SELECT blocker_id, blocked_id FROM user_blocks"
-        " WHERE (blocker_id = ? AND blocked_id = ?) OR (blocker_id = ? AND blocked_id = ?)",
-        (a_id, b_id, b_id, a_id)).fetchall()
-    mine = any(r["blocker_id"] == a_id for r in rows)
-    theirs = any(r["blocker_id"] == b_id for r in rows)
-    return mine, theirs
-
-
-def _conv_muted(conn, user_id, conversation_id):
-    row = conn.execute(
-        "SELECT muted FROM conversation_prefs WHERE user_id = ? AND conversation_id = ?",
-        (user_id, conversation_id)).fetchone()
-    return bool(row and row["muted"])
-
-
-def _msg_payload(m):
-    return {
-        "id": m["id"],
-        "content": m["content"],
-        "sender_role": m["sender_role"],
-        "created_at": m["created_at"],
-        "sender_name": m.get("sender_name") if hasattr(m, "get") else None,
-        "message_type": (m.get("message_type") if hasattr(m, "get") else None) or "text",
-        "attachment_url": m.get("attachment_url") if hasattr(m, "get") else None,
-        "attachment_name": m.get("attachment_name") if hasattr(m, "get") else None,
-        "duration_ms": m.get("duration_ms") if hasattr(m, "get") else None,
-        "is_read": bool(m["is_read"]),
-        "is_delivered": bool((m.get("is_delivered") if hasattr(m, "get") else 0) or m["is_read"]),
-    }
-
-
 @app.route("/messages/<int:conversation_id>", methods=["GET", "POST"])
 @login_required
 def client_conversation(conversation_id):
-    """Conversation client <-> technicien (ou assistant FixPro)."""
+    """Conversation client."""
     user = get_current_user()
     conn = get_db_connection()
     try:
         conv = conn.execute(
             "SELECT * FROM conversations WHERE id = ?", (conversation_id,)).fetchone()
-        is_participant = conv and (
-            conv["client_id"] == user["id"] or conv.get("artisan_id") == user["id"])
-        if not conv or not is_participant:
+        if not conv or conv["client_id"] != user["id"]:
             flash("Conversation introuvable.", "error")
             return redirect(url_for("client_messages"))
-        # Conversation directe client <-> technicien (bouton "Message" du profil).
-        viewer_is_tech = _is_technician(user) and conv.get("artisan_id") == user["id"]
-        is_direct = bool(conv.get("artisan_id")) and conv["status"] == "direct"
-        me_role = "artisan" if viewer_is_tech else "client"
-        other_id = None
-        if is_direct:
-            other_id = conv["client_id"] if viewer_is_tech else conv.get("artisan_id")
-        blocked_by_me, blocked_by_them = (False, False)
-        if other_id:
-            blocked_by_me, blocked_by_them = _block_state(conn, user["id"], other_id)
-
         if request.method == "POST":
             status = conv["status"]
             ready = False
-            is_xhr = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
             content = (request.form.get("content") or "").strip()
-            mtype = (request.form.get("message_type") or "text").strip()
-            attachment = request.form.get("attachment") or ""
-            attachment_name = (request.form.get("attachment_name") or "").strip()[:180]
-            try:
-                duration_ms = int(request.form.get("duration_ms") or 0) or None
-            except (TypeError, ValueError):
-                duration_ms = None
-
-            if is_direct and (blocked_by_me or blocked_by_them):
-                msg = ("Vous avez bloque cet utilisateur." if blocked_by_me
-                       else "Vous ne pouvez plus envoyer de message dans cette conversation.")
-                if is_xhr:
-                    return jsonify({"ok": False, "error": msg, "blocked": True}), 403
-                flash(msg, "error")
-                return redirect(url_for("client_conversation", conversation_id=conversation_id))
-
-            attach_url = None
-            if mtype in _MSG_MEDIA_TYPES and attachment.startswith("data:"):
-                try:
-                    attach_url = storage.get_storage().upload(
-                        attachment_name or mtype, attachment,
-                        max_size=_ATTACH_MAX.get(mtype, 8 * 1024 * 1024))
-                except Exception as e:
-                    logger.warning("Upload piece jointe messagerie impossible: %s", e)
-                    err = "Fichier non accepte ou trop volumineux."
-                    if is_xhr:
-                        return jsonify({"ok": False, "error": err}), 400
-                    flash(err, "error")
-                    return redirect(url_for("client_conversation", conversation_id=conversation_id))
-            else:
-                mtype = "text"
-
-            if mtype == "text" and not content:
-                if is_xhr:
-                    return jsonify({"ok": False, "error": "Message vide."}), 400
+            if not content:
                 flash("Le message ne peut pas etre vide.", "error")
             else:
-                new_id = _insert_id(
-                    conn,
+                conn.execute(
                     "INSERT INTO conversation_messages"
-                    " (conversation_id, sender_id, sender_role, content,"
-                    "  message_type, attachment_url, attachment_name, duration_ms)"
-                    " VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                    (conversation_id, user["id"], me_role,
-                     content or ("" if mtype != "text" else content),
-                     mtype, attach_url, attachment_name or None, duration_ms))
+                    " (conversation_id, sender_id, sender_role, content)"
+                    " VALUES (?, ?, ?, ?)",
+                    (conversation_id, user["id"], "client", content))
 
-                if is_direct:
-                    other_role = "artisan" if me_role == "client" else "client"
-                    conn.execute(
-                        "UPDATE conversation_messages SET is_read = 1"
-                        " WHERE conversation_id = ? AND sender_role = ?",
-                        (conversation_id, other_role))
-                    conn.execute(
-                        "UPDATE conversations SET updated_at = ? WHERE id = ?",
-                        (datetime.now(timezone.utc).isoformat(), conversation_id))
-                    # Un nouveau message fait reapparaitre la conversation.
-                    conn.execute(
-                        "UPDATE conversation_prefs SET deleted_at = NULL"
-                        " WHERE conversation_id = ?", (conversation_id,))
-                elif conv["status"] != "admin_active":
+                if conv["status"] != "admin_active":
                     collected = _get_collected_from_messages(conn, conversation_id)
                     if not collected.get("location") and session.get("client_zone"):
                         collected["location"] = session["client_zone"]
@@ -8455,383 +8213,54 @@ def client_conversation(conversation_id):
                         "UPDATE conversations SET updated_at = ? WHERE id = ?",
                         (datetime.now(timezone.utc).isoformat(), conversation_id))
                 conn.commit()
-                if is_xhr:
-                    if is_direct:
-                        rows = conn.execute(
-                            "SELECT m.*, u.full_name AS sender_name"
-                            " FROM conversation_messages m JOIN users u ON u.id = m.sender_id"
-                            " WHERE m.id = ?", (new_id,)).fetchall()
-                    else:
-                        rows = conn.execute(
-                            "SELECT m.*, u.full_name AS sender_name"
-                            " FROM conversation_messages m JOIN users u ON u.id = m.sender_id"
-                            " WHERE m.conversation_id = ? AND m.sender_role != 'system'"
-                            " AND m.id >= ?"
-                            " ORDER BY m.id ASC",
-                            (conversation_id, new_id)).fetchall()
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    latest = conn.execute(
+                        "SELECT m.*, u.full_name AS sender_name"
+                        " FROM conversation_messages m"
+                        " JOIN users u ON u.id = m.sender_id"
+                        " WHERE m.conversation_id = ? AND m.sender_role != 'system'"
+                        " AND m.id >= (SELECT COALESCE(MAX(id), 0) - 4 FROM conversation_messages WHERE conversation_id = ? AND sender_role != 'system')"
+                        " ORDER BY m.id ASC",
+                        (conversation_id, conversation_id)).fetchall()
                     return jsonify({
                         "ok": True,
-                        "messages": [_msg_payload(r) for r in rows],
+                        "messages": [
+                            {"id": m["id"], "content": m["content"], "sender_role": m["sender_role"], "created_at": m["created_at"], "sender_name": m["sender_name"]}
+                            for m in latest
+                        ],
                         "status": status,
                         "ready": ready,
                     })
-                return redirect(url_for("client_conversation", conversation_id=conversation_id))
-
-        is_xhr = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         messages = conn.execute(
             "SELECT m.*, u.full_name AS sender_name"
             " FROM conversation_messages m"
             " JOIN users u ON u.id = m.sender_id"
             " WHERE m.conversation_id = ? AND m.sender_role != 'system'"
-            " ORDER BY m.created_at ASC, m.id ASC",
+            " ORDER BY m.created_at ASC",
             (conversation_id,)).fetchall()
-
-        # Accuse de reception : l'autre partie a recu les messages (app ouverte).
-        other_roles = ["admin"]
-        if is_direct:
-            other_roles.append("artisan" if me_role == "client" else "client")
-        ph = ",".join("?" * len(other_roles))
         conn.execute(
-            "UPDATE conversation_messages SET is_delivered = 1"
-            " WHERE conversation_id = ? AND sender_role IN (%s) AND is_delivered = 0" % ph,
-            (conversation_id, *other_roles))
-        if not is_xhr:
-            # Ouverture reelle de la conversation -> messages marques comme lus.
-            conn.execute(
-                "UPDATE conversation_messages SET is_read = 1"
-                " WHERE conversation_id = ? AND sender_role IN (%s)" % ph,
-                (conversation_id, *other_roles))
+            "UPDATE conversation_messages SET is_read = 1"
+            " WHERE conversation_id = ? AND sender_role = 'admin'",
+            (conversation_id,))
         conn.commit()
-
-        if is_xhr:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return jsonify({
                 "ok": True,
-                "me_role": me_role,
-                "blocked_by_me": blocked_by_me,
-                "blocked_by_them": blocked_by_them,
-                "muted": _conv_muted(conn, user["id"], conversation_id),
-                "messages": [_msg_payload(m) for m in messages],
+                "conversation": dict(conv),
+                "messages": [
+                    {"id": m["id"], "content": m["content"], "sender_role": m["sender_role"],
+                     "created_at": m["created_at"], "sender_name": m["sender_name"]}
+                    for m in messages
+                ]
             })
         artisan = None
         if conv.get("artisan_id"):
             artisan = conn.execute(
                 "SELECT id, full_name, profession, photo_url FROM users WHERE id = ?",
                 (conv["artisan_id"],)).fetchone()
-        counterpart = None
-        if other_id:
-            counterpart = conn.execute(
-                "SELECT id, full_name, profession, photo_url, is_verified,"
-                " availability_status, phone, role FROM users WHERE id = ?",
-                (other_id,)).fetchone()
-        muted = _conv_muted(conn, user["id"], conversation_id)
     finally:
         conn.close()
-    return render_template("client_conversation.html", conversation=conv, messages=messages,
-                           user=user, artisan=artisan, counterpart=counterpart,
-                           is_direct=is_direct, me_role=me_role, muted=muted,
-                           blocked_by_me=blocked_by_me, blocked_by_them=blocked_by_them)
-
-
-@app.route("/messages/technicien/<int:artisan_id>", methods=["GET"])
-@login_required
-@limiter.limit("30 per hour")
-def client_message_artisan(artisan_id):
-    """Ouvre (ou cree) la conversation directe entre le client et CE technicien.
-
-    Cible du bouton "Message" sur le profil technicien : jamais l'assistant IA,
-    jamais l'administration -- un dialogue 1-a-1 avec le technicien affiche.
-    """
-    user = get_current_user()
-    conn = get_db_connection()
-    try:
-        artisan = conn.execute(
-            "SELECT id, full_name FROM users WHERE id = ?"
-            " AND role IN ('artisan', 'technician')",
-            (artisan_id,)).fetchone()
-        if not artisan:
-            flash("Technicien introuvable.", "error")
-            return redirect(url_for("artisans_page"))
-        if user["id"] == artisan_id:
-            flash("Vous ne pouvez pas vous ecrire a vous-meme.", "error")
-            return redirect(url_for("artisan_detail", artisan_id=artisan_id))
-
-        now_iso = datetime.now(timezone.utc).isoformat()
-        conv = conn.execute(
-            "SELECT id, status FROM conversations"
-            " WHERE client_id = ? AND artisan_id = ?",
-            (user["id"], artisan_id)).fetchone()
-        if not conv:
-            conv_id = _insert_id(
-                conn,
-                "INSERT INTO conversations (client_id, artisan_id, subject, status, updated_at)"
-                " VALUES (?, ?, ?, 'direct', ?)",
-                (user["id"], artisan_id, artisan["full_name"], now_iso))
-        else:
-            conv_id = conv["id"]
-            if conv["status"] != "direct":
-                conn.execute(
-                    "UPDATE conversations SET status = 'direct', updated_at = ?"
-                    " WHERE id = ?", (now_iso, conv_id))
-        conn.commit()
-    finally:
-        conn.close()
-    return redirect(url_for("client_conversation", conversation_id=conv_id))
-
-
-def _conv_guard(conn, conversation_id, user):
-    """Retourne (conv, other_id) si l'utilisateur participe, sinon (None, None)."""
-    conv = conn.execute(
-        "SELECT * FROM conversations WHERE id = ?", (conversation_id,)).fetchone()
-    if not conv:
-        return None, None
-    if conv["client_id"] != user["id"] and conv.get("artisan_id") != user["id"]:
-        return None, None
-    other = conv["artisan_id"] if conv["client_id"] == user["id"] else conv["client_id"]
-    return conv, other
-
-
-@app.route("/messages/<int:conversation_id>/prefs", methods=["POST"])
-@login_required
-def conversation_prefs(conversation_id):
-    """Active/desactive les notifications (mute) de cette conversation."""
-    user = get_current_user()
-    muted = 1 if (request.form.get("muted") in ("1", "true", "on")) else 0
-    conn = get_db_connection()
-    try:
-        conv, _ = _conv_guard(conn, conversation_id, user)
-        if not conv:
-            return jsonify({"ok": False, "error": "Conversation introuvable."}), 404
-        existing = conn.execute(
-            "SELECT 1 FROM conversation_prefs WHERE user_id = ? AND conversation_id = ?",
-            (user["id"], conversation_id)).fetchone()
-        if existing:
-            conn.execute(
-                "UPDATE conversation_prefs SET muted = ? WHERE user_id = ? AND conversation_id = ?",
-                (muted, user["id"], conversation_id))
-        else:
-            conn.execute(
-                "INSERT INTO conversation_prefs (user_id, conversation_id, muted) VALUES (?, ?, ?)",
-                (user["id"], conversation_id, muted))
-        conn.commit()
-    finally:
-        conn.close()
-    return jsonify({"ok": True, "muted": bool(muted)})
-
-
-@app.route("/messages/<int:conversation_id>/block", methods=["POST"])
-@login_required
-def conversation_block(conversation_id):
-    """Bloque ou debloque l'autre participant de la conversation."""
-    user = get_current_user()
-    action = request.form.get("action") or "block"
-    conn = get_db_connection()
-    try:
-        conv, other_id = _conv_guard(conn, conversation_id, user)
-        if not conv or not other_id:
-            return jsonify({"ok": False, "error": "Conversation introuvable."}), 404
-        if action == "unblock":
-            conn.execute(
-                "DELETE FROM user_blocks WHERE blocker_id = ? AND blocked_id = ?",
-                (user["id"], other_id))
-            blocked = False
-        else:
-            exists = conn.execute(
-                "SELECT 1 FROM user_blocks WHERE blocker_id = ? AND blocked_id = ?",
-                (user["id"], other_id)).fetchone()
-            if not exists:
-                conn.execute(
-                    "INSERT INTO user_blocks (blocker_id, blocked_id) VALUES (?, ?)",
-                    (user["id"], other_id))
-            blocked = True
-        conn.commit()
-    finally:
-        conn.close()
-    return jsonify({"ok": True, "blocked": blocked})
-
-
-@app.route("/messages/<int:conversation_id>/report", methods=["POST"])
-@login_required
-def conversation_report(conversation_id):
-    """Signale la conversation ou l'autre participant a l'administration."""
-    user = get_current_user()
-    reason = (request.form.get("reason") or "autre").strip()[:80]
-    details = (request.form.get("details") or "").strip()[:2000]
-    conn = get_db_connection()
-    try:
-        conv, other_id = _conv_guard(conn, conversation_id, user)
-        if not conv:
-            return jsonify({"ok": False, "error": "Conversation introuvable."}), 404
-        conn.execute(
-            "INSERT INTO conversation_reports"
-            " (conversation_id, reporter_id, reported_id, reason, details)"
-            " VALUES (?, ?, ?, ?, ?)",
-            (conversation_id, user["id"], other_id, reason, details))
-        conn.commit()
-    finally:
-        conn.close()
-    return jsonify({"ok": True})
-
-
-@app.route("/messages/<int:conversation_id>/delete", methods=["POST"])
-@login_required
-def conversation_delete(conversation_id):
-    """Masque la conversation pour cet utilisateur (suppression cote client)."""
-    user = get_current_user()
-    conn = get_db_connection()
-    try:
-        conv, _ = _conv_guard(conn, conversation_id, user)
-        if not conv:
-            return jsonify({"ok": False, "error": "Conversation introuvable."}), 404
-        now_iso = datetime.now(timezone.utc).isoformat()
-        existing = conn.execute(
-            "SELECT 1 FROM conversation_prefs WHERE user_id = ? AND conversation_id = ?",
-            (user["id"], conversation_id)).fetchone()
-        if existing:
-            conn.execute(
-                "UPDATE conversation_prefs SET deleted_at = ? WHERE user_id = ? AND conversation_id = ?",
-                (now_iso, user["id"], conversation_id))
-        else:
-            conn.execute(
-                "INSERT INTO conversation_prefs (user_id, conversation_id, deleted_at) VALUES (?, ?, ?)",
-                (user["id"], conversation_id, now_iso))
-        conn.commit()
-    finally:
-        conn.close()
-    return jsonify({"ok": True, "redirect": url_for("client_messages")})
-
-
-@app.route("/messages/<int:conversation_id>/call/signal", methods=["POST"])
-@login_required
-def call_signal(conversation_id):
-    """Depose un message de signalisation WebRTC pour l'appel video."""
-    user = get_current_user()
-    kind = (request.form.get("kind") or "").strip()
-    payload = request.form.get("payload") or ""
-    if kind not in ("ring", "offer", "answer", "ice", "accept", "decline", "hangup"):
-        return jsonify({"ok": False, "error": "Signal invalide."}), 400
-    if len(payload) > 200_000:
-        return jsonify({"ok": False, "error": "Signal trop volumineux."}), 400
-    conn = get_db_connection()
-    try:
-        conv, other_id = _conv_guard(conn, conversation_id, user)
-        if not conv or not other_id:
-            return jsonify({"ok": False, "error": "Conversation introuvable."}), 404
-        mine, theirs = _block_state(conn, user["id"], other_id)
-        if mine or theirs:
-            return jsonify({"ok": False, "error": "Appel indisponible."}), 403
-        now_dt = datetime.now(timezone.utc)
-        conn.execute(
-            "INSERT INTO call_signals (conversation_id, from_id, to_id, kind, payload, created_at)"
-            " VALUES (?, ?, ?, ?, ?, ?)",
-            (conversation_id, user["id"], other_id, kind, payload, now_dt.isoformat()))
-        # Purge des vieux signaux (> 1h) pour garder la table legere.
-        cutoff = (now_dt - timedelta(hours=1)).isoformat()
-        conn.execute(
-            "DELETE FROM call_signals WHERE created_at < ? AND created_at LIKE '%T%'",
-            (cutoff,))
-        conn.commit()
-    finally:
-        conn.close()
-    return jsonify({"ok": True})
-
-
-@app.route("/messages/<int:conversation_id>/call/poll", methods=["GET"])
-@login_required
-def call_poll(conversation_id):
-    """Recupere les signaux WebRTC destines a l'utilisateur courant."""
-    user = get_current_user()
-    try:
-        after = int(request.args.get("after") or 0)
-    except (TypeError, ValueError):
-        after = 0
-    conn = get_db_connection()
-    try:
-        conv, _ = _conv_guard(conn, conversation_id, user)
-        if not conv:
-            return jsonify({"ok": False, "error": "Conversation introuvable."}), 404
-        rows = conn.execute(
-            "SELECT id, from_id, kind, payload, created_at FROM call_signals"
-            " WHERE conversation_id = ? AND to_id = ? AND id > ?"
-            " ORDER BY id ASC LIMIT 50",
-            (conversation_id, user["id"], after)).fetchall()
-    finally:
-        conn.close()
-    return jsonify({
-        "ok": True,
-        "signals": [
-            {"id": r["id"], "from_id": r["from_id"], "kind": r["kind"],
-             "payload": r["payload"], "created_at": r["created_at"]}
-            for r in rows
-        ],
-    })
-
-
-_ice_cache = {"servers": None, "exp": 0.0}
-
-
-def _ice_servers():
-    """Construit la liste des serveurs ICE (STUN + TURN) selon la config.
-
-    Priorite : jetons ephemeres Twilio si configures, sinon TURN statique.
-    Resultat mis en cache jusqu'a expiration.
-    """
-    now = datetime.now(timezone.utc).timestamp()
-    if _ice_cache["servers"] is not None and _ice_cache["exp"] > now:
-        return _ice_cache["servers"]
-
-    servers = [{"urls": u.strip()}
-               for u in (app.config.get("STUN_URLS") or "").split(",") if u.strip()]
-    ttl = 3300
-
-    sid = app.config.get("TWILIO_ACCOUNT_SID")
-    tok = app.config.get("TWILIO_AUTH_TOKEN")
-    if sid and tok:
-        try:
-            import requests
-            resp = requests.post(
-                f"https://api.twilio.com/2010-04-01/Accounts/{sid}/Tokens.json",
-                auth=(sid, tok), timeout=6)
-            if resp.ok:
-                data = resp.json()
-                raw = data.get("ice_servers") or data.get("iceServers") or []
-                norm = []
-                for s in raw:
-                    entry = {k: v for k, v in s.items() if k != "url"}
-                    entry["urls"] = s.get("urls") or s.get("url")
-                    if entry.get("urls"):
-                        norm.append(entry)
-                if norm:
-                    servers = norm
-                ttl = max(int(data.get("ttl") or 3600) - 120, 300)
-        except Exception as e:
-            logger.warning("Twilio NTS indisponible: %s", e)
-
-    turn = (app.config.get("TURN_URLS") or "").strip()
-    if turn:
-        entry = {"urls": [x.strip() for x in turn.split(",") if x.strip()]}
-        if app.config.get("TURN_USERNAME"):
-            entry["username"] = app.config["TURN_USERNAME"]
-            entry["credential"] = app.config.get("TURN_CREDENTIAL", "")
-        servers.append(entry)
-
-    _ice_cache["servers"] = servers
-    _ice_cache["exp"] = now + ttl
-    return servers
-
-
-@app.route("/messages/<int:conversation_id>/call/ice", methods=["GET"])
-@login_required
-def call_ice(conversation_id):
-    """Fournit les serveurs ICE (STUN/TURN) pour l'appel video."""
-    user = get_current_user()
-    conn = get_db_connection()
-    try:
-        conv, _ = _conv_guard(conn, conversation_id, user)
-    finally:
-        conn.close()
-    if not conv:
-        return jsonify({"ok": False, "error": "Conversation introuvable."}), 404
-    return jsonify({"ok": True, "iceServers": _ice_servers()})
+    return render_template("client_conversation.html", conversation=conv, messages=messages, user=user, artisan=artisan)
 
 
 @app.route("/admin/messages")

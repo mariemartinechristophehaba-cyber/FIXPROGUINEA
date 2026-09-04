@@ -61,23 +61,6 @@ class Config:
     HOST = os.getenv("HOST", "127.0.0.1")
     PORT = int(os.getenv("PORT", "5000"))
 
-    # Appel video (WebRTC) : serveurs ICE.
-    # STUN suffit sur la plupart des reseaux ; un serveur TURN est requis pour
-    # traverser les NAT symetriques (beaucoup de reseaux mobiles).
-    # Option A - TURN statique :
-    #   TURN_URLS="turn:host:3478?transport=udp,turn:host:3478?transport=tcp"
-    #   TURN_USERNAME=... TURN_CREDENTIAL=...
-    # Option B - Twilio Network Traversal Service (jetons ephemeres) :
-    #   TWILIO_ACCOUNT_SID=... TWILIO_AUTH_TOKEN=...
-    STUN_URLS = os.getenv(
-        "STUN_URLS",
-        "stun:stun.l.google.com:19302,stun:global.stun.twilio.com:3478").strip()
-    TURN_URLS = os.getenv("TURN_URLS", "").strip()
-    TURN_USERNAME = os.getenv("TURN_USERNAME", "").strip()
-    TURN_CREDENTIAL = os.getenv("TURN_CREDENTIAL", "").strip()
-    TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID", "").strip()
-    TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN", "").strip()
-
     # Commission preleve par la plateforme sur chaque intervention
     FIXPRO_COMMISSION_RATE = float(os.getenv("FIXPRO_COMMISSION_RATE", "0.10"))
 
@@ -121,10 +104,10 @@ class Config:
     # limites ne s'appliquent jamais. Fournir alors une URL Redis / Upstash.
     RATELIMIT_STORAGE_URI = os.getenv("RATELIMIT_STORAGE_URI", "memory://").strip()
 
-    # Taille maximale d'une requete (24 Mo) : couvre les pieces jointes de la
-    # messagerie (photo, document, message vocal) envoyees en data URI base64
-    # (~1.33x la taille du fichier). Empeche un POST geant de saturer la memoire.
-    MAX_CONTENT_LENGTH = int(os.getenv("MAX_CONTENT_LENGTH", str(24 * 1024 * 1024)))
+    # Taille maximale d'une requete (8 Mo) : les documents envoyes sont des
+    # data URI base64 plafonnes a ~3 Mo cote _parse_base64_file. Empeche un
+    # POST geant de saturer la memoire de la fonction serverless.
+    MAX_CONTENT_LENGTH = int(os.getenv("MAX_CONTENT_LENGTH", str(8 * 1024 * 1024)))
 
     # Securite des sessions
     SECRET_KEY = os.getenv("SECRET_KEY", "").strip()

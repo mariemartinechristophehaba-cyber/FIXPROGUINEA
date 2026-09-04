@@ -38,22 +38,6 @@
     .cm-body h2 { font-size: 1.05rem; font-weight: 800; margin: 0 0 6px; }
     .cm-body p { font-size: 0.9rem; color: #64748B; margin: 0; }
 
-    .cm-list { flex: 1; padding: 4px 0 120px; }
-    .cm-row { display: flex; align-items: center; gap: 12px; padding: 13px 16px; border-bottom: 1px solid #EEF2F9; }
-    .cm-row:active { background: #EEF3FF; }
-    .cm-ava { flex: 0 0 50px; width: 50px; height: 50px; border-radius: 50%; overflow: hidden;
-      background: #E4ECFF; color: #2563EB; font-weight: 800; display: flex; align-items: center; justify-content: center; font-size: 1.05rem; }
-    .cm-ava img { width: 100%; height: 100%; object-fit: cover; }
-    .cm-main { flex: 1; min-width: 0; }
-    .cm-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
-    .cm-name { font-weight: 700; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .cm-time { flex: 0 0 auto; font-size: 0.7rem; color: #94A3B8; }
-    .cm-bot { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 3px; }
-    .cm-last { font-size: 0.85rem; color: #64748B; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .cm-last.unseen { color: #0F172A; font-weight: 600; }
-    .cm-badge { flex: 0 0 auto; min-width: 19px; height: 19px; padding: 0 5px; border-radius: 10px;
-      background: #2563EB; color: #fff; font-size: 0.7rem; font-weight: 700; display: flex; align-items: center; justify-content: center; }
-
     .cm-nav {
       position: fixed; bottom: 0; left: 0; right: 0; background: #fff;
       border-top: 1px solid #E6ECF5; display: flex; justify-content: space-around; align-items: flex-end;
@@ -86,50 +70,26 @@
     <h1>Messages</h1>
   </header>
 
-  {% if conversations %}
-  <main class="cm-list">
-    {% for c in conversations %}
-    <a class="cm-row" href="{{ url_for('client_conversation', conversation_id=c.id) }}">
-      <span class="cm-ava">
-        {% if c.peer_photo %}<img src="{{ c.peer_photo }}" alt="{{ c.peer_name }}" />
-        {% else %}{{ (c.peer_name or '?')[0]|upper }}{% endif %}
-      </span>
-      <span class="cm-main">
-        <span class="cm-top">
-          <span class="cm-name">{{ c.peer_name }}</span>
-          <span class="cm-time">{{ c.last_at | dt_hm }}</span>
-        </span>
-        <span class="cm-bot">
-          <span class="cm-last {{ 'unseen' if c.unread }}">{{ c.last_message or c.peer_sub }}</span>
-          {% if c.unread %}<span class="cm-badge">{{ c.unread }}</span>{% endif %}
-        </span>
-      </span>
-    </a>
-    {% endfor %}
-  </main>
-  {% else %}
   <main class="cm-body">
     <span class="icon">
       <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"/></svg>
     </span>
-    <h2>Aucune conversation</h2>
-    <p>Vos échanges avec les techniciens apparaîtront ici.</p>
+    <h2>Messages</h2>
+    <p>Refonte en cours.</p>
   </main>
-  {% endif %}
 
-  {% set is_tech = user and user.role in ('artisan', 'technician') %}
   <nav class="cm-nav">
-    <a href="{{ url_for('artisan_dashboard') if is_tech else url_for('index') }}">
+    <a href="{{ url_for('index') }}">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
       Accueil
     </a>
-    <a href="{{ url_for('technician_interventions') if is_tech else url_for('artisans_page') }}">
+    <a href="{{ url_for('artisans_page') }}">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
-      {{ 'Missions' if is_tech else 'Recherche' }}
+      Recherche
     </a>
-    <a href="{{ url_for('technician_calls') if is_tech else (url_for('requests_list') if user else url_for('login')) }}" class="cm-fab">
+    <a href="{{ url_for('requests_list') if user else url_for('login') }}" class="cm-fab">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v3M16 2v3"/><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/></svg>
-      <span>{{ 'Appels' if is_tech else 'Réservations' }}</span>
+      <span>Réservations</span>
     </a>
     <a href="{{ url_for('client_messages') }}" class="active">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"/></svg>

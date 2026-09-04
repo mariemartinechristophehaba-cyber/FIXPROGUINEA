@@ -329,54 +329,12 @@ CREATE TABLE IF NOT EXISTS conversation_messages (
     sender_id       INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     sender_role     TEXT NOT NULL,
     content         TEXT NOT NULL,
-    message_type    TEXT DEFAULT 'text',
-    attachment_url  TEXT,
-    attachment_name TEXT,
-    duration_ms     INTEGER,
-    is_delivered    INTEGER DEFAULT 0,
     is_read         INTEGER DEFAULT 0,
     created_at      TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_conversation_messages_conv ON conversation_messages(conversation_id);
 CREATE INDEX IF NOT EXISTS idx_conversation_messages_unread ON conversation_messages(conversation_id, is_read);
-
-CREATE TABLE IF NOT EXISTS conversation_prefs (
-    user_id         INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    conversation_id INTEGER NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
-    muted           INTEGER NOT NULL DEFAULT 0,
-    deleted_at      TEXT,
-    PRIMARY KEY (user_id, conversation_id)
-);
-
-CREATE TABLE IF NOT EXISTS user_blocks (
-    blocker_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    blocked_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    created_at  TEXT DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (blocker_id, blocked_id)
-);
-
-CREATE TABLE IF NOT EXISTS conversation_reports (
-    id              INTEGER PRIMARY KEY AUTOINCREMENT,
-    conversation_id INTEGER REFERENCES conversations(id) ON DELETE SET NULL,
-    reporter_id     INTEGER REFERENCES users(id) ON DELETE SET NULL,
-    reported_id     INTEGER REFERENCES users(id) ON DELETE SET NULL,
-    reason          TEXT NOT NULL DEFAULT '',
-    details         TEXT DEFAULT '',
-    status          TEXT NOT NULL DEFAULT 'new',
-    created_at      TEXT DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS call_signals (
-    id              INTEGER PRIMARY KEY AUTOINCREMENT,
-    conversation_id INTEGER NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
-    from_id         INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    to_id           INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    kind            TEXT NOT NULL,
-    payload         TEXT DEFAULT '',
-    created_at      TEXT DEFAULT CURRENT_TIMESTAMP
-);
-CREATE INDEX IF NOT EXISTS idx_call_signals_to ON call_signals(conversation_id, to_id, id);
 
 -- Contacts clients anonymes depuis les fiches techniciens
 CREATE TABLE IF NOT EXISTS client_contacts (
