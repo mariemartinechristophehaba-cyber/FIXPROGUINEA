@@ -2510,6 +2510,49 @@ def _pct_delta(current, previous):
     return round((current - previous) / previous * 100, 1)
 
 
+# TEMPORAIRE (demande du proprietaire, 2026-09-05) : affiche des donnees de
+# demonstration fixes sur le tableau de bord (mockup) au lieu des vraies
+# donnees, le temps de peupler la base. Remettre a False pour revenir aux
+# vraies donnees des que possible - ne JAMAIS laisser en prod durablement.
+_DASHBOARD_DEMO_MODE = True
+
+_DASHBOARD_DEMO_DATA = {
+    "kpis": {
+        "techniciens": {"value": 2487, "delta": 12.0, "sub": "+265 ce mois"},
+        "actifs": {"value": 1892, "delta": 8.0, "sub": "75% des techniciens"},
+        "attente": {"value": 254, "delta": 18.0, "sub": "En attente de paiement"},
+        "expires": {"value": 341, "delta": 6.0, "sub": "A renouveler"},
+    },
+    "evolution_counts": [(110, 75), (150, 115), (170, 130), (145, 105), (205, 150), (230, 165)],
+    "revenu_mois": 184500,
+    "revenu_delta": 20.0,
+    "objectif_pct": 62,
+    "derniers_abos": [
+        {"id": 65, "tech_name": "Ibrahima Sylla", "plan_name": "Pro", "price_month": 50000,
+         "status": "ACTIVE", "created_at": "2026-09-01"},
+        {"id": 64, "tech_name": "Mariama Keita", "plan_name": "Business Annuel", "price_month": 500000,
+         "status": "ACTIVE", "created_at": "2026-09-01"},
+        {"id": 63, "tech_name": "Ousmane Diallo", "plan_name": "Pro", "price_month": 50000,
+         "status": "PAST_DUE", "created_at": "2026-09-01"},
+        {"id": 62, "tech_name": "Amadou Barry", "plan_name": "Pro", "price_month": 50000,
+         "status": "ACTIVE", "created_at": "2026-08-31"},
+        {"id": 61, "tech_name": "Kadiatou Sow", "plan_name": "Business Annuel", "price_month": 500000,
+         "status": "ACTIVE", "created_at": "2026-08-31"},
+    ],
+    "repartition": [
+        {"name": "Pro Mensuel", "count": 1097},
+        {"name": "Pro Annuel", "count": 416},
+        {"name": "Business Mensuel", "count": 227},
+        {"name": "Business Annuel", "count": 152},
+    ],
+    "demandes_validation": [
+        {"full_name": "Alpha Conde", "profession": "Plombier", "photo_url": None, "created_at": "2026-09-01"},
+        {"full_name": "Aissatou Bah", "profession": "Electricienne", "photo_url": None, "created_at": "2026-08-31"},
+        {"full_name": "Mamadou Diallo", "profession": "Frigoriste", "photo_url": None, "created_at": "2026-08-30"},
+    ],
+}
+
+
 _MONTH_ABBR_FR = {1: "Janv", 2: "Fevr", 3: "Mars", 4: "Avr", 5: "Mai", 6: "Juin",
                   7: "Juil", 8: "Aout", 9: "Sept", 10: "Oct", 11: "Nov", 12: "Dec"}
 _MONTH_LONG_FR = {1: "janv.", 2: "fevr.", 3: "mars", 4: "avr.", 5: "mai", 6: "juin",
@@ -2649,10 +2692,25 @@ def admin_dashboard():
     finally:
         conn.close()
 
+    revenu_delta = _pct_delta(revenu_mois, revenu_mois_precedent)
+
+    if _DASHBOARD_DEMO_MODE:
+        demo = _DASHBOARD_DEMO_DATA
+        kpis = demo["kpis"]
+        for row, (new_c, renew_c) in zip(evolution, demo["evolution_counts"]):
+            row["new"], row["renew"] = new_c, renew_c
+        revenu_mois = demo["revenu_mois"]
+        revenu_delta = demo["revenu_delta"]
+        objectif_pct = demo["objectif_pct"]
+        derniers_abos = demo["derniers_abos"]
+        repartition = demo["repartition"]
+        repartition_total = sum(r["count"] for r in repartition)
+        demandes_validation = demo["demandes_validation"]
+
     return render_template(
         "admin_dashboard.html", user=user, active="dashboard", badges=badges,
         today_label=today_label, kpis=kpis, evolution=evolution,
-        revenu_mois=revenu_mois, revenu_delta=_pct_delta(revenu_mois, revenu_mois_precedent),
+        revenu_mois=revenu_mois, revenu_delta=revenu_delta,
         objectif=objectif, objectif_pct=objectif_pct,
         derniers_abos=derniers_abos, repartition=repartition,
         repartition_total=repartition_total, demandes_validation=demandes_validation,

@@ -61,6 +61,12 @@
       .side-user .tag { display: inline-flex; align-items: center; gap: 5px; margin-top: 4px; background: rgba(37,99,235,0.2); color: #93b4fb; font-size: 0.62rem; font-weight: 700; padding: 2px 8px; border-radius: 6px; }
       .side-user .tag.online { background: rgba(16,185,129,0.16); color: #34d399; }
       .side-user .tag .d { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+      .side-help { display: flex; align-items: center; gap: 10px; margin: 0 8px 12px; padding: 10px 12px; border-radius: 10px; background: rgba(255,255,255,0.05); }
+      .side-help:hover { background: rgba(255,255,255,0.09); }
+      .side-help-ic { width: 30px; height: 30px; border-radius: 8px; background: rgba(37,99,235,0.25); color: #93b4fb; display: grid; place-items: center; flex: none; }
+      .side-help-ic svg { width: 15px; height: 15px; }
+      .side-help-t { display: block; color: #fff; font-size: 0.78rem; font-weight: 700; }
+      .side-help-s { display: block; font-size: 0.7rem; color: var(--sidebar-fg); }
       .logout { display: flex; align-items: center; gap: 10px; padding: 9px 10px; color: #f87171; border-radius: 8px; font-size: 0.84rem; font-weight: 600; }
       .logout:hover { background: rgba(239,68,68,0.12); }
 
@@ -159,6 +165,13 @@
         </nav>
 
         <div class="side-foot">
+          <a class="side-help" href="mailto:{{ config.ADMIN_EMAIL or 'support@fixpro.app' }}">
+            <span class="side-help-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 2-3 4"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
+            <span>
+              <span class="side-help-t">Besoin d'aide ?</span>
+              <span class="side-help-s">Contacter le support</span>
+            </span>
+          </a>
           <div class="side-user">
             <div class="av">{{ (user.full_name or 'A')[0]|upper if user else 'A' }}</div>
             <div>

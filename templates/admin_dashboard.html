@@ -242,6 +242,7 @@
             <div class="t">{{ d.full_name }}</div>
             <div class="s">{{ d.profession or '' }}</div>
           </div>
+          <span class="row-more" style="font-size:.72rem;white-space:nowrap">Inscrit le {{ (d.created_at|string)[8:10] }}/{{ (d.created_at|string)[5:7] }}/{{ (d.created_at|string)[0:4] }}</span>
           <span class="tag2 amber">En attente</span>
         </li>
         {% else %}
