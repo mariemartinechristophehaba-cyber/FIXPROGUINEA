@@ -16,20 +16,21 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/fixpro.css', v='12') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/fixpro.css', v='13') }}" />
     {% block extra_head %}{% endblock %}
   </head>
   {% set is_admin_route = request.endpoint and request.endpoint.startswith('admin') %}
   {% set chat_view = request.endpoint in ('client_conversation', 'client_message_new', 'client_message_artisan') %}
-  <body class="{% if not nav_user or request.endpoint in ('index', 'ticket_detail') %} no-tabbar{% endif %}{% if request.endpoint == 'dashboard' or is_admin_route or chat_view %} no-sidebar{% endif %}{% if request.endpoint == 'index' %} landing{% endif %}{% if is_admin_route %} admin-page{% endif %}{% if chat_view %} chat-view{% endif %}">
+  {% set is_tech = nav_user and nav_user.role in ('artisan', 'technician') %}
+  <body class="{% if not nav_user or request.endpoint in ('index', 'ticket_detail') %} no-tabbar{% endif %}{% if not nav_user or is_admin_route or chat_view %} no-sidebar{% endif %}{% if request.endpoint == 'index' %} landing{% endif %}{% if is_admin_route %} admin-page{% endif %}{% if chat_view %} chat-view{% endif %}">
 
     {% block header %}{% endblock %}
 
     {% block sidebar %}
-    {% if nav_user and not is_admin_route and request.endpoint not in ('index', 'dashboard', 'artisans_page') %}
+    {% if nav_user and not is_admin_route and not chat_view %}
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-top">
-        <a class="brand" href="{{ url_for('index') }}">
+        <a class="brand" href="{{ url_for('artisan_dashboard') if is_tech else url_for('dashboard') }}">
           <span class="brand-mark">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
               <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
@@ -37,38 +38,80 @@
           </span>
           Fix<em>Pro</em>
         </a>
-        <p class="sidebar-tagline">Votre technicien a portee de main.</p>
+        <p class="sidebar-tagline">{{ 'Espace technicien' if is_tech else 'Votre technicien a portee de main.' }}</p>
       </div>
 
       <nav class="sidebar-nav">
+        {% if is_tech %}
+        <a class="sidebar-link {{ 'active' if request.endpoint == 'artisan_dashboard' }}" href="{{ url_for('artisan_dashboard') }}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
+          Accueil
+        </a>
+        <a class="sidebar-link {{ 'active' if request.endpoint == 'technician_interventions' }}" href="{{ url_for('technician_interventions') }}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+          Interventions
+        </a>
+        <a class="sidebar-link {{ 'active' if request.endpoint == 'technician_calls' }}" href="{{ url_for('technician_calls') }}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          Appels / Contacts
+        </a>
+        <a class="sidebar-link {{ 'active' if request.endpoint in ('client_messages', 'client_conversation', 'client_message_new', 'client_message_artisan') }}" href="{{ url_for('client_messages') }}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 21l1.9-5.1A8.4 8.4 0 0 1 4 11.5a8.5 8.5 0 0 1 8.5-8.5A8.5 8.5 0 0 1 21 11.5z"/></svg>
+          Messages
+          {% if messages_unread %}<span class="s-badge">{{ messages_unread }}</span>{% endif %}
+        </a>
+        <a class="sidebar-link {{ 'active' if request.endpoint == 'technician_subscription' }}" href="{{ url_for('technician_subscription') }}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+          Abonnement
+        </a>
+        <a class="sidebar-link {{ 'active' if request.endpoint == 'technician_reviews' }}" href="{{ url_for('technician_reviews') }}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          Avis clients
+        </a>
+        <a class="sidebar-link {{ 'active' if request.endpoint == 'profile' }}" href="{{ url_for('profile') }}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
+          Mon profil
+        </a>
+        {% else %}
         <a class="sidebar-link {{ 'active' if request.endpoint == 'dashboard' }}" href="{{ url_for('dashboard') }}">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
           Accueil
         </a>
         <a class="sidebar-link {{ 'active' if request.endpoint == 'artisans_page' }}" href="{{ url_for('artisans_page') }}">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-          Techniciens
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          Rechercher un pro
         </a>
         <a class="sidebar-link {{ 'active' if request.endpoint in ('requests_list', 'request_new', 'request_detail') }}" href="{{ url_for('requests_list') }}">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M9 14h6M9 17h4"/></svg>
-          Demandes
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M9 14h6M9 17h4"/></svg>
+          Mes demandes
         </a>
-        <a class="sidebar-link {{ 'active' if request.endpoint in ('lia', 'client_messages', 'client_message_new', 'client_conversation') }}" href="{{ url_for('lia') }}">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 21l1.9-5.1A8.4 8.4 0 0 1 4 11.5a8.5 8.5 0 0 1 8.5-8.5A8.5 8.5 0 0 1 21 11.5z"/></svg>
+        <a class="sidebar-link {{ 'active' if request.endpoint in ('lia', 'client_messages', 'client_message_new', 'client_conversation', 'client_message_artisan') }}" href="{{ url_for('client_messages') }}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 21l1.9-5.1A8.4 8.4 0 0 1 4 11.5a8.5 8.5 0 0 1 8.5-8.5A8.5 8.5 0 0 1 21 11.5z"/></svg>
           Messages
+          {% if messages_unread %}<span class="s-badge">{{ messages_unread }}</span>{% endif %}
         </a>
         <a class="sidebar-link {{ 'active' if request.endpoint == 'payments' }}" href="{{ url_for('payments') }}">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
           Paiements
         </a>
+        <a class="sidebar-link {{ 'active' if request.endpoint in ('profile', 'edit_profile') }}" href="{{ url_for('edit_profile') }}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
+          Mon profil
+        </a>
+        {% endif %}
       </nav>
 
       <div class="sidebar-bottom">
         <a class="icon-btn" href="{{ url_for('notifications') }}" aria-label="Notifications">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-          {% if unread_count %}<span class="dot-badge">{{ unread_count }}</span>{% endif %}
+          {% if notif_unread %}<span class="dot-badge">{{ notif_unread }}</span>{% endif %}
         </a>
-        <a class="avatar" href="{{ url_for('profile') }}" aria-label="Mon profil">{{ (nav_user.full_name or 'U')[0]|upper }}</a>
+        <a class="icon-btn" href="{{ url_for('logout') }}" aria-label="Deconnexion">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/></svg>
+        </a>
+        <a class="avatar" href="{{ url_for('profile') }}" aria-label="Mon profil">
+          {% if nav_user.photo_url %}<img src="{{ nav_user.photo_url }}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">{% else %}{{ (nav_user.full_name or 'U')[0]|upper }}{% endif %}
+        </a>
       </div>
     </aside>
     {% endif %}
