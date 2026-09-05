@@ -117,19 +117,18 @@
   </main>
   {% endif %}
 
-  {% set is_tech = user and user.role in ('artisan', 'technician') %}
   <nav class="cm-nav">
-    <a href="{{ url_for('artisan_dashboard') if is_tech else url_for('index') }}">
+    <a href="{{ url_for('index') }}">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
       Accueil
     </a>
-    <a href="{{ url_for('technician_interventions') if is_tech else url_for('artisans_page') }}">
+    <a href="{{ url_for('artisans_page') }}">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
-      {{ 'Missions' if is_tech else 'Recherche' }}
+      Recherche
     </a>
-    <a href="{{ url_for('technician_calls') if is_tech else (url_for('requests_list') if user else url_for('login')) }}" class="cm-fab">
+    <a href="{{ url_for('requests_list') if user else url_for('login') }}" class="cm-fab">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v3M16 2v3"/><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/></svg>
-      <span>{{ 'Appels' if is_tech else 'Réservations' }}</span>
+      <span>Réservations</span>
     </a>
     <a href="{{ url_for('client_messages') }}" class="active">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"/></svg>
