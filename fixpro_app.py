@@ -4687,14 +4687,6 @@ def _tech_plan_amount(plan, period):
     return int(plan["price_month"])
 
 
-def _tech_plan_savings_pct(plan):
-    """% economise sur l'engagement annuel par rapport a 12 mensualites."""
-    monthly_total = plan["price_month"] * 12
-    if monthly_total <= 0:
-        return 0
-    return round((1 - plan["price_year"] / monthly_total) * 100)
-
-
 def _ensure_tech_plan_row(conn, code):
     """Cree/actualise la ligne subscription_plans correspondant a un plan technicien."""
     plan = _tech_plan_by_code(code)
@@ -4727,10 +4719,6 @@ def _sub_frequency(start, end):
         return "Mensuel"
 
 
-_SUB_ACTIVE_STATUSES = ("ACTIVE", "TRIAL")
-_SUB_WARN_STATUSES = ("PAST_DUE", "EXPIRED", "SUSPENDED")
-
-
 @app.route("/abonnement")
 @app.route("/dashboard/technicien/abonnement")
 @login_required
@@ -4746,71 +4734,11 @@ def technician_subscription():
             or not user.get("is_verified")):
         return redirect(url_for("artisan_pending"))
 
-    current = None
-    payments = []
-    unread_count = 0
-    conn = get_db_connection()
-    try:
-        try:
-            current = conn.execute(
-                "SELECT s.status, s.start_date, s.end_date, s.auto_renew,"
-                " p.code AS plan_code, p.name AS plan_name"
-                " FROM technician_subscriptions s"
-                " LEFT JOIN subscription_plans p ON p.id = s.plan_id"
-                " WHERE s.technician_id = ?"
-                " ORDER BY s.created_at DESC LIMIT 1",
-                (user["id"],)).fetchone()
-        except Exception:
-            conn.rollback()
-            current = None
-        try:
-            payments = conn.execute(
-                "SELECT sp.amount, sp.currency, sp.status, sp.payment_method,"
-                " sp.paid_at, sp.created_at, sp.period_start, sp.period_end,"
-                " p.name AS plan_name"
-                " FROM subscription_payments sp"
-                " LEFT JOIN subscription_plans p ON p.id = sp.plan_id"
-                " WHERE sp.user_id = ?"
-                " ORDER BY COALESCE(sp.paid_at, sp.created_at) DESC LIMIT 20",
-                (user["id"],)).fetchall()
-        except Exception:
-            conn.rollback()
-            payments = []
-        try:
-            unread_count = conn.execute(
-                "SELECT COUNT(*) AS n FROM notifications WHERE user_id = ? AND is_read = 0",
-                (user["id"],)).fetchone()["n"]
-        except Exception:
-            conn.rollback()
-            unread_count = 0
-    finally:
-        conn.close()
-
-    current_code = (current["plan_code"] if current else None) or None
-    status = (current["status"] or "").upper() if current else None
-    current_active = status in _SUB_ACTIVE_STATUSES
-    frequency = _sub_frequency(current["start_date"], current["end_date"]) if current else None
-
-    payments_view = []
-    for p in payments:
-        freq = _sub_frequency(p["period_start"], p["period_end"]) if p["period_start"] else "Mensuel"
-        payments_view.append({
-            "plan_name": p["plan_name"] or "Abonnement",
-            "amount": p["amount"], "currency": p["currency"] or "GNF",
-            "status": (p["status"] or "pending").lower(),
-            "method": dict(_SUB_PAYMENT_METHODS).get(p["payment_method"], p["payment_method"] or "—"),
-            "date": p["paid_at"] or p["created_at"],
-            "frequency": freq,
-        })
-
-    plan_savings = {p["code"]: _tech_plan_savings_pct(p) for p in _TECH_PLANS}
-    max_savings_pct = max(plan_savings.values())
-
-    return render_template("technician_subscription.html", user=user,
-                           plans=_TECH_PLANS, max_savings_pct=max_savings_pct, plan_savings=plan_savings,
-                           current=current, current_code=current_code, status=status,
-                           current_active=current_active, frequency=frequency,
-                           payments=payments_view, unread_count=unread_count)
+    # Page en refonte (placeholder) : plus de formules/historique affiches ici
+    # pour l'instant, donc plus de requetes/calculs inutilises. La logique
+    # d'abonnement en cours + paiements sera reintroduite avec la nouvelle
+    # maquette dans render_template ci-dessous.
+    return render_template("technician_subscription.html", user=user)
 
 
 @app.route("/abonnement/paiement", methods=["GET", "POST"])
