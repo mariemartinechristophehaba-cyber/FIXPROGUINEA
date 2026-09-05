@@ -86,6 +86,19 @@
       .icon-btn .dot { position: absolute; top: -5px; right: -5px; min-width: 18px; height: 18px; padding: 0 4px; background: var(--red); color: #fff; border-radius: 9px; font-size: 0.62rem; font-weight: 700; display: grid; place-items: center; }
       .btn-add { display: flex; align-items: center; gap: 7px; background: var(--blue); color: #fff; border: none; border-radius: 10px; padding: 10px 16px; font-size: 0.85rem; font-weight: 700; cursor: pointer; }
       .btn-add:hover { background: #1d4ed8; }
+      .topbar-user { display: flex; align-items: center; gap: 10px; padding: 6px 10px 6px 6px; border-radius: 12px; color: var(--text); }
+      .topbar-user:hover { background: var(--bg); }
+      .topbar-user .av { width: 36px; height: 36px; border-radius: 50%; background: var(--blue); color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 0.85rem; flex: none; overflow: hidden; }
+      .topbar-user .av img { width: 100%; height: 100%; object-fit: cover; }
+      .topbar-user .tu-txt { display: flex; flex-direction: column; line-height: 1.2; }
+      .topbar-user .nm { font-size: 0.85rem; font-weight: 700; }
+      .topbar-user .rl { font-size: 0.72rem; color: var(--muted); }
+      .topbar-user svg { color: var(--muted); flex: none; }
+      @media (max-width: 640px) { .topbar-user .tu-txt { display: none; } }
+      .admin-foot { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; padding: 16px 28px; border-top: 1px solid var(--line); font-size: 0.78rem; color: var(--muted); }
+      .admin-foot-links { display: flex; align-items: center; gap: 16px; }
+      .admin-foot-links a { color: var(--muted); }
+      .admin-foot-links a:hover { color: var(--text); }
       .search { width: 220px; padding: 9px 12px 9px 36px; border: 1px solid var(--line); border-radius: 10px; font-size: 0.85rem; background: var(--card) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="%2394a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>') no-repeat 12px center; color: var(--text); }
 
       .content { padding: 24px 28px 40px; flex: 1; }
@@ -113,9 +126,9 @@
       <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
           <div class="logo-mark">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5.5 3.8 8.7 8 10 4.2-1.3 8-4.5 8-10V5l-8-3z"/><path d="M13 8h-2.2L9 12.5h2l-1 3.5 4-5h-2z" fill="currentColor" stroke="none"/></svg>
           </div>
-          <div class="logo-text">FixPro <small>ADMINISTRATION</small></div>
+          <div class="logo-text">FixPro <small>Des pros. Des solutions.</small></div>
         </div>
 
         {% set b = badges if badges is defined else {} %}
@@ -177,10 +190,16 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
               {% if b.get('notifications', 0) %}<span class="dot">{{ b.get('notifications') }}</span>{% endif %}
             </button>
-            <button class="btn-add" type="button" onclick="window.location='{{ url_for('admin_artisans') }}'">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-              Ajouter / Gerer
-            </button>
+            <a class="topbar-user" href="{{ url_for('admin_settings') }}">
+              <span class="av">
+                {% if user and user.photo_url %}<img src="{{ user.photo_url }}" alt="" />{% else %}{{ (user.full_name or 'A')[0]|upper if user else 'A' }}{% endif %}
+              </span>
+              <span class="tu-txt">
+                <span class="nm">{{ (user.full_name or 'Admin').split(' ')[0] if user else 'Admin' }}</span>
+                <span class="rl">{{ 'Super administrateur' if (user.admin_role|default('')) == 'owner' else 'Administrateur' }}</span>
+              </span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </a>
           </div>
         </header>
         <div class="content">
@@ -191,6 +210,14 @@
           {% endwith %}
           {% block admin_content %}{% endblock %}
         </div>
+        <footer class="admin-foot">
+          <span>FixPro &bull; Des pros. Des solutions.</span>
+          <span class="admin-foot-links">
+            <a href="{{ url_for('admin_settings') }}">Confidentialite</a>
+            <a href="{{ url_for('admin_settings') }}">Conditions d'utilisation</a>
+            <span>Version 1.0.0</span>
+          </span>
+        </footer>
       </main>
     </div>
     <script>
