@@ -4384,8 +4384,57 @@ def artisan_dashboard():
                 (user["id"],)).fetchone()
         except Exception:
             conn.rollback()
+
+        # Comparaison au mois precedent (badges de tendance "Vue d'ensemble").
+        prev_month_prefix = (datetime.now(timezone.utc).replace(day=1) - timedelta(days=1)).strftime("%Y-%m")
+
+        appels_mois_prev = _scalar(
+            "SELECT COUNT(*) AS n FROM client_contacts"
+            " WHERE artisan_id = ? AND substr(created_at, 1, 7) = ?",
+            (user["id"], prev_month_prefix))
+
+        interventions_mois = _scalar(
+            "SELECT COUNT(*) AS n FROM requests WHERE artisan_id = ? AND status = ?"
+            " AND substr(COALESCE(completed_at, updated_at), 1, 7) = ?",
+            (user["id"], MISSION_STATUS_COMPLETED, month_prefix))
+        interventions_mois_prev = _scalar(
+            "SELECT COUNT(*) AS n FROM requests WHERE artisan_id = ? AND status = ?"
+            " AND substr(COALESCE(completed_at, updated_at), 1, 7) = ?",
+            (user["id"], MISSION_STATUS_COMPLETED, prev_month_prefix))
+
+        nouveaux_clients_mois = _scalar(
+            "SELECT COUNT(DISTINCT client_id) AS n FROM requests"
+            " WHERE artisan_id = ? AND substr(created_at, 1, 7) = ?",
+            (user["id"], month_prefix))
+        nouveaux_clients_mois_prev = _scalar(
+            "SELECT COUNT(DISTINCT client_id) AS n FROM requests"
+            " WHERE artisan_id = ? AND substr(created_at, 1, 7) = ?",
+            (user["id"], prev_month_prefix))
+
+        completed_all_time = _scalar(
+            "SELECT COUNT(*) AS n FROM requests WHERE artisan_id = ? AND status = ?",
+            (user["id"], MISSION_STATUS_COMPLETED))
+
+        has_documents = _scalar(
+            "SELECT COUNT(*) AS n FROM technician_documents WHERE technician_id = ?",
+            (user["id"],)) > 0
     finally:
         conn.close()
+
+    def _trend(cur, prev):
+        """Variation en % par rapport au mois precedent, ou None si non significatif."""
+        if prev <= 0:
+            return 100 if cur > 0 else None
+        return round((cur - prev) / prev * 100)
+
+    # Niveau du technicien : heuristique simple basee sur la note et le volume
+    # d'interventions terminees (aucune notion de "niveau" en base pour l'instant).
+    if note_count >= 10 and note_avg >= 4.7 and completed_all_time >= 15:
+        tier_label = "Top Pro"
+    elif note_count >= 3 and note_avg >= 4.0:
+        tier_label = "Pro confirmé"
+    else:
+        tier_label = "Nouveau"
 
     # Completude du profil (toujours reelle).
     checklist = {
@@ -4395,11 +4444,15 @@ def artisan_dashboard():
         "zone": bool((user.get("zone_intervention") or user.get("city") or "").strip()),
     }
     profile_pct = int(round(sum(checklist.values()) / len(checklist) * 100))
+    checklist["documents"] = has_documents
 
     demo = not recent_requests and not recent_reviews and subscription is None
 
     if demo:
-        kpis = {"appels": 12, "demandes": 5, "note": 4.8}
+        kpis = {"appels": 12, "demandes": 5, "interventions": 16, "clients": 9, "note": 4.8}
+        trends = {"appels": 20, "interventions": 33, "clients": 50}
+        note_count = 127
+        tier_label = "Top Pro"
         recent_requests = [
             {"title": "Réparation fuite d'eau", "cat": "plomberie", "address": "Sonfonia, Conakry",
              "status": "en_cours", "when": "Aujourd'hui, 09:30"},
@@ -4420,10 +4473,16 @@ def artisan_dashboard():
             "plan_name": "Plan Pro", "status": "ACTIVE", "end_date_label": "30 Juin 2025",
             "frequency": "Abonnement mensuel", "auto_renew": True, "support": "Support standard",
         }
-        checklist = {"photo": True, "infos": True, "services": True, "zone": True}
+        checklist = {"photo": True, "infos": True, "services": True, "zone": True, "documents": False}
         profile_pct = 85
     else:
-        kpis = {"appels": appels_mois, "demandes": demandes_en_cours, "note": note_avg}
+        kpis = {"appels": appels_mois, "demandes": demandes_en_cours,
+                "interventions": interventions_mois, "clients": nouveaux_clients_mois, "note": note_avg}
+        trends = {
+            "appels": _trend(appels_mois, appels_mois_prev),
+            "interventions": _trend(interventions_mois, interventions_mois_prev),
+            "clients": _trend(nouveaux_clients_mois, nouveaux_clients_mois_prev),
+        }
         _status_map = {
             MISSION_STATUS_ASSIGNED: "nouveau",
             MISSION_STATUS_COMPLETED: "termine",
@@ -4460,7 +4519,8 @@ def artisan_dashboard():
             subscription_view = None
 
     return render_template("dashboard_artisan.html", user=user, unread_count=unread_count,
-                           demo=demo, kpis=kpis, note_count=note_count,
+                           demo=demo, kpis=kpis, trends=trends, note_count=note_count,
+                           tier_label=tier_label,
                            recent_requests=recent_requests, recent_reviews=recent_reviews,
                            subscription=subscription_view,
                            checklist=checklist, profile_pct=profile_pct,

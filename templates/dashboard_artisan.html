@@ -1,368 +1,506 @@
-{% extends 'base.html' %}
-{% block title %}Tableau de bord - FixPro{% endblock %}
-{% block header %}{% endblock %}
-{% block footer %}{% endblock %}
-{% block tabbar %}{% endblock %}
-{% block sidebar %}{% include '_tech_sidebar.html' %}{% endblock %}
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#155EEF" />
+  <meta name="csrf-token" content="{{ csrf_token() }}" />
+  <title>Espace Technicien - FixPro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --td-primary: #155EEF;
+      --td-primary-dark: #0F3DBB;
+      --td-bg: #F4F7FD;
+      --td-text: #0F172A;
+      --td-muted: #64748B;
+      --td-line: #E6ECF5;
+      --td-green: #16A34A;
+      --td-yellow: #F7B718;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--td-bg); color: var(--td-text); -webkit-font-smoothing: antialiased;
+      padding-bottom: 96px;
+    }
+    a { text-decoration: none; color: inherit; }
+    button { font-family: inherit; }
 
-{% block extra_head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/tech-espace.css', v='4') }}">
-<style>
-  :root { --db-blue:#2563EB; --db-blue-d:#1D4ED8; --db-ink:#0F172A; --db-mut:#64748B; }
+    /* Header */
+    .td-header {
+      background: #fff; border-bottom: 1px solid var(--td-line);
+      padding: 14px 16px; padding-top: calc(24px + env(safe-area-inset-top));
+      display: flex; align-items: center; gap: 12px;
+    }
+    .td-menu { background: none; border: none; color: var(--td-text); padding: 4px; cursor: pointer; display: flex; }
+    .td-menu svg { width: 24px; height: 24px; }
+    .td-brand { display: flex; align-items: center; gap: 9px; }
+    .td-brand svg { width: 24px; height: 24px; color: var(--td-primary); }
+    .td-brand-text { display: flex; flex-direction: column; line-height: 1.1; }
+    .td-brand-name { font-size: 1.15rem; font-weight: 800; color: var(--td-text); }
+    .td-brand-sub { font-size: 0.66rem; color: var(--td-muted); font-weight: 600; }
+    .td-h-actions { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+    .td-bell { position: relative; display: flex; color: var(--td-text); }
+    .td-bell svg { width: 22px; height: 22px; }
+    .td-badge {
+      position: absolute; top: -6px; right: -6px; min-width: 16px; height: 16px; padding: 0 3px;
+      background: #E6543A; color: #fff; font-size: 10px; font-weight: 700; border-radius: 50px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .td-avatar { position: relative; width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0; }
+    .td-avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block; }
+    .td-avatar .fallback {
+      width: 100%; height: 100%; border-radius: 50%; background: #EEF4FF; color: var(--td-primary);
+      display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.95rem;
+    }
+    .td-avatar .dot { position: absolute; bottom: 0; right: 0; width: 11px; height: 11px; background: var(--td-green); border: 2px solid #fff; border-radius: 50%; }
 
-  .db-topbar {
-    display:flex; align-items:center; justify-content:space-between; gap:10px;
-    padding:12px 16px; background:#fff; border-bottom:1px solid #EEF1F6;
-    position:sticky; top:0; z-index:20;
-  }
-  .db-topbar .left { display:flex; align-items:center; gap:12px; }
-  .db-burger { width:38px; height:38px; border:1px solid #E7EBF2; border-radius:11px; background:#fff; display:flex; align-items:center; justify-content:center; color:var(--db-ink); cursor:pointer; }
-  .db-logo { display:flex; align-items:center; gap:7px; font-size:19px; font-weight:800; color:var(--db-blue); }
-  .db-topbar .right { display:flex; align-items:center; gap:12px; }
-  .db-bell { position:relative; color:var(--db-ink); display:flex; }
-  .db-bell .badge { position:absolute; top:-6px; right:-6px; min-width:16px; height:16px; padding:0 4px; border-radius:999px; background:#EF4444; color:#fff; font-size:10px; font-weight:700; display:flex; align-items:center; justify-content:center; }
-  .db-ava-sm { width:34px; height:34px; border-radius:50%; object-fit:cover; background:#DBE6FF; color:var(--db-blue-d); font-weight:800; font-size:13px; display:flex; align-items:center; justify-content:center; }
+    .td-main { max-width: 640px; margin: 0 auto; padding: 16px; }
 
-  .db-hero {
-    background:linear-gradient(135deg, #2563EB, #1D4ED8);
-    color:#fff; padding:22px 18px 20px; border-radius:0 0 20px 20px;
-    display:flex; align-items:flex-start; justify-content:space-between; gap:14px; flex-wrap:wrap;
-  }
-  .db-hero h1 { margin:0 0 4px; font-size:clamp(21px, 5.5vw, 26px); font-weight:800; }
-  .db-hero p { margin:0; font-size:13.5px; opacity:.9; }
-  .db-avail { position:relative; }
-  .db-avail-btn {
-    display:inline-flex; align-items:center; gap:8px; padding:9px 14px; border-radius:999px;
-    background:#fff; border:0; font-size:13px; font-weight:700; cursor:pointer;
-  }
-  .db-avail-btn .d { width:8px; height:8px; border-radius:50%; }
-  .db-avail-btn.on .d { background:#16A34A; } .db-avail-btn.on { color:#15803D; }
-  .db-avail-btn.busy .d { background:#F59E0B; } .db-avail-btn.busy { color:#B45309; }
-  .db-avail-btn.off .d { background:#94A3B8; } .db-avail-btn.off { color:#64748B; }
-  .db-avail-menu { position:absolute; right:0; top:calc(100% + 6px); background:#fff; border:1px solid #E7EBF2; border-radius:12px; overflow:hidden; min-width:180px; box-shadow:0 8px 24px rgba(15,23,42,.14); z-index:15; }
-  .db-avail-menu button { display:flex; width:100%; align-items:center; gap:9px; padding:11px 14px; background:none; border:0; border-bottom:1px solid #F1F5F9; font-size:13.5px; font-weight:600; color:var(--db-ink); cursor:pointer; text-align:left; }
-  .db-avail-menu button:last-child { border-bottom:0; }
-  .db-avail-menu .d { width:8px; height:8px; border-radius:50%; }
+    /* Hero */
+    .td-hero {
+      position: relative; overflow: hidden;
+      background: linear-gradient(150deg, #2E6BFF 0%, #1B54E6 55%, #0F3DBB 100%);
+      border-radius: 22px; padding: 20px 18px; color: #fff; margin-bottom: 16px;
+      box-shadow: 0 14px 34px rgba(21,94,239,0.28);
+    }
+    .td-hero-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+    .td-hero-text h1 { font-size: 1.3rem; font-weight: 800; margin: 0 0 4px; }
+    .td-hero-text p { margin: 0 0 14px; font-size: 0.85rem; color: rgba(255,255,255,0.85); }
+    .td-avail {
+      display: inline-flex; align-items: center; gap: 8px; background: #fff; color: var(--td-text);
+      border: none; border-radius: 50px; padding: 8px 14px; font-size: 0.82rem; font-weight: 700; cursor: pointer;
+    }
+    .td-avail .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--td-green); }
+    .td-avail.is-off .dot { background: #94A3B8; }
+    .td-avail svg { width: 14px; height: 14px; color: var(--td-muted); }
+    .td-avail-menu {
+      position: absolute; z-index: 5; margin-top: 6px; background: #fff; color: var(--td-text);
+      border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.18); overflow: hidden; min-width: 160px;
+    }
+    .td-avail-menu button {
+      display: flex; align-items: center; gap: 8px; width: 100%; padding: 10px 14px; border: none;
+      background: #fff; cursor: pointer; font-size: 0.82rem; font-weight: 600; color: var(--td-text); text-align: left;
+    }
+    .td-avail-menu button:hover { background: #F4F7FD; }
+    .td-avail-menu .dot { width: 8px; height: 8px; border-radius: 50%; }
 
-  .db-kpis { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:10px; padding:14px 16px 0; }
-  @media (max-width:560px){ .db-kpis { grid-template-columns:1fr; } }
-  .db-kpi { background:#fff; border:1px solid #E7EBF2; border-radius:16px; padding:16px; }
-  .db-kpi-top { display:flex; align-items:center; gap:11px; }
-  .db-kpi-ico { width:40px; height:40px; border-radius:11px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-  .db-kpi-ico.blue { background:#E7EEFF; color:var(--db-blue); }
-  .db-kpi-ico.green { background:#DCFCE7; color:#16A34A; }
-  .db-kpi-ico.amber { background:#FEF3C7; color:#D97706; }
-  .db-kpi-t { font-size:14px; font-weight:800; color:var(--db-ink); }
-  .db-kpi-s { font-size:11.5px; color:var(--db-mut); }
-  .db-kpi-v { font-size:30px; font-weight:800; margin:12px 0 6px; line-height:1; }
-  .db-kpi-v.blue { color:var(--db-blue); } .db-kpi-v.green { color:#16A34A; } .db-kpi-v.amber { color:#7C3AED; }
-  .db-kpi-v small { font-size:14px; font-weight:600; color:var(--db-mut); }
-  .db-kpi a { font-size:12.5px; font-weight:700; color:var(--db-blue); text-decoration:none; display:inline-flex; align-items:center; gap:5px; }
+    .td-hero-photo {
+      width: 92px; height: 92px; border-radius: 18px; overflow: hidden; flex-shrink: 0;
+      background: rgba(255,255,255,0.15);
+    }
+    .td-hero-photo img { width: 100%; height: 100%; object-fit: cover; }
+    .td-hero-photo .fallback { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 800; }
 
-  .db-grid { display:grid; grid-template-columns:1fr; gap:16px; padding:16px 16px 0; }
-  @media (min-width:860px){ .db-grid.two { grid-template-columns:1.2fr .8fr; } }
-  @media (min-width:860px){ .db-grid.even { grid-template-columns:1fr 1fr; } }
+    .td-quote {
+      margin-top: 10px; font-size: 0.72rem; font-style: italic; color: rgba(255,255,255,0.75);
+      max-width: 190px; margin-left: auto; text-align: right; line-height: 1.4;
+    }
 
-  .db-card { background:#fff; border:1px solid #E7EBF2; border-radius:18px; padding:18px; }
-  .db-card-h { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
-  .db-card-h h2 { margin:0; font-size:16px; font-weight:800; color:var(--db-ink); }
-  .db-link { font-size:12.5px; font-weight:700; color:var(--db-blue); text-decoration:none; display:inline-flex; align-items:center; gap:4px; white-space:nowrap; }
+    .td-stats { display: flex; margin-top: 16px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.2); }
+    .td-stat { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; text-align: center; }
+    .td-stat svg { width: 16px; height: 16px; color: var(--td-yellow); }
+    .td-stat b { font-size: 1rem; font-weight: 800; }
+    .td-stat span { font-size: 0.66rem; color: rgba(255,255,255,0.8); }
 
-  .db-req { display:flex; align-items:center; gap:12px; padding:13px 0; border-bottom:1px solid #F1F5F9; }
-  .db-req:last-child { border-bottom:0; padding-bottom:2px; }
-  .db-req-ico { width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; background:#EEF4FF; color:var(--db-blue); }
-  .db-req-ico.g { background:#E9FBEF; color:#16A34A; } .db-req-ico.o { background:#FFF3E0; color:#EA580C; } .db-req-ico.v { background:#F3EEFF; color:#7C3AED; }
-  .db-req-main { flex:1; min-width:0; }
-  .db-req-t { font-size:13.5px; font-weight:700; color:var(--db-ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .db-req-m { font-size:11.5px; color:var(--db-mut); }
-  .db-req-m .clk { display:inline-flex; align-items:center; gap:3px; }
-  .db-badge { font-size:10.5px; font-weight:800; padding:4px 9px; border-radius:8px; white-space:nowrap; }
-  .db-badge.en_cours { background:#E0EBFF; color:#1D4ED8; }
-  .db-badge.nouveau { background:#DCFCE7; color:#15803D; }
-  .db-badge.en_attente { background:#FEF0DA; color:#B45309; }
-  .db-badge.termine { background:#F1F5F9; color:#64748B; }
-  .db-badge.annule { background:#FEE2E2; color:#DC2626; }
-  .db-req .chev { color:#CBD5E1; flex-shrink:0; }
-  .db-empty { padding:20px 4px; text-align:center; font-size:13px; color:var(--db-mut); }
+    /* Subscription card */
+    .td-sub {
+      background: #fff; border: 1px solid var(--td-line); border-radius: 18px; padding: 14px;
+      display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;
+      box-shadow: 0 8px 22px rgba(16,42,67,0.05);
+    }
+    .td-sub-icon {
+      width: 44px; height: 44px; border-radius: 13px; background: var(--td-primary); color: #fff; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .td-sub-icon svg { width: 22px; height: 22px; }
+    .td-sub-body { flex: 1; min-width: 140px; }
+    .td-sub-title { display: flex; align-items: center; gap: 8px; font-size: 0.86rem; font-weight: 700; color: var(--td-primary); margin-bottom: 2px; }
+    .td-sub-pill { font-size: 0.64rem; font-weight: 700; padding: 2px 9px; border-radius: 50px; }
+    .td-sub-pill.active { color: var(--td-green); background: #DCFCE7; }
+    .td-sub-pill.other { color: var(--td-muted); background: #F1F5F9; }
+    .td-sub-plan { font-size: 0.98rem; font-weight: 800; }
+    .td-sub-exp { font-size: 0.76rem; color: var(--td-muted); }
+    .td-sub-btn {
+      background: var(--td-primary); color: #fff; border-radius: 12px; padding: 11px 16px;
+      font-size: 0.82rem; font-weight: 700; display: flex; align-items: center; gap: 8px; white-space: nowrap;
+    }
+    .td-sub-btn svg { width: 15px; height: 15px; }
+    .td-sub-empty { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; color: var(--td-primary); font-weight: 700; font-size: 0.86rem; }
 
-  /* Mon abonnement */
-  .db-sub-inner { background:#EEF3FF; border:1px solid #DDE6FF; border-radius:14px; padding:16px; }
-  .db-sub-plan { font-size:19px; font-weight:800; color:var(--db-blue); }
-  .db-sub-badge { display:inline-flex; align-items:center; gap:6px; margin-top:8px; font-size:11.5px; font-weight:800; padding:3px 9px; border-radius:999px; }
-  .db-sub-badge .d { width:7px; height:7px; border-radius:50%; }
-  .db-sub-badge.ok { background:#DCFCE7; color:#15803D; } .db-sub-badge.ok .d { background:#16A34A; }
-  .db-sub-badge.warn { background:#FEF3C7; color:#B45309; } .db-sub-badge.warn .d { background:#F59E0B; }
-  .db-sub-badge.bad { background:#FEE2E2; color:#DC2626; } .db-sub-badge.bad .d { background:#EF4444; }
-  .db-sub-l { font-size:11.5px; color:var(--db-mut); margin-top:12px; }
-  .db-sub-v { font-size:16px; font-weight:800; color:var(--db-ink); }
-  .db-sub-list { list-style:none; margin:14px 0 0; padding:14px 0 0; border-top:1px solid #DDE6FF; display:flex; flex-direction:column; gap:9px; }
-  .db-sub-list li { display:flex; align-items:center; gap:9px; font-size:12.5px; color:#334155; }
-  .db-sub-list svg { color:var(--db-blue); flex-shrink:0; }
-  .db-btn-primary { display:flex; align-items:center; justify-content:center; width:100%; margin-top:14px; padding:13px; border-radius:12px; background:var(--db-blue-d); color:#fff; font-size:13.5px; font-weight:700; text-decoration:none; border:0; }
+    /* Sections */
+    .td-section { margin-bottom: 16px; }
+    .td-section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .td-section-head h2 { font-size: 1.02rem; font-weight: 800; margin: 0; }
+    .td-section-head .sub-link { color: var(--td-primary); font-size: 0.82rem; font-weight: 700; display: flex; align-items: center; gap: 3px; }
+    .td-section-head .sub-link svg { width: 14px; height: 14px; }
 
-  /* Mon profil */
-  .db-prof { display:flex; gap:16px; align-items:center; flex-wrap:wrap; }
-  .db-ring { position:relative; width:104px; height:104px; flex-shrink:0; }
-  .db-ring svg { transform:rotate(-90deg); }
-  .db-ring .c { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
-  .db-ring .c b { font-size:20px; font-weight:800; color:var(--db-ink); }
-  .db-ring .c span { font-size:10.5px; color:var(--db-mut); }
-  .db-check { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:9px; flex:1; min-width:150px; }
-  .db-check li { display:flex; align-items:center; gap:9px; font-size:13px; color:#334155; }
-  .db-check .b { width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; background:#16A34A; color:#fff; }
-  .db-check .b.off { background:#E2E8F0; color:#94A3B8; }
-  .db-btn-outline { display:flex; align-items:center; justify-content:center; width:100%; margin-top:16px; padding:12px; border-radius:12px; border:1px solid #C7D6F5; background:#fff; color:var(--db-blue-d); font-size:13.5px; font-weight:700; text-decoration:none; }
+    .td-kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .td-kpi { background: #fff; border: 1px solid var(--td-line); border-radius: 16px; padding: 14px; box-shadow: 0 6px 18px rgba(16,42,67,0.04); }
+    .td-kpi-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .td-kpi-icon { width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+    .td-kpi-icon svg { width: 17px; height: 17px; }
+    .td-kpi.c-blue .td-kpi-icon { background: #EEF4FF; color: var(--td-primary); }
+    .td-kpi.c-green .td-kpi-icon { background: #ECFDF5; color: var(--td-green); }
+    .td-kpi.c-purple .td-kpi-icon { background: #F3E8FF; color: #7C3AED; }
+    .td-kpi.c-blue2 .td-kpi-icon { background: #E0F2FE; color: #0369A1; }
+    .td-trend { font-size: 0.68rem; font-weight: 700; display: flex; align-items: center; gap: 2px; }
+    .td-trend.up { color: var(--td-green); }
+    .td-trend.down { color: #DC2626; }
+    .td-trend svg { width: 11px; height: 11px; }
+    .td-kpi b { display: block; font-size: 1.35rem; font-weight: 800; line-height: 1; margin-bottom: 4px; }
+    .td-kpi span { font-size: 0.76rem; color: var(--td-muted); font-weight: 500; }
 
-  /* Avis récents */
-  .db-rev { display:flex; gap:11px; padding:12px 0; border-bottom:1px solid #F1F5F9; }
-  .db-rev:last-child { border-bottom:0; }
-  .db-rev-ava { width:40px; height:40px; border-radius:50%; object-fit:cover; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:14px; color:#fff; }
-  .db-rev-main { flex:1; min-width:0; }
-  .db-rev-top { display:flex; justify-content:space-between; gap:8px; }
-  .db-rev-name { font-size:13px; font-weight:800; color:var(--db-ink); }
-  .db-rev-when { font-size:11px; color:var(--db-mut); white-space:nowrap; }
-  .db-rev-stars { color:#F5A623; font-size:12px; letter-spacing:1px; margin:1px 0 3px; }
-  .db-rev-comment { font-size:12.5px; color:#334155; line-height:1.45; }
-  .db-dots { display:flex; gap:6px; justify-content:center; margin-top:12px; }
-  .db-dots i { width:7px; height:7px; border-radius:50%; background:#D6DEEA; }
-  .db-dots i.on { background:var(--db-blue); width:18px; border-radius:999px; }
-</style>
-{% endblock %}
+    .td-perf {
+      background: #fff; border: 1px solid var(--td-line); border-radius: 16px; padding: 14px;
+      display: flex; align-items: center; gap: 12px; box-shadow: 0 6px 18px rgba(16,42,67,0.04);
+    }
+    .td-perf-icon { width: 40px; height: 40px; border-radius: 12px; background: var(--td-primary); color: #fff; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+    .td-perf-icon svg { width: 20px; height: 20px; }
+    .td-perf-body { flex: 1; }
+    .td-perf-body b { display: block; font-size: 0.9rem; font-weight: 700; }
+    .td-perf-body span { font-size: 0.76rem; color: var(--td-muted); }
+    .td-perf-soon { font-size: 0.66rem; font-weight: 700; color: var(--td-muted); background: #F1F5F9; padding: 4px 10px; border-radius: 50px; white-space: nowrap; }
 
-{% block content %}
-{% set prenom = (user.full_name or 'Technicien').split(' ')[0] %}
-{% macro stars(n) %}{% for i in range(5) %}{{ '★' if i < n else '☆' }}{% endfor %}{% endmacro %}
-{% set palette = ['#2563EB', '#7C3AED', '#0891B2', '#DB2777', '#D97706'] %}
-<div class="db">
+    .td-profile { background: #fff; border: 1px solid var(--td-line); border-radius: 18px; padding: 16px; box-shadow: 0 8px 22px rgba(16,42,67,0.05); }
+    .td-profile-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .td-profile-head h2 { font-size: 0.98rem; font-weight: 800; margin: 0; }
+    .td-profile-pct { font-size: 1rem; font-weight: 800; color: var(--td-primary); }
+    .td-progress { height: 8px; border-radius: 50px; background: #EEF2F9; overflow: hidden; margin-bottom: 14px; }
+    .td-progress-fill { height: 100%; background: var(--td-primary); border-radius: 50px; }
+    .td-checklist { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; margin-bottom: 14px; }
+    .td-check-item { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; font-weight: 600; }
+    .td-check-item .ic { width: 19px; height: 19px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+    .td-check-item.done .ic { background: var(--td-green); color: #fff; }
+    .td-check-item.done .ic svg { width: 11px; height: 11px; }
+    .td-check-item.pending .ic { border: 2px solid #CBD5E1; }
+    .td-check-item.pending { color: var(--td-muted); }
+    .td-profile-btn {
+      display: block; text-align: center; border: 1.5px solid var(--td-primary); color: var(--td-primary);
+      border-radius: 12px; padding: 11px; font-size: 0.85rem; font-weight: 700;
+    }
 
-  <div class="db-topbar">
-    <div class="left">
-      <button type="button" class="db-burger" data-tech-menu aria-label="Menu">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
-      </button>
-      <span class="db-logo">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-        FixPro
+    .td-review { background: #fff; border: 1px solid var(--td-line); border-radius: 16px; padding: 14px; margin-bottom: 10px; box-shadow: 0 6px 18px rgba(16,42,67,0.04); }
+    .td-review-top { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+    .td-review-ava { width: 36px; height: 36px; border-radius: 50%; background: var(--td-primary); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.85rem; flex-shrink: 0; }
+    .td-review-name { font-weight: 700; font-size: 0.88rem; flex: 1; }
+    .td-review-when { font-size: 0.72rem; color: var(--td-muted); }
+    .td-review-stars { color: var(--td-yellow); font-size: 0.8rem; margin-bottom: 6px; }
+    .td-review p { margin: 0; font-size: 0.84rem; color: #334155; line-height: 1.45; }
+    .td-empty { text-align: center; color: var(--td-muted); font-size: 0.85rem; padding: 20px 0; }
+
+    /* Bottom nav */
+    .td-nav {
+      position: fixed; bottom: 0; left: 0; right: 0; background: #fff;
+      border-top: 1px solid var(--td-line); display: flex; justify-content: space-around; align-items: flex-end;
+      padding: 8px 0 calc(10px + env(safe-area-inset-bottom)); z-index: 90;
+    }
+    .td-nav a {
+      display: flex; flex-direction: column; align-items: center; gap: 3px; color: var(--td-muted);
+      text-decoration: none; font-size: 0.64rem; font-weight: 600; flex: 1; position: relative;
+    }
+    .td-nav a svg { width: 22px; height: 22px; }
+    .td-nav a.active { color: var(--td-primary); }
+    .td-nav a .badge {
+      position: absolute; top: -4px; right: 24%; min-width: 15px; height: 15px; padding: 0 3px;
+      background: #E6543A; color: #fff; font-size: 9px; font-weight: 700; border-radius: 50px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .td-nav a.td-fab {
+      position: relative; top: -16px;
+      flex: 0 0 54px; width: 54px; height: 54px; min-width: 54px;
+      background: var(--td-primary); color: #fff; border-radius: 50%;
+      justify-content: center; align-self: flex-start;
+      box-shadow: 0 10px 22px rgba(21,94,239,0.34);
+    }
+    .td-nav a.td-fab svg { width: 26px; height: 26px; }
+    .td-nav a.td-fab span {
+      position: absolute; bottom: -18px; width: 92px; left: 50%; transform: translateX(-50%);
+      text-align: center; color: var(--td-muted); font-size: 0.64rem;
+    }
+  </style>
+</head>
+<body>
+  <header class="td-header">
+    <button class="td-menu" id="menuBtn" type="button" aria-label="Menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+    </button>
+    <a href="{{ url_for('artisan_dashboard') }}" class="td-brand">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+      <span class="td-brand-text">
+        <span class="td-brand-name">FixPro</span>
+        <span class="td-brand-sub">Espace Technicien</span>
       </span>
-    </div>
-    <div class="right">
-      <a class="db-bell" href="{{ url_for('notifications') }}" aria-label="Notifications">
-        <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-        {% if unread_count %}<span class="badge">{{ unread_count }}</span>{% endif %}
+    </a>
+    <div class="td-h-actions">
+      <a href="{{ url_for('notifications') }}" class="td-bell" aria-label="Notifications">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></svg>
+        {% if unread_count %}<span class="td-badge">{{ unread_count if unread_count < 10 else '9+' }}</span>{% endif %}
       </a>
-      <a href="{{ url_for('profile') }}" aria-label="Mon profil">
-        {% if user.photo_url %}<img class="db-ava-sm" src="{{ user.photo_url }}" alt="">{% else %}<span class="db-ava-sm">{{ prenom[0]|upper }}</span>{% endif %}
-      </a>
-    </div>
-  </div>
-
-  <div class="db-hero">
-    <div>
-      <h1>Bonjour, {{ prenom }}&nbsp;👋</h1>
-      <p>Voici un aperçu de votre activité aujourd'hui.</p>
-    </div>
-    <div class="db-avail" id="dbAvail" data-url="{{ url_for('api_technicien_status') }}">
-      {% set av = availability %}
-      <button type="button" class="db-avail-btn {{ 'on' if av == 'en_ligne' else 'busy' if av == 'occupe' else 'off' }}" id="dbAvailBtn">
-        <span class="d"></span>
-        <span class="lbl">{{ 'Disponible' if av == 'en_ligne' else 'En intervention' if av == 'occupe' else 'Hors ligne' }}</span>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-      </button>
-      <div class="db-avail-menu" id="dbAvailMenu" hidden>
-        <button type="button" data-status="en_ligne"><span class="d" style="background:#16A34A"></span> Disponible</button>
-        <button type="button" data-status="occupe"><span class="d" style="background:#F59E0B"></span> En intervention</button>
-        <button type="button" data-status="hors_ligne"><span class="d" style="background:#94A3B8"></span> Hors ligne</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="db-kpis">
-    <div class="db-kpi">
-      <div class="db-kpi-top">
-        <span class="db-kpi-ico blue"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></span>
-        <div><div class="db-kpi-t">Appels reçus</div><div class="db-kpi-s">Ce mois</div></div>
-      </div>
-      <div class="db-kpi-v blue">{{ kpis.appels }}</div>
-      <a href="{{ url_for('technician_calls') }}">Voir les détails <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
-    </div>
-    <div class="db-kpi">
-      <div class="db-kpi-top">
-        <span class="db-kpi-ico green"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 4V2h6v2M9 12h6M9 16h4"/></svg></span>
-        <div><div class="db-kpi-t">Demandes en cours</div><div class="db-kpi-s">Aujourd'hui</div></div>
-      </div>
-      <div class="db-kpi-v green">{{ kpis.demandes }}</div>
-      <a href="{{ url_for('technician_interventions') }}">Voir les détails <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
-    </div>
-    <div class="db-kpi">
-      <div class="db-kpi-top">
-        <span class="db-kpi-ico amber"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></span>
-        <div><div class="db-kpi-t">Avis clients</div><div class="db-kpi-s">Note moyenne</div></div>
-      </div>
-      <div class="db-kpi-v amber">{{ ('%.1f'|format(kpis.note))|replace('.0', '.0') }} <small>/ 5</small></div>
-      <a href="{{ url_for('technician_reviews') }}">Voir les avis <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
-    </div>
-  </div>
-
-  <div class="db-grid two">
-    <div class="db-card">
-      <div class="db-card-h">
-        <h2>Demandes récentes</h2>
-        <a class="db-link" href="{{ url_for('technician_interventions') }}">Voir toutes <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
-      </div>
-      {% for r in recent_requests %}
-      {% set cat = (r.cat or '') %}
-      <div class="db-req">
-        <span class="db-req-ico {{ 'g' if 'electr' in cat else 'o' if 'clim' in cat else 'v' if 'canal' in r.title|lower else '' }}">
-          {% if 'electr' in cat %}
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-          {% elif 'clim' in cat %}
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="10" rx="2"/><path d="M6 18v2M12 18v3M18 18v2"/></svg>
-          {% else %}
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v6M16 2v6M8 8h8l-1 6H9L8 8ZM12 14v8"/></svg>
-          {% endif %}
-        </span>
-        <div class="db-req-main">
-          <div class="db-req-t">{{ r.title }}</div>
-          <div class="db-req-m">{{ r.address }}</div>
-          <div class="db-req-m"><span class="clk"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> {{ r.when if r.when is string and ',' in (r.when or '') else (r.when|time_ago if r.when else '') }}</span></div>
-        </div>
-        <span class="db-badge {{ r.status }}">
-          {%- if r.status == 'en_cours' %}En cours
-          {%- elif r.status == 'nouveau' %}Nouveau
-          {%- elif r.status == 'en_attente' %}En attente
-          {%- elif r.status == 'termine' %}Terminé
-          {%- elif r.status == 'annule' %}Annulé
-          {%- else %}{{ r.status }}{% endif -%}
-        </span>
-        <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-      </div>
-      {% else %}
-      <div class="db-empty">Aucune demande pour le moment.</div>
-      {% endfor %}
-    </div>
-
-    <div class="db-card">
-      <div class="db-card-h"><h2>Mon abonnement</h2></div>
-      {% if subscription %}
-      <div class="db-sub-inner">
-        <div class="db-sub-plan">{{ subscription.plan_name }}</div>
-        {% if subscription.status in ('ACTIVE', 'TRIAL') %}
-          <span class="db-sub-badge ok"><span class="d"></span> Actif</span>
-        {% elif subscription.status == 'PAST_DUE' %}
-          <span class="db-sub-badge warn"><span class="d"></span> En attente de paiement</span>
+      <a href="{{ url_for('profile') }}" class="td-avatar" aria-label="Mon profil">
+        {% if user.photo_url %}
+          <img src="{{ user.photo_url }}" alt="{{ user.full_name }}" />
         {% else %}
-          <span class="db-sub-badge bad"><span class="d"></span> {{ subscription.status|capitalize }}</span>
+          <span class="fallback">{{ (user.full_name or 'T')[0]|upper }}</span>
         {% endif %}
-        <div class="db-sub-l">Échéance</div>
-        <div class="db-sub-v">{{ subscription.end_date_label }}</div>
-        <ul class="db-sub-list">
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> {{ subscription.frequency }}</li>
-          {% if subscription.auto_renew %}<li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m9 12 2 2 4-4"/></svg> Renouvellement automatique</li>{% endif %}
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg> {{ subscription.support }}</li>
-        </ul>
-        <a class="db-btn-primary" href="{{ url_for('technician_subscription') }}">Gérer mon abonnement</a>
-      </div>
-      {% else %}
-      <div class="db-sub-inner">
-        <div class="db-sub-v">Aucun abonnement actif</div>
-        <div class="db-sub-l" style="margin-top:4px;">Activez une formule pour recevoir plus de missions.</div>
-        <a class="db-btn-primary" href="{{ url_for('technician_subscription') }}">Voir les formules</a>
-      </div>
-      {% endif %}
+        {% if availability == 'en_ligne' %}<span class="dot"></span>{% endif %}
+      </a>
     </div>
-  </div>
+  </header>
 
-  <div class="db-grid even">
-    <div class="db-card">
-      <div class="db-card-h"><h2>Mon profil</h2></div>
-      <div class="db-prof">
-        {% set circ = 289 %}
-        <div class="db-ring">
-          <svg width="104" height="104" viewBox="0 0 104 104">
-            <circle cx="52" cy="52" r="46" fill="none" stroke="#E7EEFF" stroke-width="10"/>
-            <circle cx="52" cy="52" r="46" fill="none" stroke="#2563EB" stroke-width="10" stroke-linecap="round"
-                    stroke-dasharray="{{ circ }}" stroke-dashoffset="{{ (circ * (100 - profile_pct) / 100)|round(1) }}"/>
-          </svg>
-          <div class="c"><b>{{ profile_pct }}%</b><span>Complet</span></div>
-        </div>
-        <ul class="db-check">
-          <li><span class="b {{ '' if checklist.photo else 'off' }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span> Photo de profil</li>
-          <li><span class="b {{ '' if checklist.infos else 'off' }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span> Informations</li>
-          <li><span class="b {{ '' if checklist.services else 'off' }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span> Services proposés</li>
-          <li><span class="b {{ '' if checklist.zone else 'off' }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span> Zone d'intervention</li>
-        </ul>
-      </div>
-      <a class="db-btn-outline" href="{{ url_for('profile') }}">Voir mon profil</a>
-    </div>
-
-    <div class="db-card">
-      <div class="db-card-h">
-        <h2>Avis clients récents</h2>
-        <a class="db-link" href="{{ url_for('technician_reviews') }}">Voir tous <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
-      </div>
-      {% for rv in recent_reviews[:2] %}
-      <div class="db-rev">
-        {% if rv.photo %}<img class="db-rev-ava" src="{{ rv.photo }}" alt="">{% else %}<span class="db-rev-ava" style="background:{{ palette[loop.index0 % 5] }}">{{ (rv.name or '?')[0]|upper }}</span>{% endif %}
-        <div class="db-rev-main">
-          <div class="db-rev-top">
-            <span class="db-rev-name">{{ rv.name }}</span>
-            <span class="db-rev-when">{{ rv.when if rv.when is string and (rv.when in ['Aujourd\'hui','Hier'] or ',' in rv.when) else (rv.when|time_ago if rv.when else '') }}</span>
+  <main class="td-main">
+    <section class="td-hero">
+      <div class="td-hero-top">
+        <div class="td-hero-text">
+          <h1>Bonjour, {{ (user.full_name or 'Technicien').split(' ')[0] }} 👋</h1>
+          <p>Prêt à recevoir de nouvelles demandes ?</p>
+          <div style="position:relative; display:inline-block;">
+            <button type="button" class="td-avail {{ 'is-off' if availability != 'en_ligne' }}" id="availBtn">
+              <span class="dot"></span>
+              <span id="availLabel">{{ 'Disponible' if availability == 'en_ligne' else ('Occupé' if availability == 'occupe' else 'Indisponible') }}</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+            <div class="td-avail-menu" id="availMenu" hidden>
+              <button type="button" data-status="en_ligne"><span class="dot" style="background:#16A34A;"></span> Disponible</button>
+              <button type="button" data-status="occupe"><span class="dot" style="background:#F7B718;"></span> Occupé</button>
+              <button type="button" data-status="hors_ligne"><span class="dot" style="background:#94A3B8;"></span> Indisponible</button>
+            </div>
           </div>
-          <div class="db-rev-stars">{{ stars(rv.rating) }}</div>
-          <div class="db-rev-comment">{{ rv.comment }}</div>
+        </div>
+        <div class="td-hero-photo">
+          {% if user.photo_url %}
+            <img src="{{ user.photo_url }}" alt="{{ user.full_name }}" />
+          {% else %}
+            <span class="fallback">{{ (user.full_name or 'T')[0]|upper }}</span>
+          {% endif %}
         </div>
       </div>
-      {% else %}
-      <div class="db-empty">Aucun avis pour le moment.</div>
-      {% endfor %}
-      {% if recent_reviews|length > 1 %}
-      <div class="db-dots"><i class="on"></i><i></i><i></i></div>
-      {% endif %}
+      <p class="td-quote">&laquo; Des professionnels pour un quotidien meilleur. &raquo;</p>
+      <div class="td-stats">
+        <div class="td-stat">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          <b>{{ "%.1f"|format(kpis.note or 0) }}/5</b>
+          <span>Note moyenne</span>
+        </div>
+        <div class="td-stat">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 21l1.9-5.1A8.4 8.4 0 0 1 4 11.5a8.5 8.5 0 0 1 8.5-8.5A8.5 8.5 0 0 1 21 11.5z"/></svg>
+          <b>{{ note_count }}</b>
+          <span>Avis clients</span>
+        </div>
+        <div class="td-stat">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+          <b>{{ tier_label }}</b>
+          <span>Niveau actuel</span>
+        </div>
+      </div>
+    </section>
+
+    {% if subscription %}
+    <div class="td-sub">
+      <a href="{{ url_for('technician_subscription') }}" class="td-sub-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+      </a>
+      <a href="{{ url_for('technician_subscription') }}" class="td-sub-body">
+        <div class="td-sub-title">
+          Mon abonnement
+          <span class="td-sub-pill {{ 'active' if subscription.status == 'ACTIVE' else 'other' }}">{{ 'Actif' if subscription.status == 'ACTIVE' else subscription.status|capitalize }}</span>
+        </div>
+        <div class="td-sub-plan">{{ subscription.plan_name }}</div>
+        <div class="td-sub-exp">Expire le {{ subscription.end_date_label }}</div>
+      </a>
+      <a href="{{ url_for('technician_subscription') }}" class="td-sub-btn">
+        Gérer mon abonnement
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </a>
     </div>
-  </div>
+    {% else %}
+    <a href="{{ url_for('technician_subscription') }}" class="td-sub">
+      <span class="td-sub-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+      </span>
+      <span class="td-sub-empty">
+        Aucun abonnement actif — découvrir les offres
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </span>
+    </a>
+    {% endif %}
 
-</div>
+    <section class="td-section">
+      <div class="td-section-head">
+        <h2>Vue d'ensemble</h2>
+        <span class="sub-link" style="color:var(--td-muted);font-weight:600;">Ce mois</span>
+      </div>
+      <div class="td-kpi-grid">
+        <div class="td-kpi c-blue">
+          <div class="td-kpi-top">
+            <span class="td-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg></span>
+            {% if trends.appels is not none %}<span class="td-trend {{ 'up' if trends.appels >= 0 else 'down' }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">{% if trends.appels >= 0 %}<path d="m18 15-6-6-6 6"/>{% else %}<path d="m6 9 6 6 6-6"/>{% endif %}</svg>{{ trends.appels|abs }}%</span>{% endif %}
+          </div>
+          <b>{{ kpis.appels }}</b>
+          <span>Appels reçus</span>
+        </div>
+        <div class="td-kpi c-green">
+          <div class="td-kpi-top">
+            <span class="td-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M9 14h6M9 17h4"/></svg></span>
+          </div>
+          <b>{{ kpis.demandes }}</b>
+          <span>Demandes en cours</span>
+        </div>
+        <div class="td-kpi c-purple">
+          <div class="td-kpi-top">
+            <span class="td-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+            {% if trends.interventions is not none %}<span class="td-trend {{ 'up' if trends.interventions >= 0 else 'down' }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">{% if trends.interventions >= 0 %}<path d="m18 15-6-6-6 6"/>{% else %}<path d="m6 9 6 6 6-6"/>{% endif %}</svg>{{ trends.interventions|abs }}%</span>{% endif %}
+          </div>
+          <b>{{ kpis.interventions }}</b>
+          <span>Interventions terminées</span>
+        </div>
+        <div class="td-kpi c-blue2">
+          <div class="td-kpi-top">
+            <span class="td-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 21a8 8 0 0 0-16 0"/><circle cx="10" cy="8" r="5"/><path d="M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3"/></svg></span>
+            {% if trends.clients is not none %}<span class="td-trend {{ 'up' if trends.clients >= 0 else 'down' }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">{% if trends.clients >= 0 %}<path d="m18 15-6-6-6 6"/>{% else %}<path d="m6 9 6 6 6-6"/>{% endif %}</svg>{{ trends.clients|abs }}%</span>{% endif %}
+          </div>
+          <b>{{ kpis.clients }}</b>
+          <span>Nouveaux clients</span>
+        </div>
+      </div>
+    </section>
 
-<nav class="db-tabbar">
-  <a class="db-tab active" href="{{ url_for('artisan_dashboard') }}">
-    <span class="tc-tab-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9"/></svg></span>
-    <span>Accueil</span>
-  </a>
-  <a class="db-tab" href="{{ url_for('profile') }}">
-    <span class="tc-tab-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg></span>
-    <span>Profil</span>
-  </a>
-  <a class="db-tab-fab" href="{{ url_for('technician_calls') }}" aria-label="Appels">
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-  </a>
-  <a class="db-tab" href="{{ url_for('client_messages') }}">
-    <span class="tc-tab-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 21l1.9-5.1A8.4 8.4 0 0 1 4 11.5a8.5 8.5 0 0 1 8.5-8.5A8.5 8.5 0 0 1 21 11.5z"/></svg></span>
-    <span>Messages</span>
-  </a>
-  <a class="db-tab" href="{{ url_for('technician_subscription') }}">
-    <span class="tc-tab-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></span>
-    <span>Abonnement</span>
-  </a>
-</nav>
+    <section class="td-section">
+      <div class="td-perf">
+        <span class="td-perf-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/></svg>
+        </span>
+        <span class="td-perf-body">
+          <b>Ma performance</b>
+          <span>Découvrez vos statistiques détaillées</span>
+        </span>
+        <span class="td-perf-soon">Bientôt</span>
+      </div>
+    </section>
 
-<script>
-(function(){
-  var box = document.getElementById('dbAvail');
-  if (box) {
-    var btn = document.getElementById('dbAvailBtn');
-    var menu = document.getElementById('dbAvailMenu');
-    btn.addEventListener('click', function(e){ e.stopPropagation(); menu.hidden = !menu.hidden; });
-    document.addEventListener('click', function(){ menu.hidden = true; });
-    menu.querySelectorAll('button').forEach(function(b){
-      b.addEventListener('click', function(){
-        var body = new FormData(); body.append('status', b.dataset.status);
-        fetch(box.dataset.url, { method:'POST', body: body, credentials:'same-origin' })
-          .then(function(r){ return r.json(); })
-          .then(function(d){ if (d && d.ok) location.reload(); else alert((d && d.error) || 'Erreur'); })
-          .catch(function(){ alert('Connexion impossible.'); });
+    <section class="td-section">
+      <div class="td-profile">
+        <div class="td-profile-head">
+          <h2>Complétude de mon profil</h2>
+          <span class="td-profile-pct">{{ profile_pct }}%</span>
+        </div>
+        <div class="td-progress"><div class="td-progress-fill" style="width:{{ profile_pct }}%;"></div></div>
+        <div class="td-checklist">
+          <span class="td-check-item {{ 'done' if checklist.photo else 'pending' }}">
+            <span class="ic">{% if checklist.photo %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>{% endif %}</span>
+            Photo de profil
+          </span>
+          <span class="td-check-item {{ 'done' if checklist.zone else 'pending' }}">
+            <span class="ic">{% if checklist.zone %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>{% endif %}</span>
+            Zone d'intervention
+          </span>
+          <span class="td-check-item {{ 'done' if checklist.infos else 'pending' }}">
+            <span class="ic">{% if checklist.infos %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>{% endif %}</span>
+            Informations personnelles
+          </span>
+          <span class="td-check-item {{ 'done' if checklist.documents else 'pending' }}">
+            <span class="ic">{% if checklist.documents %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>{% endif %}</span>
+            Documents (facultatif)
+          </span>
+          <span class="td-check-item {{ 'done' if checklist.services else 'pending' }}">
+            <span class="ic">{% if checklist.services %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>{% endif %}</span>
+            Services proposés
+          </span>
+        </div>
+        <a href="{{ url_for('profile') }}" class="td-profile-btn">Voir / compléter mon profil →</a>
+      </div>
+    </section>
+
+    <section class="td-section">
+      <div class="td-section-head">
+        <h2>Avis clients récents</h2>
+        <a href="{{ url_for('technician_reviews') }}" class="sub-link">Voir tous <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></a>
+      </div>
+      {% if recent_reviews %}
+        {% for rv in recent_reviews[:3] %}
+        <div class="td-review">
+          <div class="td-review-top">
+            <span class="td-review-ava">{{ (rv.name or 'C')[0]|upper }}</span>
+            <span class="td-review-name">{{ rv.name }}</span>
+            <span class="td-review-when">{{ rv.when }}</span>
+          </div>
+          <div class="td-review-stars">{{ '★' * rv.rating }}{{ '☆' * (5 - rv.rating) }}</div>
+          {% if rv.comment %}<p>{{ rv.comment }}</p>{% endif %}
+        </div>
+        {% endfor %}
+      {% else %}
+      <div class="td-empty">Aucun avis pour le moment.</div>
+      {% endif %}
+    </section>
+  </main>
+
+  <nav class="td-nav">
+    <a href="{{ url_for('artisan_dashboard') }}" class="active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+      Accueil
+    </a>
+    <a href="{{ url_for('technician_interventions') }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      Demandes
+      {% if kpis.demandes %}<span class="badge">{{ kpis.demandes if kpis.demandes < 10 else '9+' }}</span>{% endif %}
+    </a>
+    <a href="{{ url_for('technician_interventions') }}" class="td-fab">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5v14"/></svg>
+      <span>Nouveau</span>
+    </a>
+    <a href="{{ url_for('lia') }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"/></svg>
+      Messages
+      {% if unread_count %}<span class="badge">{{ unread_count if unread_count < 10 else '9+' }}</span>{% endif %}
+    </a>
+    <a href="{{ url_for('profile') }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      Profil
+    </a>
+  </nav>
+
+  <script>
+    (function () {
+      var btn = document.getElementById('availBtn');
+      var menu = document.getElementById('availMenu');
+      var label = document.getElementById('availLabel');
+      var csrfMeta = document.querySelector('meta[name="csrf-token"]');
+      var csrf = csrfMeta ? csrfMeta.content : '';
+      var LABELS = { en_ligne: 'Disponible', occupe: 'Occupé', hors_ligne: 'Indisponible' };
+
+      if (btn) btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        menu.hidden = !menu.hidden;
       });
-    });
-  }
-})();
-</script>
-{% endblock %}
+      document.addEventListener('click', function () { if (menu) menu.hidden = true; });
+
+      if (menu) menu.querySelectorAll('button').forEach(function (b) {
+        b.addEventListener('click', function (e) {
+          e.stopPropagation();
+          var status = b.dataset.status;
+          fetch('/api/technicien/status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': csrf },
+            body: 'status=' + encodeURIComponent(status)
+          }).then(function (r) { return r.json(); }).then(function (data) {
+            if (data.ok) {
+              label.textContent = LABELS[status] || 'Disponible';
+              btn.classList.toggle('is-off', status !== 'en_ligne');
+            }
+          }).catch(function () {});
+          menu.hidden = true;
+        });
+      });
+
+      var menuBtn = document.getElementById('menuBtn');
+      if (menuBtn) menuBtn.addEventListener('click', function () {
+        window.location.href = "{{ url_for('artisan_dashboard') }}";
+      });
+    })();
+  </script>
+</body>
+</html>
