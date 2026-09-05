@@ -2478,8 +2478,18 @@ def _safe_url(endpoint, **kw):
 
 def _admin_sidebar_badges(conn, admin_id):
     def one(sql, params=()):
-        row = conn.execute(sql, params).fetchone()
-        return row["n"] if row else 0
+        try:
+            row = conn.execute(sql, params).fetchone()
+            return row["n"] if row else 0
+        except Exception as exc:
+            # Ne doit jamais faire planter une page admin (ex: derive de
+            # schema sur une table annexe) ; le badge affiche 0 au pire.
+            logger.warning("Badge sidebar indisponible (%s...): %s", sql[:50], exc)
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+            return 0
     return {
         "validations": one(
             "SELECT COUNT(*) AS n FROM users WHERE role = 'technician' AND verification_status = ?",
