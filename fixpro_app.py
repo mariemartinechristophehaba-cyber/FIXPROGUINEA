@@ -3948,7 +3948,11 @@ def login():
             if user["role"] == "client":
                 return redirect(url_for("artisans_page"))
             if _is_technician(user):
-                return redirect(url_for("artisan_dashboard"))
+                # Le compte technicien reste dans l'app normale apres connexion :
+                # c'est le bloc "Mon espace professionnel" du menu qui ouvre le
+                # dashboard (ou le suivi d'inscription), jamais une redirection
+                # automatique qui l'empecherait de jamais voir ce bloc.
+                return redirect(url_for("artisans_page"))
             if user["role"] == "admin":
                 session["admin_unlocked"] = False
                 return redirect(url_for("admin_unlock"))
