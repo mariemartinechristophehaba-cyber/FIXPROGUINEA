@@ -4628,36 +4628,30 @@ _TECH_PLANS = [
     {
         "code": "tech_basic", "name": "Basic", "icon": "send", "popular": False,
         "desc": "L'essentiel pour avancer.",
-        "price_month": 175000, "price_year": 1240000,
+        "price_month": 80000, "price_year": 800000,
         "features": [
             ("Profil visible", True),
             ("Jusqu'à 5 services", True),
             ("Support standard", True),
-            ("Mise en avant", False),
-            ("Statistiques avancées", False),
         ],
     },
     {
         "code": "tech_pro", "name": "Pro", "icon": "crown", "popular": True,
         "desc": "Plus de visibilité.",
-        "price_month": 237000, "price_year": 1680000,
+        "price_month": 140000, "price_year": 1400000,
         "features": [
             ("Profil mis en avant", True),
             ("Services illimités", True),
-            ("Statistiques détaillées", True),
             ("Support prioritaire", True),
-            ("Badge « Top Pro »", True),
         ],
     },
     {
         "code": "tech_premium", "name": "Premium", "icon": "diamond", "popular": False,
         "desc": "Pour les meilleurs.",
-        "price_month": 300000, "price_year": 2120000,
+        "price_month": 210000, "price_year": 2100000,
         "features": [
             ("Tout dans Pro", True),
-            ("Mise en avant nationale", True),
             ("Accès aux demandes prioritaires", True),
-            ("Support 24/7", True),
             ("Conseil personnalisé", True),
         ],
     },
@@ -4734,11 +4728,45 @@ def technician_subscription():
             or not user.get("is_verified")):
         return redirect(url_for("artisan_pending"))
 
-    # Page en refonte (placeholder) : plus de formules/historique affiches ici
-    # pour l'instant, donc plus de requetes/calculs inutilises. La logique
-    # d'abonnement en cours + paiements sera reintroduite avec la nouvelle
-    # maquette dans render_template ci-dessous.
-    return render_template("technician_subscription.html", user=user)
+    current_code = None
+    current_active = False
+    unread_count = 0
+    conn = get_db_connection()
+    try:
+        try:
+            current = conn.execute(
+                "SELECT s.status, p.code AS plan_code"
+                " FROM technician_subscriptions s"
+                " LEFT JOIN subscription_plans p ON p.id = s.plan_id"
+                " WHERE s.technician_id = ?"
+                " ORDER BY s.created_at DESC LIMIT 1",
+                (user["id"],)).fetchone()
+            if current:
+                current_code = current["plan_code"]
+                current_active = (current["status"] or "").upper() in ("ACTIVE", "TRIAL")
+        except Exception:
+            conn.rollback()
+        try:
+            unread_count = conn.execute(
+                "SELECT COUNT(*) AS n FROM notifications WHERE user_id = ? AND is_read = 0",
+                (user["id"],)).fetchone()["n"]
+        except Exception:
+            conn.rollback()
+            unread_count = 0
+    finally:
+        conn.close()
+
+    min_month = min(p["price_month"] for p in _TECH_PLANS)
+    max_month = max(p["price_month"] for p in _TECH_PLANS)
+    min_year = min(p["price_year"] for p in _TECH_PLANS)
+    max_year = max(p["price_year"] for p in _TECH_PLANS)
+
+    return render_template("technician_subscription.html", user=user,
+                           plans=_TECH_PLANS, unread_count=unread_count,
+                           availability=(user.get("availability_status") or "hors_ligne"),
+                           current_code=current_code, current_active=current_active,
+                           min_month=min_month, max_month=max_month,
+                           min_year=min_year, max_year=max_year)
 
 
 @app.route("/abonnement/paiement", methods=["GET", "POST"])
