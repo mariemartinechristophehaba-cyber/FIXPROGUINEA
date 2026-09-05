@@ -602,14 +602,17 @@ body {
   .f-pros-grid { grid-template-columns: repeat(4, 1fr); }
 }
 
+/* ==========================================================================
+   Barre laterale (bureau) - masquee sous 1024px, tiroir mobile a la place
+   ========================================================================== */
 .sidebar {
   display: none;
   flex-direction: column;
-  width: 240px;
+  width: 252px;
   min-height: 100vh;
   background: var(--f-white);
   border-right: 1px solid var(--f-line);
-  padding: 20px;
+  padding: 20px 14px 16px;
 }
 
 .sidebar svg, .tabbar svg, .support-fab svg {
@@ -619,10 +622,101 @@ body {
   vertical-align: middle;
 }
 
-.sidebar-link, .tab { display: flex; align-items: center; gap: 10px; }
+.sidebar-top { padding: 4px 8px 14px; border-bottom: 1px solid var(--f-line); margin-bottom: 12px; }
+.sidebar .brand {
+  display: flex; align-items: center; gap: 9px;
+  font-family: var(--f-display); font-weight: 800; font-size: 19px;
+  color: var(--f-text); text-decoration: none;
+}
+.sidebar .brand em { font-style: normal; color: var(--f-primary); }
+.sidebar .brand-mark {
+  width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0;
+  background: rgba(21,94,239,.12); color: var(--f-primary);
+  display: flex; align-items: center; justify-content: center;
+}
+.sidebar-tagline { margin: 8px 0 0; font-size: 11.5px; color: var(--f-text-2); }
+
+.sidebar-nav { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.sidebar-link {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 12px; border-radius: 11px;
+  font-size: 14px; font-weight: 600; color: var(--f-text-2);
+  text-decoration: none; position: relative;
+}
+.sidebar-link:hover { background: var(--f-bg); color: var(--f-text); }
+.sidebar-link.active { background: rgba(21,94,239,.10); color: var(--f-primary); }
+.sidebar-link .s-badge {
+  margin-left: auto; min-width: 18px; height: 18px; padding: 0 5px;
+  border-radius: 999px; background: #EF4444; color: #fff;
+  font-size: 11px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.sidebar-bottom {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 8px 0; border-top: 1px solid var(--f-line); margin-top: 10px;
+}
+.sidebar-bottom .icon-btn {
+  position: relative; width: 40px; height: 40px; border-radius: 11px;
+  background: var(--f-bg); color: var(--f-text-2);
+  display: flex; align-items: center; justify-content: center; text-decoration: none;
+}
+.sidebar-bottom .icon-btn:hover { color: var(--f-primary); }
+.sidebar-bottom .dot-badge {
+  position: absolute; top: 4px; right: 4px; min-width: 16px; height: 16px; padding: 0 4px;
+  border-radius: 999px; background: #EF4444; color: #fff;
+  font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center;
+}
+.sidebar-bottom .avatar {
+  width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
+  background: rgba(21,94,239,.12); color: var(--f-primary);
+  font-weight: 800; font-size: 15px;
+  display: flex; align-items: center; justify-content: center; text-decoration: none;
+  margin-left: auto;
+}
 
 @media (min-width: 1024px) {
-  .sidebar { display: flex; }
+  .sidebar {
+    display: flex;
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: 252px;
+    z-index: 60;
+    overflow-y: auto;
+  }
+
+  body:not(.no-sidebar) .app-wrap { margin-left: 252px; }
+
+  /* Chrome mobile masquee sur bureau */
+  .tabbar,
+  .support-fab,
+  .burger,
+  .f-menu-btn,
+  .f-bottom-nav,
+  #mobileDrawer,
+  #mobileDrawerOverlay,
+  .cd-drawer,
+  .cd-overlay,
+  .f-drawer,
+  .f-drawer-overlay { display: none !important; }
+
+  /* Cadre de contenu confortable sur bureau */
+  body:not(.no-sidebar) .page {
+    max-width: 1160px;
+    margin: 0 auto;
+    padding: 28px 40px 56px;
+  }
+
+  /* Les conteneurs "colonne mobile" s'elargissent au lieu de rester a ~520px */
+  .rz, .hp-wrap, .ti-wrap, .db, .tc, .tp,
+  .cprof, .p-wrap, .rq-wrap, .sec-wrap, .conv-wrap,
+  .req-wrap, .notif-wrap, .pay-wrap {
+    max-width: none !important;
+  }
+}
+
+@media (min-width: 1440px) {
+  body:not(.no-sidebar) .page { max-width: 1320px; }
 }
 /* Categories supplementaires */
 .f-cat-carpenter .f-cat-icon { background: rgba(154,93,60,.12); color: #9A5D3C; }
