@@ -19,9 +19,7 @@ import requests
 import urllib.parse
 import urllib.request
 import secrets
-import smtplib
 from datetime import datetime, timedelta, timezone
-from email.mime.text import MIMEText
 from functools import wraps
 
 from authlib.integrations.flask_client import OAuth
@@ -841,20 +839,6 @@ _MISSION_STATUS_ALIASES = {
     "refused": MISSION_STATUS_REFUSED,
     "cancelled": MISSION_STATUS_CANCELLED,
     "reassignment_required": MISSION_STATUS_REASSIGNMENT_REQUIRED,
-}
-
-# Libelles lisibles pour l'affichage dans l'historique.
-_MISSION_STATUS_LABELS = {
-    MISSION_STATUS_REQUESTED: "Nouvelle demande",
-    MISSION_STATUS_ASSIGNED: "Technicien attribue",
-    MISSION_STATUS_ACCEPTED: "Mission acceptee",
-    MISSION_STATUS_EN_ROUTE: "En route",
-    MISSION_STATUS_ARRIVED: "Arrivee",
-    MISSION_STATUS_IN_PROGRESS: "Intervention en cours",
-    MISSION_STATUS_COMPLETED: "Terminee",
-    MISSION_STATUS_REFUSED: "Mission refusee",
-    MISSION_STATUS_CANCELLED: "Mission annulee",
-    MISSION_STATUS_REASSIGNMENT_REQUIRED: "Reattribution requise",
 }
 
 # Transitions autorisees pour les demandes.
@@ -1819,7 +1803,6 @@ VERIF_PENDING = "PENDING_REVIEW"
 VERIF_APPROVED = "APPROVED"
 VERIF_REJECTED = "REJECTED"
 VERIF_REVISION = "REVISION_REQUIRED"
-VERIF_BLOCKING = (VERIF_PENDING, VERIF_REJECTED, VERIF_REVISION)
 
 DOC_IDENTITY = "identity"
 DOC_PROFESSIONAL = "professional"
@@ -1851,30 +1834,6 @@ def _technician_has_documents(conn, tech_id):
         "SELECT COUNT(*) AS n FROM technician_documents WHERE technician_id = ?",
         (tech_id,)).fetchone()
     return bool(row and row["n"])
-
-
-def _send_admin_notification(subject, body):
-    """Envoie un email a l'admin si la configuration SMTP est presente."""
-    host = app.config.get("SMTP_HOST", "")
-    port = app.config.get("SMTP_PORT", 587)
-    user = app.config.get("SMTP_USER", "")
-    password = app.config.get("SMTP_PASSWORD", "")
-    to = app.config.get("ADMIN_EMAIL", "")
-    if not all([host, user, password, to]):
-        logger.info("Notification admin (pas d'email configure) : %s", subject)
-        return
-    try:
-        msg = MIMEText(body, "plain", "utf-8")
-        msg["Subject"] = subject
-        msg["From"] = user
-        msg["To"] = to
-        with smtplib.SMTP(host, port, timeout=10) as server:
-            server.starttls()
-            server.login(user, password)
-            server.sendmail(user, [to], msg.as_bytes())
-        logger.info("Notification admin envoyee a %s", to)
-    except Exception as exc:  # pragma: no cover
-        logger.exception("Echec envoi notification admin : %s", exc)
 
 
 @app.route("/admin/login", methods=["GET", "POST"])
@@ -2016,14 +1975,6 @@ def _expire_due_subscriptions(conn):
         conn.commit()
     except Exception as exc:
         logger.warning("Expiration abonnements impossible: %s", exc)
-
-
-def _safe_url(endpoint, **kw):
-    """url_for tolerant : renvoie '#' si la route n'existe pas encore."""
-    try:
-        return url_for(endpoint, **kw)
-    except Exception:
-        return "#"
 
 
 def _admin_sidebar_badges(conn, admin_id):
@@ -3618,30 +3569,10 @@ def _generate_activation_token(user_id):
     return _activation_serializer.dumps({"user_id": user_id})
 
 
-def _verify_activation_token(token):
-    """Verifie un jeton d'activation et retourne l'identifiant utilisateur."""
-    if not token:
-        return None
-    try:
-        data = _activation_serializer.loads(token, max_age=_ACTIVATION_MAX_AGE)
-        return data.get("user_id")
-    except (BadSignature, SignatureExpired):
-        return None
-
-
 _MOBILE_TOKEN_MAX_AGE = 7 * 24 * 60 * 60  # 7 jours
 _mobile_serializer = URLSafeTimedSerializer(
     app.config.get("SECRET_KEY") or "fallback-secret",
     salt="technician-mobile")
-
-
-def _generate_mobile_token(user):
-    """Genere un token mobile de 7 jours pour un technicien."""
-    return _mobile_serializer.dumps({
-        "user_id": user["id"],
-        "role": user["role"],
-        "account_status": user.get("account_status", ""),
-    })
 
 
 def _verify_mobile_token(token):
@@ -3810,8 +3741,6 @@ _DOC_LABELS = {
     DOC_IDENTITY: "Pièce d'identité",
     DOC_PROFESSIONAL: "Justificatif professionnel",
 }
-
-
 
 
 @app.route("/payments")
@@ -4060,9 +3989,6 @@ def _to_int(value, default=0):
         return default
 
 
-import math
-
-
 def _haversine(lat1, lon1, lat2, lon2):
     try:
         lat1, lon1, lat2, lon2 = float(lat1), float(lon1), float(lat2), float(lon2)
@@ -4088,27 +4014,6 @@ def _services_for_category(conn, category_name):
         " WHERE c.name = ? AND s.is_active = 1"
         " ORDER BY s.name",
         (category_name,)).fetchall()
-
-def _save_artisan_services(conn, artisan_id, service_ids):
-    """Remplace les services d'un artisan apres validation du domaine."""
-    service_ids = [int(s) for s in (service_ids or []) if s]
-    if not service_ids:
-        conn.execute("DELETE FROM artisan_services WHERE artisan_id = ?", (artisan_id,))
-        return
-    artisan = conn.execute(
-        "SELECT profession FROM users WHERE id = ? AND role = 'technician'",
-        (artisan_id,)).fetchone()
-    if not artisan or not artisan["profession"]:
-        raise ValueError("Domaine professionnel non defini.")
-    allowed = {r["id"] for r in _services_for_category(conn, artisan["profession"])}
-    invalid = [s for s in service_ids if s not in allowed]
-    if invalid:
-        raise ValueError("Certains services n'appartiennent pas au domaine du technicien.")
-    conn.execute("DELETE FROM artisan_services WHERE artisan_id = ?", (artisan_id,))
-    for sid in service_ids:
-        conn.execute(
-            "INSERT INTO artisan_services (artisan_id, service_id) VALUES (?, ?)",
-            (artisan_id, sid))
 
 
 def _enrich_artisan(row, client_lat, client_lon):
@@ -4547,7 +4452,6 @@ def artisan_detail(artisan_id):
             distance = _haversine(client_lat, client_lon, artisan_lat, artisan_lon)
 
         # Conversation client - FixPro pour ce technicien
-        chat_messages = []
         ticket_id = None
         if user:
             ticket = conn.execute(
@@ -4557,11 +4461,6 @@ def artisan_detail(artisan_id):
                 (user["id"], artisan_id)).fetchone()
             if ticket:
                 ticket_id = ticket["id"]
-                chat_messages = conn.execute(
-                    "SELECT m.*, u.full_name AS sender_name"
-                    " FROM admin_messages m JOIN users u ON u.id = m.sender_id"
-                    " WHERE m.ticket_id = ? ORDER BY m.created_at ASC",
-                    (ticket_id,)).fetchall()
 
         # Le client peut-il laisser un avis ?
         can_review = False
