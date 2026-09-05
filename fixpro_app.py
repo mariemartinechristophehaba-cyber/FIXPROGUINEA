@@ -2517,6 +2517,14 @@ def _shift_month(year, month, delta):
 @admin_required
 def admin_dashboard():
     """Tableau de bord admin : abonnements, revenus, validations."""
+    try:
+        return _admin_dashboard_impl()
+    except Exception:
+        import traceback
+        return "<pre>" + traceback.format_exc() + "</pre>", 200
+
+
+def _admin_dashboard_impl():
     user = get_current_user()
     now = datetime.now(timezone.utc)
     month_start_dt = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
