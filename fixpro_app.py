@@ -1210,6 +1210,19 @@ def inject_layout_context():
         finally:
             conn.close()
 
+    notif_unread = 0
+    if connected and connected.get("role") != "admin":
+        conn = get_db_connection()
+        try:
+            row = conn.execute(
+                "SELECT COUNT(*) AS n FROM notifications WHERE user_id = ? AND is_read = 0",
+                (connected["id"],)).fetchone()
+            notif_unread = (row["n"] if row else 0) or 0
+        except Exception:
+            conn.rollback()
+        finally:
+            conn.close()
+
     stats = {}
     if connected and connected.get("role") == "admin":
         if ADMIN_DEMO:
@@ -1233,7 +1246,8 @@ def inject_layout_context():
             finally:
                 conn.close()
 
-    return {"nav_user": connected, "admin_stats": stats}
+    return {"nav_user": connected, "admin_stats": stats,
+            "messages_unread": messages_unread, "notif_unread": notif_unread}
 
 
 def can_access_request(user, req):
