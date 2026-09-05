@@ -12,6 +12,7 @@ import base64
 import csv
 import io
 import json
+import os
 import math
 import re
 import requests
@@ -1606,19 +1607,42 @@ def home():
                            popular=popular)
 
 
+# users.profession est un champ libre : selon le formulaire d'inscription utilise,
+# le meme metier peut y etre enregistre sous plusieurs orthographes/accents/casse
+# (ex. "Plombier", "Plomberie", "plombier"). Le gabarit categories.html affiche un
+# jeu fixe de 8 categories : on y associe toutes les variantes reellement vues en
+# base pour que le compte de techniciens ne soit pas bloque a 0. Meme principe que
+# le regroupement "canonical" utilise dans index()/home().
+_CATEGORY_PROFESSION_ALIASES = {
+    "Électricité": ("électricien", "electricien", "electricite", "électricité"),
+    "Plomberie": ("plombier", "plomberie"),
+    "Climatisation": ("climatisation", "climatiseur", "clim"),
+    "Réfrigération": ("frigoriste", "réfrigération", "refrigeration", "froid"),
+    "Menuiserie": ("menuisier", "menuiserie"),
+    "Peinture": ("peintre", "peinture"),
+    "Maçonnerie": ("maçon", "maçonnerie", "macon", "maconnerie"),
+    "Nettoyage": ("nettoyage", "menage", "ménage"),
+}
+
+
 @app.route("/categories")
 def categories():
     conn = get_db_connection()
     try:
         categories = conn.execute(
             "SELECT name, diagnostic_price FROM service_categories ORDER BY name").fetchall()
-        rows = conn.execute(
-            "SELECT sc.name,"
-            " (SELECT COUNT(*) FROM users u"
-            " WHERE u.profession IS NOT NULL AND u.profession != ''"
-            " AND (u.profession = sc.name OR u.skills LIKE '%' || sc.name || '%')) AS n"
-            " FROM service_categories sc ORDER BY sc.name").fetchall()
-        counts = {r["name"]: r["n"] for r in rows}
+        profession_counts = {}
+        for row in conn.execute(
+                "SELECT profession, COUNT(*) AS n FROM users"
+                " WHERE profession IS NOT NULL AND profession != ''"
+                " GROUP BY profession").fetchall():
+            key = (row["profession"] or "").strip().lower()
+            profession_counts[key] = profession_counts.get(key, 0) + row["n"]
+
+        counts = {
+            label: sum(profession_counts.get(alias, 0) for alias in aliases)
+            for label, aliases in _CATEGORY_PROFESSION_ALIASES.items()
+        }
     finally:
         conn.close()
     return render_template("categories.html", categories=categories, counts=counts)
@@ -7672,15 +7696,39 @@ def _is_technician(user):
 
 
 _settings_loaded = False
+
+
+def _migrations_enabled():
+    """En production, le balayage DDL ne tourne PAS a chaque cold start
+    serverless (15-70 s de latence). Le schema Supabase est applique a la
+    main ou via un deploiement avec RUN_MIGRATIONS=1. En dev/test, toujours."""
+    if app.config.get("FLASK_ENV") != "production":
+        return True
+    return str(os.getenv("RUN_MIGRATIONS", "")).strip() in ("1", "true", "yes")
+
+
 def _ensure_settings_and_migrations():
-    """Charge les settings et migrations une seule fois au premier appel."""
+    """Charge les settings (et migrations si activees) au premier appel."""
     global _settings_loaded
     if _settings_loaded:
         return
     _settings_loaded = True
     try:
         _load_settings()
-        _migrate_db()
+        if _migrations_enabled():
+            _migrate_db()
+        else:
+            # Le balayage DDL est saute en prod, mais le compte admin doit
+            # rester synchronise avec ADMIN_EMAILS / ADMIN_PASSWORD (peu couteux).
+            try:
+                _c = get_db_connection()
+                try:
+                    _bootstrap_admin(_c)
+                    _c.commit()
+                finally:
+                    _c.close()
+            except Exception as e:
+                logger.warning("Bootstrap admin ignore: %s", e)
     except Exception as e:
         logger.warning("Parametres ou migrations indisponibles: %s", e)
 
