@@ -1237,6 +1237,9 @@ def is_prohibited_message(content):
 
 @app.route("/")
 def index():
+    _u = get_current_user()
+    if _u and _is_technician(_u):
+        return redirect(url_for("artisan_dashboard"))
     conn = get_db_connection()
     try:
         artisans = conn.execute("""
@@ -3633,13 +3636,9 @@ def login():
 
             if next_url:
                 return redirect(next_url)
-            if user["role"] == "client":
-                return redirect(url_for("artisans_page"))
             if _is_technician(user):
-                # Le compte technicien reste dans l'app normale apres connexion :
-                # c'est le bloc "Mon espace professionnel" du menu qui ouvre le
-                # dashboard (ou le suivi d'inscription), jamais une redirection
-                # automatique qui l'empecherait de jamais voir ce bloc.
+                return redirect(url_for("artisan_dashboard"))
+            if user["role"] == "client":
                 return redirect(url_for("artisans_page"))
             if user["role"] == "admin":
                 return redirect(url_for("admin_dashboard"))
@@ -3665,6 +3664,8 @@ def logout():
 @app.route("/dashboard")
 def dashboard():
     user = get_current_user()
+    if user and _is_technician(user):
+        return redirect(url_for("artisan_dashboard"))
     if user is None:
         user = {"id": 0, "full_name": "Visiteur", "role": "client", "city": "Conakry"}
     try:
@@ -3735,6 +3736,190 @@ def dashboard():
 @login_required
 def mobile_dashboard():
     return render_template("mobile_dashboard.html", user=get_current_user())
+
+
+# ---------------------------------------------------------------------------
+# Espace technicien
+# ---------------------------------------------------------------------------
+
+@app.route("/dashboard/technicien")
+@app.route("/technician/dashboard")
+@login_required
+def artisan_dashboard():
+    """Accueil de l'espace technicien."""
+    user = get_current_user()
+    if not _is_technician(user):
+        flash("Cet espace est reserve aux techniciens.", "error")
+        return redirect(url_for("dashboard"))
+
+    month_prefix = datetime.now(timezone.utc).strftime("%Y-%m")
+    prev_month_prefix = (datetime.now(timezone.utc).replace(day=1)
+                         - timedelta(days=1)).strftime("%Y-%m")
+
+    unread_count = 0
+    conn = get_db_connection()
+    try:
+        def _scalar(sql, params=()):
+            try:
+                row = conn.execute(sql, params).fetchone()
+                return (row["n"] if row else 0) or 0
+            except Exception:
+                conn.rollback()
+                return 0
+
+        unread_count = _scalar(
+            "SELECT COUNT(*) AS n FROM notifications WHERE user_id = ? AND is_read = 0",
+            (user["id"],))
+        appels_mois = _scalar(
+            "SELECT COUNT(*) AS n FROM client_contacts"
+            " WHERE artisan_id = ? AND substr(created_at, 1, 7) = ?",
+            (user["id"], month_prefix))
+        appels_mois_prev = _scalar(
+            "SELECT COUNT(*) AS n FROM client_contacts"
+            " WHERE artisan_id = ? AND substr(created_at, 1, 7) = ?",
+            (user["id"], prev_month_prefix))
+        demandes_mois = _scalar(
+            "SELECT COUNT(*) AS n FROM requests"
+            " WHERE artisan_id = ? AND substr(created_at, 1, 7) = ?",
+            (user["id"], month_prefix))
+        demandes_mois_prev = _scalar(
+            "SELECT COUNT(*) AS n FROM requests"
+            " WHERE artisan_id = ? AND substr(created_at, 1, 7) = ?",
+            (user["id"], prev_month_prefix))
+        nouveaux_clients_mois = _scalar(
+            "SELECT COUNT(DISTINCT client_id) AS n FROM requests"
+            " WHERE artisan_id = ? AND substr(created_at, 1, 7) = ?",
+            (user["id"], month_prefix))
+        nouveaux_clients_mois_prev = _scalar(
+            "SELECT COUNT(DISTINCT client_id) AS n FROM requests"
+            " WHERE artisan_id = ? AND substr(created_at, 1, 7) = ?",
+            (user["id"], prev_month_prefix))
+        reviews_mois = _scalar(
+            "SELECT COUNT(*) AS n FROM reviews"
+            " WHERE artisan_id = ? AND substr(created_at, 1, 7) = ?",
+            (user["id"], month_prefix))
+        reviews_mois_prev = _scalar(
+            "SELECT COUNT(*) AS n FROM reviews"
+            " WHERE artisan_id = ? AND substr(created_at, 1, 7) = ?",
+            (user["id"], prev_month_prefix))
+
+        note_row = None
+        try:
+            note_row = conn.execute(
+                "SELECT COALESCE(AVG(rating), 0) AS avg, COUNT(*) AS cnt FROM reviews"
+                " WHERE artisan_id = ?", (user["id"],)).fetchone()
+        except Exception:
+            conn.rollback()
+        note_avg = round(note_row["avg"], 1) if note_row and note_row["cnt"] else 0
+        note_count = note_row["cnt"] if note_row else 0
+
+        recent_requests = []
+        try:
+            recent_requests = conn.execute(
+                "SELECT id FROM requests WHERE artisan_id = ?"
+                " ORDER BY created_at DESC LIMIT 1", (user["id"],)).fetchall()
+        except Exception:
+            conn.rollback()
+        recent_reviews_exist = bool(note_count)
+
+        subscription = None
+        try:
+            subscription = conn.execute(
+                "SELECT s.status, s.start_date, s.end_date, s.auto_renew,"
+                " p.name AS plan_name"
+                " FROM technician_subscriptions s"
+                " LEFT JOIN subscription_plans p ON p.id = s.plan_id"
+                " WHERE s.technician_id = ? ORDER BY s.created_at DESC LIMIT 1",
+                (user["id"],)).fetchone()
+        except Exception:
+            conn.rollback()
+
+        has_documents = _scalar(
+            "SELECT COUNT(*) AS n FROM technician_documents WHERE technician_id = ?",
+            (user["id"],)) > 0
+    finally:
+        conn.close()
+
+    def _trend(cur, prev):
+        if prev <= 0:
+            return 100 if cur > 0 else None
+        return round((cur - prev) / prev * 100)
+
+    checklist = {
+        "photo": bool(user.get("photo_url")),
+        "infos": bool((user.get("full_name") or "").strip() and (user.get("bio") or "").strip()),
+        "services": bool((user.get("profession") or "").strip()),
+        "zone": bool((user.get("zone_intervention") or user.get("city") or "").strip()),
+    }
+    profile_pct = int(round(sum(checklist.values()) / len(checklist) * 100))
+    checklist["documents"] = has_documents
+
+    demo = not recent_requests and not recent_reviews_exist and subscription is None
+
+    price_min, price_max = 80000, 210000
+
+    if demo:
+        kpis = {"appels": 12, "demandes": 5, "clients": 9, "reviews": 127, "note": 4.8}
+        trends = {"appels": 20, "demandes": 12, "clients": 50, "reviews": 25}
+        note_count = 127
+        tier_label = "Top Pro"
+        subscription_view = {
+            "plan_name": "Pro Mensuel", "status": "ACTIVE",
+            "end_date_label": "30 Juin 2025", "auto_renew": True,
+            "support": "Support standard", "price_current": price_min,
+        }
+        checklist = {"photo": True, "infos": True, "services": True, "zone": True, "documents": False}
+        profile_pct = 85
+    else:
+        kpis = {"appels": appels_mois, "demandes": demandes_mois,
+                "clients": nouveaux_clients_mois, "reviews": note_count, "note": note_avg}
+        trends = {
+            "appels": _trend(appels_mois, appels_mois_prev),
+            "demandes": _trend(demandes_mois, demandes_mois_prev),
+            "clients": _trend(nouveaux_clients_mois, nouveaux_clients_mois_prev),
+            "reviews": _trend(reviews_mois, reviews_mois_prev),
+        }
+        tier_label = "Top Pro" if (note_avg >= 4.5 and note_count >= 20) else "Standard"
+        if subscription:
+            subscription_view = {
+                "plan_name": subscription["plan_name"] or "Abonnement FixPro",
+                "status": (subscription["status"] or "").upper(),
+                "end_date_label": _format_date_month_fr(subscription["end_date"]) if subscription["end_date"] else "—",
+                "auto_renew": bool(subscription["auto_renew"]),
+                "support": "Support standard", "price_current": price_min,
+            }
+        else:
+            subscription_view = None
+
+    return render_template("dashboard_artisan.html", user=user, unread_count=unread_count,
+                           demo=demo, kpis=kpis, trends=trends, note_count=note_count,
+                           tier_label=tier_label, subscription=subscription_view,
+                           checklist=checklist, profile_pct=profile_pct,
+                           price_min=price_min, price_max=price_max,
+                           availability=(user.get("availability_status") or "hors_ligne"))
+
+
+@app.route("/api/technicien/status", methods=["POST"])
+@login_required
+def api_technicien_status():
+    """Met a jour la disponibilite du technicien (toggle de l'accueil)."""
+    user = get_current_user()
+    if not _is_technician(user):
+        return jsonify({"ok": False}), 403
+    status = (request.form.get("status") or "").strip()
+    if status not in ("en_ligne", "occupe", "hors_ligne"):
+        return jsonify({"ok": False, "error": "statut invalide"}), 400
+    conn = get_db_connection()
+    try:
+        conn.execute("UPDATE users SET availability_status = ? WHERE id = ?",
+                     (status, user["id"]))
+        conn.commit()
+    finally:
+        conn.close()
+    return jsonify({"ok": True, "status": status})
+
+
+csrf.exempt(api_technicien_status)
 
 
 _DOC_LABELS = {
