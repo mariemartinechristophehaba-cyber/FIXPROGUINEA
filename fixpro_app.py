@@ -790,16 +790,13 @@ def login_required(view_func):
 
 
 def admin_required(view_func):
-    """Verifie que l'utilisateur connecte possede le role admin et a déverrouillé sa session."""
+    """Verifie que l'utilisateur connecte possede le role admin."""
     @wraps(view_func)
     def wrapper(*args, **kwargs):
         user = get_current_user()
         if not user or user["role"] != "admin":
             flash("Acces reserve aux administrateurs.", "error")
             return redirect(url_for("admin_login"))
-        if (request.endpoint and request.endpoint not in ("admin_unlock", "admin_logout")
-                and not session.get("admin_unlocked")):
-            return redirect(url_for("admin_unlock"))
         return view_func(*args, **kwargs)
     return wrapper
 
@@ -2336,9 +2333,7 @@ def admin_login():
     if session.get("user_id"):
         user = get_current_user()
         if user and user["role"] == "admin":
-            if session.get("admin_unlocked"):
-                return redirect(url_for("admin_dashboard"))
-            return redirect(url_for("admin_unlock"))
+            return redirect(url_for("admin_dashboard"))
 
     if request.method == "POST":
         email = (request.form.get("email") or "").strip().lower()
@@ -2353,27 +2348,21 @@ def admin_login():
         if admin and check_password_hash(admin["password_hash"], password):
             session.clear()
             session["user_id"] = admin["id"]
-            session["admin_unlocked"] = False
             session.permanent = True
-            return redirect(url_for("admin_unlock"))
+            return redirect(url_for("admin_dashboard"))
         flash("Email ou mot de passe incorrect.", "error")
 
     return render_template("admin_login.html")
 
 
 @app.route("/admin/unlock", methods=["GET", "POST"])
-@admin_required
+@login_required
 def admin_unlock():
-    """Verrou secondaire du tableau de bord administrateur."""
-    if request.method == "POST":
-        password = request.form.get("password", "")
-        user = get_current_user()
-        if user and check_password_hash(user["password_hash"], password):
-            session["admin_unlocked"] = True
-            flash("Tableau de bord deverrouille.", "success")
-            return redirect(url_for("admin_dashboard"))
-        flash("Mot de passe incorrect.", "error")
-    return render_template("admin_unlock.html")
+    """Etape de deverrouillage retiree : redirige directement vers l'espace admin."""
+    user = get_current_user()
+    if user and user["role"] == "admin":
+        return redirect(url_for("admin_dashboard"))
+    return redirect(url_for("admin_login"))
 
 
 @app.route("/admin/login/google")
@@ -4104,8 +4093,7 @@ def login():
                 # automatique qui l'empecherait de jamais voir ce bloc.
                 return redirect(url_for("artisans_page"))
             if user["role"] == "admin":
-                session["admin_unlocked"] = False
-                return redirect(url_for("admin_unlock"))
+                return redirect(url_for("admin_dashboard"))
             return redirect(url_for("requests_list"))
 
         # Message identique pour ne pas reveler quel identifiant existe.
