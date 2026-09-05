@@ -7028,11 +7028,32 @@ def _load_settings():
         conn.close()
 
 
+_SCHEMA_VERSION = "2026-09-05"
+
+
 def _migrate_db():
-    """Applique les migrations legeres au demarrage."""
+    """Applique les migrations legeres au demarrage.
+
+    En serverless, chaque cold start relance ce module : sans garde, on
+    rejouait tout le balayage DDL (dizaines d'aller-retours vers Supabase)
+    a chaque requete -> 15-35 s de latence. On note la version de schema
+    dans `settings` et on saute tout si elle est deja a jour.
+    """
     try:
         conn = get_db_connection()
         try:
+            try:
+                _row = conn.execute(
+                    "SELECT value FROM settings WHERE key = 'schema_version'").fetchone()
+                if _row and _row["value"] == _SCHEMA_VERSION:
+                    conn.close()
+                    return
+            except Exception:
+                try:
+                    conn.rollback()
+                except Exception:
+                    pass
+
             is_pg = db.is_postgres_url(app.config.get("DATABASE_URL"))
             cols = conn.table_columns('conversations')
             if 'artisan_id' not in cols:
@@ -7265,6 +7286,20 @@ def _migrate_db():
             conn.commit()
         except Exception as e:
             logger.warning("Bootstrap admin impossible: %s", e)
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+
+        # --- Marqueur : schema a jour, on sautera tout au prochain boot -----
+        try:
+            conn.execute("DELETE FROM settings WHERE key = 'schema_version'")
+            conn.execute(
+                "INSERT INTO settings (key, value) VALUES ('schema_version', ?)",
+                (_SCHEMA_VERSION,))
+            conn.commit()
+        except Exception as e:
+            logger.warning("Marqueur schema_version non ecrit: %s", e)
             try:
                 conn.rollback()
             except Exception:
