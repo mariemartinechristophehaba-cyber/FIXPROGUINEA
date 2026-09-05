@@ -12,6 +12,7 @@ import base64
 import csv
 import io
 import json
+import os
 import math
 import re
 import requests
@@ -9359,15 +9360,39 @@ def _is_technician(user):
 
 
 _settings_loaded = False
+
+
+def _migrations_enabled():
+    """En production, le balayage DDL ne tourne PAS a chaque cold start
+    serverless (15-70 s de latence). Le schema Supabase est applique a la
+    main ou via un deploiement avec RUN_MIGRATIONS=1. En dev/test, toujours."""
+    if app.config.get("FLASK_ENV") != "production":
+        return True
+    return str(os.getenv("RUN_MIGRATIONS", "")).strip() in ("1", "true", "yes")
+
+
 def _ensure_settings_and_migrations():
-    """Charge les settings et migrations une seule fois au premier appel."""
+    """Charge les settings (et migrations si activees) au premier appel."""
     global _settings_loaded
     if _settings_loaded:
         return
     _settings_loaded = True
     try:
         _load_settings()
-        _migrate_db()
+        if _migrations_enabled():
+            _migrate_db()
+        else:
+            # Le balayage DDL est saute en prod, mais le compte admin doit
+            # rester synchronise avec ADMIN_EMAILS / ADMIN_PASSWORD (peu couteux).
+            try:
+                _c = get_db_connection()
+                try:
+                    _bootstrap_admin(_c)
+                    _c.commit()
+                finally:
+                    _c.close()
+            except Exception as e:
+                logger.warning("Bootstrap admin ignore: %s", e)
     except Exception as e:
         logger.warning("Parametres ou migrations indisponibles: %s", e)
 
