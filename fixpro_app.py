@@ -2478,8 +2478,18 @@ def _safe_url(endpoint, **kw):
 
 def _admin_sidebar_badges(conn, admin_id):
     def one(sql, params=()):
-        row = conn.execute(sql, params).fetchone()
-        return row["n"] if row else 0
+        try:
+            row = conn.execute(sql, params).fetchone()
+            return row["n"] if row else 0
+        except Exception as exc:
+            # Ne doit jamais faire planter une page admin (ex: derive de
+            # schema sur une table annexe) ; le badge affiche 0 au pire.
+            logger.warning("Badge sidebar indisponible (%s...): %s", sql[:50], exc)
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+            return 0
     return {
         "validations": one(
             "SELECT COUNT(*) AS n FROM users WHERE role = 'technician' AND verification_status = ?",
@@ -2517,14 +2527,6 @@ def _shift_month(year, month, delta):
 @admin_required
 def admin_dashboard():
     """Tableau de bord admin : abonnements, revenus, validations."""
-    try:
-        return _admin_dashboard_impl()
-    except Exception:
-        import traceback
-        return "<pre>" + traceback.format_exc() + "</pre>", 200
-
-
-def _admin_dashboard_impl():
     user = get_current_user()
     now = datetime.now(timezone.utc)
     month_start_dt = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
