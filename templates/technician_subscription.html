@@ -1,401 +1,491 @@
-{% extends 'base.html' %}
-{% block title %}Abonnement - FixPro{% endblock %}
-{% block header %}{% endblock %}
-{% block footer %}{% endblock %}
-{% block tabbar %}{% endblock %}
-{% block sidebar %}{% include '_tech_sidebar.html' %}{% endblock %}
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#155EEF" />
+  <meta name="csrf-token" content="{{ csrf_token() }}" />
+  <title>Abonnement - FixPro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --td-primary: #155EEF;
+      --td-primary-dark: #0F3DBB;
+      --td-bg: #F4F7FD;
+      --td-text: #0F172A;
+      --td-muted: #64748B;
+      --td-line: #E6ECF5;
+      --td-green: #16A34A;
+      --td-yellow: #F7B718;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--td-bg); color: var(--td-text); -webkit-font-smoothing: antialiased;
+      padding-bottom: 96px;
+    }
+    a { text-decoration: none; color: inherit; }
+    button { font-family: inherit; }
 
-{% block extra_head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/tech-espace.css', v='3') }}">
-<style>
-  :root { --db-blue:#2563EB; --db-blue-d:#1D4ED8; --db-ink:#0F172A; --db-mut:#64748B; }
+    /* Header (identique au reste de l'espace technicien) */
+    .td-header {
+      background: #fff; border-bottom: 1px solid var(--td-line);
+      padding: 14px 16px; padding-top: calc(24px + env(safe-area-inset-top));
+      display: flex; align-items: center; gap: 12px;
+    }
+    .td-menu { background: none; border: none; color: var(--td-text); padding: 4px; cursor: pointer; display: flex; }
+    .td-menu svg { width: 24px; height: 24px; }
+    .td-brand { display: flex; align-items: center; gap: 9px; }
+    .td-brand svg { width: 24px; height: 24px; color: var(--td-primary); }
+    .td-brand-text { display: flex; flex-direction: column; line-height: 1.1; }
+    .td-brand-name { font-size: 1.15rem; font-weight: 800; color: var(--td-text); }
+    .td-brand-sub { font-size: 0.66rem; color: var(--td-muted); font-weight: 600; }
+    .td-h-actions { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+    .td-bell { position: relative; display: flex; color: var(--td-text); }
+    .td-bell svg { width: 22px; height: 22px; }
+    .td-badge {
+      position: absolute; top: -6px; right: -6px; min-width: 16px; height: 16px; padding: 0 3px;
+      background: #E6543A; color: #fff; font-size: 10px; font-weight: 700; border-radius: 50px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .td-avatar { position: relative; width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0; }
+    .td-avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block; }
+    .td-avatar .fallback {
+      width: 100%; height: 100%; border-radius: 50%; background: #EEF4FF; color: var(--td-primary);
+      display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.95rem;
+    }
 
-  .ts-topbar { display:flex; align-items:center; justify-content:space-between; padding:14px 16px 6px; }
-  .ts-topbar .mid { display:flex; align-items:center; gap:8px; font-size:20px; font-weight:800; color:var(--db-blue); }
-  .ts-icobtn { width:40px; height:40px; border-radius:12px; border:1px solid #E7EBF2; background:#fff; display:flex; align-items:center; justify-content:center; color:var(--db-ink); position:relative; text-decoration:none; }
-  .ts-icobtn .dot { position:absolute; top:8px; right:8px; width:8px; height:8px; border-radius:50%; background:#EF4444; }
+    .td-main { max-width: 640px; margin: 0 auto; padding: 16px; }
 
-  .ts-head { padding:6px 16px 4px; }
-  .ts-head h1 { margin:0 0 4px; font-size:clamp(22px, 6vw, 28px); font-weight:800; color:var(--db-ink); }
-  .ts-head p { margin:0; font-size:13.5px; color:var(--db-mut); }
+    /* Hero */
+    .ts-hero {
+      position: relative; overflow: hidden;
+      background: linear-gradient(150deg, #2E6BFF 0%, #1B54E6 55%, #0F3DBB 100%);
+      border-radius: 22px; padding: 22px 18px; color: #fff; margin-bottom: 18px;
+      box-shadow: 0 14px 34px rgba(21,94,239,0.28);
+    }
+    .ts-hero-eyebrow {
+      display: inline-flex; align-items: center; gap: 6px; font-size: 0.66rem; font-weight: 800;
+      letter-spacing: .06em; text-transform: uppercase; color: #C7D6FF; margin-bottom: 8px;
+    }
+    .ts-hero-eyebrow svg { width: 13px; height: 13px; color: var(--td-yellow); }
+    .ts-hero h1 { font-size: 1.3rem; font-weight: 800; margin: 0 0 6px; max-width: 260px; line-height: 1.25; }
+    .ts-hero p { margin: 0; font-size: 0.85rem; color: rgba(255,255,255,0.85); max-width: 260px; line-height: 1.4; }
+    .ts-hero-photo {
+      position: absolute; right: 14px; top: 18px; width: 76px; height: 76px; border-radius: 18px;
+      overflow: hidden; background: rgba(255,255,255,0.15);
+    }
+    .ts-hero-photo img { width: 100%; height: 100%; object-fit: cover; }
+    .ts-hero-photo .fallback { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; font-weight: 800; }
+    .ts-hero-quote { margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.2); font-size: 0.74rem; font-style: italic; color: rgba(255,255,255,0.75); }
 
-  /* abonnement en cours */
-  .ts-current { margin:16px 16px 0; border-radius:18px; padding:18px; border:1px solid #E7EBF2; background:#fff; }
-  .ts-current-top { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
-  .ts-current h2 { margin:0; font-size:13px; font-weight:800; letter-spacing:.03em; text-transform:uppercase; color:var(--db-mut); }
-  .ts-state { display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:800; padding:4px 10px; border-radius:999px; }
-  .ts-state .d { width:8px; height:8px; border-radius:50%; }
-  .ts-state.ok   { background:#DCFCE7; color:#15803D; } .ts-state.ok .d   { background:#16A34A; }
-  .ts-state.warn { background:#FEF3C7; color:#B45309; } .ts-state.warn .d { background:#F59E0B; }
-  .ts-state.bad  { background:#FEE2E2; color:#DC2626; } .ts-state.bad .d  { background:#EF4444; }
-  .ts-current-plan { font-size:20px; font-weight:800; color:var(--db-ink); margin:10px 0 8px; }
-  .ts-current-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px 14px; }
-  .ts-current-grid .l { font-size:11.5px; color:var(--db-mut); }
-  .ts-current-grid .v { font-size:13.5px; font-weight:700; color:var(--db-ink); }
-  .ts-current-actions { display:flex; gap:10px; margin-top:16px; flex-wrap:wrap; }
-  .ts-current-actions a { flex:1 1 auto; min-width:140px; text-align:center; padding:12px; border-radius:11px; font-size:13.5px; font-weight:700; text-decoration:none; }
-  .ts-current-actions .primary { background:var(--db-blue-d); color:#fff; }
-  .ts-current-actions .ghost { background:#fff; border:1px solid #C7D6F5; color:var(--db-blue-d); }
+    /* Toggle mensuel / annuel */
+    .ts-toggle-row { display: flex; align-items: center; justify-content: center; margin-bottom: 10px; }
+    .ts-toggle { display: inline-flex; background: #fff; border: 1px solid var(--td-line); border-radius: 999px; padding: 4px; box-shadow: 0 6px 18px rgba(16,42,67,0.04); }
+    .ts-toggle button {
+      border: 0; background: none; padding: 10px 20px; border-radius: 999px; font-size: 0.84rem; font-weight: 700;
+      color: var(--td-muted); cursor: pointer; display: inline-flex; align-items: center; gap: 7px;
+    }
+    .ts-toggle button svg { width: 15px; height: 15px; }
+    .ts-toggle button.active { background: var(--td-primary); color: #fff; }
+    .ts-toggle .save {
+      font-size: 0.6rem; font-weight: 800; padding: 2px 6px; border-radius: 6px; background: #DCFCE7; color: #15803D;
+    }
+    .ts-toggle button.active .save { background: rgba(255,255,255,0.25); color: #fff; }
 
-  .ts-promo { margin:16px 16px 0; background:#EEF3FE; border:1px solid #DCE6FE; border-radius:16px; padding:16px; display:flex; align-items:center; gap:14px; }
-  .ts-promo-ico { width:46px; height:46px; flex-shrink:0; color:var(--db-blue); }
-  .ts-promo h3 { margin:0 0 3px; font-size:15px; font-weight:800; color:var(--db-ink); }
-  .ts-promo p { margin:0; font-size:12.5px; color:#475569; }
-  .ts-promo-art { margin-left:auto; color:#9DB6F5; flex-shrink:0; }
-  @media (max-width:480px){ .ts-promo-art { display:none; } }
+    .ts-savings {
+      display: none; align-items: center; gap: 10px; justify-content: center; text-align: center;
+      background: #DCFCE7; color: #15803D; border-radius: 14px; padding: 12px 16px; margin-bottom: 18px;
+      font-size: 0.82rem; font-weight: 700;
+    }
+    .ts-savings.show { display: flex; }
+    .ts-savings svg { width: 18px; height: 18px; flex-shrink: 0; }
 
-  .ts-sec-title { margin:22px 16px 10px; font-size:18px; font-weight:800; color:var(--db-ink); }
+    .ts-sec-title { text-align: center; margin-bottom: 4px; }
+    .ts-sec-title h2 { font-size: 1.15rem; font-weight: 800; margin: 0 0 4px; }
+    .ts-sec-title p { margin: 0 0 16px; font-size: 0.82rem; color: var(--td-muted); }
 
-  .ts-toggle-row { display:flex; align-items:center; gap:12px; padding:0 16px; flex-wrap:wrap; }
-  .ts-toggle { display:inline-flex; background:#fff; border:1px solid #E7EBF2; border-radius:999px; padding:4px; }
-  .ts-toggle button { border:0; background:none; padding:9px 16px; border-radius:999px; font-size:13.5px; font-weight:700; color:var(--db-mut); cursor:pointer; display:inline-flex; align-items:center; gap:6px; }
-  .ts-toggle button.active { background:var(--db-blue-d); color:#fff; }
-  .ts-toggle .save { font-size:10.5px; font-weight:800; padding:2px 6px; border-radius:6px; background:#DCFCE7; color:#15803D; }
-  .ts-toggle button.active .save { background:rgba(255,255,255,.25); color:#fff; }
-  .ts-toggle-hint { display:flex; align-items:center; gap:6px; font-size:12px; color:var(--db-mut); }
+    /* Plans */
+    .ts-plans { display: flex; flex-direction: column; gap: 14px; margin-bottom: 18px; }
+    .ts-plan {
+      position: relative; background: #fff; border: 1.5px solid var(--td-line); border-radius: 20px;
+      padding: 18px; box-shadow: 0 8px 22px rgba(16,42,67,0.05);
+    }
+    .ts-plan.popular { border-color: var(--td-primary); box-shadow: 0 12px 28px rgba(21,94,239,0.16); }
+    .ts-plan-ribbon {
+      position: absolute; top: -11px; left: 18px; background: var(--td-primary); color: #fff;
+      font-size: 0.62rem; font-weight: 800; letter-spacing: .03em; text-transform: uppercase;
+      padding: 5px 12px; border-radius: 999px;
+    }
+    .ts-plan-top { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
+    .ts-plan-icon {
+      width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .ts-plan-icon svg { width: 21px; height: 21px; }
+    .ts-plan.tier-basic .ts-plan-icon { background: #EEF4FF; color: var(--td-primary); }
+    .ts-plan.tier-pro .ts-plan-icon { background: #FEF3C7; color: #B45309; }
+    .ts-plan.tier-premium .ts-plan-icon { background: #F3E8FF; color: #7C3AED; }
+    .ts-plan-name { font-size: 1.05rem; font-weight: 800; }
+    .ts-plan-desc { font-size: 0.78rem; color: var(--td-muted); margin: 0 0 12px; }
+    .ts-plan-price { display: flex; align-items: baseline; gap: 6px; margin-bottom: 4px; }
+    .ts-plan-price b { font-size: 1.55rem; font-weight: 800; }
+    .ts-plan-price span { font-size: 0.78rem; color: var(--td-muted); font-weight: 600; }
+    .ts-plan-save { display: inline-block; font-size: 0.68rem; font-weight: 700; color: #15803D; background: #DCFCE7; border-radius: 999px; padding: 2px 8px; margin: 0 0 12px; }
+    .ts-plan-feats { list-style: none; margin: 0 0 16px; padding: 0; display: flex; flex-direction: column; gap: 9px; }
+    .ts-plan-feats li { display: flex; align-items: flex-start; gap: 9px; font-size: 0.82rem; }
+    .ts-plan-feats li .ic { width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; margin-top: 1px; }
+    .ts-plan-feats li .ic svg { width: 11px; height: 11px; }
+    .ts-plan-feats li.on .ic { background: #DCFCE7; color: #15803D; }
+    .ts-plan-feats li.off .ic { background: #F1F5F9; color: #94A3B8; }
+    .ts-plan-feats li.off span { color: #94A3B8; }
+    .ts-plan-btn {
+      display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
+      border-radius: 12px; padding: 13px; font-size: 0.86rem; font-weight: 700; border: none; cursor: pointer;
+      background: #F1F5F9; color: var(--td-text);
+    }
+    .ts-plan.popular .ts-plan-btn { background: var(--td-primary); color: #fff; }
+    .ts-plan-btn svg { width: 15px; height: 15px; }
+    .ts-plan-btn.current { background: #DCFCE7; color: #15803D; cursor: default; }
 
-  /* Pro + Business : toujours cote a cote, meme sur petit ecran */
-  .ts-plans { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:10px; padding:16px 16px 0; align-items:stretch; }
-  @media (min-width:560px){ .ts-plans { gap:16px; } }
+    /* Promo banner */
+    .ts-promo {
+      display: flex; align-items: center; gap: 14px; background: #EEF3FE; border: 1px solid #DCE6FE;
+      border-radius: 16px; padding: 16px; margin-bottom: 22px;
+    }
+    .ts-promo-ico { width: 44px; height: 44px; border-radius: 12px; background: #fff; color: var(--td-primary); flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+    .ts-promo-ico svg { width: 22px; height: 22px; }
+    .ts-promo h3 { margin: 0 0 3px; font-size: 0.9rem; font-weight: 800; }
+    .ts-promo p { margin: 0; font-size: 0.78rem; color: #475569; }
 
-  .ts-plan { background:#fff; border:1px solid #E7EBF2; border-radius:16px; padding:12px; position:relative; display:flex; flex-direction:column; min-width:0; }
-  .ts-plan.pop { border:2px solid var(--db-blue); }
-  .ts-plan-pop { position:absolute; top:0; left:50%; transform:translate(-50%,-50%); background:var(--db-blue-d); color:#fff; font-size:9.5px; font-weight:800; padding:3px 9px; border-radius:7px; white-space:nowrap; }
-  .ts-plan-top { display:flex; flex-direction:column; gap:7px; margin-top:4px; }
-  .ts-plan-ico { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-  .ts-plan-ico.blue { background:#DBE6FF; color:var(--db-blue); }
-  .ts-plan-ico.gold { background:#FDE9B8; color:#B45309; }
-  .ts-plan-name { font-size:15px; font-weight:800; color:var(--db-ink); }
-  .ts-plan-desc { font-size:11px; color:var(--db-mut); line-height:1.4; margin-top:2px; }
-  .ts-plan-price { margin:12px 0 2px; font-size:16px; font-weight:800; color:var(--db-blue); line-height:1.2; }
-  .ts-plan-price small { display:block; font-size:10.5px; font-weight:600; color:var(--db-mut); }
-  .ts-feats { list-style:none; margin:12px 0 14px; padding:0; display:flex; flex-direction:column; gap:8px; }
-  .ts-feats li { display:flex; align-items:flex-start; gap:7px; font-size:11.5px; line-height:1.35; color:#334155; }
-  .ts-feats svg { flex-shrink:0; width:14px; height:14px; color:var(--db-blue); margin-top:1px; }
-  .ts-plan-btn { margin-top:auto; display:block; width:100%; text-align:center; padding:10px 8px; border-radius:10px; font-size:12px; font-weight:700; text-decoration:none; cursor:pointer; border:1px solid var(--db-blue-d); background:var(--db-blue-d); color:#fff; }
-  .ts-plan-btn.current { background:#DCFCE7; border-color:#BBF7D0; color:#15803D; pointer-events:none; }
+    /* Avantages */
+    .ts-adv { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 22px; }
+    .ts-adv-item { background: #fff; border: 1px solid var(--td-line); border-radius: 16px; padding: 14px; text-align: center; box-shadow: 0 6px 18px rgba(16,42,67,0.04); }
+    .ts-adv-ico { width: 40px; height: 40px; border-radius: 12px; margin: 0 auto 8px; display: flex; align-items: center; justify-content: center; }
+    .ts-adv-ico svg { width: 20px; height: 20px; }
+    .ts-adv-item:nth-child(1) .ts-adv-ico { background: #ECFDF5; color: var(--td-green); }
+    .ts-adv-item:nth-child(2) .ts-adv-ico { background: #FEF3C7; color: #B45309; }
+    .ts-adv-item:nth-child(3) .ts-adv-ico { background: #EEF4FF; color: var(--td-primary); }
+    .ts-adv-item:nth-child(4) .ts-adv-ico { background: #F3E8FF; color: #7C3AED; }
+    .ts-adv-item b { display: block; font-size: 0.8rem; font-weight: 700; margin-bottom: 2px; }
+    .ts-adv-item span { font-size: 0.7rem; color: var(--td-muted); line-height: 1.3; display: block; }
 
-  @media (min-width:420px){
-    .ts-plan { padding:16px; }
-    .ts-plan-top { flex-direction:row; align-items:flex-start; gap:11px; }
-    .ts-plan-ico { width:42px; height:42px; }
-    .ts-plan-name { font-size:16px; }
-    .ts-plan-desc { font-size:12px; }
-    .ts-plan-price { font-size:19px; }
-    .ts-plan-price small { display:inline; font-size:12px; }
-    .ts-feats li { font-size:12.5px; }
-    .ts-plan-btn { font-size:13px; padding:12px; }
-  }
-  @media (min-width:640px){
-    .ts-plan { padding:20px; border-radius:18px; }
-    .ts-plan-pop { left:auto; right:20px; transform:translateY(-50%); font-size:11px; padding:4px 12px; }
-    .ts-plan-ico { width:46px; height:46px; }
-    .ts-plan-name { font-size:18px; }
-    .ts-plan-price { font-size:22px; }
-    .ts-feats { gap:11px; }
-    .ts-feats li { font-size:13.5px; }
-    .ts-plan-btn { font-size:14px; border-radius:12px; }
-  }
+    /* Paiement */
+    .ts-pay { background: #fff; border: 1px solid var(--td-line); border-radius: 18px; padding: 16px; margin-bottom: 22px; box-shadow: 0 8px 22px rgba(16,42,67,0.05); }
+    .ts-pay-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 12px; }
+    .ts-pay-mark {
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+      border: 1px solid var(--td-line); border-radius: 12px; padding: 10px 4px; text-align: center;
+    }
+    .ts-pay-mark b { font-size: 0.68rem; font-weight: 800; line-height: 1.1; }
+    .ts-pay-mark span { font-size: 0.56rem; color: var(--td-muted); font-weight: 700; letter-spacing: .02em; }
+    .ts-pay-secure { display: flex; align-items: center; gap: 8px; font-size: 0.72rem; color: var(--td-muted); }
+    .ts-pay-secure svg { width: 15px; height: 15px; color: var(--td-green); flex-shrink: 0; }
 
-  .ts-card { background:#fff; border:1px solid #E7EBF2; border-radius:16px; margin:16px 16px 0; padding:18px; }
-  .ts-card h2 { margin:0 0 14px; font-size:15px; font-weight:800; color:var(--db-ink); }
-  .ts-incl { display:grid; grid-template-columns:repeat(2,1fr); gap:16px 10px; }
-  @media (min-width:560px){ .ts-incl { grid-template-columns:repeat(4,1fr); } }
-  .ts-incl-item { text-align:center; }
-  .ts-incl-ico { width:44px; height:44px; border-radius:50%; background:#EEF4FF; color:var(--db-blue); display:flex; align-items:center; justify-content:center; margin:0 auto 8px; }
-  .ts-incl-item span { font-size:11.5px; color:#475569; line-height:1.35; }
+    /* Historique */
+    .ts-hist-item {
+      background: #fff; border: 1px solid var(--td-line); border-radius: 14px; padding: 13px 14px;
+      display: flex; align-items: center; gap: 12px; margin-bottom: 8px;
+    }
+    .ts-hist-ico { width: 36px; height: 36px; border-radius: 10px; background: #EEF4FF; color: var(--td-primary); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .ts-hist-ico svg { width: 17px; height: 17px; }
+    .ts-hist-body { flex: 1; min-width: 0; }
+    .ts-hist-body b { display: block; font-size: 0.82rem; font-weight: 700; }
+    .ts-hist-body span { font-size: 0.7rem; color: var(--td-muted); }
+    .ts-hist-right { text-align: right; flex-shrink: 0; }
+    .ts-hist-amount { display: block; font-size: 0.84rem; font-weight: 800; margin-bottom: 3px; }
+    .ts-hist-pill { font-size: 0.6rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
+    .ts-hist-pill.paid { background: #DCFCE7; color: #15803D; }
+    .ts-hist-pill.pending { background: #FEF3C7; color: #B45309; }
+    .ts-hist-pill.failed, .ts-hist-pill.refunded { background: #FEE2E2; color: #DC2626; }
 
-  .ts-pay { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
-  @media (min-width:520px){ .ts-pay { grid-template-columns:repeat(3,1fr); } }
-  @media (min-width:900px){ .ts-pay { grid-template-columns:repeat(6,1fr); } }
-  .ts-pay-item { border:1px solid #E7EBF2; border-radius:12px; height:54px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; padding:6px 8px; text-align:center; overflow:hidden; }
-  .ts-pay-mark { font-weight:800; font-size:14px; line-height:1; letter-spacing:.02em; }
-  .ts-pay-sub { font-size:9px; font-weight:700; line-height:1; opacity:.85; }
-  .ts-pay-item.pm-orange { background:#FFF3E9; border-color:#FFD9BC; } .pm-orange .ts-pay-mark { color:#E85D00; }
-  .ts-pay-item.pm-mtn { background:#FFF9E0; border-color:#F5E6A8; } .pm-mtn .ts-pay-mark { color:#1A1A1A; }
-  .ts-pay-item.pm-moov { background:#EAF2FB; border-color:#C6DCF2; } .pm-moov .ts-pay-mark { color:#004B87; }
-  .ts-pay-item.pm-visa { background:#F2F4FC; border-color:#D3DAF3; } .pm-visa .ts-pay-mark { color:#1A1F71; font-style:italic; font-size:16px; }
-  .ts-pay-item.pm-mc { background:#fff; }
-  .pm-mc .mc-circles { display:flex; }
-  .pm-mc .mc-circles i { width:16px; height:16px; border-radius:50%; display:block; }
-  .pm-mc .mc-circles i:first-child { background:#EB001B; }
-  .pm-mc .mc-circles i:last-child { background:#F79E1B; margin-left:-7px; mix-blend-mode:multiply; }
-  .pm-mc .ts-pay-sub { color:#333; }
-  .ts-pay-item.pm-wu { background:#FFFBE6; border-color:#F2E7A6; } .pm-wu .ts-pay-mark { color:#1A1A1A; } .pm-wu .ts-pay-sub { color:#B58900; }
-  .ts-pay-note { display:flex; align-items:center; gap:7px; margin-top:14px; font-size:12px; color:var(--db-mut); }
-
-  /* historique */
-  .ts-pay-row { display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid #F1F5F9; }
-  .ts-pay-row:last-child { border-bottom:0; padding-bottom:0; }
-  .ts-pay-row .info { flex:1; min-width:0; }
-  .ts-pay-row .info .t { font-size:13.5px; font-weight:700; color:var(--db-ink); }
-  .ts-pay-row .info .s { font-size:11.5px; color:var(--db-mut); }
-  .ts-pay-row .amt { font-size:13.5px; font-weight:800; color:var(--db-ink); white-space:nowrap; }
-  .ts-pay-pill { font-size:10.5px; font-weight:800; padding:3px 8px; border-radius:7px; white-space:nowrap; }
-  .ts-pay-pill.paid { background:#DCFCE7; color:#15803D; }
-  .ts-pay-pill.pending { background:#FEF3C7; color:#B45309; }
-  .ts-pay-pill.failed { background:#FEE2E2; color:#DC2626; }
-  .ts-pay-pill.refunded { background:#F1F5F9; color:#64748B; }
-  .ts-empty { font-size:13px; color:var(--db-mut); text-align:center; padding:8px 0 2px; }
-
-  .ts-help { margin:16px 16px 0; background:#EEF4FF; border:1px solid #DBE6FF; border-radius:16px; padding:16px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
-  .ts-help-ico { width:38px; height:38px; border-radius:50%; background:var(--db-blue); color:#fff; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-  .ts-help-txt { flex:1; min-width:160px; }
-  .ts-help-txt h3 { margin:0 0 2px; font-size:13.5px; font-weight:800; color:var(--db-ink); }
-  .ts-help-txt p { margin:0; font-size:12.5px; color:#475569; }
-  .ts-help a { display:inline-flex; align-items:center; gap:6px; padding:10px 14px; border-radius:10px; border:1px solid #C7D6F5; background:#fff; color:var(--db-blue-d); font-size:13px; font-weight:700; text-decoration:none; white-space:nowrap; }
-
-  .db-tab.active .tc-tab-ic { background:var(--db-blue-d); color:#fff; border-radius:50%; }
-  .tc-tab-ic { width:34px; height:34px; display:flex; align-items:center; justify-content:center; }
-</style>
-{% endblock %}
-
-{% block content %}
-{% set has_sub = current is not none %}
-<div class="tc">
-
-  <div class="ts-topbar">
-    <button type="button" class="ts-icobtn" data-tech-menu aria-label="Menu">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+    /* Bottom nav (identique au reste de l'espace technicien) */
+    .td-nav {
+      position: fixed; bottom: 0; left: 0; right: 0; background: #fff;
+      border-top: 1px solid var(--td-line); display: flex; justify-content: space-around; align-items: flex-end;
+      padding: 8px 0 calc(10px + env(safe-area-inset-bottom)); z-index: 90;
+    }
+    .td-nav a {
+      display: flex; flex-direction: column; align-items: center; gap: 3px; color: var(--td-muted);
+      text-decoration: none; font-size: 0.64rem; font-weight: 600; flex: 1; position: relative;
+    }
+    .td-nav a svg { width: 22px; height: 22px; }
+    .td-nav a.active { color: var(--td-primary); }
+    .td-nav a .badge {
+      position: absolute; top: -4px; right: 24%; min-width: 15px; height: 15px; padding: 0 3px;
+      background: #E6543A; color: #fff; font-size: 9px; font-weight: 700; border-radius: 50px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .td-nav a.td-fab {
+      position: relative; top: -16px;
+      flex: 0 0 54px; width: 54px; height: 54px; min-width: 54px;
+      background: var(--td-primary); color: #fff; border-radius: 50%;
+      justify-content: center; align-self: flex-start;
+      box-shadow: 0 10px 22px rgba(21,94,239,0.34);
+    }
+    .td-nav a.td-fab svg { width: 26px; height: 26px; }
+    .td-nav a.td-fab span {
+      position: absolute; bottom: -18px; width: 92px; left: 50%; transform: translateX(-50%);
+      text-align: center; color: var(--td-muted); font-size: 0.64rem;
+    }
+  </style>
+</head>
+<body>
+  <header class="td-header">
+    <button class="td-menu" id="menuBtn" type="button" aria-label="Retour">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
     </button>
-    <span class="mid">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-      FixPro
-    </span>
-    <a class="ts-icobtn" href="{{ url_for('notifications') }}" aria-label="Notifications">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-      {% if unread_count %}<span class="dot"></span>{% endif %}
+    <a href="{{ url_for('artisan_dashboard') }}" class="td-brand">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+      <span class="td-brand-text">
+        <span class="td-brand-name">FixPro</span>
+        <span class="td-brand-sub">Espace Technicien</span>
+      </span>
     </a>
-  </div>
-
-  <div class="ts-head">
-    <h1>Abonnement</h1>
-    <p>Choisissez le plan qui vous convient pour développer votre activité.</p>
-  </div>
-
-  {% if has_sub %}
-  <div class="ts-current">
-    <div class="ts-current-top">
-      <h2>Votre abonnement actuel</h2>
-      {% if status in ('ACTIVE', 'TRIAL') %}
-        <span class="ts-state ok"><span class="d"></span> Actif</span>
-      {% elif status == 'PAST_DUE' %}
-        <span class="ts-state warn"><span class="d"></span> En attente de paiement</span>
-      {% elif status == 'EXPIRED' %}
-        <span class="ts-state bad"><span class="d"></span> Expiré</span>
-      {% elif status == 'SUSPENDED' %}
-        <span class="ts-state bad"><span class="d"></span> Suspendu</span>
-      {% else %}
-        <span class="ts-state warn"><span class="d"></span> {{ status|capitalize }}</span>
-      {% endif %}
+    <div class="td-h-actions">
+      <a href="{{ url_for('notifications') }}" class="td-bell" aria-label="Notifications">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></svg>
+        {% if unread_count %}<span class="td-badge">{{ unread_count if unread_count < 10 else '9+' }}</span>{% endif %}
+      </a>
+      <a href="{{ url_for('profile') }}" class="td-avatar" aria-label="Mon profil">
+        {% if user.photo_url %}
+          <img src="{{ user.photo_url }}" alt="{{ user.full_name }}" />
+        {% else %}
+          <span class="fallback">{{ (user.full_name or 'T')[0]|upper }}</span>
+        {% endif %}
+      </a>
     </div>
-    <div class="ts-current-plan">{{ current.plan_name or 'Abonnement FixPro' }}</div>
-    <div class="ts-current-grid">
-      <div><div class="l">Fréquence</div><div class="v">{{ frequency or 'Mensuel' }}</div></div>
-      <div><div class="l">{{ 'Prochaine échéance' if status in ('ACTIVE','TRIAL') else 'Échéance' }}</div>
-        <div class="v">{{ current.end_date|date_long_fr if current.end_date else '—' }}</div></div>
-    </div>
-    <div class="ts-current-actions">
-      <a class="ghost" href="{{ url_for('client_tickets') }}">Gérer mon abonnement</a>
-      {% if current_code %}
-      <a class="primary" href="{{ url_for('technician_subscription_checkout', plan=current_code, period='year' if frequency == 'Annuel' else 'month') }}">Renouveler</a>
-      {% endif %}
-    </div>
-  </div>
-  {% endif %}
+  </header>
 
-  <div class="ts-promo">
-    <span class="ts-promo-ico">
-      <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15a5 5 0 1 0 0-10 5 5 0 0 0 0 10Z"/><path d="m8.5 13-2 8 5.5-3 5.5 3-2-8"/></svg>
-    </span>
-    <div>
-      <h3>Développez votre activité avec FixPro</h3>
-      <p>Plus de visibilité, plus de clients, plus de revenus.</p>
+  <main class="td-main">
+    <section class="ts-hero">
+      <div class="ts-hero-eyebrow">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 8l4 3 5-7 5 7 4-3-2 11H5L3 8z"/></svg>
+        Abonnement FixPro
+      </div>
+      <h1>Investissez aujourd'hui pour aller plus loin</h1>
+      <p>Choisissez la formule qui vous aide à décrocher plus de demandes et à gagner la confiance de vos clients.</p>
+      <div class="ts-hero-photo">
+        {% if user.photo_url %}
+          <img src="{{ user.photo_url }}" alt="{{ user.full_name }}" />
+        {% else %}
+          <span class="fallback">{{ (user.full_name or 'T')[0]|upper }}</span>
+        {% endif %}
+      </div>
+      <p class="ts-hero-quote">&laquo; Des professionnels pour un quotidien meilleur. &raquo;</p>
+    </section>
+
+    <div class="ts-toggle-row">
+      <div class="ts-toggle">
+        <button type="button" id="btnMonth" data-period="month">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          Mensuel
+        </button>
+        <button type="button" id="btnYear" data-period="year" class="active">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          Annuel
+          <span class="save">-{{ max_savings_pct }}%</span>
+        </button>
+      </div>
     </div>
-    <span class="ts-promo-art">
-      <svg width="70" height="54" viewBox="0 0 70 54" fill="none"><rect x="6" y="8" width="34" height="30" rx="4" fill="#C7D6F5"/><rect x="6" y="8" width="34" height="8" rx="4" fill="#8FA6F5"/><rect x="12" y="22" width="6" height="6" fill="#fff"/><rect x="22" y="22" width="6" height="6" fill="#fff"/><rect x="32" y="22" width="4" height="6" fill="#fff"/><rect x="46" y="30" width="5" height="12" rx="1" fill="#8FA6F5"/><rect x="54" y="24" width="5" height="18" rx="1" fill="#8FA6F5"/><rect x="62" y="18" width="5" height="24" rx="1" fill="#5B79F0"/></svg>
-    </span>
-  </div>
 
-  <h2 class="ts-sec-title">Nos formules</h2>
-
-  <div class="ts-toggle-row">
-    <div class="ts-toggle" id="tsToggle">
-      <button type="button" class="active" data-period="month">Mensuel</button>
-      <button type="button" data-period="year">Annuel <span class="save">-{{ annual_discount }}%</span></button>
+    <div class="ts-savings show" id="savingsBanner">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      Économisez jusqu'à {{ max_savings_pct }}% avec l'engagement annuel
     </div>
-    <span class="ts-toggle-hint">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
-      Économisez avec l'abonnement annuel
-    </span>
-  </div>
 
-  <div class="ts-plans">
-    {% for plan in plans %}
-    {% set is_current = current_active and current_code == plan.code %}
-    {% set year_price = (plan.price_month * 12 * (100 - annual_discount) / 100)|round|int %}
-    <div class="ts-plan {{ 'pop' if plan.popular }}">
-      {% if plan.popular %}<span class="ts-plan-pop">Populaire</span>{% endif %}
-      <div class="ts-plan-top">
-        <span class="ts-plan-ico {{ 'gold' if plan.icon == 'crown' else 'blue' }}">
-          {% if plan.icon == 'crown' %}
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 8 4.5 3L12 5l4.5 6L21 8l-2 11H5L3 8Z"/></svg>
-          {% else %}
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-          {% endif %}
-        </span>
-        <div>
-          <div class="ts-plan-name">{{ plan.name }}</div>
-          <div class="ts-plan-desc">{{ plan.desc }}</div>
+    <div class="ts-sec-title">
+      <h2>Choisissez le plan qui vous convient</h2>
+      <p>Sans engagement, résiliable à tout moment depuis votre espace.</p>
+    </div>
+
+    <div class="ts-plans">
+      {% for plan in plans %}
+      <div class="ts-plan tier-{{ plan.code.split('_')[1] }} {{ 'popular' if plan.popular else '' }}">
+        {% if plan.popular %}<span class="ts-plan-ribbon">Le plus populaire</span>{% endif %}
+        <div class="ts-plan-top">
+          <span class="ts-plan-icon">
+            {% if plan.icon == 'send' %}
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+            {% elif plan.icon == 'crown' %}
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 8l4 3 5-7 5 7 4-3-2 11H5L3 8z"/></svg>
+            {% else %}
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12l4 6-10 12L2 9Z"/><path d="M11 3 8 9l4 12 4-12-3-6"/><path d="M2 9h20"/></svg>
+            {% endif %}
+          </span>
+          <span class="ts-plan-name">{{ plan.name }}</span>
         </div>
-      </div>
-
-      <div class="ts-plan-price"
-           data-month="{{ '{:,}'.format(plan.price_month).replace(',', ' ') }} GNF"
-           data-year="{{ '{:,}'.format(year_price).replace(',', ' ') }} GNF">
-        {{ '{:,}'.format(plan.price_month).replace(',', ' ') }} GNF <small class="ts-per">/ mois</small>
-      </div>
-
-      <ul class="ts-feats">
-        {% for f in plan.features %}
-        <li>
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m8 12 3 3 5-6"/></svg>
-          {{ f }}
-        </li>
-        {% endfor %}
-      </ul>
-
-      {% if is_current %}
-      <span class="ts-plan-btn current">Votre plan actuel</span>
-      {% else %}
-      <a class="ts-plan-btn ts-choose" data-plan="{{ plan.code }}"
-         href="{{ url_for('technician_subscription_checkout', plan=plan.code, period='month') }}">Choisir ce plan</a>
-      {% endif %}
-    </div>
-    {% endfor %}
-  </div>
-
-  <div class="ts-card">
-    <h2>Tous nos abonnements incluent</h2>
-    <div class="ts-incl">
-      <div class="ts-incl-item">
-        <span class="ts-incl-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg></span>
-        <span>Paiement<br>sécurisé</span>
-      </div>
-      <div class="ts-incl-item">
-        <span class="ts-incl-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg></span>
-        <span>Support<br>FixPro</span>
-      </div>
-      <div class="ts-incl-item">
-        <span class="ts-incl-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></span>
-        <span>Notifications<br>en temps réel</span>
-      </div>
-      <div class="ts-incl-item">
-        <span class="ts-incl-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
-        <span>Sans engagement,<br>résiliez à tout moment</span>
-      </div>
-    </div>
-  </div>
-
-  <div class="ts-card">
-    <h2>Moyens de paiement acceptés</h2>
-    <div class="ts-pay">
-      <div class="ts-pay-item pm-orange"><span class="ts-pay-mark">Orange</span><span class="ts-pay-sub">MONEY</span></div>
-      <div class="ts-pay-item pm-mtn"><span class="ts-pay-mark">MTN</span><span class="ts-pay-sub">MOBILE MONEY</span></div>
-      <div class="ts-pay-item pm-moov"><span class="ts-pay-mark">moov</span><span class="ts-pay-sub">MONEY</span></div>
-      <div class="ts-pay-item pm-visa"><span class="ts-pay-mark">VISA</span></div>
-      <div class="ts-pay-item pm-mc"><span class="mc-circles"><i></i><i></i></span><span class="ts-pay-sub">Mastercard</span></div>
-      <div class="ts-pay-item pm-wu"><span class="ts-pay-mark">WU</span><span class="ts-pay-sub">WESTERN UNION</span></div>
-    </div>
-    <div class="ts-pay-note">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-      Vos paiements sont 100% sécurisés et cryptés.
-    </div>
-  </div>
-
-  <div class="ts-card">
-    <h2>Historique des paiements</h2>
-    {% if payments %}
-      {% for p in payments %}
-      <div class="ts-pay-row">
-        <div class="info">
-          <div class="t">{{ p.plan_name }} · {{ p.frequency }}</div>
-          <div class="s">{{ p.date|date_long_fr }} · {{ p.method }}</div>
+        <p class="ts-plan-desc">{{ plan.desc }}</p>
+        <div class="ts-plan-price">
+          <b class="amount" data-month="{{ '{:,}'.format(plan.price_month).replace(',', ' ') }}" data-year="{{ '{:,}'.format(plan.price_year).replace(',', ' ') }}">{{ '{:,}'.format(plan.price_year).replace(',', ' ') }}</b>
+          <span>GNF <span class="period">/ an</span></span>
         </div>
-        <span class="amt">{{ '{:,}'.format(p.amount or 0).replace(',', ' ') }} {{ p.currency }}</span>
-        <span class="ts-pay-pill {{ p.status }}">
-          {%- if p.status == 'paid' %}Payé
-          {%- elif p.status == 'failed' %}Échoué
-          {%- elif p.status == 'refunded' %}Remboursé
-          {%- else %}En attente{% endif -%}
-        </span>
+        <span class="ts-plan-save">-{{ plan_savings[plan.code] }}% vs paiement mensuel</span>
+        <ul class="ts-plan-feats">
+          {% for label, included in plan.features %}
+          <li class="{{ 'on' if included else 'off' }}">
+            <span class="ic">
+              {% if included %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+              {% else %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m18 6-12 12M6 6l12 12"/></svg>{% endif %}
+            </span>
+            <span>{{ label }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+        {% if current_code == plan.code and current_active %}
+        <button type="button" class="ts-plan-btn current" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+          Formule actuelle
+        </button>
+        {% else %}
+        <a class="ts-plan-btn choose-btn" data-code="{{ plan.code }}" href="{{ url_for('technician_subscription_checkout', plan=plan.code, period='year') }}">
+          Choisir {{ plan.name }}
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+        {% endif %}
       </div>
       {% endfor %}
-    {% else %}
-      <p class="ts-empty">Aucun paiement pour le moment.</p>
-    {% endif %}
-  </div>
-
-  <div class="ts-help">
-    <span class="ts-help-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></span>
-    <div class="ts-help-txt">
-      <h3>Besoin d'aide ?</h3>
-      <p>Notre équipe est disponible pour vous accompagner.</p>
     </div>
-    <a href="{{ url_for('client_tickets') }}">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-      Nous contacter
+
+    <div class="ts-promo">
+      <span class="ts-promo-ico">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5C11 3 12 8 12 8s1-5 4.5-5a2.5 2.5 0 0 1 0 5"/></svg>
+      </span>
+      <span>
+        <h3>Changez de formule à tout moment</h3>
+        <p>Passez à un plan supérieur ou revenez au mensuel sans frais cachés, directement depuis votre espace.</p>
+      </span>
+    </div>
+
+    <div class="ts-sec-title">
+      <h2>Les avantages FixPro</h2>
+      <p>Ce que votre abonnement vous apporte au quotidien</p>
+    </div>
+    <div class="ts-adv">
+      <div class="ts-adv-item">
+        <span class="ts-adv-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 21a8 8 0 0 0-16 0"/><circle cx="10" cy="8" r="5"/><path d="M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3"/></svg></span>
+        <b>Plus de clients</b>
+        <span>Un profil mis en avant auprès des clients de votre zone</span>
+      </div>
+      <div class="ts-adv-item">
+        <span class="ts-adv-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/></svg></span>
+        <b>Plus de visibilité</b>
+        <span>Statistiques détaillées pour suivre votre activité</span>
+      </div>
+      <div class="ts-adv-item">
+        <span class="ts-adv-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg></span>
+        <b>Plus de confiance</b>
+        <span>Un badge qui rassure vos clients avant de vous contacter</span>
+      </div>
+      <div class="ts-adv-item">
+        <span class="ts-adv-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg></span>
+        <b>Un meilleur support</b>
+        <span>Une équipe disponible pour répondre à vos questions</span>
+      </div>
+    </div>
+
+    <div class="ts-pay">
+      <div class="ts-sec-title" style="margin-bottom:12px;">
+        <h2 style="font-size:1rem;">Méthodes de paiement</h2>
+      </div>
+      <div class="ts-pay-grid">
+        <span class="ts-pay-mark"><b>Orange</b><span>MONEY</span></span>
+        <span class="ts-pay-mark"><b>MTN</b><span>MOBILE MONEY</span></span>
+        <span class="ts-pay-mark"><b>Airtel</b><span>MONEY</span></span>
+        <span class="ts-pay-mark"><b>VISA</b><span>CARTE</span></span>
+        <span class="ts-pay-mark"><b>Mastercard</b><span>CARTE</span></span>
+        <span class="ts-pay-mark"><b>Virement</b><span>BANCAIRE</span></span>
+      </div>
+      <div class="ts-pay-secure">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Paiements sécurisés, aucune donnée bancaire stockée par FixPro.
+      </div>
+    </div>
+
+    {% if payments %}
+    <div class="ts-sec-title" style="text-align:left; margin-bottom:12px;">
+      <h2 style="font-size:1.02rem;">Historique des paiements</h2>
+    </div>
+    {% for p in payments %}
+    <div class="ts-hist-item">
+      <span class="ts-hist-ico">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+      </span>
+      <span class="ts-hist-body">
+        <b>{{ p.plan_name }} — {{ p.frequency }}</b>
+        <span>{{ p.date|date_long_fr }} · {{ p.method }}</span>
+      </span>
+      <span class="ts-hist-right">
+        <span class="ts-hist-amount">{{ '{:,}'.format(p.amount|int).replace(',', ' ') }} {{ p.currency }}</span>
+        <span class="ts-hist-pill {{ p.status }}">
+          {% if p.status == 'paid' %}Payé{% elif p.status == 'pending' %}En attente{% elif p.status == 'refunded' %}Remboursé{% else %}Échoué{% endif %}
+        </span>
+      </span>
+    </div>
+    {% endfor %}
+    {% endif %}
+  </main>
+
+  <nav class="td-nav">
+    <a href="{{ url_for('artisan_dashboard') }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+      Accueil
     </a>
-  </div>
+    <a href="{{ url_for('technician_interventions') }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      Demandes
+    </a>
+    <a href="{{ url_for('technician_interventions') }}" class="td-fab">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5v14"/></svg>
+      <span>Nouveau</span>
+    </a>
+    <a href="{{ url_for('lia') }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"/></svg>
+      Messages
+      {% if unread_count %}<span class="badge">{{ unread_count if unread_count < 10 else '9+' }}</span>{% endif %}
+    </a>
+    <a href="{{ url_for('technician_subscription') }}" class="active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l4 3 5-7 5 7 4-3-2 11H5L3 8z"/></svg>
+      Abonnement
+    </a>
+  </nav>
 
-</div>
+  <script>
+    (function () {
+      var btnMonth = document.getElementById('btnMonth');
+      var btnYear = document.getElementById('btnYear');
+      var savings = document.getElementById('savingsBanner');
+      var amounts = document.querySelectorAll('.ts-plan-price .amount');
+      var periodLabels = document.querySelectorAll('.ts-plan-price .period');
+      var saveTags = document.querySelectorAll('.ts-plan-save');
+      var chooseBtns = document.querySelectorAll('.choose-btn');
 
-<nav class="db-tabbar">
-  <a class="db-tab" href="{{ url_for('artisan_dashboard') }}">
-    <span class="tc-tab-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9"/></svg></span>
-    <span>Accueil</span>
-  </a>
-  <a class="db-tab" href="{{ url_for('profile') }}">
-    <span class="tc-tab-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg></span>
-    <span>Profil</span>
-  </a>
-  <a class="db-tab-fab" href="{{ url_for('technician_calls') }}" aria-label="Appels">
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-  </a>
-  <a class="db-tab active" href="{{ url_for('technician_subscription') }}">
-    <span class="tc-tab-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></span>
-    <span>Abonnement</span>
-  </a>
-  <a class="db-tab" href="{{ url_for('technician_reviews') }}">
-    <span class="tc-tab-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></span>
-    <span>Avis</span>
-  </a>
-</nav>
+      function setPeriod(period) {
+        btnMonth.classList.toggle('active', period === 'month');
+        btnYear.classList.toggle('active', period === 'year');
+        savings.classList.toggle('show', period === 'year');
+        amounts.forEach(function (el) {
+          el.textContent = el.dataset[period === 'year' ? 'year' : 'month'];
+        });
+        periodLabels.forEach(function (el) { el.textContent = period === 'year' ? '/ an' : '/ mois'; });
+        saveTags.forEach(function (el) { el.style.display = period === 'year' ? 'inline-block' : 'none'; });
+        chooseBtns.forEach(function (a) {
+          var url = new URL(a.href, window.location.origin);
+          url.searchParams.set('period', period);
+          a.href = url.pathname + url.search;
+        });
+      }
 
-<script>
-(function(){
-  var toggle = document.getElementById('tsToggle');
-  var btns = toggle.querySelectorAll('button');
-  var period = 'month';
-  function setUrlPeriod(url){
-    return url.replace(/([?&])period=(month|year)/, '$1period=' + period);
-  }
-  btns.forEach(function(b){
-    b.addEventListener('click', function(){
-      btns.forEach(function(x){ x.classList.remove('active'); });
-      b.classList.add('active');
-      period = b.dataset.period;
-      document.querySelectorAll('.ts-plan-price').forEach(function(el){
-        var main = el.childNodes[0];
-        var per_el = el.querySelector('.ts-per');
-        main.textContent = (period === 'year' ? el.dataset.year : el.dataset.month) + ' ';
-        if (per_el) per_el.textContent = period === 'year' ? '/ an' : '/ mois';
+      btnMonth.addEventListener('click', function () { setPeriod('month'); });
+      btnYear.addEventListener('click', function () { setPeriod('year'); });
+
+      var menuBtn = document.getElementById('menuBtn');
+      if (menuBtn) menuBtn.addEventListener('click', function () {
+        window.location.href = "{{ url_for('artisan_dashboard') }}";
       });
-      document.querySelectorAll('.ts-choose').forEach(function(a){
-        a.href = setUrlPeriod(a.href);
-      });
-    });
-  });
-})();
-</script>
-{% endblock %}
+    })();
+  </script>
+</body>
+</html>

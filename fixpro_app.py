@@ -4626,36 +4626,42 @@ def technician_calls():
 
 _TECH_PLANS = [
     {
-        "code": "tech_pro", "name": "Pro", "icon": "star", "popular": False,
-        "desc": "Idéal pour les techniciens indépendants.",
-        "price_month": 150000,
+        "code": "tech_basic", "name": "Basic", "icon": "send", "popular": False,
+        "desc": "L'essentiel pour avancer.",
+        "price_month": 175000, "price_year": 1240000,
         "features": [
-            "Jusqu'à 20 demandes par mois",
-            "Profil professionnel",
-            "Accès aux appels clients",
-            "Messagerie intégrée",
-            "Gestion de vos interventions",
-            "Support standard",
+            ("Profil visible", True),
+            ("Jusqu'à 5 services", True),
+            ("Support standard", True),
+            ("Mise en avant", False),
+            ("Statistiques avancées", False),
         ],
     },
     {
-        "code": "tech_business", "name": "Business", "icon": "crown", "popular": True,
-        "desc": "Pour les professionnels qui veulent plus de visibilité.",
-        "price_month": 250000,
+        "code": "tech_pro", "name": "Pro", "icon": "crown", "popular": True,
+        "desc": "Plus de visibilité.",
+        "price_month": 237000, "price_year": 1680000,
         "features": [
-            "Demandes illimitées",
-            "Mise en avant en tête de liste",
-            "Profil premium",
-            "Messagerie intégrée",
-            "Statistiques avancées",
-            "Gestion de vos interventions",
-            "Support prioritaire",
+            ("Profil mis en avant", True),
+            ("Services illimités", True),
+            ("Statistiques détaillées", True),
+            ("Support prioritaire", True),
+            ("Badge « Top Pro »", True),
+        ],
+    },
+    {
+        "code": "tech_premium", "name": "Premium", "icon": "diamond", "popular": False,
+        "desc": "Pour les meilleurs.",
+        "price_month": 300000, "price_year": 2120000,
+        "features": [
+            ("Tout dans Pro", True),
+            ("Mise en avant nationale", True),
+            ("Accès aux demandes prioritaires", True),
+            ("Support 24/7", True),
+            ("Conseil personnalisé", True),
         ],
     },
 ]
-
-# Reduction appliquee sur l'engagement annuel.
-_TECH_ANNUAL_DISCOUNT = 0.10
 
 _SUB_PAYMENT_METHODS = [
     ("orange_money", "Orange Money"),
@@ -4677,8 +4683,16 @@ def _tech_plan_by_code(code):
 def _tech_plan_amount(plan, period):
     """Montant a payer selon la periode ('month' ou 'year')."""
     if period == "year":
-        return int(round(plan["price_month"] * 12 * (1 - _TECH_ANNUAL_DISCOUNT)))
+        return int(plan["price_year"])
     return int(plan["price_month"])
+
+
+def _tech_plan_savings_pct(plan):
+    """% economise sur l'engagement annuel par rapport a 12 mensualites."""
+    monthly_total = plan["price_month"] * 12
+    if monthly_total <= 0:
+        return 0
+    return round((1 - plan["price_year"] / monthly_total) * 100)
 
 
 def _ensure_tech_plan_row(conn, code):
@@ -4686,7 +4700,7 @@ def _ensure_tech_plan_row(conn, code):
     plan = _tech_plan_by_code(code)
     if not plan:
         return None
-    feats = "\n".join(plan["features"])
+    feats = "\n".join(label for label, included in plan["features"] if included)
     row = conn.execute("SELECT id FROM subscription_plans WHERE code = ?", (code,)).fetchone()
     if row:
         conn.execute(
@@ -4694,7 +4708,7 @@ def _ensure_tech_plan_row(conn, code):
             " WHERE id = ?",
             (plan["name"], plan["price_month"], feats, row["id"]))
         return row["id"]
-    order = 10 if code == "tech_pro" else 11
+    order = {"tech_basic": 10, "tech_pro": 11, "tech_premium": 12}.get(code, 13)
     conn.execute(
         "INSERT INTO subscription_plans (code, name, price_month, features, is_active, sort_order)"
         " VALUES (?, ?, ?, ?, 1, ?)",
@@ -4789,8 +4803,11 @@ def technician_subscription():
             "frequency": freq,
         })
 
+    plan_savings = {p["code"]: _tech_plan_savings_pct(p) for p in _TECH_PLANS}
+    max_savings_pct = max(plan_savings.values())
+
     return render_template("technician_subscription.html", user=user,
-                           plans=_TECH_PLANS, annual_discount=int(_TECH_ANNUAL_DISCOUNT * 100),
+                           plans=_TECH_PLANS, max_savings_pct=max_savings_pct, plan_savings=plan_savings,
                            current=current, current_code=current_code, status=status,
                            current_active=current_active, frequency=frequency,
                            payments=payments_view, unread_count=unread_count)
