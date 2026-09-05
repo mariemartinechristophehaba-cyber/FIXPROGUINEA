@@ -1,13 +1,302 @@
 {% extends 'admin_base.html' %}
 {% block title %}Tableau de bord - FixPro Admin{% endblock %}
-{% block admin_title %}Tableau de bord{% endblock %}
+{% block admin_title %}Bienvenue {{ (user.full_name or 'Admin').split(' ')[0] if user else 'Admin' }} !{% endblock %}
+{% block admin_subtitle %}Gerez les abonnements et suivez la croissance de FixPro{% endblock %}
+
+{% block topbar_actions %}
+<div class="period">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+  <span>Aujourd'hui <b style="font-weight:700">&middot; {{ today_label }}</b></span>
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .kpi { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 18px; }
+  .kpi-top { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  .kpi-ic { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; flex: none; }
+  .kpi-ic svg { width: 21px; height: 21px; }
+  .kpi-label { font-size: .82rem; color: var(--muted); font-weight: 600; }
+  .kpi-val { font-size: 1.55rem; font-weight: 800; letter-spacing: -.02em; display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; }
+  .kpi-delta { font-size: .78rem; font-weight: 700; display: inline-flex; align-items: center; gap: 3px; }
+  .kpi-delta.up { color: var(--green); }
+  .kpi-delta.down { color: var(--red); }
+  .kpi-sub { font-size: .78rem; color: var(--muted); margin-top: 6px; }
+
+  .tone-blue { background: #eaf1ff; color: #2563eb; }
+  .tone-gold { background: #fef3d6; color: #b8860b; }
+  .tone-orange { background: #fef2e2; color: #d97706; }
+  .tone-red { background: #fdecec; color: #dc2626; }
+
+  .grid-2 { display: grid; grid-template-columns: 1.65fr 1fr; gap: 16px; margin-top: 16px; }
+  .grid-2b { display: grid; grid-template-columns: 1.65fr 1fr; gap: 16px; margin-top: 16px; align-items: start; }
+  .panel { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 20px; min-width: 0; }
+  .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 16px; }
+  .panel-head h2 { font-size: 1rem; font-weight: 800; }
+  .panel-head a { font-size: .82rem; font-weight: 700; color: var(--blue); }
+  .pill-select { font-size: .8rem; font-weight: 600; color: var(--muted); border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; display: inline-flex; align-items: center; gap: 6px; }
+  .legend-row { display: flex; gap: 18px; margin-bottom: 14px; font-size: .8rem; font-weight: 600; color: var(--muted); }
+  .legend-row span { display: inline-flex; align-items: center; gap: 7px; }
+  .legend-row .dot { width: 9px; height: 9px; border-radius: 50%; }
+  .chart-box { position: relative; height: 210px; }
+
+  .rev-val { font-size: 1.7rem; font-weight: 800; letter-spacing: -.02em; display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; margin-bottom: 2px; }
+  .rev-sub { font-size: .8rem; color: var(--muted); margin-bottom: 18px; }
+  .objectif-box { background: var(--bg); border-radius: 12px; padding: 14px; display: flex; gap: 12px; align-items: flex-start; }
+  .objectif-ic { width: 34px; height: 34px; border-radius: 9px; background: #eaf1ff; color: #2563eb; display: grid; place-items: center; flex: none; }
+  .objectif-ic svg { width: 17px; height: 17px; }
+  .objectif-box .ot { font-size: .78rem; color: var(--muted); font-weight: 600; }
+  .objectif-box .ov { font-size: 1.02rem; font-weight: 800; margin: 2px 0 8px; }
+  .progress { height: 8px; border-radius: 6px; background: var(--line); overflow: hidden; position: relative; }
+  .progress-bar { height: 100%; background: var(--blue); border-radius: 6px; }
+  .progress-pct { font-size: .76rem; font-weight: 700; color: var(--muted); margin-top: 6px; text-align: right; }
+
+  table.grid { width: 100%; border-collapse: collapse; font-size: .85rem; }
+  table.grid th, table.grid td { text-align: left; padding: 11px 10px; border-bottom: 1px solid var(--line); }
+  table.grid th { color: var(--muted); font-weight: 600; font-size: .74rem; text-transform: uppercase; letter-spacing: .03em; }
+  table.grid tr:last-child td { border-bottom: 0; }
+  .tag2 { display: inline-flex; align-items: center; gap: 5px; font-size: .74rem; font-weight: 700; padding: 3px 10px; border-radius: 999px; }
+  .tag2.green { background: #e7f8f1; color: #059669; }
+  .tag2.amber { background: #fef7e0; color: #b45309; }
+  .tag2.red { background: #fdecec; color: #dc2626; }
+  .tag2.grey { background: #f1f5fb; color: #64748b; }
+  .row-more { color: var(--muted); font-weight: 700; }
+
+  .donut-wrap { position: relative; width: 150px; height: 150px; margin: 0 auto 16px; }
+  .donut-center { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
+  .donut-center b { display: block; font-size: 1.3rem; font-weight: 800; }
+  .donut-center span { font-size: .68rem; color: var(--muted); }
+  .legend { list-style: none; display: grid; gap: 10px; }
+  .legend li { display: flex; align-items: center; gap: 9px; font-size: .82rem; }
+  .legend li b { margin-left: auto; color: var(--text); font-weight: 700; }
+  .legend .dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+  .dot-0 { background: #2563eb; } .dot-1 { background: #93c5fd; } .dot-2 { background: #f5b301; } .dot-3 { background: #a78bfa; }
+
+  .validation-list { list-style: none; display: grid; gap: 4px; }
+  .validation-list li { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .validation-list li:last-child { border: 0; }
+  .val-av { width: 36px; height: 36px; border-radius: 50%; background: #eaf1ff; color: #2563eb; display: grid; place-items: center; font-weight: 700; font-size: .78rem; flex: none; overflow: hidden; }
+  .val-av img { width: 100%; height: 100%; object-fit: cover; }
+  .val-main { min-width: 0; flex: 1; }
+  .val-main .t { font-size: .84rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .val-main .s { font-size: .74rem; color: var(--muted); }
+  .empty { color: var(--muted); font-size: .84rem; padding: 14px 0; }
+
+  @media (max-width: 1300px) { .kpis { grid-template-columns: repeat(2, 1fr); } .grid-2, .grid-2b { grid-template-columns: 1fr; } }
+  @media (max-width: 640px) { .kpis { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}
+
+{% macro kpi_icon(name) %}
+  {% if name == 'users' %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+  {% elif name == 'crown' %}<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 8l4 3 5-7 5 7 4-3-2 11H5L3 8z"/></svg>
+  {% elif name == 'clock' %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+  {% elif name == 'x' %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+  {% endif %}
+{% endmacro %}
+
+{% macro initials(name) %}{{ ((name or '?').split()[0][:1] ~ ((name or '?').split()[1][:1] if (name or '?').split()|length > 1 else ''))|upper }}{% endmacro %}
+
+{% macro sub_badge(status) %}
+  {% if status == 'ACTIVE' %}<span class="tag2 green">Paye</span>
+  {% elif status == 'PAST_DUE' %}<span class="tag2 amber">En attente</span>
+  {% elif status == 'EXPIRED' %}<span class="tag2 red">Expire</span>
+  {% else %}<span class="tag2 grey">{{ status }}</span>{% endif %}
+{% endmacro %}
 
 {% block admin_content %}
-<!--
-  PLACEHOLDER - page videe avant refonte (nouvelle maquette a venir).
-  La route admin_dashboard() ne rend plus que la coquille (sidebar + topbar).
-  Les pages Abonnements / Paiements / Reclamations / Utilisateurs restent
-  fonctionnelles ; l'expiration auto des abonnements tourne toujours ici.
--->
-<p style="color:var(--muted)">Tableau de bord en cours de refonte.</p>
+<div class="kpis">
+  <a class="kpi" href="{{ url_for('admin_artisans') }}">
+    <div class="kpi-top">
+      <span class="kpi-ic tone-blue">{{ kpi_icon('users') }}</span>
+      <span class="kpi-label">Techniciens inscrits</span>
+    </div>
+    <div class="kpi-val">{{ kpis.techniciens.value }}
+      {% if kpis.techniciens.delta is not none %}
+      <span class="kpi-delta {{ 'up' if kpis.techniciens.delta >= 0 else 'down' }}">{{ '↗' if kpis.techniciens.delta >= 0 else '↘' }}{{ kpis.techniciens.delta|abs }}%</span>
+      {% endif %}
+    </div>
+    <div class="kpi-sub">{{ kpis.techniciens.sub }}</div>
+  </a>
+  <a class="kpi" href="{{ url_for('admin_subscriptions', filter='active') }}">
+    <div class="kpi-top">
+      <span class="kpi-ic tone-gold">{{ kpi_icon('crown') }}</span>
+      <span class="kpi-label">Abonnements actifs</span>
+    </div>
+    <div class="kpi-val">{{ kpis.actifs.value }}
+      {% if kpis.actifs.delta is not none %}
+      <span class="kpi-delta {{ 'up' if kpis.actifs.delta >= 0 else 'down' }}">{{ '↗' if kpis.actifs.delta >= 0 else '↘' }}{{ kpis.actifs.delta|abs }}%</span>
+      {% endif %}
+    </div>
+    <div class="kpi-sub">{{ kpis.actifs.sub }}</div>
+  </a>
+  <a class="kpi" href="{{ url_for('admin_subscriptions', filter='past_due') }}">
+    <div class="kpi-top">
+      <span class="kpi-ic tone-orange">{{ kpi_icon('clock') }}</span>
+      <span class="kpi-label">Abonnements en attente</span>
+    </div>
+    <div class="kpi-val">{{ kpis.attente.value }}
+      {% if kpis.attente.delta is not none %}
+      <span class="kpi-delta {{ 'up' if kpis.attente.delta >= 0 else 'down' }}">{{ '↗' if kpis.attente.delta >= 0 else '↘' }}{{ kpis.attente.delta|abs }}%</span>
+      {% endif %}
+    </div>
+    <div class="kpi-sub">{{ kpis.attente.sub }}</div>
+  </a>
+  <a class="kpi" href="{{ url_for('admin_subscriptions', filter='expired') }}">
+    <div class="kpi-top">
+      <span class="kpi-ic tone-red">{{ kpi_icon('x') }}</span>
+      <span class="kpi-label">Abonnements expires</span>
+    </div>
+    <div class="kpi-val">{{ kpis.expires.value }}
+      {% if kpis.expires.delta is not none %}
+      <span class="kpi-delta {{ 'up' if kpis.expires.delta >= 0 else 'down' }}">{{ '↗' if kpis.expires.delta >= 0 else '↘' }}{{ kpis.expires.delta|abs }}%</span>
+      {% endif %}
+    </div>
+    <div class="kpi-sub">{{ kpis.expires.sub }}</div>
+  </a>
+</div>
+
+<div class="grid-2">
+  <section class="panel">
+    <div class="panel-head">
+      <h2>Evolution des abonnements</h2>
+      <span class="pill-select">6 derniers mois</span>
+    </div>
+    <div class="legend-row">
+      <span><span class="dot" style="background:#2563eb"></span>Nouveaux abonnements</span>
+      <span><span class="dot" style="background:#93c5fd"></span>Renouvellements</span>
+    </div>
+    <div class="chart-box"><canvas id="evoChart"></canvas></div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><h2>Revenus des abonnements</h2><span class="pill-select">Ce mois</span></div>
+    <div class="rev-val">{{ revenu_mois|gnf }}
+      {% if revenu_delta is not none %}
+      <span class="kpi-delta {{ 'up' if revenu_delta >= 0 else 'down' }}">{{ '↗' if revenu_delta >= 0 else '↘' }}{{ revenu_delta|abs }}%</span>
+      {% endif %}
+    </div>
+    <div class="rev-sub">Total des paiements recus</div>
+    <div class="objectif-box">
+      <span class="objectif-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg></span>
+      <div style="flex:1;min-width:0">
+        <div class="ot">Objectif mensuel</div>
+        <div class="ov">{{ objectif|gnf }}</div>
+        <div class="progress"><div class="progress-bar" style="width:{{ objectif_pct }}%"></div></div>
+        <div class="progress-pct">{{ objectif_pct }}%</div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="grid-2b">
+  <section class="panel">
+    <div class="panel-head"><h2>Derniers abonnements</h2><a href="{{ url_for('admin_subscriptions') }}">Voir tous</a></div>
+    {% if derniers_abos %}
+    <div style="overflow-x:auto">
+    <table class="grid">
+      <thead><tr><th>#ID</th><th>Technicien</th><th>Forfait</th><th>Montant</th><th>Statut</th><th>Date</th><th></th></tr></thead>
+      <tbody>
+        {% for s in derniers_abos %}
+        <tr>
+          <td class="row-more">#AB{{ 1200 + s.id }}</td>
+          <td>{{ s.tech_name }}</td>
+          <td>{{ s.plan_name or '-' }} Mensuel</td>
+          <td>{{ (s.price_month or 0)|gnf }}</td>
+          <td>{{ sub_badge(s.status) }}</td>
+          <td class="row-more">{{ (s.created_at|string)[:10] if s.created_at else '-' }}</td>
+          <td class="row-more">&middot;&middot;&middot;</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+    {% else %}
+    <p class="empty">Aucun abonnement pour le moment.</p>
+    {% endif %}
+  </section>
+
+  <div style="display:grid;gap:16px">
+    <section class="panel">
+      <div class="panel-head"><h2>Repartition des abonnements</h2></div>
+      <div class="donut-wrap">
+        <canvas id="planChart"></canvas>
+        <div class="donut-center"><b>{{ repartition_total }}</b><span>abonnements actifs</span></div>
+      </div>
+      <ul class="legend">
+        {% for r in repartition %}
+        <li><span class="dot dot-{{ loop.index0 }}"></span>{{ r.name }}
+          <b>{{ (r.count / repartition_total * 100)|round|int if repartition_total else 0 }}%</b></li>
+        {% endfor %}
+      </ul>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><h2>Techniciens en attente</h2><a href="{{ url_for('admin_artisans', filter='pending') }}">Voir tous</a></div>
+      <ul class="validation-list">
+        {% for d in demandes_validation %}
+        <li>
+          <span class="val-av">{% if d.photo_url %}<img src="{{ d.photo_url }}" alt="" />{% else %}{{ initials(d.full_name) }}{% endif %}</span>
+          <div class="val-main">
+            <div class="t">{{ d.full_name }}</div>
+            <div class="s">{{ d.profession or '' }}</div>
+          </div>
+          <span class="tag2 amber">En attente</span>
+        </li>
+        {% else %}
+        <li class="empty">Aucune demande en attente.</li>
+        {% endfor %}
+      </ul>
+    </section>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script id="dash-data" type="application/json">{{ {
+  "labels": evolution|map(attribute='label')|list,
+  "new": evolution|map(attribute='new')|list,
+  "renew": evolution|map(attribute='renew')|list,
+  "plans": repartition|map(attribute='count')|list
+} | tojson }}</script>
+<script>
+  (function () {
+    if (typeof Chart === 'undefined') return;
+    var data;
+    try { data = JSON.parse(document.getElementById('dash-data').textContent); }
+    catch (e) { return; }
+
+    var evo = document.getElementById('evoChart');
+    if (evo) {
+      new Chart(evo.getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels: data.labels,
+          datasets: [
+            { label: 'Nouveaux abonnements', data: data.new, backgroundColor: '#2563eb', borderRadius: 5, maxBarThickness: 22 },
+            { label: 'Renouvellements', data: data.renew, backgroundColor: '#93c5fd', borderRadius: 5, maxBarThickness: 22 }
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 11 } } },
+            y: { grid: { color: '#e6ecf5' }, ticks: { color: '#64748b', font: { size: 11 } }, beginAtZero: true }
+          }
+        }
+      });
+    }
+
+    var plan = document.getElementById('planChart');
+    if (plan && data.plans && data.plans.some(function (n) { return n > 0; })) {
+      new Chart(plan.getContext('2d'), {
+        type: 'doughnut',
+        data: { datasets: [{ data: data.plans, backgroundColor: ['#2563eb', '#93c5fd', '#f5b301', '#a78bfa'], borderWidth: 0 }] },
+        options: { responsive: true, maintainAspectRatio: false, cutout: '72%', plugins: { legend: { display: false } } }
+      });
+    }
+  })();
+</script>
 {% endblock %}

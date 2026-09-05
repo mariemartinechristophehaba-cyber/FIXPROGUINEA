@@ -2490,24 +2490,160 @@ def _admin_sidebar_badges(conn, admin_id):
     }
 
 
+def _pct_delta(current, previous):
+    """Variation en % entre deux valeurs, ou None si pas de reference."""
+    if not previous:
+        return None
+    return round((current - previous) / previous * 100, 1)
+
+
+_MONTH_ABBR_FR = {1: "Janv", 2: "Fevr", 3: "Mars", 4: "Avr", 5: "Mai", 6: "Juin",
+                  7: "Juil", 8: "Aout", 9: "Sept", 10: "Oct", 11: "Nov", 12: "Dec"}
+_MONTH_LONG_FR = {1: "janv.", 2: "fevr.", 3: "mars", 4: "avr.", 5: "mai", 6: "juin",
+                  7: "juil.", 8: "aout", 9: "sept.", 10: "oct.", 11: "nov.", 12: "dec."}
+_WEEKDAY_FR = {0: "Lun", 1: "Mar", 2: "Mer", 3: "Jeu", 4: "Ven", 5: "Sam", 6: "Dim"}
+
+
+def _shift_month(year, month, delta):
+    idx = year * 12 + (month - 1) + delta
+    return idx // 12, idx % 12 + 1
+
+
 @app.route("/admin/dashboard")
 @login_required
 @admin_required
 def admin_dashboard():
-    """Tableau de bord admin - en cours de refonte (nouvelle maquette a venir).
-
-    Le rendu est un placeholder : la sidebar et l'expiration automatique des
-    abonnements restent actives.
-    """
+    """Tableau de bord admin : abonnements, revenus, validations."""
     user = get_current_user()
+    now = datetime.now(timezone.utc)
+    month_start_dt = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    month_start = _ts(month_start_dt)
+    prev_month_end_dt = month_start_dt - timedelta(seconds=1)
+    prev_month_start = _ts(prev_month_end_dt.replace(day=1, hour=0, minute=0, second=0, microsecond=0))
+    today_label = "%s %d %s %d" % (
+        _WEEKDAY_FR[now.weekday()], now.day, _MONTH_LONG_FR[now.month], now.year)
+
     conn = get_db_connection()
     try:
         _expire_due_subscriptions(conn)
+
+        def scalar(sql, params=()):
+            row = conn.execute(sql, params).fetchone()
+            if not row:
+                return 0
+            return list(row.values())[0] or 0
+
+        techniciens_total = scalar("SELECT COUNT(*) AS n FROM users WHERE role = 'technician'")
+        techniciens_avant_mois = scalar(
+            "SELECT COUNT(*) AS n FROM users WHERE role = 'technician' AND created_at < ?",
+            (month_start,))
+        techniciens_ce_mois = scalar(
+            "SELECT COUNT(*) AS n FROM users WHERE role = 'technician' AND created_at >= ?",
+            (month_start,))
+
+        def sub_count(where, params=()):
+            return scalar("SELECT COUNT(*) AS n FROM technician_subscriptions WHERE " + where, params)
+
+        abos_actifs = sub_count("status = 'ACTIVE'")
+        abos_actifs_avant = sub_count("status = 'ACTIVE' AND created_at < ?", (month_start,))
+        abos_attente = sub_count("status = 'PAST_DUE'")
+        abos_attente_avant = sub_count("status = 'PAST_DUE' AND created_at < ?", (month_start,))
+        abos_expires = sub_count("status = 'EXPIRED'")
+        abos_expires_avant = sub_count("status = 'EXPIRED' AND created_at < ?", (month_start,))
+
+        kpis = {
+            "techniciens": {
+                "value": techniciens_total,
+                "delta": _pct_delta(techniciens_total, techniciens_avant_mois),
+                "sub": "+%d ce mois" % techniciens_ce_mois,
+            },
+            "actifs": {
+                "value": abos_actifs,
+                "delta": _pct_delta(abos_actifs, abos_actifs_avant),
+                "sub": "%d%% des techniciens" % (
+                    round(abos_actifs / techniciens_total * 100) if techniciens_total else 0),
+            },
+            "attente": {
+                "value": abos_attente,
+                "delta": _pct_delta(abos_attente, abos_attente_avant),
+                "sub": "En attente de paiement",
+            },
+            "expires": {
+                "value": abos_expires,
+                "delta": _pct_delta(abos_expires, abos_expires_avant),
+                "sub": "A renouveler",
+            },
+        }
+
+        # Evolution sur 6 mois : premier abonnement d'un technicien = "nouveau",
+        # tout abonnement suivant du meme technicien = "renouvellement".
+        sub_rows = conn.execute(
+            "SELECT technician_id, created_at FROM technician_subscriptions"
+            " ORDER BY technician_id, created_at").fetchall()
+        first_month_by_tech = {}
+        for r in sub_rows:
+            tid = r["technician_id"]
+            ym = str(r["created_at"])[:7]
+            if tid not in first_month_by_tech or ym < first_month_by_tech[tid]:
+                first_month_by_tech[tid] = ym
+
+        evolution = []
+        yy, mm = now.year, now.month
+        for i in range(5, -1, -1):
+            y2, m2 = _shift_month(yy, mm, -i)
+            ym_key = "%04d-%02d" % (y2, m2)
+            new_c = renew_c = 0
+            for r in sub_rows:
+                if str(r["created_at"])[:7] != ym_key:
+                    continue
+                if first_month_by_tech.get(r["technician_id"]) == ym_key:
+                    new_c += 1
+                else:
+                    renew_c += 1
+            evolution.append({"label": _MONTH_ABBR_FR[m2], "new": new_c, "renew": renew_c})
+
+        revenu_mois = int(scalar(
+            "SELECT COALESCE(SUM(amount), 0) AS s FROM subscription_payments"
+            " WHERE status = 'paid' AND paid_at >= ?", (month_start,)))
+        revenu_mois_precedent = int(scalar(
+            "SELECT COALESCE(SUM(amount), 0) AS s FROM subscription_payments"
+            " WHERE status = 'paid' AND paid_at >= ? AND paid_at < ?",
+            (prev_month_start, month_start)))
+        objectif = int(app.config.get("SUBSCRIPTION_MONTHLY_TARGET_GNF", 300000))
+        objectif_pct = min(100, round(revenu_mois / objectif * 100)) if objectif else 0
+
+        derniers_abos = conn.execute(
+            "SELECT s.id, s.status, s.created_at, u.full_name AS tech_name,"
+            " p.name AS plan_name, p.price_month"
+            " FROM technician_subscriptions s"
+            " JOIN users u ON u.id = s.technician_id"
+            " LEFT JOIN subscription_plans p ON p.id = s.plan_id"
+            " ORDER BY s.created_at DESC LIMIT 5").fetchall()
+
+        plan_rows = conn.execute(
+            "SELECT p.name, COUNT(s.id) AS n FROM subscription_plans p"
+            " LEFT JOIN technician_subscriptions s ON s.plan_id = p.id AND s.status = 'ACTIVE'"
+            " WHERE p.is_active = 1 GROUP BY p.id ORDER BY p.sort_order").fetchall()
+        repartition = [{"name": r["name"], "count": r["n"]} for r in plan_rows]
+        repartition_total = sum(r["count"] for r in repartition)
+
+        demandes_validation = conn.execute(
+            "SELECT id, full_name, profession, photo_url, created_at FROM users"
+            " WHERE role = 'technician' AND verification_status = ?"
+            " ORDER BY created_at DESC LIMIT 5", (VERIF_PENDING,)).fetchall()
+
         badges = _admin_sidebar_badges(conn, user["id"])
     finally:
         conn.close()
-    return render_template("admin_dashboard.html", user=user,
-                           active="dashboard", badges=badges)
+
+    return render_template(
+        "admin_dashboard.html", user=user, active="dashboard", badges=badges,
+        today_label=today_label, kpis=kpis, evolution=evolution,
+        revenu_mois=revenu_mois, revenu_delta=_pct_delta(revenu_mois, revenu_mois_precedent),
+        objectif=objectif, objectif_pct=objectif_pct,
+        derniers_abos=derniers_abos, repartition=repartition,
+        repartition_total=repartition_total, demandes_validation=demandes_validation,
+    )
 
 
 # ===========================================================================
