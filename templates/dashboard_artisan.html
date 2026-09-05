@@ -97,39 +97,48 @@
     .td-hero-photo .fallback { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 800; }
 
     .td-quote {
-      margin-top: 10px; font-size: 0.72rem; font-style: italic; color: rgba(255,255,255,0.75);
-      max-width: 190px; margin-left: auto; text-align: right; line-height: 1.4;
+      margin-top: 8px; font-size: 0.74rem; color: rgba(255,255,255,0.8);
+      max-width: 170px; margin-left: auto; text-align: right; line-height: 1.35;
     }
+    .td-quote-line { display: block; width: 34px; height: 2px; background: rgba(255,255,255,0.4); margin: 6px 0 6px auto; }
 
-    .td-stats { display: flex; margin-top: 16px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.2); }
-    .td-stat { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; text-align: center; }
-    .td-stat svg { width: 16px; height: 16px; color: var(--td-yellow); }
+    .td-stats { display: flex; gap: 26px; margin-top: 16px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.2); }
+    .td-stat { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; }
+    .td-stat svg { width: 20px; height: 20px; color: var(--td-yellow); flex-shrink: 0; }
+    .td-stat .txt { display: flex; flex-direction: column; line-height: 1.2; }
     .td-stat b { font-size: 1rem; font-weight: 800; }
-    .td-stat span { font-size: 0.66rem; color: rgba(255,255,255,0.8); }
+    .td-stat .txt span { font-size: 0.66rem; color: rgba(255,255,255,0.8); }
 
     /* Subscription card */
     .td-sub {
-      background: #fff; border: 1px solid var(--td-line); border-radius: 18px; padding: 14px;
-      display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;
-      box-shadow: 0 8px 22px rgba(16,42,67,0.05);
+      background: #fff; border: 1px solid var(--td-line); border-radius: 18px; padding: 16px;
+      margin-bottom: 16px; box-shadow: 0 8px 22px rgba(16,42,67,0.05);
     }
+    .td-sub-top { display: flex; align-items: center; gap: 12px; }
     .td-sub-icon {
-      width: 44px; height: 44px; border-radius: 13px; background: var(--td-primary); color: #fff; flex-shrink: 0;
+      width: 46px; height: 46px; border-radius: 13px; background: var(--td-primary); color: var(--td-yellow); flex-shrink: 0;
       display: flex; align-items: center; justify-content: center;
     }
-    .td-sub-icon svg { width: 22px; height: 22px; }
-    .td-sub-body { flex: 1; min-width: 140px; }
+    .td-sub-icon svg { width: 24px; height: 24px; }
+    .td-sub-body { flex: 1; min-width: 0; }
     .td-sub-title { display: flex; align-items: center; gap: 8px; font-size: 0.86rem; font-weight: 700; color: var(--td-primary); margin-bottom: 2px; }
-    .td-sub-pill { font-size: 0.64rem; font-weight: 700; padding: 2px 9px; border-radius: 50px; }
+    .td-sub-pill { display: inline-flex; align-items: center; gap: 4px; font-size: 0.64rem; font-weight: 700; padding: 2px 9px; border-radius: 50px; }
+    .td-sub-pill svg { width: 10px; height: 10px; }
     .td-sub-pill.active { color: var(--td-green); background: #DCFCE7; }
     .td-sub-pill.other { color: var(--td-muted); background: #F1F5F9; }
     .td-sub-plan { font-size: 0.98rem; font-weight: 800; }
     .td-sub-exp { font-size: 0.76rem; color: var(--td-muted); }
+    .td-sub-chev { color: #CBD5E1; flex-shrink: 0; }
+    .td-sub-chev svg { width: 18px; height: 18px; }
+    .td-sub-feats { display: flex; gap: 8px; margin: 14px 0; padding-top: 14px; border-top: 1px solid var(--td-line); }
+    .td-sub-feat { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px; text-align: center; min-width: 0; }
+    .td-sub-feat svg { width: 18px; height: 18px; color: var(--td-primary); }
+    .td-sub-feat span { font-size: 0.65rem; color: var(--td-muted); font-weight: 600; line-height: 1.25; }
     .td-sub-btn {
-      background: var(--td-primary); color: #fff; border-radius: 12px; padding: 11px 16px;
-      font-size: 0.82rem; font-weight: 700; display: flex; align-items: center; gap: 8px; white-space: nowrap;
+      background: var(--td-primary); color: #fff; border-radius: 12px; padding: 13px 16px; width: 100%;
+      font-size: 0.86rem; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px;
     }
-    .td-sub-btn svg { width: 15px; height: 15px; }
+    .td-sub-btn svg { width: 16px; height: 16px; }
     .td-sub-empty { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; color: var(--td-primary); font-weight: 700; font-size: 0.86rem; }
 
     /* Sections */
@@ -139,32 +148,23 @@
     .td-section-head .sub-link { color: var(--td-primary); font-size: 0.82rem; font-weight: 700; display: flex; align-items: center; gap: 3px; }
     .td-section-head .sub-link svg { width: 14px; height: 14px; }
 
-    .td-kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .td-kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
     .td-kpi { background: #fff; border: 1px solid var(--td-line); border-radius: 16px; padding: 14px; box-shadow: 0 6px 18px rgba(16,42,67,0.04); }
-    .td-kpi-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-    .td-kpi-icon { width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+    .td-kpi-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; }
+    .td-kpi-icon { width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
     .td-kpi-icon svg { width: 17px; height: 17px; }
     .td-kpi.c-blue .td-kpi-icon { background: #EEF4FF; color: var(--td-primary); }
     .td-kpi.c-green .td-kpi-icon { background: #ECFDF5; color: var(--td-green); }
     .td-kpi.c-purple .td-kpi-icon { background: #F3E8FF; color: #7C3AED; }
-    .td-kpi.c-blue2 .td-kpi-icon { background: #E0F2FE; color: #0369A1; }
-    .td-trend { font-size: 0.68rem; font-weight: 700; display: flex; align-items: center; gap: 2px; }
+    .td-kpi.c-yellow .td-kpi-icon { background: #FEF3C7; color: #B45309; }
+    .td-kpi-trend { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; }
+    .td-trend { font-size: 0.7rem; font-weight: 700; display: flex; align-items: center; gap: 2px; }
     .td-trend.up { color: var(--td-green); }
     .td-trend.down { color: #DC2626; }
     .td-trend svg { width: 11px; height: 11px; }
+    .td-kpi-trend .period { font-size: 0.6rem; color: var(--td-muted); font-weight: 600; }
     .td-kpi b { display: block; font-size: 1.35rem; font-weight: 800; line-height: 1; margin-bottom: 4px; }
-    .td-kpi span { font-size: 0.76rem; color: var(--td-muted); font-weight: 500; }
-
-    .td-perf {
-      background: #fff; border: 1px solid var(--td-line); border-radius: 16px; padding: 14px;
-      display: flex; align-items: center; gap: 12px; box-shadow: 0 6px 18px rgba(16,42,67,0.04);
-    }
-    .td-perf-icon { width: 40px; height: 40px; border-radius: 12px; background: var(--td-primary); color: #fff; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
-    .td-perf-icon svg { width: 20px; height: 20px; }
-    .td-perf-body { flex: 1; }
-    .td-perf-body b { display: block; font-size: 0.9rem; font-weight: 700; }
-    .td-perf-body span { font-size: 0.76rem; color: var(--td-muted); }
-    .td-perf-soon { font-size: 0.66rem; font-weight: 700; color: var(--td-muted); background: #F1F5F9; padding: 4px 10px; border-radius: 50px; white-space: nowrap; }
+    .td-kpi span.lbl { font-size: 0.76rem; color: var(--td-muted); font-weight: 500; }
 
     .td-profile { background: #fff; border: 1px solid var(--td-line); border-radius: 18px; padding: 16px; box-shadow: 0 8px 22px rgba(16,42,67,0.05); }
     .td-profile-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
@@ -279,48 +279,61 @@
           {% endif %}
         </div>
       </div>
-      <p class="td-quote">&laquo; Des professionnels pour un quotidien meilleur. &raquo;</p>
+      <p class="td-quote">Des professionnels pour un quotidien meilleur.<span class="td-quote-line"></span></p>
       <div class="td-stats">
         <div class="td-stat">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-          <b>{{ "%.1f"|format(kpis.note or 0) }}/5</b>
-          <span>Note moyenne</span>
+          <span class="txt"><b>{{ "%.1f"|format(kpis.note or 0) }}/5</b><span>Note moyenne</span></span>
         </div>
         <div class="td-stat">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 21l1.9-5.1A8.4 8.4 0 0 1 4 11.5a8.5 8.5 0 0 1 8.5-8.5A8.5 8.5 0 0 1 21 11.5z"/></svg>
-          <b>{{ note_count }}</b>
-          <span>Avis clients</span>
-        </div>
-        <div class="td-stat">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
-          <b>{{ tier_label }}</b>
-          <span>Niveau actuel</span>
+          <span class="txt"><b>{{ note_count }}</b><span>Avis clients</span></span>
         </div>
       </div>
     </section>
 
     {% if subscription %}
     <div class="td-sub">
-      <a href="{{ url_for('technician_subscription') }}" class="td-sub-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+      <a href="{{ url_for('technician_subscription') }}" class="td-sub-top">
+        <span class="td-sub-icon">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 8l4 3 5-7 5 7 4-3-2 11H5L3 8z"/></svg>
+        </span>
+        <span class="td-sub-body">
+          <span class="td-sub-title">
+            Mon abonnement
+            <span class="td-sub-pill {{ 'active' if subscription.status == 'ACTIVE' else 'other' }}">
+              {% if subscription.status == 'ACTIVE' %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>{% endif %}
+              {{ 'Actif' if subscription.status == 'ACTIVE' else subscription.status|capitalize }}
+            </span>
+          </span>
+          <span class="td-sub-plan" style="display:block;">{{ subscription.plan_name }}</span>
+          <span class="td-sub-exp" style="display:block;">Expire le {{ subscription.end_date_label }}</span>
+        </span>
+        <span class="td-sub-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
       </a>
-      <a href="{{ url_for('technician_subscription') }}" class="td-sub-body">
-        <div class="td-sub-title">
-          Mon abonnement
-          <span class="td-sub-pill {{ 'active' if subscription.status == 'ACTIVE' else 'other' }}">{{ 'Actif' if subscription.status == 'ACTIVE' else subscription.status|capitalize }}</span>
+      <div class="td-sub-feats">
+        <div class="td-sub-feat">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+          <span>Visibilité prioritaire</span>
         </div>
-        <div class="td-sub-plan">{{ subscription.plan_name }}</div>
-        <div class="td-sub-exp">Expire le {{ subscription.end_date_label }}</div>
-      </a>
+        <div class="td-sub-feat">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
+          <span>{{ subscription.support }}</span>
+        </div>
+        <div class="td-sub-feat">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>
+          <span>{{ 'Renouvellement automatique' if subscription.auto_renew else 'Renouvellement manuel' }}</span>
+        </div>
+      </div>
       <a href="{{ url_for('technician_subscription') }}" class="td-sub-btn">
         Gérer mon abonnement
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
       </a>
     </div>
     {% else %}
-    <a href="{{ url_for('technician_subscription') }}" class="td-sub">
+    <a href="{{ url_for('technician_subscription') }}" class="td-sub" style="display:flex; align-items:center; gap:12px;">
       <span class="td-sub-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 8l4 3 5-7 5 7 4-3-2 11H5L3 8z"/></svg>
       </span>
       <span class="td-sub-empty">
         Aucun abonnement actif — découvrir les offres
@@ -329,58 +342,48 @@
     </a>
     {% endif %}
 
-    <section class="td-section">
-      <div class="td-section-head">
-        <h2>Vue d'ensemble</h2>
-        <span class="sub-link" style="color:var(--td-muted);font-weight:600;">Ce mois</span>
+    {% macro kpi_trend(t) %}
+      {% if t is not none %}
+      <span class="td-kpi-trend">
+        <span class="td-trend {{ 'up' if t >= 0 else 'down' }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">{% if t >= 0 %}<path d="m18 15-6-6-6 6"/>{% else %}<path d="m6 9 6 6 6-6"/>{% endif %}</svg>{{ t|abs }}%</span>
+        <span class="period">Ce mois</span>
+      </span>
+      {% endif %}
+    {% endmacro %}
+    <div class="td-kpi-grid">
+      <div class="td-kpi c-blue">
+        <div class="td-kpi-top">
+          <span class="td-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg></span>
+          {{ kpi_trend(trends.appels) }}
+        </div>
+        <b>{{ kpis.appels }}</b>
+        <span class="lbl">Appels reçus</span>
       </div>
-      <div class="td-kpi-grid">
-        <div class="td-kpi c-blue">
-          <div class="td-kpi-top">
-            <span class="td-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg></span>
-            {% if trends.appels is not none %}<span class="td-trend {{ 'up' if trends.appels >= 0 else 'down' }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">{% if trends.appels >= 0 %}<path d="m18 15-6-6-6 6"/>{% else %}<path d="m6 9 6 6 6-6"/>{% endif %}</svg>{{ trends.appels|abs }}%</span>{% endif %}
-          </div>
-          <b>{{ kpis.appels }}</b>
-          <span>Appels reçus</span>
+      <div class="td-kpi c-green">
+        <div class="td-kpi-top">
+          <span class="td-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M9 14h6M9 17h4"/></svg></span>
+          {{ kpi_trend(trends.demandes) }}
         </div>
-        <div class="td-kpi c-green">
-          <div class="td-kpi-top">
-            <span class="td-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M9 14h6M9 17h4"/></svg></span>
-          </div>
-          <b>{{ kpis.demandes }}</b>
-          <span>Demandes en cours</span>
-        </div>
-        <div class="td-kpi c-purple">
-          <div class="td-kpi-top">
-            <span class="td-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
-            {% if trends.interventions is not none %}<span class="td-trend {{ 'up' if trends.interventions >= 0 else 'down' }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">{% if trends.interventions >= 0 %}<path d="m18 15-6-6-6 6"/>{% else %}<path d="m6 9 6 6 6-6"/>{% endif %}</svg>{{ trends.interventions|abs }}%</span>{% endif %}
-          </div>
-          <b>{{ kpis.interventions }}</b>
-          <span>Interventions terminées</span>
-        </div>
-        <div class="td-kpi c-blue2">
-          <div class="td-kpi-top">
-            <span class="td-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 21a8 8 0 0 0-16 0"/><circle cx="10" cy="8" r="5"/><path d="M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3"/></svg></span>
-            {% if trends.clients is not none %}<span class="td-trend {{ 'up' if trends.clients >= 0 else 'down' }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">{% if trends.clients >= 0 %}<path d="m18 15-6-6-6 6"/>{% else %}<path d="m6 9 6 6 6-6"/>{% endif %}</svg>{{ trends.clients|abs }}%</span>{% endif %}
-          </div>
-          <b>{{ kpis.clients }}</b>
-          <span>Nouveaux clients</span>
-        </div>
+        <b>{{ kpis.demandes }}</b>
+        <span class="lbl">Demandes</span>
       </div>
-    </section>
-
-    <section class="td-section">
-      <div class="td-perf">
-        <span class="td-perf-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/></svg>
-        </span>
-        <span class="td-perf-body">
-          <b>Ma performance</b>
-          <span>Découvrez vos statistiques détaillées</span>
-        </span>
-        <span class="td-perf-soon">Bientôt</span>
+      <div class="td-kpi c-purple">
+        <div class="td-kpi-top">
+          <span class="td-kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 21a8 8 0 0 0-16 0"/><circle cx="10" cy="8" r="5"/><path d="M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3"/></svg></span>
+          {{ kpi_trend(trends.clients) }}
+        </div>
+        <b>{{ kpis.clients }}</b>
+        <span class="lbl">Nouveaux clients</span>
       </div>
-    </section>
+      <div class="td-kpi c-yellow">
+        <div class="td-kpi-top">
+          <span class="td-kpi-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></span>
+          {{ kpi_trend(trends.reviews) }}
+        </div>
+        <b>{{ kpis.reviews }}</b>
+        <span class="lbl">Avis clients</span>
+      </div>
+    </div>
 
     <section class="td-section">
       <div class="td-profile">
@@ -418,7 +421,7 @@
     <section class="td-section">
       <div class="td-section-head">
         <h2>Avis clients récents</h2>
-        <a href="{{ url_for('technician_reviews') }}" class="sub-link">Voir tous <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></a>
+        <a href="{{ url_for('technician_reviews') }}" class="sub-link">Voir tous <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></a>
       </div>
       {% if recent_reviews %}
         {% for rv in recent_reviews[:3] %}
@@ -457,9 +460,9 @@
       Messages
       {% if unread_count %}<span class="badge">{{ unread_count if unread_count < 10 else '9+' }}</span>{% endif %}
     </a>
-    <a href="{{ url_for('profile') }}">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-      Profil
+    <a href="{{ url_for('technician_subscription') }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l4 3 5-7 5 7 4-3-2 11H5L3 8z"/></svg>
+      Abonnement
     </a>
   </nav>
 
