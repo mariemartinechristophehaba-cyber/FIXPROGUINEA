@@ -147,8 +147,6 @@ class FixProTestCase(unittest.TestCase):
                     "SELECT role FROM users WHERE id = ?", (user_id,)).fetchone()
             finally:
                 conn.close()
-            if user and user["role"] == "admin":
-                self.client.post("/admin/unlock", data={"password": password})
             if user and user["role"] == "client":
                 self._set_client_location()
         return response
@@ -992,38 +990,26 @@ class AdminPanelTests(FixProTestCase):
         self.assertNotIn(b"<script>alert(1)", r.data)
         self.assertIn(b"&lt;script&gt;", r.data)
 
-    def test_admin_login_redirects_to_unlock(self):
+    def test_admin_login_grants_immediate_dashboard_access(self):
+        """L'etape de deverrouillage a ete retiree : la connexion admin donne
+        un acces direct au tableau de bord, sans second mot de passe."""
         response = self.client.post("/login", data={
             "identifier": "admin@fixpro.local",
             "password": "adminpass"}, follow_redirects=False)
         self.assertEqual(response.status_code, 302)
-        self.assertIn("/admin/unlock", response.location or "")
+        self.assertIn("/admin/dashboard", response.location or "")
 
-    def test_admin_dashboard_requires_unlock(self):
+        dashboard = self.client.get("/admin/dashboard")
+        self.assertEqual(dashboard.status_code, 200)
+
+    def test_admin_unlock_route_redirects_to_dashboard(self):
+        """/admin/unlock (ancienne etape) redirige sans redemander de mot de passe."""
         self.client.post("/login", data={
             "identifier": "admin@fixpro.local",
             "password": "adminpass"}, follow_redirects=False)
-        response = self.client.get("/admin/dashboard", follow_redirects=False)
+        response = self.client.get("/admin/unlock", follow_redirects=False)
         self.assertEqual(response.status_code, 302)
-        self.assertIn("/admin/unlock", response.location or "")
-
-    def test_admin_unlock_wrong_password_fails(self):
-        self.client.post("/login", data={
-            "identifier": "admin@fixpro.local",
-            "password": "adminpass"}, follow_redirects=False)
-        response = self.client.post("/admin/unlock", data={
-            "password": "wrong"}, follow_redirects=True)
-        self.assertEqual(response.status_code, 200)
-        self.assertIn(b"Mot de passe incorrect", response.data)
-
-    def test_admin_unlock_right_password_opens_dashboard(self):
-        self.client.post("/login", data={
-            "identifier": "admin@fixpro.local",
-            "password": "adminpass"}, follow_redirects=False)
-        response = self.client.post("/admin/unlock", data={
-            "password": "adminpass"}, follow_redirects=True)
-        self.assertEqual(response.status_code, 200)
-        self.assertIn(b"Admin", response.data)
+        self.assertIn("/admin/dashboard", response.location or "")
 
     def test_non_admin_cannot_access_dashboard(self):
         self.register_client(phone="+224620000000")
@@ -1111,7 +1097,7 @@ class AdminPanelTests(FixProTestCase):
                 "email": "patron@fixpro.gn", "password": "FixPro-Test-1234",
             })
             self.assertEqual(r.status_code, 302)
-            self.assertIn("/admin/unlock", r.headers["Location"])
+            self.assertIn("/admin/dashboard", r.headers["Location"])
         finally:
             fixpro_app.app.config["ADMIN_EMAILS"] = []
             fixpro_app.app.config["ADMIN_PASSWORD"] = ""
