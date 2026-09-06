@@ -259,12 +259,23 @@
     </div>
 
     <div class="dt-cta">
-      <a class="dt-cta-btn" href="{{ url_for('technician_signup') }}">
+      <button type="button" class="dt-cta-btn" id="dtStart">
         Commencer l'inscription
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-      </a>
+      </button>
       <p class="dt-cta-foot">Vous avez déjà un compte ? <a href="{{ url_for('login') }}">Se connecter</a></p>
     </div>
   </div>
+
+  <div class="dt-toast" id="dtToast" hidden>L'inscription en ligne des techniciens arrive très bientôt.</div>
+
+  <script>
+    var t = document.getElementById('dtToast'), h;
+    document.getElementById('dtStart').addEventListener('click', function () {
+      t.hidden = false;
+      clearTimeout(h);
+      h = setTimeout(function () { t.hidden = true; }, 2800);
+    });
+  </script>
 </body>
 </html>

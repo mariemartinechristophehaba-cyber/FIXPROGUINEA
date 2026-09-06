@@ -248,39 +248,6 @@ class DevenirTechnicienTests(FixProTestCase):
         self.assertIn("/devenir-technicien", html)
         self.assertIn("S'inscrire en tant que technicien", html)
 
-    def test_cta_links_to_signup_wizard(self):
-        html = self.client.get("/devenir-technicien").get_data(as_text=True)
-        self.assertIn("/devenir-technicien/inscription", html)
-
-
-class TechnicianSignupWizardTests(FixProTestCase):
-    """Wizard d'inscription technicien -- etape 1 : choix du profil."""
-
-    def test_step1_renders(self):
-        r = self.client.get("/devenir-technicien/inscription")
-        self.assertEqual(r.status_code, 200)
-        html = r.get_data(as_text=True)
-        self.assertIn("Quel est votre", html)
-        self.assertIn("Technicien ind", html)
-        self.assertIn("Entreprise / Soci", html)
-        self.assertIn('name="profile"', html)
-        self.assertIn("tape 1 sur 5", html)
-
-    def test_step1_post_stores_choice_and_shows_teaser(self):
-        with self.client as c:
-            r = c.post("/devenir-technicien/inscription", data={"profile": "entreprise"})
-            self.assertEqual(r.status_code, 200)
-            html = r.get_data(as_text=True)
-            self.assertIn("bient", html)  # teaser
-            with c.session_transaction() as sess:
-                self.assertEqual(sess.get("tech_signup_profile"), "entreprise")
-
-    def test_step1_post_ignores_invalid_profile(self):
-        with self.client as c:
-            c.post("/devenir-technicien/inscription", data={"profile": "n_importe_quoi"})
-            with c.session_transaction() as sess:
-                self.assertIsNone(sess.get("tech_signup_profile"))
-
 
 class ClientProfileTests(FixProTestCase):
     """Profil client et pages associees."""

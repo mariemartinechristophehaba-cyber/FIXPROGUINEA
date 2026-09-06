@@ -1801,34 +1801,10 @@ def register():
 @app.route("/devenir-technicien")
 def devenir_technicien():
     """Ecran d'accueil de l'Espace Technicien : presentation du programme pro
-    pour rejoindre FixPro. Public (aucun compte requis)."""
+    pour rejoindre FixPro. Public (aucun compte requis). Le formulaire
+    d'inscription complet est en cours de conception -- le bouton
+    "Commencer l'inscription" est provisoirement un teaser."""
     return render_template("devenir_technicien.html", nav_user=get_current_user())
-
-
-# Profils proposes a l'etape 1 du wizard d'inscription technicien.
-_TECH_SIGNUP_PROFILES = ("independant", "entreprise")
-
-
-@app.route("/devenir-technicien/inscription", methods=["GET", "POST"])
-def technician_signup():
-    """Wizard d'inscription technicien -- etape 1 sur 5 : choix du profil
-    (technicien independant ou entreprise/societe). Public. Les etapes
-    suivantes sont en cours de conception ; "Continuer" enregistre le choix
-    et affiche un teaser en attendant."""
-    profile = (session.get("tech_signup_profile") or "independant").lower()
-    teaser = False
-    if request.method == "POST":
-        chosen = (request.form.get("profile") or "").lower()
-        if chosen in _TECH_SIGNUP_PROFILES:
-            profile = chosen
-            session["tech_signup_profile"] = profile
-        teaser = True
-    return render_template(
-        "technician_signup.html",
-        nav_user=get_current_user(),
-        profile=profile,
-        teaser=teaser,
-    )
 
 
 # --- Verification des techniciens -------------------------------------------
