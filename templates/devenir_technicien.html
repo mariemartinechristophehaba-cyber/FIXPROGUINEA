@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#2563EB" />
+  {% include '_pwa_head.html' %}
+  <title>Devenir technicien - FixPro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Caveat:wght@600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --dt-blue: #2563EB;
+      --dt-blue-d: #1D4ED8;
+      --dt-ink: #0B1B3B;
+      --dt-muted: #64748B;
+      --dt-ice: #E7EEFC;
+      --dt-ice-2: #F2F6FE;
+      --dt-card-sh: 0 12px 30px rgba(37,99,235,.10);
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      color: var(--dt-ink); -webkit-font-smoothing: antialiased; overflow: hidden;
+      background: #fff;
+    }
+    a { text-decoration: none; color: inherit; }
+    button { font-family: inherit; }
+
+    /* Écran autonome : toute la composition tient dans le viewport, sans scroll. */
+    .dt {
+      position: relative;
+      height: 100vh; height: 100dvh;
+      max-width: 480px; margin: 0 auto;
+      padding: calc(10px + env(safe-area-inset-top)) 20px calc(14px + env(safe-area-inset-bottom));
+      overflow: hidden;
+      display: flex; flex-direction: column;
+      background:
+        radial-gradient(58% 34% at 100% 4%, #CFE0FF 0%, rgba(207,224,255,0) 70%),
+        radial-gradient(46% 26% at 108% 40%, #DCE8FF 0%, rgba(220,232,255,0) 72%),
+        radial-gradient(70% 24% at -10% 100%, #DBE7FF 0%, rgba(219,231,255,0) 70%),
+        #fff;
+    }
+
+    /* --- En-tête --- */
+    .dt-head {
+      position: relative; z-index: 3; flex-shrink: 0;
+      display: flex; align-items: center; gap: 11px;
+    }
+    .dt-logo {
+      width: clamp(40px, 5.6vh, 46px); height: clamp(40px, 5.6vh, 46px);
+      color: var(--dt-blue); display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .dt-logo svg { width: 100%; height: 100%; }
+    .dt-brand-txt { display: flex; flex-direction: column; }
+    .dt-brand-txt .n { font-size: clamp(1.42rem, 3.4vh, 1.68rem); font-weight: 800; line-height: 1; letter-spacing: -.02em; color: var(--dt-ink); }
+    .dt-brand-txt .n i { color: var(--dt-blue); font-style: normal; }
+    .dt-brand-txt .s { font-size: clamp(.78rem, 1.7vh, .88rem); font-weight: 600; color: var(--dt-muted); margin-top: 3px; white-space: nowrap; }
+    .dt-skip {
+      position: absolute; z-index: 6;
+      top: calc(10px + env(safe-area-inset-top)); right: 20px;
+      background: #fff; color: var(--dt-blue); font-weight: 700; font-size: clamp(.82rem, 1.8vh, .9rem);
+      padding: clamp(9px, 1.5vh, 11px) clamp(18px, 4.6vw, 22px); border-radius: 999px;
+      box-shadow: 0 10px 24px rgba(37,99,235,.18);
+    }
+    .dt-skip:active { background: #EEF3FF; }
+
+    .dt-progress {
+      position: relative; z-index: 3; flex-shrink: 0;
+      margin: clamp(10px, 2.1vh, 20px) 0 0; width: 168px; max-width: 46%; height: 7px;
+      border-radius: 999px; background: #DCE6FA; overflow: hidden;
+    }
+    .dt-progress span {
+      display: block; width: 40%; height: 100%; border-radius: 999px;
+      background: linear-gradient(90deg, var(--dt-blue), #5B8DF7);
+    }
+
+    /* --- Titre + citation + accroche --- */
+    .dt-hero { position: relative; z-index: 3; flex-shrink: 0; margin-top: clamp(10px, 2vh, 18px); }
+    .dt-hero h1 {
+      margin: 0; padding-right: 34%;
+      font-size: clamp(1.44rem, 6.2vw, 1.9rem); font-weight: 900; line-height: 1.08;
+      letter-spacing: -.03em; color: var(--dt-ink); overflow-wrap: break-word;
+    }
+    .dt-hero h1 .b { color: var(--dt-blue); white-space: nowrap; }
+    .dt-quote {
+      position: absolute; z-index: 4; top: clamp(46px, 12vw, 96px); right: 0; width: 42%; max-width: 184px;
+      font-family: 'Caveat', 'Segoe Script', cursive;
+      font-size: clamp(1.2rem, 5.6vw, 1.7rem); font-weight: 700; line-height: 1.02;
+      color: var(--dt-blue); text-align: center; transform: rotate(-4deg);
+    }
+    .dt-quote::after {
+      content: ""; display: block; width: 62%; height: 3px; margin: 5px 0 0 auto;
+      border-radius: 3px; background: var(--dt-blue);
+    }
+    .dt-hero p {
+      margin: clamp(9px, 1.5vh, 13px) 0 0; padding-right: 2%;
+      font-size: clamp(.84rem, 3.6vw, .94rem); line-height: 1.4; color: var(--dt-muted);
+    }
+
+    /* --- Cartes avantages --- */
+    .dt-benefits {
+      position: relative; z-index: 3; flex-shrink: 0; list-style: none;
+      margin: clamp(12px, 2.1vh, 19px) 0 0; padding: 0;
+      display: flex; flex-direction: column; gap: clamp(7px, 1.3vh, 11px);
+    }
+    .dt-benefits li {
+      display: flex; align-items: center; gap: 13px;
+      background: #fff; border-radius: 16px; padding: clamp(9px, 1.4vh, 12px) clamp(12px, 3vw, 15px);
+      box-shadow: var(--dt-card-sh);
+    }
+    .dt-b-ic {
+      flex-shrink: 0;
+      width: clamp(40px, 5.4vh, 46px); height: clamp(40px, 5.4vh, 46px);
+      border-radius: 14px; background: var(--dt-ice); color: var(--dt-blue);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .dt-b-ic.fill { background: var(--dt-blue); color: #fff; }
+    .dt-b-ic svg { width: clamp(20px, 2.9vh, 24px); height: clamp(20px, 2.9vh, 24px); }
+    .dt-b-tx { flex: 1; min-width: 0; }
+    .dt-b-tx b { display: block; font-size: clamp(.94rem, 4vw, 1.02rem); font-weight: 800; color: var(--dt-ink); line-height: 1.2; }
+    .dt-b-tx span { display: block; font-size: clamp(.79rem, 3.4vw, .87rem); line-height: 1.32; color: var(--dt-muted); margin-top: 2px; }
+    .dt-b-chev {
+      flex-shrink: 0; width: 30px; height: 30px; border-radius: 999px; background: var(--dt-ice-2);
+      display: flex; align-items: center; justify-content: center; color: var(--dt-blue);
+    }
+    .dt-b-chev svg { width: 15px; height: 15px; }
+
+    /* --- Preuve sociale --- */
+    .dt-social {
+      position: relative; z-index: 3; margin: clamp(9px, 1.5vh, 13px) 0 0;
+      background: #fff; border-radius: 16px; padding: clamp(10px, 1.5vh, 12px) clamp(12px, 3vw, 15px);
+      box-shadow: var(--dt-card-sh);
+      display: flex; align-items: center; gap: clamp(9px, 2.6vw, 13px); flex-shrink: 0;
+    }
+    .dt-social-ic {
+      flex-shrink: 0;
+      width: clamp(40px, 5.4vh, 46px); height: clamp(40px, 5.4vh, 46px);
+      border-radius: 13px; background: var(--dt-ice); color: var(--dt-blue);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .dt-social-ic svg { width: 54%; height: 54%; }
+    .dt-social-tx { flex: 1; min-width: 0; font-size: clamp(.82rem, 3.5vw, .9rem); line-height: 1.3; color: var(--dt-muted); }
+    .dt-social-tx b { display: block; color: var(--dt-blue); font-weight: 800; }
+    .dt-avatars { flex-shrink: 0; display: flex; align-items: center; }
+    .dt-av {
+      width: clamp(30px, 4.2vh, 36px); height: clamp(30px, 4.2vh, 36px); border-radius: 999px;
+      background: #BBD0F7; color: #fff; border: 2px solid #fff;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .dt-av + .dt-av { margin-left: -12px; }
+    .dt-av svg { width: 58%; height: 58%; }
+    .dt-plus {
+      margin-left: -12px; min-width: clamp(34px, 4.6vh, 40px); height: clamp(34px, 4.6vh, 40px); padding: 0 5px;
+      border-radius: 999px; background: var(--dt-blue-d); color: #fff;
+      font-size: clamp(.6rem, 1.3vh, .68rem); font-weight: 800;
+      display: flex; align-items: center; justify-content: center; border: 2px solid #fff;
+    }
+
+    /* --- Action --- */
+    .dt-cta { position: relative; z-index: 3; flex-shrink: 0; margin-top: auto; padding-top: clamp(10px, 1.6vh, 16px); }
+    .dt-cta-btn {
+      width: 100%; border: 0; border-radius: 999px; padding: clamp(13px, 2vh, 17px) 26px;
+      background: linear-gradient(180deg, #3B76F5, var(--dt-blue));
+      color: #fff; font-size: clamp(.98rem, 2.1vh, 1.08rem); font-weight: 800; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 12px;
+      box-shadow: 0 18px 34px rgba(37,99,235,.34);
+    }
+    .dt-cta-btn:active { transform: translateY(1px); }
+    .dt-cta-foot { margin: clamp(8px, 1.3vh, 12px) 0 0; text-align: center; font-size: clamp(.84rem, 1.7vh, .94rem); color: var(--dt-muted); }
+    .dt-cta-foot a { color: var(--dt-blue); font-weight: 800; }
+
+    .dt-toast {
+      position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%);
+      background: var(--dt-ink); color: #fff; font-size: .85rem; font-weight: 600;
+      padding: 12px 20px; border-radius: 13px; z-index: 30; max-width: 88%; text-align: center;
+      box-shadow: 0 14px 34px rgba(11,27,59,.32);
+    }
+    [hidden] { display: none !important; }
+
+    @media (max-width: 400px) {
+      .dt { padding-left: 16px; padding-right: 16px; }
+      .dt-hero h1 { padding-right: 26%; }
+      .dt-quote { top: 40px; font-size: clamp(1.05rem, 5vw, 1.3rem); width: 38%; }
+    }
+    @media (max-height: 800px) {
+      .dt-benefits { gap: clamp(6px, 1vh, 9px); }
+      .dt-benefits li { padding: clamp(8px, 1.2vh, 11px) 14px; }
+      .dt-b-tx span { font-size: .8rem; line-height: 1.28; }
+      .dt-hero h1 { font-size: clamp(1.36rem, 5.8vw, 1.7rem); }
+    }
+  </style>
+</head>
+<body>
+  <div class="dt">
+    <header class="dt-head">
+      <span class="dt-logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+      </span>
+      <span class="dt-brand-txt">
+        <span class="n">Fix<i>Pro</i></span>
+        <span class="s">Espace Technicien</span>
+      </span>
+    </header>
+    <a class="dt-skip" href="{{ url_for('index') }}">Passer</a>
+
+    <div class="dt-progress"><span></span></div>
+
+    <div class="dt-hero">
+      <p class="dt-quote">Ensemble, allons plus loin&nbsp;!</p>
+      <h1>Rejoignez une communauté de professionnels <span class="b">de confiance</span></h1>
+      <p>Développez votre activité, recevez des demandes près de chez vous et augmentez vos revenus avec FixPro.</p>
+    </div>
+
+    <ul class="dt-benefits">
+      <li>
+        <span class="dt-b-ic fill">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </span>
+        <span class="dt-b-tx"><b>Plus de clients</b><span>Recevez des demandes près de chez vous</span></span>
+        <span class="dt-b-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+      </li>
+      <li>
+        <span class="dt-b-ic">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        </span>
+        <span class="dt-b-tx"><b>Plus de revenus</b><span>Développez votre activité</span></span>
+        <span class="dt-b-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+      </li>
+      <li>
+        <span class="dt-b-ic fill">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg>
+        </span>
+        <span class="dt-b-tx"><b>Un accompagnement dédié</b><span>Une équipe toujours à vos côtés</span></span>
+        <span class="dt-b-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+      </li>
+      <li>
+        <span class="dt-b-ic">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="3" width="10" height="18" rx="2"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+        </span>
+        <span class="dt-b-tx"><b>Une gestion simple</b><span>Tout depuis votre téléphone</span></span>
+        <span class="dt-b-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+      </li>
+    </ul>
+
+    <div class="dt-social">
+      <span class="dt-social-ic">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg>
+      </span>
+      <span class="dt-social-tx">Des milliers de techniciens <b>nous font déjà confiance</b></span>
+      <span class="dt-avatars">
+        <span class="dt-av"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-5 0-9 2.7-9 6v2h18v-2c0-3.3-4-6-9-6Z"/></svg></span>
+        <span class="dt-av"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-5 0-9 2.7-9 6v2h18v-2c0-3.3-4-6-9-6Z"/></svg></span>
+        <span class="dt-av"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-5 0-9 2.7-9 6v2h18v-2c0-3.3-4-6-9-6Z"/></svg></span>
+        <span class="dt-plus">+10K</span>
+      </span>
+    </div>
+
+    <div class="dt-cta">
+      <button type="button" class="dt-cta-btn" id="dtStart">
+        Commencer l'inscription
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </button>
+      <p class="dt-cta-foot">Vous avez déjà un compte ? <a href="{{ url_for('login') }}">Se connecter</a></p>
+    </div>
+  </div>
+
+  <div class="dt-toast" id="dtToast" hidden>L'inscription en ligne des techniciens arrive très bientôt.</div>
+
+  <script>
+    var t = document.getElementById('dtToast'), h;
+    document.getElementById('dtStart').addEventListener('click', function () {
+      t.hidden = false;
+      clearTimeout(h);
+      h = setTimeout(function () { t.hidden = true; }, 2800);
+    });
+  </script>
+</body>
+</html>
