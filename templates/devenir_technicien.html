@@ -36,26 +36,22 @@
       padding: calc(10px + env(safe-area-inset-top)) 20px calc(16px + env(safe-area-inset-bottom));
       overflow: hidden;
       display: flex; flex-direction: column;
+      background:
+        radial-gradient(150% 70% at 116% -6%, #BBD9FF 0%, #DCEBFF 34%, rgba(220,235,255,0) 62%),
+        #fff;
     }
 
-    /* --- Forme bleue DERRIÈRE : monte jusqu'en haut à droite, arrondie --- */
-    .dt-bg {
-      position: absolute; z-index: 0; pointer-events: none;
-      top: calc(-2px - env(safe-area-inset-top)); right: -2px;
-      width: clamp(60%, 66vw, 70%); height: clamp(58%, 66vh, 74%);
-      background: linear-gradient(160deg, #93CAFF 0%, #66B3FE 52%, #3F98F6 100%);
-      border-bottom-left-radius: 88% 72%;
-    }
-
-    /* --- Personnage : image détourée (casquette, bras croisés, ceinture
-           à outils avec la clé), DEVANT le texte, calée à droite et en bas
-           pour qu'on voie le personnage entier + les outils. --- */
+    /* --- Visuel : la forme bleue ET le personnage complet (casquette,
+           bras croisés, ceinture à outils avec la clé) sont dans LA MÊME
+           image -> aucune cassure de bleu. Elle monte jusqu'en haut à
+           droite, déborde des bords et descend jusqu'au niveau de la
+           carte pour laisser voir les outils. Fondu doux vers la gauche. --- */
     .dt-photo {
       position: absolute; z-index: 4; pointer-events: none;
-      right: -20px; bottom: clamp(94px, 15vh, 148px);
-      width: clamp(50%, 55vw, 59%); max-width: 310px; height: auto;
-      -webkit-mask-image: linear-gradient(90deg, transparent 0, transparent 2%, rgba(0,0,0,.4) 20%, #000 40%, #000 100%);
-              mask-image: linear-gradient(90deg, transparent 0, transparent 2%, rgba(0,0,0,.4) 20%, #000 40%, #000 100%);
+      right: -30px; bottom: clamp(150px, 21vh, 192px);
+      width: clamp(60%, 66vw, 71%); max-width: 372px; height: auto;
+      -webkit-mask-image: linear-gradient(90deg, transparent 0, transparent 4%, rgba(0,0,0,.38) 24%, #000 46%, #000 100%);
+              mask-image: linear-gradient(90deg, transparent 0, transparent 4%, rgba(0,0,0,.38) 24%, #000 46%, #000 100%);
     }
 
     /* --- En-tête --- */
@@ -95,8 +91,8 @@
     /* --- Titre + accroche --- */
     .dt-hero { position: relative; z-index: 3; flex-shrink: 0; }
     .dt-hero h1 {
-      margin: 0; padding-right: 40%;
-      font-size: clamp(1.28rem, 5.7vw, 1.62rem); font-weight: 900; line-height: 1.12;
+      margin: 0; padding-right: 43%;
+      font-size: clamp(1.32rem, 6vw, 1.72rem); font-weight: 900; line-height: 1.12;
       letter-spacing: -.028em; color: var(--dt-ink); overflow-wrap: break-word;
     }
     .dt-hero h1 .b { color: var(--dt-blue); white-space: nowrap; }
@@ -151,11 +147,6 @@
 
     /* --- Action principale --- */
     .dt-cta { position: relative; z-index: 6; flex-shrink: 0; }
-    .dt-cta::before {
-      content: ""; position: absolute; z-index: -1;
-      left: -22px; right: -22px; top: -46px; bottom: -22px;
-      background: linear-gradient(to top, #fff 54%, rgba(255,255,255,.7) 80%, rgba(255,255,255,0));
-    }
     .dt-cta-btn {
       width: 100%; border: 0; border-radius: 30px; padding: clamp(13px, 2vh, 17px) 24px;
       background: linear-gradient(180deg, #2C6BF3, var(--dt-blue));
@@ -182,12 +173,13 @@
       .dt-benefits { padding-right: 40%; }
     }
     @media (max-height: 760px) {
-      .dt-photo { bottom: clamp(88px, 13vh, 128px); }
+      .dt-photo { bottom: clamp(132px, 18vh, 165px); width: clamp(56%, 62vw, 66%); }
       .dt-benefits { gap: clamp(6px, 1.3vh, 11px); }
     }
     @media (max-height: 670px) {
-      .dt-hero h1 { font-size: clamp(1.16rem, 5.2vw, 1.38rem); }
+      .dt-hero h1 { font-size: clamp(1.16rem, 5.4vw, 1.4rem); }
       .dt-b-tx span { line-height: 1.26; }
+      .dt-photo { width: clamp(56%, 60vw, 64%); }
     }
     @media (min-width: 700px) {
       .dt-cta, .dt-cta-foot { max-width: 440px; margin-left: auto; margin-right: auto; }
@@ -196,7 +188,6 @@
 </head>
 <body>
   <div class="dt">
-    <div class="dt-bg"></div>
     <img class="dt-photo" src="{{ url_for('static', filename='img/devenir-technicien-hero.jpg') }}"
          alt="Technicien FixPro, bras croisés, casquette et bleu de travail FixPro" />
 
