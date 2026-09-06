@@ -507,19 +507,6 @@ CREATE TABLE IF NOT EXISTS complaints (
 );
 CREATE INDEX IF NOT EXISTS idx_complaints_status ON complaints(status);
 
-CREATE TABLE IF NOT EXISTS technician_leads (
-    id          SERIAL PRIMARY KEY,
-    first_name  TEXT NOT NULL,
-    last_name   TEXT NOT NULL,
-    phone       TEXT NOT NULL,
-    profession  TEXT NOT NULL,
-    city        TEXT NOT NULL,
-    note        TEXT DEFAULT '',
-    status      TEXT NOT NULL DEFAULT 'nouveau',
-    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-CREATE INDEX IF NOT EXISTS idx_technician_leads_status ON technician_leads(status);
-
 INSERT INTO subscription_plans (code, name, price_month, sort_order, features)
 SELECT 'basic', 'Basic', 50000, 1, E'Profil verifie\nApparait dans la recherche\nMessagerie avec les clients'
 WHERE NOT EXISTS (SELECT 1 FROM subscription_plans WHERE code = 'basic');
