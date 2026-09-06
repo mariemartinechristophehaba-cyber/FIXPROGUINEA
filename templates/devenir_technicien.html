@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#155EEF" />
+  {% include '_pwa_head.html' %}
+  <title>Devenir technicien - FixPro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --dt-blue: #155EEF;
+      --dt-blue-d: #1B4FD6;
+      --dt-ink: #0B1B3B;
+      --dt-muted: #5B6B85;
+      --dt-bg: #FFFFFF;
+      --dt-ice: #EEF3FE;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--dt-bg); color: var(--dt-ink); -webkit-font-smoothing: antialiased;
+      overflow: hidden;
+    }
+    a { text-decoration: none; color: inherit; }
+    button { font-family: inherit; }
+
+    /* Écran autonome : toute la composition tient dans le viewport, sans scroll. */
+    .dt {
+      position: relative;
+      height: 100vh; height: 100dvh;
+      max-width: 480px; margin: 0 auto;
+      padding: calc(10px + env(safe-area-inset-top)) 20px calc(16px + env(safe-area-inset-bottom));
+      overflow: hidden;
+      display: flex; flex-direction: column;
+    }
+
+    /* --- Visuel technicien : la forme bleue + le personnage complet
+           (casquette, bras croisés, ceinture à outils avec la clé) sont
+           dans l'image. Elle est DEVANT le texte ; seule la zone claire
+           reste en fond. Collée en haut à droite, débordant des bords,
+           elle descend jusqu'au niveau de la carte / du bouton. --- */
+    .dt-photo {
+      position: absolute; z-index: 4; pointer-events: none;
+      top: calc(-14px - env(safe-area-inset-top)); right: -20px;
+      height: calc(100dvh + 24px + env(safe-area-inset-top) + env(safe-area-inset-bottom));
+      width: clamp(52%, 56vw, 59%); max-width: 296px;
+      object-fit: cover; object-position: 82% 0%;
+      -webkit-mask-image: linear-gradient(90deg, transparent 0, transparent 6%, rgba(0,0,0,.55) 24%, #000 46%, #000 100%);
+              mask-image: linear-gradient(90deg, transparent 0, transparent 6%, rgba(0,0,0,.55) 24%, #000 46%, #000 100%);
+    }
+
+    /* --- En-tête --- */
+    .dt-head {
+      position: relative; z-index: 8; flex-shrink: 0;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .dt-logo {
+      width: clamp(38px, 5.6vh, 44px); height: clamp(38px, 5.6vh, 44px);
+      border-radius: 13px; background: var(--dt-ice); color: var(--dt-blue);
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .dt-logo svg { width: 56%; height: 56%; }
+    .dt-brand-txt { display: flex; flex-direction: column; }
+    .dt-brand-txt .n { font-size: clamp(1.28rem, 3.1vh, 1.5rem); font-weight: 800; line-height: 1; letter-spacing: -.02em; color: var(--dt-ink); }
+    .dt-brand-txt .n i { color: var(--dt-blue); font-style: normal; }
+    .dt-brand-txt .s { font-size: clamp(.72rem, 1.6vh, .8rem); font-weight: 600; color: var(--dt-muted); margin-top: 2px; white-space: nowrap; }
+    .dt-skip {
+      position: absolute; z-index: 12;
+      top: calc(10px + env(safe-area-inset-top)); right: 20px;
+      background: #fff; color: var(--dt-blue); font-weight: 700; font-size: clamp(.8rem, 1.75vh, .88rem);
+      padding: clamp(8px, 1.4vh, 10px) clamp(16px, 4.4vw, 20px); border-radius: 999px;
+      box-shadow: 0 8px 22px rgba(11,27,59,.16);
+    }
+    .dt-skip:active { background: #EEF3FF; }
+
+    .dt-progress {
+      position: relative; z-index: 3; flex-shrink: 0;
+      margin: clamp(10px, 2.1vh, 20px) 0; width: 92px; height: 6px;
+      border-radius: 999px; background: #DCE6FA; overflow: hidden;
+    }
+    .dt-progress span {
+      display: block; width: 40%; height: 100%; border-radius: 999px;
+      background: linear-gradient(90deg, var(--dt-blue), #5B8DF7);
+    }
+
+    /* --- Titre + accroche --- */
+    .dt-hero { position: relative; z-index: 3; flex-shrink: 0; }
+    .dt-hero h1 {
+      margin: 0; padding-right: 42%;
+      font-size: clamp(1.3rem, 3.7vh, 1.82rem); font-weight: 900; line-height: 1.1;
+      letter-spacing: -.028em; color: var(--dt-ink); overflow-wrap: break-word;
+    }
+    .dt-hero h1 .b { color: var(--dt-blue); white-space: nowrap; }
+    .dt-hero p {
+      margin: clamp(9px, 1.6vh, 15px) 0 0; padding-right: 44%;
+      font-size: clamp(.83rem, 1.85vh, .96rem); line-height: 1.45; color: var(--dt-muted);
+    }
+
+    /* --- Avantages --- */
+    .dt-benefits {
+      position: relative; z-index: 3; flex-shrink: 0; list-style: none;
+      margin: clamp(12px, 2.2vh, 20px) 0 0; padding: 0 46% 0 0;
+      display: flex; flex-direction: column; gap: clamp(7px, 1.7vh, 14px);
+    }
+    .dt-benefits li { display: flex; gap: 13px; align-items: flex-start; }
+    .dt-b-ic {
+      flex-shrink: 0;
+      width: clamp(40px, 5.8vh, 48px); height: clamp(40px, 5.8vh, 48px);
+      border-radius: 14px; background: var(--dt-ice); color: var(--dt-blue);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .dt-b-ic svg { width: clamp(19px, 2.8vh, 22px); height: clamp(19px, 2.8vh, 22px); }
+    .dt-b-tx { min-width: 0; padding-top: 2px; }
+    .dt-b-tx b { display: block; font-size: clamp(.92rem, 2vh, 1rem); font-weight: 800; color: var(--dt-ink); line-height: 1.2; }
+    .dt-b-tx span { display: block; font-size: clamp(.79rem, 1.65vh, .86rem); line-height: 1.35; color: var(--dt-muted); margin-top: 2px; }
+
+    /* --- Preuve sociale : carte pleine largeur, juste au-dessus du bouton.
+           margin-top:auto -> pousse le bloc bas au bas de l'écran. --- */
+    .dt-social {
+      position: relative; z-index: 6; margin: auto 0 clamp(9px, 1.4vh, 12px);
+      background: #fff; border-radius: 18px; padding: clamp(11px, 1.8vh, 15px) 15px;
+      box-shadow: 0 18px 40px rgba(11,27,59,.14);
+      display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+    }
+    .dt-social-ic {
+      flex-shrink: 0;
+      width: clamp(36px, 5vh, 42px); height: clamp(36px, 5vh, 42px);
+      border-radius: 12px; background: var(--dt-ice); color: var(--dt-blue);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .dt-social-ic svg { width: 52%; height: 52%; }
+    .dt-social-tx { flex: 1; min-width: 0; font-size: clamp(.8rem, 1.65vh, .88rem); line-height: 1.3; color: var(--dt-muted); }
+    .dt-social-tx b { display: block; color: var(--dt-blue); font-weight: 800; }
+    .dt-avatars { flex-shrink: 0; display: flex; align-items: center; }
+    .dt-avatars img { height: clamp(28px, 4vh, 34px); width: auto; border-radius: 999px; }
+    .dt-plus {
+      margin-left: -10px; min-width: clamp(30px, 4.4vh, 36px); height: clamp(30px, 4.4vh, 36px); padding: 0 5px;
+      border-radius: 999px; background: var(--dt-blue); color: #fff;
+      font-size: clamp(.58rem, 1.25vh, .66rem); font-weight: 800;
+      display: flex; align-items: center; justify-content: center; border: 2px solid #fff;
+    }
+
+    /* --- Action principale --- */
+    .dt-cta { position: relative; z-index: 6; flex-shrink: 0; }
+    .dt-cta::before {
+      content: ""; position: absolute; z-index: -1;
+      left: -22px; right: -22px; top: -46px; bottom: -22px;
+      background: linear-gradient(to top, #fff 54%, rgba(255,255,255,.7) 80%, rgba(255,255,255,0));
+    }
+    .dt-cta-btn {
+      width: 100%; border: 0; border-radius: 30px; padding: clamp(13px, 2vh, 17px) 24px;
+      background: linear-gradient(180deg, #2C6BF3, var(--dt-blue));
+      color: #fff; font-size: clamp(.95rem, 2.05vh, 1.05rem); font-weight: 800; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 11px;
+      box-shadow: 0 18px 34px rgba(21,94,239,.34);
+    }
+    .dt-cta-btn:active { transform: translateY(1px); }
+    .dt-cta-foot { margin: clamp(8px, 1.3vh, 12px) 0 0; text-align: center; font-size: clamp(.82rem, 1.65vh, .92rem); color: var(--dt-muted); }
+    .dt-cta-foot a { color: var(--dt-blue); font-weight: 800; }
+
+    .dt-toast {
+      position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
+      background: var(--dt-ink); color: #fff; font-size: .85rem; font-weight: 600;
+      padding: 12px 20px; border-radius: 13px; z-index: 30; max-width: 88%; text-align: center;
+      box-shadow: 0 14px 34px rgba(11,27,59,.32);
+    }
+    [hidden] { display: none !important; }
+
+    @media (max-width: 374px) {
+      .dt { padding-left: 16px; padding-right: 16px; }
+      .dt-hero h1 { padding-right: 36%; }
+      .dt-hero p { padding-right: 42%; }
+      .dt-benefits { padding-right: 44%; }
+    }
+    @media (max-height: 780px) {
+      .dt-photo { width: clamp(52%, 56vw, 60%); }
+      .dt-benefits { gap: clamp(7px, 1.5vh, 12px); }
+    }
+    @media (max-height: 680px) {
+      .dt-hero h1 { font-size: clamp(1.2rem, 5.3vw, 1.44rem); }
+      .dt-b-tx span { font-size: .78rem; line-height: 1.28; }
+      .dt-photo { width: clamp(48%, 52vw, 55%); }
+    }
+    @media (min-width: 700px) {
+      .dt-cta, .dt-cta-foot { max-width: 440px; margin-left: auto; margin-right: auto; }
+    }
+  </style>
+</head>
+<body>
+  <div class="dt">
+    <img class="dt-photo" src="{{ url_for('static', filename='img/devenir-technicien-hero.jpg') }}"
+         alt="Technicien FixPro, bras croisés, casquette et bleu de travail FixPro" />
+
+    <header class="dt-head">
+      <span class="dt-logo">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+      </span>
+      <span class="dt-brand-txt">
+        <span class="n">Fix<i>Pro</i></span>
+        <span class="s">Espace Technicien</span>
+      </span>
+    </header>
+    <a class="dt-skip" href="{{ url_for('index') }}">Passer</a>
+
+    <div class="dt-progress"><span></span></div>
+
+    <div class="dt-hero">
+      <h1>Rejoignez une communauté de professionnels <span class="b">de confiance</span></h1>
+      <p>Développez votre activité, recevez des demandes près de chez vous et augmentez vos revenus avec FixPro.</p>
+    </div>
+
+    <ul class="dt-benefits">
+      <li>
+        <span class="dt-b-ic">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </span>
+        <span class="dt-b-tx"><b>Plus de clients</b><span>Recevez des demandes près de chez vous</span></span>
+      </li>
+      <li>
+        <span class="dt-b-ic">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        </span>
+        <span class="dt-b-tx"><b>Plus de revenus</b><span>Développez votre activité</span></span>
+      </li>
+      <li>
+        <span class="dt-b-ic">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg>
+        </span>
+        <span class="dt-b-tx"><b>Un accompagnement dédié</b><span>Une équipe toujours à vos côtés</span></span>
+      </li>
+      <li>
+        <span class="dt-b-ic">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="3" width="10" height="18" rx="2"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+        </span>
+        <span class="dt-b-tx"><b>Une gestion simple</b><span>Tout depuis votre téléphone</span></span>
+      </li>
+    </ul>
+
+    <div class="dt-social">
+      <span class="dt-social-ic">
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg>
+      </span>
+      <span class="dt-social-tx">Des milliers de techniciens <b>nous font déjà confiance</b></span>
+      <span class="dt-avatars">
+        <img src="{{ url_for('static', filename='img/devenir-technicien-avatars.jpg') }}" alt="" />
+        <span class="dt-plus">+10K</span>
+      </span>
+    </div>
+
+    <div class="dt-cta">
+      <button type="button" class="dt-cta-btn" id="dtStart">
+        Commencer l'inscription
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </button>
+      <p class="dt-cta-foot">Vous avez déjà un compte ? <a href="{{ url_for('login') }}">Se connecter</a></p>
+    </div>
+  </div>
+
+  <div class="dt-toast" id="dtToast" hidden>L'inscription en ligne des techniciens arrive très bientôt.</div>
+
+  <script>
+    var t = document.getElementById('dtToast'), h;
+    document.getElementById('dtStart').addEventListener('click', function () {
+      t.hidden = false;
+      clearTimeout(h);
+      h = setTimeout(function () { t.hidden = true; }, 2800);
+    });
+  </script>
+</body>
+</html>
