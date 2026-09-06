@@ -224,6 +224,32 @@ class ClientRegistrationTests(FixProTestCase):
             conn.close()
 
 
+class DevenirTechnicienTests(FixProTestCase):
+    """Ecran d'accueil Espace Technicien (rejoindre FixPro)."""
+
+    def test_page_renders_for_visitor(self):
+        r = self.client.get("/devenir-technicien")
+        self.assertEqual(r.status_code, 200)
+        html = r.get_data(as_text=True)
+        self.assertIn("Espace Technicien", html)
+        self.assertIn("Commencer l'inscription", html)
+        self.assertIn("Développez votre activité", html)  # titre
+        self.assertIn("compte", html)  # bouton "J'ai déjà un compte"
+        self.assertIn("/login", html)  # lien "J'ai déjà un compte"
+
+    def test_register_role_technicien_redirects_here(self):
+        r = self.client.get("/register?role=technicien", follow_redirects=False)
+        self.assertEqual(r.status_code, 302)
+        self.assertIn("/devenir-technicien", r.location)
+
+    def test_menu_link_present_on_client_page(self):
+        self.register_client()
+        self.login("+224620000000")
+        html = self.client.get("/artisans").get_data(as_text=True)
+        self.assertIn("/devenir-technicien", html)
+        self.assertIn("S'inscrire en tant que technicien", html)
+
+
 class ClientProfileTests(FixProTestCase):
     """Profil client et pages associees."""
 
