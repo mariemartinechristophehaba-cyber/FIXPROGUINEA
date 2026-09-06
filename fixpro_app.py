@@ -1801,18 +1801,29 @@ def register():
 # Champs obligatoires de l'etape 1 (profil) du wizard d'inscription technicien.
 _TECH_SIGNUP_STEP1_FIELDS = ("first_name", "last_name", "phone", "email", "password")
 
+# Etape 2 : catalogue des services proposes (slug -> libelle).
+_TECH_SERVICES = [
+    ("plomberie", "Plomberie"),
+    ("electricite", "Électricité"),
+    ("climatisation", "Climatisation et réfrigération"),
+    ("peinture", "Peinture"),
+    ("menuiserie", "Menuiserie"),
+    ("maconnerie", "Maçonnerie"),
+    ("depannage", "Dépannage général"),
+    ("mecanique", "Mécanique domestique"),
+    ("nettoyage", "Nettoyage"),
+]
+_TECH_SERVICE_SLUGS = {s for s, _ in _TECH_SERVICES}
+
 
 @app.route("/devenir-technicien", methods=["GET", "POST"])
 @limiter.limit("15 per hour", methods=["POST"])
 def devenir_technicien():
     """Wizard d'inscription technicien -- etape 1 sur 5 : le profil
-    (identite, telephone, e-mail, mot de passe). Public. Les etapes 2 a 5
-    (Services, Documents, Localisation, Finalisation) sont en cours de
-    conception : "Continuer" valide et memorise l'etape 1 puis affiche un
-    message d'attente."""
+    (identite, telephone, e-mail, mot de passe). Public. Au POST valide,
+    memorise l'etape 1 en session et passe a l'etape 2 (Services)."""
     data = dict(session.get("tech_signup", {}))
     errors = {}
-    teaser = False
 
     if request.method == "POST":
         data = {
@@ -1838,13 +1849,51 @@ def devenir_technicien():
             session["tech_signup"] = {k: data[k] for k in
                                       ("first_name", "last_name", "phone", "email")}
             session.modified = True
-            teaser = True
+            return redirect(url_for("technician_signup_services"))
 
     return render_template(
         "technician_signup.html",
         nav_user=get_current_user(),
         data=data,
         errors=errors,
+    )
+
+
+@app.route("/devenir-technicien/services", methods=["GET", "POST"])
+@limiter.limit("20 per hour", methods=["POST"])
+def technician_signup_services():
+    """Wizard d'inscription technicien -- etape 2 sur 5 : les services
+    proposes (multi-selection). L'etape 1 doit avoir ete remplie. Les
+    etapes 3 a 5 (Documents, Localisation, Finalisation) sont en cours de
+    conception : "Continuer" memorise la selection puis affiche un
+    message d'attente."""
+    if not session.get("tech_signup"):
+        return redirect(url_for("devenir_technicien"))
+
+    selected = list(session.get("tech_signup_services", []))
+    other = (session.get("tech_signup_service_other") or "").strip()
+    error = None
+    teaser = False
+
+    if request.method == "POST":
+        selected = [s for s in request.form.getlist("services")
+                    if s in _TECH_SERVICE_SLUGS]
+        other = request.form.get("other", "").strip()[:80]
+        if not selected and not other:
+            error = "Sélectionnez au moins un service."
+        else:
+            session["tech_signup_services"] = selected
+            session["tech_signup_service_other"] = other
+            session.modified = True
+            teaser = True
+
+    return render_template(
+        "technician_signup_services.html",
+        nav_user=get_current_user(),
+        services=_TECH_SERVICES,
+        selected=selected,
+        other=other,
+        error=error,
         teaser=teaser,
     )
 

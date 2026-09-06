@@ -160,6 +160,7 @@
 </head>
 <body>
   <form class="ts" method="post" action="{{ url_for('devenir_technicien') }}" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
     <header class="ts-head">
       <a class="ts-back" href="{{ url_for('index') }}" aria-label="Retour">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
@@ -258,8 +259,6 @@
     </p>
   </form>
 
-  <div class="ts-toast" id="tsToast" {{ '' if teaser else 'hidden' }}>Étape 1 enregistrée. La suite de l'inscription arrive très bientôt.</div>
-
   <script>
     (function () {
       var pwd = document.getElementById('tsPwd'), eye = document.getElementById('tsEye');
@@ -275,8 +274,6 @@
         ph.style.backgroundPosition = 'center';
         ph.querySelector('svg').style.display = 'none';
       });
-      var t = document.getElementById('tsToast');
-      if (t && !t.hidden) setTimeout(function () { t.hidden = true; }, 3600);
     })();
   </script>
 </body>

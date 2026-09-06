@@ -250,18 +250,61 @@ class TechnicianSignupTests(FixProTestCase):
         self.assertIn("/devenir-technicien", html)
         self.assertIn("S'inscrire en tant que technicien", html)
 
-    def test_step1_post_valid_stores_and_shows_teaser(self):
+    _STEP1_OK = {
+        "first_name": "Mohamed", "last_name": "Diallo",
+        "phone": "620112233", "email": "m@gmail.com", "password": "FixPro2026!",
+    }
+
+    def test_step1_post_valid_stores_and_goes_to_step2(self):
         with self.client as c:
-            r = c.post("/devenir-technicien", data={
-                "first_name": "Mohamed", "last_name": "Diallo",
-                "phone": "620112233", "email": "m@gmail.com",
-                "password": "FixPro2026!",
-            })
-            self.assertEqual(r.status_code, 200)
-            self.assertIn("bient", r.get_data(as_text=True))
+            r = c.post("/devenir-technicien", data=self._STEP1_OK, follow_redirects=False)
+            self.assertEqual(r.status_code, 302)
+            self.assertIn("/devenir-technicien/services", r.location)
             with c.session_transaction() as sess:
                 self.assertEqual(sess["tech_signup"]["first_name"], "Mohamed")
                 self.assertNotIn("password", sess["tech_signup"])
+
+    def test_step2_requires_step1(self):
+        r = self.client.get("/devenir-technicien/services", follow_redirects=False)
+        self.assertEqual(r.status_code, 302)
+        self.assertTrue(r.location.endswith("/devenir-technicien"))
+
+    def test_step2_renders_after_step1(self):
+        with self.client as c:
+            c.post("/devenir-technicien", data=self._STEP1_OK)
+            html = c.get("/devenir-technicien/services").get_data(as_text=True)
+            self.assertIn("Quels services", html)
+            self.assertIn("Plomberie", html)
+            self.assertIn("Nettoyage", html)
+            self.assertIn('name="services"', html)
+            self.assertIn("Services", html)
+
+    def test_step2_post_stores_selection_and_teaser(self):
+        with self.client as c:
+            c.post("/devenir-technicien", data=self._STEP1_OK)
+            r = c.post("/devenir-technicien/services",
+                       data={"services": ["plomberie", "peinture"]})
+            self.assertEqual(r.status_code, 200)
+            self.assertIn("bient", r.get_data(as_text=True))
+            with c.session_transaction() as sess:
+                self.assertEqual(sorted(sess["tech_signup_services"]),
+                                 ["peinture", "plomberie"])
+
+    def test_step2_post_requires_a_choice(self):
+        with self.client as c:
+            c.post("/devenir-technicien", data=self._STEP1_OK)
+            r = c.post("/devenir-technicien/services", data={})
+            self.assertIn("au moins un service", r.get_data(as_text=True))
+            with c.session_transaction() as sess:
+                self.assertNotIn("tech_signup_services", sess)
+
+    def test_step2_post_ignores_unknown_service(self):
+        with self.client as c:
+            c.post("/devenir-technicien", data=self._STEP1_OK)
+            c.post("/devenir-technicien/services",
+                   data={"services": ["plomberie", "n_importe_quoi"]})
+            with c.session_transaction() as sess:
+                self.assertEqual(sess["tech_signup_services"], ["plomberie"])
 
     def test_step1_post_missing_fields_shows_errors_no_session(self):
         with self.client as c:
