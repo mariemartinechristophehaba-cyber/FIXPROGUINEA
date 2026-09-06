@@ -40,23 +40,25 @@
       display: flex; flex-direction: column;
     }
 
-    /* --- Halo décoratif bas gauche (comme la maquette) --- */
+    /* halo bleu discret en bas à gauche (comme la maquette) */
     .dt::after {
-      content: ""; position: absolute; left: -130px; bottom: -150px; width: 300px; height: 300px;
+      content: ""; position: absolute; left: -120px; bottom: -140px; width: 300px; height: 300px;
       border-radius: 50%;
-      background: radial-gradient(circle at 30% 30%, rgba(43,107,243,.16), rgba(43,107,243,0) 70%);
+      background: radial-gradient(circle at 32% 32%, rgba(43,107,243,.18), rgba(43,107,243,0) 70%);
       z-index: 0; pointer-events: none;
     }
 
-    /* --- Visuel technicien : le personnage COMPLET (casquette, bras
-           croisés, ceinture à outils) sur la partie droite, fondu doux
-           vers la gauche. Taille modérée : il ne recouvre pas l'interface. --- */
+    /* --- Visuel technicien : la forme bleue + la citation + le personnage
+           COMPLET (casquette, bras croisés, ceinture à outils avec la clé)
+           sont dans l'image. Collée en haut à droite et débordant des
+           bords -> le bleu monte jusqu'en haut ; le personnage descend
+           jusqu'au niveau de la carte. Fondu doux vers la gauche. --- */
     .dt-photo {
-      position: absolute; right: 0; z-index: 1; pointer-events: none;
-      bottom: clamp(150px, 22vh, 190px);
-      width: clamp(49%, 53vw, 55%); max-width: 264px; height: auto;
-      -webkit-mask-image: linear-gradient(90deg, transparent 0, transparent 2%, rgba(0,0,0,.5) 22%, #000 44%, #000 100%);
-              mask-image: linear-gradient(90deg, transparent 0, transparent 2%, rgba(0,0,0,.5) 22%, #000 44%, #000 100%);
+      position: absolute; z-index: 1; pointer-events: none;
+      top: calc(-10px - env(safe-area-inset-top)); right: -20px;
+      width: clamp(50%, 54vw, 57%); max-width: 282px; height: auto;
+      -webkit-mask-image: linear-gradient(90deg, transparent 0, transparent 2%, rgba(0,0,0,.5) 20%, #000 42%, #000 100%);
+              mask-image: linear-gradient(90deg, transparent 0, transparent 2%, rgba(0,0,0,.5) 20%, #000 42%, #000 100%);
     }
 
     /* --- En-tête --- */
@@ -96,21 +98,21 @@
     /* --- Titre + accroche --- */
     .dt-hero { position: relative; z-index: 3; flex-shrink: 0; }
     .dt-hero h1 {
-      margin: 0; padding-right: 34%;
+      margin: 0; padding-right: 36%;
       font-size: clamp(1.3rem, 3.8vh, 1.85rem); font-weight: 900; line-height: 1.1;
       letter-spacing: -.025em; color: var(--dt-ink);
       overflow-wrap: break-word;
     }
     .dt-hero h1 .b { color: var(--dt-blue); white-space: nowrap; }
     .dt-hero p {
-      margin: clamp(8px, 1.5vh, 14px) 0 0; padding-right: 42%;
+      margin: clamp(8px, 1.5vh, 14px) 0 0; padding-right: 43%;
       font-size: clamp(.82rem, 1.8vh, .95rem); line-height: 1.45; color: var(--dt-muted);
     }
 
     /* --- Avantages --- */
     .dt-benefits {
       position: relative; z-index: 3; flex-shrink: 0; list-style: none;
-      margin: clamp(13px, 2.4vh, 22px) 0 0; padding: 0 40% 0 0;
+      margin: clamp(13px, 2.4vh, 22px) 0 0; padding: 0 41% 0 0;
       display: flex; flex-direction: column; gap: clamp(7px, 1.7vh, 15px);
     }
     .dt-benefits li { display: flex; gap: 12px; align-items: flex-start; }
