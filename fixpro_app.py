@@ -4009,6 +4009,239 @@ def api_technicien_status():
 csrf.exempt(api_technicien_status)
 
 
+# --- Abonnement technicien -------------------------------------------------
+
+_TECH_PLANS = [
+    {
+        "code": "tech_basic", "name": "Basic", "icon": "send", "popular": False,
+        "desc": "L'essentiel pour avancer.",
+        "price_month": 80000, "price_year": 566000,
+        "features": [
+            ("Profil visible", True),
+            ("Jusqu'à 5 services", True),
+            ("Support standard", True),
+            ("Mise en avant", False),
+            ("Statistiques avancées", False),
+        ],
+    },
+    {
+        "code": "tech_pro", "name": "Pro", "icon": "crown", "popular": True,
+        "desc": "Plus de visibilité.",
+        "price_month": 140000, "price_year": 991000,
+        "features": [
+            ("Profil mis en avant", True),
+            ("Services illimités", True),
+            ("Statistiques détaillées", True),
+            ("Support prioritaire", True),
+            ("Badge « Top Pro »", True),
+        ],
+    },
+    {
+        "code": "tech_premium", "name": "Premium", "icon": "diamond", "popular": False,
+        "desc": "Pour les meilleurs.",
+        "price_month": 210000, "price_year": 1487000,
+        "features": [
+            ("Tout dans Pro", True),
+            ("Mise en avant nationale", True),
+            ("Accès aux demandes prioritaires", True),
+            ("Support 24/7", True),
+            ("Conseil personnalisé", True),
+        ],
+    },
+]
+
+_SUB_PAYMENT_METHODS = [
+    ("orange_money", "Orange Money"),
+    ("mtn_mobile_money", "MTN Mobile Money"),
+    ("airtel_money", "Airtel Money"),
+    ("visa", "Carte VISA"),
+    ("mastercard", "Carte Mastercard"),
+    ("bank_transfer", "Virement bancaire"),
+]
+
+
+def _tech_plan_by_code(code):
+    for p in _TECH_PLANS:
+        if p["code"] == code:
+            return p
+    return None
+
+
+def _tech_plan_amount(plan, period):
+    """Montant a payer selon la periode ('month' ou 'year')."""
+    if period == "year":
+        return int(plan["price_year"])
+    return int(plan["price_month"])
+
+
+def _tech_plan_savings_pct(plan):
+    """Economie de l'engagement annuel par rapport a 12 mensualites."""
+    full = plan["price_month"] * 12
+    if full <= 0:
+        return 0
+    return int(round((1 - plan["price_year"] / full) * 100))
+
+
+def _ensure_tech_plan_row(conn, code):
+    """Cree/actualise la ligne subscription_plans correspondant a un plan technicien."""
+    plan = _tech_plan_by_code(code)
+    if not plan:
+        return None
+    feats = "\n".join(label for label, included in plan["features"] if included)
+    row = conn.execute("SELECT id FROM subscription_plans WHERE code = ?", (code,)).fetchone()
+    if row:
+        conn.execute(
+            "UPDATE subscription_plans SET name = ?, price_month = ?, features = ?, is_active = 1"
+            " WHERE id = ?",
+            (plan["name"], plan["price_month"], feats, row["id"]))
+        return row["id"]
+    order = {"tech_basic": 10, "tech_pro": 11, "tech_premium": 12}.get(code, 13)
+    conn.execute(
+        "INSERT INTO subscription_plans (code, name, price_month, features, is_active, sort_order)"
+        " VALUES (?, ?, ?, ?, 1, ?)",
+        (code, plan["name"], plan["price_month"], feats, order))
+    got = conn.execute("SELECT id FROM subscription_plans WHERE code = ?", (code,)).fetchone()
+    return got["id"] if got else None
+
+
+@app.route("/abonnement")
+@app.route("/dashboard/technicien/abonnement")
+@login_required
+def technician_subscription():
+    """Page Abonnement du technicien : formules et engagement."""
+    user = get_current_user()
+    if not _is_technician(user):
+        flash("Cet espace est reserve aux techniciens.", "error")
+        return redirect(url_for("dashboard"))
+
+    current_code = None
+    current_active = False
+    unread_count = 0
+    conn = get_db_connection()
+    try:
+        try:
+            current = conn.execute(
+                "SELECT s.status, p.code AS plan_code"
+                " FROM technician_subscriptions s"
+                " LEFT JOIN subscription_plans p ON p.id = s.plan_id"
+                " WHERE s.technician_id = ?"
+                " ORDER BY s.created_at DESC LIMIT 1",
+                (user["id"],)).fetchone()
+            if current:
+                current_code = current["plan_code"]
+                current_active = (current["status"] or "").upper() in ("ACTIVE", "TRIAL")
+        except Exception:
+            conn.rollback()
+        try:
+            unread_count = conn.execute(
+                "SELECT COUNT(*) AS n FROM notifications WHERE user_id = ? AND is_read = 0",
+                (user["id"],)).fetchone()["n"]
+        except Exception:
+            conn.rollback()
+            unread_count = 0
+    finally:
+        conn.close()
+
+    plans = []
+    for p in _TECH_PLANS:
+        pv = dict(p)
+        pv["savings_pct"] = _tech_plan_savings_pct(p)
+        plans.append(pv)
+    max_savings = max((pv["savings_pct"] for pv in plans), default=0)
+
+    return render_template("technician_subscription.html", user=user,
+                           plans=plans, max_savings=max_savings, unread_count=unread_count,
+                           availability=(user.get("availability_status") or "hors_ligne"),
+                           current_code=current_code, current_active=current_active)
+
+
+@app.route("/abonnement/paiement", methods=["GET", "POST"])
+@app.route("/dashboard/technicien/abonnement/paiement", methods=["GET", "POST"])
+@login_required
+@limiter.limit("20 per hour", methods=["POST"])
+def technician_subscription_checkout():
+    """Recapitulatif + choix du moyen de paiement pour un abonnement technicien."""
+    user = get_current_user()
+    if not _is_technician(user):
+        flash("Cet espace est reserve aux techniciens.", "error")
+        return redirect(url_for("dashboard"))
+
+    code = (request.values.get("plan") or "").strip()
+    period = (request.values.get("period") or "month").strip()
+    if period not in ("month", "year"):
+        period = "month"
+    plan = _tech_plan_by_code(code)
+    if not plan:
+        flash("Formule inconnue.", "error")
+        return redirect(url_for("technician_subscription"))
+
+    amount = _tech_plan_amount(plan, period)
+
+    if request.method == "POST":
+        method = (request.form.get("payment_method") or "").strip()
+        if method not in dict(_SUB_PAYMENT_METHODS):
+            flash("Choisissez un moyen de paiement.", "error")
+            return redirect(url_for("technician_subscription_checkout", plan=code, period=period))
+
+        now = datetime.now(timezone.utc)
+        period_end = now + timedelta(days=365 if period == "year" else 30)
+        ref = "SUB-%s-%s-%s" % (code.upper(), period[:1].upper(), now.strftime("%Y%m%d%H%M%S"))
+        conn = get_db_connection()
+        try:
+            plan_id = _ensure_tech_plan_row(conn, code)
+            existing = conn.execute(
+                "SELECT id FROM technician_subscriptions WHERE technician_id = ?"
+                " ORDER BY created_at DESC LIMIT 1", (user["id"],)).fetchone()
+            if existing:
+                conn.execute(
+                    "UPDATE technician_subscriptions SET plan_id = ?, status = 'PAST_DUE',"
+                    " start_date = ?, end_date = ?, auto_renew = 1, updated_at = CURRENT_TIMESTAMP"
+                    " WHERE id = ?",
+                    (plan_id, now.strftime("%Y-%m-%d %H:%M:%S"),
+                     period_end.strftime("%Y-%m-%d %H:%M:%S"), existing["id"]))
+                sub_id = existing["id"]
+            else:
+                conn.execute(
+                    "INSERT INTO technician_subscriptions"
+                    " (technician_id, plan_id, status, start_date, end_date, auto_renew)"
+                    " VALUES (?, ?, 'PAST_DUE', ?, ?, 1)",
+                    (user["id"], plan_id, now.strftime("%Y-%m-%d %H:%M:%S"),
+                     period_end.strftime("%Y-%m-%d %H:%M:%S")))
+                sub_id = conn.execute(
+                    "SELECT id FROM technician_subscriptions WHERE technician_id = ?"
+                    " ORDER BY created_at DESC LIMIT 1", (user["id"],)).fetchone()["id"]
+            conn.execute(
+                "INSERT INTO subscription_payments"
+                " (user_id, subscription_id, plan_id, amount, currency, payment_method,"
+                "  transaction_reference, status, period_start, period_end)"
+                " VALUES (?, ?, ?, ?, 'GNF', ?, ?, 'pending', ?, ?)",
+                (user["id"], sub_id, plan_id, amount, method, ref,
+                 now.strftime("%Y-%m-%d %H:%M:%S"), period_end.strftime("%Y-%m-%d %H:%M:%S")))
+            conn.commit()
+        finally:
+            conn.close()
+
+        flash("Votre demande d'abonnement %s (%s) a bien été enregistrée. "
+              "Elle sera activée dès la confirmation du paiement."
+              % (plan["name"], "annuel" if period == "year" else "mensuel"), "success")
+        return redirect(url_for("technician_subscription"))
+
+    unread_count = 0
+    conn = get_db_connection()
+    try:
+        unread_count = conn.execute(
+            "SELECT COUNT(*) AS n FROM notifications WHERE user_id = ? AND is_read = 0",
+            (user["id"],)).fetchone()["n"]
+    except Exception:
+        conn.rollback()
+    finally:
+        conn.close()
+
+    return render_template("technician_subscription_checkout.html", user=user,
+                           plan=plan, period=period, amount=amount,
+                           methods=_SUB_PAYMENT_METHODS, unread_count=unread_count)
+
+
 _DOC_LABELS = {
     DOC_IDENTITY: "Pièce d'identité",
     DOC_PROFESSIONAL: "Justificatif professionnel",

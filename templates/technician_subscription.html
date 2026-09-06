@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#155EEF" />
+  <meta name="csrf-token" content="{{ csrf_token() }}" />
+  <title>Abonnement - FixPro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --td-primary: #155EEF;
+      --td-primary-dark: #0F3DBB;
+      --td-bg: #F4F7FD;
+      --td-text: #0F172A;
+      --td-muted: #64748B;
+      --td-line: #E6ECF5;
+      --td-green: #16A34A;
+      --td-yellow: #F7B718;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--td-bg); color: var(--td-text); -webkit-font-smoothing: antialiased;
+      padding-bottom: 96px;
+    }
+    a { text-decoration: none; color: inherit; }
+    button { font-family: inherit; }
+
+    /* Header */
+    .td-header {
+      background: #fff; border-bottom: 1px solid var(--td-line);
+      padding: 14px 16px; padding-top: calc(24px + env(safe-area-inset-top));
+      display: flex; align-items: center; gap: 12px;
+    }
+    .td-back { background: none; border: none; color: var(--td-text); padding: 4px; cursor: pointer; display: flex; }
+    .td-back svg { width: 24px; height: 24px; }
+    .td-brand { display: flex; align-items: center; gap: 9px; }
+    .td-brand svg { width: 24px; height: 24px; color: var(--td-primary); }
+    .td-brand-text { display: flex; flex-direction: column; line-height: 1.1; }
+    .td-brand-name { font-size: 1.15rem; font-weight: 800; color: var(--td-text); }
+    .td-brand-name em { color: var(--td-primary); font-style: normal; }
+    .td-brand-sub { font-size: 0.66rem; color: var(--td-muted); font-weight: 600; }
+    .td-h-actions { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+    .td-bell { position: relative; display: flex; color: var(--td-text); }
+    .td-bell svg { width: 22px; height: 22px; }
+    .td-badge {
+      position: absolute; top: -6px; right: -6px; min-width: 16px; height: 16px; padding: 0 3px;
+      background: #E6543A; color: #fff; font-size: 10px; font-weight: 700; border-radius: 50px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .td-avatar { position: relative; width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0; }
+    .td-avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block; }
+    .td-avatar .fallback { width: 100%; height: 100%; border-radius: 50%; background: #EEF4FF; color: var(--td-primary); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.95rem; }
+    .td-avatar .dot { position: absolute; bottom: 0; right: 0; width: 11px; height: 11px; background: var(--td-green); border: 2px solid #fff; border-radius: 50%; }
+
+    .td-main { max-width: 640px; margin: 0 auto; padding: 16px; }
+
+    /* Hero */
+    .ts-hero {
+      position: relative; overflow: hidden;
+      background: linear-gradient(150deg, #2E6BFF 0%, #1B54E6 55%, #0F3DBB 100%);
+      border-radius: 22px; padding: 20px 18px; color: #fff; margin-bottom: 16px;
+      box-shadow: 0 14px 34px rgba(21,94,239,0.28);
+      display: flex; align-items: flex-start; gap: 10px;
+    }
+    .ts-hero-text { flex: 1; min-width: 0; }
+    .ts-hero-eyebrow { font-size: 0.64rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #C7D6FF; margin-bottom: 8px; }
+    .ts-hero h1 { font-size: 1.18rem; font-weight: 800; margin: 0 0 8px; line-height: 1.22; }
+    .ts-hero p { margin: 0; font-size: 0.8rem; color: rgba(255,255,255,0.85); line-height: 1.4; }
+    .ts-hero-photo { width: 72px; height: 104px; border-radius: 16px; overflow: hidden; flex-shrink: 0; background: rgba(255,255,255,0.14); align-self: stretch; }
+    .ts-hero-photo img { width: 100%; height: 100%; object-fit: cover; object-position: top center; }
+    .ts-hero-photo .fallback { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 800; }
+    .ts-hero-quote { flex-shrink: 0; width: 74px; font-size: 0.68rem; font-style: italic; color: rgba(255,255,255,0.82); text-align: right; line-height: 1.35; }
+    .ts-hero-quote .line { display: block; width: 30px; height: 2px; background: rgba(255,255,255,0.45); margin: 8px 0 0 auto; }
+    @media (max-width: 360px) { .ts-hero-quote { display: none; } }
+
+    /* Toggle mensuel / annuel */
+    .ts-seg { position: relative; display: flex; background: #E4EAF7; border-radius: 16px; padding: 5px; margin-bottom: 18px; }
+    .ts-seg-thumb { position: absolute; top: 5px; bottom: 5px; left: 5px; width: calc(50% - 5px); background: var(--td-primary); border-radius: 12px; box-shadow: 0 8px 18px rgba(21,94,239,0.32); transition: transform .28s cubic-bezier(.4,0,.2,1); }
+    .ts-seg.year .ts-seg-thumb { transform: translateX(100%); }
+    .ts-seg-opt { position: relative; z-index: 1; flex: 1; min-width: 0; background: none; border: 0; cursor: pointer; padding: 9px 8px; display: flex; align-items: center; justify-content: center; gap: 8px; color: var(--td-muted); transition: color .2s; }
+    .ts-seg-opt svg { width: 18px; height: 18px; flex-shrink: 0; }
+    .ts-seg-opt .lbl { text-align: left; min-width: 0; }
+    .ts-seg-opt .lbl b { display: block; font-size: 0.86rem; font-weight: 800; line-height: 1.15; }
+    .ts-seg-opt .lbl small { display: block; font-size: 0.6rem; font-weight: 600; opacity: .85; white-space: nowrap; }
+    .ts-seg-save { font-size: 0.6rem; font-weight: 800; padding: 2px 6px; border-radius: 7px; background: #DCFCE7; color: #15803D; white-space: nowrap; }
+    .ts-seg.month .ts-seg-opt[data-period="month"], .ts-seg.year .ts-seg-opt[data-period="year"] { color: #fff; }
+    .ts-seg.year .ts-seg-opt[data-period="year"] .ts-seg-save { background: rgba(255,255,255,0.22); color: #fff; }
+
+    .ts-sec-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
+    .ts-sec-head h2 { font-size: 1.05rem; font-weight: 800; margin: 0; }
+    .ts-sec-head span { font-size: 0.72rem; color: var(--td-muted); text-align: right; line-height: 1.3; }
+
+    /* Plans - 3 colonnes */
+    .ts-plans { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 18px; align-items: start; }
+    .ts-plan { position: relative; background: #fff; border: 1.5px solid var(--td-line); border-radius: 16px; padding: 12px 10px; box-shadow: 0 6px 18px rgba(16,42,67,0.05); }
+    .ts-plan.popular { border-color: var(--td-primary); box-shadow: 0 12px 26px rgba(21,94,239,0.16); }
+    .ts-plan-ribbon { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); white-space: nowrap; background: var(--td-primary); color: #fff; font-size: 0.56rem; font-weight: 800; letter-spacing: .02em; padding: 4px 9px; border-radius: 999px; }
+    .ts-plan-icon { width: 38px; height: 38px; border-radius: 11px; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; }
+    .ts-plan-icon svg { width: 19px; height: 19px; }
+    .ts-plan.tier-basic .ts-plan-icon { background: #EEF4FF; color: var(--td-primary); }
+    .ts-plan.tier-pro .ts-plan-icon { background: var(--td-primary); color: #fff; }
+    .ts-plan.tier-premium .ts-plan-icon { background: #F3E8FF; color: #7C3AED; }
+    .ts-plan-name { font-size: 0.98rem; font-weight: 800; }
+    .ts-plan-desc { font-size: 0.66rem; color: var(--td-muted); margin: 1px 0 8px; line-height: 1.3; min-height: 1.7em; }
+    .ts-plan-price b { font-size: 1.12rem; font-weight: 800; color: var(--td-text); display: block; line-height: 1.1; white-space: nowrap; }
+    .ts-plan-price span { font-size: 0.66rem; color: var(--td-muted); font-weight: 600; }
+    .ts-plan-feats { list-style: none; margin: 10px 0 12px; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+    .ts-plan-feats li { display: flex; align-items: flex-start; gap: 6px; font-size: 0.72rem; line-height: 1.25; }
+    .ts-plan-feats li .ic { width: 15px; height: 15px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; margin-top: 1px; }
+    .ts-plan-feats li .ic svg { width: 9px; height: 9px; }
+    .ts-plan-feats li.on .ic { background: var(--td-primary); color: #fff; }
+    .ts-plan-feats li.off .ic { background: #E2E8F0; color: #94A3B8; }
+    .ts-plan-feats li.off span { color: #94A3B8; }
+    .ts-plan-btn { display: flex; align-items: center; justify-content: center; width: 100%; border-radius: 10px; padding: 10px 6px; font-size: 0.76rem; font-weight: 700; cursor: pointer; background: #fff; color: var(--td-primary); border: 1.5px solid var(--td-primary); text-align: center; }
+    .ts-plan.popular .ts-plan-btn { background: var(--td-primary); color: #fff; }
+    .ts-plan-btn.current { background: #DCFCE7; color: #15803D; border-color: #DCFCE7; cursor: default; }
+
+    /* Bandeau economie annuelle */
+    .ts-save-banner { display: flex; align-items: center; gap: 12px; background: #E9F9EF; border: 1px solid #C7EED6; border-radius: 16px; padding: 14px 16px; margin-bottom: 22px; }
+    .ts-save-ico { width: 44px; height: 44px; border-radius: 12px; background: var(--td-green); color: #fff; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+    .ts-save-ico svg { width: 22px; height: 22px; }
+    .ts-save-body { flex: 1; min-width: 0; }
+    .ts-save-body b { display: block; font-size: 0.9rem; font-weight: 800; color: #15803D; }
+    .ts-save-body p { margin: 2px 0 0; font-size: 0.74rem; color: #3F6B51; line-height: 1.35; }
+    .ts-save-btn { flex-shrink: 0; background: #fff; color: #15803D; border: 1.5px solid #15803D; border-radius: 11px; padding: 9px 12px; font-size: 0.72rem; font-weight: 800; text-align: center; max-width: 120px; line-height: 1.25; cursor: pointer; }
+
+    /* Avantages */
+    .ts-sec-title { font-size: 1.05rem; font-weight: 800; margin: 4px 0 14px; }
+    .ts-adv { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 22px; }
+    .ts-adv-item { text-align: center; }
+    .ts-adv-ico { width: 46px; height: 46px; border-radius: 14px; margin: 0 auto 8px; display: flex; align-items: center; justify-content: center; }
+    .ts-adv-ico svg { width: 22px; height: 22px; }
+    .ts-adv-item:nth-child(1) .ts-adv-ico { background: #ECFDF5; color: var(--td-green); }
+    .ts-adv-item:nth-child(2) .ts-adv-ico { background: #FEF3C7; color: #E0A211; }
+    .ts-adv-item:nth-child(3) .ts-adv-ico { background: #EEF4FF; color: var(--td-primary); }
+    .ts-adv-item:nth-child(4) .ts-adv-ico { background: #F3E8FF; color: #7C3AED; }
+    .ts-adv-item b { display: block; font-size: 0.74rem; font-weight: 800; margin-bottom: 2px; }
+    .ts-adv-item span { font-size: 0.66rem; color: var(--td-muted); line-height: 1.3; display: block; }
+
+    /* Paiement */
+    .ts-pay { background: #fff; border: 1px solid var(--td-line); border-radius: 18px; padding: 16px; box-shadow: 0 8px 22px rgba(16,42,67,0.05); margin-bottom: 16px; }
+    .ts-pay-head b { display: block; font-size: 1rem; font-weight: 800; }
+    .ts-pay-head span { font-size: 0.76rem; color: var(--td-muted); }
+    .ts-pay-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 10px; margin: 14px 0; }
+    .pm { display: flex; align-items: center; gap: 9px; font-size: 0.8rem; font-weight: 600; }
+    .pm-badge { width: 40px; height: 26px; border-radius: 6px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.6rem; overflow: hidden; border: 1px solid rgba(15,23,42,0.08); }
+    .pm-badge.orange { background: #FF7900; } .pm-badge.orange i { width: 12px; height: 12px; background: #fff; border-radius: 2px; display: block; }
+    .pm-badge.mtn { background: #FFCB05; color: #00539F; }
+    .pm-badge.airtel { background: #E40000; } .pm-badge.airtel i { width: 12px; height: 12px; border: 3px solid #fff; border-radius: 50%; display: block; }
+    .pm-badge.visa { background: #fff; color: #1A1F71; font-style: italic; font-size: 0.72rem; }
+    .pm-badge.mc { background: #fff; } .pm-badge.mc i { width: 14px; height: 14px; border-radius: 50%; display: block; } .pm-badge.mc i.r { background: #EB001B; } .pm-badge.mc i.y { background: #F79E1B; margin-left: -6px; mix-blend-mode: multiply; }
+    .pm-badge.bank { background: #EEF2F9; color: #334155; } .pm-badge.bank svg { width: 16px; height: 16px; }
+    .ts-pay-secure { display: flex; align-items: center; gap: 8px; font-size: 0.76rem; color: var(--td-muted); background: #F4F7FD; border-radius: 12px; padding: 10px 12px; }
+    .ts-pay-secure svg { width: 16px; height: 16px; color: var(--td-green); flex-shrink: 0; }
+
+    /* FAQ */
+    .ts-faq { display: flex; align-items: center; gap: 12px; background: #fff; border: 1px solid var(--td-line); border-radius: 18px; padding: 16px; box-shadow: 0 8px 22px rgba(16,42,67,0.05); }
+    .ts-faq-ico { width: 44px; height: 44px; border-radius: 12px; background: #EEF4FF; color: var(--td-primary); flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+    .ts-faq-ico svg { width: 22px; height: 22px; }
+    .ts-faq-body { flex: 1; min-width: 0; }
+    .ts-faq-body b { display: block; font-size: 0.9rem; font-weight: 800; }
+    .ts-faq-body p { margin: 2px 0 0; font-size: 0.74rem; color: var(--td-muted); line-height: 1.35; }
+    .ts-faq-link { flex-shrink: 0; display: flex; align-items: center; gap: 4px; color: var(--td-primary); font-size: 0.78rem; font-weight: 800; }
+    .ts-faq-link svg { width: 15px; height: 15px; }
+
+    /* Bottom nav */
+    .td-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid var(--td-line); display: flex; justify-content: space-around; align-items: flex-end; padding: 8px 0 calc(10px + env(safe-area-inset-bottom)); z-index: 90; }
+    .td-nav a { display: flex; flex-direction: column; align-items: center; gap: 3px; color: var(--td-muted); text-decoration: none; font-size: 0.64rem; font-weight: 600; flex: 1; position: relative; }
+    .td-nav a svg { width: 22px; height: 22px; }
+    .td-nav a.active { color: var(--td-primary); }
+    .td-nav a.active::after { content: ""; position: absolute; bottom: -8px; width: 22px; height: 3px; border-radius: 2px; background: var(--td-primary); }
+    .td-nav a .badge { position: absolute; top: -4px; right: 24%; min-width: 15px; height: 15px; padding: 0 3px; background: #E6543A; color: #fff; font-size: 9px; font-weight: 700; border-radius: 50px; display: flex; align-items: center; justify-content: center; }
+    .td-nav a.td-fab { position: relative; top: -16px; flex: 0 0 54px; width: 54px; height: 54px; min-width: 54px; background: var(--td-primary); color: #fff; border-radius: 50%; justify-content: center; align-self: flex-start; box-shadow: 0 10px 22px rgba(21,94,239,0.34); }
+    .td-nav a.td-fab svg { width: 26px; height: 26px; }
+    .td-nav a.td-fab span { position: absolute; bottom: -18px; width: 92px; left: 50%; transform: translateX(-50%); text-align: center; color: var(--td-muted); font-size: 0.64rem; }
+  </style>
+</head>
+<body>
+  <header class="td-header">
+    <button class="td-back" id="backBtn" type="button" aria-label="Retour">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+    </button>
+    <a href="{{ url_for('artisan_dashboard') }}" class="td-brand">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+      <span class="td-brand-text">
+        <span class="td-brand-name">Fix<em>Pro</em></span>
+        <span class="td-brand-sub">Espace Technicien</span>
+      </span>
+    </a>
+    <div class="td-h-actions">
+      <a href="{{ url_for('notifications') }}" class="td-bell" aria-label="Notifications">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></svg>
+        {% if unread_count %}<span class="td-badge">{{ unread_count if unread_count < 10 else '9+' }}</span>{% endif %}
+      </a>
+      <a href="{{ url_for('profile') }}" class="td-avatar" aria-label="Mon profil">
+        {% if user.photo_url %}
+          <img src="{{ user.photo_url }}" alt="{{ user.full_name }}" />
+        {% else %}
+          <span class="fallback">{{ (user.full_name or 'T')[0]|upper }}</span>
+        {% endif %}
+        {% if availability == 'en_ligne' %}<span class="dot"></span>{% endif %}
+      </a>
+    </div>
+  </header>
+
+  <main class="td-main">
+    <section class="ts-hero">
+      <div class="ts-hero-text">
+        <div class="ts-hero-eyebrow">Abonnement FixPro</div>
+        <h1>Investissez aujourd'hui pour aller plus loin</h1>
+        <p>Plus de visibilité. Plus de clients. Plus de revenus.</p>
+      </div>
+      <div class="ts-hero-photo">
+        {% if user.photo_url %}
+          <img src="{{ user.photo_url }}" alt="{{ user.full_name }}" />
+        {% else %}
+          <span class="fallback">{{ (user.full_name or 'T')[0]|upper }}</span>
+        {% endif %}
+      </div>
+      <p class="ts-hero-quote">&laquo; Des professionnels plus forts avec FixPro &raquo;<span class="line"></span></p>
+    </section>
+
+    <div class="ts-seg month" id="subSeg">
+      <span class="ts-seg-thumb"></span>
+      <button type="button" class="ts-seg-opt" data-period="month">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        <span class="lbl"><b>Mensuel</b><small>Flexible et sans engagement</small></span>
+      </button>
+      <button type="button" class="ts-seg-opt" data-period="year">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M8 15l2 2 4-4"/></svg>
+        <span class="lbl"><b>Annuel</b><small>Plus d'économies</small></span>
+        <span class="ts-seg-save">Jusqu'à -{{ max_savings }}%</span>
+      </button>
+    </div>
+
+    <div class="ts-sec-head">
+      <h2 id="secTitle">Choisissez le plan mensuel qui vous convient</h2>
+      <span>Des formules adaptées<br />à tous les besoins</span>
+    </div>
+
+    <div class="ts-plans">
+      {% for plan in plans %}
+      <div class="ts-plan tier-{{ plan.code.split('_')[1] }} {{ 'popular' if plan.popular else '' }}">
+        {% if plan.popular %}<span class="ts-plan-ribbon">Le plus populaire</span>{% endif %}
+        <span class="ts-plan-icon">
+          {% if plan.icon == 'send' %}
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+          {% elif plan.icon == 'crown' %}
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 8l4 3 5-7 5 7 4-3-2 11H5L3 8z"/></svg>
+          {% else %}
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12l4 6-10 12L2 9Z"/><path d="M11 3 8 9l4 12 4-12-3-6"/><path d="M2 9h20"/></svg>
+          {% endif %}
+        </span>
+        <div class="ts-plan-name">{{ plan.name }}</div>
+        <div class="ts-plan-desc">{{ plan.desc }}</div>
+        <div class="ts-plan-price">
+          <b class="amount" data-month="{{ '{:,}'.format(plan.price_month).replace(',', ' ') }} GNF" data-year="{{ '{:,}'.format(plan.price_year).replace(',', ' ') }} GNF">{{ '{:,}'.format(plan.price_month).replace(',', ' ') }} GNF</b>
+          <span>/ <span class="unitlabel">mois</span></span>
+        </div>
+        <ul class="ts-plan-feats">
+          {% for label, included in plan.features %}
+          <li class="{{ 'on' if included else 'off' }}">
+            <span class="ic">
+              {% if included %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+              {% else %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>{% endif %}
+            </span>
+            <span>{{ label }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+        {% if current_code == plan.code and current_active %}
+        <button type="button" class="ts-plan-btn current" disabled>Formule actuelle</button>
+        {% else %}
+        <a class="ts-plan-btn choose-btn" href="{{ url_for('technician_subscription_checkout', plan=plan.code, period='month') }}">{{ 'Choisir ce plan' if plan.popular else 'Choisir' }}</a>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="ts-save-banner">
+      <span class="ts-save-ico">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>
+      </span>
+      <span class="ts-save-body">
+        <b>Économisez jusqu'à {{ max_savings }} %</b>
+        <p>Avec l'abonnement annuel, bénéficiez de tarifs réduits et de plus d'avantages.</p>
+      </span>
+      <button type="button" class="ts-save-btn" id="goYearBtn">Passer à l'annuel et économiser</button>
+    </div>
+
+    <h2 class="ts-sec-title">Les avantages FixPro</h2>
+    <div class="ts-adv">
+      <div class="ts-adv-item">
+        <span class="ts-adv-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+        <b>Plus de clients</b>
+        <span>Augmentez vos réservations</span>
+      </div>
+      <div class="ts-adv-item">
+        <span class="ts-adv-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="20" x2="6" y2="14"/><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/></svg></span>
+        <b>Plus de visibilité</b>
+        <span>Soyez en tête des résultats</span>
+      </div>
+      <div class="ts-adv-item">
+        <span class="ts-adv-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg></span>
+        <b>Plus de confiance</b>
+        <span>Badge vérifié Top Pro</span>
+      </div>
+      <div class="ts-adv-item">
+        <span class="ts-adv-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></svg></span>
+        <b>Un meilleur support</b>
+        <span>Notre équipe toujours avec vous</span>
+      </div>
+    </div>
+
+    <div class="ts-pay">
+      <div class="ts-pay-head">
+        <b>Méthodes de paiement</b>
+        <span>Paiement 100% sécurisé</span>
+      </div>
+      <div class="ts-pay-grid">
+        <span class="pm"><span class="pm-badge orange"><i></i></span> Orange Money</span>
+        <span class="pm"><span class="pm-badge mtn">MTN</span> MTN Mobile Money</span>
+        <span class="pm"><span class="pm-badge airtel"><i></i></span> Airtel Money</span>
+        <span class="pm"><span class="pm-badge visa">VISA</span> Carte VISA</span>
+        <span class="pm"><span class="pm-badge mc"><i class="r"></i><i class="y"></i></span> Mastercard</span>
+        <span class="pm"><span class="pm-badge bank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M4 21V10M20 21V10M2 10l10-6 10 6M7 10v5M12 10v5M17 10v5"/></svg></span> Virement bancaire</span>
+      </div>
+      <div class="ts-pay-secure">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Vos paiements sont sécurisés et vos données sont protégées.
+      </div>
+    </div>
+
+    <div class="ts-faq">
+      <span class="ts-faq-ico">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+      </span>
+      <span class="ts-faq-body">
+        <b>Questions fréquentes</b>
+        <p>Trouvez rapidement des réponses à vos questions.</p>
+      </span>
+      <a href="#" class="ts-faq-link">Voir la FAQ
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </a>
+    </div>
+  </main>
+
+  <nav class="td-nav">
+    <a href="{{ url_for('artisan_dashboard') }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+      Accueil
+    </a>
+    <a href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      Demandes
+    </a>
+    <a href="#" class="td-fab">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5v14"/></svg>
+      <span>Nouveau</span>
+    </a>
+    <a href="{{ url_for('lia') }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"/></svg>
+      Messages
+      {% if unread_count %}<span class="badge">{{ unread_count if unread_count < 10 else '9+' }}</span>{% endif %}
+    </a>
+    <a href="{{ url_for('technician_subscription') }}" class="active">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 8l4 3 5-7 5 7 4-3-2 11H5L3 8z"/></svg>
+      Abonnement
+    </a>
+  </nav>
+
+  <script>
+    (function () {
+      var seg = document.getElementById('subSeg');
+      var secTitle = document.getElementById('secTitle');
+      var amounts = document.querySelectorAll('.ts-plan-price .amount');
+      var unitLabels = document.querySelectorAll('.unitlabel');
+      var chooseBtns = document.querySelectorAll('.choose-btn');
+
+      function setPeriod(period) {
+        seg.classList.toggle('month', period === 'month');
+        seg.classList.toggle('year', period === 'year');
+        secTitle.textContent = period === 'year'
+          ? 'Choisissez le plan annuel qui vous convient'
+          : 'Choisissez le plan mensuel qui vous convient';
+        amounts.forEach(function (el) { el.textContent = el.dataset[period]; });
+        unitLabels.forEach(function (el) { el.textContent = period === 'year' ? 'an' : 'mois'; });
+        chooseBtns.forEach(function (a) {
+          var u = new URL(a.href, window.location.origin);
+          u.searchParams.set('period', period);
+          a.href = u.pathname + u.search;
+        });
+      }
+
+      seg.querySelectorAll('.ts-seg-opt').forEach(function (o) {
+        o.addEventListener('click', function () { setPeriod(o.dataset.period); });
+      });
+      var goYear = document.getElementById('goYearBtn');
+      if (goYear) goYear.addEventListener('click', function () {
+        setPeriod('year');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+
+      var backBtn = document.getElementById('backBtn');
+      if (backBtn) backBtn.addEventListener('click', function () {
+        if (history.length > 1) history.back();
+        else window.location.href = "{{ url_for('artisan_dashboard') }}";
+      });
+    })();
+  </script>
+</body>
+</html>

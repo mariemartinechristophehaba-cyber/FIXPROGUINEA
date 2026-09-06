@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#155EEF" />
+  <meta name="csrf-token" content="{{ csrf_token() }}" />
+  <title>Paiement de l'abonnement - FixPro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root { --td-primary:#155EEF; --td-primary-dark:#0F3DBB; --td-bg:#F4F7FD; --td-text:#0F172A; --td-muted:#64748B; --td-line:#E6ECF5; --td-green:#16A34A; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--td-bg); color: var(--td-text); -webkit-font-smoothing: antialiased; padding-bottom: 40px; }
+    a { text-decoration: none; color: inherit; }
+    button { font-family: inherit; }
+
+    .co-header { background: #fff; border-bottom: 1px solid var(--td-line); padding: 14px 16px; padding-top: calc(24px + env(safe-area-inset-top)); display: flex; align-items: center; gap: 12px; }
+    .co-back { background: none; border: none; color: var(--td-text); padding: 4px; cursor: pointer; display: flex; }
+    .co-back svg { width: 24px; height: 24px; }
+    .co-header h1 { font-size: 1.1rem; font-weight: 800; margin: 0; }
+
+    .co-main { max-width: 560px; margin: 0 auto; padding: 16px; }
+    .co-card { background: #fff; border: 1px solid var(--td-line); border-radius: 18px; padding: 18px; margin-bottom: 16px; box-shadow: 0 8px 22px rgba(16,42,67,0.05); }
+    .co-card h2 { margin: 0 0 12px; font-size: 0.98rem; font-weight: 800; }
+    .co-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 0; font-size: 0.86rem; }
+    .co-row .l { color: var(--td-muted); }
+    .co-row .v { font-weight: 700; text-align: right; }
+    .co-total { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-top: 10px; padding-top: 12px; border-top: 1px solid var(--td-line); }
+    .co-total .l { font-size: 0.9rem; font-weight: 800; }
+    .co-total .v { font-size: 1.4rem; font-weight: 800; color: var(--td-primary); }
+    .co-total .v small { font-size: 0.72rem; font-weight: 600; color: var(--td-muted); }
+
+    .co-method { display: flex; align-items: center; gap: 12px; padding: 13px 14px; border: 1.5px solid var(--td-line); border-radius: 12px; margin-bottom: 10px; cursor: pointer; font-size: 0.88rem; font-weight: 600; }
+    .co-method:last-child { margin-bottom: 0; }
+    .co-method input { accent-color: var(--td-primary); width: 18px; height: 18px; flex-shrink: 0; }
+    .co-method.sel { border-color: var(--td-primary); background: #F5F8FF; }
+
+    .co-note { display: flex; gap: 9px; font-size: 0.76rem; color: var(--td-muted); line-height: 1.5; margin-bottom: 16px; }
+    .co-note svg { width: 15px; height: 15px; flex-shrink: 0; margin-top: 2px; color: var(--td-green); }
+
+    .co-submit { display: block; width: 100%; padding: 15px; border: 0; border-radius: 13px; background: var(--td-primary); color: #fff; font-size: 0.95rem; font-weight: 800; cursor: pointer; text-align: center; }
+
+    .co-flash { border-radius: 12px; padding: 12px 14px; margin-bottom: 14px; font-size: 0.85rem; font-weight: 600; }
+    .co-flash.success { background: #DCFCE7; color: #15803D; }
+    .co-flash.error { background: #FEE2E2; color: #B91C1C; }
+  </style>
+</head>
+<body>
+  {% set year = period == 'year' %}
+  <header class="co-header">
+    <a class="co-back" href="{{ url_for('technician_subscription') }}" aria-label="Retour">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+    </a>
+    <h1>Finaliser votre abonnement</h1>
+  </header>
+
+  <main class="co-main">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+      <div class="co-flash {{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    <form method="post" action="{{ url_for('technician_subscription_checkout') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      <input type="hidden" name="plan" value="{{ plan.code }}" />
+      <input type="hidden" name="period" value="{{ period }}" />
+
+      <div class="co-card">
+        <h2>Récapitulatif</h2>
+        <div class="co-row"><span class="l">Formule</span><span class="v">{{ plan.name }}</span></div>
+        <div class="co-row"><span class="l">Engagement</span><span class="v">{{ 'Annuel' if year else 'Mensuel' }}</span></div>
+        <div class="co-row"><span class="l">Période couverte</span><span class="v">{{ '12 mois' if year else '1 mois' }}</span></div>
+        {% if year %}
+        <div class="co-row"><span class="l">Prix mensuel équivalent</span><span class="v">{{ '{:,}'.format((amount / 12)|round|int).replace(',', ' ') }} GNF</span></div>
+        {% endif %}
+        <div class="co-total">
+          <span class="l">Total à payer</span>
+          <span class="v">{{ '{:,}'.format(amount).replace(',', ' ') }} GNF <small>/ {{ 'an' if year else 'mois' }}</small></span>
+        </div>
+      </div>
+
+      <div class="co-card">
+        <h2>Moyen de paiement</h2>
+        {% for code, label in methods %}
+        <label class="co-method{{ ' sel' if loop.first }}">
+          <input type="radio" name="payment_method" value="{{ code }}" {{ 'checked' if loop.first }} />
+          {{ label }}
+        </label>
+        {% endfor %}
+      </div>
+
+      <div class="co-note">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Paiement 100% sécurisé. Votre abonnement est activé dès la confirmation du paiement par notre équipe.
+      </div>
+
+      <button type="submit" class="co-submit">Confirmer et payer {{ '{:,}'.format(amount).replace(',', ' ') }} GNF</button>
+    </form>
+  </main>
+
+  <script>
+    (function () {
+      document.querySelectorAll('.co-method').forEach(function (m) {
+        m.addEventListener('click', function () {
+          document.querySelectorAll('.co-method').forEach(function (x) { x.classList.remove('sel'); });
+          m.classList.add('sel');
+          var r = m.querySelector('input'); if (r) r.checked = true;
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

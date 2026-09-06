@@ -431,7 +431,7 @@
         </div>
       </div>
 
-      <a href="#" class="td-sub-btn">
+      <a href="{{ url_for('technician_subscription') }}" class="td-sub-btn">
         Gérer mon abonnement
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
       </a>
@@ -510,7 +510,7 @@
       Messages
       {% if unread_count %}<span class="badge">{{ unread_count if unread_count < 10 else '9+' }}</span>{% endif %}
     </a>
-    <a href="#">
+    <a href="{{ url_for('technician_subscription') }}">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l4 3 5-7 5 7 4-3-2 11H5L3 8z"/></svg>
       Abonnement
     </a>
