@@ -40,25 +40,37 @@
       display: flex; flex-direction: column;
     }
 
-    /* halo bleu discret en bas à gauche (comme la maquette) */
+    /* --- Fond bleu (DERRIÈRE tout) : monte en haut à droite et redescend
+           jusqu'en bas de la page, comme la maquette --- */
+    .dt::before {
+      content: ""; position: absolute; z-index: 0; pointer-events: none;
+      left: -60px; right: -40px;
+      bottom: calc(-40px - env(safe-area-inset-bottom)); height: 300px;
+      background:
+        radial-gradient(130% 120% at 12% 100%, rgba(43,107,243,.20), rgba(43,107,243,0) 58%),
+        radial-gradient(120% 120% at 95% 100%, rgba(21,94,239,.16), rgba(21,94,239,0) 60%);
+    }
     .dt::after {
-      content: ""; position: absolute; left: -120px; bottom: -140px; width: 300px; height: 300px;
-      border-radius: 50%;
-      background: radial-gradient(circle at 32% 32%, rgba(43,107,243,.18), rgba(43,107,243,0) 70%);
-      z-index: 0; pointer-events: none;
+      content: ""; position: absolute; z-index: 0; pointer-events: none;
+      top: calc(-160px - env(safe-area-inset-top)); right: -130px;
+      width: 400px; height: clamp(430px, 62vh, 560px); border-radius: 50%;
+      background: radial-gradient(circle at 42% 46%, rgba(43,107,243,.22), rgba(43,107,243,0) 62%);
     }
 
     /* --- Visuel technicien : la forme bleue + la citation + le personnage
            COMPLET (casquette, bras croisés, ceinture à outils avec la clé)
-           sont dans l'image. Collée en haut à droite et débordant des
-           bords -> le bleu monte jusqu'en haut ; le personnage descend
-           jusqu'au niveau de la carte. Fondu doux vers la gauche. --- */
+           sont dans l'image. Elle est DEVANT le texte (seul le fond bleu
+           reste derrière), collée en haut à droite, débordant des bords,
+           et DESCEND jusqu'en bas de l'écran (sous la carte, jusqu'au
+           bouton). Fondu doux vers la gauche. --- */
     .dt-photo {
-      position: absolute; z-index: 1; pointer-events: none;
+      position: absolute; z-index: 4; pointer-events: none;
       top: calc(-10px - env(safe-area-inset-top)); right: -20px;
-      width: clamp(50%, 54vw, 57%); max-width: 282px; height: auto;
-      -webkit-mask-image: linear-gradient(90deg, transparent 0, transparent 2%, rgba(0,0,0,.5) 20%, #000 42%, #000 100%);
-              mask-image: linear-gradient(90deg, transparent 0, transparent 2%, rgba(0,0,0,.5) 20%, #000 42%, #000 100%);
+      height: calc(100dvh + 20px + env(safe-area-inset-top) + env(safe-area-inset-bottom));
+      width: clamp(54%, 58vw, 62%); max-width: 312px;
+      object-fit: cover; object-position: 78% 0%;
+      -webkit-mask-image: linear-gradient(90deg, transparent 0, transparent 3%, rgba(0,0,0,.5) 22%, #000 46%, #000 100%);
+              mask-image: linear-gradient(90deg, transparent 0, transparent 3%, rgba(0,0,0,.5) 22%, #000 46%, #000 100%);
     }
 
     /* --- En-tête --- */
@@ -98,21 +110,21 @@
     /* --- Titre + accroche --- */
     .dt-hero { position: relative; z-index: 3; flex-shrink: 0; }
     .dt-hero h1 {
-      margin: 0; padding-right: 36%;
+      margin: 0; padding-right: 40%;
       font-size: clamp(1.3rem, 3.8vh, 1.85rem); font-weight: 900; line-height: 1.1;
       letter-spacing: -.025em; color: var(--dt-ink);
       overflow-wrap: break-word;
     }
     .dt-hero h1 .b { color: var(--dt-blue); white-space: nowrap; }
     .dt-hero p {
-      margin: clamp(8px, 1.5vh, 14px) 0 0; padding-right: 43%;
+      margin: clamp(8px, 1.5vh, 14px) 0 0; padding-right: 46%;
       font-size: clamp(.82rem, 1.8vh, .95rem); line-height: 1.45; color: var(--dt-muted);
     }
 
     /* --- Avantages --- */
     .dt-benefits {
       position: relative; z-index: 3; flex-shrink: 0; list-style: none;
-      margin: clamp(13px, 2.4vh, 22px) 0 0; padding: 0 41% 0 0;
+      margin: clamp(13px, 2.4vh, 22px) 0 0; padding: 0 49% 0 0;
       display: flex; flex-direction: column; gap: clamp(7px, 1.7vh, 15px);
     }
     .dt-benefits li { display: flex; gap: 12px; align-items: flex-start; }
@@ -135,7 +147,7 @@
            de l'écran sur les grands téléphones. --- */
     .dt-social {
       position: relative; z-index: 6;
-      margin: auto 10px clamp(9px, 1.5vh, 14px) 0;
+      margin: auto 20px clamp(9px, 1.5vh, 14px) 0;
       background: #fff; border-radius: 16px; padding: clamp(10px, 1.6vh, 13px) 13px;
       box-shadow: 0 16px 36px rgba(11,27,59,.16);
       display: flex; align-items: center; gap: 10px; flex-shrink: 0;
@@ -159,7 +171,13 @@
     }
 
     /* --- Action principale --- */
-    .dt-cta { position: relative; z-index: 5; flex-shrink: 0; }
+    .dt-cta { position: relative; z-index: 6; flex-shrink: 0; }
+    /* voile qui fond le bas du visuel derrière le bouton + "Se connecter" */
+    .dt-cta::before {
+      content: ""; position: absolute; z-index: -1;
+      left: -22px; right: -22px; top: -46px; bottom: -22px;
+      background: linear-gradient(to top, var(--dt-bg) 52%, rgba(244,247,253,.72) 78%, rgba(244,247,253,0));
+    }
     .dt-cta-btn {
       width: 100%; border: 0; border-radius: 26px; padding: clamp(13px, 2.1vh, 18px) 22px;
       background: linear-gradient(180deg, #2C6BF3, var(--dt-blue));
@@ -188,13 +206,13 @@
     }
     /* Écrans peu hauts : on resserre pour rester sans scroll */
     @media (max-height: 780px) {
-      .dt-photo { width: clamp(47%, 50vw, 52%); bottom: clamp(140px, 20vh, 172px); }
+      .dt-photo { width: clamp(54%, 60vw, 64%); }
       .dt-benefits { gap: clamp(6px, 1.3vh, 11px); }
     }
     @media (max-height: 680px) {
       .dt-hero h1 { font-size: clamp(1.18rem, 5.2vw, 1.4rem); }
       .dt-b-tx span { font-size: .76rem; line-height: 1.26; }
-      .dt-photo { width: clamp(44%, 47vw, 49%); }
+      .dt-photo { width: clamp(50%, 55vw, 58%); }
     }
     @media (min-width: 700px) {
       .dt-cta, .dt-cta-foot { max-width: 440px; margin-left: auto; margin-right: auto; }
