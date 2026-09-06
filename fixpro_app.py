@@ -1742,7 +1742,9 @@ def _parse_base64_file(data_uri):
 def register():
     role = request.form.get("role") if request.method == "POST" else request.args.get("role", "client")
     role = (role or "client").lower()
-    if role not in ("client", "artisan", "technician"):
+    if role in ("artisan", "technician", "technicien", "pro", "professionnel"):
+        return redirect(url_for("devenir_technicien"))
+    if role != "client":
         role = "client"
 
     if role == "client" and request.method == "POST":
@@ -1790,11 +1792,57 @@ def register():
         finally:
             conn.close()
 
-    if role in ("artisan", "technician"):
-        flash("L'inscription technicien n'est plus disponible.", "info")
-        return redirect(url_for("register"))
-
     return render_template("choose_account.html")
+
+
+_LEAD_PROFESSIONS = [
+    "Plomberie", "Électricité", "Froid / Climatisation", "Menuiserie",
+    "Peinture", "Maçonnerie", "Serrurerie", "Carrelage", "Soudure", "Autre",
+]
+
+
+@app.route("/devenir-technicien", methods=["GET", "POST"])
+@limiter.limit("6 per hour", methods=["POST"])
+def devenir_technicien():
+    """Page publique "Devenir technicien FixPro".
+
+    L'espace technicien et son inscription en ligne sont en cours de refonte.
+    En attendant, on collecte les candidatures (nom, telephone, metier, ville)
+    pour que l'equipe FixPro rappelle les professionnels interesses.
+    """
+    if request.method == "POST":
+        first_name = (request.form.get("first_name") or "").strip()[:80]
+        last_name = (request.form.get("last_name") or "").strip()[:80]
+        phone = _phone_with_prefix(request.form.get("phone") or "")
+        profession = (request.form.get("profession") or "").strip()[:60]
+        city = (request.form.get("city") or "").strip()[:80]
+        note = (request.form.get("note") or "").strip()[:1000]
+
+        if not (first_name and last_name and phone and profession and city):
+            flash("Merci de renseigner tous les champs obligatoires.", "error")
+            return redirect(url_for("devenir_technicien"))
+        if len(phone) < 8:
+            flash("Numero de telephone invalide.", "error")
+            return redirect(url_for("devenir_technicien"))
+
+        conn = get_db_connection()
+        try:
+            _ensure_technician_leads(conn)
+            conn.execute(
+                "INSERT INTO technician_leads"
+                " (first_name, last_name, phone, profession, city, note)"
+                " VALUES (?, ?, ?, ?, ?, ?)",
+                (first_name, last_name, phone, profession, city, note))
+            conn.commit()
+        finally:
+            conn.close()
+        flash("Merci ! Votre demande est enregistree. L'equipe FixPro vous "
+              "contactera tres bientot.", "success")
+        return redirect(url_for("devenir_technicien"))
+
+    return render_template("devenir_technicien.html",
+                           professions=_LEAD_PROFESSIONS,
+                           nav_user=get_current_user())
 
 
 # --- Verification des techniciens -------------------------------------------
@@ -2948,6 +2996,45 @@ def admin_contact_detail(contact_id):
         conn.close()
     return render_template("admin_contact_detail.html",
                            user=user, contact=contact, events=events)
+
+
+@app.route("/admin/candidatures-techniciens", methods=["GET", "POST"])
+@login_required
+@admin_required
+def admin_technician_leads():
+    """Candidatures 'Devenir technicien' collectees en attendant la refonte
+    de l'espace technicien."""
+    user = get_current_user()
+    conn = get_db_connection()
+    try:
+        _ensure_technician_leads(conn)
+        if request.method == "POST":
+            lead_id = request.form.get("lead_id")
+            new_status = request.form.get("status")
+            if lead_id and new_status in ("nouveau", "contacte", "valide", "refuse"):
+                conn.execute(
+                    "UPDATE technician_leads SET status = ? WHERE id = ?",
+                    (new_status, lead_id))
+                conn.commit()
+                log_admin_action(user["id"], user["email"],
+                                 "update_technician_lead_status", "technician_leads", lead_id)
+                flash("Statut mis à jour.", "success")
+            return redirect(url_for("admin_technician_leads"))
+
+        status_filter = request.args.get("status", "").strip()
+        if status_filter in ("nouveau", "contacte", "valide", "refuse"):
+            leads = conn.execute(
+                "SELECT * FROM technician_leads WHERE status = ? ORDER BY created_at DESC",
+                (status_filter,)).fetchall()
+        else:
+            leads = conn.execute(
+                "SELECT * FROM technician_leads ORDER BY created_at DESC").fetchall()
+        counts = {r["status"]: r["n"] for r in conn.execute(
+            "SELECT status, COUNT(*) AS n FROM technician_leads GROUP BY status").fetchall()}
+    finally:
+        conn.close()
+    return render_template("admin_technician_leads.html", user=user, leads=leads,
+                           counts=counts, status_filter=status_filter)
 
 
 @app.route("/admin/requests")
@@ -5687,6 +5774,16 @@ def _migrate_db():
             except Exception:
                 pass
 
+        try:
+            _ensure_technician_leads(conn)
+            conn.commit()
+        except Exception as e:
+            logger.warning("Migration candidatures technicien impossible: %s", e)
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+
         # --- Compte administrateur (a partir des variables d'env) -----------
         try:
             _bootstrap_admin(conn)
@@ -5878,6 +5975,29 @@ def _migrate_messaging(conn):
         f" created_at {ts} DEFAULT CURRENT_TIMESTAMP)")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_conv_reports_status ON conversation_reports(status)")
     conn.commit()
+
+
+def _ensure_technician_leads(conn):
+    """Table des candidatures "Devenir technicien" (inscription pro en attente
+    de la refonte de l'espace technicien). Portable SQLite / PostgreSQL.
+
+    Appelee aussi a la volee par les routes concernees : en production le
+    balayage DDL global est desactive, donc on ne peut pas compter dessus.
+    """
+    pk = "SERIAL PRIMARY KEY" if conn.is_postgres else "INTEGER PRIMARY KEY AUTOINCREMENT"
+    ts = "TIMESTAMP" if conn.is_postgres else "TEXT"
+    conn.execute(
+        f"CREATE TABLE IF NOT EXISTS technician_leads ("
+        f" id {pk},"
+        f" first_name TEXT NOT NULL,"
+        f" last_name TEXT NOT NULL,"
+        f" phone TEXT NOT NULL,"
+        f" profession TEXT NOT NULL,"
+        f" city TEXT NOT NULL,"
+        f" note TEXT DEFAULT '',"
+        f" status TEXT NOT NULL DEFAULT 'nouveau',"
+        f" created_at {ts} DEFAULT CURRENT_TIMESTAMP)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_technician_leads_status ON technician_leads(status)")
 
 
 _DEFAULT_PLANS = [
