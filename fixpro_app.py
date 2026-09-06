@@ -1745,9 +1745,7 @@ def _parse_base64_file(data_uri):
 def register():
     role = request.form.get("role") if request.method == "POST" else request.args.get("role", "client")
     role = (role or "client").lower()
-    if role in ("artisan", "technician", "technicien", "pro", "professionnel"):
-        return redirect(url_for("devenir_technicien"))
-    if role != "client":
+    if role not in ("client", "artisan", "technician"):
         role = "client"
 
     if role == "client" and request.method == "POST":
@@ -1795,16 +1793,11 @@ def register():
         finally:
             conn.close()
 
+    if role in ("artisan", "technician"):
+        flash("L'inscription technicien n'est plus disponible.", "info")
+        return redirect(url_for("register"))
+
     return render_template("choose_account.html")
-
-
-@app.route("/devenir-technicien")
-def devenir_technicien():
-    """Ecran d'accueil de l'Espace Technicien : presentation du programme pro
-    pour rejoindre FixPro. Public (aucun compte requis). Le formulaire
-    d'inscription complet est en cours de conception -- le bouton
-    "Commencer l'inscription" est provisoirement un teaser."""
-    return render_template("devenir_technicien.html", nav_user=get_current_user())
 
 
 # --- Verification des techniciens -------------------------------------------
