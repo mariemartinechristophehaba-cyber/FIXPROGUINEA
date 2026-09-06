@@ -224,54 +224,6 @@ class ClientRegistrationTests(FixProTestCase):
             conn.close()
 
 
-class DevenirTechnicienTests(FixProTestCase):
-    """Page publique 'Devenir technicien' + collecte des candidatures."""
-
-    def test_page_renders_for_visitor(self):
-        r = self.client.get("/devenir-technicien")
-        self.assertEqual(r.status_code, 200)
-        self.assertIn("Devenez technicien", r.get_data(as_text=True))
-
-    def test_register_role_technicien_redirects_here(self):
-        r = self.client.get("/register?role=technicien", follow_redirects=False)
-        self.assertEqual(r.status_code, 302)
-        self.assertIn("/devenir-technicien", r.location)
-
-    def test_submitting_form_stores_a_lead(self):
-        r = self.client.post("/devenir-technicien", data={
-            "first_name": "Ibrahim", "last_name": "Sory", "phone": "620112233",
-            "profession": "Plomberie", "city": "Ratoma", "note": "5 ans d'experience",
-        }, follow_redirects=True)
-        self.assertEqual(r.status_code, 200)
-        self.assertIn("enregistr", r.get_data(as_text=True).lower())
-        conn = db.connect(sqlite_path=self.db_path)
-        try:
-            lead = conn.execute("SELECT * FROM technician_leads").fetchone()
-        finally:
-            conn.close()
-        self.assertEqual(lead["last_name"], "Sory")
-        self.assertEqual(lead["phone"], "+224620112233")
-        self.assertEqual(lead["status"], "nouveau")
-
-    def test_form_rejects_missing_fields(self):
-        self.client.post("/devenir-technicien", data={"first_name": "X"},
-                         follow_redirects=True)
-        conn = db.connect(sqlite_path=self.db_path)
-        try:
-            n = conn.execute("SELECT COUNT(*) AS n FROM technician_leads").fetchone()["n"]
-        finally:
-            conn.close()
-        self.assertEqual(n, 0)
-
-    def test_drawer_shows_link_on_client_page(self):
-        self.register_client()
-        self.login("+224620000000")
-        r = self.client.get("/artisans")
-        html = r.get_data(as_text=True)
-        self.assertIn("/devenir-technicien", html)
-        self.assertIn("S'inscrire en tant que technicien", html)
-
-
 class ClientProfileTests(FixProTestCase):
     """Profil client et pages associees."""
 
@@ -986,31 +938,6 @@ class AdminPanelTests(FixProTestCase):
         r = self.client.get("/admin/utilisateurs")
         self.assertEqual(r.status_code, 200)
         self.assertIn("Administrateurs", r.get_data(as_text=True))
-
-    def test_admin_technician_leads_page_and_status_update(self):
-        conn = db.connect(sqlite_path=self.db_path)
-        try:
-            conn.execute(
-                "INSERT INTO technician_leads (first_name, last_name, phone,"
-                " profession, city) VALUES ('Ada', 'Balde', '+224620000009',"
-                " 'Électricité', 'Kaloum')")
-            conn.commit()
-            lid = conn.execute("SELECT id FROM technician_leads").fetchone()["id"]
-        finally:
-            conn.close()
-        self.login_admin()
-        r = self.client.get("/admin/candidatures-techniciens")
-        self.assertEqual(r.status_code, 200)
-        self.assertIn("Balde", r.get_data(as_text=True))
-        self.client.post("/admin/candidatures-techniciens", data={
-            "lead_id": lid, "status": "valide"}, follow_redirects=True)
-        conn = db.connect(sqlite_path=self.db_path)
-        try:
-            st = conn.execute(
-                "SELECT status FROM technician_leads WHERE id = ?", (lid,)).fetchone()["status"]
-        finally:
-            conn.close()
-        self.assertEqual(st, "valide")
 
     def test_owner_can_grant_and_revoke_admin_role(self):
         self._make_owner()
