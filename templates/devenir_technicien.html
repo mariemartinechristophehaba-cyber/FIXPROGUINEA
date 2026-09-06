@@ -46,10 +46,10 @@
     /* --- Visuel technicien (forme bleue + citation intégrées à l'image,
            bord droit à fond, fondu doux vers la gauche) --- */
     .dt-photo {
-      position: absolute; top: 46px; right: 0; z-index: 1;
-      width: 59%; max-width: 278px; height: auto; pointer-events: none;
-      -webkit-mask-image: linear-gradient(90deg, transparent 0, transparent 9%, #000 34%, #000 100%);
-              mask-image: linear-gradient(90deg, transparent 0, transparent 9%, #000 34%, #000 100%);
+      position: absolute; top: 54px; right: 0; z-index: 1;
+      width: 56%; max-width: 280px; height: auto; pointer-events: none;
+      -webkit-mask-image: linear-gradient(90deg, transparent 0, transparent 3%, #000 27%, #000 100%);
+              mask-image: linear-gradient(90deg, transparent 0, transparent 3%, #000 27%, #000 100%);
     }
 
     /* --- En-tête --- */
@@ -82,20 +82,20 @@
     /* --- Titre + accroche --- */
     .dt-hero { position: relative; z-index: 3; }
     .dt-hero h1 {
-      margin: 0; padding-right: 33%;
+      margin: 0; padding-right: 38%;
       font-size: clamp(1.5rem, 7.1vw, 1.95rem); font-weight: 900; line-height: 1.12;
       letter-spacing: -.025em; color: var(--dt-ink);
       overflow-wrap: break-word;
     }
     .dt-hero h1 .b { color: var(--dt-blue); white-space: nowrap; }
     .dt-hero p {
-      margin: 14px 0 0; padding-right: 43%;
+      margin: 14px 0 0; padding-right: 45%;
       font-size: .95rem; line-height: 1.5; color: var(--dt-muted);
     }
 
     /* --- Avantages --- */
     .dt-benefits {
-      position: relative; z-index: 3; list-style: none; margin: 24px 0 0; padding: 0 42% 0 0;
+      position: relative; z-index: 3; list-style: none; margin: 24px 0 0; padding: 0 46% 0 0;
       display: flex; flex-direction: column; gap: 15px;
     }
     .dt-benefits li { display: flex; gap: 13px; align-items: flex-start; }
@@ -111,11 +111,12 @@
     .dt-b-tx b { display: block; font-size: .98rem; font-weight: 800; color: var(--dt-ink); line-height: 1.25; }
     .dt-b-tx span { display: block; font-size: .84rem; line-height: 1.4; color: var(--dt-muted); margin-top: 3px; }
 
-    /* --- Preuve sociale (chevauche le bas de la photo) --- */
+    /* --- Preuve sociale (chevauche le bas du visuel, légèrement en
+           retrait à droite pour laisser dépasser les outils) --- */
     .dt-social {
-      position: relative; z-index: 5; margin-top: 24px;
+      position: relative; z-index: 6; margin: 20px 30px 0 0;
       background: #fff; border-radius: 18px; padding: 14px 15px;
-      box-shadow: 0 14px 34px rgba(11,27,59,.12);
+      box-shadow: 0 16px 36px rgba(11,27,59,.16);
       display: flex; align-items: center; gap: 12px;
     }
     .dt-social-ic {
@@ -156,10 +157,11 @@
 
     @media (max-width: 374px) {
       .dt { padding-left: 17px; padding-right: 17px; }
-      .dt-hero h1 { padding-right: 30%; }
-      .dt-hero p { padding-right: 38%; }
-      .dt-benefits { padding-right: 40%; }
-      .dt-photo { top: 64px; width: 56%; }
+      .dt-hero h1 { padding-right: 34%; }
+      .dt-hero p { padding-right: 44%; }
+      .dt-benefits { padding-right: 46%; }
+      .dt-photo { top: 40px; width: 55%; }
+      .dt-social { margin-right: 20px; }
     }
     @media (min-width: 700px) {
       .dt-cta, .dt-cta-foot { max-width: 440px; margin-left: auto; margin-right: auto; }
