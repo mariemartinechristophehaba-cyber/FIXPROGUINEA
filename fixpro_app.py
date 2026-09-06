@@ -1745,7 +1745,9 @@ def _parse_base64_file(data_uri):
 def register():
     role = request.form.get("role") if request.method == "POST" else request.args.get("role", "client")
     role = (role or "client").lower()
-    if role not in ("client", "artisan", "technician"):
+    if role in ("artisan", "technician", "technicien", "pro", "professionnel"):
+        return redirect(url_for("devenir_technicien"))
+    if role != "client":
         role = "client"
 
     if role == "client" and request.method == "POST":
@@ -1793,11 +1795,58 @@ def register():
         finally:
             conn.close()
 
-    if role in ("artisan", "technician"):
-        flash("L'inscription technicien n'est plus disponible.", "info")
-        return redirect(url_for("register"))
-
     return render_template("choose_account.html")
+
+
+# Champs obligatoires de l'etape 1 (profil) du wizard d'inscription technicien.
+_TECH_SIGNUP_STEP1_FIELDS = ("first_name", "last_name", "phone", "email", "password")
+
+
+@app.route("/devenir-technicien", methods=["GET", "POST"])
+@limiter.limit("15 per hour", methods=["POST"])
+def devenir_technicien():
+    """Wizard d'inscription technicien -- etape 1 sur 5 : le profil
+    (identite, telephone, e-mail, mot de passe). Public. Les etapes 2 a 5
+    (Services, Documents, Localisation, Finalisation) sont en cours de
+    conception : "Continuer" valide et memorise l'etape 1 puis affiche un
+    message d'attente."""
+    data = dict(session.get("tech_signup", {}))
+    errors = {}
+    teaser = False
+
+    if request.method == "POST":
+        data = {
+            "first_name": request.form.get("first_name", "").strip(),
+            "last_name": request.form.get("last_name", "").strip(),
+            "phone": request.form.get("phone", "").strip(),
+            "email": request.form.get("email", "").strip().lower(),
+            "password": request.form.get("password", ""),
+        }
+        for f in ("first_name", "last_name", "phone", "email"):
+            if not data[f]:
+                errors[f] = "Ce champ est obligatoire."
+        if data["email"] and "@" not in data["email"]:
+            errors["email"] = "Adresse e-mail invalide."
+        if not data["password"]:
+            errors["password"] = "Ce champ est obligatoire."
+        else:
+            pwd_error = _validate_password_strength(data["password"])
+            if pwd_error:
+                errors["password"] = pwd_error
+
+        if not errors:
+            session["tech_signup"] = {k: data[k] for k in
+                                      ("first_name", "last_name", "phone", "email")}
+            session.modified = True
+            teaser = True
+
+    return render_template(
+        "technician_signup.html",
+        nav_user=get_current_user(),
+        data=data,
+        errors=errors,
+        teaser=teaser,
+    )
 
 
 # --- Verification des techniciens -------------------------------------------

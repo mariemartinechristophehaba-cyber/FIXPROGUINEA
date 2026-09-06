@@ -224,6 +224,77 @@ class ClientRegistrationTests(FixProTestCase):
             conn.close()
 
 
+class TechnicianSignupTests(FixProTestCase):
+    """Inscription technicien -- etape 1 sur 5 : le profil."""
+
+    def test_step1_form_renders(self):
+        r = self.client.get("/devenir-technicien")
+        self.assertEqual(r.status_code, 200)
+        html = r.get_data(as_text=True)
+        self.assertIn("Espace Technicien", html)
+        self.assertIn("Parlons de", html)
+        self.assertIn('name="first_name"', html)
+        self.assertIn('name="phone"', html)
+        self.assertIn('name="password"', html)
+        self.assertIn("Continuer", html)
+
+    def test_register_role_technicien_redirects_to_form(self):
+        r = self.client.get("/register?role=technicien", follow_redirects=False)
+        self.assertEqual(r.status_code, 302)
+        self.assertIn("/devenir-technicien", r.location)
+
+    def test_menu_link_present_on_client_page(self):
+        self.register_client()
+        self.login("+224620000000")
+        html = self.client.get("/artisans").get_data(as_text=True)
+        self.assertIn("/devenir-technicien", html)
+        self.assertIn("S'inscrire en tant que technicien", html)
+
+    def test_step1_post_valid_stores_and_shows_teaser(self):
+        with self.client as c:
+            r = c.post("/devenir-technicien", data={
+                "first_name": "Mohamed", "last_name": "Diallo",
+                "phone": "620112233", "email": "m@gmail.com",
+                "password": "FixPro2026!",
+            })
+            self.assertEqual(r.status_code, 200)
+            self.assertIn("bient", r.get_data(as_text=True))
+            with c.session_transaction() as sess:
+                self.assertEqual(sess["tech_signup"]["first_name"], "Mohamed")
+                self.assertNotIn("password", sess["tech_signup"])
+
+    def test_step1_post_missing_fields_shows_errors_no_session(self):
+        with self.client as c:
+            r = c.post("/devenir-technicien", data={"first_name": "Mohamed"})
+            self.assertEqual(r.status_code, 200)
+            self.assertIn("obligatoire", r.get_data(as_text=True))
+            with c.session_transaction() as sess:
+                self.assertNotIn("tech_signup", sess)
+
+    def test_step1_post_weak_password_rejected(self):
+        with self.client as c:
+            r = c.post("/devenir-technicien", data={
+                "first_name": "M", "last_name": "D", "phone": "620",
+                "email": "m@gmail.com", "password": "faible",
+            })
+            self.assertIn("mot de passe", r.get_data(as_text=True).lower())
+            with c.session_transaction() as sess:
+                self.assertNotIn("tech_signup", sess)
+
+    def test_no_technician_account_is_created(self):
+        self.client.post("/devenir-technicien", data={
+            "first_name": "Mohamed", "last_name": "Diallo",
+            "phone": "620112233", "email": "m@gmail.com",
+            "password": "FixPro2026!",
+        })
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            n = conn.execute("SELECT COUNT(*) AS n FROM users").fetchone()["n"]
+        finally:
+            conn.close()
+        self.assertEqual(n, 0)
+
+
 class ClientProfileTests(FixProTestCase):
     """Profil client et pages associees."""
 

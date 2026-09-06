@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#2563EB" />
+  {% include '_pwa_head.html' %}
+  <title>Inscription technicien - FixPro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ts-blue: #2563EB;
+      --ts-blue-d: #1D4ED8;
+      --ts-ink: #0B1B3B;
+      --ts-muted: #64748B;
+      --ts-ice: #EEF2F9;
+      --ts-line: #E2E8F2;
+      --ts-req: #EF4444;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      color: var(--ts-ink); -webkit-font-smoothing: antialiased; background: #F7F9FC;
+    }
+    a { text-decoration: none; color: inherit; }
+    button, input, select { font-family: inherit; }
+
+    .ts {
+      max-width: 480px; margin: 0 auto; min-height: 100dvh;
+      padding: calc(12px + env(safe-area-inset-top)) 20px calc(22px + env(safe-area-inset-bottom));
+      background: #F7F9FC;
+    }
+
+    /* --- En-tête --- */
+    .ts-head { position: relative; display: flex; align-items: center; justify-content: center; }
+    .ts-back {
+      position: absolute; left: -6px; top: 50%; transform: translateY(-50%);
+      width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; color: var(--ts-ink);
+    }
+    .ts-back svg { width: 24px; height: 24px; }
+    .ts-brand { display: flex; align-items: center; gap: 9px; }
+    .ts-brand .ic { width: 36px; height: 36px; color: var(--ts-blue); }
+    .ts-brand .ic svg { width: 100%; height: 100%; }
+    .ts-brand .n { font-size: 1.4rem; font-weight: 800; letter-spacing: -.02em; line-height: 1; }
+    .ts-brand .n i { color: var(--ts-blue); font-style: normal; }
+    .ts-brand .s { display: block; font-size: .72rem; font-weight: 600; color: var(--ts-muted); margin-top: 2px; }
+
+    /* --- Stepper --- */
+    .ts-steps { display: flex; margin: 22px 0 4px; }
+    .ts-step { flex: 1; display: flex; flex-direction: column; align-items: center; position: relative; }
+    .ts-step .num {
+      width: 40px; height: 40px; border-radius: 999px; background: #E7ECF4; color: #94A3B8;
+      display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: .98rem;
+      position: relative; z-index: 2;
+    }
+    .ts-step.on .num { background: var(--ts-blue); color: #fff; box-shadow: 0 8px 18px rgba(37,99,235,.35); }
+    .ts-step .lbl { margin-top: 7px; font-size: .74rem; font-weight: 700; color: var(--ts-muted); text-align: center; }
+    .ts-step.on .lbl { color: var(--ts-blue); }
+    .ts-step::before {
+      content: ""; position: absolute; top: 20px; right: 50%; width: 100%; height: 3px; background: #E1E7F0; z-index: 1;
+    }
+    .ts-step:first-child::before { display: none; }
+
+    /* --- Titre + avatar --- */
+    .ts-hero { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-top: 26px; }
+    .ts-hero-tx { min-width: 0; }
+    .ts-hero h1 { margin: 0; font-size: clamp(1.9rem, 8.6vw, 2.5rem); font-weight: 900; letter-spacing: -.03em; line-height: 1.04; }
+    .ts-hero h1 span { color: var(--ts-blue); }
+    .ts-hero p { margin: 10px 0 0; font-size: clamp(.9rem, 3.9vw, 1rem); line-height: 1.4; color: var(--ts-muted); }
+    .ts-avatar { flex-shrink: 0; text-align: center; }
+    .ts-avatar .ph {
+      position: relative; width: clamp(92px, 26vw, 118px); height: clamp(92px, 26vw, 118px);
+      border-radius: 999px; background: #E5EBF4; color: #AEBBD0;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .ts-avatar .ph > svg { width: 56%; height: 56%; }
+    .ts-avatar .cam {
+      position: absolute; right: 2px; bottom: 2px; width: 34px; height: 34px; border-radius: 999px;
+      background: var(--ts-blue); color: #fff; border: 3px solid #F7F9FC;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .ts-avatar .cam svg { width: 16px; height: 16px; }
+    .ts-avatar .t1 { display: block; margin-top: 8px; font-size: .84rem; font-weight: 700; }
+    .ts-avatar .t2 { display: block; font-size: .78rem; color: var(--ts-muted); }
+    .ts-avatar input { display: none; }
+
+    /* --- Formulaire --- */
+    .ts-form { margin-top: 26px; display: flex; flex-direction: column; gap: 18px; }
+    .ts-row { display: flex; gap: 14px; }
+    .ts-row .ts-field { flex: 1; min-width: 0; }
+    .ts-field > label { display: block; font-size: .96rem; font-weight: 700; margin-bottom: 8px; }
+    .ts-field > label b { color: var(--ts-req); font-weight: 700; }
+    .ts-input {
+      display: flex; align-items: stretch; background: #fff; border: 1.5px solid var(--ts-line);
+      border-radius: 15px; overflow: hidden; transition: border-color .15s, box-shadow .15s;
+    }
+    .ts-input:focus-within { border-color: var(--ts-blue); box-shadow: 0 0 0 3px rgba(37,99,235,.12); }
+    .ts-input.err { border-color: var(--ts-req); }
+    .ts-input .ic {
+      flex-shrink: 0; width: 52px; display: flex; align-items: center; justify-content: center;
+      background: var(--ts-ice); color: var(--ts-blue);
+    }
+    .ts-input .ic svg { width: 20px; height: 20px; }
+    .ts-input input {
+      flex: 1; min-width: 0; border: 0; outline: 0; background: transparent;
+      padding: 15px 14px; font-size: .98rem; color: var(--ts-ink);
+    }
+    .ts-input input::placeholder { color: #9AA7BC; }
+    .ts-input .eye {
+      flex-shrink: 0; width: 48px; border: 0; background: transparent; color: var(--ts-muted);
+      display: flex; align-items: center; justify-content: center; cursor: pointer;
+    }
+    .ts-input .eye svg { width: 21px; height: 21px; }
+    .ts-cc {
+      flex-shrink: 0; display: flex; align-items: center; gap: 6px; padding: 0 12px;
+      border-right: 1.5px solid var(--ts-line); font-weight: 700; font-size: .96rem; color: var(--ts-ink);
+      background: #fff;
+    }
+    .ts-cc .flag {
+      width: 22px; height: 16px; border-radius: 3px; overflow: hidden; flex-shrink: 0; display: block;
+      background: linear-gradient(90deg, #CE1126 0 33.33%, #FCD116 33.33% 66.66%, #009460 66.66%);
+    }
+    .ts-cc svg { width: 15px; height: 15px; color: var(--ts-muted); }
+    .ts-err { margin: 6px 0 0; font-size: .82rem; color: var(--ts-req); font-weight: 600; }
+
+    /* --- Action --- */
+    .ts-submit {
+      width: 100%; margin-top: 26px; border: 0; border-radius: 18px; padding: 18px 24px;
+      background: linear-gradient(180deg, #3B76F5, var(--ts-blue));
+      color: #fff; font-size: 1.06rem; font-weight: 800; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 12px;
+      box-shadow: 0 16px 32px rgba(37,99,235,.32);
+    }
+    .ts-submit:active { transform: translateY(1px); }
+    .ts-secure {
+      margin: 16px 0 0; display: flex; align-items: center; justify-content: center; gap: 8px;
+      font-size: .82rem; color: var(--ts-muted); font-weight: 500; text-align: center;
+    }
+    .ts-secure svg { width: 15px; height: 15px; flex-shrink: 0; color: var(--ts-muted); }
+
+    .ts-toast {
+      position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%);
+      background: var(--ts-ink); color: #fff; font-size: .85rem; font-weight: 600;
+      padding: 12px 20px; border-radius: 13px; z-index: 40; max-width: 90%; text-align: center;
+      box-shadow: 0 14px 34px rgba(11,27,59,.32);
+    }
+    [hidden] { display: none !important; }
+
+    @media (max-width: 360px) {
+      .ts { padding-left: 16px; padding-right: 16px; }
+      .ts-step .lbl { font-size: .68rem; }
+      .ts-hero { flex-direction: column-reverse; align-items: stretch; }
+      .ts-avatar { align-self: flex-start; display: flex; align-items: center; gap: 12px; text-align: left; }
+      .ts-avatar .info { display: flex; flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <form class="ts" method="post" action="{{ url_for('devenir_technicien') }}" novalidate>
+    <header class="ts-head">
+      <a class="ts-back" href="{{ url_for('index') }}" aria-label="Retour">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      </a>
+      <span class="ts-brand">
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span>
+        <span><span class="n">Fix<i>Pro</i></span><span class="s">Espace Technicien</span></span>
+      </span>
+    </header>
+
+    <div class="ts-steps">
+      {% for n, lbl in [(1,'Profil'),(2,'Services'),(3,'Documents'),(4,'Localisation'),(5,'Finalisation')] %}
+      <div class="ts-step {{ 'on' if n == 1 }}"><span class="num">{{ n }}</span><span class="lbl">{{ lbl }}</span></div>
+      {% endfor %}
+    </div>
+
+    <div class="ts-hero">
+      <div class="ts-hero-tx">
+        <h1>Parlons de <span>vous</span></h1>
+        <p>Renseignez vos informations personnelles pour créer votre compte technicien.</p>
+      </div>
+      <label class="ts-avatar">
+        <span class="ph">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-5 0-9 2.7-9 6v2h18v-2c0-3.3-4-6-9-6Z"/></svg>
+          <span class="cam"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></span>
+        </span>
+        <span class="info"><span class="t1">Ajouter une photo</span><span class="t2">(facultatif)</span></span>
+        <input type="file" name="photo" accept="image/*" />
+      </label>
+    </div>
+
+    <div class="ts-form">
+      <div class="ts-row">
+        <div class="ts-field">
+          <label>Prénom <b>*</b></label>
+          <div class="ts-input {{ 'err' if errors.first_name }}">
+            <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+            <input type="text" name="first_name" placeholder="Ex. : Mohamed" value="{{ data.first_name or '' }}" autocomplete="given-name" />
+          </div>
+          {% if errors.first_name %}<p class="ts-err">{{ errors.first_name }}</p>{% endif %}
+        </div>
+        <div class="ts-field">
+          <label>Nom <b>*</b></label>
+          <div class="ts-input {{ 'err' if errors.last_name }}">
+            <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+            <input type="text" name="last_name" placeholder="Ex. : Diallo" value="{{ data.last_name or '' }}" autocomplete="family-name" />
+          </div>
+          {% if errors.last_name %}<p class="ts-err">{{ errors.last_name }}</p>{% endif %}
+        </div>
+      </div>
+
+      <div class="ts-field">
+        <label>Numéro de téléphone <b>*</b></label>
+        <div class="ts-input {{ 'err' if errors.phone }}">
+          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3.1-8.7A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1.2.4 2.4.7 3.5a2 2 0 0 1-.5 2.1L8.1 10.5a16 16 0 0 0 6 6l1.2-1.2a2 2 0 0 1 2.1-.5c1.1.4 2.3.6 3.5.7A2 2 0 0 1 22 16.9z"/></svg></span>
+          <span class="ts-cc">
+            <span class="flag" aria-hidden="true"></span>
+            +224
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+          </span>
+          <input type="tel" name="phone" placeholder="Ex. : 620 11 22 33" value="{{ data.phone or '' }}" inputmode="tel" autocomplete="tel-national" />
+        </div>
+        {% if errors.phone %}<p class="ts-err">{{ errors.phone }}</p>{% endif %}
+      </div>
+
+      <div class="ts-field">
+        <label>Adresse e-mail <b>*</b></label>
+        <div class="ts-input {{ 'err' if errors.email }}">
+          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg></span>
+          <input type="email" name="email" placeholder="Ex. : mamadou@gmail.com" value="{{ data.email or '' }}" autocomplete="email" />
+        </div>
+        {% if errors.email %}<p class="ts-err">{{ errors.email }}</p>{% endif %}
+      </div>
+
+      <div class="ts-field">
+        <label>Mot de passe <b>*</b></label>
+        <div class="ts-input {{ 'err' if errors.password }}">
+          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+          <input type="password" name="password" id="tsPwd" placeholder="Créez un mot de passe sécurisé" autocomplete="new-password" />
+          <button type="button" class="eye" id="tsEye" aria-label="Afficher le mot de passe">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+        {% if errors.password %}<p class="ts-err">{{ errors.password }}</p>{% endif %}
+      </div>
+    </div>
+
+    <button type="submit" class="ts-submit">
+      Continuer
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </button>
+
+    <p class="ts-secure">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      Vos informations sont sécurisées et resteront confidentielles.
+    </p>
+  </form>
+
+  <div class="ts-toast" id="tsToast" {{ '' if teaser else 'hidden' }}>Étape 1 enregistrée. La suite de l'inscription arrive très bientôt.</div>
+
+  <script>
+    (function () {
+      var pwd = document.getElementById('tsPwd'), eye = document.getElementById('tsEye');
+      eye.addEventListener('click', function () {
+        pwd.type = pwd.type === 'password' ? 'text' : 'password';
+      });
+      var av = document.querySelector('.ts-avatar input'), ph = document.querySelector('.ts-avatar .ph');
+      av.addEventListener('change', function () {
+        if (!av.files || !av.files[0]) return;
+        var url = URL.createObjectURL(av.files[0]);
+        ph.style.backgroundImage = 'url(' + url + ')';
+        ph.style.backgroundSize = 'cover';
+        ph.style.backgroundPosition = 'center';
+        ph.querySelector('svg').style.display = 'none';
+      });
+      var t = document.getElementById('tsToast');
+      if (t && !t.hidden) setTimeout(function () { t.hidden = true; }, 3600);
+    })();
+  </script>
+</body>
+</html>
