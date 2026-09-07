@@ -293,6 +293,14 @@ class TechnicianSignupTests(FixProTestCase):
         client.post("/devenir-technicien", data=self._STEP1_OK)
         client.post("/devenir-technicien/services", data={"trade": trade})
 
+    def _count_users(self):
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            return conn.execute(
+                "SELECT COUNT(*) AS n FROM users").fetchone()["n"]
+        finally:
+            conn.close()
+
     def test_step2_post_stores_single_trade_and_goes_to_step3(self):
         with self.client as c:
             c.post("/devenir-technicien", data=self._STEP1_OK)
@@ -419,13 +427,14 @@ class TechnicianSignupTests(FixProTestCase):
                        data={"latitude": "abc", "longitude": "xyz"})
             self.assertIn("invalide", r.get_data(as_text=True).lower())
 
-    def test_step4_post_valid_coordinates_stores_and_teaser(self):
+    def test_step4_post_valid_coordinates_stores_and_goes_to_step5(self):
         with self.client as c:
             self._do_steps_1_3(c)
             r = c.post("/devenir-technicien/localisation",
-                       data={"latitude": "9.5370", "longitude": "-13.6785"})
-            self.assertEqual(r.status_code, 200)
-            self.assertIn("bient", r.get_data(as_text=True))
+                       data={"latitude": "9.5370", "longitude": "-13.6785"},
+                       follow_redirects=False)
+            self.assertEqual(r.status_code, 302)
+            self.assertIn("/devenir-technicien/finalisation", r.location)
             with c.session_transaction() as sess:
                 loc = sess["tech_signup_location"]
                 self.assertAlmostEqual(loc["lat"], 9.537, places=3)
@@ -435,6 +444,79 @@ class TechnicianSignupTests(FixProTestCase):
         r = self.client.get("/devenir-technicien/localisation/lieu?lat=0&lon=0")
         self.assertEqual(r.status_code, 400)
         self.assertFalse(r.get_json()["ok"])
+
+    def _do_steps_1_4(self, client, trade="plomberie"):
+        self._do_steps_1_2(client, trade=trade)
+        client.post("/devenir-technicien/documents",
+                    data={"identity_doc": self._JPEG_DATA_URI})
+        client.post("/devenir-technicien/localisation",
+                    data={"latitude": "9.5370", "longitude": "-13.6785"})
+
+    def test_step5_requires_previous_steps(self):
+        r = self.client.get("/devenir-technicien/finalisation", follow_redirects=False)
+        self.assertEqual(r.status_code, 302)
+        self.assertTrue(r.location.endswith("/devenir-technicien"))
+        with self.client as c:
+            self._do_steps_1_3(c)  # etape 4 pas faite
+            r = c.get("/devenir-technicien/finalisation", follow_redirects=False)
+            self.assertIn("/devenir-technicien/localisation", r.location)
+
+    def test_step5_renders_recap(self):
+        with self.client as c:
+            self._do_steps_1_4(c, trade="electricite")
+            html = c.get("/devenir-technicien/finalisation").get_data(as_text=True)
+            self.assertIn("Mohamed Diallo", html)
+            self.assertIn("Électricité", html)
+            self.assertIn("+224620112233", html)
+            self.assertIn('name="accept_cgu"', html)
+            self.assertIn("disabled", html)  # bouton bloque tant que CGU non cochee
+
+    def test_step5_post_requires_cgu(self):
+        with self.client as c:
+            self._do_steps_1_4(c)
+            r = c.post("/devenir-technicien/finalisation", data={})
+            self.assertEqual(r.status_code, 200)
+            self.assertIn("conditions d'utilisation", r.get_data(as_text=True))
+        self.assertEqual(self._count_users(), 0)
+
+    def test_step5_post_creates_technician_and_logs_in(self):
+        with self.client as c:
+            self._do_steps_1_4(c)
+            r = c.post("/devenir-technicien/finalisation",
+                       data={"accept_cgu": "1"}, follow_redirects=False)
+            self.assertEqual(r.status_code, 302)
+            with c.session_transaction() as sess:
+                self.assertIn("user_id", sess)
+                self.assertNotIn("tech_signup", sess)
+
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            user = conn.execute(
+                "SELECT * FROM users WHERE phone = ?", ("+224620112233",)
+            ).fetchone()
+            self.assertIsNotNone(user)
+            self.assertEqual(user["role"], "technician")
+            self.assertEqual(user["profession"], "Plombier")
+            self.assertEqual(user["verification_status"], "PENDING_REVIEW")
+            self.assertIsNotNone(user["latitude"])
+            docs = conn.execute(
+                "SELECT * FROM technician_documents WHERE technician_id = ?",
+                (user["id"],)).fetchall()
+            self.assertEqual(len(docs), 1)
+            self.assertEqual(docs[0]["document_type"], "identity")
+            self.assertEqual(docs[0]["status"], "pending")
+        finally:
+            conn.close()
+
+    def test_step5_rejects_duplicate_phone(self):
+        with self.client as c:
+            self._do_steps_1_4(c)
+            c.post("/devenir-technicien/finalisation", data={"accept_cgu": "1"})
+        with self.client as c:
+            self._do_steps_1_4(c)
+            r = c.post("/devenir-technicien/finalisation", data={"accept_cgu": "1"})
+            self.assertIn("déjà utilisé", r.get_data(as_text=True))
+        self.assertEqual(self._count_users(), 1)
 
     def test_step1_post_missing_fields_shows_errors_no_session(self):
         with self.client as c:

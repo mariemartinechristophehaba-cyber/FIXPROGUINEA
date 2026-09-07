@@ -16,6 +16,7 @@ import os
 import math
 import re
 import requests
+import tempfile
 import urllib.parse
 import urllib.request
 import secrets
@@ -1826,6 +1827,38 @@ _TECH_TRADE_PROFESSION = {
 }
 
 
+def _signup_doc_dir():
+    """Dossier temporaire ou sont stockees les pieces jointes du wizard
+    d'inscription technicien, en attendant la creation du compte (etape 5)."""
+    d = os.path.join(tempfile.gettempdir(), "fixpro_signup_docs")
+    os.makedirs(d, exist_ok=True)
+    return d
+
+
+def _signup_doc_stash(token, kind, data_uri):
+    """Ecrit une piece jointe (data-URI) dans un fichier temporaire."""
+    if not data_uri:
+        return
+    path = os.path.join(_signup_doc_dir(), f"{token}_{kind}")
+    with open(path, "w", encoding="ascii") as fh:
+        fh.write(data_uri)
+
+
+def _signup_doc_pop(token, kind):
+    """Relit puis supprime une piece jointe temporaire. None si absente."""
+    path = os.path.join(_signup_doc_dir(), f"{token}_{kind}")
+    try:
+        with open(path, "r", encoding="ascii") as fh:
+            data = fh.read()
+    except OSError:
+        return None
+    try:
+        os.remove(path)
+    except OSError:
+        pass
+    return data or None
+
+
 @app.route("/devenir-technicien", methods=["GET", "POST"])
 @limiter.limit("15 per hour", methods=["POST"])
 def devenir_technicien():
@@ -1858,6 +1891,9 @@ def devenir_technicien():
         if not errors:
             session["tech_signup"] = {k: data[k] for k in
                                       ("first_name", "last_name", "phone", "email")}
+            # Le mot de passe est stocke HACHE (jamais en clair) pour creer
+            # le compte a l'etape 5 sans le redemander.
+            session["tech_signup"]["pwd_hash"] = generate_password_hash(data["password"])
             session.modified = True
             return redirect(url_for("technician_signup_trade"))
 
@@ -1921,15 +1957,14 @@ def technician_signup_documents():
 
     docs = dict(session.get("tech_signup_docs", {}))
     errors = {}
-    teaser = False
 
     if request.method == "POST":
         identity = request.form.get("identity_doc", "")
         diploma = request.form.get("diploma_doc", "")
 
         _MAX_DOC = 7 * 1024 * 1024  # base64 -> ~5 Mo binaire
-        mime, ext, _ = (_parse_base64_file(identity, _MAX_DOC)
-                        if identity else (None, None, None))
+        _, ext, _ = (_parse_base64_file(identity, _MAX_DOC)
+                     if identity else (None, None, None))
         if not identity:
             errors["identity"] = "La pièce d'identité est obligatoire."
         elif not ext:
@@ -1942,9 +1977,14 @@ def technician_signup_documents():
                 errors["diploma"] = "Fichier invalide (JPG, PNG ou PDF, 5 Mo max)."
 
         if not errors:
-            # Les fichiers eux-memes seront persistes a l'etape de
-            # finalisation (aucun compte n'existe encore) : on ne garde
-            # ici que l'etat (type de fichier fourni).
+            # Le contenu des fichiers est mis de cote dans un fichier temp
+            # (trop volumineux pour le cookie de session) ; ils seront
+            # persistes en base a l'etape 5 (creation du compte).
+            token = session.get("tech_signup_doc_token") or secrets.token_hex(12)
+            _signup_doc_stash(token, "identity", identity)
+            if dip_ext:
+                _signup_doc_stash(token, "diploma", diploma)
+            session["tech_signup_doc_token"] = token
             session["tech_signup_docs"] = {"identity": ext, "diploma": dip_ext}
             session.modified = True
             return redirect(url_for("technician_signup_location"))
@@ -1965,9 +2005,8 @@ def technician_signup_location():
     navigateur (navigator.geolocation cote client). Le serveur valide les
     coordonnees et fait le geocodage inverse (Nominatim). Elle sera
     enregistree dans users.latitude / users.longitude a la finalisation
-    (aucune migration -- colonnes deja presentes). L'etape 5 (Finalisation)
-    est en cours de conception : "Continuer" memorise la position puis
-    affiche un message d'attente."""
+    (aucune migration -- colonnes deja presentes). Au POST valide, passe a
+    l'etape 5 (Finalisation)."""
     if not session.get("tech_signup"):
         return redirect(url_for("devenir_technicien"))
     if not session.get("tech_signup_trade"):
@@ -1977,7 +2016,6 @@ def technician_signup_location():
 
     loc = dict(session.get("tech_signup_location", {}))
     error = None
-    teaser = False
 
     if request.method == "POST":
         lat = request.form.get("latitude", "")
@@ -1987,17 +2025,130 @@ def technician_signup_location():
         else:
             lat, lon = round(float(lat), 6), round(float(lon), 6)
             zone = _reverse_geocode(lat, lon)
-            loc = {"lat": lat, "lon": lon, "zone": zone}
-            session["tech_signup_location"] = loc
+            session["tech_signup_location"] = {"lat": lat, "lon": lon, "zone": zone}
             session.modified = True
-            teaser = True
+            return redirect(url_for("technician_signup_finalize"))
 
     return render_template(
         "technician_signup_location.html",
         nav_user=get_current_user(),
         loc=loc,
         error=error,
-        teaser=teaser,
+        teaser=False,
+    )
+
+
+def _clear_tech_signup_session():
+    """Nettoie toutes les cles du wizard d'inscription technicien."""
+    token = session.get("tech_signup_doc_token")
+    if token:
+        for kind in ("identity", "diploma"):
+            _signup_doc_pop(token, kind)
+    for k in ("tech_signup", "tech_signup_trade", "tech_signup_docs",
+              "tech_signup_doc_token", "tech_signup_location"):
+        session.pop(k, None)
+
+
+@app.route("/devenir-technicien/finalisation", methods=["GET", "POST"])
+@limiter.limit("10 per hour", methods=["POST"])
+def technician_signup_finalize():
+    """Wizard d'inscription technicien -- etape 5 sur 5 : recapitulatif et
+    creation du compte. Les etapes 1 a 4 doivent avoir ete remplies. Au POST
+    (case CGU cochee), cree le compte technicien (users.role='technician',
+    profession = metier principal, latitude/longitude = position),
+    enregistre les documents dans technician_documents (statut 'pending',
+    dossier a verifier par l'admin), connecte le nouvel utilisateur et le
+    redirige vers son tableau de bord. Aucune migration SQL."""
+    ts = session.get("tech_signup") or {}
+    trade = session.get("tech_signup_trade")
+    docs = session.get("tech_signup_docs") or {}
+    loc = session.get("tech_signup_location") or {}
+
+    if not ts.get("pwd_hash"):
+        return redirect(url_for("devenir_technicien"))
+    if not trade:
+        return redirect(url_for("technician_signup_trade"))
+    if not docs.get("identity"):
+        return redirect(url_for("technician_signup_documents"))
+    if not _is_valid_coordinate(loc.get("lat"), loc.get("lon")):
+        return redirect(url_for("technician_signup_location"))
+
+    full_name = f"{ts.get('first_name', '')} {ts.get('last_name', '')}".strip()
+    phone = _phone_with_prefix(ts.get("phone", ""))
+    email = (ts.get("email") or "").strip().lower() or None
+    zone_label = (loc.get("zone") or "").strip()
+    recap = {
+        "full_name": full_name,
+        "email": email or "—",
+        "phone": phone,
+        "trade": dict(_TECH_TRADES).get(trade, trade),
+        "identity": bool(docs.get("identity")),
+        "diploma": bool(docs.get("diploma")),
+        "zone": zone_label or "Position enregistrée",
+    }
+    error = None
+
+    if request.method == "POST":
+        if not request.form.get("accept_cgu"):
+            error = "Vous devez accepter les conditions d'utilisation pour créer votre compte."
+        else:
+            new_id = None
+            conn = get_db_connection()
+            try:
+                if conn.execute("SELECT id FROM users WHERE phone = ?", (phone,)).fetchone():
+                    error = "Ce numéro de téléphone est déjà utilisé."
+                elif email and conn.execute(
+                        "SELECT id FROM users WHERE email = ?", (email,)).fetchone():
+                    error = "Cette adresse e-mail est déjà utilisée."
+                else:
+                    profession = _TECH_TRADE_PROFESSION.get(trade, trade.capitalize())
+                    new_id = _insert_id(
+                        conn,
+                        "INSERT INTO users (full_name, phone, email, password_hash,"
+                        " role, profession, city, zone_intervention, latitude, longitude,"
+                        " is_verified, is_active, account_status, availability_status,"
+                        " verification_status)"
+                        " VALUES (?, ?, ?, ?, 'technician', ?, ?, ?, ?, ?,"
+                        " 0, 1, 'ACTIVE', 'hors_ligne', ?)",
+                        (full_name, phone, email, ts["pwd_hash"], profession,
+                         zone_label or None, zone_label or None,
+                         float(loc["lat"]), float(loc["lon"]), VERIF_PENDING))
+
+                    token = session.get("tech_signup_doc_token")
+                    for kind, dtype in (("identity", DOC_IDENTITY),
+                                        ("diploma", DOC_PROFESSIONAL)):
+                        data_uri = _signup_doc_pop(token, kind) if token else None
+                        if not data_uri:
+                            continue
+                        mime, ext, encoded = _parse_base64_file(data_uri, 7 * 1024 * 1024)
+                        if not ext:
+                            continue
+                        conn.execute(
+                            "INSERT INTO technician_documents (technician_id,"
+                            " document_type, file_name, mime_type, file_size,"
+                            " content_base64, status)"
+                            " VALUES (?, ?, ?, ?, ?, ?, 'pending')",
+                            (new_id, dtype, f"{kind}{ext}",
+                             mime or "application/octet-stream",
+                             len(encoded) if encoded else 0, encoded))
+                    conn.commit()
+            finally:
+                conn.close()
+
+            if new_id and not error:
+                _clear_tech_signup_session()
+                session.clear()
+                session["user_id"] = new_id
+                session.permanent = True
+                flash("Votre compte technicien a été créé. Votre dossier est"
+                      " en cours de vérification.", "success")
+                return redirect(url_for("artisan_dashboard"))
+
+    return render_template(
+        "technician_signup_finalize.html",
+        nav_user=get_current_user(),
+        recap=recap,
+        error=error,
     )
 
 

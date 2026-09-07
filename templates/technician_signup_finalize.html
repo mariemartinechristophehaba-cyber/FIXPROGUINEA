@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#2563EB" />
+  {% include '_pwa_head.html' %}
+  <title>Inscription technicien - Finalisation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ts-blue: #2563EB;
+      --ts-blue-d: #1D4ED8;
+      --ts-ink: #0B1B3B;
+      --ts-muted: #64748B;
+      --ts-ice: #EAF1FE;
+      --ts-line: #E4EAF4;
+      --ts-ok: #16A34A;
+      --ts-err: #EF4444;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      color: var(--ts-ink); -webkit-font-smoothing: antialiased; background: #F7F9FC;
+    }
+    a { text-decoration: none; color: inherit; }
+    button, input { font-family: inherit; }
+
+    .ts {
+      position: relative; max-width: 480px; margin: 0 auto; min-height: 100dvh;
+      padding: calc(12px + env(safe-area-inset-top)) 20px calc(24px + env(safe-area-inset-bottom));
+      overflow: hidden;
+    }
+    .ts::after {
+      content: ""; position: absolute; left: -40px; right: -40px; bottom: -70px; height: 150px;
+      background: radial-gradient(60% 100% at 50% 100%, #E4ECFA, rgba(228,236,250,0) 72%);
+      z-index: 0; pointer-events: none;
+    }
+    .ts > * { position: relative; z-index: 1; }
+
+    .ts-head { position: relative; display: flex; align-items: center; justify-content: center; }
+    .ts-back {
+      position: absolute; left: -6px; top: 50%; transform: translateY(-50%);
+      width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; color: var(--ts-ink);
+    }
+    .ts-back svg { width: 24px; height: 24px; }
+    .ts-brand { display: flex; align-items: center; gap: 9px; }
+    .ts-brand .ic { width: 36px; height: 36px; color: var(--ts-blue); }
+    .ts-brand .ic svg { width: 100%; height: 100%; }
+    .ts-brand .n { font-size: 1.4rem; font-weight: 800; letter-spacing: -.02em; line-height: 1; }
+    .ts-brand .n i { color: var(--ts-blue); font-style: normal; }
+    .ts-brand .s { display: block; font-size: .72rem; font-weight: 600; color: var(--ts-muted); margin-top: 2px; }
+
+    .ts-steps { display: flex; margin: 22px 0 4px; }
+    .ts-step { flex: 1; display: flex; flex-direction: column; align-items: center; position: relative; }
+    .ts-step .num {
+      width: 40px; height: 40px; border-radius: 999px; background: #E7ECF4; color: #94A3B8;
+      display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: .98rem;
+      position: relative; z-index: 2;
+    }
+    .ts-step.on .num { background: var(--ts-blue); color: #fff; box-shadow: 0 8px 18px rgba(37,99,235,.35); }
+    .ts-step.done .num { background: #DBEAFE; color: var(--ts-blue); }
+    .ts-step .lbl { margin-top: 7px; font-size: .74rem; font-weight: 700; color: var(--ts-muted); text-align: center; }
+    .ts-step.on .lbl { color: var(--ts-blue); }
+    .ts-step::before {
+      content: ""; position: absolute; top: 20px; right: 50%; width: 100%; height: 3px; background: #E1E7F0; z-index: 1;
+    }
+    .ts-step:first-child::before { display: none; }
+
+    .ts h1 { margin: clamp(18px, 3vh, 28px) 0 0; font-size: clamp(1.8rem, 8.4vw, 2.45rem); font-weight: 900; letter-spacing: -.03em; line-height: 1.05; }
+    .ts h1 span { display: block; color: var(--ts-blue); }
+    .ts-sub { margin: clamp(9px, 1.6vh, 14px) 0 0; font-size: clamp(.9rem, 3.9vw, 1rem); line-height: 1.42; color: var(--ts-muted); }
+
+    /* --- Recapitulatif --- */
+    .ts-recap {
+      margin-top: clamp(16px, 2.8vh, 26px); border: 1px solid var(--ts-line);
+      border-radius: 20px; background: #fff; overflow: hidden;
+    }
+    .ts-recap .row {
+      display: flex; align-items: center; gap: 13px; padding: 14px 16px;
+      border-bottom: 1px solid var(--ts-line);
+    }
+    .ts-recap .row:last-child { border-bottom: 0; }
+    .ts-recap .ic {
+      flex-shrink: 0; width: 38px; height: 38px; border-radius: 11px; background: var(--ts-ice); color: var(--ts-blue);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .ts-recap .ic svg { width: 19px; height: 19px; }
+    .ts-recap .tx { flex: 1; min-width: 0; }
+    .ts-recap .tx .k { display: block; font-size: .74rem; font-weight: 700; color: var(--ts-muted); text-transform: uppercase; letter-spacing: .03em; }
+    .ts-recap .tx .v { display: block; font-size: .98rem; font-weight: 700; line-height: 1.3; margin-top: 2px; word-break: break-word; }
+    .ts-recap .tag {
+      flex-shrink: 0; font-size: .74rem; font-weight: 800; padding: 4px 9px; border-radius: 999px;
+      background: #E7F6EC; color: var(--ts-ok);
+    }
+    .ts-recap .tag.muted { background: #EEF2F8; color: var(--ts-muted); }
+
+    .ts-cgu {
+      display: flex; align-items: flex-start; gap: 12px; margin-top: clamp(16px, 2.6vh, 22px);
+      background: var(--ts-ice); border-radius: 16px; padding: 14px 15px;
+      font-size: clamp(.82rem, 3.4vw, .9rem); line-height: 1.4;
+    }
+    .ts-cgu input { margin: 2px 0 0; width: 20px; height: 20px; flex-shrink: 0; accent-color: var(--ts-blue); }
+    .ts-cgu a { color: var(--ts-blue); font-weight: 700; text-decoration: underline; }
+
+    .ts-status {
+      margin-top: 12px; display: flex; align-items: flex-start; gap: 9px;
+      font-size: .88rem; line-height: 1.36; font-weight: 600;
+    }
+    .ts-status svg { flex-shrink: 0; width: 18px; height: 18px; margin-top: 1px; }
+    .ts-status.err { color: var(--ts-err); }
+
+    .ts-note {
+      display: flex; align-items: flex-start; gap: 10px; margin-top: clamp(14px, 2.4vh, 20px);
+      background: var(--ts-ice); border-radius: 16px; padding: 13px 15px;
+      font-size: clamp(.8rem, 3.3vw, .87rem); line-height: 1.36; color: var(--ts-muted);
+    }
+    .ts-note svg { flex-shrink: 0; width: 16px; height: 16px; margin-top: 2px; color: var(--ts-muted); }
+
+    .ts-submit {
+      width: 100%; margin-top: clamp(18px, 3vh, 26px); border: 0; border-radius: 18px;
+      padding: clamp(15px, 2.3vh, 19px) 24px;
+      background: linear-gradient(180deg, #3B76F5, var(--ts-blue));
+      color: #fff; font-size: 1.06rem; font-weight: 800; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 12px;
+      box-shadow: 0 16px 32px rgba(37,99,235,.32); transition: opacity .15s, filter .15s;
+    }
+    .ts-submit:active { transform: translateY(1px); }
+    .ts-submit:disabled { cursor: not-allowed; opacity: .45; filter: grayscale(.3); box-shadow: none; transform: none; }
+    [hidden] { display: none !important; }
+
+    @media (max-width: 360px) {
+      .ts { padding-left: 15px; padding-right: 15px; }
+      .ts-step .num { width: 34px; height: 34px; font-size: .9rem; }
+      .ts-step .lbl { font-size: .66rem; }
+      .ts-step::before { top: 17px; }
+    }
+  </style>
+</head>
+<body>
+  <form class="ts" method="post" action="{{ url_for('technician_signup_finalize') }}" id="tsForm">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+    <header class="ts-head">
+      <a class="ts-back" href="{{ url_for('technician_signup_location') }}" aria-label="Retour">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      </a>
+      <span class="ts-brand">
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span>
+        <span><span class="n">Fix<i>Pro</i></span><span class="s">Espace Technicien</span></span>
+      </span>
+    </header>
+
+    <div class="ts-steps">
+      {% for n, lbl in [(1,'Profil'),(2,'Métier'),(3,'Documents'),(4,'Localisation'),(5,'Finalisation')] %}
+      <div class="ts-step {{ 'on' if n == 5 else 'done' }}"><span class="num">{{ '✓' if n < 5 else n }}</span><span class="lbl">{{ lbl }}</span></div>
+      {% endfor %}
+    </div>
+
+    <h1>Presque <span>terminé&nbsp;!</span></h1>
+    <p class="ts-sub">Vérifiez vos informations puis créez votre compte technicien. Votre dossier sera ensuite vérifié par notre équipe.</p>
+
+    <div class="ts-recap">
+      <div class="row">
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+        <span class="tx"><span class="k">Nom</span><span class="v">{{ recap.full_name }}</span></span>
+      </div>
+      <div class="row">
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span>
+        <span class="tx"><span class="k">Métier principal</span><span class="v">{{ recap.trade }}</span></span>
+      </div>
+      <div class="row">
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg></span>
+        <span class="tx"><span class="k">Téléphone</span><span class="v">{{ recap.phone }}</span></span>
+      </div>
+      <div class="row">
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg></span>
+        <span class="tx"><span class="k">E-mail</span><span class="v">{{ recap.email }}</span></span>
+      </div>
+      <div class="row">
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg></span>
+        <span class="tx"><span class="k">Zone d'intervention</span><span class="v">{{ recap.zone }}</span></span>
+      </div>
+      <div class="row">
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></span>
+        <span class="tx"><span class="k">Documents</span><span class="v">Pièce d'identité{{ " + diplôme" if recap.diploma }}</span></span>
+        <span class="tag">Fourni</span>
+      </div>
+    </div>
+
+    <label class="ts-cgu">
+      <input type="checkbox" name="accept_cgu" id="tsCgu" value="1" />
+      <span>J'accepte les <a href="{{ url_for('static', filename='presentation.html') }}" target="_blank" rel="noopener">conditions d'utilisation</a> de FixPro et je certifie que les informations et documents fournis sont exacts.</span>
+    </label>
+
+    {% if error %}
+    <p class="ts-status err">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+      <span>{{ error }}</span>
+    </p>
+    {% endif %}
+
+    <p class="ts-note">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      Après création, votre compte reste en attente de vérification. Vous pourrez accéder à votre tableau de bord, mais ne recevrez de demandes qu'une fois votre dossier validé.
+    </p>
+
+    <button type="submit" class="ts-submit" id="tsSubmit" disabled>
+      Créer mon compte technicien
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+    </button>
+  </form>
+
+  <script>
+    (function () {
+      var cgu = document.getElementById('tsCgu');
+      var submit = document.getElementById('tsSubmit');
+      function sync() { submit.disabled = !cgu.checked; }
+      cgu.addEventListener('change', sync);
+      sync();
+    })();
+  </script>
+</body>
+</html>
