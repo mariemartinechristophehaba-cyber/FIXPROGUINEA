@@ -1700,10 +1700,12 @@ def _phone_with_prefix(phone):
     return phone
 
 
-def _parse_base64_file(data_uri):
+def _parse_base64_file(data_uri, max_bytes=3 * 1024 * 1024):
     """Extrait le mime, le nom et le contenu binaire depuis un data URI base64.
 
     Valide le type MIME, la taille et les magic bytes du fichier decode.
+    ``max_bytes`` borne la taille du contenu base64 (par defaut ~2,25 Mo
+    binaire ; ~5 Mo binaire pour les documents d'inscription technicien).
     """
     if not data_uri or not data_uri.startswith("data:"):
         return None, None, None
@@ -1715,7 +1717,7 @@ def _parse_base64_file(data_uri):
             return None, None, None
 
         # Limite approximative : base64 est ~33% plus gros que binaire
-        if len(encoded) > 3 * 1024 * 1024:
+        if len(encoded) > max_bytes:
             return None, None, None
 
         # Verification des magic bytes pour eviter les fichiers deguises
@@ -1860,16 +1862,13 @@ def devenir_technicien():
 @limiter.limit("20 per hour", methods=["POST"])
 def technician_signup_services():
     """Wizard d'inscription technicien -- etape 2 sur 5 : les services
-    proposes (multi-selection). L'etape 1 doit avoir ete remplie. Les
-    etapes 3 a 5 (Documents, Localisation, Finalisation) sont en cours de
-    conception : "Continuer" memorise la selection puis affiche un
-    message d'attente."""
+    proposes (multi-selection). L'etape 1 doit avoir ete remplie. Au POST
+    valide, memorise la selection et passe a l'etape 3 (Documents)."""
     if not session.get("tech_signup"):
         return redirect(url_for("devenir_technicien"))
 
     selected = list(session.get("tech_signup_services", []))
     error = None
-    teaser = False
 
     if request.method == "POST":
         selected = [s for s in request.form.getlist("services")
@@ -1879,7 +1878,7 @@ def technician_signup_services():
         else:
             session["tech_signup_services"] = selected
             session.modified = True
-            teaser = True
+            return redirect(url_for("technician_signup_documents"))
 
     return render_template(
         "technician_signup_services.html",
@@ -1887,6 +1886,60 @@ def technician_signup_services():
         services=_TECH_SERVICES,
         selected=selected,
         error=error,
+    )
+
+
+@app.route("/devenir-technicien/documents", methods=["GET", "POST"])
+@limiter.limit("20 per hour", methods=["POST"])
+def technician_signup_documents():
+    """Wizard d'inscription technicien -- etape 3 sur 5 : les documents
+    (piece d'identite obligatoire, diplome facultatif). Les etapes 1 et 2
+    doivent avoir ete remplies. Les fichiers sont envoyes en data-URI
+    base64 et valides (type + taille + magic bytes) via _parse_base64_file.
+    Les etapes 4 et 5 (Localisation, Finalisation) sont en cours de
+    conception : "Continuer" memorise l'etat des documents puis affiche un
+    message d'attente."""
+    if not session.get("tech_signup"):
+        return redirect(url_for("devenir_technicien"))
+    if not session.get("tech_signup_services"):
+        return redirect(url_for("technician_signup_services"))
+
+    docs = dict(session.get("tech_signup_docs", {}))
+    errors = {}
+    teaser = False
+
+    if request.method == "POST":
+        identity = request.form.get("identity_doc", "")
+        diploma = request.form.get("diploma_doc", "")
+
+        _MAX_DOC = 7 * 1024 * 1024  # base64 -> ~5 Mo binaire
+        mime, ext, _ = (_parse_base64_file(identity, _MAX_DOC)
+                        if identity else (None, None, None))
+        if not identity:
+            errors["identity"] = "La pièce d'identité est obligatoire."
+        elif not ext:
+            errors["identity"] = "Fichier invalide (JPG, PNG ou PDF, 5 Mo max)."
+
+        dip_ext = None
+        if diploma:
+            _, dip_ext, _ = _parse_base64_file(diploma, _MAX_DOC)
+            if not dip_ext:
+                errors["diploma"] = "Fichier invalide (JPG, PNG ou PDF, 5 Mo max)."
+
+        if not errors:
+            # Les fichiers eux-memes seront persistes a l'etape de
+            # finalisation (aucun compte n'existe encore) : on ne garde
+            # ici que l'etat (type de fichier fourni).
+            session["tech_signup_docs"] = {"identity": ext, "diploma": dip_ext}
+            session.modified = True
+            docs = session["tech_signup_docs"]
+            teaser = True
+
+    return render_template(
+        "technician_signup_documents.html",
+        nav_user=get_current_user(),
+        docs=docs,
+        errors=errors,
         teaser=teaser,
     )
 

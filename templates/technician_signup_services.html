@@ -195,18 +195,12 @@
     </button>
   </form>
 
-  <div class="ts-toast" id="tsToast" {{ '' if teaser else 'hidden' }}>Services enregistrés. La suite de l'inscription arrive très bientôt.</div>
-
   <script>
-    (function () {
-      document.querySelectorAll('.ts-card').forEach(function (c) {
-        var inp = c.querySelector('input');
-        function sync() { c.classList.toggle('is-on', inp.checked); }
-        inp.addEventListener('change', sync); sync();
-      });
-      var t = document.getElementById('tsToast');
-      if (t && !t.hidden) setTimeout(function () { t.hidden = true; }, 3600);
-    })();
+    document.querySelectorAll('.ts-card').forEach(function (c) {
+      var inp = c.querySelector('input');
+      function sync() { c.classList.toggle('is-on', inp.checked); }
+      inp.addEventListener('change', sync); sync();
+    });
   </script>
 </body>
 </html>

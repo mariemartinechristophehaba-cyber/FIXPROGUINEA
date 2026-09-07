@@ -280,13 +280,25 @@ class TechnicianSignupTests(FixProTestCase):
             self.assertNotIn("Autre service", html)
             self.assertIn('name="services"', html)
 
-    def test_step2_post_stores_selection_and_teaser(self):
+    # Petit JPEG valide (magic bytes FF D8 ... FF D9) encode en data-URI.
+    _JPEG_DATA_URI = (
+        "data:image/jpeg;base64,"
+        + __import__("base64").b64encode(
+            b"\xff\xd8\xff\xe0" + b"\x00" * 40 + b"\xff\xd9").decode()
+    )
+
+    def _do_steps_1_2(self, client):
+        client.post("/devenir-technicien", data=self._STEP1_OK)
+        client.post("/devenir-technicien/services", data={"services": ["plomberie"]})
+
+    def test_step2_post_stores_selection_and_goes_to_step3(self):
         with self.client as c:
             c.post("/devenir-technicien", data=self._STEP1_OK)
             r = c.post("/devenir-technicien/services",
-                       data={"services": ["plomberie", "peinture"]})
-            self.assertEqual(r.status_code, 200)
-            self.assertIn("bient", r.get_data(as_text=True))
+                       data={"services": ["plomberie", "peinture"]},
+                       follow_redirects=False)
+            self.assertEqual(r.status_code, 302)
+            self.assertIn("/devenir-technicien/documents", r.location)
             with c.session_transaction() as sess:
                 self.assertEqual(sorted(sess["tech_signup_services"]),
                                  ["peinture", "plomberie"])
@@ -306,6 +318,52 @@ class TechnicianSignupTests(FixProTestCase):
                    data={"services": ["plomberie", "n_importe_quoi"]})
             with c.session_transaction() as sess:
                 self.assertEqual(sess["tech_signup_services"], ["plomberie"])
+
+    def test_step3_requires_previous_steps(self):
+        r = self.client.get("/devenir-technicien/documents", follow_redirects=False)
+        self.assertEqual(r.status_code, 302)
+        self.assertTrue(r.location.endswith("/devenir-technicien"))
+        with self.client as c:
+            c.post("/devenir-technicien", data=self._STEP1_OK)
+            r = c.get("/devenir-technicien/documents", follow_redirects=False)
+            self.assertIn("/devenir-technicien/services", r.location)
+
+    def test_step3_renders_after_steps_1_2(self):
+        with self.client as c:
+            self._do_steps_1_2(c)
+            html = c.get("/devenir-technicien/documents").get_data(as_text=True)
+            self.assertIn("Ajoutez vos", html)
+            self.assertIn("identit", html)   # "Pièce d'identité"
+            self.assertIn("Dipl", html)      # "Diplôme de votre métier"
+            self.assertIn('name="identity_doc"', html)
+
+    def test_step3_post_requires_identity(self):
+        with self.client as c:
+            self._do_steps_1_2(c)
+            r = c.post("/devenir-technicien/documents", data={})
+            self.assertIn("obligatoire", r.get_data(as_text=True))
+            with c.session_transaction() as sess:
+                self.assertNotIn("tech_signup_docs", sess)
+
+    def test_step3_post_rejects_bad_file(self):
+        with self.client as c:
+            self._do_steps_1_2(c)
+            r = c.post("/devenir-technicien/documents",
+                       data={"identity_doc": "data:text/plain;base64,aGVsbG8="})
+            self.assertIn("invalide", r.get_data(as_text=True))
+            with c.session_transaction() as sess:
+                self.assertNotIn("tech_signup_docs", sess)
+
+    def test_step3_post_valid_identity_stores_and_teaser(self):
+        with self.client as c:
+            self._do_steps_1_2(c)
+            r = c.post("/devenir-technicien/documents",
+                       data={"identity_doc": self._JPEG_DATA_URI})
+            self.assertEqual(r.status_code, 200)
+            self.assertIn("bient", r.get_data(as_text=True))
+            with c.session_transaction() as sess:
+                self.assertEqual(sess["tech_signup_docs"]["identity"], ".jpg")
+                self.assertIsNone(sess["tech_signup_docs"]["diploma"])
 
     def test_step1_post_missing_fields_shows_errors_no_session(self):
         with self.client as c:
