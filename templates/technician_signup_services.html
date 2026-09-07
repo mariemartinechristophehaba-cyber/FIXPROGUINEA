@@ -19,7 +19,7 @@
       --ts-line: #E2E8F2;
     }
     * { box-sizing: border-box; }
-    html, body { margin: 0; padding: 0; }
+    html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       color: var(--ts-ink); -webkit-font-smoothing: antialiased; background: #F7F9FC;
@@ -28,9 +28,11 @@
     button, input { font-family: inherit; }
 
     .ts {
-      max-width: 480px; margin: 0 auto; min-height: 100dvh;
-      padding: calc(12px + env(safe-area-inset-top)) clamp(15px, 4.5vw, 20px) calc(22px + env(safe-area-inset-bottom));
+      max-width: 480px; margin: 0 auto; height: 100dvh; height: 100svh;
+      display: flex; flex-direction: column; overflow: hidden;
+      padding: calc(8px + env(safe-area-inset-top)) clamp(15px, 4.5vw, 20px) calc(12px + env(safe-area-inset-bottom));
     }
+    .ts > *:not(.ts-grid) { flex-shrink: 0; }
 
     .ts-head { position: relative; display: flex; align-items: center; justify-content: center; }
     .ts-back {
@@ -45,7 +47,7 @@
     .ts-brand .n i { color: var(--ts-blue); font-style: normal; }
     .ts-brand .s { display: block; font-size: .72rem; font-weight: 600; color: var(--ts-muted); margin-top: 2px; }
 
-    .ts-steps { display: flex; margin: clamp(16px, 3vh, 22px) 0 4px; }
+    .ts-steps { display: flex; margin: clamp(10px, 2.2vh, 20px) 0 2px; }
     .ts-step { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; position: relative; }
     .ts-step .num {
       width: clamp(30px, 8.5vw, 40px); height: clamp(30px, 8.5vw, 40px); border-radius: 999px;
@@ -66,20 +68,21 @@
     }
     .ts-step:first-child::before { display: none; }
 
-    .ts h1 { margin: clamp(18px, 3vh, 26px) 0 0; font-size: clamp(1.7rem, 8vw, 2.3rem); font-weight: 900; letter-spacing: -.03em; line-height: 1.08; }
+    .ts h1 { margin: clamp(12px, 2.4vh, 24px) 0 0; font-size: clamp(1.55rem, 7vw, 2.25rem); font-weight: 900; letter-spacing: -.03em; line-height: 1.06; }
     .ts h1 span { color: var(--ts-blue); }
-    .ts-sub { margin: clamp(8px, 1.5vh, 11px) 0 0; font-size: clamp(.9rem, 3.9vw, 1rem); line-height: 1.4; color: var(--ts-muted); }
+    .ts-sub { margin: clamp(6px, 1.2vh, 11px) 0 0; font-size: clamp(.88rem, 3.7vw, 1rem); line-height: 1.36; color: var(--ts-muted); }
 
     .ts-grid {
+      flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; align-content: start;
       display: grid; grid-template-columns: repeat(3, 1fr);
-      gap: clamp(9px, 2.6vw, 14px); margin-top: clamp(18px, 3vh, 26px);
+      gap: clamp(9px, 2.6vw, 14px); margin-top: clamp(12px, 2.4vh, 24px);
     }
     .ts-card {
       position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;
-      gap: clamp(8px, 2vh, 12px); text-align: center; cursor: pointer;
+      gap: clamp(6px, 1.6vh, 12px); text-align: center; cursor: pointer;
       background: #fff; border: 2px solid var(--ts-line); border-radius: 18px;
-      padding: clamp(14px, 3vh, 20px) 8px clamp(12px, 2.4vh, 16px);
-      min-height: clamp(108px, 16vh, 134px); transition: border-color .14s, background .14s;
+      padding: clamp(11px, 2.4vh, 20px) 8px clamp(10px, 2vh, 16px);
+      min-height: clamp(94px, 14vh, 132px); transition: border-color .14s, background .14s;
     }
     .ts-card input { position: absolute; opacity: 0; pointer-events: none; }
     .ts-card .svc-ic { width: clamp(32px, 5.4vh, 40px); height: clamp(32px, 5.4vh, 40px); color: var(--ts-blue); }
@@ -101,10 +104,10 @@
     }
     .ts-card:has(input:checked) .tick::after, .ts-card.is-on .tick::after { opacity: 1; }
 
-    .ts-err { margin: 12px 0 0; font-size: .86rem; color: #EF4444; font-weight: 700; text-align: center; }
+    .ts-err { margin: 10px 0 0; font-size: .86rem; color: #EF4444; font-weight: 700; text-align: center; }
 
     .ts-submit {
-      width: 100%; margin-top: clamp(20px, 3.2vh, 28px); border: 0; border-radius: 18px; padding: clamp(15px, 2.2vh, 18px) 24px;
+      width: 100%; margin-top: clamp(12px, 2.2vh, 24px); border: 0; border-radius: 18px; padding: clamp(13px, 1.9vh, 18px) 24px;
       background: linear-gradient(180deg, #3B76F5, var(--ts-blue));
       color: #fff; font-size: 1.06rem; font-weight: 800; cursor: pointer;
       display: flex; align-items: center; justify-content: center; gap: 12px;
@@ -122,8 +125,8 @@
       .ts-grid { gap: 8px; }
       .ts-card { padding-left: 4px; padding-right: 4px; }
     }
-    @media (min-height: 800px) {
-      .ts-card { min-height: 142px; }
+    @media (min-height: 820px) {
+      .ts-card { min-height: 136px; }
     }
   </style>
 </head>

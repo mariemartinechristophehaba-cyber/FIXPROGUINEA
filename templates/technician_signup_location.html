@@ -21,7 +21,7 @@
       --ts-err: #EF4444;
     }
     * { box-sizing: border-box; }
-    html, body { margin: 0; padding: 0; }
+    html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       color: var(--ts-ink); -webkit-font-smoothing: antialiased; background: #F7F9FC;
@@ -30,9 +30,9 @@
     button, input { font-family: inherit; }
 
     .ts {
-      position: relative; max-width: 480px; margin: 0 auto; min-height: 100dvh;
-      padding: calc(12px + env(safe-area-inset-top)) clamp(15px, 4.5vw, 20px) calc(24px + env(safe-area-inset-bottom));
-      overflow: hidden;
+      position: relative; max-width: 480px; margin: 0 auto; height: 100dvh; height: 100svh;
+      display: flex; flex-direction: column; overflow: hidden;
+      padding: calc(8px + env(safe-area-inset-top)) clamp(15px, 4.5vw, 20px) calc(12px + env(safe-area-inset-bottom));
     }
     .ts::after {
       content: ""; position: absolute; left: -40px; right: -40px; bottom: -70px; height: 150px;
@@ -40,6 +40,7 @@
       z-index: 0; pointer-events: none;
     }
     .ts > * { position: relative; z-index: 1; }
+    .ts > *:not(.ts-map) { flex-shrink: 0; }
 
     .ts-head { position: relative; display: flex; align-items: center; justify-content: center; }
     .ts-back {
@@ -54,7 +55,7 @@
     .ts-brand .n i { color: var(--ts-blue); font-style: normal; }
     .ts-brand .s { display: block; font-size: .72rem; font-weight: 600; color: var(--ts-muted); margin-top: 2px; }
 
-    .ts-steps { display: flex; margin: clamp(16px, 3vh, 22px) 0 4px; }
+    .ts-steps { display: flex; margin: clamp(10px, 2.2vh, 20px) 0 2px; }
     .ts-step { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; position: relative; }
     .ts-step .num {
       width: clamp(30px, 8.5vw, 40px); height: clamp(30px, 8.5vw, 40px); border-radius: 999px;
@@ -75,14 +76,15 @@
     }
     .ts-step:first-child::before { display: none; }
 
-    .ts h1 { margin: clamp(18px, 3vh, 28px) 0 0; font-size: clamp(1.8rem, 8.4vw, 2.45rem); font-weight: 900; letter-spacing: -.03em; line-height: 1.05; }
+    .ts h1 { margin: clamp(10px, 2.2vh, 26px) 0 0; font-size: clamp(1.55rem, 7vw, 2.35rem); font-weight: 900; letter-spacing: -.03em; line-height: 1.04; }
     .ts h1 span { display: block; color: var(--ts-blue); }
-    .ts-sub { margin: clamp(9px, 1.6vh, 14px) 0 0; font-size: clamp(.9rem, 3.9vw, 1rem); line-height: 1.42; color: var(--ts-muted); }
+    .ts-sub { margin: clamp(6px, 1.3vh, 14px) 0 0; font-size: clamp(.88rem, 3.7vw, 1rem); line-height: 1.38; color: var(--ts-muted); }
 
     /* --- Carte illustrative --- */
     .ts-map {
-      position: relative; margin-top: clamp(16px, 2.8vh, 26px);
-      height: clamp(190px, 30vh, 260px); border-radius: 22px; overflow: hidden;
+      flex: 1 1 auto; min-height: clamp(88px, 13vh, 150px); max-height: clamp(170px, 28vh, 240px);
+      position: relative; margin-top: clamp(10px, 2.2vh, 22px);
+      border-radius: 22px; overflow: hidden;
       background: #EAEEF6; border: 1px solid var(--ts-line);
     }
     .ts-map svg.bg { position: absolute; inset: 0; width: 100%; height: 100%; }
@@ -111,8 +113,8 @@
 
     /* --- Interrupteur position --- */
     .ts-toggle {
-      display: flex; align-items: center; gap: 14px; margin-top: clamp(14px, 2.4vh, 20px);
-      background: var(--ts-ice); border-radius: 18px; padding: 15px 16px;
+      display: flex; align-items: center; gap: 14px; margin-top: clamp(10px, 1.8vh, 18px);
+      background: var(--ts-ice); border-radius: 18px; padding: clamp(11px, 1.7vh, 15px) 16px;
     }
     .ts-toggle .ic {
       flex-shrink: 0; width: 46px; height: 46px; border-radius: 13px; background: #fff; color: var(--ts-blue);
@@ -150,15 +152,15 @@
     .ts-retry:active { background: #F2F6FF; }
 
     .ts-note {
-      display: flex; align-items: flex-start; gap: 10px; margin-top: clamp(14px, 2.4vh, 20px);
-      background: var(--ts-ice); border-radius: 16px; padding: 13px 15px;
-      font-size: clamp(.8rem, 3.3vw, .87rem); line-height: 1.36; color: var(--ts-muted);
+      display: flex; align-items: flex-start; gap: 10px; margin-top: clamp(10px, 1.8vh, 18px);
+      background: var(--ts-ice); border-radius: 16px; padding: clamp(10px, 1.5vh, 13px) 15px;
+      font-size: clamp(.78rem, 3.2vw, .87rem); line-height: 1.34; color: var(--ts-muted);
     }
     .ts-note svg { flex-shrink: 0; width: 16px; height: 16px; margin-top: 2px; color: var(--ts-muted); }
 
     .ts-submit {
-      width: 100%; margin-top: clamp(18px, 3vh, 26px); border: 0; border-radius: 18px;
-      padding: clamp(15px, 2.3vh, 19px) 24px;
+      width: 100%; margin-top: clamp(10px, 2vh, 22px); border: 0; border-radius: 18px;
+      padding: clamp(13px, 1.9vh, 19px) 24px;
       background: linear-gradient(180deg, #3B76F5, var(--ts-blue));
       color: #fff; font-size: 1.06rem; font-weight: 800; cursor: pointer;
       display: flex; align-items: center; justify-content: center; gap: 12px;
@@ -176,8 +178,13 @@
     [hidden] { display: none !important; }
 
     @media (max-width: 360px) {
-      .ts-toggle { gap: 10px; padding: 13px 13px; }
+      .ts-toggle { gap: 10px; padding: 12px 12px; }
       .ts-toggle .ic { width: 40px; height: 40px; }
+    }
+    @media (max-height: 680px) {
+      .ts-map { min-height: 76px; }
+      .ts-toggle .tx span { display: none; }
+      .ts-note { font-size: .74rem; padding: 9px 12px; }
     }
   </style>
 </head>

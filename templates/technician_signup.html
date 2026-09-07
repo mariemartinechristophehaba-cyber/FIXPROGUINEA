@@ -20,7 +20,7 @@
       --ts-req: #EF4444;
     }
     * { box-sizing: border-box; }
-    html, body { margin: 0; padding: 0; }
+    html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       color: var(--ts-ink); -webkit-font-smoothing: antialiased; background: #F7F9FC;
@@ -29,10 +29,12 @@
     button, input, select { font-family: inherit; }
 
     .ts {
-      max-width: 480px; margin: 0 auto; min-height: 100dvh;
-      padding: calc(12px + env(safe-area-inset-top)) clamp(15px, 4.5vw, 20px) calc(22px + env(safe-area-inset-bottom));
+      max-width: 480px; margin: 0 auto; height: 100dvh; height: 100svh;
+      display: flex; flex-direction: column; overflow: hidden;
+      padding: calc(8px + env(safe-area-inset-top)) clamp(15px, 4.5vw, 20px) calc(12px + env(safe-area-inset-bottom));
       background: #F7F9FC;
     }
+    .ts > *:not(.ts-form) { flex-shrink: 0; }
 
     /* --- En-tête --- */
     .ts-head { position: relative; display: flex; align-items: center; justify-content: center; }
@@ -49,7 +51,7 @@
     .ts-brand .s { display: block; font-size: .72rem; font-weight: 600; color: var(--ts-muted); margin-top: 2px; }
 
     /* --- Stepper --- */
-    .ts-steps { display: flex; margin: clamp(16px, 3vh, 22px) 0 4px; }
+    .ts-steps { display: flex; margin: clamp(10px, 2.2vh, 20px) 0 2px; }
     .ts-step { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; position: relative; }
     .ts-step .num {
       width: clamp(30px, 8.5vw, 40px); height: clamp(30px, 8.5vw, 40px); border-radius: 999px;
@@ -71,33 +73,36 @@
     .ts-step:first-child::before { display: none; }
 
     /* --- Titre + avatar --- */
-    .ts-hero { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-top: 26px; }
+    .ts-hero { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-top: clamp(12px, 2.6vh, 24px); }
     .ts-hero-tx { min-width: 0; }
-    .ts-hero h1 { margin: 0; font-size: clamp(1.55rem, 7.6vw, 2.5rem); font-weight: 900; letter-spacing: -.03em; line-height: 1.06; }
+    .ts-hero h1 { margin: 0; font-size: clamp(1.5rem, 6.8vw, 2.4rem); font-weight: 900; letter-spacing: -.03em; line-height: 1.05; }
     .ts-hero h1 span { color: var(--ts-blue); }
-    .ts-hero p { margin: 10px 0 0; font-size: clamp(.9rem, 3.9vw, 1rem); line-height: 1.4; color: var(--ts-muted); }
+    .ts-hero p { margin: clamp(5px, 1vh, 10px) 0 0; font-size: clamp(.85rem, 3.6vw, .98rem); line-height: 1.36; color: var(--ts-muted); }
     .ts-avatar { flex-shrink: 0; text-align: center; }
     .ts-avatar .ph {
-      position: relative; width: clamp(92px, 26vw, 118px); height: clamp(92px, 26vw, 118px);
+      position: relative; width: clamp(70px, 19vw, 108px); height: clamp(70px, 19vw, 108px);
       border-radius: 999px; background: #E5EBF4; color: #AEBBD0;
       display: flex; align-items: center; justify-content: center;
     }
     .ts-avatar .ph > svg { width: 56%; height: 56%; }
     .ts-avatar .cam {
-      position: absolute; right: 2px; bottom: 2px; width: 34px; height: 34px; border-radius: 999px;
+      position: absolute; right: 0; bottom: 0; width: clamp(26px, 7vw, 32px); height: clamp(26px, 7vw, 32px); border-radius: 999px;
       background: var(--ts-blue); color: #fff; border: 3px solid #F7F9FC;
       display: flex; align-items: center; justify-content: center;
     }
-    .ts-avatar .cam svg { width: 16px; height: 16px; }
-    .ts-avatar .t1 { display: block; margin-top: 8px; font-size: .84rem; font-weight: 700; }
-    .ts-avatar .t2 { display: block; font-size: .78rem; color: var(--ts-muted); }
+    .ts-avatar .cam svg { width: 15px; height: 15px; }
+    .ts-avatar .t1 { display: block; margin-top: 6px; font-size: .8rem; font-weight: 700; }
+    .ts-avatar .t2 { display: block; font-size: .75rem; color: var(--ts-muted); }
     .ts-avatar input { display: none; }
 
     /* --- Formulaire --- */
-    .ts-form { margin-top: 26px; display: flex; flex-direction: column; gap: 18px; }
+    .ts-form {
+      flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+      margin-top: clamp(12px, 2.4vh, 22px); display: flex; flex-direction: column; gap: clamp(9px, 1.8vh, 16px);
+    }
     .ts-row { display: flex; gap: clamp(10px, 3vw, 14px); }
     .ts-row .ts-field { flex: 1; min-width: 0; }
-    .ts-field > label { display: block; font-size: .96rem; font-weight: 700; margin-bottom: 8px; }
+    .ts-field > label { display: block; font-size: clamp(.85rem, 3.6vw, .95rem); font-weight: 700; margin-bottom: clamp(4px, .9vh, 8px); }
     .ts-field > label b { color: var(--ts-req); font-weight: 700; }
     .ts-input {
       display: flex; align-items: stretch; background: #fff; border: 1.5px solid var(--ts-line);
@@ -112,7 +117,7 @@
     .ts-input .ic svg { width: 20px; height: 20px; }
     .ts-input input {
       flex: 1; min-width: 0; border: 0; outline: 0; background: transparent;
-      padding: 15px 14px; font-size: .98rem; color: var(--ts-ink);
+      padding: clamp(11px, 1.7vh, 15px) 14px; font-size: .98rem; color: var(--ts-ink);
     }
     .ts-input input::placeholder { color: #9AA7BC; }
     .ts-input .eye {
@@ -134,7 +139,8 @@
 
     /* --- Action --- */
     .ts-submit {
-      width: 100%; margin-top: 26px; border: 0; border-radius: 18px; padding: 18px 24px;
+      width: 100%; margin-top: clamp(12px, 2.2vh, 22px); border: 0; border-radius: 18px;
+      padding: clamp(13px, 1.9vh, 18px) 24px;
       background: linear-gradient(180deg, #3B76F5, var(--ts-blue));
       color: #fff; font-size: 1.06rem; font-weight: 800; cursor: pointer;
       display: flex; align-items: center; justify-content: center; gap: 12px;
@@ -142,8 +148,8 @@
     }
     .ts-submit:active { transform: translateY(1px); }
     .ts-secure {
-      margin: 16px 0 0; display: flex; align-items: center; justify-content: center; gap: 8px;
-      font-size: .82rem; color: var(--ts-muted); font-weight: 500; text-align: center;
+      margin: clamp(8px, 1.5vh, 15px) 0 0; display: flex; align-items: center; justify-content: center; gap: 8px;
+      font-size: .8rem; color: var(--ts-muted); font-weight: 500; text-align: center;
     }
     .ts-secure svg { width: 15px; height: 15px; flex-shrink: 0; color: var(--ts-muted); }
 
