@@ -269,16 +269,18 @@ class TechnicianSignupTests(FixProTestCase):
         self.assertEqual(r.status_code, 302)
         self.assertTrue(r.location.endswith("/devenir-technicien"))
 
-    def test_step2_renders_after_step1(self):
+    def test_step2_renders_metier_single_choice(self):
         with self.client as c:
             c.post("/devenir-technicien", data=self._STEP1_OK)
             html = c.get("/devenir-technicien/services").get_data(as_text=True)
-            self.assertIn("Quels services", html)
+            self.assertIn("Quel est votre", html)          # "Quel est votre métier ?"
+            self.assertIn("tier principal", html)          # sous-titre
             self.assertIn("Plomberie", html)
-            self.assertIn("Maçonnerie", html)
-            self.assertNotIn("Nettoyage", html)
-            self.assertNotIn("Autre service", html)
-            self.assertIn('name="services"', html)
+            self.assertIn("Nettoyage", html)
+            self.assertIn('type="radio"', html)            # selection exclusive
+            self.assertIn('name="trade"', html)
+            self.assertNotIn('name="services"', html)
+            self.assertIn("disabled", html)                # Continuer bloque au depart
 
     # Petit JPEG valide (magic bytes FF D8 ... FF D9) encode en data-URI.
     _JPEG_DATA_URI = (
@@ -287,37 +289,51 @@ class TechnicianSignupTests(FixProTestCase):
             b"\xff\xd8\xff\xe0" + b"\x00" * 40 + b"\xff\xd9").decode()
     )
 
-    def _do_steps_1_2(self, client):
+    def _do_steps_1_2(self, client, trade="plomberie"):
         client.post("/devenir-technicien", data=self._STEP1_OK)
-        client.post("/devenir-technicien/services", data={"services": ["plomberie"]})
+        client.post("/devenir-technicien/services", data={"trade": trade})
 
-    def test_step2_post_stores_selection_and_goes_to_step3(self):
+    def test_step2_post_stores_single_trade_and_goes_to_step3(self):
         with self.client as c:
             c.post("/devenir-technicien", data=self._STEP1_OK)
             r = c.post("/devenir-technicien/services",
-                       data={"services": ["plomberie", "peinture"]},
-                       follow_redirects=False)
+                       data={"trade": "electricite"}, follow_redirects=False)
             self.assertEqual(r.status_code, 302)
             self.assertIn("/devenir-technicien/documents", r.location)
             with c.session_transaction() as sess:
-                self.assertEqual(sorted(sess["tech_signup_services"]),
-                                 ["peinture", "plomberie"])
+                self.assertEqual(sess["tech_signup_trade"], "electricite")
+
+    def test_step2_last_choice_replaces_previous(self):
+        with self.client as c:
+            c.post("/devenir-technicien", data=self._STEP1_OK)
+            c.post("/devenir-technicien/services", data={"trade": "plomberie"})
+            c.post("/devenir-technicien/services", data={"trade": "electricite"})
+            with c.session_transaction() as sess:
+                # une seule valeur, la derniere
+                self.assertEqual(sess["tech_signup_trade"], "electricite")
 
     def test_step2_post_requires_a_choice(self):
         with self.client as c:
             c.post("/devenir-technicien", data=self._STEP1_OK)
             r = c.post("/devenir-technicien/services", data={})
-            self.assertIn("au moins un service", r.get_data(as_text=True))
+            self.assertIn("tier principal", r.get_data(as_text=True))
             with c.session_transaction() as sess:
-                self.assertNotIn("tech_signup_services", sess)
+                self.assertNotIn("tech_signup_trade", sess)
 
-    def test_step2_post_ignores_unknown_service(self):
+    def test_step2_post_rejects_unknown_trade(self):
         with self.client as c:
             c.post("/devenir-technicien", data=self._STEP1_OK)
-            c.post("/devenir-technicien/services",
-                   data={"services": ["plomberie", "n_importe_quoi"]})
+            r = c.post("/devenir-technicien/services",
+                       data={"trade": "n_importe_quoi"}, follow_redirects=False)
+            self.assertEqual(r.status_code, 200)
             with c.session_transaction() as sess:
-                self.assertEqual(sess["tech_signup_services"], ["plomberie"])
+                self.assertNotIn("tech_signup_trade", sess)
+
+    def test_step2_keeps_choice_when_returning(self):
+        with self.client as c:
+            self._do_steps_1_2(c, trade="maconnerie")
+            html = c.get("/devenir-technicien/services").get_data(as_text=True)
+            self.assertIn('value="maconnerie" checked', html)
 
     def test_step3_requires_previous_steps(self):
         r = self.client.get("/devenir-technicien/documents", follow_redirects=False)

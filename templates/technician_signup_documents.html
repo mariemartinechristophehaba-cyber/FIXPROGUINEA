@@ -143,7 +143,7 @@
   <form class="ts" method="post" action="{{ url_for('technician_signup_documents') }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
     <header class="ts-head">
-      <a class="ts-back" href="{{ url_for('technician_signup_services') }}" aria-label="Retour">
+      <a class="ts-back" href="{{ url_for('technician_signup_trade') }}" aria-label="Retour">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
       </a>
       <span class="ts-brand">
@@ -153,7 +153,7 @@
     </header>
 
     <div class="ts-steps">
-      {% for n, lbl in [(1,'Profil'),(2,'Services'),(3,'Documents'),(4,'Localisation'),(5,'Finalisation')] %}
+      {% for n, lbl in [(1,'Profil'),(2,'Métier'),(3,'Documents'),(4,'Localisation'),(5,'Finalisation')] %}
       <div class="ts-step {{ 'on' if n == 3 }}"><span class="num">{{ n }}</span><span class="lbl">{{ lbl }}</span></div>
       {% endfor %}
     </div>

@@ -1803,16 +1803,27 @@ def register():
 # Champs obligatoires de l'etape 1 (profil) du wizard d'inscription technicien.
 _TECH_SIGNUP_STEP1_FIELDS = ("first_name", "last_name", "phone", "email", "password")
 
-# Etape 2 : catalogue des services proposes (slug -> libelle).
-_TECH_SERVICES = [
+# Etape 2 : metier principal (slug -> libelle). Un technicien = UN SEUL
+# metier principal (enregistre plus tard dans users.profession, une seule
+# valeur texte -- aucune migration necessaire).
+_TECH_TRADES = [
     ("plomberie", "Plomberie"),
     ("electricite", "Électricité"),
-    ("climatisation", "Climatisation et réfrigération"),
+    ("climatisation", "Climatisation / Réfrigération"),
     ("peinture", "Peinture"),
     ("menuiserie", "Menuiserie"),
     ("maconnerie", "Maçonnerie"),
+    ("depannage", "Dépannage général"),
+    ("nettoyage", "Nettoyage"),
 ]
-_TECH_SERVICE_SLUGS = {s for s, _ in _TECH_SERVICES}
+_TECH_TRADE_SLUGS = {s for s, _ in _TECH_TRADES}
+# Libelle "profession" (users.profession) pour chaque metier principal.
+_TECH_TRADE_PROFESSION = {
+    "plomberie": "Plombier", "electricite": "Électricien",
+    "climatisation": "Frigoriste", "peinture": "Peintre",
+    "menuiserie": "Menuisier", "maconnerie": "Maçon",
+    "depannage": "Dépannage général", "nettoyage": "Nettoyage",
+}
 
 
 @app.route("/devenir-technicien", methods=["GET", "POST"])
@@ -1848,7 +1859,7 @@ def devenir_technicien():
             session["tech_signup"] = {k: data[k] for k in
                                       ("first_name", "last_name", "phone", "email")}
             session.modified = True
-            return redirect(url_for("technician_signup_services"))
+            return redirect(url_for("technician_signup_trade"))
 
     return render_template(
         "technician_signup.html",
@@ -1860,30 +1871,34 @@ def devenir_technicien():
 
 @app.route("/devenir-technicien/services", methods=["GET", "POST"])
 @limiter.limit("20 per hour", methods=["POST"])
-def technician_signup_services():
-    """Wizard d'inscription technicien -- etape 2 sur 5 : les services
-    proposes (multi-selection). L'etape 1 doit avoir ete remplie. Au POST
-    valide, memorise la selection et passe a l'etape 3 (Documents)."""
+def technician_signup_trade():
+    """Wizard d'inscription technicien -- etape 2 sur 5 : le METIER PRINCIPAL
+    (selection unique, exclusive). Un technicien = un seul metier. L'etape 1
+    doit avoir ete remplie. Au POST valide, memorise le metier et passe a
+    l'etape 3 (Documents)."""
     if not session.get("tech_signup"):
         return redirect(url_for("devenir_technicien"))
 
-    selected = list(session.get("tech_signup_services", []))
+    selected = session.get("tech_signup_trade")
     error = None
 
     if request.method == "POST":
-        selected = [s for s in request.form.getlist("services")
-                    if s in _TECH_SERVICE_SLUGS]
-        if not selected:
-            error = "Sélectionnez au moins un service."
+        chosen = request.form.get("trade", "")
+        if chosen in _TECH_TRADE_SLUGS:
+            selected = chosen
         else:
-            session["tech_signup_services"] = selected
+            selected = None
+        if not selected:
+            error = "Sélectionnez votre métier principal."
+        else:
+            session["tech_signup_trade"] = selected
             session.modified = True
             return redirect(url_for("technician_signup_documents"))
 
     return render_template(
         "technician_signup_services.html",
         nav_user=get_current_user(),
-        services=_TECH_SERVICES,
+        trades=_TECH_TRADES,
         selected=selected,
         error=error,
     )
@@ -1901,8 +1916,8 @@ def technician_signup_documents():
     message d'attente."""
     if not session.get("tech_signup"):
         return redirect(url_for("devenir_technicien"))
-    if not session.get("tech_signup_services"):
-        return redirect(url_for("technician_signup_services"))
+    if not session.get("tech_signup_trade"):
+        return redirect(url_for("technician_signup_trade"))
 
     docs = dict(session.get("tech_signup_docs", {}))
     errors = {}
