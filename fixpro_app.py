@@ -1809,9 +1809,6 @@ _TECH_SERVICES = [
     ("peinture", "Peinture"),
     ("menuiserie", "Menuiserie"),
     ("maconnerie", "Maçonnerie"),
-    ("depannage", "Dépannage général"),
-    ("mecanique", "Mécanique domestique"),
-    ("nettoyage", "Nettoyage"),
 ]
 _TECH_SERVICE_SLUGS = {s for s, _ in _TECH_SERVICES}
 
@@ -1871,19 +1868,16 @@ def technician_signup_services():
         return redirect(url_for("devenir_technicien"))
 
     selected = list(session.get("tech_signup_services", []))
-    other = (session.get("tech_signup_service_other") or "").strip()
     error = None
     teaser = False
 
     if request.method == "POST":
         selected = [s for s in request.form.getlist("services")
                     if s in _TECH_SERVICE_SLUGS]
-        other = request.form.get("other", "").strip()[:80]
-        if not selected and not other:
+        if not selected:
             error = "Sélectionnez au moins un service."
         else:
             session["tech_signup_services"] = selected
-            session["tech_signup_service_other"] = other
             session.modified = True
             teaser = True
 
@@ -1892,7 +1886,6 @@ def technician_signup_services():
         nav_user=get_current_user(),
         services=_TECH_SERVICES,
         selected=selected,
-        other=other,
         error=error,
         teaser=teaser,
     )

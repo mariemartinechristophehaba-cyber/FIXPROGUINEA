@@ -275,9 +275,10 @@ class TechnicianSignupTests(FixProTestCase):
             html = c.get("/devenir-technicien/services").get_data(as_text=True)
             self.assertIn("Quels services", html)
             self.assertIn("Plomberie", html)
-            self.assertIn("Nettoyage", html)
+            self.assertIn("Maçonnerie", html)
+            self.assertNotIn("Nettoyage", html)
+            self.assertNotIn("Autre service", html)
             self.assertIn('name="services"', html)
-            self.assertIn("Services", html)
 
     def test_step2_post_stores_selection_and_teaser(self):
         with self.client as c:
