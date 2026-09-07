@@ -186,8 +186,13 @@
       </div>
       <div class="row">
         <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></span>
-        <span class="tx"><span class="k">Documents</span><span class="v">Pièce d'identité{{ " + diplôme" if recap.diploma }}</span></span>
-        <span class="tag">Fourni</span>
+        <span class="tx"><span class="k">Documents</span><span class="v">
+          {%- if recap.identity and recap.diploma %}Pièce d'identité + diplôme
+          {%- elif recap.identity %}Pièce d'identité
+          {%- elif recap.diploma %}Diplôme
+          {%- else %}Aucun document (facultatif){% endif -%}
+        </span></span>
+        {% if recap.identity or recap.diploma %}<span class="tag">Fourni</span>{% else %}<span class="tag muted">Optionnel</span>{% endif %}
       </div>
     </div>
 

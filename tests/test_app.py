@@ -361,13 +361,17 @@ class TechnicianSignupTests(FixProTestCase):
             self.assertIn("Dipl", html)      # "Diplôme de votre métier"
             self.assertIn('name="identity_doc"', html)
 
-    def test_step3_post_requires_identity(self):
+    def test_step3_documents_are_optional(self):
+        # Phase de test : on peut continuer sans aucun document.
         with self.client as c:
             self._do_steps_1_2(c)
-            r = c.post("/devenir-technicien/documents", data={})
-            self.assertIn("obligatoire", r.get_data(as_text=True))
+            r = c.post("/devenir-technicien/documents", data={},
+                       follow_redirects=False)
+            self.assertEqual(r.status_code, 302)
+            self.assertIn("/devenir-technicien/localisation", r.location)
             with c.session_transaction() as sess:
-                self.assertNotIn("tech_signup_docs", sess)
+                self.assertIn("tech_signup_docs", sess)
+                self.assertIsNone(sess["tech_signup_docs"]["identity"])
 
     def test_step3_post_rejects_bad_file(self):
         with self.client as c:
@@ -404,7 +408,7 @@ class TechnicianSignupTests(FixProTestCase):
             r = c.get("/devenir-technicien/localisation", follow_redirects=False)
             self.assertIn("/devenir-technicien/documents", r.location)
 
-    def test_step4_renders_with_disabled_continue(self):
+    def test_step4_renders(self):
         with self.client as c:
             self._do_steps_1_3(c)
             html = c.get("/devenir-technicien/localisation").get_data(as_text=True)
@@ -412,8 +416,19 @@ class TechnicianSignupTests(FixProTestCase):
             self.assertIn("position actuelle", html)
             self.assertIn('name="latitude"', html)
             self.assertIn('name="longitude"', html)
-            self.assertIn("disabled", html)            # Continuer bloque
             self.assertNotIn("Conakry", html)          # pas de position en dur
+
+    def test_step4_location_is_optional(self):
+        # Phase de test : on peut continuer sans position.
+        with self.client as c:
+            self._do_steps_1_3(c)
+            r = c.post("/devenir-technicien/localisation", data={},
+                       follow_redirects=False)
+            self.assertEqual(r.status_code, 302)
+            self.assertIn("/devenir-technicien/finalisation", r.location)
+            with c.session_transaction() as sess:
+                self.assertIn("tech_signup_location", sess)
+                self.assertIsNone(sess["tech_signup_location"]["lat"])
 
     def test_step4_post_requires_valid_coordinates(self):
         with self.client as c:
@@ -517,6 +532,31 @@ class TechnicianSignupTests(FixProTestCase):
             r = c.post("/devenir-technicien/finalisation", data={"accept_cgu": "1"})
             self.assertIn("déjà utilisé", r.get_data(as_text=True))
         self.assertEqual(self._count_users(), 1)
+
+    def test_wizard_without_documents_or_location_creates_technician(self):
+        # Phase de test : etapes 3 et 4 sautees -> compte cree quand meme.
+        with self.client as c:
+            self._do_steps_1_2(c, trade="peinture")
+            c.post("/devenir-technicien/documents", data={})
+            c.post("/devenir-technicien/localisation", data={})
+            r = c.post("/devenir-technicien/finalisation",
+                       data={"accept_cgu": "1"}, follow_redirects=False)
+            self.assertEqual(r.status_code, 302)
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            user = conn.execute(
+                "SELECT * FROM users WHERE phone = ?", ("+224620112233",)
+            ).fetchone()
+            self.assertIsNotNone(user)
+            self.assertEqual(user["role"], "technician")
+            self.assertEqual(user["profession"], "Peintre")
+            self.assertIsNone(user["latitude"])
+            docs = conn.execute(
+                "SELECT COUNT(*) AS n FROM technician_documents WHERE technician_id = ?",
+                (user["id"],)).fetchone()
+            self.assertEqual(docs["n"], 0)
+        finally:
+            conn.close()
 
     def test_step1_post_missing_fields_shows_errors_no_session(self):
         with self.client as c:

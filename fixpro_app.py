@@ -1963,12 +1963,13 @@ def technician_signup_documents():
         diploma = request.form.get("diploma_doc", "")
 
         _MAX_DOC = 7 * 1024 * 1024  # base64 -> ~5 Mo binaire
-        _, ext, _ = (_parse_base64_file(identity, _MAX_DOC)
-                     if identity else (None, None, None))
-        if not identity:
-            errors["identity"] = "La pièce d'identité est obligatoire."
-        elif not ext:
-            errors["identity"] = "Fichier invalide (JPG, PNG ou PDF, 5 Mo max)."
+        # Phase de test : les documents sont optionnels. On valide seulement
+        # le format quand un fichier est effectivement fourni.
+        ext = None
+        if identity:
+            _, ext, _ = _parse_base64_file(identity, _MAX_DOC)
+            if not ext:
+                errors["identity"] = "Fichier invalide (JPG, PNG ou PDF, 5 Mo max)."
 
         dip_ext = None
         if diploma:
@@ -1981,11 +1982,13 @@ def technician_signup_documents():
             # (trop volumineux pour le cookie de session) ; ils seront
             # persistes en base a l'etape 5 (creation du compte).
             token = session.get("tech_signup_doc_token") or secrets.token_hex(12)
-            _signup_doc_stash(token, "identity", identity)
+            if ext:
+                _signup_doc_stash(token, "identity", identity)
             if dip_ext:
                 _signup_doc_stash(token, "diploma", diploma)
             session["tech_signup_doc_token"] = token
-            session["tech_signup_docs"] = {"identity": ext, "diploma": dip_ext}
+            session["tech_signup_docs"] = {"identity": ext, "diploma": dip_ext,
+                                           "done": True}
             session.modified = True
             return redirect(url_for("technician_signup_location"))
 
@@ -2020,6 +2023,12 @@ def technician_signup_location():
     if request.method == "POST":
         lat = request.form.get("latitude", "")
         lon = request.form.get("longitude", "")
+        if not lat and not lon:
+            # Phase de test : la localisation est optionnelle.
+            session["tech_signup_location"] = {"lat": None, "lon": None,
+                                               "zone": None, "done": True}
+            session.modified = True
+            return redirect(url_for("technician_signup_finalize"))
         if not _is_valid_coordinate(lat, lon):
             error = "Position invalide. Réessayez d'autoriser la localisation."
         else:
@@ -2068,10 +2077,11 @@ def technician_signup_finalize():
         return redirect(url_for("devenir_technicien"))
     if not trade:
         return redirect(url_for("technician_signup_trade"))
-    if not docs.get("identity"):
+    if not docs:
         return redirect(url_for("technician_signup_documents"))
-    if not _is_valid_coordinate(loc.get("lat"), loc.get("lon")):
+    if not loc:
         return redirect(url_for("technician_signup_location"))
+    has_location = _is_valid_coordinate(loc.get("lat"), loc.get("lon"))
 
     full_name = f"{ts.get('first_name', '')} {ts.get('last_name', '')}".strip()
     phone = _phone_with_prefix(ts.get("phone", ""))
@@ -2084,7 +2094,8 @@ def technician_signup_finalize():
         "trade": dict(_TECH_TRADES).get(trade, trade),
         "identity": bool(docs.get("identity")),
         "diploma": bool(docs.get("diploma")),
-        "zone": zone_label or "Position enregistrée",
+        "zone": zone_label or ("Position enregistrée" if has_location
+                               else "Non renseignée"),
     }
     error = None
 
@@ -2112,7 +2123,9 @@ def technician_signup_finalize():
                         " 0, 1, 'ACTIVE', 'hors_ligne', ?)",
                         (full_name, phone, email, ts["pwd_hash"], profession,
                          zone_label or None, zone_label or None,
-                         float(loc["lat"]), float(loc["lon"]), VERIF_PENDING))
+                         float(loc["lat"]) if has_location else None,
+                         float(loc["lon"]) if has_location else None,
+                         VERIF_PENDING))
 
                     token = session.get("tech_signup_doc_token")
                     for kind, dtype in (("identity", DOC_IDENTITY),

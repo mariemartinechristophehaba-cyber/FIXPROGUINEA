@@ -245,7 +245,7 @@
       Votre localisation est utilisée uniquement pour vous proposer des demandes adaptées à votre zone. Elle reste confidentielle.
     </p>
 
-    <button type="submit" class="ts-submit" id="tsSubmit" {{ '' if loc.get('lat') is not none else 'disabled' }}>
+    <button type="submit" class="ts-submit" id="tsSubmit">
       Continuer
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
     </button>
@@ -273,7 +273,7 @@
         retry.hidden = false;
         sw.setAttribute('aria-checked', 'false');
         sw.disabled = false;
-        submit.disabled = true;
+        // Phase de test : la localisation est optionnelle, on ne bloque pas "Continuer".
       }
 
       function setLocated(la, lo, zone) {
@@ -324,7 +324,6 @@
           lat.value = ''; lon.value = '';
           map.classList.remove('located', 'pending');
           okBox.hidden = true; errBox.hidden = true; retry.hidden = true;
-          submit.disabled = true;
         } else {
           locate();
         }
