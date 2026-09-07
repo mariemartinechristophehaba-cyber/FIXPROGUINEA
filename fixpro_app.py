@@ -1947,16 +1947,72 @@ def technician_signup_documents():
             # ici que l'etat (type de fichier fourni).
             session["tech_signup_docs"] = {"identity": ext, "diploma": dip_ext}
             session.modified = True
-            docs = session["tech_signup_docs"]
-            teaser = True
+            return redirect(url_for("technician_signup_location"))
 
     return render_template(
         "technician_signup_documents.html",
         nav_user=get_current_user(),
         docs=docs,
         errors=errors,
+    )
+
+
+@app.route("/devenir-technicien/localisation", methods=["GET", "POST"])
+@limiter.limit("30 per hour", methods=["POST"])
+def technician_signup_location():
+    """Wizard d'inscription technicien -- etape 4 sur 5 : la zone
+    d'intervention. La position vient de la geolocalisation reelle du
+    navigateur (navigator.geolocation cote client). Le serveur valide les
+    coordonnees et fait le geocodage inverse (Nominatim). Elle sera
+    enregistree dans users.latitude / users.longitude a la finalisation
+    (aucune migration -- colonnes deja presentes). L'etape 5 (Finalisation)
+    est en cours de conception : "Continuer" memorise la position puis
+    affiche un message d'attente."""
+    if not session.get("tech_signup"):
+        return redirect(url_for("devenir_technicien"))
+    if not session.get("tech_signup_trade"):
+        return redirect(url_for("technician_signup_trade"))
+    if not session.get("tech_signup_docs"):
+        return redirect(url_for("technician_signup_documents"))
+
+    loc = dict(session.get("tech_signup_location", {}))
+    error = None
+    teaser = False
+
+    if request.method == "POST":
+        lat = request.form.get("latitude", "")
+        lon = request.form.get("longitude", "")
+        if not _is_valid_coordinate(lat, lon):
+            error = "Position invalide. Réessayez d'autoriser la localisation."
+        else:
+            lat, lon = round(float(lat), 6), round(float(lon), 6)
+            zone = _reverse_geocode(lat, lon)
+            loc = {"lat": lat, "lon": lon, "zone": zone}
+            session["tech_signup_location"] = loc
+            session.modified = True
+            teaser = True
+
+    return render_template(
+        "technician_signup_location.html",
+        nav_user=get_current_user(),
+        loc=loc,
+        error=error,
         teaser=teaser,
     )
+
+
+@app.route("/devenir-technicien/localisation/lieu")
+@limiter.limit("60 per hour")
+def technician_signup_location_reverse():
+    """Geocodage inverse pour l'etape 4 (appele en AJAX par la page apres
+    que le navigateur a fourni les coordonnees). Renvoie un libelle de zone
+    lisible, jamais l'adresse exacte."""
+    lat = request.args.get("lat", "")
+    lon = request.args.get("lon", "")
+    if not _is_valid_coordinate(lat, lon):
+        return jsonify({"ok": False}), 400
+    zone = _reverse_geocode(lat, lon)
+    return jsonify({"ok": True, "zone": zone or ""})
 
 
 # --- Verification des techniciens -------------------------------------------

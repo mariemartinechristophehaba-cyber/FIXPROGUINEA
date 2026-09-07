@@ -370,16 +370,71 @@ class TechnicianSignupTests(FixProTestCase):
             with c.session_transaction() as sess:
                 self.assertNotIn("tech_signup_docs", sess)
 
-    def test_step3_post_valid_identity_stores_and_teaser(self):
+    def test_step3_post_valid_identity_goes_to_step4(self):
         with self.client as c:
             self._do_steps_1_2(c)
             r = c.post("/devenir-technicien/documents",
-                       data={"identity_doc": self._JPEG_DATA_URI})
-            self.assertEqual(r.status_code, 200)
-            self.assertIn("bient", r.get_data(as_text=True))
+                       data={"identity_doc": self._JPEG_DATA_URI},
+                       follow_redirects=False)
+            self.assertEqual(r.status_code, 302)
+            self.assertIn("/devenir-technicien/localisation", r.location)
             with c.session_transaction() as sess:
                 self.assertEqual(sess["tech_signup_docs"]["identity"], ".jpg")
                 self.assertIsNone(sess["tech_signup_docs"]["diploma"])
+
+    def _do_steps_1_3(self, client):
+        self._do_steps_1_2(client)
+        client.post("/devenir-technicien/documents",
+                    data={"identity_doc": self._JPEG_DATA_URI})
+
+    def test_step4_requires_previous_steps(self):
+        r = self.client.get("/devenir-technicien/localisation", follow_redirects=False)
+        self.assertEqual(r.status_code, 302)
+        self.assertTrue(r.location.endswith("/devenir-technicien"))
+        with self.client as c:
+            self._do_steps_1_2(c)  # etape 3 pas faite
+            r = c.get("/devenir-technicien/localisation", follow_redirects=False)
+            self.assertIn("/devenir-technicien/documents", r.location)
+
+    def test_step4_renders_with_disabled_continue(self):
+        with self.client as c:
+            self._do_steps_1_3(c)
+            html = c.get("/devenir-technicien/localisation").get_data(as_text=True)
+            self.assertIn("intervenez", html)          # "Où intervenez-vous ?"
+            self.assertIn("position actuelle", html)
+            self.assertIn('name="latitude"', html)
+            self.assertIn('name="longitude"', html)
+            self.assertIn("disabled", html)            # Continuer bloque
+            self.assertNotIn("Conakry", html)          # pas de position en dur
+
+    def test_step4_post_requires_valid_coordinates(self):
+        with self.client as c:
+            self._do_steps_1_3(c)
+            r = c.post("/devenir-technicien/localisation",
+                       data={"latitude": "0", "longitude": "0"})
+            self.assertIn("invalide", r.get_data(as_text=True).lower())
+            with c.session_transaction() as sess:
+                self.assertNotIn("tech_signup_location", sess)
+            r = c.post("/devenir-technicien/localisation",
+                       data={"latitude": "abc", "longitude": "xyz"})
+            self.assertIn("invalide", r.get_data(as_text=True).lower())
+
+    def test_step4_post_valid_coordinates_stores_and_teaser(self):
+        with self.client as c:
+            self._do_steps_1_3(c)
+            r = c.post("/devenir-technicien/localisation",
+                       data={"latitude": "9.5370", "longitude": "-13.6785"})
+            self.assertEqual(r.status_code, 200)
+            self.assertIn("bient", r.get_data(as_text=True))
+            with c.session_transaction() as sess:
+                loc = sess["tech_signup_location"]
+                self.assertAlmostEqual(loc["lat"], 9.537, places=3)
+                self.assertAlmostEqual(loc["lon"], -13.6785, places=3)
+
+    def test_step4_reverse_endpoint_rejects_bad_coords(self):
+        r = self.client.get("/devenir-technicien/localisation/lieu?lat=0&lon=0")
+        self.assertEqual(r.status_code, 400)
+        self.assertFalse(r.get_json()["ok"])
 
     def test_step1_post_missing_fields_shows_errors_no_session(self):
         with self.client as c:
