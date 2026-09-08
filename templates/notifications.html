@@ -11,17 +11,17 @@
     <h3 style="margin:12px 0 0;font-size:22px;">Notifications</h3>
   </div>
 
-  <div class="fx-list" style="padding:14px 16px 100px;">
+  <div class="fx-list" id="notifList" data-csrf="{{ csrf_token() }}" data-read-url="{{ url_for('mark_notification_read', notif_id=0) }}" style="padding:14px 16px 100px;">
     {% if notifications %}
     {% for n in notifications %}
-    <div class="fx-card" style="{% if not n.is_read %}border-left:3px solid var(--amber);{% endif %}">
-      <form method="post" action="{{ url_for('mark_notification_read', notif_id=n.id) }}" style="display:none;" id="readForm{{ n.id }}">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-      </form>
-      <a href="{% if n.data and 'request_id' in n.data %}{{ url_for('request_detail', request_id=n.data.split(':')[1]) }}{% else %}#{% endif %}" style="text-decoration:none;color:inherit;" onclick="document.getElementById('readForm{{ n.id }}').submit();">
-        <div style="font-size:14px;font-weight:700;color:var(--ink);">{{ n.title }}</div>
-        <div style="font-size:12.5px;color:var(--slate);margin-top:4px;">{{ n.body }}</div>
-        <div style="font-size:11px;color:var(--slate-light);margin-top:6px;">{{ n.created_at[:16] }}</div>
+    <div class="fx-card" style="padding:0;overflow:hidden;{% if not n.is_read %}background:#F4F8FF;{% endif %}">
+      <a href="{{ n.href }}" data-id="{{ n.id }}" style="display:flex;align-items:flex-start;gap:11px;padding:14px 15px;text-decoration:none;color:inherit;">
+        <span style="width:8px;height:8px;margin-top:6px;border-radius:999px;flex-shrink:0;background:{% if not n.is_read %}#2563EB{% else %}transparent{% endif %};"></span>
+        <span style="flex:1;min-width:0;">
+          <span style="display:block;font-size:14px;font-weight:800;color:var(--ink);">{{ n.title }}</span>
+          <span style="display:block;font-size:12.5px;color:var(--slate);margin-top:3px;line-height:1.35;">{{ n.body }}</span>
+          <span style="display:block;font-size:11px;color:var(--slate-light);margin-top:6px;">{{ n.ago }}</span>
+        </span>
       </a>
     </div>
     {% endfor %}
@@ -30,4 +30,20 @@
     {% endif %}
   </div>
 </div>
+<script>
+  (function () {
+    var box = document.getElementById('notifList');
+    if (!box) return;
+    var csrf = box.dataset.csrf || '', tpl = box.dataset.readUrl || '';
+    box.querySelectorAll('a[data-id]').forEach(function (a) {
+      a.addEventListener('click', function (e) {
+        var href = a.getAttribute('href');
+        var url = tpl.replace('/0/', '/' + a.getAttribute('data-id') + '/');
+        e.preventDefault();
+        fetch(url, { method: 'POST', headers: { 'X-CSRFToken': csrf }, credentials: 'same-origin' })
+          .finally(function () { window.location.href = href; });
+      });
+    });
+  })();
+</script>
 {% endblock %}

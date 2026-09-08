@@ -5696,17 +5696,74 @@ def ticket_close(ticket_id):
     return redirect(url_for("client_tickets"))
 
 
+def _notif_target(notif):
+    """Deduit (icone, lien) pour une notification a partir de son type,
+    de son champ `data` ('cle:valeur') et de son titre. Le lien renvoie
+    toujours vers une fonctionnalite reelle du technicien."""
+    def _f(key):
+        try:
+            return (notif[key] or "")
+        except (KeyError, IndexError, TypeError):
+            return ""
+    typ = _f("type").lower()
+    title = _f("title").lower()
+    body = _f("body").lower()
+    data = _f("data")
+    kind, _, val = data.partition(":")
+
+    if kind == "request_id" and val.isdigit():
+        href = url_for("request_detail", request_id=int(val))
+    elif typ == "new_request" or "demande" in title or "mission" in title:
+        href = url_for("conversations")
+    elif "message" in title or "reponse" in title or "réponse" in title:
+        href = url_for("client_messages")
+    elif "appel" in title or "contact" in title or kind == "contact_id":
+        href = url_for("conversations")
+    elif "avis" in title or "evaluation" in body or "évaluation" in body:
+        href = url_for("profile")
+    elif "abonnement" in title or typ in ("subscription", "abonnement"):
+        href = url_for("technician_subscription")
+    elif "intervention" in title:
+        href = url_for("conversations")
+    elif "document" in title or "dossier" in title or typ == "error":
+        href = url_for("profile")
+    elif typ == "success":
+        href = url_for("artisan_dashboard")
+    else:
+        href = url_for("notifications")
+
+    if "demande" in title or "mission" in title or typ == "new_request":
+        icon = "wrench"
+    elif "appel" in title or "contact" in title:
+        icon = "phone"
+    elif "message" in title or "reponse" in title or "réponse" in title:
+        icon = "chat"
+    elif "avis" in title or "evaluation" in body or "évaluation" in body:
+        icon = "star"
+    elif "abonnement" in title:
+        icon = "card"
+    elif "intervention" in title:
+        icon = "calendar"
+    elif typ == "error" or "document" in title or "dossier" in title or "important" in title:
+        icon = "alert"
+    elif typ == "success":
+        icon = "check"
+    else:
+        icon = "info"
+    return icon, href
+
+
 @app.route("/notifications")
 @login_required
 def notifications():
-    """Liste les notifications in-app de l'utilisateur."""
+    """Liste complete des notifications in-app de l'utilisateur connecte."""
     user = get_current_user()
     conn = get_db_connection()
     try:
         try:
             rows = conn.execute(
                 "SELECT * FROM notifications"
-                " WHERE user_id = ? ORDER BY created_at DESC LIMIT 50",
+                " WHERE user_id = ? ORDER BY created_at DESC, id DESC LIMIT 50",
                 (user["id"],)).fetchall()
             unread = conn.execute(
                 "SELECT COUNT(*) AS n FROM notifications"
@@ -5717,7 +5774,51 @@ def notifications():
             unread = 0
     finally:
         conn.close()
-    return render_template("notifications.html", user=user, notifications=rows, unread=unread)
+    items = []
+    for r in rows:
+        icon, href = _notif_target(r)
+        d = dict(r)
+        d["href"] = href
+        d["icon"] = icon
+        d["ago"] = _format_time_ago(r["created_at"])
+        items.append(d)
+    return render_template("notifications.html", user=user,
+                           notifications=items, unread=unread)
+
+
+@app.route("/api/notifications")
+@login_required
+def api_notifications():
+    """Notifications recentes du technicien pour le panneau de la cloche.
+    Un utilisateur ne recoit QUE ses propres notifications (filtre serveur)."""
+    user = get_current_user()
+    conn = get_db_connection()
+    rows, unread = [], 0
+    try:
+        rows = conn.execute(
+            "SELECT id, title, body, type, is_read, data, created_at"
+            " FROM notifications WHERE user_id = ?"
+            " ORDER BY created_at DESC, id DESC LIMIT 8", (user["id"],)).fetchall()
+        unread = conn.execute(
+            "SELECT COUNT(*) AS n FROM notifications"
+            " WHERE user_id = ? AND is_read = 0", (user["id"],)).fetchone()["n"]
+    except Exception:
+        conn.rollback()
+    finally:
+        conn.close()
+    items = []
+    for r in rows:
+        icon, href = _notif_target(r)
+        items.append({
+            "id": r["id"],
+            "title": r["title"] or "Notification",
+            "body": r["body"] or "",
+            "is_read": bool(r["is_read"]),
+            "ago": _format_time_ago(r["created_at"]),
+            "icon": icon,
+            "href": href,
+        })
+    return jsonify({"ok": True, "unread": unread or 0, "items": items})
 
 
 @app.route("/notifications/<int:notif_id>/read", methods=["POST"])
@@ -5733,6 +5834,22 @@ def mark_notification_read(notif_id):
     finally:
         conn.close()
     return jsonify({"ok": True})
+
+
+@app.route("/notifications/read-all", methods=["POST"])
+@login_required
+def mark_all_notifications_read():
+    """Marque comme lues toutes les notifications non lues de l'utilisateur."""
+    user = get_current_user()
+    conn = get_db_connection()
+    try:
+        conn.execute(
+            "UPDATE notifications SET is_read = 1"
+            " WHERE user_id = ? AND is_read = 0", (user["id"],))
+        conn.commit()
+    finally:
+        conn.close()
+    return jsonify({"ok": True, "unread": 0})
 
 
 # ---------------------------------------------------------------------------

@@ -694,6 +694,98 @@ class TechnicianDashboardTests(FixProTestCase):
         self.assertEqual(r.status_code, 302)
         self.assertIn("abonnement", r.location)
 
+    # --- Notifications ---------------------------------------------------
+
+    def _seed_notif(self, user_id, title="Nouvelle demande", body="…",
+                    ntype="new_request", data="", is_read=0):
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute(
+                "INSERT INTO notifications (user_id, title, body, type, data, is_read)"
+                " VALUES (?, ?, ?, ?, ?, ?)",
+                (user_id, title, body, ntype, data, is_read))
+            conn.commit()
+        finally:
+            conn.close()
+
+    def _artisan_id(self, phone):
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            return conn.execute(
+                "SELECT id FROM users WHERE phone = ?", (phone,)).fetchone()["id"]
+        finally:
+            conn.close()
+
+    def test_dashboard_header_has_notification_bell(self):
+        self.register_artisan("bell@example.com", phone="+224621112001")
+        self.login("bell@example.com")
+        html = self.client.get("/dashboard/technicien").get_data(as_text=True)
+        self.assertIn('id="ntfbBtn"', html)
+        self.assertIn("/api/notifications", html)
+        self.assertIn("Tout marquer comme lu", html)
+
+    def test_api_notifications_returns_only_own(self):
+        self.register_artisan("me@example.com", phone="+224621112002")
+        self.register_artisan("other@example.com", phone="+224621112003")
+        mine = self._artisan_id("+224621112002")
+        theirs = self._artisan_id("+224621112003")
+        self._seed_notif(mine, title="Ma notif", data="request_id:5")
+        self._seed_notif(theirs, title="Notif des autres")
+        self.login("me@example.com")
+        r = self.client.get("/api/notifications")
+        self.assertEqual(r.status_code, 200)
+        data = r.get_json()
+        self.assertTrue(data["ok"])
+        titles = [i["title"] for i in data["items"]]
+        self.assertIn("Ma notif", titles)
+        self.assertNotIn("Notif des autres", titles)
+        self.assertEqual(data["unread"], 1)
+        # lien profond calcule depuis data=request_id:5
+        self.assertEqual(data["items"][0]["href"], "/requests/5")
+
+    def test_notifications_mark_one_read(self):
+        self.register_artisan("r1@example.com", phone="+224621112004")
+        uid = self._artisan_id("+224621112004")
+        self._seed_notif(uid, title="A lire")
+        self.login("r1@example.com")
+        nid = self.client.get("/api/notifications").get_json()["items"][0]["id"]
+        r = self.client.post("/notifications/%d/read" % nid,
+                             headers={"X-CSRFToken": "x"})
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(self.client.get("/api/notifications").get_json()["unread"], 0)
+
+    def test_notifications_cannot_mark_other_users(self):
+        self.register_artisan("a@example.com", phone="+224621112005")
+        self.register_artisan("b@example.com", phone="+224621112006")
+        victim = self._artisan_id("+224621112006")
+        self._seed_notif(victim, title="Privee")
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            nid = conn.execute(
+                "SELECT id FROM notifications WHERE user_id = ?", (victim,)).fetchone()["id"]
+        finally:
+            conn.close()
+        self.login("a@example.com")
+        self.client.post("/notifications/%d/read" % nid, headers={"X-CSRFToken": "x"})
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            still_unread = conn.execute(
+                "SELECT is_read FROM notifications WHERE id = ?", (nid,)).fetchone()["is_read"]
+        finally:
+            conn.close()
+        self.assertEqual(still_unread, 0)
+
+    def test_notifications_mark_all_read(self):
+        self.register_artisan("all@example.com", phone="+224621112007")
+        uid = self._artisan_id("+224621112007")
+        for i in range(3):
+            self._seed_notif(uid, title="N%d" % i)
+        self.login("all@example.com")
+        r = self.client.post("/notifications/read-all", headers={"X-CSRFToken": "x"})
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.get_json()["unread"], 0)
+        self.assertEqual(self.client.get("/api/notifications").get_json()["unread"], 0)
+
 
 class ClientProfileTests(FixProTestCase):
     """Profil client et pages associees."""
