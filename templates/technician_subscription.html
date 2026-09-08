@@ -71,87 +71,85 @@
     .seg button.on { background: var(--d-blue); color: #fff; box-shadow: 0 6px 16px rgba(37,99,235,.3); }
     .seg-save { background: #DCFCE7; color: #15803D; font-size: .76rem; font-weight: 800; padding: 6px 12px; border-radius: 999px; }
 
-    /* ================= PLANS : alignement robuste ================= */
-    /* Grille : 3 colonnes egales, cartes etirees a la meme hauteur. */
+    /* ============ PLANS : 2 cartes cote a cote, parfaitement alignees ============ */
+    /* Grille : 2 colonnes strictement egales, cartes etirees a la meme hauteur.
+       On NE passe en pile que sous 360px (2 cartes vraiment illisibles). */
     .plans {
-      display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px;
-      align-items: stretch; margin-top: 26px;
+      display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: clamp(10px, 2.5vw, 22px); align-items: stretch; margin-top: 30px;
+      max-width: 820px; margin-inline: auto;
     }
-    @media (min-width: 900px) { .plans { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; } }
+    @media (max-width: 359px) { .plans { grid-template-columns: minmax(0, 1fr); } }
 
-    /* Carte : colonne flex pleine hauteur -> header / prix / features / footer. */
+    /* Carte : colonne flex pleine hauteur -> header / prix / separation / features / footer. */
     .plan {
       position: relative; display: flex; flex-direction: column; height: 100%;
       background: #fff; border: 1.5px solid var(--d-line); border-radius: 20px;
-      padding: clamp(18px, 2.6vw, 24px); box-shadow: 0 8px 22px rgba(11,27,59,.06);
+      padding: clamp(13px, 3vw, 24px); box-shadow: 0 8px 22px rgba(11,27,59,.06);
     }
-    .plan.pop { border-color: var(--d-blue); box-shadow: 0 18px 38px rgba(37,99,235,.18); }
-    .plan.amber { border-color: #FCE3B3; background: #FFFCF5; }
-    /* En pile (mobile) : chaque carte a sa hauteur propre, pas besoin de
-       reserver la hauteur du bloc prix -> on evite le vide dans "Gratuit". */
-    @media (max-width: 899px) {
-      .plan-price { min-height: 0 !important; }
-      .plan-h .desc { min-height: 0 !important; }
-    }
+    .plan.blue { border-color: #C3D8FF; }
+    .plan.amber { border-color: #F2C879; background: #FFFCF5; }
+    .plan.pop { border-width: 2px; box-shadow: 0 18px 40px rgba(245,158,11,.20); }
 
-    /* Badge "Recommande" : flotte au-dessus, ne pousse rien. */
+    /* Badge "Le plus populaire" : flotte au-dessus, ne pousse pas la carte. */
     .plan .ribbon {
       position: absolute; top: -13px; left: 50%; transform: translateX(-50%);
-      background: var(--d-blue); color: #fff; font-size: .74rem; font-weight: 800;
-      padding: 6px 16px; border-radius: 999px; white-space: nowrap;
-      box-shadow: 0 6px 16px rgba(37,99,235,.34);
+      background: linear-gradient(180deg, #FBBF24, var(--d-amber)); color: #fff;
+      font-size: clamp(.66rem, 2.6vw, .74rem); font-weight: 800; letter-spacing: .01em;
+      padding: 6px 14px; border-radius: 999px; white-space: nowrap;
+      box-shadow: 0 6px 16px rgba(245,158,11,.4);
     }
     /* Badge de reduction : coin haut-droit, hors flux, n'altere pas l'alignement. */
     .plan .disc {
-      position: absolute; top: 16px; right: 16px;
-      background: #FEE2E2; color: #DC2626; font-size: .76rem; font-weight: 800;
-      padding: 4px 9px; border-radius: 8px; white-space: nowrap;
+      position: absolute; top: 12px; right: 12px;
+      background: #FEE2E2; color: #DC2626; font-size: clamp(.66rem, 2.6vw, .76rem);
+      font-weight: 800; padding: 3px 8px; border-radius: 8px; white-space: nowrap;
     }
 
     .plan-h { text-align: center; }
     .plan-h .pi {
-      width: 60px; height: 60px; border-radius: 999px; margin: 4px auto 12px;
-      display: flex; align-items: center; justify-content: center; color: #fff;
+      width: clamp(46px, 13vw, 58px); height: clamp(46px, 13vw, 58px); border-radius: 999px;
+      margin: 4px auto 10px; display: flex; align-items: center; justify-content: center; color: #fff;
     }
-    .plan-h .pi.ice { background: #DBEAFE; color: var(--d-blue); }
     .plan-h .pi.blue { background: var(--d-blue); }
     .plan-h .pi.amber { background: var(--d-amber); }
-    .plan-h .pi svg { width: 27px; height: 27px; }
-    .plan-h .name { font-size: 1.5rem; font-weight: 900; letter-spacing: -.02em; }
-    /* hauteur reservee -> la description occupe le meme espace sur les 3 cartes */
-    .plan-h .desc { margin-top: 4px; font-size: .88rem; color: var(--d-muted); font-weight: 600; min-height: 2.6em; display: flex; align-items: flex-start; justify-content: center; }
+    .plan-h .pi svg { width: 46%; height: 46%; }
+    .plan-h .name { font-size: clamp(1.15rem, 5vw, 1.5rem); font-weight: 900; letter-spacing: -.02em; }
+    /* hauteur reservee -> le bloc prix demarre au meme niveau sur les 2 cartes */
+    .plan-h .desc {
+      margin-top: 4px; font-size: clamp(.78rem, 3.2vw, .88rem); color: var(--d-muted); font-weight: 600;
+      min-height: 2.7em; display: flex; align-items: flex-start; justify-content: center;
+    }
 
-    /* Bloc prix : hauteur homogene, meme separateur en bas. */
+    /* Bloc prix : hauteur homogene + meme separateur en bas sur les 2 cartes. */
     .plan-price {
-      text-align: center; margin-top: 6px; padding-bottom: 18px;
-      border-bottom: 1px solid var(--d-line); min-height: 118px;
+      text-align: center; margin-top: 6px; padding-bottom: clamp(12px, 2vw, 18px);
+      border-bottom: 1px solid var(--d-line); min-height: 104px;
       display: flex; flex-direction: column; justify-content: center;
     }
-    .plan-price .ref { font-size: .95rem; font-weight: 700; color: #94A3B8; text-decoration: line-through; min-height: 1.2em; }
-    .plan-price .now { font-size: clamp(1.7rem, 5vw, 2.05rem); font-weight: 900; color: var(--d-blue); letter-spacing: -.02em; line-height: 1.1; margin-top: 2px; }
+    .plan-price .ref { font-size: clamp(.82rem, 3.4vw, .95rem); font-weight: 700; color: #94A3B8; text-decoration: line-through; }
+    .plan-price .now { font-size: clamp(1.35rem, 6vw, 2rem); font-weight: 900; color: var(--d-blue); letter-spacing: -.02em; line-height: 1.1; margin-top: 3px; }
     .plan.amber .plan-price .now { color: var(--d-amber-d); }
-    .plan-price .per { font-size: .82rem; color: var(--d-muted); font-weight: 600; margin-top: 4px; }
-    .plan-price .eqv:not(:empty) { font-size: .76rem; color: var(--d-green); font-weight: 700; margin-top: 4px; }
+    .plan-price .per { font-size: clamp(.74rem, 3vw, .82rem); color: var(--d-muted); font-weight: 600; margin-top: 3px; }
+    .plan-price .eqv:not(:empty) { font-size: clamp(.68rem, 2.8vw, .76rem); color: var(--d-green); font-weight: 700; margin-top: 4px; }
 
-    /* Liste : occupe l'espace restant pour que le footer descende en bas. */
-    .plan-feats { list-style: none; margin: 18px 0 0; padding: 0; display: grid; gap: 12px; }
-    .plan-feats li { display: flex; align-items: flex-start; gap: 10px; font-size: .9rem; font-weight: 500; line-height: 1.35; }
-    .plan-feats li .ck { width: 20px; height: 20px; border-radius: 999px; flex-shrink: 0; margin-top: 1px; display: flex; align-items: center; justify-content: center; background: var(--d-blue); color: #fff; }
-    .plan.amber .plan-feats li.ok .ck { background: var(--d-amber); }
-    .plan-feats li .ck svg { width: 12px; height: 12px; }
-    .plan-feats li.no { color: #94A3B8; }
-    .plan-feats li.no .ck { background: #E7ECF4; color: #94A3B8; }
+    /* Liste : la meme structure ; le footer (margin-top:auto) descend le CTA en bas. */
+    .plan-feats { list-style: none; margin: clamp(12px, 2.4vw, 18px) 0 0; padding: 0; display: grid; gap: clamp(8px, 1.8vw, 12px); }
+    .plan-feats li { display: flex; align-items: flex-start; gap: 9px; font-size: clamp(.8rem, 3.3vw, .9rem); font-weight: 500; line-height: 1.34; }
+    .plan-feats li .ck { width: 19px; height: 19px; border-radius: 999px; flex-shrink: 0; margin-top: 1px; display: flex; align-items: center; justify-content: center; background: var(--d-blue); color: #fff; }
+    .plan.amber .plan-feats li .ck { background: var(--d-amber); }
+    .plan-feats li .ck svg { width: 11px; height: 11px; }
 
-    /* Footer : pousse le bouton tout en bas -> les 3 CTA sont sur la meme ligne. */
-    .plan-foot { margin-top: auto; padding-top: 20px; }
+    /* Footer : margin-top:auto -> les 2 boutons "Choisir ce plan" sur la meme ligne,
+       quel que soit le nombre de fonctionnalites. */
+    .plan-foot { margin-top: auto; padding-top: clamp(14px, 2.6vw, 20px); }
     .plan-btn {
-      display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
-      border-radius: 13px; padding: 13px 18px; font-size: .95rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center; gap: 7px; width: 100%;
+      border-radius: 13px; padding: clamp(11px, 2.2vw, 14px) 14px; font-size: clamp(.85rem, 3.4vw, .95rem); font-weight: 800;
       border: 1.5px solid var(--d-line); background: #fff; color: var(--d-ink); cursor: pointer;
     }
     .plan-btn.primary { background: linear-gradient(180deg, #3B76F5, var(--d-blue)); color: #fff; border-color: transparent; box-shadow: 0 12px 24px rgba(37,99,235,.28); }
     .plan-btn.gold { background: linear-gradient(180deg, #FBBF24, var(--d-amber)); color: #fff; border-color: transparent; box-shadow: 0 12px 24px rgba(245,158,11,.3); }
-    .plan-btn.ghost { background: #fff; color: var(--d-blue); border-color: var(--d-blue); }
     .plan-btn.current { background: #F1F5F9; color: var(--d-muted); border-color: transparent; cursor: default; }
 
     /* ---------- Comparatif ---------- */
@@ -159,13 +157,13 @@
     @media (min-width: 980px) { .compare { grid-template-columns: 1fr 300px; align-items: start; } }
     .compare h2, .faq-h h2 { margin: 0 0 12px; font-size: clamp(1.2rem, 4.6vw, 1.5rem); font-weight: 900; letter-spacing: -.02em; }
     .cmp-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 18px; border: 1px solid var(--d-line); background: #fff; box-shadow: 0 8px 22px rgba(11,27,59,.05); }
-    table.cmp { width: 100%; border-collapse: collapse; min-width: 460px; font-size: .88rem; }
-    table.cmp th, table.cmp td { padding: 12px 14px; text-align: center; border-bottom: 1px solid var(--d-line); }
+    table.cmp { width: 100%; border-collapse: collapse; min-width: 340px; font-size: .86rem; }
+    table.cmp th, table.cmp td { padding: 11px 12px; text-align: center; border-bottom: 1px solid var(--d-line); }
     table.cmp thead th { font-size: .8rem; font-weight: 800; color: var(--d-muted); background: #F8FAFD; }
     table.cmp thead th.pro { color: var(--d-blue); }
     table.cmp thead th.prem { color: var(--d-amber-d); background: #FEF7EA; }
     table.cmp tbody tr:last-child td { border-bottom: 0; }
-    table.cmp td.feat { text-align: left; font-weight: 600; white-space: nowrap; }
+    table.cmp td.feat { text-align: left; font-weight: 600; }
     table.cmp td.feat .fi { display: inline-flex; width: 26px; height: 26px; border-radius: 8px; background: var(--d-ice); color: var(--d-blue); align-items: center; justify-content: center; vertical-align: middle; margin-right: 8px; }
     table.cmp td.feat .fi svg { width: 14px; height: 14px; }
     table.cmp td .yes { color: var(--d-blue); }
@@ -255,54 +253,40 @@
       {% if max_year_savings %}<span class="seg-save">Économisez jusqu'à {{ max_year_savings }}%</span>{% endif %}
     </div>
 
-    <section class="plans">
+    <section class="plans" id="plans">
       {% for p in plans %}
-      <article class="plan {{ 'pop' if p.popular }} {{ 'amber' if p.accent == 'amber' }}">
-        {% if p.popular %}<span class="ribbon">Recommandé</span>{% endif %}
-        {% if not p.free %}<span class="disc" data-disc-month="-{{ p.discount_month }}%" data-disc-year="-{{ p.discount_year }}%">-{{ p.discount_month }}%</span>{% endif %}
+      <article class="plan {{ 'pop' if p.popular }} {{ p.accent }}">
+        {% if p.popular %}<span class="ribbon">Le plus populaire</span>{% endif %}
+        <span class="disc" data-disc-month="-{{ p.discount_month }}%" data-disc-year="-{{ p.discount_year }}%">-{{ p.discount_month }}%</span>
 
         <div class="plan-h">
-          <span class="pi {{ 'ice' if p.free else ('amber' if p.accent == 'amber' else 'blue') }}">
+          <span class="pi {{ p.accent }}">
             {% if p.icon == 'crown' %}
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7z"/></svg>
-            {% elif p.icon == 'star' %}
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 17.8 6.2 20.9l1.1-6.5L2.6 9.8l6.5-.9z"/></svg>
             {% else %}
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></svg>
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 17.8 6.2 20.9l1.1-6.5L2.6 9.8l6.5-.9z"/></svg>
             {% endif %}
           </span>
-          <div class="name">{{ p.name }}</div>
+          <div class="name">Plan {{ p.name }}</div>
           <div class="desc">{{ p.desc }}</div>
         </div>
 
         <div class="plan-price">
-          {% if p.free %}
-          <span class="ref"></span>
-          <span class="now">0 GNF</span>
-          <span class="per">/ mois</span>
-          <span class="eqv"></span>
-          {% else %}
           <span class="ref"
                 data-ref-month="{{ '{:,}'.format(p.price_ref_month) | replace(',', ' ') }} GNF"
                 data-ref-year="{{ '{:,}'.format(p.price_ref_year) | replace(',', ' ') }} GNF">{{ '{:,}'.format(p.price_ref_month) | replace(',', ' ') }} GNF</span>
           <span class="now"
                 data-now-month="{{ '{:,}'.format(p.price_month) | replace(',', ' ') }} GNF"
                 data-now-year="{{ '{:,}'.format(p.price_year) | replace(',', ' ') }} GNF">{{ '{:,}'.format(p.price_month) | replace(',', ' ') }} GNF</span>
-          <span class="per"
-                data-per-month="/ mois"
-                data-per-year="/ an">/ mois</span>
+          <span class="per" data-per-month="/ mois" data-per-year="/ an">/ mois</span>
           <span class="eqv"
                 data-eqv-year="soit {{ '{:,}'.format(p.price_month_year) | replace(',', ' ') }} GNF / mois"></span>
-          {% endif %}
         </div>
 
         <ul class="plan-feats">
           {% for label, ok in p.features %}
-          <li class="{{ 'ok' if ok else 'no' }}">
-            <span class="ck">
-              {% if ok %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-              {% else %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>{% endif %}
-            </span>
+          <li>
+            <span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
             {{ label }}
           </li>
           {% endfor %}
@@ -311,8 +295,6 @@
         <div class="plan-foot">
           {% if p.is_current %}
           <span class="plan-btn current">Plan actuel</span>
-          {% elif p.free %}
-          <span class="plan-btn ghost">Plan gratuit</span>
           {% else %}
           <a class="plan-btn {{ 'gold' if p.accent == 'amber' else 'primary' }}" data-plan="{{ p.code }}"
              href="{{ url_for('technician_subscription_checkout', plan=p.code, period='month') }}">Choisir ce plan</a>
@@ -330,43 +312,39 @@
             <thead>
               <tr>
                 <th style="text-align:left">Fonctionnalités</th>
-                <th>Gratuit</th><th class="pro">Pro</th><th class="prem">Premium</th>
+                <th class="pro">Pro</th><th class="prem">Premium</th>
               </tr>
             </thead>
             <tbody>
               {% macro yes(cls='') %}<svg class="yes {{ cls }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>{% endmacro %}
               {% set dash %}<span class="mut">—</span>{% endset %}
               <tr>
-                <td class="feat"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></span>Recevoir des demandes</td>
-                <td><span class="yes mut" style="color:#CBD5E1">✓</span></td><td>{{ yes('b') }}</td><td>{{ yes('g') }}</td>
-              </tr>
-              <tr>
-                <td class="feat"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span>Nombre de demandes / mois</td>
-                <td><span class="txt">5</span></td><td><span class="txt b">Illimité</span></td><td><span class="txt g">Illimité</span></td>
+                <td class="feat"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></span>Nombre de demandes / mois</td>
+                <td><span class="txt b">Illimité</span></td><td><span class="txt g">Illimité</span></td>
               </tr>
               <tr>
                 <td class="feat"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg></span>Visibilité dans la recherche</td>
-                <td><span class="txt">Standard</span></td><td><span class="txt b">Prioritaire</span></td><td><span class="txt g">En tête</span></td>
+                <td><span class="txt b">Prioritaire</span></td><td><span class="txt g">En tête</span></td>
               </tr>
               <tr>
                 <td class="feat"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg></span>Badge profil vérifié</td>
-                <td>{{ dash }}</td><td>{{ yes('b') }}</td><td>{{ yes('g') }}</td>
+                <td>{{ yes('b') }}</td><td>{{ yes('g') }}</td>
               </tr>
               <tr>
                 <td class="feat"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="4" width="3" height="14"/></svg></span>Statistiques détaillées</td>
-                <td>{{ dash }}</td><td>{{ yes('b') }}</td><td>{{ yes('g') }}</td>
+                <td><span class="txt b">De base</span></td><td>{{ yes('g') }}</td>
               </tr>
               <tr>
-                <td class="feat"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1v-6h3zM3 19a2 2 0 0 0 2 2h1v-6H3z"/></svg></span>Support prioritaire</td>
-                <td>{{ dash }}</td><td>{{ dash }}</td><td>{{ yes('g') }}</td>
+                <td class="feat"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1v-6h3zM3 19a2 2 0 0 0 2 2h1v-6H3z"/></svg></span>Support</td>
+                <td><span class="txt b">Temps réel</span></td><td><span class="txt g">Prioritaire</span></td>
               </tr>
               <tr>
-                <td class="feat"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7z"/></svg></span>Mise en avant sur l'accueil</td>
-                <td>{{ dash }}</td><td>{{ dash }}</td><td>{{ yes('g') }}</td>
+                <td class="feat"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7z"/></svg></span>Mise en avant du profil</td>
+                <td>{{ dash }}</td><td>{{ yes('g') }}</td>
               </tr>
               <tr>
                 <td class="feat"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12h8M12 8v8"/></svg></span>Réduction sur les commissions</td>
-                <td>{{ dash }}</td><td><span class="txt g">10%</span></td><td><span class="txt g">20%</span></td>
+                <td><span class="txt g">10%</span></td><td><span class="txt g">20%</span></td>
               </tr>
             </tbody>
           </table>
@@ -377,7 +355,7 @@
         <span class="ui"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg></span>
         <b>Passez à un plan supérieur</b>
         <p>et développez votre activité avec FixPro.</p>
-        <a href="#plans-top">En savoir plus</a>
+        <a href="#plans">En savoir plus</a>
       </aside>
     </section>
 
