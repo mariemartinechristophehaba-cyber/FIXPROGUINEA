@@ -8,98 +8,556 @@
   <title>Espace Technicien - FixPro</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Caveat:wght@600;700&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --td-blue: #2563EB;
-      --td-ink: #0B1B3B;
-      --td-muted: #64748B;
-      --td-ice: #EEF2F9;
-      --td-line: #E2E8F2;
+      --d-blue: #2563EB;
+      --d-blue-d: #1D4ED8;
+      --d-ink: #0B1B3B;
+      --d-muted: #64748B;
+      --d-ice: #EEF2F9;
+      --d-line: #E4EAF4;
+      --d-bg: #F5F7FB;
+      --d-green: #16A34A;
+      --d-amber: #F59E0B;
+      --d-purple: #7C3AED;
+      --d-orange: #F97316;
     }
     * { box-sizing: border-box; }
-    html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+    html, body { margin: 0; padding: 0; }
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      color: var(--td-ink); -webkit-font-smoothing: antialiased; background: #F7F9FC;
+      color: var(--d-ink); background: var(--d-bg); -webkit-font-smoothing: antialiased;
     }
     a { text-decoration: none; color: inherit; }
+    button { font-family: inherit; }
+    [hidden] { display: none !important; }
 
-    .td {
-      max-width: 480px; margin: 0 auto; height: 100dvh; height: 100svh;
-      display: flex; flex-direction: column; overflow: hidden;
-      padding: calc(10px + env(safe-area-inset-top)) clamp(15px, 4.5vw, 20px) calc(14px + env(safe-area-inset-bottom));
+    .wrap {
+      max-width: 1100px; margin: 0 auto;
+      padding: 0 clamp(14px, 4vw, 26px) calc(96px + env(safe-area-inset-bottom));
     }
 
-    .td-head { display: flex; align-items: center; gap: 10px; }
-    .td-head .ic { width: 34px; height: 34px; color: var(--td-blue); flex-shrink: 0; }
-    .td-head .ic svg { width: 100%; height: 100%; }
-    .td-head .n { font-size: 1.3rem; font-weight: 800; letter-spacing: -.02em; line-height: 1; }
-    .td-head .n i { color: var(--td-blue); font-style: normal; }
-    .td-head .s { display: block; font-size: .72rem; font-weight: 600; color: var(--td-muted); margin-top: 2px; }
-    .td-logout {
-      margin-left: auto; font-size: .82rem; font-weight: 700; color: var(--td-muted);
-      display: flex; align-items: center; gap: 6px;
+    /* ---------- Topbar ---------- */
+    .topbar {
+      position: sticky; top: 0; z-index: 20; background: rgba(245,247,251,.92);
+      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      display: flex; align-items: center; gap: 12px;
+      max-width: 1100px; margin: 0 auto;
+      padding: calc(10px + env(safe-area-inset-top)) clamp(14px, 4vw, 26px) 10px;
     }
-    .td-logout svg { width: 16px; height: 16px; }
+    .brand { display: flex; align-items: center; gap: 9px; }
+    .brand .ic { width: 34px; height: 34px; color: var(--d-blue); flex-shrink: 0; }
+    .brand .ic svg { width: 100%; height: 100%; }
+    .brand .n { font-size: 1.28rem; font-weight: 800; letter-spacing: -.02em; line-height: 1; }
+    .brand .n i { color: var(--d-blue); font-style: normal; }
+    .brand .s { display: block; font-size: .7rem; font-weight: 600; color: var(--d-muted); margin-top: 2px; }
+    .topbar .sp { flex: 1; }
+    .icon-btn {
+      position: relative; width: 42px; height: 42px; border-radius: 999px; border: 0;
+      background: #fff; color: var(--d-ink); box-shadow: 0 4px 14px rgba(11,27,59,.07);
+      display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0;
+    }
+    .icon-btn svg { width: 21px; height: 21px; }
+    .badge {
+      position: absolute; top: -3px; right: -3px; min-width: 18px; height: 18px; padding: 0 4px;
+      border-radius: 999px; background: #EF4444; color: #fff; font-size: .68rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center; border: 2px solid var(--d-bg);
+    }
+    .who { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+    .avatar {
+      position: relative; width: 40px; height: 40px; border-radius: 999px; overflow: hidden;
+      background: var(--d-ice); color: var(--d-blue); flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: .95rem;
+    }
+    .avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .avatar .dot {
+      position: absolute; right: -1px; bottom: -1px; width: 12px; height: 12px; border-radius: 999px;
+      background: #9AA7BC; border: 2px solid var(--d-bg);
+    }
+    .avatar .dot.on { background: var(--d-green); }
+    .who .name { font-size: .9rem; font-weight: 700; white-space: nowrap; }
+    .who .name svg { width: 15px; height: 15px; vertical-align: -2px; color: var(--d-muted); }
+    @media (max-width: 560px) { .who .name span { display: none; } }
 
-    .td-body {
-      flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column;
-      align-items: center; justify-content: center; text-align: center; gap: 14px;
+    /* ---------- Hero ---------- */
+    .hero {
+      position: relative; overflow: hidden; margin-top: 8px;
+      border-radius: 24px; color: #fff;
+      background: linear-gradient(135deg, #2E6BF0 0%, #1D4ED8 60%, #1E40AF 100%);
+      padding: clamp(18px, 3.5vw, 28px);
     }
-    .td-illo {
-      width: clamp(88px, 24vw, 116px); height: clamp(88px, 24vw, 116px); border-radius: 26px;
-      background: var(--td-ice); color: var(--td-blue);
+    .hero::after {
+      content: ""; position: absolute; right: -80px; top: -80px; width: 260px; height: 260px;
+      border-radius: 999px; background: rgba(255,255,255,.08); pointer-events: none;
+    }
+    .hero-grid { position: relative; z-index: 1; display: grid; grid-template-columns: 1fr; gap: 14px; }
+    .hero .hi { font-size: 1rem; font-weight: 700; opacity: .95; }
+    .hero h1 {
+      margin: 6px 0 0; font-size: clamp(1.5rem, 6vw, 2.1rem); font-weight: 900;
+      letter-spacing: -.02em; line-height: 1.08; max-width: 12ch;
+    }
+    .hero .tag { margin: 8px 0 0; font-size: clamp(.92rem, 3.6vw, 1.02rem); opacity: .92; font-weight: 500; }
+    .hero .script {
+      position: absolute; right: 16px; top: 14px; z-index: 2;
+      font-family: 'Caveat', 'Inter', cursive; font-size: clamp(1.1rem, 4.6vw, 1.7rem);
+      font-weight: 700; line-height: 1.15; text-align: right; max-width: 46%; opacity: .92;
+    }
+    @media (max-width: 720px) { .hero .script { display: none; } }
+    .feats { display: flex; flex-wrap: wrap; gap: 10px 18px; margin-top: 4px; }
+    .feat { display: flex; align-items: center; gap: 8px; font-size: .84rem; font-weight: 600; opacity: .95; }
+    .feat .fi {
+      width: 26px; height: 26px; border-radius: 8px; background: rgba(255,255,255,.16);
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .feat .fi svg { width: 15px; height: 15px; }
+    .feat b { font-weight: 700; }
+    .feat span { display: block; opacity: .8; font-weight: 500; font-size: .78rem; }
+
+    .avail {
+      margin-top: 6px; width: 100%; border: 0; cursor: pointer; text-align: left;
+      background: #fff; color: var(--d-ink); border-radius: 16px;
+      padding: 14px 16px; display: flex; align-items: center; gap: 14px;
+      box-shadow: 0 10px 26px rgba(11,27,59,.18);
+    }
+    .switch {
+      flex-shrink: 0; width: 52px; height: 30px; border-radius: 999px; background: #CBD5E1;
+      position: relative; transition: background .18s;
+    }
+    .switch::after {
+      content: ""; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 999px;
+      background: #fff; box-shadow: 0 2px 6px rgba(11,27,59,.25); transition: transform .18s;
+    }
+    .avail.on .switch { background: var(--d-green); }
+    .avail.on .switch::after { transform: translateX(22px); }
+    .avail .tx { flex: 1; min-width: 0; }
+    .avail .tx b { display: block; font-size: 1rem; font-weight: 800; }
+    .avail.on .tx b { color: var(--d-green); }
+    .avail .tx span { display: block; font-size: .82rem; color: var(--d-muted); margin-top: 1px; }
+    .avail .chev { color: #94A3B8; flex-shrink: 0; }
+    .avail .chev svg { width: 18px; height: 18px; }
+
+    /* ---------- Verification ---------- */
+    .verif {
+      display: flex; align-items: flex-start; gap: 13px; margin-top: 14px; flex-wrap: wrap;
+      background: #FEF6E7; border: 1px solid #FBE3B4; border-radius: 18px;
+      padding: 14px 16px;
+    }
+    .verif .vi {
+      width: 40px; height: 40px; border-radius: 12px; background: var(--d-amber); color: #fff;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .verif .vi svg { width: 21px; height: 21px; }
+    .verif .vt { flex: 1; min-width: 0; }
+    .verif .vt b { display: block; font-size: .96rem; font-weight: 800; color: #92400E; }
+    .verif .vt p { margin: 3px 0 0; font-size: .85rem; line-height: 1.4; color: #B45309; }
+    .verif .pill {
+      flex-shrink: 0; align-self: center; background: #FBBF24; color: #7C2D12;
+      font-size: .76rem; font-weight: 800; padding: 6px 12px; border-radius: 999px; white-space: nowrap;
+    }
+    @media (max-width: 560px) { .verif .pill { margin-left: 53px; } }
+
+    /* ---------- KPI ---------- */
+    .kpis {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 16px;
+    }
+    @media (min-width: 860px) { .kpis { grid-template-columns: repeat(4, 1fr); } }
+    .kpi {
+      background: #fff; border-radius: 18px; padding: 15px 15px 13px;
+      box-shadow: 0 8px 22px rgba(11,27,59,.06); position: relative; overflow: hidden;
+    }
+    .kpi .ki {
+      width: 38px; height: 38px; border-radius: 11px; display: flex; align-items: center; justify-content: center;
+      color: #fff; margin-bottom: 10px;
+    }
+    .kpi .ki svg { width: 20px; height: 20px; }
+    .kpi.b .ki { background: var(--d-blue); }
+    .kpi.g .ki { background: var(--d-green); }
+    .kpi.p .ki { background: var(--d-purple); }
+    .kpi.o .ki { background: var(--d-orange); }
+    .kpi .v { font-size: clamp(1.25rem, 5vw, 1.6rem); font-weight: 900; letter-spacing: -.02em; line-height: 1; }
+    .kpi .l { display: block; margin-top: 5px; font-size: .84rem; font-weight: 700; }
+    .kpi .sl { display: block; margin-top: 1px; font-size: .74rem; color: var(--d-muted); font-weight: 500; }
+    .kpi .spark { position: absolute; right: 10px; bottom: 10px; width: 54px; height: 22px; opacity: .5; }
+
+    /* ---------- Colonnes ---------- */
+    .cols { display: grid; grid-template-columns: 1fr; gap: 14px; margin-top: 16px; }
+    @media (min-width: 900px) { .cols { grid-template-columns: 1.2fr .9fr; align-items: start; } }
+    .side { display: grid; gap: 14px; }
+
+    .card {
+      background: #fff; border-radius: 20px; padding: clamp(15px, 3vw, 20px);
+      box-shadow: 0 8px 22px rgba(11,27,59,.06);
+    }
+    .card-h { display: flex; align-items: center; gap: 10px; }
+    .card-h .hi2 {
+      width: 34px; height: 34px; border-radius: 10px; background: var(--d-ice); color: var(--d-blue);
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .card-h .hi2 svg { width: 18px; height: 18px; }
+    .card-h h2 { margin: 0; font-size: 1.02rem; font-weight: 800; flex: 1; }
+    .card-h .more { font-size: .84rem; font-weight: 700; color: var(--d-blue); display: flex; align-items: center; gap: 3px; white-space: nowrap; }
+    .card-h .more svg { width: 15px; height: 15px; }
+
+    .empty { text-align: center; padding: 22px 10px 8px; }
+    .empty .eill {
+      width: 92px; height: 92px; margin: 0 auto 14px; border-radius: 999px; background: #EAF1FE;
+      color: #9DBDF5; display: flex; align-items: center; justify-content: center;
+    }
+    .empty .eill svg { width: 44px; height: 44px; }
+    .empty b { display: block; font-size: .98rem; font-weight: 800; }
+    .empty p { margin: 6px auto 0; font-size: .86rem; line-height: 1.4; color: var(--d-muted); max-width: 34ch; }
+
+    .req { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--d-line); }
+    .req:first-of-type { border-top: 0; }
+    .req .ri {
+      width: 40px; height: 40px; border-radius: 11px; background: var(--d-ice); color: var(--d-blue);
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .req .ri svg { width: 19px; height: 19px; }
+    .req .rt { flex: 1; min-width: 0; }
+    .req .rt b { display: block; font-size: .92rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .req .rt span { display: block; font-size: .78rem; color: var(--d-muted); margin-top: 1px; }
+    .req .rchev { color: #94A3B8; flex-shrink: 0; }
+    .req .rchev svg { width: 17px; height: 17px; }
+
+    /* profil */
+    .prof { display: flex; align-items: center; gap: 16px; margin-top: 14px; }
+    .ring {
+      --p: 80; flex-shrink: 0; width: 78px; height: 78px; border-radius: 999px;
+      background: conic-gradient(var(--d-green) calc(var(--p) * 1%), #E8EDF5 0);
       display: flex; align-items: center; justify-content: center;
     }
-    .td-illo svg { width: 46%; height: 46%; }
-    .td-body h1 { margin: 0; font-size: clamp(1.5rem, 6.6vw, 2rem); font-weight: 900; letter-spacing: -.03em; line-height: 1.1; }
-    .td-body h1 span { color: var(--td-blue); }
-    .td-body p { margin: 0; font-size: clamp(.9rem, 3.8vw, 1rem); line-height: 1.45; color: var(--td-muted); max-width: 30ch; }
-
-    .td-actions { display: flex; flex-direction: column; gap: 12px; width: 100%; flex-shrink: 0; }
-    .td-btn {
-      width: 100%; border-radius: 16px; padding: 15px 22px; font-size: 1rem; font-weight: 800;
-      display: flex; align-items: center; justify-content: center; gap: 10px; border: 0; cursor: pointer;
+    .ring i {
+      width: 58px; height: 58px; border-radius: 999px; background: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-style: normal; font-weight: 900; font-size: 1.02rem;
     }
-    .td-btn svg { width: 19px; height: 19px; }
-    .td-btn.primary { background: linear-gradient(180deg, #3B76F5, var(--td-blue)); color: #fff; box-shadow: 0 14px 30px rgba(37,99,235,.3); }
-    .td-btn.ghost { background: #fff; color: var(--td-ink); border: 1.5px solid var(--td-line); }
-    [hidden] { display: none !important; }
+    .prof .pt b { display: block; font-size: .95rem; font-weight: 800; }
+    .prof .pt p { margin: 3px 0 0; font-size: .83rem; line-height: 1.38; color: var(--d-muted); }
+
+    .btn {
+      display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
+      margin-top: 14px; border-radius: 13px; padding: 12px 16px; font-size: .92rem; font-weight: 800;
+      border: 1.5px solid var(--d-blue); background: #fff; color: var(--d-blue); cursor: pointer;
+    }
+    .btn svg { width: 16px; height: 16px; }
+    .btn.solid { background: linear-gradient(180deg, #3B76F5, var(--d-blue)); color: #fff; border-color: transparent; box-shadow: 0 12px 24px rgba(37,99,235,.28); }
+
+    /* abonnement */
+    .sub-h { display: flex; align-items: flex-start; gap: 12px; }
+    .sub-h .si {
+      width: 40px; height: 40px; border-radius: 11px; background: #FEF3C7; color: var(--d-amber);
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .sub-h .si svg { width: 21px; height: 21px; }
+    .sub-h .st { flex: 1; min-width: 0; }
+    .sub-h .st .k { font-size: .8rem; font-weight: 700; color: var(--d-muted); }
+    .sub-h .st .plan { display: block; font-size: 1.02rem; font-weight: 800; margin-top: 1px; }
+    .sub-h .st .price { display: block; font-size: .84rem; color: var(--d-muted); margin-top: 1px; }
+    .sub-h .tag2 {
+      flex-shrink: 0; font-size: .74rem; font-weight: 800; padding: 4px 10px; border-radius: 999px;
+      background: #E7F6EC; color: var(--d-green);
+    }
+    .sub-h .tag2.off { background: #F1F5F9; color: var(--d-muted); }
+    .sub-due { margin: 10px 0 0; font-size: .8rem; color: var(--d-muted); }
+
+    /* ---------- Notifications ---------- */
+    .notif {
+      display: flex; align-items: center; gap: 14px; margin-top: 16px;
+      background: #EAF1FE; border-radius: 20px; padding: clamp(14px, 3vw, 18px);
+    }
+    .notif .ni {
+      width: 46px; height: 46px; border-radius: 13px; background: #fff; color: var(--d-blue);
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .notif .ni svg { width: 22px; height: 22px; }
+    .notif .nt { flex: 1; min-width: 0; }
+    .notif .nt b { display: block; font-size: .96rem; font-weight: 800; }
+    .notif .nt p { margin: 3px 0 0; font-size: .83rem; line-height: 1.38; color: var(--d-muted); }
+    .notif button {
+      flex-shrink: 0; border: 0; cursor: pointer; border-radius: 13px; padding: 12px 18px;
+      background: linear-gradient(180deg, #3B76F5, var(--d-blue)); color: #fff; font-weight: 800; font-size: .9rem;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .notif button svg { width: 17px; height: 17px; }
+    @media (max-width: 560px) {
+      .notif { flex-wrap: wrap; }
+      .notif button { width: 100%; justify-content: center; }
+    }
+
+    /* ---------- Tabbar ---------- */
+    .tabbar {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
+      background: #fff; border-top: 1px solid var(--d-line);
+      padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+      display: flex; align-items: flex-end; justify-content: space-around;
+      box-shadow: 0 -8px 24px rgba(11,27,59,.06);
+    }
+    .tab {
+      flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
+      font-size: .68rem; font-weight: 700; color: var(--d-muted); position: relative;
+      padding: 4px 2px;
+    }
+    .tab svg { width: 22px; height: 22px; }
+    .tab.active { color: var(--d-blue); }
+    .tab .tb {
+      position: absolute; top: -1px; right: 22%; min-width: 15px; height: 15px; padding: 0 3px;
+      border-radius: 999px; background: #EF4444; color: #fff; font-size: .6rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .tab.fab { flex: 0 0 auto; }
+    .tab.fab .fb {
+      width: 54px; height: 54px; border-radius: 999px; margin-top: -22px;
+      background: linear-gradient(180deg, #3B76F5, var(--d-blue)); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 12px 24px rgba(37,99,235,.4); border: 4px solid #fff;
+    }
+    .tab.fab .fb svg { width: 26px; height: 26px; }
   </style>
 </head>
 <body>
-  <div class="td">
-    <header class="td-head">
+  {% set av_on = availability == 'en_ligne' %}
+
+  <header class="topbar">
+    <a class="brand" href="{{ url_for('artisan_dashboard') }}">
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span>
-      <span>
-        <span class="n">Fix<i>Pro</i></span>
-        <span class="s">Espace Technicien</span>
+      <span><span class="n">Fix<i>Pro</i></span><span class="s">Espace Technicien</span></span>
+    </a>
+    <span class="sp"></span>
+    <a class="icon-btn" href="{{ url_for('notifications') }}" aria-label="Notifications">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+      {% if notif_unread %}<span class="badge">{{ notif_unread if notif_unread < 100 else '99+' }}</span>{% endif %}
+    </a>
+    <a class="who" href="{{ url_for('profile') }}">
+      <span class="avatar">
+        {% if user.photo_url %}<img src="{{ user.photo_url }}" alt="" />{% else %}{{ (user.full_name or 'T')[:1] | upper }}{% endif %}
+        <span class="dot {{ 'on' if av_on }}"></span>
       </span>
-      <a class="td-logout" href="{{ url_for('logout') }}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
-        Déconnexion
-      </a>
-    </header>
-
-    <div class="td-body">
-      <span class="td-illo">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M3 20h4M4 12h16M4 12a8 8 0 0 1 16 0M9 4h6"/><path d="M12 12v8"/></svg>
+      <span class="name"><span>{{ (user.full_name or 'Technicien').split(' ')[0] }}</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
       </span>
-      <h1>Nouveau tableau de bord <span>en préparation</span></h1>
-      <p>Votre espace technicien est en cours de refonte. Votre compte et vos informations restent enregistrés.</p>
-    </div>
+    </a>
+  </header>
 
-    <div class="td-actions">
-      <a class="td-btn primary" href="{{ url_for('technician_subscription') }}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7z"/></svg>
-        Mon abonnement
-      </a>
-      <a class="td-btn ghost" href="{{ url_for('index') }}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 12 9-9 9 9M5 10v10h14V10"/></svg>
-        Accueil
-      </a>
-    </div>
-  </div>
+  <main class="wrap">
+    <!-- Hero -->
+    <section class="hero">
+      <p class="script">Des services fiables pour une vie plus simple&nbsp;!</p>
+      <div class="hero-grid">
+        <div>
+          <span class="hi">Bonjour, {{ (user.full_name or 'Technicien').split(' ')[0] }}&nbsp;! 👋</span>
+          <h1>Prêt à recevoir des demandes&nbsp;?</h1>
+          <p class="tag">Votre savoir-faire fait la différence&nbsp;!</p>
+        </div>
+        <div class="feats">
+          <span class="feat"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg></span><b>Des clients<span>vérifiés</span></b></span>
+          <span class="feat"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><b>Des missions<span>près de chez vous</span></b></span>
+          <span class="feat"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 17.8 6.2 20.9l1.1-6.5L2.6 9.8l6.5-.9z"/></svg></span><b>Un revenu<span>supplémentaire</span></b></span>
+        </div>
+        <button type="button" class="avail {{ 'on' if av_on }}" id="availBtn" aria-pressed="{{ 'true' if av_on else 'false' }}">
+          <span class="switch"></span>
+          <span class="tx">
+            <b id="availLabel">{{ 'Disponible' if av_on else 'Indisponible' }}</b>
+            <span id="availSub">{{ 'Vous pouvez recevoir de nouvelles demandes' if av_on else 'Vous ne recevez pas de nouvelles demandes' }}</span>
+          </span>
+          <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Vérification -->
+    {% if not verifie %}
+    <section class="verif">
+      <span class="vi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
+      <div class="vt">
+        <b>Votre profil est en cours de vérification</b>
+        <p>Notre équipe vérifie vos informations. Vous serez notifié dès que votre compte sera activé. En attendant, vous pouvez explorer l'application.</p>
+      </div>
+      <span class="pill">En cours</span>
+    </section>
+    {% endif %}
+
+    <!-- KPI -->
+    <section class="kpis">
+      <div class="kpi b">
+        <span class="ki"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h4"/></svg></span>
+        <span class="v">{{ kpis.demandes }}</span>
+        <span class="l">Demandes reçues</span>
+        <span class="sl">Cette semaine</span>
+        <svg class="spark" viewBox="0 0 54 22" fill="none" stroke="var(--d-blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 18 12 12 22 15 33 6 43 9 53 3"/></svg>
+      </div>
+      <div class="kpi g">
+        <span class="ki"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span>
+        <span class="v">{{ kpis.interventions }}</span>
+        <span class="l">Interventions</span>
+        <span class="sl">Ce mois-ci</span>
+        <svg class="spark" viewBox="0 0 54 22" fill="none" stroke="var(--d-green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 16 12 17 22 10 33 12 43 5 53 7"/></svg>
+      </div>
+      <div class="kpi p">
+        <span class="ki"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v6c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg></span>
+        <span class="v">{{ "{:,}".format(kpis.revenus) | replace(",", " ") }} <small style="font-size:.6em;font-weight:800">GNF</small></span>
+        <span class="l">Mes revenus</span>
+        <span class="sl">Ce mois-ci</span>
+        <svg class="spark" viewBox="0 0 54 22" fill="none" stroke="var(--d-purple)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 19 12 14 22 16 33 8 43 11 53 2"/></svg>
+      </div>
+      <div class="kpi o">
+        <span class="ki"><svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 3 2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 17.8 6.2 20.9l1.1-6.5L2.6 9.8l6.5-.9z"/></svg></span>
+        <span class="v">{{ '%.1f'|format(kpis.note) if kpis.reviews_count else '—' }}</span>
+        <span class="l">Note moyenne</span>
+        <span class="sl">{% if kpis.reviews_count %}({{ kpis.reviews_count }} avis){% else %}Aucun avis{% endif %}</span>
+        <svg class="spark" viewBox="0 0 54 22" fill="none" stroke="var(--d-orange)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 14 12 13 22 15 33 11 43 12 53 9"/></svg>
+      </div>
+    </section>
+
+    <!-- Colonnes -->
+    <section class="cols">
+      <div class="card">
+        <div class="card-h">
+          <span class="hi2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span>
+          <h2>Vos prochaines demandes</h2>
+          <a class="more" href="{{ url_for('conversations') }}">Voir tout <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></a>
+        </div>
+        {% if upcoming %}
+          {% for r in upcoming %}
+          <a class="req" href="{{ url_for('request_detail', request_id=r.id) }}">
+            <span class="ri"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span>
+            <span class="rt">
+              <b>{{ r.title or r.service or r.category or 'Demande' }}</b>
+              <span>{{ r.client_name or 'Client' }}{% if r.address %} · {{ r.address }}{% endif %}</span>
+            </span>
+            <span class="rchev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+          </a>
+          {% endfor %}
+        {% else %}
+        <div class="empty">
+          <span class="eill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6a1 1 0 0 1 1 1v1H8V4a1 1 0 0 1 1-1z"/><path d="M8 5H6a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h8"/><path d="M16 5h2a2 2 0 0 1 2 2v4"/><circle cx="18" cy="17" r="3"/><path d="m21.5 20.5-1.8-1.8"/></svg></span>
+          <b>Vous n'avez pas encore de demande.</b>
+          <p>Les nouvelles demandes des clients apparaîtront ici une fois votre compte activé.</p>
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="side">
+        <div class="card">
+          <div class="card-h">
+            <span class="hi2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+            <h2>Mon profil</h2>
+            <a class="more" href="{{ url_for('profile') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></a>
+          </div>
+          <div class="prof">
+            <span class="ring" style="--p: {{ profile_pct }}"><i>{{ profile_pct }}%</i></span>
+            <div class="pt">
+              <b>Profil {{ 'complété' if profile_pct >= 100 else 'à compléter' }}</b>
+              <p>{% if profile_pct >= 100 %}Votre profil est complet, bravo&nbsp;!{% else %}Ajoutez les informations manquantes pour être plus visible.{% endif %}</p>
+            </div>
+          </div>
+          <a class="btn" href="{{ url_for('profile') }}">Voir mon profil <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        </div>
+
+        <div class="card">
+          {% if subscription %}
+          <div class="sub-h">
+            <span class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7z"/></svg></span>
+            <div class="st">
+              <span class="k">Mon abonnement</span>
+              <span class="plan">{{ subscription.plan_name }}</span>
+              {% if subscription.price_month %}<span class="price">{{ "{:,}".format(subscription.price_month) | replace(",", " ") }} {{ subscription.currency }} / mois</span>{% endif %}
+            </div>
+            <span class="tag2 {{ '' if subscription.active else 'off' }}">{{ subscription.status_label }}</span>
+          </div>
+          {% if subscription.end_date_label %}<p class="sub-due">Prochaine échéance : {{ subscription.end_date_label }}</p>{% endif %}
+          <a class="btn" href="{{ url_for('technician_subscription') }}">Gérer mon abonnement <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+          {% else %}
+          <div class="sub-h">
+            <span class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7z"/></svg></span>
+            <div class="st">
+              <span class="k">Mon abonnement</span>
+              <span class="plan">Aucun abonnement actif</span>
+              <span class="price">Choisissez une formule pour recevoir plus de demandes.</span>
+            </div>
+          </div>
+          <a class="btn solid" href="{{ url_for('technician_subscription') }}">Choisir un abonnement <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+          {% endif %}
+        </div>
+      </div>
+    </section>
+
+    <!-- Notifications -->
+    <section class="notif" id="notifCard">
+      <span class="ni"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></span>
+      <div class="nt">
+        <b>Activez les notifications</b>
+        <p>Soyez informé immédiatement des nouvelles demandes, même lorsque l'application est fermée.</p>
+      </div>
+      <button type="button" id="notifBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+        Activer
+      </button>
+    </section>
+  </main>
+
+  <nav class="tabbar">
+    <a class="tab active" href="{{ url_for('artisan_dashboard') }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
+      Accueil
+    </a>
+    <a class="tab" href="{{ url_for('conversations') }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h4"/></svg>
+      Demandes
+    </a>
+    <a class="tab fab" href="{{ url_for('request_new') }}" aria-label="Nouvelle demande">
+      <span class="fb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></span>
+      Nouvelle
+    </a>
+    <a class="tab" href="{{ url_for('client_messages') }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      Messages
+      {% if messages_unread %}<span class="tb">{{ messages_unread if messages_unread < 100 else '99+' }}</span>{% endif %}
+    </a>
+    <a class="tab" href="{{ url_for('technician_subscription') }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7z"/></svg>
+      Abonnement
+    </a>
+  </nav>
+
+  <script>
+    (function () {
+      var btn = document.getElementById('availBtn');
+      var label = document.getElementById('availLabel');
+      var sub = document.getElementById('availSub');
+      var dot = document.querySelector('.avatar .dot');
+      var busy = false;
+      btn.addEventListener('click', function () {
+        if (busy) return;
+        busy = true;
+        var goOn = !btn.classList.contains('on');
+        var status = goOn ? 'en_ligne' : 'hors_ligne';
+        var body = new FormData(); body.append('status', status);
+        fetch("{{ url_for('api_technicien_status') }}", { method: 'POST', body: body, headers: { 'Accept': 'application/json' } })
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (d) {
+            if (d && d.ok) {
+              btn.classList.toggle('on', goOn);
+              btn.setAttribute('aria-pressed', goOn ? 'true' : 'false');
+              label.textContent = goOn ? 'Disponible' : 'Indisponible';
+              sub.textContent = goOn ? 'Vous pouvez recevoir de nouvelles demandes' : 'Vous ne recevez pas de nouvelles demandes';
+              if (dot) dot.classList.toggle('on', goOn);
+            }
+          })
+          .finally(function () { busy = false; });
+      });
+
+      var nb = document.getElementById('notifBtn');
+      var nc = document.getElementById('notifCard');
+      if (!('Notification' in window)) { nc.hidden = true; }
+      else if (Notification.permission === 'granted') { nc.hidden = true; }
+      nb.addEventListener('click', function () {
+        Notification.requestPermission().then(function (p) {
+          if (p === 'granted') nc.hidden = true;
+        });
+      });
+    })();
+  </script>
 </body>
 </html>

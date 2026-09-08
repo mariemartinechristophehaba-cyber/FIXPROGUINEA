@@ -590,6 +590,58 @@ class TechnicianSignupTests(FixProTestCase):
         self.assertEqual(n, 0)
 
 
+class TechnicianDashboardTests(FixProTestCase):
+    """Accueil de l'espace technicien (/dashboard/technicien)."""
+
+    def test_dashboard_renders_for_technician(self):
+        self.register_artisan("tech@example.com", phone="+224621111111")
+        self.login("tech@example.com")
+        r = self.client.get("/dashboard/technicien")
+        self.assertEqual(r.status_code, 200)
+        html = r.get_data(as_text=True)
+        self.assertIn("Espace Technicien", html)
+        self.assertIn("Prêt à recevoir", html)
+        self.assertIn("Demandes reçues", html)
+
+    def test_dashboard_redirects_non_technician(self):
+        self.register_client()
+        self.login("+224620000000")
+        r = self.client.get("/dashboard/technicien", follow_redirects=False)
+        self.assertEqual(r.status_code, 302)
+        self.assertNotIn("/dashboard/technicien", r.location)
+
+    def test_login_technician_lands_on_dashboard(self):
+        self.register_artisan("tech2@example.com", phone="+224621111112")
+        r = self.client.post("/login", data={
+            "identifier": "tech2@example.com", "password": "FixPro2026!"},
+            follow_redirects=True)
+        self.assertEqual(r.status_code, 200)
+        self.assertIn(r.request.path,
+                      ("/dashboard/technicien", "/technician/dashboard"))
+        self.assertIn("Espace Technicien", r.get_data(as_text=True))
+
+    def test_availability_toggle_updates_status(self):
+        self.register_artisan("tech3@example.com", phone="+224621111113")
+        self.login("tech3@example.com")
+        r = self.client.post("/api/technicien/status", data={"status": "en_ligne"})
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(r.get_json()["ok"])
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            row = conn.execute(
+                "SELECT availability_status FROM users WHERE phone = ?",
+                ("+224621111113",)).fetchone()
+            self.assertEqual(row["availability_status"], "en_ligne")
+        finally:
+            conn.close()
+
+    def test_availability_toggle_rejects_bad_status(self):
+        self.register_artisan("tech4@example.com", phone="+224621111114")
+        self.login("tech4@example.com")
+        r = self.client.post("/api/technicien/status", data={"status": "n_importe"})
+        self.assertEqual(r.status_code, 400)
+
+
 class ClientProfileTests(FixProTestCase):
     """Profil client et pages associees."""
 

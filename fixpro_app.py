@@ -4125,33 +4125,145 @@ def mobile_dashboard():
 @app.route("/technician/dashboard")
 @login_required
 def artisan_dashboard():
-    """Accueil de l'espace technicien.
-
-    L'ancien tableau de bord a ete retire : une nouvelle page est en cours
-    d'implementation. En attendant, on rend un ecran neutre. L'endpoint et
-    les URLs sont conserves (connexion technicien, fin d'inscription, page
-    Abonnement en dependent)."""
+    """Accueil de l'espace technicien : etat du compte, indicateurs du mois,
+    prochaines demandes, profil et abonnement."""
     user = get_current_user()
     if not _is_technician(user):
         flash("Cet espace est reserve aux techniciens.", "error")
         return redirect(url_for("dashboard"))
 
-    unread_count = 0
+    now = datetime.now(timezone.utc)
+    month_prefix = now.strftime("%Y-%m")
+    week_start = (now - timedelta(days=now.weekday())).strftime("%Y-%m-%d")
+
     conn = get_db_connection()
     try:
+        def _scalar(sql, params=()):
+            try:
+                row = conn.execute(sql, params).fetchone()
+                return (row["n"] if row else 0) or 0
+            except Exception:
+                conn.rollback()
+                return 0
+
+        demandes_semaine = _scalar(
+            "SELECT COUNT(*) AS n FROM requests"
+            " WHERE artisan_id = ? AND substr(created_at, 1, 10) >= ?",
+            (user["id"], week_start))
+        interventions_mois = _scalar(
+            "SELECT COUNT(*) AS n FROM requests"
+            " WHERE artisan_id = ? AND LOWER(status) = 'completed'"
+            " AND substr(COALESCE(completed_at, updated_at, created_at), 1, 7) = ?",
+            (user["id"], month_prefix))
+        revenus_mois = _scalar(
+            "SELECT COALESCE(SUM(COALESCE(professional_amount, final_price,"
+            " quote_amount, 0)), 0) AS n FROM requests"
+            " WHERE artisan_id = ? AND LOWER(status) = 'completed'"
+            " AND substr(COALESCE(completed_at, updated_at, created_at), 1, 7) = ?",
+            (user["id"], month_prefix))
+
+        note_avg, reviews_count = 0, 0
         try:
-            row = conn.execute(
-                "SELECT COUNT(*) AS n FROM notifications"
-                " WHERE user_id = ? AND is_read = 0", (user["id"],)).fetchone()
-            unread_count = (row["n"] if row else 0) or 0
+            note_row = conn.execute(
+                "SELECT ROUND(AVG(rating), 1) AS avg, COUNT(*) AS n FROM reviews"
+                " WHERE artisan_id = ?", (user["id"],)).fetchone()
+            if note_row and note_row["n"]:
+                note_avg = note_row["avg"] or 0
+                reviews_count = note_row["n"]
+        except Exception:
+            conn.rollback()
+
+        upcoming = []
+        try:
+            upcoming = conn.execute(
+                "SELECT r.id, r.title, r.category, r.service, r.status, r.address,"
+                " r.requested_date, r.urgency, r.created_at,"
+                " c.full_name AS client_name"
+                " FROM requests r LEFT JOIN users c ON c.id = r.client_id"
+                " WHERE r.artisan_id = ?"
+                " AND LOWER(r.status) NOT IN ('completed', 'cancelled', 'refused', 'rejected')"
+                " ORDER BY COALESCE(r.requested_date, r.created_at) ASC LIMIT 4",
+                (user["id"],)).fetchall()
+        except Exception:
+            conn.rollback()
+
+        sub = None
+        try:
+            sub = conn.execute(
+                "SELECT s.status, s.end_date, s.auto_renew,"
+                " p.name AS plan_name, p.price_month, p.currency"
+                " FROM technician_subscriptions s"
+                " LEFT JOIN subscription_plans p ON p.id = s.plan_id"
+                " WHERE s.technician_id = ? ORDER BY s.created_at DESC LIMIT 1",
+                (user["id"],)).fetchone()
         except Exception:
             conn.rollback()
     finally:
         conn.close()
 
+    kpis = {
+        "demandes": int(demandes_semaine),
+        "interventions": int(interventions_mois),
+        "revenus": int(revenus_mois),
+        "note": note_avg,
+        "reviews_count": int(reviews_count),
+    }
+
+    fields = {
+        "photo": bool((user.get("photo_url") or "").strip()),
+        "bio": bool((user.get("bio") or "").strip()),
+        "profession": bool((user.get("profession") or "").strip()),
+        "zone": bool((user.get("zone_intervention") or user.get("city") or "").strip()),
+        "experience": bool(user.get("years_experience")),
+    }
+    profile_pct = int(round(sum(fields.values()) / len(fields) * 100))
+
+    verifie = (user.get("verification_status") or "").upper() in (
+        "APPROVED", "APPROUVE", "APPROUVÉ", "VERIFIED", "ACTIVE")
+
+    subscription_view = None
+    if sub:
+        keys = sub.keys()
+        price = sub["price_month"] if "price_month" in keys else None
+        status = (sub["status"] or "").upper()
+        subscription_view = {
+            "plan_name": sub["plan_name"] or "Abonnement FixPro",
+            "price_month": int(price) if price else None,
+            "currency": (sub["currency"] if "currency" in keys and sub["currency"] else "GNF"),
+            "active": status in ("ACTIVE", "TRIAL"),
+            "status_label": {"ACTIVE": "Actif", "TRIAL": "Essai", "PAST_DUE": "En attente",
+                             "EXPIRED": "Expire", "CANCELLED": "Annule"}.get(status, sub["status"] or "—"),
+            "end_date_label": _format_date_month_fr(sub["end_date"]) if sub["end_date"] else None,
+        }
+
     return render_template(
-        "dashboard_technicien.html", user=user, unread_count=unread_count,
+        "dashboard_technicien.html", user=user, kpis=kpis,
+        upcoming=[dict(r) for r in upcoming], profile_pct=profile_pct,
+        verifie=verifie, subscription=subscription_view,
         availability=(user.get("availability_status") or "hors_ligne"))
+
+
+@app.route("/api/technicien/status", methods=["POST"])
+@login_required
+def api_technicien_status():
+    """Met a jour la disponibilite du technicien (toggle de l'accueil)."""
+    user = get_current_user()
+    if not _is_technician(user):
+        return jsonify({"ok": False}), 403
+    status = (request.form.get("status") or "").strip()
+    if status not in ("en_ligne", "occupe", "hors_ligne"):
+        return jsonify({"ok": False, "error": "statut invalide"}), 400
+    conn = get_db_connection()
+    try:
+        conn.execute("UPDATE users SET availability_status = ? WHERE id = ?",
+                     (status, user["id"]))
+        conn.commit()
+    finally:
+        conn.close()
+    return jsonify({"ok": True, "status": status})
+
+
+csrf.exempt(api_technicien_status)
 
 
 # --- Abonnement technicien -------------------------------------------------
