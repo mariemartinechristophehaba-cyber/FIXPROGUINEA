@@ -156,6 +156,7 @@
     }
     .method .mi.orange { background: #FF7900; }
     .method .mi.mtn { background: #FFCC00; color: #0B1B3B; }
+    .method .mi.unitrade { background: #0B1B3B; letter-spacing: .02em; }
     .method .mi.card { background: var(--d-blue); }
     .method .mi svg { width: 100%; height: 100%; flex-shrink: 0; display: block; }
     .method .mi.card svg { width: 19px; height: 19px; }
@@ -170,6 +171,16 @@
     .method .radio::after { content: ""; width: 10px; height: 10px; border-radius: 999px; background: var(--d-blue); opacity: 0; transition: opacity .12s; }
     .method:has(input:checked) .radio::after, .method.sel .radio::after { opacity: 1; }
     .method input { position: absolute; opacity: 0; pointer-events: none; }
+
+    .phone-field { margin-top: 12px; background: #F6F8FC; border: 1px solid var(--d-line); border-radius: 12px; padding: 12px; }
+    .phone-field > label { display: block; font-size: .82rem; font-weight: 800; margin-bottom: 7px; }
+    .phone-in { display: flex; align-items: stretch; background: #fff; border: 1.5px solid var(--d-line); border-radius: 10px; overflow: hidden; }
+    .phone-in:focus-within { border-color: var(--d-blue); }
+    .phone-in .cc { display: flex; align-items: center; gap: 6px; padding: 0 11px; font-weight: 700; font-size: .88rem; border-right: 1.5px solid var(--d-line); background: #fff; white-space: nowrap; }
+    .phone-in .cc .flag { width: 20px; height: 14px; border-radius: 3px; flex-shrink: 0; background: linear-gradient(90deg, #CE1126 0 33.33%, #FCD116 33.33% 66.66%, #009460 66.66%); }
+    .phone-in input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; padding: 11px 12px; font-size: .92rem; color: var(--d-ink); }
+    .phone-note { display: flex; align-items: flex-start; gap: 7px; margin: 9px 0 0; font-size: .78rem; line-height: 1.35; color: var(--d-muted); }
+    .phone-note svg { width: 14px; height: 14px; flex-shrink: 0; margin-top: 1px; color: var(--d-blue); }
 
     /* --- Total --- */
     .total {
@@ -321,19 +332,32 @@
         </div>
 
         {% for m in methods %}
-        <label class="method{{ ' sel' if loop.first }}">
+        <label class="method{{ ' sel' if loop.first }}" data-method="{{ m.code }}">
           <input type="radio" name="payment_method" value="{{ m.code }}" {{ 'checked' if loop.first }} />
           <span class="mi {{ m.brand }}">
             {% if m.brand == 'orange' %}
             {# logo Orange : carré orange (fond du bloc) + carré blanc en haut à droite #}
             <svg viewBox="0 0 40 40" aria-hidden="true"><rect x="18" y="5" width="17" height="17" rx="1.5" fill="#fff"/></svg>
             {% elif m.brand == 'mtn' %}MTN
+            {% elif m.brand == 'unitrade' %}UT
             {% else %}<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/></svg>{% endif %}
           </span>
           <span class="mtx"><b>{{ m.label }}</b><span>{{ m.desc }}</span></span>
           <span class="radio"></span>
         </label>
         {% endfor %}
+
+        <div class="phone-field" id="phoneField" hidden>
+          <label for="payerPhone">Numéro <span id="phoneMethodName">Orange Money</span></label>
+          <div class="phone-in">
+            <span class="cc"><span class="flag" aria-hidden="true"></span>+224</span>
+            <input type="tel" id="payerPhone" name="payer_phone" inputmode="tel" autocomplete="tel-national" placeholder="620 00 00 00" />
+          </div>
+          <p class="phone-note">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg>
+            Vous recevrez une demande de paiement sur votre téléphone. Validez-la pour confirmer votre abonnement.
+          </p>
+        </div>
       </section>
 
       <div class="total">
@@ -343,7 +367,7 @@
 
       <button type="submit" class="cta">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
-        Continuer vers le paiement
+        Payer {{ "{:,}".format(amount) | replace(",", " ") }} GNF
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
       </button>
     </form>
@@ -376,13 +400,22 @@
 
   <script>
     (function () {
+      var MOBILE = { orange_money: 'Orange Money', mtn_mobile_money: 'MTN Mobile Money' };
+      var field = document.getElementById('phoneField');
+      var nameEl = document.getElementById('phoneMethodName');
+      function sync(code) {
+        if (MOBILE[code]) { field.hidden = false; nameEl.textContent = MOBILE[code]; }
+        else { field.hidden = true; }
+      }
       document.querySelectorAll('.method').forEach(function (m) {
         m.addEventListener('click', function () {
           document.querySelectorAll('.method').forEach(function (x) { x.classList.remove('sel'); });
           m.classList.add('sel');
-          var r = m.querySelector('input'); if (r) r.checked = true;
+          var r = m.querySelector('input'); if (r) { r.checked = true; sync(r.value); }
         });
       });
+      var checked = document.querySelector('.method input:checked');
+      if (checked) sync(checked.value);
     })();
   </script>
 </body>

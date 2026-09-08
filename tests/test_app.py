@@ -894,6 +894,321 @@ class TechnicianDashboardTests(FixProTestCase):
             self.assertNotIn("user_id", sess)
 
 
+class SubscriptionPaymentFlowTests(FixProTestCase):
+    """Parcours de paiement des abonnements : AUCUNE fausse activation.
+    Un abonnement ne devient ACTIVE que sur confirmation serveur reelle."""
+
+    WEBHOOK_SECRET = "test-webhook-secret"
+
+    def setUp(self):
+        super().setUp()
+        fixpro_app.app.config["PAYMENT_WEBHOOK_SECRET"] = self.WEBHOOK_SECRET
+        self.addCleanup(fixpro_app.app.config.pop, "PAYMENT_WEBHOOK_SECRET", None)
+
+    # --- helpers -------------------------------------------------------
+
+    def _tech(self, email="payflow@example.com", phone="+224622000001"):
+        self.register_artisan(email, phone=phone)
+        self.login(email)
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            return conn.execute("SELECT id FROM users WHERE phone = ?",
+                                (phone,)).fetchone()["id"]
+        finally:
+            conn.close()
+
+    def _start_payment(self, plan="tech_premium", method="orange_money",
+                       period="month"):
+        r = self.client.post(
+            "/abonnement/confirmation?plan=%s&period=%s" % (plan, period),
+            data={"payment_method": method, "payer_phone": "620000000"},
+            follow_redirects=False)
+        self.assertEqual(r.status_code, 302)
+        self.assertIn("/abonnement/statut/", r.location)
+        return r.location.rsplit("/", 1)[-1]
+
+    def _pay_row(self, ref):
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            return conn.execute(
+                "SELECT * FROM subscription_payments WHERE transaction_reference = ?",
+                (ref,)).fetchone()
+        finally:
+            conn.close()
+
+    def _sub_row(self, tech_id):
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            return conn.execute(
+                "SELECT * FROM technician_subscriptions WHERE technician_id = ?"
+                " ORDER BY id DESC LIMIT 1", (tech_id,)).fetchone()
+        finally:
+            conn.close()
+
+    def _webhook(self, ref, status, amount=140000, token=None):
+        return self.client.post(
+            "/webhooks/paiement/orange",
+            json={"reference": ref, "status": status, "amount": amount},
+            headers={"X-FixPro-Signature": token if token is not None else self.WEBHOOK_SECRET})
+
+    def _make_admin(self):
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute(
+                "INSERT INTO users (email, phone, password_hash, role, full_name,"
+                " is_verified, is_active) VALUES (?, ?, ?, 'admin', 'Admin', 1, 1)",
+                ("adm@fixpro.local", "+224000009999",
+                 fixpro_app.generate_password_hash("x")))
+            conn.commit()
+            aid = conn.execute("SELECT id FROM users WHERE phone = ?",
+                               ("+224000009999",)).fetchone()["id"]
+        finally:
+            conn.close()
+        with self.client.session_transaction() as sess:
+            sess["user_id"] = aid
+
+    # --- 1. le clic "Payer" n'active RIEN ----------------------------
+
+    def test_pay_click_creates_pending_only(self):
+        tid = self._tech()
+        ref = self._start_payment()
+        pay = self._pay_row(ref)
+        self.assertEqual(pay["status"], "pending")
+        self.assertIsNone(pay["paid_at"])
+        sub = self._sub_row(tid)
+        self.assertEqual(sub["status"], "PAST_DUE")      # PAS ACTIVE
+        self.assertIsNone(sub["end_date"])              # pas de periode tant qu'inactif
+
+    def test_status_page_and_api_report_pending(self):
+        self._tech()
+        ref = self._start_payment()
+        html = self.client.get("/abonnement/statut/%s" % ref).get_data(as_text=True)
+        self.assertIn("Paiement en cours", html)
+        j = self.client.get("/api/abonnement/statut/%s" % ref).get_json()
+        self.assertEqual(j["state"], "PENDING")
+        self.assertFalse(j["final"])
+        self.assertFalse(j["confirmed"])
+
+    # --- 2. webhook : securite --------------------------------------
+
+    def test_webhook_without_secret_is_rejected(self):
+        tid = self._tech()
+        ref = self._start_payment()
+        r = self._webhook(ref, "success", token="")
+        self.assertEqual(r.status_code, 403)
+        self.assertEqual(self._sub_row(tid)["status"], "PAST_DUE")
+        self.assertEqual(self._pay_row(ref)["status"], "pending")
+
+    def test_webhook_wrong_amount_is_rejected(self):
+        tid = self._tech()
+        ref = self._start_payment()
+        r = self._webhook(ref, "success", amount=1)
+        self.assertEqual(r.status_code, 400)
+        self.assertEqual(self._sub_row(tid)["status"], "PAST_DUE")
+
+    # --- 3. echecs -> reste inactif --------------------------------
+
+    def test_webhook_failed_keeps_subscription_inactive(self):
+        tid = self._tech()
+        ref = self._start_payment()
+        self.assertEqual(self._webhook(ref, "failed").status_code, 200)
+        self.assertEqual(self._pay_row(ref)["status"], "failed")
+        self.assertEqual(self._sub_row(tid)["status"], "PAST_DUE")
+        html = self.client.get("/abonnement/statut/%s" % ref).get_data(as_text=True)
+        self.assertIn("Paiement échoué", html)
+
+    def test_webhook_cancelled_keeps_inactive(self):
+        tid = self._tech()
+        ref = self._start_payment()
+        self._webhook(ref, "cancelled")
+        self.assertEqual(self._pay_row(ref)["status"], "cancelled")
+        self.assertEqual(self._sub_row(tid)["status"], "PAST_DUE")
+
+    def test_user_cancel_keeps_inactive(self):
+        tid = self._tech()
+        ref = self._start_payment()
+        self.client.post("/abonnement/statut/%s/annuler" % ref)
+        self.assertEqual(self._pay_row(ref)["status"], "cancelled")
+        self.assertEqual(self._sub_row(tid)["status"], "PAST_DUE")
+
+    def test_stale_attempt_expires_and_stays_inactive(self):
+        tid = self._tech()
+        ref = self._start_payment()
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute("UPDATE subscription_payments SET created_at = '2020-01-01 00:00:00'"
+                         " WHERE transaction_reference = ?", (ref,))
+            conn.commit()
+        finally:
+            conn.close()
+        j = self.client.get("/api/abonnement/statut/%s" % ref).get_json()
+        self.assertEqual(j["state"], "PAYMENT_EXPIRED")
+        self.assertEqual(self._pay_row(ref)["status"], "expired")
+        self.assertEqual(self._sub_row(tid)["status"], "PAST_DUE")
+
+    # --- 4. confirmation reelle -> activation ----------------------
+
+    def test_webhook_success_activates_subscription(self):
+        tid = self._tech()
+        ref = self._start_payment()
+        self.assertEqual(self._webhook(ref, "success").status_code, 200)
+        pay = self._pay_row(ref)
+        self.assertEqual(pay["status"], "paid")
+        self.assertIsNotNone(pay["paid_at"])
+        sub = self._sub_row(tid)
+        self.assertEqual(sub["status"], "ACTIVE")
+        self.assertIsNotNone(sub["start_date"])
+        self.assertIsNotNone(sub["end_date"])
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            n = conn.execute(
+                "SELECT COUNT(*) AS n FROM notifications"
+                " WHERE user_id = ? AND title = 'Abonnement activé'",
+                (tid,)).fetchone()["n"]
+        finally:
+            conn.close()
+        self.assertEqual(n, 1)
+        html = self.client.get("/abonnement/statut/%s" % ref).get_data(as_text=True)
+        self.assertIn("Félicitations", html)
+
+    def test_webhook_success_is_idempotent(self):
+        tid = self._tech()
+        ref = self._start_payment()
+        self._webhook(ref, "success")
+        r2 = self._webhook(ref, "success")
+        self.assertEqual(r2.status_code, 200)
+        self.assertTrue(r2.get_json().get("already"))
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            active = conn.execute(
+                "SELECT COUNT(*) AS n FROM technician_subscriptions"
+                " WHERE technician_id = ? AND status = 'ACTIVE'", (tid,)).fetchone()["n"]
+        finally:
+            conn.close()
+        self.assertEqual(active, 1)
+
+    # --- 5. double clic ------------------------------------------
+
+    def test_double_pay_click_reuses_same_attempt(self):
+        self._tech()
+        ref1 = self._start_payment()
+        ref2 = self._start_payment()
+        self.assertEqual(ref1, ref2)
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            n = conn.execute(
+                "SELECT COUNT(*) AS n FROM subscription_payments"
+                " WHERE status IN ('pending', 'processing')").fetchone()["n"]
+        finally:
+            conn.close()
+        self.assertEqual(n, 1)
+
+    # --- 6. confirmation admin ----------------------------------
+
+    def test_admin_confirm_activates_then_idempotent(self):
+        tid = self._tech()
+        ref = self._start_payment()
+        pay_id = self._pay_row(ref)["id"]
+        self._make_admin()
+        self.client.post("/admin/abonnements/paiements/%d/statut" % pay_id,
+                         data={"action": "confirm"})
+        self.assertEqual(self._sub_row(tid)["status"], "ACTIVE")
+        self.client.post("/admin/abonnements/paiements/%d/statut" % pay_id,
+                         data={"action": "confirm"})
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            active = conn.execute(
+                "SELECT COUNT(*) AS n FROM technician_subscriptions"
+                " WHERE technician_id = ? AND status = 'ACTIVE'", (tid,)).fetchone()["n"]
+        finally:
+            conn.close()
+        self.assertEqual(active, 1)
+
+    def test_admin_fail_keeps_inactive(self):
+        tid = self._tech()
+        ref = self._start_payment()
+        pay_id = self._pay_row(ref)["id"]
+        self._make_admin()
+        self.client.post("/admin/abonnements/paiements/%d/statut" % pay_id,
+                         data={"action": "fail"})
+        self.assertEqual(self._pay_row(ref)["status"], "failed")
+        self.assertEqual(self._sub_row(tid)["status"], "PAST_DUE")
+
+    # --- 7. persistance : rouvrir l'app -> vrai statut ----------
+
+    def test_reopen_reads_real_status_from_backend(self):
+        tid = self._tech(email="reopen@example.com", phone="+224622000009")
+        ref = self._start_payment()
+        self._webhook(ref, "success")
+        # nouveau "client" (nouvelle session) = fermeture/reouverture
+        self.client.get("/logout")
+        self.login("reopen@example.com")
+        j = self.client.get("/api/abonnement/statut/%s" % ref).get_json()
+        self.assertEqual(j["state"], "PAYMENT_CONFIRMED")
+        self.assertTrue(j["confirmed"])
+
+    # --- 8. architecture providers -----------------------------
+
+    def test_refresh_during_pending_stays_pending(self):
+        self._tech(email="refresh@example.com", phone="+224622000021")
+        ref = self._start_payment()
+        for _ in range(3):
+            self.assertEqual(
+                self.client.get("/api/abonnement/statut/%s" % ref).get_json()["state"],
+                "PENDING")
+        self.assertEqual(self._pay_row(ref)["status"], "pending")
+
+    def test_unitrade_is_a_selectable_method_but_stays_pending(self):
+        tid = self._tech(email="unitrade@example.com", phone="+224622000022")
+        ref = self._start_payment(method="unitrade")
+        self.assertEqual(self._pay_row(ref)["payment_method"], "unitrade")
+        self.assertEqual(self._pay_row(ref)["status"], "pending")
+        self.assertEqual(self._sub_row(tid)["status"], "PAST_DUE")
+
+    def test_real_providers_never_return_paid(self):
+        for code, cls in fixpro_app._REAL_PAYMENT_PROVIDERS.items():
+            res = cls().process(140000, code, "SUB-X", {})
+            self.assertIn(res["status"], ("pending", "processing"))
+            self.assertNotEqual(res["status"], "success")
+
+    def test_mock_provider_not_used_outside_testing_config(self):
+        for flag in ("TESTING", "FLASK_ENV", "PAYMENT_PROVIDER"):
+            self.addCleanup(fixpro_app.app.config.pop, flag, None)
+        fixpro_app.app.config["TESTING"] = False
+        fixpro_app.app.config["FLASK_ENV"] = "production"
+        fixpro_app.app.config.pop("PAYMENT_PROVIDER", None)
+        try:
+            self.assertNotIsInstance(
+                fixpro_app.get_payment_provider("orange_money"),
+                fixpro_app.MockPaymentProvider)
+            self.assertIsInstance(
+                fixpro_app.get_payment_provider("orange_money"),
+                fixpro_app.OrangeMoneyProvider)
+        finally:
+            fixpro_app.app.config["TESTING"] = True
+            fixpro_app.app.config["FLASK_ENV"] = "testing"
+
+    def test_webhook_wrong_currency_is_rejected(self):
+        tid = self._tech(email="cur@example.com", phone="+224622000023")
+        ref = self._start_payment()
+        r = self.client.post(
+            "/webhooks/paiement/orange",
+            json={"reference": ref, "status": "success", "amount": 140000,
+                  "currency": "USD"},
+            headers={"X-FixPro-Signature": self.WEBHOOK_SECRET})
+        self.assertEqual(r.status_code, 400)
+        self.assertEqual(self._sub_row(tid)["status"], "PAST_DUE")
+
+    def test_webhook_unknown_reference_is_rejected(self):
+        self._tech(email="badref@example.com", phone="+224622000024")
+        self._start_payment()
+        r = self.client.post(
+            "/webhooks/paiement/orange",
+            json={"reference": "SUB-DOES-NOT-EXIST", "status": "success"},
+            headers={"X-FixPro-Signature": self.WEBHOOK_SECRET})
+        self.assertEqual(r.status_code, 404)
+
+
 class ClientProfileTests(FixProTestCase):
     """Profil client et pages associees."""
 

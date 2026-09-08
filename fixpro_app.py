@@ -804,6 +804,7 @@ def get_current_user():
 PAYMENT_METHODS = {
     "orange_money": "Orange Money",
     "mtn_mobile_money": "MTN Mobile Money",
+    "unitrade": "Unitrade",
     "card": "Carte bancaire",
     "cash": "Espèces en main propre",
     "mobile_money": "Mobile Money",
@@ -1049,9 +1050,96 @@ class PaymentProvider(ABC):
     def refund(self, reference, amount):
         """Initie un remboursement."""
 
+    def verify(self, reference, payload=None):
+        """Interroge le fournisseur sur l'etat reel d'une transaction.
+
+        A implementer par chaque fournisseur reel d'apres sa doc officielle.
+        Par defaut : ne se prononce pas (statut 'pending')."""
+        return {"ok": True, "status": "pending"}
+
+    def handle_webhook(self, payload, headers=None):
+        """Traite une notification signee du fournisseur.
+
+        A implementer par chaque fournisseur reel : (1) verifier
+        l'authenticite, (2) la reference, (3) le montant, (4) la devise,
+        (5) l'existence de la tentative, (6) qu'elle n'est pas finalisee,
+        puis renvoyer l'issue normalisee. Non disponible sans API."""
+        raise NotImplementedError
+
+
+class _UnconfiguredProvider(PaymentProvider):
+    """Base commune des fournisseurs reels PAS ENCORE branches.
+
+    Tant que les identifiants et la documentation officielle de l'API ne
+    sont pas disponibles, ces fournisseurs :
+      - acceptent d'ouvrir une TENTATIVE (statut 'pending' / NOT_CONFIGURED) ;
+      - ne pretendent JAMAIS avoir encaisse un paiement (jamais 'success').
+    La confirmation ne peut venir que d'un webhook signe ou d'un admin.
+    Chaque fournisseur reel devra implementer process(), verify() et
+    handle_webhook() d'apres sa documentation officielle.
+    """
+
+    code = "generic"
+    label = "Fournisseur"
+
+    def _configured(self):
+        return bool(app.config.get("PAYMENT_%s_ENABLED" % self.code.upper()))
+
+    def process(self, amount, method, reference, metadata):
+        return {
+            "ok": True,
+            "status": "pending",
+            "configured": self._configured(),
+            "provider": self.code,
+            "provider_reference": None,
+            "message": ("%s : API non encore configuree, tentative en attente "
+                        "de confirmation reelle." % self.label),
+        }
+
+    def verify(self, reference, payload=None):
+        # Aucune API : on ne peut rien affirmer -> on reste 'pending'.
+        return {"ok": True, "status": "pending", "configured": self._configured()}
+
+    def handle_webhook(self, payload, headers=None):
+        # A implementer par chaque fournisseur reel selon sa doc officielle.
+        raise NotImplementedError(
+            "%s.handle_webhook non implemente (API non branchee)" % type(self).__name__)
+
+    def confirm(self, reference, payload):
+        return {"ok": False, "status": "pending", "configured": self._configured()}
+
+    def refund(self, reference, amount):
+        return {"ok": False, "status": "not_configured", "provider": self.code}
+
+
+class OrangeMoneyProvider(_UnconfiguredProvider):
+    code = "orange_money"
+    label = "Orange Money"
+
+
+class MTNMobileMoneyProvider(_UnconfiguredProvider):
+    code = "mtn_mobile_money"
+    label = "MTN Mobile Money"
+
+
+class UnitradeProvider(_UnconfiguredProvider):
+    code = "unitrade"
+    label = "Unitrade"
+
+
+class CardProvider(_UnconfiguredProvider):
+    code = "card"
+    label = "Carte bancaire"
+
 
 class MockPaymentProvider(PaymentProvider):
-    """Fournisseur factice pour les environnements de test."""
+    """Fournisseur factice reserve AUX TESTS AUTOMATISES uniquement.
+
+    Il n'est jamais instancie en production : get_payment_provider() ne le
+    retourne que si la config declare explicitement l'environnement de test
+    (FLASK_ENV='testing' ou PAYMENT_PROVIDER='mock'). Meme dans ce cas il
+    renvoie 'pending' par defaut ; la confirmation passe par le webhook.
+    """
 
     def process(self, amount, method, reference, metadata):
         return {
@@ -1076,12 +1164,36 @@ class MockPaymentProvider(PaymentProvider):
         }
 
 
-def get_payment_provider():
-    """Retourne le fournisseur de paiement actuel."""
-    if app.config.get("FLASK_ENV") == "testing" or app.config.get("PAYMENT_PROVIDER") == "mock":
+_REAL_PAYMENT_PROVIDERS = {
+    "orange_money": OrangeMoneyProvider,
+    "mtn_mobile_money": MTNMobileMoneyProvider,
+    "unitrade": UnitradeProvider,
+    "card": CardProvider,
+}
+
+
+def _use_mock_payment_provider():
+    """Le mock n'est autorise QUE si la config le declare explicitement."""
+    return (app.config.get("TESTING") is True
+            or app.config.get("FLASK_ENV") == "testing"
+            or app.config.get("PAYMENT_PROVIDER") == "mock")
+
+
+def get_payment_provider(payment_method=None):
+    """Retourne le fournisseur de paiement pour un moyen donne.
+
+    En production, chaque moyen route vers sa propre implementation
+    (Orange Money / MTN / Unitrade / carte). Aucune de ces implementations
+    n'encaisse reellement tant que l'API officielle n'est pas branchee :
+    elles restent en 'pending' / NOT_CONFIGURED. Le mock n'est jamais
+    retourne sauf en environnement de test declare.
+    """
+    if _use_mock_payment_provider():
         return MockPaymentProvider()
-    # TODO : instancier OrangeMoneyProvider lorsque credentials configures.
-    return MockPaymentProvider()
+    cls = _REAL_PAYMENT_PROVIDERS.get(payment_method)
+    if cls is not None:
+        return cls()
+    return _UnconfiguredProvider()
 
 
 def create_notification(user_id, title, body, notif_type="info", data=None, conn=None):
@@ -2702,7 +2814,7 @@ def admin_subscription_payments():
     user = get_current_user()
     flt = request.args.get("filter", "")
     where, params = "1 = 1", []
-    if flt in ("paid", "pending", "failed", "refunded"):
+    if flt in ("paid", "pending", "processing", "failed", "cancelled", "expired", "refunded"):
         where, params = "sp.status = ?", [flt]
     conn = get_db_connection()
     try:
@@ -4305,6 +4417,8 @@ _SUB_PAYMENT_METHODS = [
      "desc": "Payez facilement et en toute sécurité avec Orange Money"},
     {"code": "mtn_mobile_money", "label": "MTN Mobile Money", "brand": "mtn",
      "desc": "Payez facilement et en toute sécurité avec MTN Mobile Money"},
+    {"code": "unitrade", "label": "Unitrade", "brand": "unitrade",
+     "desc": "Payez avec votre compte Unitrade"},
     {"code": "card", "label": "Carte bancaire", "brand": "card",
      "desc": "Visa, Mastercard ou autres cartes"},
 ]
@@ -4316,6 +4430,135 @@ _SUB_VALUE_PROPS = [
     ("Plus de clients", "Recevez plus de demandes"),
     ("Plus de revenus", "Développez votre activité"),
 ]
+
+# ---------------------------------------------------------------------------
+# Machine a etats des paiements d'abonnement.
+#
+# REGLE ABSOLUE : un abonnement ne devient ACTIVE que lorsqu'un paiement
+# passe a l'etat PAYMENT_CONFIRMED, et cette transition ne peut venir QUE
+# d'une source serveur fiable :
+#   - le webhook prestataire signe  (payment_webhook)
+#   - une confirmation manuelle admin (admin_subscription_payment_update)
+# Le clic "Payer" cree seulement une TENTATIVE (PENDING) : il n'active rien.
+# ---------------------------------------------------------------------------
+
+# Valeur stockee en base (compat admin historique)  <->  etat logique expose.
+_PAY_STATE = {
+    "pending": "PENDING",
+    "processing": "PROCESSING",
+    "paid": "PAYMENT_CONFIRMED",
+    "failed": "PAYMENT_FAILED",
+    "cancelled": "PAYMENT_CANCELLED",
+    "expired": "PAYMENT_EXPIRED",
+}
+_PAY_OPEN = ("pending", "processing")            # en attente de confirmation
+_PAY_FINAL = ("paid", "failed", "cancelled", "expired")
+_PAY_ATTEMPT_TTL_MIN = 30                        # au-dela : PAYMENT_EXPIRED
+_SUB_METHOD_LABEL = {m["code"]: m["label"] for m in _SUB_PAYMENT_METHODS}
+
+
+def _sub_payment_by_ref(conn, ref, user_id=None):
+    sql = "SELECT * FROM subscription_payments WHERE transaction_reference = ?"
+    params = [ref]
+    if user_id is not None:
+        sql += " AND user_id = ?"
+        params.append(user_id)
+    return conn.execute(sql + " ORDER BY id DESC LIMIT 1", params).fetchone()
+
+
+def _sub_payment_expire_stale(conn, payment):
+    """Passe une tentative ouverte trop ancienne en 'expired'.
+    Renvoie le statut (base, minuscule) eventuellement mis a jour."""
+    st = (payment["status"] or "").lower()
+    if st not in _PAY_OPEN:
+        return st
+    try:
+        created = datetime.strptime(
+            str(payment["created_at"]).replace("T", " ")[:19], "%Y-%m-%d %H:%M:%S")
+        created = created.replace(tzinfo=timezone.utc)
+    except (ValueError, TypeError):
+        return st
+    if datetime.now(timezone.utc) - created > timedelta(minutes=_PAY_ATTEMPT_TTL_MIN):
+        conn.execute("UPDATE subscription_payments SET status = 'expired' WHERE id = ?",
+                     (payment["id"],))
+        conn.commit()
+        return "expired"
+    return st
+
+
+def _activate_subscription_from_payment(conn, payment_id):
+    """SEUL point d'activation d'un abonnement technicien.
+    Transactionnel + idempotent. Refuse d'agir si le paiement n'est pas
+    a l'etat 'paid'. N'active jamais deux fois le meme paiement."""
+    pay = conn.execute("SELECT * FROM subscription_payments WHERE id = ?",
+                       (payment_id,)).fetchone()
+    if not pay or (pay["status"] or "").lower() != "paid":
+        return False
+
+    now = datetime.now(timezone.utc)
+    now_s = now.strftime("%Y-%m-%d %H:%M:%S")
+    end_s = (now + timedelta(days=30)).strftime("%Y-%m-%d %H:%M:%S")
+
+    sub = None
+    if pay["subscription_id"]:
+        sub = conn.execute("SELECT * FROM technician_subscriptions WHERE id = ?",
+                           (pay["subscription_id"],)).fetchone()
+    if sub is None:
+        sub = conn.execute(
+            "SELECT * FROM technician_subscriptions WHERE technician_id = ?"
+            " ORDER BY created_at DESC LIMIT 1", (pay["user_id"],)).fetchone()
+
+    # Idempotence : ce paiement a deja active cet abonnement -> ne rien refaire.
+    if (pay["paid_at"] and sub and (sub["status"] or "").upper() == "ACTIVE"
+            and sub["plan_id"] == pay["plan_id"]):
+        return True
+
+    if sub:
+        conn.execute(
+            "UPDATE technician_subscriptions SET plan_id = ?, status = 'ACTIVE',"
+            " start_date = ?, end_date = ?, auto_renew = 1, updated_at = CURRENT_TIMESTAMP"
+            " WHERE id = ?",
+            (pay["plan_id"], now_s, end_s, sub["id"]))
+        sub_id = sub["id"]
+    else:
+        sub_id = _insert_id(
+            conn,
+            "INSERT INTO technician_subscriptions"
+            " (technician_id, plan_id, status, start_date, end_date, auto_renew)"
+            " VALUES (?, ?, 'ACTIVE', ?, ?, 1)",
+            (pay["user_id"], pay["plan_id"], now_s, end_s))
+
+    conn.execute(
+        "UPDATE subscription_payments SET paid_at = ?, subscription_id = ?,"
+        " period_start = ?, period_end = ? WHERE id = ?",
+        (now_s, sub_id, now_s, end_s, payment_id))
+    conn.commit()
+
+    try:
+        create_notification(
+            pay["user_id"], "Abonnement activé",
+            "Votre paiement a été confirmé. Votre abonnement est actif jusqu'au %s."
+            % _format_date_month_fr(end_s),
+            "success", data="abonnement", conn=conn)
+        conn.commit()
+    except Exception:
+        conn.rollback()
+    return True
+
+
+def _fail_subscription_payment(conn, payment_id, new_status="failed"):
+    """Passe une tentative OUVERTE en echec / annulee / expiree.
+    Ne touche jamais un paiement deja confirme. L'abonnement reste inactif."""
+    if new_status not in ("failed", "cancelled", "expired"):
+        return False
+    row = conn.execute("SELECT status FROM subscription_payments WHERE id = ?",
+                       (payment_id,)).fetchone()
+    if not row or (row["status"] or "").lower() not in _PAY_OPEN:
+        return False
+    conn.execute("UPDATE subscription_payments SET status = ? WHERE id = ?",
+                 (new_status, payment_id))
+    conn.commit()
+    return True
 
 
 def _tech_plan_by_code(code):
@@ -4420,6 +4663,17 @@ def technician_subscription():
         except Exception:
             conn.rollback()
             unread_count = 0
+        # Tentative de paiement encore ouverte -> proposer de la reprendre.
+        pending_payment = None
+        try:
+            op = conn.execute(
+                "SELECT transaction_reference FROM subscription_payments"
+                " WHERE user_id = ? AND status IN ('pending', 'processing')"
+                " ORDER BY id DESC LIMIT 1", (user["id"],)).fetchone()
+            if op:
+                pending_payment = op["transaction_reference"]
+        except Exception:
+            conn.rollback()
     finally:
         conn.close()
 
@@ -4445,8 +4699,8 @@ def technician_subscription():
          "Sans renouvellement, votre profil reste visible mais vous ne recevez plus de "
          "nouvelles demandes tant qu'un abonnement n'est pas actif."),
         ("Comment effectuer le paiement ?",
-         "Par Orange Money, MTN ou Airtel Money, carte bancaire ou virement. "
-         "Votre abonnement est activé dès la confirmation du paiement."),
+         "Par Orange Money, MTN Mobile Money ou carte bancaire. Votre abonnement "
+         "n'est activé qu'une fois le paiement réellement confirmé par le moyen choisi."),
     ]
 
     return render_template("technician_subscription.html", user=user,
@@ -4454,7 +4708,8 @@ def technician_subscription():
                            max_year_savings=max_year_savings,
                            availability=(user.get("availability_status") or "hors_ligne"),
                            current_code=current_code, current_active=current_active,
-                           current_sub=current_sub, faq=faq)
+                           current_sub=current_sub, faq=faq,
+                           pending_payment=pending_payment)
 
 
 @app.route("/dashboard/technicien/abonnement/paiement", methods=["GET", "POST"])
@@ -4487,49 +4742,73 @@ def technician_subscription_checkout():
         if method not in _SUB_PAYMENT_CODES:
             flash("Choisissez un moyen de paiement.", "error")
             return redirect(url_for("technician_subscription_checkout", plan=code, period=period))
+        payer_phone = (request.form.get("payer_phone") or "").strip()
 
-        now = datetime.now(timezone.utc)
-        period_end = now + timedelta(days=365 if period == "year" else 30)
-        ref = "SUB-%s-%s-%s" % (code.upper(), period[:1].upper(), now.strftime("%Y%m%d%H%M%S"))
         conn = get_db_connection()
         try:
             plan_id = _ensure_tech_plan_row(conn, code)
+
+            # 1 abonnement par technicien. Il RESTE inactif (PAST_DUE) : le clic
+            # "Payer" n'active rien. Les dates ne sont posees qu'a la confirmation.
             existing = conn.execute(
-                "SELECT id FROM technician_subscriptions WHERE technician_id = ?"
+                "SELECT id, status FROM technician_subscriptions WHERE technician_id = ?"
                 " ORDER BY created_at DESC LIMIT 1", (user["id"],)).fetchone()
             if existing:
-                conn.execute(
-                    "UPDATE technician_subscriptions SET plan_id = ?, status = 'PAST_DUE',"
-                    " start_date = ?, end_date = ?, auto_renew = 1, updated_at = CURRENT_TIMESTAMP"
-                    " WHERE id = ?",
-                    (plan_id, now.strftime("%Y-%m-%d %H:%M:%S"),
-                     period_end.strftime("%Y-%m-%d %H:%M:%S"), existing["id"]))
+                if (existing["status"] or "").upper() != "ACTIVE":
+                    conn.execute(
+                        "UPDATE technician_subscriptions SET plan_id = ?, status = 'PAST_DUE',"
+                        " updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                        (plan_id, existing["id"]))
                 sub_id = existing["id"]
             else:
-                conn.execute(
+                sub_id = _insert_id(
+                    conn,
                     "INSERT INTO technician_subscriptions"
-                    " (technician_id, plan_id, status, start_date, end_date, auto_renew)"
-                    " VALUES (?, ?, 'PAST_DUE', ?, ?, 1)",
-                    (user["id"], plan_id, now.strftime("%Y-%m-%d %H:%M:%S"),
-                     period_end.strftime("%Y-%m-%d %H:%M:%S")))
-                sub_id = conn.execute(
-                    "SELECT id FROM technician_subscriptions WHERE technician_id = ?"
-                    " ORDER BY created_at DESC LIMIT 1", (user["id"],)).fetchone()["id"]
-            conn.execute(
-                "INSERT INTO subscription_payments"
-                " (user_id, subscription_id, plan_id, amount, currency, payment_method,"
-                "  transaction_reference, status, period_start, period_end)"
-                " VALUES (?, ?, ?, ?, 'GNF', ?, ?, 'pending', ?, ?)",
-                (user["id"], sub_id, plan_id, amount, method, ref,
-                 now.strftime("%Y-%m-%d %H:%M:%S"), period_end.strftime("%Y-%m-%d %H:%M:%S")))
+                    " (technician_id, plan_id, status, auto_renew) VALUES (?, ?, 'PAST_DUE', 1)",
+                    (user["id"], plan_id))
+
+            # Anti double-clic / double-tentative : on reutilise la tentative
+            # ouverte identique (meme plan, meme methode, meme montant).
+            open_pay = conn.execute(
+                "SELECT * FROM subscription_payments"
+                " WHERE user_id = ? AND status IN ('pending', 'processing')"
+                " ORDER BY id DESC LIMIT 1", (user["id"],)).fetchone()
+            if (open_pay and open_pay["plan_id"] == plan_id
+                    and open_pay["payment_method"] == method
+                    and int(open_pay["amount"] or 0) == int(amount)):
+                ref = open_pay["transaction_reference"]
+            else:
+                if open_pay:            # tentative differente en cours -> on l'abandonne
+                    conn.execute(
+                        "UPDATE subscription_payments SET status = 'cancelled' WHERE id = ?",
+                        (open_pay["id"],))
+                now = datetime.now(timezone.utc)
+                ref = "SUB-%s-%s-%s-%s" % (
+                    code.upper(), period[:1].upper(),
+                    now.strftime("%Y%m%d%H%M%S"), secrets.token_hex(3).upper())
+                # Lancement de la tentative aupres du fournisseur. Aucun
+                # fournisseur reel n'est configure : le mock renvoie 'pending',
+                # le paiement N'EST JAMAIS considere comme reussi ici.
+                res = get_payment_provider(method).process(int(amount), method, ref, {
+                    "technician_id": user["id"], "plan": code, "phone": payer_phone,
+                })
+                # Un fournisseur non configure reste HONNETEMENT en 'pending' :
+                # on ne marque 'failed' que sur un echec explicite du fournisseur.
+                init_status = "pending"
+                if res.get("status") == "failed":
+                    init_status = "failed"
+                elif res.get("status") == "processing":
+                    init_status = "processing"
+                conn.execute(
+                    "INSERT INTO subscription_payments"
+                    " (user_id, subscription_id, plan_id, amount, currency, payment_method,"
+                    "  transaction_reference, status) VALUES (?, ?, ?, ?, 'GNF', ?, ?, ?)",
+                    (user["id"], sub_id, plan_id, int(amount), method, ref, init_status))
             conn.commit()
         finally:
             conn.close()
 
-        flash("Votre demande d'abonnement %s (%s) a bien été enregistrée. "
-              "Elle sera activée dès la confirmation du paiement."
-              % (plan["name"], "annuel" if period == "year" else "mensuel"), "success")
-        return redirect(url_for("technician_subscription"))
+        return redirect(url_for("subscription_payment_status", ref=ref))
 
     unread_count = 0
     conn = get_db_connection()
@@ -4564,6 +4843,201 @@ def technician_subscription_checkout():
                            plan=pv, period=period, amount=int(amount),
                            methods=_SUB_PAYMENT_METHODS, unread_count=unread_count,
                            availability=(user.get("availability_status") or "hors_ligne"))
+
+
+@app.route("/abonnement/paiement/statut/<ref>")
+@app.route("/abonnement/statut/<ref>")
+@login_required
+def subscription_payment_status(ref):
+    """Page unique pilotee par l'etat reel du paiement (lu en base) :
+    Paiement en cours / Abonnement active / Paiement echoue / annule / expire.
+    Ne decide RIEN : elle affiche le statut serveur."""
+    user = get_current_user()
+    if not _is_technician(user):
+        flash("Cet espace est reserve aux techniciens.", "error")
+        return redirect(url_for("dashboard"))
+
+    conn = get_db_connection()
+    try:
+        pay = _sub_payment_by_ref(conn, ref, user["id"])
+        if not pay:
+            flash("Paiement introuvable.", "error")
+            return redirect(url_for("technician_subscription"))
+        status = _sub_payment_expire_stale(conn, pay)
+        plan_name, plan_code = "Abonnement", None
+        prow = conn.execute("SELECT name, code FROM subscription_plans WHERE id = ?",
+                            (pay["plan_id"],)).fetchone()
+        if prow:
+            plan_name, plan_code = prow["name"], prow["code"]
+        sub = None
+        if pay["subscription_id"]:
+            sub = conn.execute(
+                "SELECT status, start_date, end_date FROM technician_subscriptions"
+                " WHERE id = ?", (pay["subscription_id"],)).fetchone()
+    finally:
+        conn.close()
+
+    view = {
+        "ref": ref,
+        "state": _PAY_STATE.get(status, "PENDING"),
+        "plan_name": plan_name,
+        "plan_code": plan_code,
+        "amount": int(pay["amount"] or 0),
+        "method": pay["payment_method"],
+        "method_label": _SUB_METHOD_LABEL.get(pay["payment_method"], pay["payment_method"]),
+        "created_label": _format_time_ago(pay["created_at"]),
+        "confirmed_label": _format_date_month_fr(pay["paid_at"]) if pay["paid_at"] else None,
+        "start_label": _format_date_month_fr(sub["start_date"]) if sub and sub["start_date"] else None,
+        "end_label": _format_date_month_fr(sub["end_date"]) if sub and sub["end_date"] else None,
+        "sub_active": bool(sub and (sub["status"] or "").upper() == "ACTIVE"),
+    }
+    return render_template("subscription_payment_status.html", user=user, v=view,
+                           availability=(user.get("availability_status") or "hors_ligne"))
+
+
+@app.route("/api/abonnement/statut/<ref>")
+@login_required
+def api_subscription_payment_status(ref):
+    """Statut REEL de la tentative de paiement, lu en base (source unique
+    de verite). Le frontend interroge cet endpoint mais ne decide de rien."""
+    user = get_current_user()
+    conn = get_db_connection()
+    try:
+        pay = _sub_payment_by_ref(conn, ref, user["id"])
+        if not pay:
+            return jsonify({"ok": False}), 404
+        status = _sub_payment_expire_stale(conn, pay)
+    finally:
+        conn.close()
+    return jsonify({
+        "ok": True,
+        "state": _PAY_STATE.get(status, "PENDING"),
+        "final": status in _PAY_FINAL,
+        "confirmed": status == "paid",
+    })
+
+
+@app.route("/abonnement/statut/<ref>/annuler", methods=["POST"])
+@login_required
+@limiter.limit("30 per hour", methods=["POST"])
+def subscription_payment_cancel(ref):
+    """Le technicien abandonne sa tentative de paiement en cours.
+    L'abonnement reste inactif."""
+    user = get_current_user()
+    conn = get_db_connection()
+    try:
+        pay = _sub_payment_by_ref(conn, ref, user["id"])
+        if pay:
+            _fail_subscription_payment(conn, pay["id"], "cancelled")
+    finally:
+        conn.close()
+    return redirect(url_for("subscription_payment_status", ref=ref))
+
+
+@app.route("/webhooks/paiement/<provider>", methods=["POST"])
+@limiter.limit("240 per hour")
+def payment_webhook(provider):
+    """Confirmation de paiement par un prestataire (Orange Money, MTN, carte).
+
+    ⚠️ AUCUN prestataire reel n'est branche aujourd'hui : cet endpoint est
+    le point d'integration pret a l'emploi. Il exige un secret partage
+    (PAYMENT_WEBHOOK_SECRET) et n'active un abonnement QUE sur une
+    confirmation explicite du prestataire. Idempotent."""
+    secret = app.config.get("PAYMENT_WEBHOOK_SECRET", "")
+    given = (request.headers.get("X-FixPro-Signature")
+             or request.args.get("token") or "")
+    if not secret or not secrets.compare_digest(str(secret), str(given)):
+        return jsonify({"ok": False, "error": "signature"}), 403
+
+    data = request.get_json(silent=True) or request.form
+    ref = (data.get("reference") or data.get("transaction_reference") or "").strip()
+    outcome = (data.get("status") or data.get("state") or "").strip().lower()
+    logger.info("webhook paiement provider=%s ref=%s outcome=%s", provider, ref, outcome)
+    if not ref:
+        return jsonify({"ok": False, "error": "reference_manquante"}), 400
+
+    conn = get_db_connection()
+    try:
+        pay = _sub_payment_by_ref(conn, ref)
+        if not pay:
+            return jsonify({"ok": False, "error": "reference_inconnue"}), 404
+        cur = (pay["status"] or "").lower()
+        if cur == "paid":
+            return jsonify({"ok": True, "already": True})       # idempotent
+        if cur not in _PAY_OPEN:
+            return jsonify({"ok": True, "ignored": cur})
+
+        amt = data.get("amount")
+        if amt is not None:
+            try:
+                if int(float(amt)) != int(pay["amount"] or 0):
+                    return jsonify({"ok": False, "error": "montant_incoherent"}), 400
+            except (TypeError, ValueError):
+                return jsonify({"ok": False, "error": "montant_invalide"}), 400
+
+        cur_dev = (data.get("currency") or data.get("devise") or "").strip().upper()
+        if cur_dev and cur_dev != (pay["currency"] or "GNF").upper():
+            return jsonify({"ok": False, "error": "devise_incoherente"}), 400
+
+        if outcome in ("success", "confirmed", "paid", "ok", "completed"):
+            conn.execute(
+                "UPDATE subscription_payments SET status = 'paid' WHERE id = ?", (pay["id"],))
+            conn.commit()
+            _activate_subscription_from_payment(conn, pay["id"])
+        elif outcome in ("failed", "error", "declined", "rejected"):
+            _fail_subscription_payment(conn, pay["id"], "failed")
+        elif outcome in ("cancelled", "canceled"):
+            _fail_subscription_payment(conn, pay["id"], "cancelled")
+        elif outcome in ("expired", "timeout"):
+            _fail_subscription_payment(conn, pay["id"], "expired")
+        else:
+            return jsonify({"ok": False, "error": "statut_inconnu"}), 400
+    finally:
+        conn.close()
+    return jsonify({"ok": True})
+
+
+csrf.exempt(payment_webhook)
+
+
+@app.route("/admin/abonnements/paiements/<int:pay_id>/statut", methods=["POST"])
+@login_required
+@admin_required
+@limiter.limit("120 per hour", methods=["POST"])
+def admin_subscription_payment_update(pay_id):
+    """Confirmation / echec MANUEL d'un paiement d'abonnement par un admin
+    (ex. il a verifie un transfert Orange Money hors application). Passe par
+    la meme machine a etats : active l'abonnement de facon idempotente."""
+    admin = get_current_user()
+    action = (request.form.get("action") or "").strip()
+    conn = get_db_connection()
+    try:
+        pay = conn.execute("SELECT * FROM subscription_payments WHERE id = ?",
+                           (pay_id,)).fetchone()
+        if not pay:
+            flash("Paiement introuvable.", "error")
+            return redirect(url_for("admin_subscription_payments"))
+        if action == "confirm":
+            if (pay["status"] or "").lower() in _PAY_OPEN:
+                conn.execute(
+                    "UPDATE subscription_payments SET status = 'paid' WHERE id = ?", (pay_id,))
+                conn.commit()
+            ok = _activate_subscription_from_payment(conn, pay_id)
+            log_admin_action(admin["id"], admin.get("email"), "confirm_sub_payment",
+                             "subscription_payment", pay_id,
+                             "%s GNF - %s" % (pay["amount"], pay["payment_method"]))
+            flash("Paiement confirmé, abonnement activé." if ok
+                  else "Paiement déjà traité.", "success")
+        elif action == "fail":
+            _fail_subscription_payment(conn, pay_id, "failed")
+            log_admin_action(admin["id"], admin.get("email"), "fail_sub_payment",
+                             "subscription_payment", pay_id, None)
+            flash("Paiement marqué en échec. L'abonnement reste inactif.", "success")
+        else:
+            flash("Action inconnue.", "error")
+    finally:
+        conn.close()
+    return redirect(url_for("admin_subscription_payments"))
 
 
 _DOC_LABELS = {

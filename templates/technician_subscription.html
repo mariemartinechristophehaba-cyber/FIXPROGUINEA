@@ -65,6 +65,11 @@
     .intro-card span { display: block; font-size: .82rem; color: var(--d-muted); margin-top: 3px; line-height: 1.4; }
 
     /* ---------- Toggle ---------- */
+    .pay-resume { display: flex; align-items: center; gap: 10px; margin-top: 18px; background: #FEF6E7; border: 1px solid #FBE3B4; border-radius: 14px; padding: 12px 14px; color: #92400E; }
+    .pay-resume > svg:first-child { width: 20px; height: 20px; flex-shrink: 0; }
+    .pay-resume > svg:last-child { width: 16px; height: 16px; flex-shrink: 0; color: #B45309; }
+    .pay-resume span { flex: 1; font-size: .86rem; line-height: 1.35; }
+    .pay-resume b { font-weight: 800; }
     .seg-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 22px; }
     .seg { display: inline-flex; background: #E7ECF4; border-radius: 999px; padding: 4px; }
     .seg button { border: 0; background: transparent; cursor: pointer; border-radius: 999px; padding: 9px 20px; font-size: .88rem; font-weight: 800; color: var(--d-muted); }
@@ -233,6 +238,14 @@
         </span>
       </div>
     </section>
+
+    {% if pending_payment %}
+    <a class="pay-resume" href="{{ url_for('subscription_payment_status', ref=pending_payment) }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+      <span><b>Un paiement est en attente de confirmation.</b> Reprendre le paiement</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+    </a>
+    {% endif %}
 
     <div class="seg-row">
       <div class="seg" id="seg" role="tablist">
