@@ -694,6 +694,63 @@ class TechnicianDashboardTests(FixProTestCase):
         self.assertEqual(r.status_code, 302)
         self.assertIn("abonnement", r.location)
 
+    def test_confirmation_page_is_dynamic_per_plan(self):
+        self.register_artisan("cf1@example.com", phone="+224621114001")
+        self.login("cf1@example.com")
+        pro = self.client.get(
+            "/abonnement/confirmation?plan=tech_pro&period=month").get_data(as_text=True)
+        self.assertIn("Confirmez votre abonnement", pro)
+        self.assertIn("97 000 GNF", pro)
+        self.assertIn("100 000 GNF", pro)          # ancien prix barre
+        self.assertIn("-3 %", pro)
+        self.assertIn("1 mois", pro)
+        prem = self.client.get(
+            "/abonnement/confirmation?plan=tech_premium&period=month").get_data(as_text=True)
+        self.assertIn("140 000 GNF", prem)
+        self.assertIn("200 000 GNF", prem)
+        self.assertIn("-30 %", prem)
+        self.assertIn("Le plus populaire", prem)
+        # meme gabarit, seules les donnees changent
+        self.assertNotIn("97 000 GNF", prem)
+
+    def test_confirmation_payment_methods_are_real_only(self):
+        self.register_artisan("cf2@example.com", phone="+224621114002")
+        self.login("cf2@example.com")
+        html = self.client.get(
+            "/abonnement/confirmation?plan=tech_pro").get_data(as_text=True)
+        self.assertIn("Orange Money", html)
+        self.assertIn("MTN Mobile Money", html)
+        self.assertIn("Carte bancaire", html)
+        self.assertNotIn("Airtel", html)          # methode retiree
+        self.assertNotIn("Virement bancaire", html)
+
+    def test_confirmation_alias_matches_paiement(self):
+        self.register_artisan("cf3@example.com", phone="+224621114003")
+        self.login("cf3@example.com")
+        for path in ("/abonnement/confirmation", "/abonnement/paiement",
+                     "/dashboard/technicien/abonnement/paiement"):
+            r = self.client.get(path + "?plan=tech_premium")
+            self.assertEqual(r.status_code, 200, path)
+            self.assertIn("Confirmez votre abonnement", r.get_data(as_text=True))
+
+    def test_confirmation_rejects_fake_payment_method(self):
+        self.register_artisan("cf4@example.com", phone="+224621114004")
+        self.login("cf4@example.com")
+        r = self.client.post("/abonnement/confirmation?plan=tech_pro&period=month",
+                             data={"payment_method": "bitcoin"},
+                             follow_redirects=False)
+        self.assertEqual(r.status_code, 302)
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            uid = conn.execute("SELECT id FROM users WHERE phone = ?",
+                               ("+224621114004",)).fetchone()["id"]
+            n = conn.execute(
+                "SELECT COUNT(*) AS n FROM subscription_payments WHERE user_id = ?",
+                (uid,)).fetchone()["n"]
+            self.assertEqual(n, 0)
+        finally:
+            conn.close()
+
     # --- Notifications ---------------------------------------------------
 
     def _seed_notif(self, user_id, title="Nouvelle demande", body="…",

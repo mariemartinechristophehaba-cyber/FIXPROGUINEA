@@ -4301,12 +4301,20 @@ _TECH_PLANS = [
 ]
 
 _SUB_PAYMENT_METHODS = [
-    ("orange_money", "Orange Money"),
-    ("mtn_mobile_money", "MTN Mobile Money"),
-    ("airtel_money", "Airtel Money"),
-    ("visa", "Carte VISA"),
-    ("mastercard", "Carte Mastercard"),
-    ("bank_transfer", "Virement bancaire"),
+    {"code": "orange_money", "label": "Orange Money", "brand": "orange",
+     "desc": "Payez facilement et en toute sécurité avec Orange Money"},
+    {"code": "mtn_mobile_money", "label": "MTN Mobile Money", "brand": "mtn",
+     "desc": "Payez facilement et en toute sécurité avec MTN Mobile Money"},
+    {"code": "card", "label": "Carte bancaire", "brand": "card",
+     "desc": "Visa, Mastercard ou autres cartes"},
+]
+_SUB_PAYMENT_CODES = {m["code"] for m in _SUB_PAYMENT_METHODS}
+
+# Arguments de vente de l'abonnement (identiques quel que soit le plan).
+_SUB_VALUE_PROPS = [
+    ("Plus de visibilité", "Soyez vu en premier"),
+    ("Plus de clients", "Recevez plus de demandes"),
+    ("Plus de revenus", "Développez votre activité"),
 ]
 
 
@@ -4449,12 +4457,15 @@ def technician_subscription():
                            current_sub=current_sub, faq=faq)
 
 
-@app.route("/abonnement/paiement", methods=["GET", "POST"])
 @app.route("/dashboard/technicien/abonnement/paiement", methods=["GET", "POST"])
+@app.route("/abonnement/paiement", methods=["GET", "POST"])
+@app.route("/abonnement/confirmation", methods=["GET", "POST"])
 @login_required
 @limiter.limit("20 per hour", methods=["POST"])
 def technician_subscription_checkout():
-    """Recapitulatif + choix du moyen de paiement pour un abonnement technicien."""
+    """Confirmez votre abonnement : recapitulatif dynamique du plan choisi
+    + choix du moyen de paiement. Fonctionne pour n'importe quel plan de
+    _TECH_PLANS (donnees passees au gabarit, rien en dur)."""
     user = get_current_user()
     if not _is_technician(user):
         flash("Cet espace est reserve aux techniciens.", "error")
@@ -4473,7 +4484,7 @@ def technician_subscription_checkout():
 
     if request.method == "POST":
         method = (request.form.get("payment_method") or "").strip()
-        if method not in dict(_SUB_PAYMENT_METHODS):
+        if method not in _SUB_PAYMENT_CODES:
             flash("Choisissez un moyen de paiement.", "error")
             return redirect(url_for("technician_subscription_checkout", plan=code, period=period))
 
@@ -4531,9 +4542,28 @@ def technician_subscription_checkout():
     finally:
         conn.close()
 
+    year = period == "year"
+    pv = {
+        "code": plan["code"],
+        "name": plan["name"],
+        "desc": plan.get("desc") or "",
+        "popular": bool(plan.get("popular")),
+        "accent": plan.get("accent", "blue"),
+        "icon": plan.get("icon", "star"),
+        "price_now": int(plan["price_year"] if year else plan["price_month"]),
+        "price_ref": int(plan.get("price_ref_year" if year else "price_ref_month") or 0),
+        "discount": _tech_plan_discount_pct(plan, period),
+        "unit": "an" if year else "mois",
+        "duration": "1 an" if year else "1 mois",
+        "tagline": "Plus de visibilité. Plus de clients. Plus de revenus.",
+        "subtagline": "Développez votre activité avec FixPro.",
+        "props": _SUB_VALUE_PROPS,
+    }
+
     return render_template("technician_subscription_checkout.html", user=user,
-                           plan=plan, period=period, amount=amount,
-                           methods=_SUB_PAYMENT_METHODS, unread_count=unread_count)
+                           plan=pv, period=period, amount=int(amount),
+                           methods=_SUB_PAYMENT_METHODS, unread_count=unread_count,
+                           availability=(user.get("availability_status") or "hors_ligne"))
 
 
 _DOC_LABELS = {
