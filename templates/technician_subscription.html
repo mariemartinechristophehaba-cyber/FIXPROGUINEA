@@ -216,15 +216,7 @@
     </a>
     <span class="sp"></span>
     {% include '_tech_notif_bell.html' %}
-    <a class="who" href="{{ url_for('profile') }}">
-      <span class="avatar">
-        {% if user.photo_url %}<img src="{{ user.photo_url }}" alt="" />{% else %}{{ (user.full_name or 'T')[:1] | upper }}{% endif %}
-        <span class="dot {{ 'on' if av_on }}"></span>
-      </span>
-      <span class="name"><span>{{ (user.full_name or 'Technicien').split(' ')[0] }}</span>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-      </span>
-    </a>
+    {% include '_tech_profile_menu.html' %}
   </header>
 
   <main class="wrap">

@@ -1,0 +1,218 @@
+{# Composant avatar + menu profil de l'Espace Technicien.
+   Inclus dans le header de dashboard_technicien.html et technician_subscription.html
+   a la place de <a class="who">. Corrige aussi le point vert de l'avatar
+   (plus clippe). Toutes les entrees pointent vers des routes existantes. #}
+{% set _avail = availability or 'hors_ligne' %}
+{% set _st = {'en_ligne': ('Disponible', 'ok'), 'occupe': ('Occupé', 'busy'), 'hors_ligne': ('Indisponible', 'off')} %}
+{% set _label, _cls = _st.get(_avail, ('Indisponible', 'off')) %}
+
+<div class="tpm" id="tpm">
+  <button type="button" class="tpm-trigger" id="tpmBtn" aria-label="Mon compte" aria-haspopup="menu" aria-expanded="false">
+    <span class="tpm-av">
+      <span class="tpm-avimg">
+        {% if user.photo_url %}<img src="{{ user.photo_url }}" alt="" />{% else %}{{ (user.full_name or 'T')[:1] | upper }}{% endif %}
+      </span>
+      <span class="tpm-dot {{ _cls }}" aria-hidden="true"></span>
+    </span>
+    <svg class="tpm-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+  </button>
+
+  <div class="tpm-overlay" id="tpmOverlay" hidden></div>
+  <div class="tpm-menu" id="tpmMenu" role="menu" aria-label="Mon compte" hidden>
+    <div class="tpm-head">
+      <span class="tpm-av tpm-av-lg">
+        <span class="tpm-avimg">
+          {% if user.photo_url %}<img src="{{ user.photo_url }}" alt="" />{% else %}{{ (user.full_name or 'T')[:1] | upper }}{% endif %}
+        </span>
+        <span class="tpm-dot {{ _cls }}" aria-hidden="true"></span>
+      </span>
+      <div class="tpm-id">
+        <b>{{ user.full_name or 'Technicien' }}</b>
+        <span class="tpm-job">{{ user.profession or 'Technicien' }}</span>
+        {% set _city = user.city or user.quartier or user.zone_intervention %}
+        {% if _city %}
+        <span class="tpm-city">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          {{ _city }}
+        </span>
+        {% endif %}
+        <span class="tpm-status {{ _cls }}"><i></i>{{ _label }}</span>
+      </div>
+    </div>
+
+    <nav class="tpm-list">
+      <a class="tpm-item" role="menuitem" href="{{ url_for('profile') }}">
+        <span class="tpm-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+        <span class="tpm-tx"><b>Mon profil</b><span>Voir et modifier mes informations</span></span>
+        <svg class="tpm-ch" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </a>
+      <a class="tpm-item" role="menuitem" href="{{ url_for('artisan_dashboard') }}">
+        <span class="tpm-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="4" width="3" height="14"/></svg></span>
+        <span class="tpm-tx"><b>Mes statistiques</b><span>Demandes, avis, revenus</span></span>
+        <svg class="tpm-ch" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </a>
+      <a class="tpm-item" role="menuitem" href="{{ url_for('technician_subscription') }}">
+        <span class="tpm-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></span>
+        <span class="tpm-tx"><b>Mon abonnement</b><span>Gérer mon plan</span></span>
+        <svg class="tpm-ch" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </a>
+      <a class="tpm-item" role="menuitem" href="{{ url_for('notifications') }}">
+        <span class="tpm-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></span>
+        <span class="tpm-tx"><b>Notifications</b><span>Voir mes notifications</span></span>
+        {% if notif_unread %}<span class="tpm-badge">{{ notif_unread if notif_unread < 100 else '99+' }}</span>{% endif %}
+        <svg class="tpm-ch" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </a>
+      <a class="tpm-item" role="menuitem" href="{{ url_for('client_security') }}">
+        <span class="tpm-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.14.66.65 1.17 1.32 1.32H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
+        <span class="tpm-tx"><b>Paramètres</b><span>Préférences de l'application</span></span>
+        <svg class="tpm-ch" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </a>
+      <a class="tpm-item" role="menuitem" href="{{ url_for('contact') }}">
+        <span class="tpm-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01"/></svg></span>
+        <span class="tpm-tx"><b>Centre d'aide</b><span>FAQ et assistance</span></span>
+        <svg class="tpm-ch" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </a>
+    </nav>
+
+    <a class="tpm-logout" role="menuitem" href="{{ url_for('logout') }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+      Se déconnecter
+    </a>
+  </div>
+</div>
+
+<style>
+  .tpm { position: relative; flex-shrink: 0; }
+
+  .tpm-trigger {
+    display: flex; align-items: center; gap: 5px; border: 0; background: transparent;
+    padding: 2px; cursor: pointer; color: inherit;
+  }
+  .tpm-caret { width: 15px; height: 15px; color: #64748B; transition: transform .18s; flex-shrink: 0; }
+  .tpm-trigger[aria-expanded="true"] .tpm-caret { transform: rotate(180deg); }
+
+  /* --- Avatar : le point vert n'est PLUS clippe (dot = frere de l'image) --- */
+  .tpm-av { position: relative; display: inline-flex; flex-shrink: 0; align-self: flex-start; }
+  .tpm-avimg {
+    width: 40px; height: 40px; border-radius: 999px; overflow: hidden;
+    background: #DBEAFE; color: #2563EB;
+    display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: .95rem;
+  }
+  .tpm-avimg img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .tpm-av-lg .tpm-avimg { width: 60px; height: 60px; font-size: 1.3rem; }
+  .tpm-dot {
+    position: absolute; right: 0; bottom: 0; z-index: 3;
+    width: 12px; height: 12px; border-radius: 999px;
+    background: #9AA7BC; border: 2.5px solid #fff; box-shadow: 0 0 0 .5px rgba(11,27,59,.06);
+  }
+  .tpm-av-lg .tpm-dot { width: 15px; height: 15px; border-width: 3px; }
+  .tpm-dot.ok { background: #16A34A; }
+  .tpm-dot.busy { background: #F59E0B; }
+  .tpm-dot.off { background: #9AA7BC; }
+
+  .tpm-overlay { position: fixed; inset: 0; top: 60px; z-index: 290; background: rgba(11,27,59,.18); }
+
+  .tpm-menu {
+    position: fixed; z-index: 300; top: 64px; right: 14px;
+    width: min(340px, calc(100vw - 24px));
+    max-height: min(80vh, 620px);
+    background: #fff; border: 1px solid #E4EAF4; border-radius: 20px;
+    box-shadow: 0 24px 60px rgba(11,27,59,.24);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+
+  .tpm-head { display: flex; gap: 14px; padding: 18px 18px 16px; }
+  .tpm-id { min-width: 0; display: flex; flex-direction: column; gap: 2px; padding-top: 2px; }
+  .tpm-id b { font-size: 1.06rem; font-weight: 900; color: #0B1B3B; letter-spacing: -.01em; line-height: 1.2; word-break: break-word; }
+  .tpm-job { font-size: .86rem; font-weight: 600; color: #64748B; }
+  .tpm-city { display: flex; align-items: center; gap: 4px; font-size: .82rem; color: #64748B; font-weight: 500; }
+  .tpm-city svg { width: 13px; height: 13px; flex-shrink: 0; }
+  .tpm-status {
+    align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; margin-top: 6px;
+    padding: 5px 11px; border-radius: 999px; font-size: .8rem; font-weight: 800;
+    background: #EEF2F9; color: #64748B;
+  }
+  .tpm-status i { width: 7px; height: 7px; border-radius: 999px; background: currentColor; }
+  .tpm-status.ok { background: #E7F6EC; color: #15803D; }
+  .tpm-status.busy { background: #FEF3C7; color: #B45309; }
+
+  .tpm-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 6px 8px; border-top: 1px solid #EEF2F9; }
+  .tpm-item {
+    display: grid; grid-template-columns: 38px 1fr auto auto; align-items: center; column-gap: 12px;
+    padding: 10px 10px; border-radius: 12px; text-decoration: none; color: inherit;
+  }
+  .tpm-item:hover, .tpm-item:focus-visible { background: #F4F8FF; outline: none; }
+  .tpm-ic {
+    width: 38px; height: 38px; border-radius: 11px; background: #EAF1FE; color: #2563EB;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .tpm-ic svg { width: 19px; height: 19px; }
+  .tpm-tx { min-width: 0; }
+  .tpm-tx b { display: block; font-size: .92rem; font-weight: 800; color: #0B1B3B; line-height: 1.25; }
+  .tpm-tx span { display: block; font-size: .78rem; color: #64748B; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tpm-badge {
+    min-width: 20px; height: 20px; padding: 0 5px; border-radius: 999px; background: #EF4444; color: #fff;
+    font-size: .72rem; font-weight: 800; display: flex; align-items: center; justify-content: center;
+  }
+  .tpm-ch { width: 16px; height: 16px; color: #C3CEDF; }
+
+  .tpm-logout {
+    display: flex; align-items: center; gap: 11px; padding: 15px 18px;
+    border-top: 1px solid #EEF2F9; text-decoration: none;
+    color: #DC2626; font-size: .95rem; font-weight: 800;
+  }
+  .tpm-logout:hover { background: #FEF2F2; }
+  .tpm-logout svg { width: 19px; height: 19px; }
+
+  @media (max-width: 400px) {
+    .tpm-item { grid-template-columns: 34px 1fr auto auto; column-gap: 10px; }
+    .tpm-ic { width: 34px; height: 34px; border-radius: 9px; }
+    .tpm-ic svg { width: 17px; height: 17px; }
+    .tpm-tx span { white-space: normal; }
+  }
+  @media (max-width: 560px) { .tpm-caret { display: none; } }
+</style>
+
+<script>
+(function () {
+  var root = document.getElementById('tpm');
+  if (!root || root.dataset.tpmInit) return;
+  root.dataset.tpmInit = '1';
+
+  var btn = document.getElementById('tpmBtn');
+  var menu = document.getElementById('tpmMenu');
+  var overlay = document.getElementById('tpmOverlay');
+
+  document.body.appendChild(overlay);
+  document.body.appendChild(menu);
+
+  var hdr = btn.closest('header');
+  function place() {
+    var r = btn.getBoundingClientRect();
+    var vw = document.documentElement.clientWidth;
+    var mw = menu.getBoundingClientRect().width;
+    var right = Math.max(10, Math.min(Math.round(vw - r.right), Math.round(vw - mw - 10)));
+    menu.style.top = Math.round(r.bottom + 8) + 'px';
+    menu.style.right = right + 'px';
+    // l'overlay assombrit seulement SOUS le header (header reste net et cliquable)
+    overlay.style.top = Math.round(hdr ? hdr.getBoundingClientRect().bottom : r.bottom) + 'px';
+  }
+  function open() {
+    document.dispatchEvent(new CustomEvent('fixpro:menu-open', { detail: 'profile' }));
+    overlay.hidden = false; menu.hidden = false;
+    place();
+    btn.setAttribute('aria-expanded', 'true');
+  }
+  function close() {
+    overlay.hidden = true; menu.hidden = true;
+    btn.setAttribute('aria-expanded', 'false');
+  }
+  function toggle() { menu.hidden ? open() : close(); }
+
+  btn.addEventListener('click', function (e) { e.preventDefault(); toggle(); });
+  overlay.addEventListener('click', close);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !menu.hidden) close(); });
+  document.addEventListener('fixpro:menu-open', function (e) { if (e.detail !== 'profile') close(); });
+  window.addEventListener('resize', function () { if (!menu.hidden) place(); });
+})();
+</script>

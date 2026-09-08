@@ -29,8 +29,7 @@
   .ntfb .icon-btn { cursor: pointer; }
 
   .ntfb-overlay {
-    position: fixed; inset: 0; z-index: 290; background: rgba(11,27,59,.28);
-    -webkit-backdrop-filter: blur(1px); backdrop-filter: blur(1px);
+    position: fixed; inset: 0; top: 60px; z-index: 290; background: rgba(11,27,59,.22);
   }
   .ntfb-panel {
     position: fixed; z-index: 300; top: 64px; right: 14px;
@@ -199,7 +198,9 @@
       .catch(function () { list.innerHTML = '<div class="ntfb-state">Impossible de charger les notifications.</div>'; });
   }
 
+  var hdr = btn.closest('header');
   function open() {
+    document.dispatchEvent(new CustomEvent('fixpro:menu-open', { detail: 'notif' }));
     overlay.hidden = false; panel.hidden = false;
     var r = btn.getBoundingClientRect();
     var vw = document.documentElement.clientWidth;
@@ -208,6 +209,7 @@
     var right = Math.max(10, Math.min(Math.round(vw - r.right), Math.round(vw - pw - 10)));
     panel.style.top = Math.round(r.bottom + 8) + 'px';
     panel.style.right = right + 'px';
+    overlay.style.top = Math.round(hdr ? hdr.getBoundingClientRect().bottom : r.bottom) + 'px';
     btn.setAttribute('aria-expanded', 'true');
     load();
   }
@@ -220,6 +222,7 @@
   btn.addEventListener('click', function (e) { e.preventDefault(); toggle(); });
   overlay.addEventListener('click', close);
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !panel.hidden) close(); });
+  document.addEventListener('fixpro:menu-open', function (e) { if (e.detail !== 'notif' && !panel.hidden) close(); });
 
   allRead.addEventListener('click', function () {
     allRead.disabled = true;

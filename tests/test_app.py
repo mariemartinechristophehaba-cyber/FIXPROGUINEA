@@ -786,6 +786,56 @@ class TechnicianDashboardTests(FixProTestCase):
         self.assertEqual(r.get_json()["unread"], 0)
         self.assertEqual(self.client.get("/api/notifications").get_json()["unread"], 0)
 
+    # --- Menu profil (avatar) -----------------------------------------
+
+    def test_profile_menu_present_in_header(self):
+        self.register_artisan("pm@example.com", phone="+224621113001",
+                              name="Mamadou Diallo")
+        self.login("pm@example.com")
+        html = self.client.get("/dashboard/technicien").get_data(as_text=True)
+        self.assertIn('id="tpmBtn"', html)
+        self.assertIn('id="tpmMenu"', html)
+        self.assertIn("Mamadou Diallo", html)
+        self.assertIn("Mes statistiques", html)
+        self.assertIn("Centre d'aide", html)
+        self.assertIn("Se déconnecter", html)
+        self.assertIn("tpm-dot", html)          # point vert (avatar partage)
+        # chaque entree pointe vers une route reelle
+        for frag in ('href="/profile"', 'abonnement"', 'href="/notifications"',
+                     'href="/profil/securite"', 'href="/contact"', 'href="/logout"'):
+            self.assertIn(frag, html)
+
+    def test_profile_menu_links_resolve(self):
+        self.register_artisan("pm2@example.com", phone="+224621113002")
+        self.login("pm2@example.com")
+        for path, code in (("/profile", 200), ("/abonnement", 200),
+                           ("/notifications", 200), ("/profil/securite", 200),
+                           ("/contact", 200)):
+            r = self.client.get(path)
+            self.assertEqual(r.status_code, code, "%s -> %s" % (path, r.status_code))
+
+    def test_profile_menu_uses_real_availability(self):
+        self.register_artisan("pm3@example.com", phone="+224621113003")
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute(
+                "UPDATE users SET availability_status = 'en_ligne' WHERE phone = ?",
+                ("+224621113003",))
+            conn.commit()
+        finally:
+            conn.close()
+        self.login("pm3@example.com")
+        html = self.client.get("/dashboard/technicien").get_data(as_text=True)
+        self.assertIn("Disponible", html)
+        self.assertIn("tpm-dot ok", html)
+
+    def test_profile_menu_logout_clears_session(self):
+        self.register_artisan("pm4@example.com", phone="+224621113004")
+        self.login("pm4@example.com")
+        self.client.get("/logout")
+        with self.client.session_transaction() as sess:
+            self.assertNotIn("user_id", sess)
+
 
 class ClientProfileTests(FixProTestCase):
     """Profil client et pages associees."""
