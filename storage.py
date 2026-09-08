@@ -5,14 +5,12 @@ rester sur du base64 en fallback (developement / tests).
 """
 
 import base64
-import io
 import os
 import re
 import uuid
 
 import requests
 from abc import ABC, abstractmethod
-from pathlib import Path
 
 
 class StorageProvider(ABC):

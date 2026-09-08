@@ -4,13 +4,10 @@ Chaque test s'execute sur une base SQLite temporaire, isolee et jetable.
 Lancement : python -m pytest tests/ -v
 """
 
-import json
 import os
-import re
 import sys
 import tempfile
 import unittest
-from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -1169,7 +1166,7 @@ class MessagingTests(FixProTestCase):
         self.assertTrue(r.get_json()["ok"])
         r = self.client.post(f"/messages/{conv_id}/delete", data={})
         self.assertTrue(r.get_json()["ok"])
-        lst = self.client.get("/messages")
+        self.client.get("/messages")
         conn = db.connect(sqlite_path=self.db_path)
         try:
             rep = conn.execute("SELECT reason FROM conversation_reports").fetchone()

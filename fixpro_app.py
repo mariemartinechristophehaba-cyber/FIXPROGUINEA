@@ -4790,16 +4790,6 @@ def _haversine(lat1, lon1, lat2, lon2):
     return 2 * R * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
 
-def _services_for_category(conn, category_name):
-    """Liste les services actifs d'un domaine professionnel."""
-    return conn.execute(
-        "SELECT s.id, s.name"
-        " FROM services s JOIN service_categories c ON c.id = s.category_id"
-        " WHERE c.name = ? AND s.is_active = 1"
-        " ORDER BY s.name",
-        (category_name,)).fetchall()
-
-
 def _enrich_artisan(row, client_lat, client_lon):
     artisan = dict(row)
     artisan["full_name"] = artisan.get("nom") or artisan.get("full_name", "")
