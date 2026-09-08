@@ -4270,39 +4270,30 @@ csrf.exempt(api_technicien_status)
 
 _TECH_PLANS = [
     {
-        "code": "tech_basic", "name": "Basic", "icon": "send", "popular": False,
-        "desc": "L'essentiel pour avancer.",
-        "price_month": 80000, "price_year": 566000,
+        "code": "tech_pro", "name": "Pro", "icon": "send", "popular": False,
+        "desc": "Idéal pour bien commencer",
+        "price_ref_month": 100000, "price_month": 97000,
+        "price_ref_year": 1200000, "price_year": 1047600,
         "features": [
-            ("Profil visible", True),
-            ("Jusqu'à 5 services", True),
-            ("Support standard", True),
-            ("Mise en avant", False),
-            ("Statistiques avancées", False),
+            ("Accès à tous les clients", True),
+            ("Visibilité dans les recherches", True),
+            ("Support en temps réel", True),
+            ("Statistiques de base", True),
+            ("Badge technicien vérifié", True),
         ],
     },
     {
-        "code": "tech_pro", "name": "Pro", "icon": "crown", "popular": True,
-        "desc": "Plus de visibilité.",
-        "price_month": 140000, "price_year": 991000,
+        "code": "tech_premium", "name": "Premium", "icon": "crown", "popular": True,
+        "desc": "Plus de visibilité, plus de clients",
+        "price_ref_month": 200000, "price_month": 140000,
+        "price_ref_year": 2400000, "price_year": 1512000,
         "features": [
-            ("Profil mis en avant", True),
-            ("Services illimités", True),
+            ("Tous les avantages du plan Pro", True),
+            ("Visibilité prioritaire dans les recherches", True),
+            ("Mise en avant de votre profil", True),
             ("Statistiques détaillées", True),
             ("Support prioritaire", True),
-            ("Badge « Top Pro »", True),
-        ],
-    },
-    {
-        "code": "tech_premium", "name": "Premium", "icon": "diamond", "popular": False,
-        "desc": "Pour les meilleurs.",
-        "price_month": 210000, "price_year": 1487000,
-        "features": [
-            ("Tout dans Pro", True),
-            ("Mise en avant nationale", True),
-            ("Accès aux demandes prioritaires", True),
-            ("Support 24/7", True),
-            ("Conseil personnalisé", True),
+            ("Plus d'opportunités d'interventions", True),
         ],
     },
 ]
@@ -4331,12 +4322,15 @@ def _tech_plan_amount(plan, period):
     return int(plan["price_month"])
 
 
-def _tech_plan_savings_pct(plan):
-    """Economie de l'engagement annuel par rapport a 12 mensualites."""
-    full = plan["price_month"] * 12
-    if full <= 0:
+def _tech_plan_discount_pct(plan, period="month"):
+    """Remise affichee (prix barre -> prix actuel) pour une periode donnee."""
+    if period == "year":
+        ref, now = plan.get("price_ref_year", 0), plan.get("price_year", 0)
+    else:
+        ref, now = plan.get("price_ref_month", 0), plan.get("price_month", 0)
+    if ref <= 0 or now <= 0 or now >= ref:
         return 0
-    return int(round((1 - plan["price_year"] / full) * 100))
+    return int(round((1 - now / ref) * 100))
 
 
 def _ensure_tech_plan_row(conn, code):
@@ -4352,7 +4346,7 @@ def _ensure_tech_plan_row(conn, code):
             " WHERE id = ?",
             (plan["name"], plan["price_month"], feats, row["id"]))
         return row["id"]
-    order = {"tech_basic": 10, "tech_pro": 11, "tech_premium": 12}.get(code, 13)
+    order = {"tech_pro": 11, "tech_premium": 12}.get(code, 13)
     conn.execute(
         "INSERT INTO subscription_plans (code, name, price_month, features, is_active, sort_order)"
         " VALUES (?, ?, ?, ?, 1, ?)",
@@ -4373,20 +4367,31 @@ def technician_subscription():
 
     current_code = None
     current_active = False
+    current_sub = None
     unread_count = 0
     conn = get_db_connection()
     try:
         try:
             current = conn.execute(
-                "SELECT s.status, p.code AS plan_code"
+                "SELECT s.status, s.end_date, p.code AS plan_code, p.name AS plan_name"
                 " FROM technician_subscriptions s"
                 " LEFT JOIN subscription_plans p ON p.id = s.plan_id"
                 " WHERE s.technician_id = ?"
                 " ORDER BY s.created_at DESC LIMIT 1",
                 (user["id"],)).fetchone()
             if current:
+                status = (current["status"] or "").upper()
                 current_code = current["plan_code"]
-                current_active = (current["status"] or "").upper() in ("ACTIVE", "TRIAL")
+                current_active = status in ("ACTIVE", "TRIAL")
+                current_sub = {
+                    "plan_name": current["plan_name"] or "Abonnement FixPro",
+                    "plan_code": current["plan_code"],
+                    "active": current_active,
+                    "status_label": {"ACTIVE": "Actif", "TRIAL": "Essai",
+                                     "PAST_DUE": "En attente de paiement", "EXPIRED": "Expiré",
+                                     "CANCELLED": "Annulé"}.get(status, current["status"] or "—"),
+                    "end_date_label": _format_date_month_fr(current["end_date"]) if current["end_date"] else None,
+                }
         except Exception:
             conn.rollback()
         try:
@@ -4402,14 +4407,31 @@ def technician_subscription():
     plans = []
     for p in _TECH_PLANS:
         pv = dict(p)
-        pv["savings_pct"] = _tech_plan_savings_pct(p)
+        pv["discount_month"] = _tech_plan_discount_pct(p, "month")
+        pv["discount_year"] = _tech_plan_discount_pct(p, "year")
+        pv["price_month_year"] = round(p["price_year"] / 12)
         plans.append(pv)
-    max_savings = max((pv["savings_pct"] for pv in plans), default=0)
+
+    faq = [
+        ("Comment fonctionne l'abonnement ?",
+         "L'abonnement vous donne accès aux demandes des clients de votre zone. "
+         "Il se renouvelle automatiquement à chaque échéance, sauf annulation de votre part."),
+        ("Puis-je changer de plan ?",
+         "Oui, à tout moment. Le nouveau plan prend effet à la prochaine échéance et le "
+         "montant est ajusté au prorata."),
+        ("Que se passe-t-il à la fin de mon abonnement ?",
+         "Sans renouvellement, votre profil reste visible mais vous ne recevez plus de "
+         "nouvelles demandes tant qu'un abonnement n'est pas actif."),
+        ("Comment effectuer le paiement ?",
+         "Par Orange Money, MTN ou Airtel Money, carte bancaire ou virement. "
+         "Votre abonnement est activé dès la confirmation du paiement."),
+    ]
 
     return render_template("technician_subscription.html", user=user,
-                           plans=plans, max_savings=max_savings, unread_count=unread_count,
+                           plans=plans, unread_count=unread_count,
                            availability=(user.get("availability_status") or "hors_ligne"),
-                           current_code=current_code, current_active=current_active)
+                           current_code=current_code, current_active=current_active,
+                           current_sub=current_sub, faq=faq)
 
 
 @app.route("/abonnement/paiement", methods=["GET", "POST"])

@@ -641,6 +641,50 @@ class TechnicianDashboardTests(FixProTestCase):
         r = self.client.post("/api/technicien/status", data={"status": "n_importe"})
         self.assertEqual(r.status_code, 400)
 
+    def test_subscription_page_renders_two_plans(self):
+        self.register_artisan("tech5@example.com", phone="+224621111115")
+        self.login("tech5@example.com")
+        r = self.client.get("/abonnement")
+        self.assertEqual(r.status_code, 200)
+        html = r.get_data(as_text=True)
+        self.assertIn("Choisissez votre plan", html)
+        self.assertIn("Plan Pro", html)
+        self.assertIn("Plan Premium", html)
+        self.assertIn("Le plus populaire", html)
+        self.assertIn("Questions fréquentes", html)
+
+    def test_subscription_checkout_creates_pending_subscription(self):
+        self.register_artisan("tech6@example.com", phone="+224621111116")
+        self.login("tech6@example.com")
+        r = self.client.post(
+            "/abonnement/paiement?plan=tech_premium&period=month",
+            data={"payment_method": "orange_money"}, follow_redirects=False)
+        self.assertEqual(r.status_code, 302)
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            uid = conn.execute("SELECT id FROM users WHERE phone = ?",
+                               ("+224621111116",)).fetchone()["id"]
+            sub = conn.execute(
+                "SELECT status FROM technician_subscriptions WHERE technician_id = ?",
+                (uid,)).fetchone()
+            self.assertIsNotNone(sub)
+            self.assertEqual(sub["status"], "PAST_DUE")
+            pay = conn.execute(
+                "SELECT status, amount FROM subscription_payments WHERE user_id = ?",
+                (uid,)).fetchone()
+            self.assertEqual(pay["status"], "pending")
+            self.assertEqual(pay["amount"], 140000)
+        finally:
+            conn.close()
+
+    def test_subscription_checkout_rejects_unknown_plan(self):
+        self.register_artisan("tech7@example.com", phone="+224621111117")
+        self.login("tech7@example.com")
+        r = self.client.get("/abonnement/paiement?plan=tech_basic",
+                            follow_redirects=False)
+        self.assertEqual(r.status_code, 302)
+        self.assertIn("abonnement", r.location)
+
 
 class ClientProfileTests(FixProTestCase):
     """Profil client et pages associees."""
