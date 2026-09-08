@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#2563EB" />
+  {% include '_pwa_head.html' %}
+  <title>Espace Technicien - FixPro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --td-blue: #2563EB;
+      --td-ink: #0B1B3B;
+      --td-muted: #64748B;
+      --td-ice: #EEF2F9;
+      --td-line: #E2E8F2;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      color: var(--td-ink); -webkit-font-smoothing: antialiased; background: #F7F9FC;
+    }
+    a { text-decoration: none; color: inherit; }
+
+    .td {
+      max-width: 480px; margin: 0 auto; height: 100dvh; height: 100svh;
+      display: flex; flex-direction: column; overflow: hidden;
+      padding: calc(10px + env(safe-area-inset-top)) clamp(15px, 4.5vw, 20px) calc(14px + env(safe-area-inset-bottom));
+    }
+
+    .td-head { display: flex; align-items: center; gap: 10px; }
+    .td-head .ic { width: 34px; height: 34px; color: var(--td-blue); flex-shrink: 0; }
+    .td-head .ic svg { width: 100%; height: 100%; }
+    .td-head .n { font-size: 1.3rem; font-weight: 800; letter-spacing: -.02em; line-height: 1; }
+    .td-head .n i { color: var(--td-blue); font-style: normal; }
+    .td-head .s { display: block; font-size: .72rem; font-weight: 600; color: var(--td-muted); margin-top: 2px; }
+    .td-logout {
+      margin-left: auto; font-size: .82rem; font-weight: 700; color: var(--td-muted);
+      display: flex; align-items: center; gap: 6px;
+    }
+    .td-logout svg { width: 16px; height: 16px; }
+
+    .td-body {
+      flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; text-align: center; gap: 14px;
+    }
+    .td-illo {
+      width: clamp(88px, 24vw, 116px); height: clamp(88px, 24vw, 116px); border-radius: 26px;
+      background: var(--td-ice); color: var(--td-blue);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .td-illo svg { width: 46%; height: 46%; }
+    .td-body h1 { margin: 0; font-size: clamp(1.5rem, 6.6vw, 2rem); font-weight: 900; letter-spacing: -.03em; line-height: 1.1; }
+    .td-body h1 span { color: var(--td-blue); }
+    .td-body p { margin: 0; font-size: clamp(.9rem, 3.8vw, 1rem); line-height: 1.45; color: var(--td-muted); max-width: 30ch; }
+
+    .td-actions { display: flex; flex-direction: column; gap: 12px; width: 100%; flex-shrink: 0; }
+    .td-btn {
+      width: 100%; border-radius: 16px; padding: 15px 22px; font-size: 1rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center; gap: 10px; border: 0; cursor: pointer;
+    }
+    .td-btn svg { width: 19px; height: 19px; }
+    .td-btn.primary { background: linear-gradient(180deg, #3B76F5, var(--td-blue)); color: #fff; box-shadow: 0 14px 30px rgba(37,99,235,.3); }
+    .td-btn.ghost { background: #fff; color: var(--td-ink); border: 1.5px solid var(--td-line); }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="td">
+    <header class="td-head">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span>
+      <span>
+        <span class="n">Fix<i>Pro</i></span>
+        <span class="s">Espace Technicien</span>
+      </span>
+      <a class="td-logout" href="{{ url_for('logout') }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+        Déconnexion
+      </a>
+    </header>
+
+    <div class="td-body">
+      <span class="td-illo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M3 20h4M4 12h16M4 12a8 8 0 0 1 16 0M9 4h6"/><path d="M12 12v8"/></svg>
+      </span>
+      <h1>Nouveau tableau de bord <span>en préparation</span></h1>
+      <p>Votre espace technicien est en cours de refonte. Votre compte et vos informations restent enregistrés.</p>
+    </div>
+
+    <div class="td-actions">
+      <a class="td-btn primary" href="{{ url_for('technician_subscription') }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7z"/></svg>
+        Mon abonnement
+      </a>
+      <a class="td-btn ghost" href="{{ url_for('index') }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 12 9-9 9 9M5 10v10h14V10"/></svg>
+        Accueil
+      </a>
+    </div>
+  </div>
+</body>
+</html>
