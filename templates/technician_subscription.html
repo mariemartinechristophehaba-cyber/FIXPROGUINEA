@@ -8,11 +8,12 @@
   <title>Abonnement - Espace Technicien</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Caveat:wght@600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <style>
     :root {
       --d-blue: #2563EB; --d-blue-d: #1D4ED8; --d-ink: #0B1B3B; --d-muted: #64748B;
-      --d-ice: #EEF2F9; --d-line: #E4EAF4; --d-bg: #F5F7FB; --d-green: #16A34A; --d-amber: #F59E0B;
+      --d-ice: #EEF2F9; --d-line: #E4EAF4; --d-bg: #F5F7FB; --d-green: #16A34A;
+      --d-amber: #F59E0B; --d-amber-d: #D97706;
     }
     * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; }
@@ -21,13 +22,13 @@
     button { font-family: inherit; }
     [hidden] { display: none !important; }
 
-    .wrap { max-width: 1100px; margin: 0 auto; padding: 0 clamp(14px, 4vw, 26px) calc(96px + env(safe-area-inset-bottom)); }
+    .wrap { max-width: 1120px; margin: 0 auto; padding: 0 clamp(14px, 4vw, 26px) calc(112px + env(safe-area-inset-bottom)); }
 
-    /* Topbar */
+    /* ---------- Topbar ---------- */
     .topbar {
       position: sticky; top: 0; z-index: 20; background: rgba(245,247,251,.92);
       backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-      display: flex; align-items: center; gap: 12px; max-width: 1100px; margin: 0 auto;
+      display: flex; align-items: center; gap: 12px; max-width: 1120px; margin: 0 auto;
       padding: calc(10px + env(safe-area-inset-top)) clamp(14px, 4vw, 26px) 10px;
     }
     .brand { display: flex; align-items: center; gap: 9px; }
@@ -37,23 +38,11 @@
     .brand .n i { color: var(--d-blue); font-style: normal; }
     .brand .s { display: block; font-size: .7rem; font-weight: 600; color: var(--d-muted); margin-top: 2px; }
     .topbar .sp { flex: 1; }
-    .icon-btn {
-      position: relative; width: 42px; height: 42px; border-radius: 999px; border: 0; background: #fff;
-      color: var(--d-ink); box-shadow: 0 4px 14px rgba(11,27,59,.07);
-      display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0;
-    }
+    .icon-btn { position: relative; width: 42px; height: 42px; border-radius: 999px; border: 0; background: #fff; color: var(--d-ink); box-shadow: 0 4px 14px rgba(11,27,59,.07); display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
     .icon-btn svg { width: 21px; height: 21px; }
-    .badge {
-      position: absolute; top: -3px; right: -3px; min-width: 18px; height: 18px; padding: 0 4px;
-      border-radius: 999px; background: #EF4444; color: #fff; font-size: .68rem; font-weight: 800;
-      display: flex; align-items: center; justify-content: center; border: 2px solid var(--d-bg);
-    }
+    .badge { position: absolute; top: -3px; right: -3px; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 999px; background: #EF4444; color: #fff; font-size: .68rem; font-weight: 800; display: flex; align-items: center; justify-content: center; border: 2px solid var(--d-bg); }
     .who { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-    .avatar {
-      position: relative; width: 40px; height: 40px; border-radius: 999px; overflow: hidden;
-      background: var(--d-ice); color: var(--d-blue); flex-shrink: 0;
-      display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: .95rem;
-    }
+    .avatar { position: relative; width: 40px; height: 40px; border-radius: 999px; overflow: hidden; background: var(--d-ice); color: var(--d-blue); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: .95rem; }
     .avatar img { width: 100%; height: 100%; object-fit: cover; }
     .avatar .dot { position: absolute; right: -1px; bottom: -1px; width: 12px; height: 12px; border-radius: 999px; background: #9AA7BC; border: 2px solid var(--d-bg); }
     .avatar .dot.on { background: var(--d-green); }
@@ -61,133 +50,155 @@
     .who .name svg { width: 15px; height: 15px; vertical-align: -2px; color: var(--d-muted); }
     @media (max-width: 560px) { .who .name span { display: none; } }
 
-    /* Hero */
-    .hero {
-      position: relative; overflow: hidden; margin-top: 6px; border-radius: 22px; color: #fff;
-      background: linear-gradient(135deg, #2E6BF0 0%, #1D4ED8 60%, #1E40AF 100%);
-      padding: clamp(14px, 3vw, 24px);
+    /* ---------- Intro ---------- */
+    .intro { display: grid; grid-template-columns: 1fr; gap: 14px; margin-top: 10px; }
+    @media (min-width: 820px) { .intro { grid-template-columns: 1.3fr 1fr; align-items: center; } }
+    .intro h1 { margin: 0; font-size: clamp(1.7rem, 6vw, 2.3rem); font-weight: 900; letter-spacing: -.03em; }
+    .intro p { margin: 8px 0 0; font-size: clamp(.92rem, 3.7vw, 1.02rem); color: var(--d-muted); line-height: 1.45; max-width: 42ch; }
+    .intro-card {
+      display: flex; align-items: center; gap: 14px; background: #EAF1FE; border-radius: 18px;
+      padding: 16px 18px;
     }
-    .hero::after { content: ""; position: absolute; right: -70px; top: -70px; width: 200px; height: 200px; border-radius: 999px; background: rgba(255,255,255,.08); }
-    .hero-grid { position: relative; z-index: 1; display: grid; gap: 10px; }
-    .hero .over { font-size: .72rem; font-weight: 800; letter-spacing: .14em; opacity: .8; }
-    .hero h1 { margin: 4px 0 0; font-size: clamp(1.4rem, 5.6vw, 2rem); font-weight: 900; letter-spacing: -.02em; line-height: 1.08; max-width: 14ch; }
-    .hero .tag { margin: 6px 0 0; font-size: clamp(.84rem, 3.4vw, .96rem); opacity: .9; font-weight: 500; max-width: 34ch; }
-    .hero .script {
-      position: absolute; right: 16px; top: 16px; z-index: 2; font-family: 'Caveat', 'Inter', cursive;
-      font-size: clamp(1.1rem, 4.4vw, 1.6rem); font-weight: 700; line-height: 1.15; text-align: right; max-width: 42%; opacity: .92;
-    }
-    @media (max-width: 760px) { .hero .script { display: none; } }
-    .feats { display: flex; flex-wrap: wrap; gap: 7px 14px; margin-top: 4px; }
-    .feat { display: flex; align-items: center; gap: 7px; font-size: .78rem; font-weight: 600; opacity: .95; }
-    .feat .fi { width: 22px; height: 22px; border-radius: 7px; background: rgba(255,255,255,.16); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-    .feat .fi svg { width: 13px; height: 13px; }
-    .feat span { display: block; opacity: .78; font-weight: 500; font-size: .7rem; }
+    .intro-card .ii { width: 44px; height: 44px; border-radius: 12px; background: #fff; color: var(--d-blue); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .intro-card .ii svg { width: 22px; height: 22px; }
+    .intro-card b { display: block; font-size: .92rem; font-weight: 800; line-height: 1.3; }
+    .intro-card span { display: block; font-size: .82rem; color: var(--d-muted); margin-top: 3px; line-height: 1.4; }
 
-    /* Section head */
-    .sec-h { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-top: 22px; }
-    .sec-h .tt { flex: 1; min-width: 180px; }
-    .sec-h h2 { margin: 0; font-size: clamp(1.25rem, 5vw, 1.6rem); font-weight: 900; letter-spacing: -.02em; }
-    .sec-h p { margin: 4px 0 0; font-size: .88rem; color: var(--d-muted); }
-
+    /* ---------- Toggle ---------- */
+    .seg-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 22px; }
     .seg { display: inline-flex; background: #E7ECF4; border-radius: 999px; padding: 4px; }
-    .seg button {
-      border: 0; background: transparent; cursor: pointer; border-radius: 999px;
-      padding: 9px 18px; font-size: .88rem; font-weight: 800; color: var(--d-muted);
-    }
+    .seg button { border: 0; background: transparent; cursor: pointer; border-radius: 999px; padding: 9px 20px; font-size: .88rem; font-weight: 800; color: var(--d-muted); }
     .seg button.on { background: var(--d-blue); color: #fff; box-shadow: 0 6px 16px rgba(37,99,235,.3); }
+    .seg-save { background: #DCFCE7; color: #15803D; font-size: .76rem; font-weight: 800; padding: 6px 12px; border-radius: 999px; }
 
-    /* Plans */
-    .plans { display: grid; grid-template-columns: 1fr; gap: 14px; margin-top: 16px; }
-    @media (min-width: 820px) { .plans { grid-template-columns: 1fr 1fr; align-items: start; } }
+    /* ================= PLANS : alignement robuste ================= */
+    /* Grille : 3 colonnes egales, cartes etirees a la meme hauteur. */
+    .plans {
+      display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px;
+      align-items: stretch; margin-top: 26px;
+    }
+    @media (min-width: 900px) { .plans { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; } }
+
+    /* Carte : colonne flex pleine hauteur -> header / prix / features / footer. */
     .plan {
-      position: relative; background: #fff; border: 1.5px solid var(--d-line); border-radius: 20px;
-      padding: clamp(16px, 3vw, 22px); box-shadow: 0 8px 22px rgba(11,27,59,.06);
+      position: relative; display: flex; flex-direction: column; height: 100%;
+      background: #fff; border: 1.5px solid var(--d-line); border-radius: 20px;
+      padding: clamp(18px, 2.6vw, 24px); box-shadow: 0 8px 22px rgba(11,27,59,.06);
     }
-    .plan.pop { border-color: var(--d-blue); box-shadow: 0 16px 34px rgba(37,99,235,.16); }
+    .plan.pop { border-color: var(--d-blue); box-shadow: 0 18px 38px rgba(37,99,235,.18); }
+    .plan.amber { border-color: #FCE3B3; background: #FFFCF5; }
+    /* En pile (mobile) : chaque carte a sa hauteur propre, pas besoin de
+       reserver la hauteur du bloc prix -> on evite le vide dans "Gratuit". */
+    @media (max-width: 899px) {
+      .plan-price { min-height: 0 !important; }
+      .plan-h .desc { min-height: 0 !important; }
+    }
+
+    /* Badge "Recommande" : flotte au-dessus, ne pousse rien. */
     .plan .ribbon {
-      position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
-      background: var(--d-blue); color: #fff; font-size: .72rem; font-weight: 800;
-      padding: 5px 14px; border-radius: 999px; white-space: nowrap;
+      position: absolute; top: -13px; left: 50%; transform: translateX(-50%);
+      background: var(--d-blue); color: #fff; font-size: .74rem; font-weight: 800;
+      padding: 6px 16px; border-radius: 999px; white-space: nowrap;
+      box-shadow: 0 6px 16px rgba(37,99,235,.34);
     }
-    .plan-h { display: flex; align-items: flex-start; gap: 13px; }
-    .plan-h .pi { width: 48px; height: 48px; border-radius: 999px; display: flex; align-items: center; justify-content: center; color: #fff; flex-shrink: 0; }
+    /* Badge de reduction : coin haut-droit, hors flux, n'altere pas l'alignement. */
+    .plan .disc {
+      position: absolute; top: 16px; right: 16px;
+      background: #FEE2E2; color: #DC2626; font-size: .76rem; font-weight: 800;
+      padding: 4px 9px; border-radius: 8px; white-space: nowrap;
+    }
+
+    .plan-h { text-align: center; }
+    .plan-h .pi {
+      width: 60px; height: 60px; border-radius: 999px; margin: 4px auto 12px;
+      display: flex; align-items: center; justify-content: center; color: #fff;
+    }
+    .plan-h .pi.ice { background: #DBEAFE; color: var(--d-blue); }
     .plan-h .pi.blue { background: var(--d-blue); }
     .plan-h .pi.amber { background: var(--d-amber); }
-    .plan-h .pi svg { width: 23px; height: 23px; }
-    .plan-h .ph { flex: 1; min-width: 0; }
-    .plan-h .ph b { display: block; font-size: 1.15rem; font-weight: 900; }
-    .plan-h .ph span { display: block; font-size: .84rem; color: var(--d-muted); margin-top: 1px; }
-    .plan-h .disc {
-      flex-shrink: 0; background: #FEE2E2; color: #DC2626; font-size: .78rem; font-weight: 800;
-      padding: 4px 9px; border-radius: 8px;
+    .plan-h .pi svg { width: 27px; height: 27px; }
+    .plan-h .name { font-size: 1.5rem; font-weight: 900; letter-spacing: -.02em; }
+    /* hauteur reservee -> la description occupe le meme espace sur les 3 cartes */
+    .plan-h .desc { margin-top: 4px; font-size: .88rem; color: var(--d-muted); font-weight: 600; min-height: 2.6em; display: flex; align-items: flex-start; justify-content: center; }
+
+    /* Bloc prix : hauteur homogene, meme separateur en bas. */
+    .plan-price {
+      text-align: center; margin-top: 6px; padding-bottom: 18px;
+      border-bottom: 1px solid var(--d-line); min-height: 118px;
+      display: flex; flex-direction: column; justify-content: center;
     }
-    .plan-price { margin: 14px 0 0; }
-    .plan-price .ref { font-size: .95rem; font-weight: 700; color: #94A3B8; text-decoration: line-through; }
-    .plan-price .now { display: block; margin-top: 2px; font-size: clamp(1.5rem, 6vw, 1.9rem); font-weight: 900; color: var(--d-blue); letter-spacing: -.02em; }
-    .plan-price .now small { font-size: .5em; font-weight: 800; color: var(--d-muted); letter-spacing: 0; }
-    .plan-price .eqv { display: block; margin-top: 3px; font-size: .78rem; color: var(--d-muted); font-weight: 600; }
+    .plan-price .ref { font-size: .95rem; font-weight: 700; color: #94A3B8; text-decoration: line-through; min-height: 1.2em; }
+    .plan-price .now { font-size: clamp(1.7rem, 5vw, 2.05rem); font-weight: 900; color: var(--d-blue); letter-spacing: -.02em; line-height: 1.1; margin-top: 2px; }
+    .plan.amber .plan-price .now { color: var(--d-amber-d); }
+    .plan-price .per { font-size: .82rem; color: var(--d-muted); font-weight: 600; margin-top: 4px; }
+    .plan-price .eqv:not(:empty) { font-size: .76rem; color: var(--d-green); font-weight: 700; margin-top: 4px; }
 
-    .plan-feats { list-style: none; margin: 16px 0 0; padding: 16px 0 0; border-top: 1px solid var(--d-line); display: grid; gap: 11px; }
+    /* Liste : occupe l'espace restant pour que le footer descende en bas. */
+    .plan-feats { list-style: none; margin: 18px 0 0; padding: 0; display: grid; gap: 12px; }
     .plan-feats li { display: flex; align-items: flex-start; gap: 10px; font-size: .9rem; font-weight: 500; line-height: 1.35; }
-    .plan-feats li .ck { width: 20px; height: 20px; border-radius: 999px; background: var(--d-blue); color: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+    .plan-feats li .ck { width: 20px; height: 20px; border-radius: 999px; flex-shrink: 0; margin-top: 1px; display: flex; align-items: center; justify-content: center; background: var(--d-blue); color: #fff; }
+    .plan.amber .plan-feats li.ok .ck { background: var(--d-amber); }
     .plan-feats li .ck svg { width: 12px; height: 12px; }
+    .plan-feats li.no { color: #94A3B8; }
+    .plan-feats li.no .ck { background: #E7ECF4; color: #94A3B8; }
 
+    /* Footer : pousse le bouton tout en bas -> les 3 CTA sont sur la meme ligne. */
+    .plan-foot { margin-top: auto; padding-top: 20px; }
     .plan-btn {
       display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
-      margin-top: 18px; border-radius: 13px; padding: 13px 18px; font-size: .95rem; font-weight: 800;
-      border: 1.5px solid var(--d-blue); background: #fff; color: var(--d-blue); cursor: pointer;
+      border-radius: 13px; padding: 13px 18px; font-size: .95rem; font-weight: 800;
+      border: 1.5px solid var(--d-line); background: #fff; color: var(--d-ink); cursor: pointer;
     }
-    .plan.pop .plan-btn, .plan-btn.solid {
-      background: linear-gradient(180deg, #3B76F5, var(--d-blue)); color: #fff; border-color: transparent;
-      box-shadow: 0 12px 24px rgba(37,99,235,.28);
-    }
+    .plan-btn.primary { background: linear-gradient(180deg, #3B76F5, var(--d-blue)); color: #fff; border-color: transparent; box-shadow: 0 12px 24px rgba(37,99,235,.28); }
+    .plan-btn.gold { background: linear-gradient(180deg, #FBBF24, var(--d-amber)); color: #fff; border-color: transparent; box-shadow: 0 12px 24px rgba(245,158,11,.3); }
+    .plan-btn.ghost { background: #fff; color: var(--d-blue); border-color: var(--d-blue); }
+    .plan-btn.current { background: #F1F5F9; color: var(--d-muted); border-color: transparent; cursor: default; }
 
-    /* Abonnement actuel */
-    .cur {
-      display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 16px;
-      background: #EAF7EE; border: 1px solid #C6EBD1; border-radius: 18px; padding: 14px 16px;
-    }
-    .cur .ci { width: 48px; height: 48px; border-radius: 999px; background: var(--d-green); color: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-    .cur .ci svg { width: 23px; height: 23px; }
-    .cur .ct { flex: 1; min-width: 140px; }
-    .cur .ct .k { display: block; font-size: .78rem; font-weight: 800; color: var(--d-green); }
-    .cur .ct .pname { display: block; font-size: 1.05rem; font-weight: 900; margin-top: 1px; }
-    .cur .ct .due { display: block; font-size: .8rem; color: var(--d-muted); margin-top: 2px; }
-    .cur .tag { flex-shrink: 0; font-size: .76rem; font-weight: 800; padding: 5px 11px; border-radius: 999px; background: #D1F0DC; color: #15803D; }
-    .cur .tag.off { background: #FDECC8; color: #92400E; }
-    .cur .manage {
-      flex-shrink: 0; display: flex; align-items: center; gap: 7px; border: 1.5px solid var(--d-blue);
-      color: var(--d-blue); background: #fff; border-radius: 12px; padding: 10px 15px; font-size: .86rem; font-weight: 800;
-    }
-    .cur .manage svg { width: 15px; height: 15px; }
-    @media (max-width: 620px) { .cur .manage { width: 100%; justify-content: center; } }
+    /* ---------- Comparatif ---------- */
+    .compare { display: grid; grid-template-columns: 1fr; gap: 16px; margin-top: 28px; }
+    @media (min-width: 980px) { .compare { grid-template-columns: 1fr 300px; align-items: start; } }
+    .compare h2, .faq-h h2 { margin: 0 0 12px; font-size: clamp(1.2rem, 4.6vw, 1.5rem); font-weight: 900; letter-spacing: -.02em; }
+    .cmp-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 18px; border: 1px solid var(--d-line); background: #fff; box-shadow: 0 8px 22px rgba(11,27,59,.05); }
+    table.cmp { width: 100%; border-collapse: collapse; min-width: 460px; font-size: .88rem; }
+    table.cmp th, table.cmp td { padding: 12px 14px; text-align: center; border-bottom: 1px solid var(--d-line); }
+    table.cmp thead th { font-size: .8rem; font-weight: 800; color: var(--d-muted); background: #F8FAFD; }
+    table.cmp thead th.pro { color: var(--d-blue); }
+    table.cmp thead th.prem { color: var(--d-amber-d); background: #FEF7EA; }
+    table.cmp tbody tr:last-child td { border-bottom: 0; }
+    table.cmp td.feat { text-align: left; font-weight: 600; white-space: nowrap; }
+    table.cmp td.feat .fi { display: inline-flex; width: 26px; height: 26px; border-radius: 8px; background: var(--d-ice); color: var(--d-blue); align-items: center; justify-content: center; vertical-align: middle; margin-right: 8px; }
+    table.cmp td.feat .fi svg { width: 14px; height: 14px; }
+    table.cmp td .yes { color: var(--d-blue); }
+    table.cmp td .yes.g { color: var(--d-amber-d); }
+    table.cmp td .mut { color: #CBD5E1; }
+    table.cmp td .txt { font-weight: 700; }
+    table.cmp td .txt.b { color: var(--d-blue); }
+    table.cmp td .txt.g { color: var(--d-green); }
+    table.cmp td svg { width: 18px; height: 18px; vertical-align: middle; }
 
-    /* FAQ */
-    .faq-h { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 24px; }
-    .faq-h h2 { margin: 0; font-size: clamp(1.15rem, 4.6vw, 1.4rem); font-weight: 900; flex: 1; }
+    .upsell { background: #EAF1FE; border-radius: 18px; padding: 20px; text-align: center; }
+    .upsell .ui { width: 56px; height: 56px; border-radius: 14px; background: #fff; color: var(--d-blue); display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; }
+    .upsell .ui svg { width: 28px; height: 28px; }
+    .upsell b { display: block; font-size: 1.05rem; font-weight: 900; line-height: 1.25; }
+    .upsell p { margin: 6px 0 14px; font-size: .85rem; color: var(--d-muted); line-height: 1.4; }
+    .upsell a { display: inline-flex; align-items: center; gap: 6px; border: 1.5px solid var(--d-blue); color: var(--d-blue); background: #fff; border-radius: 12px; padding: 10px 18px; font-size: .86rem; font-weight: 800; }
+
+    /* ---------- FAQ ---------- */
+    .faq-h { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 28px; }
+    .faq-h h2 { margin: 0; flex: 1; }
     .faq-h a { font-size: .84rem; font-weight: 800; color: var(--d-blue); display: flex; align-items: center; gap: 4px; }
     .faq-h a svg { width: 15px; height: 15px; }
     .faq { margin-top: 12px; display: grid; gap: 10px; }
-    .faq details {
-      background: #fff; border: 1px solid var(--d-line); border-radius: 14px; padding: 0 15px;
-      box-shadow: 0 4px 12px rgba(11,27,59,.04);
-    }
-    .faq summary {
-      list-style: none; cursor: pointer; display: flex; align-items: center; gap: 12px;
-      padding: 15px 0; font-size: .92rem; font-weight: 700;
-    }
+    .faq details { background: #fff; border: 1px solid var(--d-line); border-radius: 14px; padding: 0 16px; box-shadow: 0 4px 12px rgba(11,27,59,.04); }
+    .faq summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 12px; padding: 16px 0; font-size: .92rem; font-weight: 700; }
     .faq summary::-webkit-details-marker { display: none; }
     .faq summary .chev { margin-left: auto; color: #94A3B8; transition: transform .2s; flex-shrink: 0; }
     .faq summary .chev svg { width: 18px; height: 18px; }
     .faq details[open] summary .chev { transform: rotate(180deg); }
-    .faq .ans { padding: 0 0 15px; font-size: .86rem; line-height: 1.5; color: var(--d-muted); }
+    .faq .ans { padding: 0 0 16px; font-size: .86rem; line-height: 1.5; color: var(--d-muted); }
 
-    /* Tabbar */
-    .tabbar {
-      position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; background: #fff;
-      border-top: 1px solid var(--d-line); padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
-      display: flex; align-items: flex-end; justify-content: space-around; box-shadow: 0 -8px 24px rgba(11,27,59,.06);
-    }
+    /* ---------- Tabbar ---------- */
+    .tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; background: #fff; border-top: 1px solid var(--d-line); padding: 8px 8px calc(8px + env(safe-area-inset-bottom)); display: flex; align-items: flex-end; justify-content: space-around; box-shadow: 0 -8px 24px rgba(11,27,59,.06); }
     .tab { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: .68rem; font-weight: 700; color: var(--d-muted); position: relative; padding: 4px 2px; }
     .tab svg { width: 22px; height: 22px; }
     .tab.active { color: var(--d-blue); }
@@ -222,88 +233,153 @@
   </header>
 
   <main class="wrap">
-    <section class="hero">
-      <p class="script">Votre talent,<br />notre force&nbsp;!</p>
-      <div class="hero-grid">
-        <div>
-          <span class="over">BOOSTEZ VOTRE ACTIVITÉ</span>
-          <h1>Plus de clients, plus de revenus&nbsp;!</h1>
-          <p class="tag">Rejoignez une communauté de clients qui ont besoin de vos services chaque jour.</p>
-        </div>
-        <div class="feats">
-          <span class="feat"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><b>Plus de <span>visibilité</span></b></span>
-          <span class="feat"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="4" width="3" height="14"/></svg></span><b>Plus <span>d'opportunités</span></b></span>
-          <span class="feat"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg></span><b>Une activité <span>en toute confiance</span></b></span>
-        </div>
+    <section class="intro">
+      <div>
+        <h1>Abonnement</h1>
+        <p>Choisissez le plan qui vous correspond et accédez à plus d'opportunités.</p>
+      </div>
+      <div class="intro-card">
+        <span class="ii"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg></span>
+        <span>
+          <b>Plus de visibilité. Plus de clients. Plus de revenus.</b>
+          <span>Avec FixPro, développez votre activité et atteignez de nouveaux sommets.</span>
+        </span>
       </div>
     </section>
 
-    <div class="sec-h">
-      <div class="tt">
-        <h2>Choisissez votre plan</h2>
-        <p>Un seul abonnement. Plus de clients. Plus d'opportunités.</p>
-      </div>
+    <div class="seg-row">
       <div class="seg" id="seg" role="tablist">
         <button type="button" class="on" data-period="month">Mensuel</button>
         <button type="button" data-period="year">Annuel</button>
       </div>
+      {% if max_year_savings %}<span class="seg-save">Économisez jusqu'à {{ max_year_savings }}%</span>{% endif %}
     </div>
 
     <section class="plans">
       {% for p in plans %}
-      <article class="plan {{ 'pop' if p.popular }}">
-        {% if p.popular %}<span class="ribbon">Le plus populaire</span>{% endif %}
+      <article class="plan {{ 'pop' if p.popular }} {{ 'amber' if p.accent == 'amber' }}">
+        {% if p.popular %}<span class="ribbon">Recommandé</span>{% endif %}
+        {% if not p.free %}<span class="disc" data-disc-month="-{{ p.discount_month }}%" data-disc-year="-{{ p.discount_year }}%">-{{ p.discount_month }}%</span>{% endif %}
+
         <div class="plan-h">
-          <span class="pi {{ 'amber' if p.icon == 'crown' else 'blue' }}">
+          <span class="pi {{ 'ice' if p.free else ('amber' if p.accent == 'amber' else 'blue') }}">
             {% if p.icon == 'crown' %}
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7z"/></svg>
+            {% elif p.icon == 'star' %}
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 17.8 6.2 20.9l1.1-6.5L2.6 9.8l6.5-.9z"/></svg>
             {% else %}
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></svg>
             {% endif %}
           </span>
-          <div class="ph"><b>Plan {{ p.name }}</b><span>{{ p.desc }}</span></div>
-          <span class="disc" data-disc-month="-{{ p.discount_month }}%" data-disc-year="-{{ p.discount_year }}%">-{{ p.discount_month }}%</span>
+          <div class="name">{{ p.name }}</div>
+          <div class="desc">{{ p.desc }}</div>
         </div>
+
         <div class="plan-price">
+          {% if p.free %}
+          <span class="ref"></span>
+          <span class="now">0 GNF</span>
+          <span class="per">/ mois</span>
+          <span class="eqv"></span>
+          {% else %}
           <span class="ref"
                 data-ref-month="{{ '{:,}'.format(p.price_ref_month) | replace(',', ' ') }} GNF"
                 data-ref-year="{{ '{:,}'.format(p.price_ref_year) | replace(',', ' ') }} GNF">{{ '{:,}'.format(p.price_ref_month) | replace(',', ' ') }} GNF</span>
           <span class="now"
-                data-now-month="{{ '{:,}'.format(p.price_month) | replace(',', ' ') }}|/ mois"
-                data-now-year="{{ '{:,}'.format(p.price_year) | replace(',', ' ') }}|/ an">
-            {{ '{:,}'.format(p.price_month) | replace(',', ' ') }} <small>GNF / mois</small>
-          </span>
+                data-now-month="{{ '{:,}'.format(p.price_month) | replace(',', ' ') }} GNF"
+                data-now-year="{{ '{:,}'.format(p.price_year) | replace(',', ' ') }} GNF">{{ '{:,}'.format(p.price_month) | replace(',', ' ') }} GNF</span>
+          <span class="per"
+                data-per-month="/ mois"
+                data-per-year="/ an">/ mois</span>
           <span class="eqv"
-                data-eqv-year="soit {{ '{:,}'.format(p.price_month_year) | replace(',', ' ') }} GNF / mois, facturé annuellement">&nbsp;</span>
+                data-eqv-year="soit {{ '{:,}'.format(p.price_month_year) | replace(',', ' ') }} GNF / mois"></span>
+          {% endif %}
         </div>
+
         <ul class="plan-feats">
           {% for label, ok in p.features %}
-          <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>{{ label }}</li>
+          <li class="{{ 'ok' if ok else 'no' }}">
+            <span class="ck">
+              {% if ok %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+              {% else %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>{% endif %}
+            </span>
+            {{ label }}
+          </li>
           {% endfor %}
         </ul>
-        <a class="plan-btn {{ 'solid' if p.popular }}" data-plan="{{ p.code }}"
-           href="{{ url_for('technician_subscription_checkout', plan=p.code, period='month') }}">
-          {{ 'Votre plan actuel' if p.code == current_code and current_active else 'Choisir ce plan' }}
-        </a>
+
+        <div class="plan-foot">
+          {% if p.is_current %}
+          <span class="plan-btn current">Plan actuel</span>
+          {% elif p.free %}
+          <span class="plan-btn ghost">Plan gratuit</span>
+          {% else %}
+          <a class="plan-btn {{ 'gold' if p.accent == 'amber' else 'primary' }}" data-plan="{{ p.code }}"
+             href="{{ url_for('technician_subscription_checkout', plan=p.code, period='month') }}">Choisir ce plan</a>
+          {% endif %}
+        </div>
       </article>
       {% endfor %}
     </section>
 
-    {% if current_sub %}
-    <section class="cur">
-      <span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7z"/></svg></span>
-      <div class="ct">
-        <span class="k">Mon abonnement actuel</span>
-        <span class="pname">Plan {{ current_sub.plan_name }}</span>
-        {% if current_sub.end_date_label %}<span class="due">Prochaine échéance : {{ current_sub.end_date_label }}</span>{% endif %}
+    <section class="compare">
+      <div>
+        <h2>Comparatif des fonctionnalités</h2>
+        <div class="cmp-scroll">
+          <table class="cmp">
+            <thead>
+              <tr>
+                <th style="text-align:left">Fonctionnalités</th>
+                <th>Gratuit</th><th class="pro">Pro</th><th class="prem">Premium</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% macro yes(cls='') %}<svg class="yes {{ cls }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>{% endmacro %}
+              {% set dash %}<span class="mut">—</span>{% endset %}
+              <tr>
+                <td class="feat"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></span>Recevoir des demandes</td>
+                <td><span class="yes mut" style="color:#CBD5E1">✓</span></td><td>{{ yes('b') }}</td><td>{{ yes('g') }}</td>
+              </tr>
+              <tr>
+                <td class="feat"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span>Nombre de demandes / mois</td>
+                <td><span class="txt">5</span></td><td><span class="txt b">Illimité</span></td><td><span class="txt g">Illimité</span></td>
+              </tr>
+              <tr>
+                <td class="feat"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg></span>Visibilité dans la recherche</td>
+                <td><span class="txt">Standard</span></td><td><span class="txt b">Prioritaire</span></td><td><span class="txt g">En tête</span></td>
+              </tr>
+              <tr>
+                <td class="feat"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg></span>Badge profil vérifié</td>
+                <td>{{ dash }}</td><td>{{ yes('b') }}</td><td>{{ yes('g') }}</td>
+              </tr>
+              <tr>
+                <td class="feat"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="4" width="3" height="14"/></svg></span>Statistiques détaillées</td>
+                <td>{{ dash }}</td><td>{{ yes('b') }}</td><td>{{ yes('g') }}</td>
+              </tr>
+              <tr>
+                <td class="feat"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1v-6h3zM3 19a2 2 0 0 0 2 2h1v-6H3z"/></svg></span>Support prioritaire</td>
+                <td>{{ dash }}</td><td>{{ dash }}</td><td>{{ yes('g') }}</td>
+              </tr>
+              <tr>
+                <td class="feat"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7z"/></svg></span>Mise en avant sur l'accueil</td>
+                <td>{{ dash }}</td><td>{{ dash }}</td><td>{{ yes('g') }}</td>
+              </tr>
+              <tr>
+                <td class="feat"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12h8M12 8v8"/></svg></span>Réduction sur les commissions</td>
+                <td>{{ dash }}</td><td><span class="txt g">10%</span></td><td><span class="txt g">20%</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
-      <span class="tag {{ '' if current_sub.active else 'off' }}">{{ current_sub.status_label }}</span>
-      <a class="manage" href="{{ url_for('technician_subscription_checkout', plan=current_sub.plan_code or 'tech_premium', period='month') }}">
-        Gérer mon abonnement
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-      </a>
+
+      <aside class="upsell">
+        <span class="ui"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg></span>
+        <b>Passez à un plan supérieur</b>
+        <p>et développez votre activité avec FixPro.</p>
+        <a href="#plans-top">En savoir plus</a>
+      </aside>
     </section>
-    {% endif %}
 
     <div class="faq-h">
       <h2>Questions fréquentes</h2>
@@ -347,30 +423,20 @@
     (function () {
       var seg = document.getElementById('seg');
       var period = 'month';
-
       function apply() {
-        document.querySelectorAll('.plan-price .now').forEach(function (el) {
-          var raw = el.getAttribute('data-now-' + period) || '';
-          var parts = raw.split('|');
-          el.innerHTML = parts[0] + ' <small>GNF ' + (parts[1] || '') + '</small>';
-        });
-        document.querySelectorAll('.plan-price .ref').forEach(function (el) {
-          el.textContent = el.getAttribute('data-ref-' + period) || el.textContent;
-        });
-        document.querySelectorAll('.plan-h .disc').forEach(function (el) {
-          el.textContent = el.getAttribute('data-disc-' + period) || el.textContent;
+        ['ref', 'now', 'per', 'disc'].forEach(function (k) {
+          document.querySelectorAll('[data-' + k + '-month]').forEach(function (el) {
+            var v = el.getAttribute('data-' + k + '-' + period);
+            if (v !== null) el.textContent = v;
+          });
         });
         document.querySelectorAll('.plan-price .eqv').forEach(function (el) {
-          var t = period === 'year' ? (el.getAttribute('data-eqv-year') || '') : '';
-          el.textContent = t || ' ';
+          el.textContent = period === 'year' ? (el.getAttribute('data-eqv-year') || '') : '';
         });
-        document.querySelectorAll('.plan-btn').forEach(function (el) {
-          var code = el.getAttribute('data-plan');
-          if (code) el.href = el.href.replace(/([?&]period=)(month|year)/, '$1' + period)
-                                     .replace(/period=(month|year)/, 'period=' + period);
+        document.querySelectorAll('.plan-btn[data-plan]').forEach(function (el) {
+          el.href = el.href.replace(/period=(month|year)/, 'period=' + period);
         });
       }
-
       seg.addEventListener('click', function (e) {
         var b = e.target.closest('button[data-period]');
         if (!b) return;

@@ -638,17 +638,29 @@ class TechnicianDashboardTests(FixProTestCase):
         r = self.client.post("/api/technicien/status", data={"status": "n_importe"})
         self.assertEqual(r.status_code, 400)
 
-    def test_subscription_page_renders_two_plans(self):
+    def test_subscription_page_renders_three_plans(self):
         self.register_artisan("tech5@example.com", phone="+224621111115")
         self.login("tech5@example.com")
         r = self.client.get("/abonnement")
         self.assertEqual(r.status_code, 200)
         html = r.get_data(as_text=True)
-        self.assertIn("Choisissez votre plan", html)
-        self.assertIn("Plan Pro", html)
-        self.assertIn("Plan Premium", html)
-        self.assertIn("Le plus populaire", html)
+        self.assertIn("Abonnement", html)
+        self.assertIn(">Gratuit<", html)
+        self.assertIn(">Pro<", html)
+        self.assertIn(">Premium<", html)
+        self.assertIn("Recommandé", html)
+        self.assertIn("Comparatif des fonctionnalités", html)
         self.assertIn("Questions fréquentes", html)
+        # sans abonnement paye -> le plan Gratuit est le "plan actuel"
+        self.assertIn("Plan actuel", html)
+
+    def test_subscription_checkout_rejects_free_plan(self):
+        self.register_artisan("tech8@example.com", phone="+224621111118")
+        self.login("tech8@example.com")
+        r = self.client.get("/abonnement/paiement?plan=tech_free",
+                            follow_redirects=False)
+        self.assertEqual(r.status_code, 302)
+        self.assertIn("abonnement", r.location)
 
     def test_subscription_checkout_creates_pending_subscription(self):
         self.register_artisan("tech6@example.com", phone="+224621111116")

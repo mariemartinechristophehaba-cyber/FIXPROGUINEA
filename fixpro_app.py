@@ -4270,30 +4270,46 @@ csrf.exempt(api_technicien_status)
 
 _TECH_PLANS = [
     {
-        "code": "tech_pro", "name": "Pro", "icon": "send", "popular": False,
-        "desc": "Idéal pour bien commencer",
-        "price_ref_month": 100000, "price_month": 97000,
-        "price_ref_year": 1200000, "price_year": 1047600,
+        "code": "tech_free", "name": "Gratuit", "icon": "send", "popular": False, "free": True,
+        "desc": "Pour bien commencer",
+        "price_ref_month": 0, "price_month": 0,
+        "price_ref_year": 0, "price_year": 0,
         "features": [
-            ("Accès à tous les clients", True),
-            ("Visibilité dans les recherches", True),
-            ("Support en temps réel", True),
-            ("Statistiques de base", True),
-            ("Badge technicien vérifié", True),
+            ("Recevoir des demandes", True),
+            ("Visibilité standard", True),
+            ("5 demandes / mois", True),
+            ("Statistiques détaillées", False),
+            ("Support prioritaire", False),
+            ("Mise en avant du profil", False),
         ],
     },
     {
-        "code": "tech_premium", "name": "Premium", "icon": "crown", "popular": True,
-        "desc": "Plus de visibilité, plus de clients",
-        "price_ref_month": 200000, "price_month": 140000,
-        "price_ref_year": 2400000, "price_year": 1512000,
+        "code": "tech_pro", "name": "Pro", "icon": "star", "popular": True,
+        "desc": "Idéal pour développer",
+        "price_ref_month": 100000, "price_month": 97000,
+        "price_ref_year": 1200000, "price_year": 931200,
         "features": [
-            ("Tous les avantages du plan Pro", True),
-            ("Visibilité prioritaire dans les recherches", True),
+            ("Demandes illimitées", True),
+            ("Visibilité dans les recherches", True),
+            ("Badge profil vérifié", True),
+            ("Statistiques de base", True),
+            ("Support en temps réel", True),
+            ("Réduction de 10% sur les commissions", True),
+        ],
+    },
+    {
+        "code": "tech_premium", "name": "Premium", "icon": "crown", "popular": False, "accent": "amber",
+        "desc": "Pour les professionnels actifs",
+        "price_ref_month": 200000, "price_month": 140000,
+        "price_ref_year": 2400000, "price_year": 1344000,
+        "features": [
+            ("Toutes les fonctionnalités Pro", True),
+            ("Visibilité prioritaire", True),
             ("Mise en avant de votre profil", True),
             ("Statistiques détaillées", True),
-            ("Support prioritaire", True),
+            ("Support client prioritaire", True),
             ("Plus d'opportunités d'interventions", True),
+            ("Réduction de 20% sur les commissions", True),
         ],
     },
 ]
@@ -4333,6 +4349,15 @@ def _tech_plan_discount_pct(plan, period="month"):
     return int(round((1 - now / ref) * 100))
 
 
+def _tech_plan_year_savings_pct(plan):
+    """Economie de l'engagement annuel par rapport a 12 mensualites."""
+    full = plan.get("price_month", 0) * 12
+    year = plan.get("price_year", 0)
+    if full <= 0 or year <= 0 or year >= full:
+        return 0
+    return int(round((1 - year / full) * 100))
+
+
 def _ensure_tech_plan_row(conn, code):
     """Cree/actualise la ligne subscription_plans correspondant a un plan technicien."""
     plan = _tech_plan_by_code(code)
@@ -4346,7 +4371,7 @@ def _ensure_tech_plan_row(conn, code):
             " WHERE id = ?",
             (plan["name"], plan["price_month"], feats, row["id"]))
         return row["id"]
-    order = {"tech_pro": 11, "tech_premium": 12}.get(code, 13)
+    order = {"tech_free": 10, "tech_pro": 11, "tech_premium": 12}.get(code, 13)
     conn.execute(
         "INSERT INTO subscription_plans (code, name, price_month, features, is_active, sort_order)"
         " VALUES (?, ?, ?, ?, 1, ?)",
@@ -4409,8 +4434,13 @@ def technician_subscription():
         pv = dict(p)
         pv["discount_month"] = _tech_plan_discount_pct(p, "month")
         pv["discount_year"] = _tech_plan_discount_pct(p, "year")
-        pv["price_month_year"] = round(p["price_year"] / 12)
+        pv["year_savings"] = _tech_plan_year_savings_pct(p)
+        pv["price_month_year"] = round(p["price_year"] / 12) if p.get("price_year") else 0
+        pv["is_current"] = (
+            (p["code"] == current_code and current_active)
+            or (p.get("free") and not (current_code and current_active)))
         plans.append(pv)
+    max_year_savings = max((pv["year_savings"] for pv in plans), default=0)
 
     faq = [
         ("Comment fonctionne l'abonnement ?",
@@ -4429,6 +4459,7 @@ def technician_subscription():
 
     return render_template("technician_subscription.html", user=user,
                            plans=plans, unread_count=unread_count,
+                           max_year_savings=max_year_savings,
                            availability=(user.get("availability_status") or "hors_ligne"),
                            current_code=current_code, current_active=current_active,
                            current_sub=current_sub, faq=faq)
@@ -4450,8 +4481,9 @@ def technician_subscription_checkout():
     if period not in ("month", "year"):
         period = "month"
     plan = _tech_plan_by_code(code)
-    if not plan:
-        flash("Formule inconnue.", "error")
+    if not plan or plan.get("free"):
+        flash("Formule inconnue." if not plan else
+              "Le plan Gratuit est déjà actif par défaut.", "error")
         return redirect(url_for("technician_subscription"))
 
     amount = _tech_plan_amount(plan, period)
