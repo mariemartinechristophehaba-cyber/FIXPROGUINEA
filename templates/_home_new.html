@@ -314,6 +314,109 @@
     .hp-bottom-nav { display: none; }
     body { padding-bottom: 0 !important; }
   }
+
+  /* ==========================================================================
+     VERSION BUREAU (>= 1024px) - vraie mise en page PC, proportionnelle.
+     La sidebar principale vient de base.html ; ici on retravaille le contenu :
+     hero large, grilles a la place des rangees a defilement, cartes aerees.
+     Rien de la version mobile ci-dessus n'est modifie.
+     ========================================================================== */
+  @media (min-width: 1024px) {
+    body { padding-bottom: 0 !important; background: var(--hp-bg); }
+
+    /* --- Hero : bandeau contenu, coins arrondis, proportions bureau --- */
+    .hp-header {
+      border-radius: 24px 24px 0 0;
+      padding: 24px 44px 76px;
+      overflow: hidden;
+    }
+    .hp-header-top { max-width: none; min-height: 40px; }
+    .hp-menu-btn { display: none !important; }
+    .hp-logo { position: static; transform: none; }
+    .hp-logo-name { font-size: 24px; }
+
+    .hp-hero {
+      border-radius: 0 0 24px 24px;
+      padding: 46px 44px 52px;
+      min-height: 400px;
+      margin-bottom: 26px;
+    }
+    .hp-hero-inner { max-width: none; }
+    .hp-hero-text { max-width: 58%; }
+    .hp-hero h1 { font-size: 2.6rem; line-height: 1.18; margin-bottom: 16px; }
+    .hp-hero-sub { font-size: 1rem; }
+    .hp-hero-pin { top: 6px; right: 34%; }
+    .hp-hero-pin svg { width: 34px; height: 34px; }
+    .hp-hero-chips { max-width: 640px; gap: 16px; margin-top: 28px; }
+    .hp-chip { flex: 0 1 300px; padding: 14px 18px; border-radius: 14px; }
+    .hp-chip-icon { width: 40px; height: 40px; border-radius: 11px; }
+    .hp-chip-icon svg { width: 20px; height: 20px; }
+    .hp-chip-text strong { font-size: 0.92rem; }
+    .hp-chip-text span { font-size: 0.76rem; }
+
+    /* --- Zone de contenu pleine largeur --- */
+    .hp-main { max-width: none; padding: 0; }
+    .hp-card { margin: 0 0 26px; padding: 30px 32px; border-radius: 24px; }
+    .hp-card-head { margin-bottom: 24px; }
+    .hp-card-head h2, .hp-section-head h2 { font-size: 1.35rem; }
+    .hp-card-head a, .hp-section-head a { font-size: 0.9rem; }
+    .hp-section-head { margin: 10px 0 22px; }
+
+    /* --- Categories : grille 6 colonnes (plus de defilement) --- */
+    .hp-cats {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 18px;
+      overflow: visible;
+      margin: 0 0 22px;
+      padding: 0;
+    }
+    .hp-cat { width: auto; padding: 22px 14px 18px; transition: transform .14s, box-shadow .14s, border-color .14s; }
+    .hp-cat:hover { border-color: #BFD3FF; box-shadow: 0 12px 28px rgba(21,94,239,0.16); transform: translateY(-3px); }
+    .hp-cat-icon { width: 54px; height: 54px; border-radius: 15px; margin-bottom: 12px; }
+    .hp-cat-icon svg { width: 27px; height: 27px; }
+    .hp-cat h3 { font-size: 0.95rem; }
+    .hp-cat p { font-size: 0.74rem; }
+    .hp-cat-bar { width: 28px; }
+
+    /* --- Localisation + bouton recherche --- */
+    .hp-loc { margin-bottom: 18px; padding: 16px 20px; border-radius: 16px; }
+    .hp-loc-text strong { font-size: 1rem; }
+    .hp-search-btn {
+      display: inline-flex; width: auto; padding: 16px 44px;
+      border-radius: 15px; font-size: 1rem;
+    }
+
+    /* --- Professionnels recommandes : grille 4 colonnes --- */
+    .hp-rec {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 22px;
+      overflow: visible;
+      margin: 0;
+      padding: 0;
+    }
+    .hp-rec-card { width: auto; padding: 18px; border-radius: 20px; transition: transform .14s, box-shadow .14s; }
+    .hp-rec-card:hover { box-shadow: 0 16px 34px rgba(16,42,67,0.13); transform: translateY(-3px); }
+    .hp-rec-avatar { width: 58px; height: 58px; }
+    .hp-rec-name { font-size: 1rem; }
+    .hp-rec-rating { font-size: 0.78rem; }
+    .hp-rec-avail { font-size: 0.68rem; }
+    .hp-rec-btn { padding: 11px; font-size: 0.82rem; }
+
+    /* --- Bandeau confiance --- */
+    .hp-trust { padding: 22px 10px; border-radius: 18px; margin: 4px 0 0; }
+    .hp-trust-item { padding: 0 18px; gap: 10px; }
+    .hp-trust-item svg { width: 22px; height: 22px; }
+    .hp-trust-item span { font-size: 0.82rem; white-space: normal; }
+
+    .hp-bottom-nav { display: none !important; }
+  }
+
+  @media (min-width: 1440px) {
+    .hp-hero h1 { font-size: 2.95rem; }
+    .hp-hero-text { max-width: 55%; }
+  }
 </style>
 
 <header class="hp-header">
