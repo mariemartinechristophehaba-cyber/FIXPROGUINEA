@@ -154,7 +154,13 @@
       width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0; overflow: hidden;
       display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 900; font-size: .64rem;
     }
-    .method .mi.orange { background: #FF7900; }
+    .method .mi.orange { background: #FF7900; position: relative; }
+    .method .mi.orange .ow {
+      position: absolute; left: 2.5px; right: 2.5px; bottom: 3px;
+      font-family: Helvetica, Arial, sans-serif; font-weight: 700; font-size: 7px;
+      line-height: 1; letter-spacing: -.01em; color: #fff; text-transform: lowercase;
+    }
+    .method .mi.orange .ow sup { font-size: 3.5px; font-weight: 700; vertical-align: super; }
     .method .mi.mtn { background: #FFCC00; color: #0B1B3B; }
     .method .mi.unitrade { background: #0B1B3B; letter-spacing: .02em; }
     .method .mi.card { background: var(--d-blue); }
@@ -336,8 +342,8 @@
           <input type="radio" name="payment_method" value="{{ m.code }}" {{ 'checked' if loop.first }} />
           <span class="mi {{ m.brand }}">
             {% if m.brand == 'orange' %}
-            {# logo Orange : carré orange (fond du bloc) + carré blanc en haut à droite #}
-            <svg viewBox="0 0 40 40" aria-hidden="true"><rect x="18" y="5" width="17" height="17" rx="1.5" fill="#fff"/></svg>
+            {# logo Orange : carré orange + mot « orange » blanc en bas à gauche #}
+            <span class="ow">orange<sup>™</sup></span>
             {% elif m.brand == 'mtn' %}MTN
             {% elif m.brand == 'unitrade' %}UT
             {% else %}<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/></svg>{% endif %}
