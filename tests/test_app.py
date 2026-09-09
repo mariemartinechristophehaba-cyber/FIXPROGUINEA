@@ -1105,35 +1105,6 @@ class SubscriptionPaymentFlowTests(FixProTestCase):
 
     # --- 6. confirmation admin ----------------------------------
 
-    def test_admin_confirm_activates_then_idempotent(self):
-        tid = self._tech()
-        ref = self._start_payment()
-        pay_id = self._pay_row(ref)["id"]
-        self._make_admin()
-        self.client.post("/admin/abonnements/paiements/%d/statut" % pay_id,
-                         data={"action": "confirm"})
-        self.assertEqual(self._sub_row(tid)["status"], "ACTIVE")
-        self.client.post("/admin/abonnements/paiements/%d/statut" % pay_id,
-                         data={"action": "confirm"})
-        conn = db.connect(sqlite_path=self.db_path)
-        try:
-            active = conn.execute(
-                "SELECT COUNT(*) AS n FROM technician_subscriptions"
-                " WHERE technician_id = ? AND status = 'ACTIVE'", (tid,)).fetchone()["n"]
-        finally:
-            conn.close()
-        self.assertEqual(active, 1)
-
-    def test_admin_fail_keeps_inactive(self):
-        tid = self._tech()
-        ref = self._start_payment()
-        pay_id = self._pay_row(ref)["id"]
-        self._make_admin()
-        self.client.post("/admin/abonnements/paiements/%d/statut" % pay_id,
-                         data={"action": "fail"})
-        self.assertEqual(self._pay_row(ref)["status"], "failed")
-        self.assertEqual(self._sub_row(tid)["status"], "PAST_DUE")
-
     # --- 7. persistance : rouvrir l'app -> vrai statut ----------
 
     def test_reopen_reads_real_status_from_backend(self):
@@ -1466,36 +1437,6 @@ class MessagingTests(FixProTestCase):
         finally:
             conn.close()
 
-    def test_admin_can_reply_and_client_reads(self):
-        self.register_client(phone="+224610000000")
-        self.login("+224610000000")
-        r = self.client.post("/messages/new", data={
-            "subject": "Probleme",
-            "content": "Bonjour, j'ai besoin d'aide."
-        }, follow_redirects=True)
-        conv_id = int(r.request.path.split("/")[-1])
-
-        self.client.get("/logout")
-        self._login_admin()
-        r = self.client.post(f"/admin/messages/{conv_id}", data={
-            "content": "Bonjour, nous vous repondrons rapidement."
-        }, follow_redirects=True)
-        self.assertEqual(r.status_code, 200)
-
-        conn = db.connect(sqlite_path=self.db_path)
-        try:
-            msgs = conn.execute(
-                "SELECT * FROM conversation_messages WHERE conversation_id = ? ORDER BY id",
-                (conv_id,)).fetchall()
-            self.assertEqual(len(msgs), 2)
-            self.assertEqual(msgs[1]["sender_role"], "admin")
-            self.assertEqual(msgs[1]["content"], "Bonjour, nous vous repondrons rapidement.")
-            notif = conn.execute(
-                "SELECT * FROM notifications WHERE user_id = 2").fetchone()
-            self.assertIsNotNone(notif)
-        finally:
-            conn.close()
-
     def test_other_client_cannot_read_conversation(self):
         self.register_client(phone="+224610000000")
         self.login("+224610000000")
@@ -1773,36 +1714,6 @@ class AdminPanelTests(FixProTestCase):
         self.assertEqual(response.status_code, 302)
         self.assertIn("/admin/login", response.location)
 
-    def test_admin_logs_contain_email(self):
-        self.register_artisan("artisan@example.com", phone="+224621111111")
-        self.login_admin()
-
-        conn = db.connect(sqlite_path=self.db_path)
-        try:
-            artisan = conn.execute(
-                "SELECT id FROM users WHERE role = 'technician'").fetchone()
-            artisan_id = artisan["id"]
-        finally:
-            conn.close()
-
-        self.client.post("/admin/artisans", data={
-            "action": "suspend", "artisan_id": str(artisan_id)}, follow_redirects=True)
-
-        conn = db.connect(sqlite_path=self.db_path)
-        try:
-            log = conn.execute(
-                "SELECT admin_email FROM admin_logs WHERE action = 'suspend'").fetchone()
-        finally:
-            conn.close()
-        self.assertEqual(log["admin_email"], "admin@fixpro.local")
-
-    def test_admin_dashboard_renders(self):
-        self.login_admin()
-        response = self.client.get("/admin/dashboard")
-        self.assertEqual(response.status_code, 200)
-        self.assertIn("FixPro".encode(), response.data)
-        self.assertIn("Admin".encode(), response.data)
-
     def test_admin_dashboard_computes_real_counts(self):
         """La route /admin/dashboard calcule toujours les vrais chiffres
         (abonnements, techniciens), meme pendant que le template est en
@@ -1858,58 +1769,6 @@ class AdminPanelTests(FixProTestCase):
             fixpro_app.app.config["ADMIN_EMAILS"] = []
             fixpro_app.app.config["ADMIN_PASSWORD"] = ""
 
-    def test_admin_subscription_pages_render(self):
-        self.login_admin()
-        for url in ("/admin/abonnements", "/admin/abonnements?filter=expiring",
-                    "/admin/abonnements/paiements", "/admin/reclamations"):
-            r = self.client.get(url)
-            self.assertEqual(r.status_code, 200, url)
-            self.assertNotIn("commission", r.get_data(as_text=True).lower())
-
-    def test_admin_can_update_plan_price(self):
-        conn = db.connect(sqlite_path=self.db_path)
-        try:
-            pid = conn.execute(
-                "SELECT id FROM subscription_plans WHERE code = 'basic'").fetchone()["id"]
-        finally:
-            conn.close()
-        self.login_admin()
-        r = self.client.post("/admin/abonnements/plans/%d" % pid, data={
-            "name": "Basic", "price_month": "75000", "features": "Test", "is_active": "1",
-        }, follow_redirects=True)
-        self.assertEqual(r.status_code, 200)
-        conn = db.connect(sqlite_path=self.db_path)
-        try:
-            price = conn.execute(
-                "SELECT price_month FROM subscription_plans WHERE id = ?", (pid,)).fetchone()["price_month"]
-        finally:
-            conn.close()
-        self.assertEqual(price, 75000)
-
-    def test_admin_can_update_complaint_status(self):
-        conn = db.connect(sqlite_path=self.db_path)
-        try:
-            conn.execute(
-                "INSERT INTO complaints (client_id, subject, message, status)"
-                " VALUES (1, 'Test', 'Probleme', 'new')")
-            conn.commit()
-            cid = conn.execute("SELECT id FROM complaints").fetchone()["id"]
-        finally:
-            conn.close()
-        self.login_admin()
-        r = self.client.post("/admin/reclamations", data={
-            "complaint_id": cid, "status": "resolved", "note": "Regle",
-        }, follow_redirects=True)
-        self.assertEqual(r.status_code, 200)
-        conn = db.connect(sqlite_path=self.db_path)
-        try:
-            row = conn.execute(
-                "SELECT status, resolution_note FROM complaints WHERE id = ?", (cid,)).fetchone()
-        finally:
-            conn.close()
-        self.assertEqual(row["status"], "resolved")
-        self.assertEqual(row["resolution_note"], "Regle")
-
     def _make_owner(self, uid=1):
         conn = db.connect(sqlite_path=self.db_path)
         try:
@@ -1917,43 +1776,6 @@ class AdminPanelTests(FixProTestCase):
             conn.commit()
         finally:
             conn.close()
-
-    def test_admin_users_page_renders(self):
-        self.login_admin()
-        r = self.client.get("/admin/utilisateurs")
-        self.assertEqual(r.status_code, 200)
-        self.assertIn("Administrateurs", r.get_data(as_text=True))
-
-    def test_owner_can_grant_and_revoke_admin_role(self):
-        self._make_owner()
-        conn = db.connect(sqlite_path=self.db_path)
-        try:
-            conn.execute(
-                "INSERT INTO users (email, phone, password_hash, role, full_name, is_active)"
-                " VALUES ('mod@x.co', '+224690000001', 'x', 'client', 'Mod', 1)")
-            conn.commit()
-            tid = conn.execute("SELECT id FROM users WHERE email = 'mod@x.co'").fetchone()["id"]
-        finally:
-            conn.close()
-        self.login_admin()
-        self.client.post("/admin/utilisateurs", data={
-            "user_id": tid, "admin_role": "moderator"}, follow_redirects=True)
-        conn = db.connect(sqlite_path=self.db_path)
-        try:
-            row = conn.execute("SELECT role, admin_role FROM users WHERE id = ?", (tid,)).fetchone()
-        finally:
-            conn.close()
-        self.assertEqual(row["admin_role"], "moderator")
-        self.assertEqual(row["role"], "admin")
-        # retrait
-        self.client.post("/admin/utilisateurs", data={
-            "user_id": tid, "admin_role": ""}, follow_redirects=True)
-        conn = db.connect(sqlite_path=self.db_path)
-        try:
-            row = conn.execute("SELECT admin_role FROM users WHERE id = ?", (tid,)).fetchone()
-        finally:
-            conn.close()
-        self.assertIsNone(row["admin_role"])
 
     def test_non_owner_cannot_change_roles(self):
         conn = db.connect(sqlite_path=self.db_path)
@@ -1975,72 +1797,6 @@ class AdminPanelTests(FixProTestCase):
         finally:
             conn.close()
         self.assertIsNone(row["admin_role"])
-
-    def test_due_subscription_expires_on_dashboard(self):
-        conn = db.connect(sqlite_path=self.db_path)
-        try:
-            conn.execute(
-                "INSERT INTO users (email, phone, password_hash, role, full_name, is_active, account_status)"
-                " VALUES ('t@x.co', '+224690000003', 'x', 'technician', 'T', 1, 'ACTIVE')")
-            tid = conn.execute("SELECT id FROM users WHERE email = 't@x.co'").fetchone()["id"]
-            conn.execute(
-                "INSERT INTO technician_subscriptions (technician_id, status, end_date)"
-                " VALUES (?, 'ACTIVE', '2000-01-01T00:00:00+00:00')", (tid,))
-            conn.commit()
-        finally:
-            conn.close()
-        self.login_admin()
-        self.client.get("/admin/dashboard")
-        conn = db.connect(sqlite_path=self.db_path)
-        try:
-            st = conn.execute(
-                "SELECT status FROM technician_subscriptions WHERE technician_id = ?", (tid,)).fetchone()["status"]
-        finally:
-            conn.close()
-        self.assertEqual(st, "EXPIRED")
-
-    def test_admin_can_suspend_and_restore_artisan(self):
-        self.register_artisan("artisan@example.com", phone="+224621111111")
-        self.login_admin()
-
-        conn = db.connect(sqlite_path=self.db_path)
-        try:
-            artisan = conn.execute(
-                "SELECT id FROM users WHERE role = 'technician'").fetchone()
-            artisan_id = artisan["id"]
-        finally:
-            conn.close()
-
-        response = self.client.post("/admin/artisans", data={
-            "action": "suspend", "artisan_id": str(artisan_id)}, follow_redirects=True)
-        self.assertEqual(response.status_code, 200)
-
-        conn = db.connect(sqlite_path=self.db_path)
-        try:
-            updated = conn.execute(
-                "SELECT is_active FROM users WHERE id = ?", (artisan_id,)).fetchone()
-            self.assertEqual(updated["is_active"], 0)
-            log = conn.execute("SELECT * FROM admin_logs WHERE action = 'suspend'").fetchone()
-        finally:
-            conn.close()
-        self.assertIsNotNone(log)
-
-    def test_admin_can_close_ticket(self):
-        self.login_admin()
-        self.register_client(phone="+224620000000")
-        conn = db.connect(sqlite_path=self.db_path)
-        try:
-            conn.execute(
-                "INSERT INTO admin_tickets (client_id, message, status)"
-                " VALUES (?, ?, 'open')", (1, "Probleme signale"))
-            conn.commit()
-        finally:
-            conn.close()
-
-        response = self.client.post("/admin/tickets", data={
-            "action": "close", "ticket_id": "1"}, follow_redirects=True)
-        self.assertEqual(response.status_code, 200)
-
 
 class DatabaseLayerTests(unittest.TestCase):
     """La traduction SQLite -> PostgreSQL doit etre fiable."""

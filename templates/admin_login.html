@@ -1,365 +1,384 @@
 <!doctype html>
 <html lang="fr">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    {% include '_pwa_head.html' %}
-    <title>Connexion administrateur - FixPro</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
-    <style>
-      :root {
-        --blue: #1f5be6;
-        --blue-deep: #1442c4;
-        --ink: #0f1a30;
-        --muted: #6a7891;
-        --line: #e3e9f4;
-        --field: #f4f7fc;
-        --danger-bg: #fdecec;
-        --danger-line: #f6cccc;
-        --danger-ink: #c02626;
-      }
-      * { box-sizing: border-box; margin: 0; padding: 0; }
-      html, body { height: 100%; }
-      body {
-        font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-        color: var(--ink);
-        background: #f4f7fd;
-        -webkit-font-smoothing: antialiased;
-        min-height: 100vh;
-        display: flex;
-      }
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#1D4ED8" />
+  <meta name="robots" content="noindex" />
+  <title>Espace Administrateur - FixPro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --al-blue: #2563EB;
+      --al-blue-d: #1D4ED8;
+      --al-blue-deep: #1E3A8A;
+      --al-navy: #0F1E3D;
+      --al-ink: #0F172A;
+      --al-muted: #64748B;
+      --al-line: #E2E8F0;
+      --al-field: #F8FAFC;
+    }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      color: var(--al-ink); background: #F1F5F9; -webkit-font-smoothing: antialiased;
+      min-height: 100dvh;
+    }
+    a { text-decoration: none; color: inherit; }
+    button { font-family: inherit; }
 
-      /* ---------- Selecteur de langue (decoratif) ---------- */
-      .lang {
-        position: absolute; top: 22px; right: 28px; z-index: 5;
-        display: flex; align-items: center; gap: 9px;
-        background: #fff; border: 1px solid var(--line); border-radius: 999px;
-        padding: 8px 14px; font-size: 13.5px; font-weight: 600; color: var(--ink);
-        box-shadow: 0 4px 14px rgba(20, 45, 110, .06);
-      }
-      .lang .flag { width: 18px; height: 13px; border-radius: 2px; overflow: hidden; display: flex; flex: none; }
-      .lang .flag i { flex: 1; }
-      .lang svg { width: 14px; height: 14px; color: var(--muted); }
+    .al-wrap { display: flex; min-height: 100dvh; }
 
-      /* ---------- Panneau gauche ---------- */
-      .brand {
-        flex: 0 0 46%; position: relative; overflow: hidden;
-        min-width: 380px;
-        background:
-          url("{{ url_for('static', filename='img/admin-login-office.png') }}") right center / auto 100% no-repeat,
-          radial-gradient(120% 90% at 15% 0%, rgba(70, 140, 255, .35), transparent 55%),
-          radial-gradient(90% 70% at 100% 100%, rgba(10, 30, 90, .55), transparent 60%),
-          linear-gradient(155deg, #0c1f5c 0%, #14338f 45%, #1a56d6 100%);
-        clip-path: ellipse(115% 60% at 0% 50%);
-        padding: clamp(30px, 5vh, 56px) clamp(28px, 4vw, 56px);
-        display: flex; flex-direction: column; justify-content: center;
-        color: #fff;
-      }
-      .brand::before {
-        content: ""; position: absolute; inset: 0; pointer-events: none;
-        background: linear-gradient(115deg, transparent 40%, rgba(255,255,255,.06) 50%, transparent 60%);
-      }
-      .brand-inner { position: relative; z-index: 1; max-width: 460px; }
+    /* ---------- Panneau gauche ---------- */
+    .al-left {
+      position: relative; overflow: hidden; flex: 1 1 50%; color: #fff;
+      padding: 48px 56px;
+      background:
+        radial-gradient(circle at 88% 8%, rgba(255,255,255,0.16) 0, transparent 30%),
+        radial-gradient(circle at 6% 84%, rgba(255,255,255,0.10) 0, transparent 30%),
+        radial-gradient(circle at 120% 60%, rgba(13,32,74,0.55) 0, transparent 45%),
+        linear-gradient(150deg, #2E6BFF 0%, #1D4ED8 45%, #1B3FA8 100%);
+      display: flex; flex-direction: column;
+    }
+    /* Visuel technicien (panneau gauche). Remplacer static/img/admin-login-hero.jpg
+       pour changer la photo : ce bloc gere le cadrage + le fondu bleu, rien d'autre a toucher. */
+    .al-left-photo {
+      position: absolute; inset: 0; z-index: 0;
+      background-position: right center; background-size: cover; background-repeat: no-repeat;
+      -webkit-mask-image: linear-gradient(90deg, transparent 0%, transparent 40%, #000 80%, #000 100%);
+      mask-image: linear-gradient(90deg, transparent 0%, transparent 40%, #000 80%, #000 100%);
+    }
+    .al-left-photo::after {
+      content: ""; position: absolute; inset: 0;
+      background: linear-gradient(90deg, #1D4ED8 0%, rgba(29,78,216,0.6) 45%, rgba(27,63,168,0.2) 100%);
+    }
+    .al-left > *:not(.al-left-photo) { position: relative; z-index: 1; }
 
-      .logo-row { display: flex; align-items: center; gap: 13px; margin-bottom: clamp(20px, 4vh, 40px); }
-      .logo-mark {
-        width: 50px; height: 50px; flex: none; border-radius: 13px;
-        background: rgba(255,255,255,.1); border: 1.5px solid rgba(255,255,255,.35);
-        display: grid; place-items: center;
-      }
-      .logo-mark svg { width: 26px; height: 26px; }
-      .logo-txt .name { font-size: 26px; font-weight: 800; letter-spacing: -.02em; line-height: 1; }
-      .logo-txt .name b { color: #7fb0ff; font-weight: 800; }
-      .logo-txt .sub { font-size: 12px; color: rgba(255,255,255,.72); margin-top: 4px; }
+    .al-brand { display: flex; align-items: center; gap: 12px; }
+    .al-brand .mark { width: 40px; height: 40px; flex-shrink: 0; }
+    .al-brand-txt { line-height: 1; }
+    .al-brand-txt b { font-size: 1.7rem; font-weight: 800; letter-spacing: -0.01em; }
+    .al-brand-txt span { display: block; font-size: 0.74rem; font-weight: 500; color: rgba(255,255,255,0.8); margin-top: 5px; }
 
-      .accent { width: 44px; height: 3px; border-radius: 3px; background: #7fb0ff; margin-bottom: 14px; }
-      .eyebrow { font-size: 13.5px; font-weight: 700; color: #a8c5ff; margin-bottom: 8px; }
-      .brand h1 { font-size: clamp(26px, 3vw, 33px); line-height: 1.18; font-weight: 800; letter-spacing: -.02em; margin-bottom: 14px; }
-      .brand .lead { font-size: 14.5px; line-height: 1.6; color: rgba(255,255,255,.78); margin-bottom: clamp(20px, 3.5vh, 30px); max-width: 400px; }
+    .al-rule { width: 46px; height: 4px; border-radius: 4px; background: rgba(255,255,255,0.85); margin: 40px 0 20px; }
+    .al-left h1 { font-size: 2.4rem; font-weight: 800; margin: 0 0 14px; letter-spacing: -0.02em; }
+    .al-left .lead { font-size: 1.02rem; line-height: 1.5; color: rgba(255,255,255,0.9); margin: 0 0 40px; max-width: 30ch; }
 
-      .features { display: grid; gap: 14px; margin-bottom: clamp(18px, 3vh, 28px); }
-      .feature { display: flex; gap: 13px; align-items: flex-start; }
-      .feature .ico {
-        width: 40px; height: 40px; border-radius: 11px; flex: none;
-        background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.2);
-        display: grid; place-items: center;
-      }
-      .feature .ico svg { width: 19px; height: 19px; color: #cfe0ff; }
-      .feature h3 { font-size: 14.5px; font-weight: 700; }
-      .feature p { font-size: 12.5px; color: rgba(255,255,255,.68); margin-top: 1px; }
+    .al-feats { display: flex; flex-direction: column; gap: 22px; margin-bottom: 40px; }
+    .al-feat { display: flex; gap: 16px; }
+    .al-feat-ic {
+      width: 46px; height: 46px; border-radius: 13px; flex-shrink: 0;
+      background: rgba(255,255,255,0.16); display: flex; align-items: center; justify-content: center;
+    }
+    .al-feat-ic svg { width: 22px; height: 22px; }
+    .al-feat b { display: block; font-size: 1.02rem; font-weight: 700; margin-bottom: 3px; }
+    .al-feat p { margin: 0; font-size: 0.88rem; line-height: 1.45; color: rgba(255,255,255,0.82); max-width: 34ch; }
 
-      .quote-rule { width: 44px; height: 2px; background: rgba(255,255,255,.35); margin-bottom: 12px; }
-      .quote { font-size: 15px; font-style: italic; color: rgba(255,255,255,.9); line-height: 1.5; }
+    .al-quote { font-size: 0.92rem; font-style: italic; color: rgba(255,255,255,0.88); line-height: 1.5; max-width: 30ch; margin: 0; }
+    .al-quote::after { content: ""; display: block; width: 60px; height: 3px; border-radius: 3px; background: rgba(255,255,255,0.55); margin-top: 14px; }
 
-      /* ---------- Panneau droit ---------- */
-      .form-panel {
-        flex: 1 1 auto; display: flex; flex-direction: column; align-items: center; justify-content: center;
-        padding: clamp(28px, 5vh, 60px) clamp(20px, 4vw, 40px);
-        gap: 20px;
-      }
-      .card {
-        width: min(430px, 100%);
-        background: #fff;
-        border-radius: 24px;
-        padding: clamp(28px, 4vh, 40px) clamp(26px, 3.5vw, 38px) clamp(22px, 3vh, 30px);
-        box-shadow: 0 30px 70px rgba(20, 45, 110, .1), 0 4px 14px rgba(20, 45, 110, .04);
-        animation: cardIn .5s cubic-bezier(.2, .7, .2, 1) both;
-      }
-      .card-logo { display: flex; flex-direction: column; align-items: center; margin-bottom: 18px; }
-      .card-logo .shield {
-        width: 68px; height: 68px; border-radius: 18px; margin-bottom: 10px;
-        background: linear-gradient(160deg, #2f74ff, #1442c4);
-        display: grid; place-items: center;
-        box-shadow: 0 12px 26px rgba(31, 91, 230, .3);
-      }
-      .card-logo .shield svg { width: 34px; height: 34px; color: #fff; }
-      .card-logo .name { font-size: 26px; font-weight: 800; letter-spacing: -.02em; }
-      .card-logo .name b { color: var(--blue); font-weight: 800; }
+    .al-stats { display: flex; gap: 34px; margin-top: auto; padding-top: 40px; }
+    .al-stat { display: flex; align-items: flex-start; gap: 10px; }
+    .al-stat svg { width: 20px; height: 20px; opacity: .9; margin-top: 2px; }
+    .al-stat b { display: block; font-size: 1.15rem; font-weight: 800; line-height: 1.1; }
+    .al-stat span { font-size: 0.76rem; color: rgba(255,255,255,0.8); }
 
-      .card h2 { text-align: center; font-size: 22px; font-weight: 800; letter-spacing: -.01em; }
-      .card .card-sub { text-align: center; font-size: 13.5px; color: var(--muted); margin: 6px 0 20px; }
+    /* ---------- Panneau droit ---------- */
+    .al-right {
+      position: relative; flex: 1 1 50%; background: #fff;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 40px 40px 28px;
+      border-radius: 28px 0 0 28px; margin-left: -28px; box-shadow: -24px 0 60px rgba(15,30,61,0.12);
+    }
+    .al-lang {
+      position: absolute; top: 28px; right: 32px;
+      display: inline-flex; align-items: center; gap: 8px;
+      border: 1px solid var(--al-line); border-radius: 10px; padding: 9px 12px;
+      font-size: 0.84rem; font-weight: 600; color: var(--al-ink); background: #fff; cursor: pointer;
+    }
+    .al-lang svg { width: 15px; height: 15px; color: var(--al-muted); }
 
-      .alert {
-        display: flex; align-items: flex-start; gap: 10px;
-        background: var(--danger-bg); border: 1px solid var(--danger-line); color: var(--danger-ink);
-        padding: 11px 13px; border-radius: 12px;
-        font-size: 12.5px; font-weight: 500; line-height: 1.4; margin-bottom: 16px;
-        animation: alertIn .3s ease both;
-      }
-      .alert svg { width: 16px; height: 16px; flex: none; margin-top: 1px; }
+    .al-watermark { position: absolute; right: -30px; bottom: -30px; width: 260px; height: 260px; color: #EEF3FE; z-index: 0; pointer-events: none; }
 
-      .field { margin-bottom: 14px; }
-      .field label { display: block; font-size: 12.5px; font-weight: 700; margin-bottom: 6px; }
-      .input-wrap { position: relative; }
-      .input-wrap > .lead-ic {
-        position: absolute; left: 15px; top: 50%; transform: translateY(-50%);
-        width: 17px; height: 17px; color: #9aa7c0; pointer-events: none;
-      }
-      .input-wrap input {
-        width: 100%; height: 50px;
-        border: 1.6px solid var(--line); border-radius: 12px;
-        padding: 0 46px;
-        font: inherit; font-size: 14px; color: var(--ink);
-        background: var(--field);
-        transition: border-color .16s ease, background .16s ease, box-shadow .16s ease;
-      }
-      .input-wrap input::placeholder { color: #9aa7c0; }
-      .input-wrap input:focus {
-        outline: none; border-color: var(--blue); background: #fff;
-        box-shadow: 0 0 0 4px rgba(31, 91, 230, .13);
-      }
-      .toggle-pw {
-        position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
-        width: 34px; height: 34px; border: none; background: none; cursor: pointer;
-        color: #9aa7c0; display: grid; place-items: center; border-radius: 8px;
-      }
-      .toggle-pw:hover { color: var(--blue); }
-      .toggle-pw svg { width: 19px; height: 19px; }
+    .al-card { position: relative; z-index: 1; width: 100%; max-width: 400px; }
 
-      .row {
-        display: flex; align-items: center; justify-content: space-between;
-        gap: 12px; margin: 4px 0 18px; font-size: 13px;
+    .al-logo { text-align: center; margin-bottom: 8px; }
+    .al-logo .mark { width: 62px; height: 62px; }
+    .al-logo b { display: block; font-size: 2rem; font-weight: 800; color: var(--al-navy); letter-spacing: -0.02em; margin-top: 6px; }
+    .al-title { text-align: center; font-size: 1.15rem; font-weight: 800; margin: 4px 0 8px; }
+    .al-sub { text-align: center; font-size: 0.9rem; color: var(--al-muted); margin: 0 0 26px; }
+
+    .al-alert {
+      display: flex; align-items: center; gap: 9px; background: #FEF2F2; color: #B91C1C;
+      border: 1px solid #FECACA; border-radius: 10px; padding: 11px 13px; font-size: 0.85rem;
+      font-weight: 500; margin-bottom: 18px;
+    }
+    .al-alert svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+    .al-field { margin-bottom: 16px; }
+    .al-field label { display: block; font-size: 0.86rem; font-weight: 700; margin-bottom: 8px; }
+    .al-input { position: relative; }
+    .al-input > svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; color: #94A3B8; }
+    .al-input input {
+      width: 100%; height: 52px; border: 1px solid var(--al-line); border-radius: 11px;
+      background: var(--al-field); padding: 0 44px 0 42px; font-size: 0.95rem; color: var(--al-ink);
+      outline: none; transition: border-color .15s, box-shadow .15s, background .15s;
+    }
+    .al-input input::placeholder { color: #94A3B8; }
+    .al-input input:focus { border-color: var(--al-blue); background: #fff; box-shadow: 0 0 0 4px rgba(37,99,235,0.12); }
+    .al-eye {
+      position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+      width: 34px; height: 34px; border: 0; background: none; cursor: pointer; color: #94A3B8;
+      display: flex; align-items: center; justify-content: center; border-radius: 8px;
+    }
+    .al-eye:hover { color: var(--al-muted); background: #F1F5F9; }
+    .al-eye svg { width: 18px; height: 18px; }
+
+    .al-forgot { text-align: right; margin: -4px 0 20px; }
+    .al-forgot a { font-size: 0.84rem; font-weight: 600; color: var(--al-blue); }
+
+    .al-submit {
+      width: 100%; height: 52px; border: 0; border-radius: 11px; cursor: pointer;
+      background: linear-gradient(180deg, #2E6BFF 0%, #1D4ED8 100%);
+      color: #fff; font-size: 0.98rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; gap: 9px;
+      box-shadow: 0 12px 26px rgba(37,99,235,0.28); transition: filter .15s, opacity .15s;
+    }
+    .al-submit:hover { filter: brightness(1.05); }
+    .al-submit:disabled { opacity: .7; cursor: progress; }
+    .al-submit svg { width: 17px; height: 17px; }
+    .al-submit .spin { width: 17px; height: 17px; border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff; border-radius: 50%; animation: al-rot .7s linear infinite; }
+    @keyframes al-rot { to { transform: rotate(360deg); } }
+
+    .al-or { display: flex; align-items: center; gap: 14px; margin: 20px 0; color: var(--al-muted); font-size: 0.82rem; }
+    .al-or::before, .al-or::after { content: ""; flex: 1; height: 1px; background: var(--al-line); }
+
+    .al-alt {
+      width: 100%; height: 50px; border: 1px solid var(--al-line); border-radius: 11px; cursor: pointer;
+      background: #F5F8FF; color: var(--al-ink); font-size: 0.9rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; gap: 9px; transition: background .15s;
+    }
+    .al-alt:hover { background: #EAF1FF; }
+    .al-alt svg { width: 17px; height: 17px; color: var(--al-blue); }
+
+    .al-footer { position: relative; z-index: 1; margin-top: 30px; text-align: center; font-size: 0.76rem; color: #94A3B8; }
+    .al-footer .sep { margin: 0 8px; }
+
+    /* ---------- Responsive ---------- */
+    @media (max-width: 1024px) {
+      .al-left { padding: 40px; }
+      .al-left h1 { font-size: 2rem; }
+      .al-stats { gap: 20px; flex-wrap: wrap; }
+    }
+    @media (max-width: 860px) {
+      .al-wrap { flex-direction: column; }
+      .al-left {
+        flex: none; padding: 32px 24px 44px; border-radius: 0 0 28px 28px;
       }
-      .row .remember { display: flex; align-items: center; gap: 9px; color: var(--muted); cursor: pointer; }
-      .row .remember input { width: 16px; height: 16px; accent-color: var(--blue); cursor: pointer; }
-      .row a { color: var(--blue); font-weight: 600; text-decoration: none; white-space: nowrap; }
-      .row a:hover { text-decoration: underline; }
-
-      .btn {
-        position: relative;
-        width: 100%; height: 52px; border: none; border-radius: 13px; cursor: pointer;
-        background: linear-gradient(180deg, #2f6bf0, var(--blue-deep));
-        color: #fff; font: inherit; font-size: 15px; font-weight: 700;
-        display: flex; align-items: center; justify-content: center; gap: 9px;
-        box-shadow: 0 14px 28px rgba(20, 66, 196, .3);
-        transition: filter .16s ease, box-shadow .16s ease, transform .06s ease;
+      .al-left-photo { opacity: .22; }
+      .al-rule { margin: 24px 0 16px; }
+      .al-left h1 { font-size: 1.7rem; }
+      .al-left .lead { margin-bottom: 26px; }
+      .al-feats { gap: 16px; margin-bottom: 26px; }
+      .al-quote { display: none; }
+      .al-stats { margin-top: 8px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.2); }
+      .al-right {
+        flex: none; margin-left: 0; margin-top: -28px; border-radius: 28px 28px 0 0;
+        box-shadow: 0 -12px 40px rgba(15,30,61,0.1); padding: 40px 22px 24px;
       }
-      .btn svg { width: 17px; height: 17px; }
-      .btn:hover { filter: brightness(1.06); box-shadow: 0 18px 36px rgba(20, 66, 196, .4); }
-      .btn:active { transform: translateY(1px); }
-      .btn:disabled, .btn[aria-busy="true"] { cursor: not-allowed; filter: saturate(.7) brightness(.95); box-shadow: none; }
-      .btn .spinner { width: 17px; height: 17px; border-radius: 50%; border: 2.5px solid rgba(255,255,255,.4); border-top-color: #fff; animation: spin .7s linear infinite; display: none; }
-      .btn[aria-busy="true"] .spinner { display: block; }
-      .btn[aria-busy="true"] .btn-icon, .btn[aria-busy="true"] .arrow { display: none; }
+      .al-lang { top: 16px; right: 16px; }
+    }
+    @media (max-width: 520px) {
+      .al-left { padding: 26px 18px 40px; }
+      .al-feat p { max-width: none; }
+      .al-stats { gap: 14px; }
+      .al-stat b { font-size: 1rem; }
+      .al-right { padding: 44px 16px 20px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="al-wrap">
+    <!-- ============ PANNEAU GAUCHE ============ -->
+    <section class="al-left">
+      <div class="al-left-photo" style="background-image:url('{{ hero_image }}')" role="img" aria-label="Technicien FixPro"></div>
 
-      .or { display: flex; align-items: center; gap: 12px; margin: 18px 0; color: var(--muted); font-size: 12px; font-weight: 600; letter-spacing: .1em; }
-      .or::before, .or::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+      <div class="al-brand">
+        <svg class="mark" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+          <path d="M8 22 24 8l16 14v16a3 3 0 0 1-3 3H11a3 3 0 0 1-3-3z" fill="#fff"/>
+          <path d="M24 8l16 14v6L24 15 8 28v-6z" fill="#93C5FD"/>
+          <rect x="20" y="27" width="8" height="11" rx="1.5" fill="#1D4ED8"/>
+        </svg>
+        <span class="al-brand-txt">
+          <b>FixPro</b>
+          <span>Services à portée de main</span>
+        </span>
+      </div>
 
-      .notice {
-        display: flex; gap: 11px; align-items: flex-start;
-        background: #eef4ff; border: 1px solid #dce8ff; border-radius: 13px; padding: 13px 14px;
-      }
-      .notice .ic { width: 30px; height: 30px; border-radius: 9px; background: #dfe9ff; color: var(--blue); display: grid; place-items: center; flex: none; }
-      .notice .ic svg { width: 15px; height: 15px; }
-      .notice .t1 { font-size: 13px; font-weight: 700; color: var(--blue); }
-      .notice .t2 { font-size: 12px; color: var(--muted); margin-top: 2px; line-height: 1.4; }
+      <div class="al-rule"></div>
+      <h1>Espace Administrateur</h1>
+      <p class="lead">Supervisez, gérez et développez FixPro en toute simplicité.</p>
 
-      .foot { font-size: 12.5px; color: var(--muted); text-align: center; }
-
-      @keyframes cardIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
-      @keyframes alertIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
-      @keyframes spin { to { transform: rotate(360deg); } }
-
-      @media (max-width: 980px) {
-        .brand { display: none; }
-        .lang { position: static; margin: 0 auto 4px; }
-        .form-panel { padding-top: 20px; }
-      }
-      @media (max-width: 420px) {
-        .card { padding: 24px 20px 20px; border-radius: 20px; }
-      }
-      @media (prefers-reduced-motion: reduce) {
-        *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }
-      }
-    </style>
-  </head>
-  <body>
-    <div class="lang">
-      <span class="flag"><i style="background:#002395"></i><i style="background:#fff"></i><i style="background:#ED2939"></i></span>
-      Francais
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-    </div>
-
-    <section class="brand">
-      <div class="brand-inner">
-        <div class="logo-row">
-          <span class="logo-mark">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5.5 3.8 8.7 8 10 4.2-1.3 8-4.5 8-10V5l-8-3z"/><path d="M13 8h-2.2L9 12.5h2l-1 3.5 4-5h-2z" fill="currentColor" stroke="none"/></svg>
-          </span>
-          <span class="logo-txt">
-            <span class="name">Fix<b>Pro</b></span>
-            <span class="sub">Des pros. Des solutions.</span>
+      <div class="al-feats">
+        <div class="al-feat">
+          <span class="al-feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="20" x2="6" y2="14"/><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="6"/></svg></span>
+          <span>
+            <b>Suivi en temps réel</b>
+            <p>Utilisateurs, techniciens, missions, revenus et plus encore.</p>
           </span>
         </div>
-
-        <div class="accent"></div>
-        <div class="eyebrow">Espace Administrateur</div>
-        <h1>Gerez, controlez, developpez.</h1>
-        <p class="lead">Accedez a votre tableau de bord administrateur pour gerer les abonnements, les utilisateurs et la croissance de FixPro.</p>
-
-        <div class="features">
-          <div class="feature">
-            <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
-            <div><h3>Gestion des techniciens</h3><p>Validez les inscriptions et suivez les profils</p></div>
-          </div>
-          <div class="feature">
-            <span class="ico"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 8l4 3 5-7 5 7 4-3-2 11H5L3 8z"/></svg></span>
-            <div><h3>Suivi des abonnements</h3><p>Controlez les forfaits et renouvellements</p></div>
-          </div>
-          <div class="feature">
-            <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></span>
-            <div><h3>Paiements</h3><p>Suivez les transactions en temps reel</p></div>
-          </div>
-          <div class="feature">
-            <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg></span>
-            <div><h3>Statistiques</h3><p>Analysez la croissance de la plateforme</p></div>
-          </div>
-          <div class="feature">
-            <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg></span>
-            <div><h3>Securite</h3><p>Un acces securise et protege</p></div>
-          </div>
+        <div class="al-feat">
+          <span class="al-feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+          <span>
+            <b>Gestion complète</b>
+            <p>Contrôlez toutes les activités depuis un seul espace.</p>
+          </span>
         </div>
+        <div class="al-feat">
+          <span class="al-feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg></span>
+          <span>
+            <b>Sécurisé et fiable</b>
+            <p>Vos données sont protégées et accessibles uniquement aux autorisés.</p>
+          </span>
+        </div>
+      </div>
 
-        <div class="quote-rule"></div>
-        <p class="quote">&laquo; Une meilleure organisation<br />pour un plus grand impact. &raquo;</p>
+      <p class="al-quote">&laquo; Ensemble, construisons un service de qualité pour tous. &raquo;</p>
+
+      <div class="al-stats">
+        <div class="al-stat">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <span><b>10 000+</b><span>Utilisateurs</span></span>
+        </div>
+        <div class="al-stat">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+          <span><b>2 000+</b><span>Techniciens</span></span>
+        </div>
+        <div class="al-stat">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+          <span><b>50 000+</b><span>Missions réalisées</span></span>
+        </div>
       </div>
     </section>
 
-    <section class="form-panel">
-      <div class="card">
-        <div class="card-logo">
-          <span class="shield">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5.5 3.8 8.7 8 10 4.2-1.3 8-4.5 8-10V5l-8-3z"/><path d="M13 8h-2.2L9 12.5h2l-1 3.5 4-5h-2z" fill="currentColor" stroke="none"/></svg>
-          </span>
-          <span class="name">Fix<b>Pro</b></span>
+    <!-- ============ PANNEAU DROIT ============ -->
+    <section class="al-right">
+      <button type="button" class="al-lang" aria-label="Choisir la langue">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg>
+        Français
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+
+      <svg class="al-watermark" viewBox="0 0 48 48" fill="currentColor" aria-hidden="true">
+        <path d="M8 22 24 8l16 14v16a3 3 0 0 1-3 3H11a3 3 0 0 1-3-3z"/>
+      </svg>
+
+      <div class="al-card">
+        <div class="al-logo">
+          <svg class="mark" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+            <path d="M8 22 24 8l16 14v16a3 3 0 0 1-3 3H11a3 3 0 0 1-3-3z" fill="#12234A"/>
+            <path d="M24 8l16 14v6L24 15 8 28v-6z" fill="#2E6BFF"/>
+            <rect x="20" y="27" width="8" height="11" rx="1.5" fill="#fff"/>
+          </svg>
+          <b>FixPro</b>
         </div>
-        <h2>Connexion Administrateur</h2>
-        <p class="card-sub">Accedez a votre espace securise</p>
+        <div class="al-title">Espace Administrateur</div>
+        <p class="al-sub">Connectez-vous pour accéder à votre tableau de bord.</p>
 
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            {% for category, message in messages %}
-              <div class="alert" role="alert">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                <span>{{ message }}</span>
-              </div>
-            {% endfor %}
-          {% endif %}
-        {% endwith %}
+        {% if error %}
+        <div class="al-alert">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+          {{ error }}
+        </div>
+        {% endif %}
 
-        <form method="post" novalidate id="loginForm">
+        <form method="post" action="{{ url_for('admin_login') }}" id="alForm" novalidate>
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
 
-          <div class="field">
-            <label for="email">Adresse e-mail</label>
-            <div class="input-wrap">
-              <svg class="lead-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>
-              <input type="email" name="email" id="email" required autofocus autocomplete="username" placeholder="Adresse e-mail" />
+          <div class="al-field">
+            <label for="alEmail">Adresse e-mail</label>
+            <div class="al-input">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+              <input type="email" id="alEmail" name="email" placeholder="admin@fixpro.com" autocomplete="username"
+                     required value="{{ email or '' }}" />
             </div>
           </div>
 
-          <div class="field">
-            <label for="password">Mot de passe</label>
-            <div class="input-wrap">
-              <svg class="lead-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-              <input type="password" name="password" id="password" required autocomplete="current-password" placeholder="Mot de passe" />
-              <button type="button" class="toggle-pw" id="togglePw" aria-label="Afficher le mot de passe" aria-pressed="false">
-                <svg id="eyeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+          <div class="al-field">
+            <label for="alPass">Mot de passe</label>
+            <div class="al-input">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <input type="password" id="alPass" name="password" placeholder="Votre mot de passe"
+                     autocomplete="current-password" required minlength="6" />
+              <button type="button" class="al-eye" id="alEye" aria-label="Afficher le mot de passe">
+                <svg id="alEyeOn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg id="alEyeOff" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" hidden><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c6.5 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68M6.61 6.61A13.53 13.53 0 0 0 2 12s3.5 7 10 7a9.05 9.05 0 0 0 5.39-1.61M14.12 14.12A3 3 0 1 1 9.88 9.88"/><path d="M1 1l22 22"/></svg>
               </button>
             </div>
           </div>
 
-          <div class="row">
-            <label class="remember"><input type="checkbox" name="remember" value="1" /> Se souvenir de moi</label>
-            <a href="mailto:{{ config.ADMIN_EMAIL or 'support@fixpro.app' }}?subject=Reinitialisation%20du%20mot%20de%20passe%20administrateur">Mot de passe oublie ?</a>
+          <div class="al-forgot">
+            <a href="{{ url_for('admin_forgot_password') }}">Mot de passe oublié ?</a>
           </div>
 
-          <button class="btn" type="submit" id="submitBtn">
-            <span class="spinner" aria-hidden="true"></span>
-            <span id="btnLabel">Se connecter</span>
-            <svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          <button type="submit" class="al-submit" id="alSubmit">
+            <span class="al-submit-label">Se connecter</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
           </button>
         </form>
 
-        <div class="or">OU</div>
+        <div class="al-or">ou</div>
 
-        <div class="notice">
-          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5.5 3.8 8.7 8 10 4.2-1.3 8-4.5 8-10V5l-8-3z"/></svg></span>
-          <div>
-            <div class="t1">Acces reserve aux administrateurs FixPro</div>
-            <div class="t2">Toute tentative d'acces non autorise sera enregistree.</div>
-          </div>
+        <a class="al-alt" href="{{ security_code_url }}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+          Connexion avec un code de sécurité
+        </a>
+
+        <div class="al-footer">
+          FixPro Admin v1.0 <span class="sep">|</span> &copy; {{ year }} FixPro. Tous droits réservés.
         </div>
       </div>
-
-      <p class="foot">&copy; {{ now_year|default(2026) }} FixPro. Tous droits reserves.</p>
     </section>
+  </div>
 
-    <script>
-      (function () {
-        var pw = document.getElementById('password');
-        var toggle = document.getElementById('togglePw');
-        var eye = document.getElementById('eyeIcon');
-        var EYE = '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/>';
-        var EYE_OFF = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-10-8-10-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 10 8 10 8a18.5 18.5 0 0 1-2.16 3.19M1 1l22 22"/>';
-        toggle.addEventListener('click', function () {
-          var show = pw.type === 'password';
-          pw.type = show ? 'text' : 'password';
-          eye.innerHTML = show ? EYE_OFF : EYE;
-          toggle.setAttribute('aria-pressed', String(show));
-          toggle.setAttribute('aria-label', show ? 'Masquer le mot de passe' : 'Afficher le mot de passe');
-        });
-        var form = document.getElementById('loginForm');
-        var btn = document.getElementById('submitBtn');
-        var label = document.getElementById('btnLabel');
-        form.addEventListener('submit', function () {
-          btn.setAttribute('aria-busy', 'true');
-          btn.disabled = true;
-          label.textContent = 'Connexion en cours...';
-        });
-      })();
-    </script>
-  </body>
+  <script>
+    (function () {
+      var eye = document.getElementById('alEye');
+      var pass = document.getElementById('alPass');
+      var on = document.getElementById('alEyeOn');
+      var off = document.getElementById('alEyeOff');
+      eye.addEventListener('click', function () {
+        var show = pass.type === 'password';
+        pass.type = show ? 'text' : 'password';
+        on.hidden = show; off.hidden = !show;
+        eye.setAttribute('aria-label', show ? 'Masquer le mot de passe' : 'Afficher le mot de passe');
+      });
+
+      var form = document.getElementById('alForm');
+      var btn = document.getElementById('alSubmit');
+      var label = btn.querySelector('.al-submit-label');
+      var arrow = btn.querySelector('svg');
+      form.addEventListener('submit', function (e) {
+        var email = document.getElementById('alEmail');
+        if (!email.value.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim())) {
+          e.preventDefault(); email.focus();
+          email.style.borderColor = '#EF4444';
+          return;
+        }
+        if (pass.value.length < 6) {
+          e.preventDefault(); pass.focus();
+          pass.style.borderColor = '#EF4444';
+          return;
+        }
+        btn.disabled = true;
+        label.textContent = 'Connexion…';
+        arrow.outerHTML = '<span class="spin"></span>';
+      });
+    })();
+  </script>
+</body>
 </html>
