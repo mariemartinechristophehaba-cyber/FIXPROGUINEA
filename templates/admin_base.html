@@ -164,10 +164,11 @@
 <body>
   <div class="ad-side-backdrop" onclick="document.body.classList.remove('ad-nav-open')"></div>
 
-  {% set _live = ('admin_dashboard',) %}
+  {% set _live = ('admin_dashboard', 'admin_users') %}
+  {% set _active_ep = request.endpoint if request.endpoint not in ('admin_user_detail',) else 'admin_users' %}
   {% macro navitem(endpoint, label) %}
     <a href="{{ url_for(endpoint) if endpoint in _live else '#' }}"
-       class="{{ 'active' if request.endpoint == endpoint }}"
+       class="{{ 'active' if _active_ep == endpoint }}"
        {% if endpoint not in _live %}data-soon="1" onclick="return admSoon(event)"{% endif %}>{{ caller() }}<span style="flex:1">{{ label }}</span></a>
   {% endmacro %}
 

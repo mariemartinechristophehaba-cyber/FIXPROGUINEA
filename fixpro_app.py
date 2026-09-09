@@ -21,7 +21,7 @@ import tempfile
 import urllib.parse
 import urllib.request
 import secrets
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from functools import wraps
 
 from authlib.integrations.flask_client import OAuth
@@ -67,6 +67,12 @@ app.config["ADMIN_DASHBOARD_DEMO"] = (
 # CLIENT_DASHBOARD_DEMO=0 -> vraies donnees du client (demandes, paiements...).
 app.config["CLIENT_DASHBOARD_DEMO"] = (
     os.environ.get("CLIENT_DASHBOARD_DEMO", "1").strip().lower()
+    not in ("0", "false", "no", "off", ""))
+
+# Idem pour la page admin "Utilisateurs" (voir _admin_users_demo_all).
+# ADMIN_USERS_DEMO=0 -> vraie table users.
+app.config["ADMIN_USERS_DEMO"] = (
+    os.environ.get("ADMIN_USERS_DEMO", "1").strip().lower()
     not in ("0", "false", "no", "off", ""))
 
 _dotenv = dotenv_values(BASE_DIR / ".env")
@@ -2945,6 +2951,415 @@ def admin_dashboard():
         kpis=kpis, chart=chart, status=status, notifications=notifications,
         last_missions=last_missions, top_techs=top_techs, recent_messages=recent_messages)
     return render_template("admin_dashboard.html", **base_ctx)
+
+
+# ===========================================================================
+# ADMIN - Page "Utilisateurs" (liste, filtres, pagination, export, profil).
+# Donnees de DEMONSTRATION deterministes tant que app.config["ADMIN_USERS_DEMO"]
+# est actif (ADMIN_USERS_DEMO=0 -> vraie table `users`). Les faux comptes ne
+# sont JAMAIS ecrits en base : creation / blocage vivent en session.
+# ===========================================================================
+_ADMIN_USERS_DEMO_TOTAL = 12548
+_ADMIN_USERS_ZONES = ["Kaloum", "Dixinn", "Ratoma", "Matam", "Matoto"]
+_ADMIN_USERS_FIRST = [
+    "Aminata", "Mamadou", "Sarah", "Ibrahima", "Fatoumata", "Moussa", "Karim",
+    "Mariama", "Lansana", "Sira", "Alpha", "Kadiatou", "Ousmane", "Hawa",
+    "Sékou", "Aïcha", "Boubacar", "Nènè", "Thierno", "Fanta", "Mohamed",
+    "Djénabou", "Amadou", "Rougui",
+]
+_ADMIN_USERS_LAST = [
+    "Diallo", "Baldé", "Barry", "Camara", "Bah", "Sow", "Keita", "Touré",
+    "Condé", "Soumah", "Sylla", "Cissé", "Kourouma", "Doumbouya", "Sacko",
+    "Kaba", "Traoré", "Fofana", "Bangoura", "Sangaré", "Dramé", "Kanté",
+]
+_ADMIN_USERS_KPIS = {
+    "total": {"value": 12548, "delta": 12},
+    "active": {"value": 10842, "delta": 8},
+    "new": {"value": 426, "delta": 15},
+    "blocked": {"value": 37, "delta": -4},
+}
+_ADMIN_USERS_STATUS_LABELS = {"active": "Actif", "inactive": "Inactif", "blocked": "Bloqué"}
+
+
+_ADMIN_ACCENTS = str.maketrans("àâäéèêëïîôöùûüç", "aaaeeeeiioouuuc")
+
+
+def _strip_accents(s):
+    return (s or "").translate(_ADMIN_ACCENTS)
+
+
+def _admin_user_demo_row(i):
+    """Un utilisateur de demo deterministe pour l'index 0-based i."""
+    fn = _ADMIN_USERS_FIRST[i % len(_ADMIN_USERS_FIRST)]
+    ln = _ADMIN_USERS_LAST[(i // len(_ADMIN_USERS_FIRST)) % len(_ADMIN_USERS_LAST)]
+    n = i + 1
+    if n % 339 == 0:
+        status = "blocked"
+    elif n % 15 in (3, 10):
+        status = "inactive"
+    else:
+        status = "active"
+    slug = "%s.%s" % (_strip_accents(fn).lower(), _strip_accents(ln).lower())
+    email = "%s%s@email.com" % (slug, "" if i < len(_ADMIN_USERS_FIRST) * len(_ADMIN_USERS_LAST) else i)
+    month = (i % 9) + 1  # janv. -> sept. 2026 (pas de date future)
+    day = (i % 27) + 1
+    return {
+        "code": "#FP-%04d" % (1000 + n),
+        "name": "%s %s" % (fn, ln),
+        "email": email,
+        "phone": "+224 6%02d %02d %02d %02d" % (20 + i % 8, i % 100, (i * 3) % 100, (i * 7) % 100),
+        "zone": _ADMIN_USERS_ZONES[i % len(_ADMIN_USERS_ZONES)],
+        "requests": (2 + i * 7) % 30,
+        "status": status,
+        "joined": "%02d/%02d/2026" % (day, month),
+        "photo": None,
+    }
+
+
+# Les 10 premieres lignes = celles de la maquette (source de verite visuelle).
+_ADMIN_USERS_DEMO_HEAD = [
+    ("Aminata Diallo", "aminata.diallo@email.com", "Kaloum", 12, "active", "01/08/2026"),
+    ("Mamadou Keita", "mamadou.keita@email.com", "Dixinn", 8, "active", "28/07/2026"),
+    ("Sarah Camara", "sarah.camara@email.com", "Ratoma", 5, "active", "25/07/2026"),
+    ("Ibrahima Sylla", "ibrahima.sylla@email.com", "Matam", 3, "inactive", "19/07/2026"),
+    ("Fatoumata Barry", "fatoumata.barry@email.com", "Dixinn", 15, "active", "12/07/2026"),
+    ("Moussa Bah", "moussa.bah@email.com", "Kaloum", 6, "blocked", "05/07/2026"),
+    ("Karim Soumah", "karim.soumah@email.com", "Ratoma", 9, "active", "02/07/2026"),
+    ("Mariama Kourouma", "mariama.kourouma@email.com", "Matam", 4, "active", "28/06/2026"),
+    ("Lansana Camara", "lansana.camara@email.com", "Kaloum", 7, "inactive", "21/06/2026"),
+    ("Sira Condé", "sira.conde@email.com", "Matoto", 2, "active", "15/06/2026"),
+]
+
+
+def _admin_users_demo_all():
+    """Liste complete des utilisateurs de demo (12 548), tetes de maquette + suite
+    deterministe, puis les comptes ajoutes en session, avec surcharges de statut."""
+    rows = []
+    for idx, (name, email, zone, reqs, status, joined) in enumerate(_ADMIN_USERS_DEMO_HEAD):
+        rows.append({
+            "code": "#FP-%04d" % (1001 + idx), "name": name, "email": email,
+            "phone": "+224 620 00 00 %02d" % (idx + 1), "zone": zone,
+            "requests": reqs, "status": status, "joined": joined, "photo": None,
+        })
+    for i in range(len(_ADMIN_USERS_DEMO_HEAD), _ADMIN_USERS_DEMO_TOTAL):
+        rows.append(_admin_user_demo_row(i))
+
+    extras = session.get("admin_users_extra") or []
+    rows = list(extras) + rows
+
+    overrides = session.get("admin_users_status") or {}
+    if overrides:
+        for r in rows:
+            if r["code"] in overrides:
+                r["status"] = overrides[r["code"]]
+    return rows
+
+
+def _admin_users_filter(rows, q, status, zone, joined=""):
+    q = (q or "").strip().lower()
+    if q:
+        rows = [r for r in rows if q in r["name"].lower() or q in r["email"].lower()
+                or q in r["phone"].lower() or q in r["code"].lower()]
+    if status in ("active", "inactive", "blocked"):
+        rows = [r for r in rows if r["status"] == status]
+    if zone in _ADMIN_USERS_ZONES:
+        rows = [r for r in rows if r["zone"] == zone]
+    if joined in ("30", "90", "2026"):
+        today = datetime.now(timezone.utc).date()
+
+        def _keep(r):
+            try:
+                d, m, y = (int(x) for x in str(r["joined"]).split("/"))
+                dt = date(y, m, d)
+            except (ValueError, TypeError):
+                return False
+            if joined == "2026":
+                return y == 2026
+            return 0 <= (today - dt).days <= int(joined)
+        rows = [r for r in rows if _keep(r)]
+    return rows
+
+
+def _admin_users_query_args():
+    q = (request.args.get("q") or "").strip()[:80]
+    status = request.args.get("status") or ""
+    zone = request.args.get("zone") or ""
+    joined = request.args.get("joined") or ""
+    try:
+        per_page = int(request.args.get("per_page") or 10)
+    except (TypeError, ValueError):
+        per_page = 10
+    per_page = per_page if per_page in (10, 25, 50, 100) else 10
+    try:
+        page = max(1, int(request.args.get("page") or 1))
+    except (TypeError, ValueError):
+        page = 1
+    return q, status, zone, joined, per_page, page
+
+
+@app.route("/admin/utilisateurs")
+@app.route("/admin/users")
+@login_required
+@admin_required
+def admin_users():
+    """Page admin de gestion des utilisateurs (liste + filtres + pagination)."""
+    user = get_current_user()
+    now = datetime.now(timezone.utc)
+    q, status, zone, joined, per_page, page = _admin_users_query_args()
+    demo = bool(app.config.get("ADMIN_USERS_DEMO"))
+
+    if demo:
+        all_rows = _admin_users_demo_all()
+        kpis = {
+            k: {"value": _fmt_int(v["value"]), "delta": v["delta"]}
+            for k, v in _ADMIN_USERS_KPIS.items()
+        }
+        headline_total = _ADMIN_USERS_KPIS["total"]["value"]
+    else:
+        all_rows = _admin_users_real_rows()
+        n_total = len(all_rows)
+        n_active = sum(1 for r in all_rows if r["status"] == "active")
+        n_blocked = sum(1 for r in all_rows if r["status"] == "blocked")
+        month_prefix = now.strftime("%Y-%m")
+        n_new = sum(1 for r in all_rows if _admin_user_joined_month(r["joined"]) == month_prefix)
+        kpis = {
+            "total": {"value": _fmt_int(n_total), "delta": None},
+            "active": {"value": _fmt_int(n_active), "delta": None},
+            "new": {"value": _fmt_int(n_new), "delta": None},
+            "blocked": {"value": _fmt_int(n_blocked), "delta": None},
+        }
+        headline_total = n_total
+
+    rows = _admin_users_filter(all_rows, q, status, zone, joined)
+    total_filtered = len(rows)
+    pages = max(1, -(-total_filtered // per_page))
+    page = min(page, pages)
+    start = (page - 1) * per_page
+    page_rows = rows[start:start + per_page]
+
+    def _page_url(p):
+        args = {"page": p, "per_page": per_page}
+        if q:
+            args["q"] = q
+        if status:
+            args["status"] = status
+        if zone:
+            args["zone"] = zone
+        if joined:
+            args["joined"] = joined
+        return url_for("admin_users", **args)
+
+    window = [p for p in range(max(1, page - 2), min(pages, page + 2) + 1)]
+
+    base_ctx = {
+        "admin_user": user, "current_year": now.year,
+        "notif_count": 0, "header_notifs": [],
+        "kpis": kpis, "users": page_rows,
+        "status_labels": _ADMIN_USERS_STATUS_LABELS,
+        "zones": _ADMIN_USERS_ZONES,
+        "f_q": q, "f_status": status, "f_zone": zone, "f_joined": joined,
+        "per_page": per_page, "page": page, "pages": pages,
+        "page_window": window, "total_filtered": total_filtered,
+        "headline_total": _fmt_int(headline_total),
+        "range_from": (start + 1) if page_rows else 0,
+        "range_to": start + len(page_rows),
+        "prev_url": _page_url(page - 1) if page > 1 else None,
+        "next_url": _page_url(page + 1) if page < pages else None,
+        "first_url": _page_url(1), "last_url": _page_url(pages),
+        "page_url_tpl": _page_url("__P__"),
+        "demo_mode": demo,
+    }
+    resp = make_response(render_template("admin_users.html", **base_ctx))
+    resp.headers["Cache-Control"] = "no-store"
+    return resp
+
+
+def _admin_user_joined_month(joined):
+    # "dd/mm/yyyy" -> "yyyy-mm"
+    try:
+        d, m, y = str(joined).split("/")
+        return "%s-%s" % (y, m)
+    except ValueError:
+        return ""
+
+
+def _admin_users_real_rows():
+    """Vraie table users (role client) mappee au format de la page."""
+    conn = get_db_connection()
+    out = []
+    try:
+        cur = conn.execute(
+            "SELECT id, full_name, email, phone, city, quartier, account_status,"
+            " is_active, created_at FROM users WHERE role = 'client' ORDER BY created_at DESC")
+        for r in cur.fetchall():
+            st = (r["account_status"] or "").lower()
+            if "block" in st or "suspend" in st or (r["is_active"] == 0):
+                status = "blocked" if "block" in st or "suspend" in st else "inactive"
+            else:
+                status = "active"
+            reqs = 0
+            try:
+                reqs = int(conn.execute(
+                    "SELECT COUNT(*) AS n FROM requests WHERE client_id = ?", (r["id"],)
+                ).fetchone()["n"] or 0)
+            except Exception:
+                conn.rollback()
+            joined = ""
+            raw = str(r["created_at"] or "")[:10]
+            if len(raw) == 10 and raw[4] == "-":
+                joined = "%s/%s/%s" % (raw[8:10], raw[5:7], raw[0:4])
+            out.append({
+                "code": "#FP-%04d" % (1000 + int(r["id"])),
+                "name": r["full_name"] or "Utilisateur",
+                "email": r["email"] or "—",
+                "phone": r["phone"] or "—",
+                "zone": r["quartier"] or r["city"] or "—",
+                "requests": reqs, "status": status, "joined": joined,
+                "photo": None, "uid": int(r["id"]),
+            })
+    except Exception:
+        conn.rollback()
+    finally:
+        conn.close()
+    return out
+
+
+@app.route("/admin/utilisateurs/export")
+@login_required
+@admin_required
+def admin_users_export():
+    """Export CSV des utilisateurs filtres (demo ou reels)."""
+    q, status, zone, joined, per_page, page = _admin_users_query_args()
+    rows = (_admin_users_demo_all() if app.config.get("ADMIN_USERS_DEMO")
+            else _admin_users_real_rows())
+    rows = _admin_users_filter(rows, q, status, zone, joined)
+
+    buf = io.StringIO()
+    w = csv.writer(buf, delimiter=";")
+    w.writerow(["Identifiant", "Nom", "E-mail", "Telephone", "Localisation",
+                "Demandes", "Statut", "Inscription"])
+    for r in rows:
+        w.writerow([r["code"], r["name"], r["email"], r["phone"], r["zone"],
+                    r["requests"], _ADMIN_USERS_STATUS_LABELS.get(r["status"], r["status"]),
+                    r["joined"]])
+    out = make_response("﻿" + buf.getvalue())
+    out.headers["Content-Type"] = "text/csv; charset=utf-8"
+    out.headers["Content-Disposition"] = (
+        "attachment; filename=fixpro-utilisateurs-%s.csv"
+        % datetime.now().strftime("%Y%m%d"))
+    return out
+
+
+@app.route("/admin/utilisateurs/creer", methods=["POST"])
+@login_required
+@admin_required
+def admin_users_create():
+    """Ajoute un utilisateur a la liste de DEMO (session, jamais en base)."""
+    if not app.config.get("ADMIN_USERS_DEMO"):
+        flash("La creation directe est desactivee hors mode demonstration.", "error")
+        return redirect(url_for("admin_users"))
+    first = (request.form.get("first_name") or "").strip()[:40]
+    last = (request.form.get("last_name") or "").strip()[:40]
+    email = (request.form.get("email") or "").strip()[:120]
+    phone = (request.form.get("phone") or "").strip()[:30]
+    zone = request.form.get("zone") or ""
+    status = request.form.get("status") or "active"
+    if not first or not last or "@" not in email:
+        flash("Prénom, nom et e-mail valide sont obligatoires.", "error")
+        return redirect(url_for("admin_users"))
+    if zone not in _ADMIN_USERS_ZONES:
+        zone = _ADMIN_USERS_ZONES[0]
+    if status not in _ADMIN_USERS_STATUS_LABELS:
+        status = "active"
+    extras = session.get("admin_users_extra") or []
+    new_code = "#FP-%04d" % (9000 + len(extras) + 1)
+    extras.insert(0, {
+        "code": new_code, "name": "%s %s" % (first, last), "email": email,
+        "phone": phone or "—", "zone": zone, "requests": 0, "status": status,
+        "joined": datetime.now().strftime("%d/%m/2026"), "photo": None,
+    })
+    session["admin_users_extra"] = extras[:50]
+    session.modified = True
+    flash("Utilisateur « %s %s » créé (données de démonstration)." % (first, last), "success")
+    return redirect(url_for("admin_users"))
+
+
+@app.route("/admin/utilisateurs/<code>/statut", methods=["POST"])
+@login_required
+@admin_required
+def admin_users_set_status(code):
+    """Bloque / débloque / (dés)active un utilisateur (surcharge en session en demo)."""
+    code = ("#" + code) if not code.startswith("#") else code
+    new_status = request.form.get("status") or "blocked"
+    if new_status not in _ADMIN_USERS_STATUS_LABELS:
+        new_status = "blocked"
+    if app.config.get("ADMIN_USERS_DEMO"):
+        ov = session.get("admin_users_status") or {}
+        ov[code] = new_status
+        session["admin_users_status"] = ov
+        session.modified = True
+    else:
+        try:
+            uid = int(code.lstrip("#FP-").lstrip("0") or "0") - 1000
+            conn = get_db_connection()
+            conn.execute("UPDATE users SET account_status = ? WHERE id = ?",
+                         (new_status, uid))
+            conn.commit()
+            conn.close()
+        except Exception as exc:
+            logger.warning("admin_users_set_status: %s", exc)
+    flash("Statut mis à jour : %s." % _ADMIN_USERS_STATUS_LABELS[new_status], "success")
+    ref = request.form.get("next") or url_for("admin_users")
+    return redirect(ref)
+
+
+@app.route("/admin/utilisateurs/<code>")
+@login_required
+@admin_required
+def admin_user_detail(code):
+    """Fiche détaillée d'un utilisateur."""
+    user = get_current_user()
+    now = datetime.now(timezone.utc)
+    code = ("#" + code) if not code.startswith("#") else code
+    rows = (_admin_users_demo_all() if app.config.get("ADMIN_USERS_DEMO")
+            else _admin_users_real_rows())
+    target = next((r for r in rows if r["code"] == code), None)
+    if not target:
+        flash("Utilisateur introuvable.", "error")
+        return redirect(url_for("admin_users"))
+
+    total = target["requests"]
+    done = int(round(total * 0.62))
+    prog = max(0, min(total - done, 1 + total % 3))
+    wait = max(0, total - done - prog)
+    seed = sum(ord(c) for c in target["code"])
+    services = ["Plomberie", "Électricité", "Climatisation", "Menuiserie", "Peinture"]
+    techs = ["Moussa Bah", "Aïssatou Diallo", "Karim Soumah", "Lansana Camara", "Mariama Kourouma"]
+    pills = ["done", "done", "prog", "wait", "canc"]
+    labels = {"done": "Terminée", "prog": "En cours", "wait": "En attente", "canc": "Annulée"}
+    history = []
+    for k in range(min(total, 6)):
+        p = pills[(seed + k) % len(pills)]
+        history.append({
+            "code": "#FP-%d" % (3200 - seed % 60 - k),
+            "service": services[(seed + k) % len(services)],
+            "tech": techs[(seed + k) % len(techs)],
+            "pill": p, "status_label": labels[p],
+            "date": "%02d/%02d/2026" % (1 + (seed + k) % 27, 1 + (seed + k) % 9),
+        })
+
+    ctx = {
+        "admin_user": user, "current_year": now.year,
+        "notif_count": 0, "header_notifs": [],
+        "u": target,
+        "status_labels": _ADMIN_USERS_STATUS_LABELS,
+        "stats": {"total": total, "done": done, "prog": prog, "wait": wait},
+        "history": history,
+        "demo_mode": bool(app.config.get("ADMIN_USERS_DEMO")),
+    }
+    resp = make_response(render_template("admin_user_detail.html", **ctx))
+    resp.headers["Cache-Control"] = "no-store"
+    return resp
 
 
 def _ts(value=None):
