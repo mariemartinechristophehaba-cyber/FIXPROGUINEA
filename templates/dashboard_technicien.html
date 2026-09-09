@@ -179,6 +179,26 @@
     .kpi .l { display: block; margin-top: 4px; font-size: .8rem; font-weight: 700; }
     .kpi .sl { display: block; margin-top: 1px; font-size: .7rem; color: var(--d-muted); font-weight: 500; }
     .kpi .spark { position: absolute; right: 9px; bottom: 9px; width: 46px; height: 18px; opacity: .5; }
+    .quota { margin-top: 12px; background: #fff; border: 1px solid var(--d-line); border-radius: 14px; padding: 13px 15px; box-shadow: 0 6px 18px rgba(11,27,59,.05); }
+    .quota.full { border-color: #FBD5B4; background: #FFF7ED; }
+    .quota .q-h { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+    .quota .q-k { font-size: .82rem; font-weight: 700; color: var(--d-muted); }
+    .quota .q-v { font-size: 1.05rem; font-weight: 900; letter-spacing: -.02em; }
+    .quota .q-v em { font-size: .78rem; font-weight: 700; font-style: normal; color: var(--d-muted); }
+    .quota .q-bar { margin-top: 9px; height: 7px; border-radius: 999px; background: var(--d-line); overflow: hidden; }
+    .quota .q-bar span { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #60A5FA, var(--d-blue)); }
+    .quota.full .q-bar span { background: linear-gradient(90deg, #FB923C, #EA580C); }
+    .quota .q-note { margin: 9px 0 0; font-size: .78rem; line-height: 1.4; color: #9A3412; }
+    .quota .q-note a { font-weight: 800; color: var(--d-blue); }
+    .stats-link { display: flex; align-items: center; gap: 10px; margin-top: 12px; background: #fff; border: 1px solid var(--d-line); border-radius: 14px; padding: 13px 15px; box-shadow: 0 6px 18px rgba(11,27,59,.05); }
+    .sub-h .si.trial { background: #FEF3E2; }
+    .sub-h .si.off { background: #FEE2E2; }
+    .trial-mini { display: flex; gap: 8px; margin: 12px 0; }
+    .trial-mini span { flex: 1; text-align: center; background: var(--d-ice); border-radius: 10px; padding: 8px 4px; font-size: .7rem; font-weight: 700; color: var(--d-muted); }
+    .trial-mini b { display: block; font-size: 1.1rem; font-weight: 900; color: var(--d-ink); letter-spacing: -.02em; }
+    .stats-link span { flex: 1; font-size: .86rem; line-height: 1.35; }
+    .stats-link b { font-weight: 800; }
+    .stats-link svg { width: 17px; height: 17px; color: var(--d-blue); flex-shrink: 0; }
 
     /* ---------- Colonnes ---------- */
     .cols { display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: 12px; }
@@ -399,13 +419,40 @@
       </div>
     </section>
 
+    {% if entitlements and entitlements.active and request_usage %}
+    <div class="quota {{ 'full' if request_usage.over_limit }}">
+      <div class="q-h">
+        <span class="q-k">Demandes reçues ce mois</span>
+        {% if request_usage.unlimited %}
+        <span class="q-v">{{ request_usage.used }} <em>· Illimité</em></span>
+        {% else %}
+        <span class="q-v">{{ request_usage.used }} / {{ request_usage.limit }}</span>
+        {% endif %}
+      </div>
+      {% if not request_usage.unlimited %}
+      <div class="q-bar"><span style="width: {{ [request_usage.used * 100 // request_usage.limit, 100] | min }}%"></span></div>
+      {% if request_usage.over_limit %}
+      <p class="q-note">Limite mensuelle atteinte. Vous recevrez de nouvelles demandes le mois prochain.
+        <a href="{{ url_for('technician_subscription_checkout', plan='tech_premium', period='month') }}">Passer à Premium</a> pour des demandes illimitées.</p>
+      {% endif %}
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% if entitlements and 'detailed_statistics' in entitlements.entitlements %}
+    <a class="stats-link" href="{{ url_for('technician_stats') }}">
+      <span><b>Statistiques détaillées</b> — évolution, taux d'acceptation, revenus</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </a>
+    {% endif %}
+
     <!-- Colonnes -->
     <section class="cols">
       <div class="card">
         <div class="card-h">
           <span class="hi2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span>
           <h2>Vos prochaines demandes</h2>
-          <a class="more" href="{{ url_for('conversations') }}">Voir tout <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></a>
+          <a class="more" href="{{ url_for('technician_requests') }}">Voir tout <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></a>
         </div>
         {% if upcoming %}
           {% for r in upcoming %}
@@ -445,18 +492,51 @@
         </div>
 
         <div class="card">
-          {% if subscription %}
+          {% if entitlements and entitlements.status == 'TRIAL' %}
+          <div class="sub-h">
+            <span class="si trial">🎁</span>
+            <div class="st">
+              <span class="k">Période découverte gratuite</span>
+              <span class="plan">Il vous reste {{ entitlements.trial_days_left }} jour{{ 's' if entitlements.trial_days_left > 1 }}</span>
+              <span class="price">Recevez des demandes et trouvez vos premiers clients.</span>
+            </div>
+            <span class="tag2">Essai</span>
+          </div>
+          <div class="trial-mini">
+            <span><b>{{ trial_stats.demandes }}</b>Demandes</span>
+            <span><b>{{ trial_stats.interventions }}</b>Interventions</span>
+            <span><b>{{ trial_stats.avis }}</b>Avis</span>
+          </div>
+          <a class="btn" href="{{ url_for('technician_subscription') }}">Voir les abonnements <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+
+          {% elif entitlements and entitlements.status == 'TRIAL_EXPIRED' and not (subscription and subscription.active) %}
+          <div class="sub-h">
+            <span class="si off">🔒</span>
+            <div class="st">
+              <span class="k">Période découverte terminée</span>
+              <span class="plan">Activez un abonnement</span>
+              <span class="price">Profitez pleinement de FixPro pour continuer à recevoir de nouvelles demandes.</span>
+            </div>
+          </div>
+          <div class="trial-mini">
+            <span><b>{{ trial_stats.demandes }}</b>Demandes</span>
+            <span><b>{{ trial_stats.interventions }}</b>Interventions</span>
+            <span><b>{{ trial_stats.avis }}</b>Avis</span>
+          </div>
+          <a class="btn solid" href="{{ url_for('technician_subscription') }}">Choisir mon abonnement <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+
+          {% elif subscription %}
           <div class="sub-h">
             <span class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7z"/></svg></span>
             <div class="st">
               <span class="k">Mon abonnement</span>
-              <span class="plan">{{ subscription.plan_name }}</span>
+              <span class="plan">{% if subscription.badge %}{% if subscription.badge.icon == 'crown' %}👑 {% else %}⭐ {% endif %}{% endif %}{{ subscription.plan_name }}{% if subscription.active %} actif{% endif %}</span>
               {% if subscription.price_month %}<span class="price">{{ "{:,}".format(subscription.price_month) | replace(",", " ") }} {{ subscription.currency }} / mois</span>{% endif %}
             </div>
             <span class="tag2 {{ '' if subscription.active else 'off' }}">{{ subscription.status_label }}</span>
           </div>
-          {% if subscription.end_date_label %}<p class="sub-due">Prochaine échéance : {{ subscription.end_date_label }}</p>{% endif %}
-          <a class="btn" href="{{ url_for('technician_subscription') }}">Gérer mon abonnement <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+          {% if subscription.end_date_label %}<p class="sub-due">{{ "Actif jusqu'au" if subscription.active else "Échéance" }} : {{ subscription.end_date_label }}</p>{% endif %}
+          <a class="btn" href="{{ url_for('technician_subscription') }}">{{ 'Voir mes avantages' if subscription.active else 'Gérer mon abonnement' }} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
           {% else %}
           <div class="sub-h">
             <span class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7z"/></svg></span>
@@ -491,7 +571,7 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
       Accueil
     </a>
-    <a class="tab" href="{{ url_for('conversations') }}">
+    <a class="tab" href="{{ url_for('technician_requests') }}">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h4"/></svg>
       Demandes
     </a>

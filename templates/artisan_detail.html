@@ -201,6 +201,14 @@
       padding: 5px 12px; border-radius: 50px;
     }
     .pl-verified-pill svg { width: 13px; height: 13px; }
+    .pl-badges { display: flex; flex-wrap: wrap; gap: 6px; }
+    .pl-plan-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-weight: 800; font-size: 0.76rem; padding: 5px 12px; border-radius: 50px;
+      background: rgba(255,255,255,0.16); border: 1px solid rgba(255,255,255,0.28); color: #fff;
+    }
+    .pl-plan-pill.amber { background: rgba(245,158,11,0.28); border-color: rgba(245,158,11,0.5); color: #FFE7BC; }
+    .pl-plan-pill.new { background: rgba(96,165,250,0.24); border-color: rgba(96,165,250,0.45); color: #DBEAFE; }
 
     /* ---------- Stats card ---------- */
     .pl-stats {
@@ -380,12 +388,22 @@
             {% if rcount > 0 %}<span>({{ rcount }} avis)</span>{% endif %}
             {% if member_year %}<span class="sep">•</span><span>Membre depuis {{ member_year }}</span>{% endif %}
           </div>
-          {% if artisan.is_verified %}
-          <span class="pl-verified-pill">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>
-            Vérifié par FixPro
-          </span>
-          {% endif %}
+          <div class="pl-badges">
+            {% if artisan.is_verified %}
+            <span class="pl-verified-pill">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>
+              Vérifié par FixPro
+            </span>
+            {% endif %}
+            {% if artisan.subscription_badge %}
+            <span class="pl-plan-pill {{ artisan.subscription_badge.accent }}">
+              {% if artisan.subscription_badge.icon == 'crown' %}👑{% else %}⭐{% endif %}
+              {{ artisan.subscription_badge.label }}
+            </span>
+            {% elif artisan.is_new %}
+            <span class="pl-plan-pill new">✨ Nouveau sur FixPro</span>
+            {% endif %}
+          </div>
         </div>
       </div>
     </header>
