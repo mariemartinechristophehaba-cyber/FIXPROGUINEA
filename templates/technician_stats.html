@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#2563EB" />
+  {% include '_pwa_head.html' %}
+  <title>Statistiques - Espace Technicien</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --d-blue: #2563EB; --d-blue-d: #1D4ED8; --d-ink: #0B1B3B; --d-muted: #64748B;
+      --d-ice: #EEF2F9; --d-line: #E4EAF4; --d-bg: #F5F7FB; --d-green: #16A34A;
+      --d-amber: #F59E0B; --d-amber-d: #D97706;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: var(--d-ink); background: var(--d-bg); -webkit-font-smoothing: antialiased; }
+    a { text-decoration: none; color: inherit; }
+    [hidden] { display: none !important; }
+
+    .topbar { position: sticky; top: 0; z-index: 20; background: rgba(245,247,251,.92); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); display: flex; align-items: center; gap: 12px; max-width: 1120px; margin: 0 auto; padding: calc(10px + env(safe-area-inset-top)) clamp(14px, 4vw, 26px) 10px; }
+    .brand { display: flex; align-items: center; gap: 9px; }
+    .brand .ic { width: 34px; height: 34px; color: var(--d-blue); flex-shrink: 0; }
+    .brand .ic svg { width: 100%; height: 100%; }
+    .brand .n { font-size: 1.28rem; font-weight: 800; letter-spacing: -.02em; line-height: 1; }
+    .brand .n i { color: var(--d-blue); font-style: normal; }
+    .brand .s { display: block; font-size: .7rem; font-weight: 600; color: var(--d-muted); margin-top: 2px; }
+    .topbar .sp { flex: 1; }
+    @media (max-width: 360px) { .brand .s { display: none; } }
+
+    .wrap { max-width: 1120px; margin: 0 auto; padding: 0 clamp(14px, 4vw, 26px) calc(112px + env(safe-area-inset-bottom)); }
+    .head { margin-top: 10px; }
+    .head h1 { margin: 0; font-size: clamp(1.6rem, 6vw, 2.2rem); font-weight: 900; letter-spacing: -.03em; }
+    .head p { margin: 8px 0 0; font-size: clamp(.9rem, 3.6vw, 1rem); color: var(--d-muted); line-height: 1.45; }
+    .plan-tag { display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; font-size: .8rem; font-weight: 800; padding: 5px 12px; border-radius: 999px; background: #FEF3E2; color: var(--d-amber-d); }
+
+    .card { background: #fff; border: 1px solid var(--d-line); border-radius: 16px; padding: clamp(14px, 3.4vw, 20px); box-shadow: 0 8px 22px rgba(11,27,59,.05); margin-top: 16px; }
+    .card h2 { margin: 0 0 12px; font-size: 1rem; font-weight: 900; letter-spacing: -.02em; }
+
+    .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-top: 16px; }
+    .kpi { background: #fff; border: 1px solid var(--d-line); border-radius: 14px; padding: 14px; box-shadow: 0 8px 22px rgba(11,27,59,.05); }
+    .kpi .ki { width: 34px; height: 34px; border-radius: 10px; background: var(--d-ice); color: var(--d-blue); display: flex; align-items: center; justify-content: center; }
+    .kpi .ki svg { width: 17px; height: 17px; }
+    .kpi b { display: block; margin-top: 10px; font-size: 1.5rem; font-weight: 900; letter-spacing: -.02em; line-height: 1; }
+    .kpi span { display: block; margin-top: 4px; font-size: .8rem; color: var(--d-muted); font-weight: 600; }
+
+    .rates { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px 20px; }
+    .rate b { display: block; font-size: 1.7rem; font-weight: 900; letter-spacing: -.02em; }
+    .rate span { display: block; font-size: .82rem; color: var(--d-muted); margin-top: 2px; }
+    .rate .na { font-size: .92rem; font-weight: 800; color: var(--d-muted); }
+
+    .bars { display: flex; align-items: flex-end; gap: 8px; height: 150px; margin-top: 6px; }
+    .bar { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; height: 100%; justify-content: flex-end; }
+    .bar .col { width: 100%; max-width: 34px; display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; height: 100%; }
+    .bar .b1 { background: linear-gradient(180deg, #60A5FA, var(--d-blue)); border-radius: 5px 5px 0 0; min-height: 3px; }
+    .bar .b2 { background: #BBF7D0; border-radius: 5px 5px 0 0; }
+    .bar em { font-size: .68rem; color: var(--d-muted); font-style: normal; font-weight: 700; }
+    .bar i { font-size: .72rem; font-weight: 800; font-style: normal; }
+    .legend { display: flex; gap: 16px; margin-top: 12px; font-size: .76rem; color: var(--d-muted); font-weight: 700; }
+    .legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .legend .d { width: 10px; height: 10px; border-radius: 3px; }
+    .legend .d1 { background: var(--d-blue); } .legend .d2 { background: #BBF7D0; }
+
+    .rec { list-style: none; margin: 0; padding: 0; }
+    .rec li { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--d-line); }
+    .rec li:last-child { border-bottom: 0; }
+    .rec .rt { flex: 1; min-width: 0; }
+    .rec .rt b { display: block; font-size: .88rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .rec .rt span { font-size: .76rem; color: var(--d-muted); }
+    .rec .rs { font-size: .72rem; font-weight: 800; padding: 3px 9px; border-radius: 999px; background: var(--d-ice); color: var(--d-muted); flex-shrink: 0; }
+    .rec .rs.ok { background: #DCFCE7; color: #15803D; }
+    .rec .rs.no { background: #FEE2E2; color: #B91C1C; }
+
+    .note { margin-top: 14px; font-size: .8rem; color: var(--d-muted); line-height: 1.5; background: var(--d-ice); border-radius: 12px; padding: 12px 14px; }
+
+    /* --- Verrou (Pro / sans abonnement) --- */
+    .lock { text-align: center; max-width: 460px; margin: 40px auto 0; }
+    .lock .li { width: 66px; height: 66px; border-radius: 20px; margin: 0 auto; background: #FEF3E2; color: var(--d-amber-d); display: flex; align-items: center; justify-content: center; }
+    .lock .li svg { width: 32px; height: 32px; }
+    .lock h1 { margin: 18px 0 0; font-size: clamp(1.4rem, 5.6vw, 1.9rem); font-weight: 900; letter-spacing: -.03em; }
+    .lock p { margin: 10px 0 0; font-size: .94rem; color: var(--d-muted); line-height: 1.5; }
+    .lock .cur { margin-top: 16px; font-size: .84rem; font-weight: 700; color: var(--d-ink); }
+    .lock .cta { display: inline-flex; align-items: center; justify-content: center; gap: 10px; margin-top: 22px; padding: 14px 24px; border-radius: 13px; background: linear-gradient(180deg, #FBBF24, var(--d-amber-d)); color: #fff; font-weight: 800; box-shadow: 0 14px 28px rgba(217,119,6,.3); }
+    .lock .cta svg { width: 17px; height: 17px; }
+    .lock .back { display: block; margin-top: 16px; font-size: .84rem; font-weight: 700; color: var(--d-blue); }
+    .lock ul { list-style: none; margin: 22px 0 0; padding: 0; text-align: left; display: inline-block; }
+    .lock ul li { display: flex; align-items: center; gap: 9px; font-size: .88rem; margin-top: 8px; }
+    .lock ul .ck { width: 18px; height: 18px; border-radius: 999px; background: #FEF3E2; color: var(--d-amber-d); flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+    .lock ul .ck svg { width: 11px; height: 11px; }
+
+    .tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; background: #fff; border-top: 1px solid var(--d-line); padding: 8px 8px calc(8px + env(safe-area-inset-bottom)); display: flex; align-items: flex-end; justify-content: space-around; box-shadow: 0 -8px 24px rgba(11,27,59,.06); }
+    .tab { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: .68rem; font-weight: 700; color: var(--d-muted); position: relative; padding: 4px 2px; }
+    .tab svg { width: 22px; height: 22px; }
+    .tab.active { color: var(--d-blue); }
+    .tab .tb { position: absolute; top: -1px; right: 22%; min-width: 15px; height: 15px; padding: 0 3px; border-radius: 999px; background: #EF4444; color: #fff; font-size: .6rem; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+    .tab.fab { flex: 0 0 auto; }
+    .tab.fab .fb { width: 54px; height: 54px; border-radius: 999px; margin-top: -22px; background: linear-gradient(180deg, #3B76F5, var(--d-blue)); color: #fff; display: flex; align-items: center; justify-content: center; box-shadow: 0 12px 24px rgba(37,99,235,.4); border: 4px solid #fff; }
+    .tab.fab .fb svg { width: 26px; height: 26px; }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="{{ url_for('artisan_dashboard') }}">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span>
+      <span><span class="n">Fix<i>Pro</i></span><span class="s">Espace Technicien</span></span>
+    </a>
+    <span class="sp"></span>
+    {% include '_tech_notif_bell.html' %}
+    {% include '_tech_profile_menu.html' %}
+  </header>
+
+  <main class="wrap">
+    {% if not allowed %}
+    <div class="lock">
+      <span class="li"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
+      <h1>Statistiques détaillées</h1>
+      <p>Cet outil fait partie du plan <b>Premium</b>. Il vous donne l'évolution de votre activité mois par mois, votre taux d'acceptation, vos revenus déclarés et votre note.</p>
+      {% if entitlements.active %}
+      <p class="cur">Votre plan actuel : <b>{{ entitlements.plan_name }}</b> — les statistiques de base restent disponibles sur votre tableau de bord.</p>
+      {% elif entitlements.status == 'TRIAL' %}
+      <p class="cur">Vous êtes en période découverte ({{ entitlements.trial_days_left }} jour{{ 's' if entitlements.trial_days_left > 1 }} restant{{ 's' if entitlements.trial_days_left > 1 }}). Les statistiques de base sont sur votre tableau de bord ; les statistiques détaillées font partie de Premium.</p>
+      {% elif entitlements.status == 'TRIAL_EXPIRED' %}
+      <p class="cur">Votre période découverte est terminée. Activez un abonnement pour continuer.</p>
+      {% elif entitlements.has_subscription %}
+      <p class="cur">Votre abonnement n'est pas actif ({{ entitlements.status }}). Aucun avantage n'est ouvert tant que le paiement n'est pas confirmé.</p>
+      {% endif %}
+      <ul>
+        <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Évolution mensuelle de vos demandes</li>
+        <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Taux d'acceptation et de complétion</li>
+        <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Revenus déclarés et note moyenne</li>
+      </ul>
+      <a class="cta" href="{{ url_for('technician_subscription_checkout', plan='tech_premium', period='month') }}">
+        Passer à Premium
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </a>
+      <a class="back" href="{{ url_for('artisan_dashboard') }}">Retour au tableau de bord</a>
+    </div>
+
+    {% else %}
+    <div class="head">
+      <h1>Statistiques</h1>
+      <p>Votre activité sur FixPro, calculée en temps réel à partir de vos demandes et de vos avis.</p>
+      {% if entitlements.badge %}
+      <span class="plan-tag">{% if entitlements.badge.icon == 'crown' %}👑{% else %}⭐{% endif %} {{ entitlements.plan_name }} actif</span>
+      {% endif %}
+    </div>
+
+    <div class="kpis">
+      <div class="kpi">
+        <span class="ki"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></span>
+        <b>{{ stats.recues }}</b><span>Demandes reçues</span>
+      </div>
+      <div class="kpi">
+        <span class="ki"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4 12 14.01l-3-3"/></svg></span>
+        <b>{{ stats.acceptees }}</b><span>Demandes acceptées</span>
+      </div>
+      <div class="kpi">
+        <span class="ki"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+        <b>{{ stats.terminees }}</b><span>Interventions terminées</span>
+      </div>
+      <div class="kpi">
+        <span class="ki"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12h8M12 8v8"/></svg></span>
+        <b>{{ "{:,}".format(stats.revenus) | replace(",", " ") }}</b><span>Revenus déclarés (GNF)</span>
+      </div>
+    </div>
+
+    <section class="card">
+      <h2>Performance</h2>
+      <div class="rates">
+        <div class="rate">
+          {% if stats.taux_acceptation is not none %}<b>{{ stats.taux_acceptation }}%</b>{% else %}<span class="na">Pas encore de donnée</span>{% endif %}
+          <span>Taux d'acceptation des demandes traitées</span>
+        </div>
+        <div class="rate">
+          {% if stats.taux_completion is not none %}<b>{{ stats.taux_completion }}%</b>{% else %}<span class="na">Pas encore de donnée</span>{% endif %}
+          <span>Part des demandes acceptées menées à terme</span>
+        </div>
+        <div class="rate">
+          {% if stats.note_avg is not none %}<b>{{ stats.note_avg }} ★</b><span>{{ stats.avis_n }} avis client{{ 's' if stats.avis_n > 1 }}</span>{% else %}<span class="na">Aucun avis pour l'instant</span><span>Note moyenne</span>{% endif %}
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Évolution sur 6 mois</h2>
+      {% if stats.recues == 0 %}
+      <p class="note" style="margin-top:0">Pas encore assez d'activité pour tracer une évolution. Le graphique apparaîtra dès vos premières demandes.</p>
+      {% else %}
+      <div class="bars">
+        {% for m in stats.months %}
+        <div class="bar">
+          <i>{{ m.received }}</i>
+          <span class="col">
+            <span class="b1" style="height: {{ (m.received / stats.months_max * 100) | round }}%"></span>
+            {% if m.completed %}<span class="b2" style="height: {{ (m.completed / stats.months_max * 100) | round }}%"></span>{% endif %}
+          </span>
+          <em>{{ m.label }}</em>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="legend">
+        <span><span class="d d1"></span>Demandes reçues</span>
+        <span><span class="d d2"></span>Terminées</span>
+      </div>
+      {% endif %}
+    </section>
+
+    <section class="card">
+      <h2>Activité récente</h2>
+      {% if stats.recent %}
+      <ul class="rec">
+        {% for r in stats.recent %}
+        <li>
+          <div class="rt">
+            <b>{{ r.title or r.category or 'Demande' }}</b>
+            <span>{{ r.created_at[:10] if r.created_at }}</span>
+          </div>
+          {% set st = (r.status or '')|lower %}
+          <span class="rs {{ 'ok' if st == 'completed' else ('no' if st in ('refused','rejected','cancelled') else '') }}">{{ r.status or '—' }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="note">Aucune demande enregistrée pour le moment.</p>
+      {% endif %}
+    </section>
+
+    <p class="note">
+      Le taux de conversion (visites de votre profil → prise de contact) n'est pas encore
+      affiché : FixPro n'enregistre pas encore les vues de profil. Cette métrique sera
+      ajoutée quand le suivi des vues existera. Aucune valeur estimée n'est montrée ici.
+    </p>
+    {% endif %}
+  </main>
+
+  <nav class="tabbar">
+    <a class="tab" href="{{ url_for('artisan_dashboard') }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
+      Accueil
+    </a>
+    <a class="tab" href="{{ url_for('technician_requests') }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h4"/></svg>
+      Demandes
+    </a>
+    <a class="tab fab" href="{{ url_for('request_new') }}" aria-label="Nouvelle demande">
+      <span class="fb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></span>
+      Nouvelle
+    </a>
+    <a class="tab" href="{{ url_for('client_messages') }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      Messages
+      {% if messages_unread %}<span class="tb">{{ messages_unread if messages_unread < 100 else '99+' }}</span>{% endif %}
+    </a>
+    <a class="tab" href="{{ url_for('technician_subscription') }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7z"/></svg>
+      Abonnement
+    </a>
+  </nav>
+</body>
+</html>

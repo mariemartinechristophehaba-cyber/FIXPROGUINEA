@@ -70,6 +70,32 @@
     .pay-resume > svg:last-child { width: 16px; height: 16px; flex-shrink: 0; color: #B45309; }
     .pay-resume span { flex: 1; font-size: .86rem; line-height: 1.35; }
     .pay-resume b { font-weight: 800; }
+
+    /* --- Abonnement actuel + avantages reels --- */
+    .cur { margin-top: 18px; background: #fff; border: 1px solid var(--d-line); border-radius: 16px; padding: clamp(14px, 3.4vw, 20px); box-shadow: 0 8px 22px rgba(11,27,59,.05); }
+    .cur.on { border-color: #BBF7D0; }
+    .cur-top { display: flex; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+    .cur-ico { width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: var(--d-ice); color: var(--d-blue); }
+    .cur-ico.amber { background: #FEF3E2; color: var(--d-amber-d); }
+    .cur-ico svg { width: 22px; height: 22px; }
+    .cur-h { flex: 1; min-width: 160px; }
+    .cur-plan { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .cur-plan b { font-size: 1.08rem; font-weight: 900; letter-spacing: -.02em; }
+    .cur-pill { font-size: .74rem; font-weight: 800; padding: 3px 10px; border-radius: 999px; }
+    .cur-pill.ok { background: #DCFCE7; color: #15803D; }
+    .cur-pill.off { background: #FEE2E2; color: #B91C1C; }
+    .cur-pill.wait { background: #FEF6E7; color: #92400E; }
+    .cur-meta { margin-top: 8px; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px 16px; }
+    .cur-meta div { font-size: .82rem; color: var(--d-muted); }
+    .cur-meta b { display: block; color: var(--d-ink); font-weight: 800; font-size: .9rem; margin-top: 1px; }
+    .cur-benefits { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--d-line); }
+    .cur-benefits h3 { margin: 0 0 10px; font-size: .95rem; font-weight: 900; }
+    .cur-benefits ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px 16px; }
+    .cur-benefits li { display: flex; align-items: flex-start; gap: 8px; font-size: .86rem; line-height: 1.35; }
+    .cur-benefits .ck { width: 18px; height: 18px; border-radius: 999px; background: #DCFCE7; color: #15803D; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+    .cur-benefits .ck svg { width: 11px; height: 11px; }
+    .cur-none { margin-top: 10px; font-size: .86rem; color: var(--d-muted); line-height: 1.45; }
+
     .seg-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 22px; }
     .seg { display: inline-flex; background: #E7ECF4; border-radius: 999px; padding: 4px; }
     .seg button { border: 0; background: transparent; cursor: pointer; border-radius: 999px; padding: 9px 20px; font-size: .88rem; font-weight: 800; color: var(--d-muted); }
@@ -239,6 +265,70 @@
       </div>
     </section>
 
+    {% if entitlements.status == 'TRIAL' %}
+    <section class="cur on">
+      <div class="cur-top">
+        <span class="cur-ico amber">🎁</span>
+        <div class="cur-h">
+          <div class="cur-plan">
+            <b>Période découverte</b>
+            <span class="cur-pill ok">{{ entitlements.trial_days_left }} jour{{ 's' if entitlements.trial_days_left > 1 }} restant{{ 's' if entitlements.trial_days_left > 1 }}</span>
+          </div>
+          <p class="cur-none" style="margin-top:8px">Découvrez FixPro pendant 14 jours avant de choisir votre abonnement. Pendant l'essai, vous êtes visible et vous recevez des demandes.</p>
+        </div>
+      </div>
+    </section>
+    {% elif entitlements.status == 'TRIAL_EXPIRED' and not entitlements.active %}
+    <section class="cur">
+      <div class="cur-top">
+        <span class="cur-ico">🔒</span>
+        <div class="cur-h">
+          <div class="cur-plan"><b>Période découverte terminée</b><span class="cur-pill off">Terminée</span></div>
+          <p class="cur-none" style="margin-top:8px">Activez un abonnement ci-dessous pour continuer à recevoir de nouvelles demandes. Votre profil, votre historique et vos avis sont conservés.</p>
+        </div>
+      </div>
+    </section>
+    {% elif entitlements.has_subscription %}
+    <section class="cur {{ 'on' if entitlements.active }}">
+      <div class="cur-top">
+        <span class="cur-ico {{ 'amber' if entitlements.badge and entitlements.badge.accent == 'amber' }}">
+          {% if entitlements.badge and entitlements.badge.icon == 'crown' %}
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7z"/></svg>
+          {% else %}
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 17.8 6.2 20.9l1.1-6.5L2.6 9.8l6.5-.9z"/></svg>
+          {% endif %}
+        </span>
+        <div class="cur-h">
+          <div class="cur-plan">
+            <b>{{ current_sub.plan_name if current_sub else 'Abonnement FixPro' }}</b>
+            {% if entitlements.active %}<span class="cur-pill ok">🟢 Actif</span>
+            {% elif entitlements.status == 'PAST_DUE' %}<span class="cur-pill wait">En attente de paiement</span>
+            {% elif entitlements.status == 'EXPIRED' %}<span class="cur-pill off">Expiré</span>
+            {% else %}<span class="cur-pill off">{{ current_sub.status_label if current_sub else 'Inactif' }}</span>{% endif %}
+          </div>
+          <div class="cur-meta">
+            {% if current_sub and current_sub.end_date_label %}
+            <div>{{ "Actif jusqu'au" if entitlements.active else "Échéance" }}<b>{{ current_sub.end_date_label }}</b></div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      {% if entitlements.active and my_benefits %}
+      <div class="cur-benefits">
+        <h3>Vos avantages</h3>
+        <ul>
+          {% for label, key in my_benefits %}
+          <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>{{ label }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% else %}
+      <p class="cur-none">Vos avantages seront actifs dès que votre paiement sera confirmé et l'abonnement activé. Un abonnement expiré ou en attente n'ouvre aucun avantage.</p>
+      {% endif %}
+    </section>
+    {% endif %}
+
     {% if pending_payment %}
     <a class="pay-resume" href="{{ url_for('subscription_payment_status', ref=pending_payment) }}">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
@@ -321,8 +411,8 @@
               {% macro yes(cls='') %}<svg class="yes {{ cls }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>{% endmacro %}
               {% set dash %}<span class="mut">—</span>{% endset %}
               <tr>
-                <td class="feat"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></span>Nombre de demandes / mois</td>
-                <td><span class="txt b">Illimité</span></td><td><span class="txt g">Illimité</span></td>
+                <td class="feat"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></span>Demandes reçues / mois</td>
+                <td><span class="txt b">30 max</span></td><td><span class="txt g">Illimité</span></td>
               </tr>
               <tr>
                 <td class="feat"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg></span>Visibilité dans la recherche</td>
@@ -343,10 +433,6 @@
               <tr>
                 <td class="feat"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7z"/></svg></span>Mise en avant du profil</td>
                 <td>{{ dash }}</td><td>{{ yes('g') }}</td>
-              </tr>
-              <tr>
-                <td class="feat"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12h8M12 8v8"/></svg></span>Réduction sur les commissions</td>
-                <td><span class="txt g">10%</span></td><td><span class="txt g">20%</span></td>
               </tr>
             </tbody>
           </table>
@@ -380,7 +466,7 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
       Accueil
     </a>
-    <a class="tab" href="{{ url_for('conversations') }}">
+    <a class="tab" href="{{ url_for('technician_requests') }}">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h4"/></svg>
       Demandes
     </a>

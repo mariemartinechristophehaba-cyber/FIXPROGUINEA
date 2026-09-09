@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#2563EB" />
+  {% include '_pwa_head.html' %}
+  <title>Demandes reçues - Espace Technicien</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --d-blue: #2563EB; --d-blue-d: #1D4ED8; --d-ink: #0B1B3B; --d-muted: #64748B;
+      --d-ice: #EEF2F9; --d-line: #E4EAF4; --d-bg: #F5F7FB; --d-green: #16A34A;
+      --d-amber: #F59E0B;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: var(--d-ink); background: var(--d-bg); -webkit-font-smoothing: antialiased; }
+    a { text-decoration: none; color: inherit; }
+    [hidden] { display: none !important; }
+
+    .topbar { position: sticky; top: 0; z-index: 20; background: rgba(245,247,251,.92); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); display: flex; align-items: center; gap: 12px; max-width: 1120px; margin: 0 auto; padding: calc(10px + env(safe-area-inset-top)) clamp(14px, 4vw, 26px) 10px; }
+    .brand { display: flex; align-items: center; gap: 9px; }
+    .brand .ic { width: 34px; height: 34px; color: var(--d-blue); flex-shrink: 0; }
+    .brand .ic svg { width: 100%; height: 100%; }
+    .brand .n { font-size: 1.28rem; font-weight: 800; letter-spacing: -.02em; line-height: 1; }
+    .brand .n i { color: var(--d-blue); font-style: normal; }
+    .brand .s { display: block; font-size: .7rem; font-weight: 600; color: var(--d-muted); margin-top: 2px; }
+    .topbar .sp { flex: 1; }
+    @media (max-width: 360px) { .brand .s { display: none; } }
+
+    .wrap { max-width: 760px; margin: 0 auto; padding: 0 clamp(14px, 4vw, 22px) calc(112px + env(safe-area-inset-bottom)); }
+    .head { margin-top: 8px; }
+    .head h1 { margin: 0; font-size: clamp(1.5rem, 6vw, 2rem); font-weight: 900; letter-spacing: -.03em; }
+    .head p { margin: 6px 0 0; font-size: clamp(.86rem, 3.4vw, .96rem); color: var(--d-muted); }
+
+    .tabs { display: flex; gap: 8px; margin-top: 16px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding-bottom: 2px; }
+    .tabs::-webkit-scrollbar { display: none; }
+    .tabs a {
+      flex: 0 0 auto; white-space: nowrap; padding: 10px 18px; border-radius: 999px;
+      font-size: .88rem; font-weight: 800; color: var(--d-muted);
+      background: #fff; border: 1px solid var(--d-line);
+    }
+    .tabs a.on { background: var(--d-blue); color: #fff; border-color: var(--d-blue); box-shadow: 0 8px 18px rgba(37,99,235,.28); }
+
+    .list { margin-top: 16px; display: grid; gap: 14px; }
+    .req {
+      background: #fff; border: 1px solid var(--d-line); border-radius: 16px;
+      padding: clamp(13px, 3.4vw, 17px); box-shadow: 0 8px 22px rgba(11,27,59,.05);
+    }
+    .req-main { display: block; }
+    .req-top { display: flex; align-items: flex-start; gap: 12px; }
+    .req-ico {
+      width: clamp(44px, 12vw, 54px); height: clamp(44px, 12vw, 54px); border-radius: 14px;
+      flex-shrink: 0; align-self: flex-start;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--d-ice); color: var(--d-blue);
+    }
+    .req-ico svg { width: 46%; height: 46%; }
+    .req-ico.plomberie { background: #E7F0FE; color: #2563EB; }
+    .req-ico.electricite { background: #E7F6EC; color: #15803D; }
+    .req-ico.climatisation { background: #FFF3DC; color: #D97706; }
+    .req-ico.electromenager { background: #EEE9FE; color: #7C3AED; }
+    .req-ico.peinture { background: #FCE7F0; color: #DB2777; }
+    .req-ico.menuiserie { background: #F1E9DD; color: #92400E; }
+    .req-ico.maconnerie { background: #ECEEF2; color: #475569; }
+    .req-ico.serrurerie { background: #E7EDF5; color: #334155; }
+
+    .req-body { flex: 1; min-width: 0; }
+    .req-line1 { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .pill {
+      font-size: .68rem; font-weight: 800; padding: 3px 9px; border-radius: 999px;
+      background: var(--d-ice); color: var(--d-muted);
+    }
+    .pill.new { background: var(--d-blue); color: #fff; }
+    .pill.today { background: #E7F0FE; color: #1D4ED8; }
+    .req-ago { margin-left: auto; font-size: .76rem; color: var(--d-muted); font-weight: 600; white-space: nowrap; }
+    .req-name { display: block; margin-top: 5px; font-size: 1.02rem; font-weight: 900; letter-spacing: -.02em; }
+    .req-loc { display: flex; align-items: center; gap: 5px; margin-top: 4px; font-size: .82rem; color: var(--d-muted); font-weight: 600; }
+    .req-loc svg { width: 13px; height: 13px; flex-shrink: 0; }
+    .req-cat { display: inline-block; margin-top: 7px; font-size: .72rem; font-weight: 800; padding: 3px 10px; border-radius: 7px; background: #EAF1FE; color: #1D4ED8; }
+    .req-desc { margin: 9px 0 0; font-size: .86rem; line-height: 1.4; color: var(--d-ink); }
+    .req-chev { flex-shrink: 0; align-self: center; color: #94A3B8; }
+    .req-chev svg { width: 18px; height: 18px; }
+
+    .req-actions { display: flex; gap: 10px; margin-top: 13px; }
+    .req-actions a {
+      flex: 1; display: flex; align-items: center; justify-content: center; gap: 7px;
+      padding: 11px 10px; border-radius: 11px; font-size: .86rem; font-weight: 800;
+    }
+    .req-actions svg { width: 15px; height: 15px; flex-shrink: 0; }
+    .btn-call { background: linear-gradient(180deg, #22C55E, #16A34A); color: #fff; box-shadow: 0 10px 20px rgba(22,163,74,.28); }
+    .btn-call[aria-disabled="true"] { background: #CBD5E1; box-shadow: none; pointer-events: none; }
+    .btn-msg { background: #fff; border: 1.5px solid var(--d-blue); color: var(--d-blue); }
+
+    .empty { text-align: center; padding: 48px 20px; }
+    .empty .ei { width: 60px; height: 60px; border-radius: 18px; margin: 0 auto; background: var(--d-ice); color: var(--d-blue); display: flex; align-items: center; justify-content: center; }
+    .empty .ei svg { width: 28px; height: 28px; }
+    .empty b { display: block; margin-top: 14px; font-size: 1.02rem; font-weight: 900; }
+    .empty p { margin: 6px 0 0; font-size: .88rem; color: var(--d-muted); line-height: 1.45; }
+
+    .notice { margin-top: 16px; font-size: .82rem; line-height: 1.5; color: #9A3412; background: #FFF7ED; border: 1px solid #FBD5B4; border-radius: 12px; padding: 12px 14px; }
+    .notice a { font-weight: 800; color: var(--d-blue); }
+
+    .tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; background: #fff; border-top: 1px solid var(--d-line); padding: 8px 8px calc(8px + env(safe-area-inset-bottom)); display: flex; align-items: flex-end; justify-content: space-around; box-shadow: 0 -8px 24px rgba(11,27,59,.06); }
+    .tab { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: .68rem; font-weight: 700; color: var(--d-muted); position: relative; padding: 4px 2px; }
+    .tab svg { width: 22px; height: 22px; }
+    .tab.active { color: var(--d-blue); }
+    .tab .tb { position: absolute; top: -1px; right: 22%; min-width: 15px; height: 15px; padding: 0 3px; border-radius: 999px; background: #EF4444; color: #fff; font-size: .6rem; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+    .tab.fab { flex: 0 0 auto; }
+    .tab.fab .fb { width: 54px; height: 54px; border-radius: 999px; margin-top: -22px; background: linear-gradient(180deg, #3B76F5, var(--d-blue)); color: #fff; display: flex; align-items: center; justify-content: center; box-shadow: 0 12px 24px rgba(37,99,235,.4); border: 4px solid #fff; }
+    .tab.fab .fb svg { width: 26px; height: 26px; }
+  </style>
+</head>
+<body>
+  {% set ICONS = {
+    'plomberie': '<path d="M12 22V8M8 8h8M6 8V6a2 2 0 0 1 2-2h1a2 2 0 0 0 2-2M18 12h1a3 3 0 0 1 0 6h-1"/>',
+    'electricite': '<path d="M13 2 3 14h9l-1 8 10-12h-9z"/>',
+    'climatisation': '<rect x="2" y="4" width="20" height="9" rx="2"/><path d="M6 17c0 2-1 3-1 3M12 17v3M18 17c0 2 1 3 1 3M6 9h.01M10 9h4"/>',
+    'electromenager': '<rect x="4" y="2" width="16" height="20" rx="2"/><circle cx="12" cy="13" r="5"/><path d="M8 6h.01M12 6h.01"/>',
+    'peinture': '<path d="M19 3H8a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h11V3zM11 13v3a2 2 0 0 1-2 2 2 2 0 0 0-2 2v1h4v-2"/>',
+    'menuiserie': '<path d="M2 20h20M4 20V10l8-6 8 6v10M9 20v-6h6v6"/>',
+    'maconnerie': '<path d="M2 8h20M2 14h20M2 4h20v16H2zM8 4v4M16 8v6M8 14v6"/>',
+    'serrurerie': '<circle cx="12" cy="8" r="5"/><path d="M12 13v8M9 18h6"/>',
+    'autre': '<circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/>'
+  } %}
+
+  <header class="topbar">
+    <a class="brand" href="{{ url_for('artisan_dashboard') }}">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span>
+      <span><span class="n">Fix<i>Pro</i></span><span class="s">Espace Technicien</span></span>
+    </a>
+    <span class="sp"></span>
+    {% include '_tech_notif_bell.html' %}
+    {% include '_tech_profile_menu.html' %}
+  </header>
+
+  <main class="wrap">
+    <div class="head">
+      <h1>Demandes reçues</h1>
+      <p>Des clients ont besoin de votre savoir-faire</p>
+    </div>
+
+    <nav class="tabs">
+      <a class="{{ 'on' if active_filter == 'all' }}" href="{{ url_for('technician_requests') }}">Toutes ({{ counts.all }})</a>
+      <a class="{{ 'on' if active_filter == 'today' }}" href="{{ url_for('technician_requests', f='today') }}">Aujourd'hui ({{ counts.today }})</a>
+      <a class="{{ 'on' if active_filter == 'week' }}" href="{{ url_for('technician_requests', f='week') }}">Cette semaine ({{ counts.week }})</a>
+    </nav>
+
+    {% if entitlements and entitlements.status == 'TRIAL_EXPIRED' and not entitlements.active %}
+    <p class="notice">Votre période découverte est terminée : vous ne recevez plus de nouvelles demandes.
+      <a href="{{ url_for('technician_subscription') }}">Activez un abonnement</a> pour continuer.</p>
+    {% endif %}
+
+    {% if items %}
+    <div class="list">
+      {% for r in items %}
+      <article class="req">
+        <a class="req-main" href="{{ url_for('request_detail', request_id=r.id) }}">
+        <div class="req-top">
+          <span class="req-ico {{ r.cat_key }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">{{ ICONS.get(r.cat_key, ICONS['autre']) | safe }}</svg>
+          </span>
+          <div class="req-body">
+            <div class="req-line1">
+              <span class="pill {{ r.bucket }}">{{ r.bucket_label }}</span>
+              <span class="req-ago">{{ r.ago }}</span>
+            </div>
+            <span class="req-name">{{ r.client_name }}</span>
+            <span class="req-loc">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-8-4.5-8-11a8 8 0 0 1 16 0c0 6.5-8 11-8 11z"/><circle cx="12" cy="10" r="3"/></svg>
+              {{ r.address or 'Conakry' }}{% if r.distance_km is not none %} ({{ r.distance_km }} km){% endif %}
+            </span>
+            {% if r.cat_label %}<span class="req-cat">{{ r.cat_label }}</span>{% endif %}
+            {% if r.summary %}<p class="req-desc">{{ r.summary }}</p>{% endif %}
+          </div>
+          <span class="req-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+        </div>
+        </a>
+        <div class="req-actions">
+          {% if r.call_phone %}
+          <a class="btn-call" href="tel:{{ r.call_phone }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.6A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1.2.4 2.4.7 3.5a2 2 0 0 1-.5 2.1L8.1 10.5a16 16 0 0 0 6 6l1.2-1.2a2 2 0 0 1 2.1-.5c1.1.4 2.3.6 3.5.7A2 2 0 0 1 22 16.9z"/></svg>
+            Appeler
+          </a>
+          {% else %}
+          <span class="btn-call" aria-disabled="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.6A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1.2.4 2.4.7 3.5a2 2 0 0 1-.5 2.1L8.1 10.5a16 16 0 0 0 6 6l1.2-1.2a2 2 0 0 1 2.1-.5c1.1.4 2.3.6 3.5.7A2 2 0 0 1 22 16.9z"/></svg>
+            Appeler
+          </span>
+          {% endif %}
+          <a class="btn-msg" href="{{ url_for('request_detail', request_id=r.id) }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            Message
+          </a>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty">
+      <span class="ei"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h4"/></svg></span>
+      <b>Aucune demande pour l'instant</b>
+      <p>Les nouvelles demandes des clients de votre zone apparaîtront ici. Restez « En ligne » pour en recevoir.</p>
+    </div>
+    {% endif %}
+  </main>
+
+  <nav class="tabbar">
+    <a class="tab" href="{{ url_for('artisan_dashboard') }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
+      Accueil
+    </a>
+    <a class="tab active" href="{{ url_for('technician_requests') }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h4"/></svg>
+      Demandes
+    </a>
+    <a class="tab fab" href="{{ url_for('request_new') }}" aria-label="Nouvelle demande">
+      <span class="fb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></span>
+      Nouvelle
+    </a>
+    <a class="tab" href="{{ url_for('client_messages') }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      Messages
+      {% if messages_unread %}<span class="tb">{{ messages_unread if messages_unread < 100 else '99+' }}</span>{% endif %}
+    </a>
+    <a class="tab" href="{{ url_for('technician_subscription') }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7z"/></svg>
+      Abonnement
+    </a>
+  </nav>
+</body>
+</html>

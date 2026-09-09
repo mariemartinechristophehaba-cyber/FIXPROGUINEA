@@ -22,6 +22,12 @@ import db  # noqa: E402
 import fixpro_app  # noqa: E402
 
 
+def datetime_now_month():
+    """Mois calendaire courant 'AAAA-MM' (UTC) — meme calcul que le serveur."""
+    import datetime as _dt
+    return _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m")
+
+
 class FixProTestCase(unittest.TestCase):
     """Socle commun : base temporaire + client HTTP."""
 
@@ -617,6 +623,55 @@ class TechnicianDashboardTests(FixProTestCase):
                       ("/dashboard/technicien", "/technician/dashboard"))
         self.assertIn("Espace Technicien", r.get_data(as_text=True))
 
+    def test_technician_requests_page_lists_assigned_requests(self):
+        self.register_artisan("trq@example.com", phone="+224621119001")
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            tid = conn.execute("SELECT id FROM users WHERE phone=?",
+                               ("+224621119001",)).fetchone()["id"]
+            cid = fixpro_app._insert_id(conn,
+                "INSERT INTO users (full_name, phone, password_hash, role)"
+                " VALUES ('Client Zed', '+224620119001', 'x', 'client')", ())
+            for desc, cat, other in [
+                    ("Fuite sous l evier", "Plomberie", tid),
+                    ("Prise du salon HS", "Electricite", tid),
+                    ("Demande orpheline", "Peinture", None)]:   # pas attribuee au tech
+                conn.execute(
+                    "INSERT INTO requests (client_id, artisan_id, reference, title,"
+                    " description, category, address, status, urgency, quote_amount,"
+                    " budget, latitude, longitude, created_at, updated_at)"
+                    " VALUES (?, ?, ?, 'T', ?, ?, 'Kaloum', 'ASSIGNED', 'normal',"
+                    " 0, 0, 0, 0, datetime('now'), datetime('now'))",
+                    (cid, other, "RQ-TRQ-%s" % cat, desc, cat))
+            # une demande terminee : ne doit pas apparaitre
+            conn.execute(
+                "INSERT INTO requests (client_id, artisan_id, reference, title,"
+                " description, category, address, status, urgency, quote_amount,"
+                " budget, latitude, longitude, created_at, updated_at)"
+                " VALUES (?, ?, 'RQ-TRQ-DONE', 'T', 'Vieille intervention', 'Plomberie', 'K',"
+                " 'completed', 'normal', 0, 0, 0, 0, datetime('now'), datetime('now'))",
+                (cid, tid))
+            conn.commit()
+        finally:
+            conn.close()
+        self.login("trq@example.com")
+        r = self.client.get("/dashboard/technicien/demandes")
+        self.assertEqual(r.status_code, 200)
+        html = r.get_data(as_text=True)
+        self.assertIn("Demandes reçues", html)
+        self.assertIn("Client Zed", html)
+        self.assertIn("Fuite sous l evier", html)
+        self.assertIn("Prise du salon HS", html)
+        self.assertNotIn("Demande orpheline", html)     # pas attribuee au tech
+        self.assertNotIn("Vieille intervention", html)  # terminee -> exclue
+        self.assertIn("Toutes (2)", html)
+
+    def test_technician_requests_page_rejects_client(self):
+        self.register_client()
+        self.login("+224620000000")
+        r = self.client.get("/dashboard/technicien/demandes", follow_redirects=False)
+        self.assertEqual(r.status_code, 302)
+
     def test_availability_toggle_updates_status(self):
         self.register_artisan("tech3@example.com", phone="+224621111113")
         self.login("tech3@example.com")
@@ -677,7 +732,7 @@ class TechnicianDashboardTests(FixProTestCase):
                 "SELECT status FROM technician_subscriptions WHERE technician_id = ?",
                 (uid,)).fetchone()
             self.assertIsNotNone(sub)
-            self.assertEqual(sub["status"], "PAST_DUE")
+            self.assertIn(sub["status"], ("TRIAL", "PAST_DUE"))
             pay = conn.execute(
                 "SELECT status, amount FROM subscription_payments WHERE user_id = ?",
                 (uid,)).fetchone()
@@ -976,8 +1031,9 @@ class SubscriptionPaymentFlowTests(FixProTestCase):
         self.assertEqual(pay["status"], "pending")
         self.assertIsNone(pay["paid_at"])
         sub = self._sub_row(tid)
-        self.assertEqual(sub["status"], "PAST_DUE")      # PAS ACTIVE
-        self.assertIsNone(sub["end_date"])              # pas de periode tant qu'inactif
+        self.assertIn(sub["status"], ("TRIAL", "PAST_DUE"))      # PAS ACTIVE
+        self.assertNotEqual(sub["status"], "ACTIVE")
+        self.assertIsNone(pay["period_end"])           # pas de periode d'abonnement tant qu'inactif
 
     def test_status_page_and_api_report_pending(self):
         self._tech()
@@ -996,7 +1052,7 @@ class SubscriptionPaymentFlowTests(FixProTestCase):
         ref = self._start_payment()
         r = self._webhook(ref, "success", token="")
         self.assertEqual(r.status_code, 403)
-        self.assertEqual(self._sub_row(tid)["status"], "PAST_DUE")
+        self.assertIn(self._sub_row(tid)["status"], ("TRIAL", "PAST_DUE"))  # jamais ACTIVE
         self.assertEqual(self._pay_row(ref)["status"], "pending")
 
     def test_webhook_wrong_amount_is_rejected(self):
@@ -1004,7 +1060,7 @@ class SubscriptionPaymentFlowTests(FixProTestCase):
         ref = self._start_payment()
         r = self._webhook(ref, "success", amount=1)
         self.assertEqual(r.status_code, 400)
-        self.assertEqual(self._sub_row(tid)["status"], "PAST_DUE")
+        self.assertIn(self._sub_row(tid)["status"], ("TRIAL", "PAST_DUE"))  # jamais ACTIVE
 
     # --- 3. echecs -> reste inactif --------------------------------
 
@@ -1013,7 +1069,7 @@ class SubscriptionPaymentFlowTests(FixProTestCase):
         ref = self._start_payment()
         self.assertEqual(self._webhook(ref, "failed").status_code, 200)
         self.assertEqual(self._pay_row(ref)["status"], "failed")
-        self.assertEqual(self._sub_row(tid)["status"], "PAST_DUE")
+        self.assertIn(self._sub_row(tid)["status"], ("TRIAL", "PAST_DUE"))  # jamais ACTIVE
         html = self.client.get("/abonnement/statut/%s" % ref).get_data(as_text=True)
         self.assertIn("Paiement échoué", html)
 
@@ -1022,14 +1078,14 @@ class SubscriptionPaymentFlowTests(FixProTestCase):
         ref = self._start_payment()
         self._webhook(ref, "cancelled")
         self.assertEqual(self._pay_row(ref)["status"], "cancelled")
-        self.assertEqual(self._sub_row(tid)["status"], "PAST_DUE")
+        self.assertIn(self._sub_row(tid)["status"], ("TRIAL", "PAST_DUE"))  # jamais ACTIVE
 
     def test_user_cancel_keeps_inactive(self):
         tid = self._tech()
         ref = self._start_payment()
         self.client.post("/abonnement/statut/%s/annuler" % ref)
         self.assertEqual(self._pay_row(ref)["status"], "cancelled")
-        self.assertEqual(self._sub_row(tid)["status"], "PAST_DUE")
+        self.assertIn(self._sub_row(tid)["status"], ("TRIAL", "PAST_DUE"))  # jamais ACTIVE
 
     def test_stale_attempt_expires_and_stays_inactive(self):
         tid = self._tech()
@@ -1044,7 +1100,7 @@ class SubscriptionPaymentFlowTests(FixProTestCase):
         j = self.client.get("/api/abonnement/statut/%s" % ref).get_json()
         self.assertEqual(j["state"], "PAYMENT_EXPIRED")
         self.assertEqual(self._pay_row(ref)["status"], "expired")
-        self.assertEqual(self._sub_row(tid)["status"], "PAST_DUE")
+        self.assertIn(self._sub_row(tid)["status"], ("TRIAL", "PAST_DUE"))  # jamais ACTIVE
 
     # --- 4. confirmation reelle -> activation ----------------------
 
@@ -1134,7 +1190,7 @@ class SubscriptionPaymentFlowTests(FixProTestCase):
         ref = self._start_payment(method="unitrade")
         self.assertEqual(self._pay_row(ref)["payment_method"], "unitrade")
         self.assertEqual(self._pay_row(ref)["status"], "pending")
-        self.assertEqual(self._sub_row(tid)["status"], "PAST_DUE")
+        self.assertIn(self._sub_row(tid)["status"], ("TRIAL", "PAST_DUE"))  # jamais ACTIVE
 
     def test_real_providers_never_return_paid(self):
         for code, cls in fixpro_app._REAL_PAYMENT_PROVIDERS.items():
@@ -1168,7 +1224,7 @@ class SubscriptionPaymentFlowTests(FixProTestCase):
                   "currency": "USD"},
             headers={"X-FixPro-Signature": self.WEBHOOK_SECRET})
         self.assertEqual(r.status_code, 400)
-        self.assertEqual(self._sub_row(tid)["status"], "PAST_DUE")
+        self.assertIn(self._sub_row(tid)["status"], ("TRIAL", "PAST_DUE"))  # jamais ACTIVE
 
     def test_webhook_unknown_reference_is_rejected(self):
         self._tech(email="badref@example.com", phone="+224622000024")
@@ -1178,6 +1234,830 @@ class SubscriptionPaymentFlowTests(FixProTestCase):
             json={"reference": "SUB-DOES-NOT-EXIST", "status": "success"},
             headers={"X-FixPro-Signature": self.WEBHOOK_SECRET})
         self.assertEqual(r.status_code, 404)
+
+
+class SubscriptionEntitlementsTests(FixProTestCase):
+    """Les avantages Pro / Premium sont de VRAIS droits, calcules depuis la
+    base par une source centrale, et desactives hors de l'etat ACTIVE."""
+
+    def _tech(self, email="ent@example.com", phone="+224623000001"):
+        self.register_artisan(email, phone=phone)
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            return conn.execute("SELECT id FROM users WHERE phone = ?",
+                                (phone,)).fetchone()["id"]
+        finally:
+            conn.close()
+
+    def _set_sub(self, tech_id, plan_code=None, status="ACTIVE", ends="future"):
+        """Cree/positionne l'abonnement du technicien pour le test."""
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            plan_id = None
+            if plan_code:
+                plan_id = fixpro_app._ensure_tech_plan_row(conn, plan_code)
+            end_date = None
+            if ends == "future":
+                end_date = "2999-01-01 00:00:00"
+            elif ends == "past":
+                end_date = "2000-01-01 00:00:00"
+            conn.execute(
+                "INSERT INTO technician_subscriptions"
+                " (technician_id, plan_id, status, start_date, end_date, auto_renew)"
+                " VALUES (?, ?, ?, '2020-01-01 00:00:00', ?, 1)",
+                (tech_id, plan_id, status, end_date))
+            conn.commit()
+        finally:
+            conn.close()
+
+    def _ents(self, tech_id):
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            return fixpro_app.get_technician_entitlements(conn, tech_id)
+        finally:
+            conn.close()
+
+    # --- matrice etat -> droits ---------------------------------------
+
+    def test_no_subscription_and_trial_over_grants_no_entitlement(self):
+        # technicien valide : il obtient d'abord l'essai de 14 jours ; une
+        # fois l'essai termine et sans abonnement -> plus aucun droit.
+        tid = self._tech()
+        self.assertEqual(self._ents(tid)["status"], "TRIAL")   # essai auto
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute("UPDATE technician_subscriptions SET end_date='2000-01-01'"
+                         " WHERE technician_id=?", (tid,))
+            conn.commit()
+        finally:
+            conn.close()
+        e = self._ents(tid)
+        self.assertEqual(e["status"], "TRIAL_EXPIRED")
+        self.assertFalse(e["active"])
+        self.assertFalse(e["eligible"])
+        self.assertEqual(e["entitlements"], set())
+        self.assertIsNone(e["badge"])
+
+    def test_pro_active_grants_pro_rights_only(self):
+        tid = self._tech()
+        self._set_sub(tid, "tech_pro", "ACTIVE")
+        e = self._ents(tid)
+        self.assertTrue(e["active"])
+        self.assertEqual(e["plan_code"], "tech_pro")
+        self.assertIn("monthly_request_quota", e["entitlements"])
+        self.assertNotIn("unlimited_requests", e["entitlements"])   # Pro = limite
+        self.assertIn("basic_statistics", e["entitlements"])
+        self.assertNotIn("detailed_statistics", e["entitlements"])
+        self.assertNotIn("priority_visibility", e["entitlements"])
+        self.assertNotIn("featured_profile", e["entitlements"])
+        self.assertEqual(e["badge"]["label"], "Pro")
+
+    def test_premium_active_grants_premium_rights(self):
+        tid = self._tech()
+        self._set_sub(tid, "tech_premium", "ACTIVE")
+        e = self._ents(tid)
+        self.assertTrue(e["active"])
+        for k in ("detailed_statistics", "priority_visibility", "featured_profile",
+                  "priority_support", "unlimited_requests"):
+            self.assertIn(k, e["entitlements"])
+        self.assertEqual(e["badge"]["label"], "Premium")
+
+    def test_pending_premium_grants_nothing(self):
+        tid = self._tech()
+        self._set_sub(tid, "tech_premium", "PAST_DUE")
+        e = self._ents(tid)
+        self.assertFalse(e["active"])
+        self.assertEqual(e["entitlements"], set())
+        self.assertIsNone(e["badge"])
+
+    def test_expired_premium_loses_all_rights(self):
+        tid = self._tech()
+        # ACTIVE mais end_date depassee -> expiration paresseuse -> EXPIRED
+        self._set_sub(tid, "tech_premium", "ACTIVE", ends="past")
+        e = self._ents(tid)
+        self.assertEqual(e["status"], "EXPIRED")
+        self.assertFalse(e["active"])
+        self.assertNotIn("priority_visibility", e["entitlements"])
+        self.assertNotIn("detailed_statistics", e["entitlements"])
+        self.assertNotIn("featured_profile", e["entitlements"])
+        self.assertEqual(e["entitlements"], set())
+
+    def test_cancelled_grants_nothing(self):
+        tid = self._tech()
+        self._set_sub(tid, "tech_premium", "CANCELLED")
+        self.assertEqual(self._ents(tid)["entitlements"], set())
+
+    def test_has_entitlement_helper_is_server_side(self):
+        tid = self._tech()
+        self._set_sub(tid, "tech_pro", "ACTIVE")
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            self.assertTrue(fixpro_app.technician_has_entitlement(
+                conn, tid, "monthly_request_quota"))
+            self.assertFalse(fixpro_app.technician_has_entitlement(
+                conn, tid, "unlimited_requests"))
+            self.assertFalse(fixpro_app.technician_has_entitlement(
+                conn, tid, "detailed_statistics"))
+        finally:
+            conn.close()
+
+    def test_plan_change_pro_to_premium_updates_rights(self):
+        tid = self._tech()
+        self._set_sub(tid, "tech_pro", "ACTIVE")
+        self.assertNotIn("detailed_statistics", self._ents(tid)["entitlements"])
+        # meme parcours qu'une nouvelle activation : on repositionne l'abo
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            pid = fixpro_app._ensure_tech_plan_row(conn, "tech_premium")
+            conn.execute(
+                "UPDATE technician_subscriptions SET plan_id = ?, status = 'ACTIVE',"
+                " end_date = '2999-01-01 00:00:00' WHERE technician_id = ?", (pid, tid))
+            conn.commit()
+        finally:
+            conn.close()
+        e = self._ents(tid)
+        self.assertEqual(e["plan_code"], "tech_premium")
+        self.assertIn("detailed_statistics", e["entitlements"])
+
+    # --- integration : cote client / recherche ----------------------
+
+    def test_client_sees_premium_badge_only_when_active(self):
+        tid = self._tech(email="pub@example.com", phone="+224623000009")
+        self._set_sub(tid, "tech_premium", "PAST_DUE")
+        self.register_client()
+        self.login("+224620000000")
+        html = self.client.get("/artisans/%d" % tid).get_data(as_text=True)
+        self.assertNotIn('<span class="pl-plan-pill', html)
+        # activation
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute("UPDATE technician_subscriptions SET status = 'ACTIVE'"
+                         " WHERE technician_id = ?", (tid,))
+            conn.commit()
+        finally:
+            conn.close()
+        html = self.client.get("/artisans/%d" % tid).get_data(as_text=True)
+        self.assertIn('<span class="pl-plan-pill', html)
+
+    def test_priority_visibility_boosts_ranking_without_excluding(self):
+        # deux techniciens identiques, l'un Premium actif -> il passe devant,
+        # mais l'autre reste present dans les resultats.
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            ids = []
+            for i in (1, 2):
+                conn.execute(
+                    "INSERT INTO users (email, phone, password_hash, role, full_name,"
+                    " profession, city, is_verified, is_active, account_status,"
+                    " availability_status, verification_status)"
+                    " VALUES (?, ?, 'x', 'technician', ?, 'Plombier', 'Conakry', 1, 1,"
+                    " 'ACTIVE', 'en_ligne', 'APPROVED')",
+                    ("rank%d@x.co" % i, "+22462400000%d" % i, "Tech %d" % i))
+                ids.append(conn.execute("SELECT id FROM users WHERE email = ?",
+                                        ("rank%d@x.co" % i,)).fetchone()["id"])
+            pid = fixpro_app._ensure_tech_plan_row(conn, "tech_premium")
+            conn.execute(
+                "INSERT INTO technician_subscriptions (technician_id, plan_id, status,"
+                " start_date, end_date, auto_renew)"
+                " VALUES (?, ?, 'ACTIVE', '2020-01-01 00:00:00', '2999-01-01 00:00:00', 1)",
+                (ids[1], pid))
+            conn.commit()
+            ranked = fixpro_app._match_technicians(conn, "plomberie", location="Conakry")
+        finally:
+            conn.close()
+        ranked_ids = [r["id"] for r in ranked]
+        self.assertIn(ids[0], ranked_ids)          # le non-Premium reste present
+        self.assertIn(ids[1], ranked_ids)
+        self.assertLess(ranked_ids.index(ids[1]), ranked_ids.index(ids[0]))
+        prem = next(r for r in ranked if r["id"] == ids[1])
+        self.assertEqual(prem["subscription_badge"]["label"], "Premium")
+
+    def test_my_subscription_page_benefits_come_from_central_source(self):
+        tid = self._tech(email="benef@example.com", phone="+224623000011")
+        self._set_sub(tid, "tech_premium", "ACTIVE")
+        self.login("+224623000011")
+        html = self.client.get("/abonnement").get_data(as_text=True)
+        self.assertIn("Vos avantages", html)
+        self.assertIn("Demandes illimitées", html)
+        self.assertIn("Statistiques détaillées", html)
+        self.assertIn("Profil mis en avant", html)
+
+    def test_pro_subscription_page_shows_30_limit_from_central_source(self):
+        tid = self._tech(email="benefpro@example.com", phone="+224623000012")
+        self._set_sub(tid, "tech_pro", "ACTIVE")
+        self.login("+224623000012")
+        html = self.client.get("/abonnement").get_data(as_text=True)
+        self.assertIn("Vos avantages", html)
+        self.assertIn("30 demandes reçues par mois", html)   # libelle central
+
+    def test_dashboard_shows_real_quota_counter_for_pro(self):
+        tid = self._tech(email="dashq@example.com", phone="+224623000013")
+        self._set_sub(tid, "tech_pro", "ACTIVE")
+        self._fill_month(tid, 7, datetime_now_month())
+        self.login("+224623000013")
+        html = self.client.get("/dashboard/technicien").get_data(as_text=True)
+        self.assertIn("Demandes reçues ce mois", html)
+        self.assertIn("7 / 30", html)
+
+    # --- Statistiques detaillees (avantage Premium) -------------------
+
+    def _add_requests(self, tech_id, specs):
+        """specs = liste de (status, month) ; cree des demandes attribuees."""
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            cid = conn.execute(
+                "INSERT INTO users (email, phone, password_hash, role, full_name)"
+                " VALUES ('cli-st@x.co', '+224620999888', 'x', 'client', 'Cli')")
+            cid = conn.execute("SELECT id FROM users WHERE email = 'cli-st@x.co'").fetchone()["id"]
+            for i, (st, month) in enumerate(specs):
+                conn.execute(
+                    "INSERT INTO requests (client_id, artisan_id, reference, title,"
+                    " description, category, address, status, urgency, quote_amount,"
+                    " budget, latitude, longitude, created_at, updated_at)"
+                    " VALUES (?, ?, ?, 'T', 'D', 'plomberie', 'Conakry', ?, 'normal',"
+                    " 0, 0, 0, 0, ?, ?)",
+                    (cid, tech_id, "R-ST-%d" % i, st,
+                     "%s-15 10:00:00" % month, "%s-15 10:00:00" % month))
+            conn.commit()
+        finally:
+            conn.close()
+
+    def test_stats_page_locked_for_pro(self):
+        tid = self._tech(email="st-pro@x.co", phone="+224623000020")
+        self._set_sub(tid, "tech_pro", "ACTIVE")
+        self.login("+224623000020")
+        r = self.client.get("/statistiques")
+        self.assertEqual(r.status_code, 200)
+        html = r.get_data(as_text=True)
+        self.assertIn("Passer à Premium", html)
+        self.assertNotIn("Évolution sur 6 mois", html)   # aucune donnee Premium servie
+
+    def test_stats_page_locked_without_subscription(self):
+        tid = self._tech(email="st-none@x.co", phone="+224623000021")
+        self.login("+224623000021")
+        r = self.client.get("/statistiques")
+        self.assertEqual(r.status_code, 200)
+        self.assertIn("Passer à Premium", r.get_data(as_text=True))
+        self.assertNotIn("Évolution sur 6 mois", r.get_data(as_text=True))
+
+    def test_stats_page_unlocked_for_premium(self):
+        tid = self._tech(email="st-prem@x.co", phone="+224623000022")
+        self._set_sub(tid, "tech_premium", "ACTIVE")
+        self.login("+224623000022")
+        r = self.client.get("/statistiques")
+        self.assertEqual(r.status_code, 200)
+        html = r.get_data(as_text=True)
+        self.assertIn("Évolution sur 6 mois", html)
+        self.assertIn("Demandes reçues", html)
+        self.assertIn("conversion", html.lower())        # metrique manquante signalee
+
+    def test_stats_page_locked_after_expiry(self):
+        tid = self._tech(email="st-exp@x.co", phone="+224623000023")
+        self._set_sub(tid, "tech_premium", "ACTIVE", ends="past")
+        self.login("+224623000023")
+        r = self.client.get("/statistiques")
+        self.assertEqual(r.status_code, 200)
+        self.assertNotIn("Évolution sur 6 mois", r.get_data(as_text=True))
+
+    def test_stats_page_rejects_client(self):
+        self.register_client()
+        self.login("+224620000000")
+        r = self.client.get("/statistiques")
+        self.assertEqual(r.status_code, 302)
+
+    def test_stats_numbers_are_real_counts(self):
+        tid = self._tech(email="st-num@x.co", phone="+224623000024")
+        self._set_sub(tid, "tech_premium", "ACTIVE")
+        self._add_requests(tid, [
+            ("completed", "2026-09"), ("completed", "2026-08"),
+            ("accepted", "2026-09"), ("refused", "2026-09"),
+            ("REQUESTED", "2026-09"),
+        ])
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            ent = fixpro_app.get_technician_entitlements(conn, tid)
+        finally:
+            conn.close()
+        self.assertTrue(ent["active"])
+        self.login("+224623000024")
+        html = self.client.get("/statistiques").get_data(as_text=True)
+        # 5 demandes recues au total, 3 acceptees (completed+completed+accepted),
+        # 1 terminee ce mois n'est pas ce qu'on teste ici : on verifie le total.
+        self.assertIn(">5<", html.replace(" ", ""))       # KPI "Demandes reçues" = 5
+
+    # --- Regle officielle : PRO = 30 / mois, PREMIUM = illimite ------
+
+    def test_plan_limits_single_source(self):
+        self.assertEqual(fixpro_app._PLAN_MONTHLY_REQUEST_LIMIT["tech_pro"], 30)
+        self.assertIsNone(fixpro_app._PLAN_MONTHLY_REQUEST_LIMIT["tech_premium"])
+        self.assertEqual(fixpro_app._PRO_MONTHLY_REQUEST_LIMIT, 30)
+        self.assertIn("30", fixpro_app._ENTITLEMENT_LABELS["monthly_request_quota"])
+
+    def _usage(self, tid, month="2026-09"):
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            return fixpro_app.technician_request_usage(conn, tid, month=month)
+        finally:
+            conn.close()
+
+    def _can_receive(self, tid):
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            return fixpro_app.technician_can_receive_request(conn, tid)
+        finally:
+            conn.close()
+
+    def _fill_month(self, tid, n, month):
+        self._add_requests(tid, [("REQUESTED", month)] * n)
+
+    def test_pro_zero_requests_can_receive(self):
+        tid = self._tech(email="p0@x.co", phone="+224623000030")
+        self._set_sub(tid, "tech_pro", "ACTIVE")
+        self.assertTrue(self._can_receive(tid))
+
+    def test_pro_29_requests_can_receive(self):
+        tid = self._tech(email="p29@x.co", phone="+224623000031")
+        self._set_sub(tid, "tech_pro", "ACTIVE")
+        self._fill_month(tid, 29, datetime_now_month())
+        self.assertTrue(self._can_receive(tid))
+        u = self._usage(tid, datetime_now_month())
+        self.assertEqual(u["used"], 29)
+        self.assertEqual(u["remaining"], 1)
+
+    def test_pro_30_requests_cannot_receive(self):
+        tid = self._tech(email="p30@x.co", phone="+224623000032")
+        self._set_sub(tid, "tech_pro", "ACTIVE")
+        self._fill_month(tid, 30, datetime_now_month())
+        self.assertFalse(self._can_receive(tid))
+        u = self._usage(tid, datetime_now_month())
+        self.assertTrue(u["over_limit"])
+        self.assertEqual(u["remaining"], 0)
+
+    def test_pro_over_limit_not_selected_by_matching(self):
+        # technicien Pro a 30/30 -> exclu de _match_technicians, mais un autre
+        # technicien identique sans quota reste selectionnable.
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            ids = []
+            for i in (1, 2):
+                conn.execute(
+                    "INSERT INTO users (email, phone, password_hash, role, full_name,"
+                    " profession, city, is_verified, is_active, account_status,"
+                    " availability_status, verification_status)"
+                    " VALUES (?, ?, 'x', 'technician', ?, 'Plombier', 'Conakry', 1, 1,"
+                    " 'ACTIVE', 'en_ligne', 'APPROVED')",
+                    ("q%d@x.co" % i, "+2246230000%d" % (40 + i), "QTech %d" % i))
+                ids.append(conn.execute("SELECT id FROM users WHERE email = ?",
+                                        ("q%d@x.co" % i,)).fetchone()["id"])
+            pid = fixpro_app._ensure_tech_plan_row(conn, "tech_pro")
+            conn.execute(
+                "INSERT INTO technician_subscriptions (technician_id, plan_id, status,"
+                " start_date, end_date, auto_renew)"
+                " VALUES (?, ?, 'ACTIVE', '2020-01-01', '2999-01-01', 1)", (ids[0], pid))
+            cli = conn.execute(
+                "INSERT INTO users (email, phone, password_hash, role, full_name)"
+                " VALUES ('qc@x.co', '+224620000777', 'x', 'client', 'C')")
+            cli = conn.execute("SELECT id FROM users WHERE email = 'qc@x.co'").fetchone()["id"]
+            month = datetime_now_month()
+            for k in range(30):
+                conn.execute(
+                    "INSERT INTO requests (client_id, artisan_id, reference, title,"
+                    " description, category, address, status, urgency, quote_amount,"
+                    " budget, latitude, longitude, created_at, updated_at)"
+                    " VALUES (?, ?, ?, 'T', 'D', 'plomberie', 'Conakry', 'REQUESTED',"
+                    " 'normal', 0, 0, 0, 0, ?, ?)",
+                    (cli, ids[0], "RQ-%d" % k, "%s-10 09:00:00" % month,
+                     "%s-10 09:00:00" % month))
+            conn.commit()
+            ranked = [r["id"] for r in
+                      fixpro_app._match_technicians(conn, "plomberie", location="Conakry")]
+        finally:
+            conn.close()
+        self.assertNotIn(ids[0], ranked)   # Pro plein -> exclu
+        self.assertIn(ids[1], ranked)      # l'autre technicien reste dispo
+
+    def test_premium_30_requests_still_receives(self):
+        tid = self._tech(email="pr30@x.co", phone="+224623000033")
+        self._set_sub(tid, "tech_premium", "ACTIVE")
+        self._fill_month(tid, 30, datetime_now_month())
+        self.assertTrue(self._can_receive(tid))
+        self.assertTrue(self._usage(tid, datetime_now_month())["unlimited"])
+
+    def test_premium_100_requests_still_receives(self):
+        tid = self._tech(email="pr100@x.co", phone="+224623000034")
+        self._set_sub(tid, "tech_premium", "ACTIVE")
+        self._fill_month(tid, 100, datetime_now_month())
+        self.assertTrue(self._can_receive(tid))
+        u = self._usage(tid, datetime_now_month())
+        self.assertEqual(u["used"], 100)
+        self.assertFalse(u["over_limit"])
+
+    def test_pro_expired_has_no_quota_entitlement(self):
+        tid = self._tech(email="pex@x.co", phone="+224623000035")
+        self._set_sub(tid, "tech_pro", "ACTIVE", ends="past")
+        e = self._ents(tid)
+        self.assertEqual(e["status"], "EXPIRED")
+        self.assertEqual(e["entitlements"], set())
+        self.assertNotIn("monthly_request_quota", e["entitlements"])
+
+    def test_premium_expired_loses_unlimited(self):
+        tid = self._tech(email="prex@x.co", phone="+224623000036")
+        self._set_sub(tid, "tech_premium", "ACTIVE", ends="past")
+        e = self._ents(tid)
+        self.assertFalse(e["active"])
+        self.assertNotIn("unlimited_requests", e["entitlements"])
+        # abonnement expire -> plus de plan actif -> usage non plafonne par un plan
+        self.assertTrue(self._usage(tid, datetime_now_month())["unlimited"])
+
+    def test_change_pro_to_premium_lifts_limit(self):
+        tid = self._tech(email="chg1@x.co", phone="+224623000037")
+        self._set_sub(tid, "tech_pro", "ACTIVE")
+        self._fill_month(tid, 30, datetime_now_month())
+        self.assertFalse(self._can_receive(tid))
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            pid = fixpro_app._ensure_tech_plan_row(conn, "tech_premium")
+            conn.execute("UPDATE technician_subscriptions SET plan_id = ?,"
+                         " status = 'ACTIVE', end_date = '2999-01-01'"
+                         " WHERE technician_id = ?", (pid, tid))
+            conn.commit()
+        finally:
+            conn.close()
+        self.assertTrue(self._can_receive(tid))
+
+    def test_change_premium_to_pro_applies_limit(self):
+        tid = self._tech(email="chg2@x.co", phone="+224623000038")
+        self._set_sub(tid, "tech_premium", "ACTIVE")
+        self._fill_month(tid, 30, datetime_now_month())
+        self.assertTrue(self._can_receive(tid))
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            pid = fixpro_app._ensure_tech_plan_row(conn, "tech_pro")
+            conn.execute("UPDATE technician_subscriptions SET plan_id = ?,"
+                         " status = 'ACTIVE', end_date = '2999-01-01'"
+                         " WHERE technician_id = ?", (pid, tid))
+            conn.commit()
+        finally:
+            conn.close()
+        self.assertFalse(self._can_receive(tid))   # 30 deja recues ce mois -> bloque
+
+    def test_frontend_bypass_is_blocked_server_side(self):
+        # Le client force une demande directe vers un technicien Pro plein :
+        # le serveur refuse, quel que soit le frontend.
+        tid = self._tech(email="byp@x.co", phone="+224623000039")
+        self._set_sub(tid, "tech_pro", "ACTIVE")
+        self._fill_month(tid, 30, datetime_now_month())
+        self.register_client()
+        self.login("+224620000000")
+        r = self.client.post("/artisans/%d" % tid, data={
+            "action": "request", "title": "Fuite", "description": "Urgent",
+            "address": "Conakry", "urgency": "urgent"})
+        self.assertEqual(r.status_code, 302)
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            n = conn.execute("SELECT COUNT(*) AS n FROM requests WHERE artisan_id = ?"
+                             " AND title = 'Fuite'", (tid,)).fetchone()["n"]
+        finally:
+            conn.close()
+        self.assertEqual(n, 0)   # aucune demande creee au-dela du quota
+
+    def test_concurrent_assignment_around_limit_no_overshoot(self):
+        # A 29/30, deux attributions "simultanees" via request_new : une seule
+        # doit passer au technicien Pro, l'autre repart non attribuee.
+        tid = self._tech(email="cc@x.co", phone="+224623000045")
+        self._set_sub(tid, "tech_pro", "ACTIVE")
+        # techncien seul eligible dans sa zone/metier
+        self._fill_month(tid, 29, datetime_now_month())
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute("UPDATE users SET latitude = 9.5, longitude = -13.7,"
+                         " profession = 'Plombier' WHERE id = ?", (tid,))
+            conn.execute(
+                "INSERT INTO technician_locations (technician_id, latitude, longitude,"
+                " updated_at) VALUES (?, 9.5, -13.7, ?)",
+                (tid, fixpro_app._ts()))
+            conn.commit()
+        finally:
+            conn.close()
+        self.register_client(phone="+224620001234")
+        self.login("+224620001234")
+        made = 0
+        for i in range(2):
+            self.client.post("/requests/new", data={
+                "title": "Demande %d" % i, "description": "x", "category": "plomberie",
+                "address": "Conakry"})
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            used = conn.execute(
+                "SELECT COUNT(*) AS n FROM requests WHERE artisan_id = ?"
+                " AND substr(created_at,1,7) = ?",
+                (tid, datetime_now_month())).fetchone()["n"]
+        finally:
+            conn.close()
+        self.assertLessEqual(used, 30)   # jamais 31
+
+    # --- PERIODE D'ESSAI GRATUIT (14 jours) --------------------------
+
+    def _trial_rows(self, tid):
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            return conn.execute(
+                "SELECT status, start_date, end_date FROM technician_subscriptions"
+                " WHERE technician_id = ? ORDER BY id", (tid,)).fetchall()
+        finally:
+            conn.close()
+
+    def _set_trial(self, tid, ends_in_days=14, started_days_ago=0):
+        import datetime as _dt
+        now = _dt.datetime.now(_dt.timezone.utc)
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute(
+                "INSERT INTO technician_subscriptions (technician_id, plan_id, status,"
+                " start_date, end_date, auto_renew) VALUES (?, NULL, 'TRIAL', ?, ?, 0)",
+                (tid,
+                 (now - _dt.timedelta(days=started_days_ago)).strftime("%Y-%m-%d %H:%M:%S"),
+                 (now + _dt.timedelta(days=ends_in_days)).strftime("%Y-%m-%d %H:%M:%S")))
+            conn.commit()
+        finally:
+            conn.close()
+
+    def test_approved_technician_gets_trial(self):
+        tid = self._tech(email="tr1@x.co", phone="+224623100001")
+        e = self._ents(tid)
+        self.assertEqual(e["status"], "TRIAL")
+        self.assertTrue(e["trial_active"])
+        self.assertTrue(e["eligible"])
+        self.assertFalse(e["active"])          # pas un abonnement paye
+        self.assertIsNone(e["badge"])          # aucun badge pendant l'essai
+        self.assertIn("receive_requests", e["entitlements"])
+        self.assertGreaterEqual(e["trial_days_left"], 13)
+
+    def test_trial_lasts_14_days(self):
+        tid = self._tech(email="tr2@x.co", phone="+224623100002")
+        self._ents(tid)     # cree l'essai
+        import datetime as _dt
+        rows = self._trial_rows(tid)
+        self.assertEqual(len(rows), 1)
+        s = _dt.datetime.strptime(rows[0]["start_date"][:19], "%Y-%m-%d %H:%M:%S")
+        end = _dt.datetime.strptime(rows[0]["end_date"][:19], "%Y-%m-%d %H:%M:%S")
+        self.assertEqual((end - s).days, 14)
+        self.assertEqual(fixpro_app._TRIAL_DAYS, 14)
+
+    def test_trial_day1_and_day13_visible_and_eligible(self):
+        tid = self._tech(email="tr3@x.co", phone="+224623100003")
+        for days_left in (13, 1):
+            conn = db.connect(sqlite_path=self.db_path)
+            try:
+                import datetime as _dt
+                end = (_dt.datetime.now(_dt.timezone.utc) + _dt.timedelta(days=days_left, hours=1)).strftime("%Y-%m-%d %H:%M:%S")
+                conn.execute("UPDATE technician_subscriptions SET end_date = ?"
+                             " WHERE technician_id = ?", (end, tid))
+                conn.commit()
+            finally:
+                conn.close()
+            self.assertTrue(self._can_receive(tid))
+            self.assertEqual(self._ents(tid)["trial_days_left"], days_left + 1 if False else days_left + 1)
+
+    def test_trial_expired_becomes_trial_expired_status(self):
+        tid = self._tech(email="tr4@x.co", phone="+224623100004")
+        self._ents(tid)
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute("UPDATE technician_subscriptions SET end_date = '2000-01-01 00:00:00'"
+                         " WHERE technician_id = ?", (tid,))
+            conn.commit()
+        finally:
+            conn.close()
+        e = self._ents(tid)
+        self.assertEqual(e["status"], "TRIAL_EXPIRED")
+        self.assertFalse(e["eligible"])
+        self.assertEqual(e["entitlements"], set())
+        self.assertEqual(e["trial_days_left"], 0)
+
+    def test_trial_active_can_receive_and_is_matched(self):
+        tid = self._tech(email="tr5@x.co", phone="+224623100005")
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute("UPDATE users SET profession='Plombier' WHERE id=?", (tid,))
+            conn.commit()
+            self.assertTrue(fixpro_app.technician_can_receive_request(conn, tid))
+            ranked = [r["id"] for r in fixpro_app._match_technicians(conn, "plomberie", location="Conakry")]
+        finally:
+            conn.close()
+        self.assertIn(tid, ranked)
+
+    def test_trial_expired_not_matched_and_cannot_receive(self):
+        tid = self._tech(email="tr6@x.co", phone="+224623100006")
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute("UPDATE users SET profession='Plombier' WHERE id=?", (tid,))
+            conn.commit()
+        finally:
+            conn.close()
+        self._ents(tid)   # cree l'essai
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute("UPDATE technician_subscriptions SET end_date='2000-01-01'"
+                         " WHERE technician_id=?", (tid,))
+            conn.commit()
+        finally:
+            conn.close()
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            self.assertFalse(fixpro_app.technician_can_receive_request(conn, tid))
+            ranked = [r["id"] for r in fixpro_app._match_technicians(conn, "plomberie", location="Conakry")]
+        finally:
+            conn.close()
+        self.assertNotIn(tid, ranked)
+
+    def test_trial_granted_only_once(self):
+        tid = self._tech(email="tr7@x.co", phone="+224623100007")
+        self._ents(tid)
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute("UPDATE technician_subscriptions SET end_date='2000-01-01'"
+                         " WHERE technician_id=?", (tid,))
+            conn.commit()
+        finally:
+            conn.close()
+        self._ents(tid)                      # -> TRIAL_EXPIRED
+        self._ents(tid)                      # nouvel appel : pas de nouvel essai
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            fixpro_app._ensure_technician_trial(conn, tid)
+            fixpro_app._ensure_trials_for_verified(conn)
+            n = conn.execute("SELECT COUNT(*) AS n FROM technician_subscriptions"
+                             " WHERE technician_id=?", (tid,)).fetchone()["n"]
+        finally:
+            conn.close()
+        self.assertEqual(n, 1)
+        self.assertEqual(self._ents(tid)["status"], "TRIAL_EXPIRED")
+
+    def test_buy_subscription_during_trial_activates_immediately(self):
+        tid = self._tech(email="tr8@x.co", phone="+224623100008")
+        self._set_trial(tid, ends_in_days=8)          # jour 6 : 8 jours restants
+        # paiement confirme -> ACTIVE tout de suite
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            pid = fixpro_app._ensure_tech_plan_row(conn, "tech_premium")
+            row = conn.execute("SELECT id FROM technician_subscriptions WHERE technician_id=?", (tid,)).fetchone()
+            payid = fixpro_app._insert_id(conn,
+                "INSERT INTO subscription_payments (user_id, subscription_id, plan_id, amount,"
+                " currency, payment_method, transaction_reference, status)"
+                " VALUES (?, ?, ?, 140000, 'GNF', 'orange_money', 'SUB-TR8', 'paid')",
+                (tid, row["id"], pid))
+            fixpro_app._activate_subscription_from_payment(conn, payid)
+        finally:
+            conn.close()
+        e = self._ents(tid)
+        self.assertEqual(e["status"], "ACTIVE")
+        self.assertTrue(e["active"])
+        self.assertEqual(e["plan_code"], "tech_premium")
+        self.assertIn("priority_visibility", e["entitlements"])
+        self.assertEqual(e["badge"]["label"], "Premium")
+
+    def test_buy_subscription_after_trial_reactivates(self):
+        tid = self._tech(email="tr9@x.co", phone="+224623100009")
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute("UPDATE users SET profession='Plombier' WHERE id=?", (tid,))
+            conn.commit()
+        finally:
+            conn.close()
+        self._set_trial(tid, ends_in_days=-1)   # deja termine
+        self.assertEqual(self._ents(tid)["status"], "TRIAL_EXPIRED")
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            pid = fixpro_app._ensure_tech_plan_row(conn, "tech_pro")
+            row = conn.execute("SELECT id FROM technician_subscriptions WHERE technician_id=?", (tid,)).fetchone()
+            payid = fixpro_app._insert_id(conn,
+                "INSERT INTO subscription_payments (user_id, subscription_id, plan_id, amount,"
+                " currency, payment_method, transaction_reference, status)"
+                " VALUES (?, ?, ?, 97000, 'GNF', 'orange_money', 'SUB-TR9', 'paid')",
+                (tid, row["id"], pid))
+            fixpro_app._activate_subscription_from_payment(conn, payid)
+            ranked = [r["id"] for r in fixpro_app._match_technicians(conn, "plomberie", location="Conakry")]
+        finally:
+            conn.close()
+        self.assertEqual(self._ents(tid)["status"], "ACTIVE")
+        self.assertTrue(self._can_receive(tid))
+        self.assertIn(tid, ranked)
+
+    def test_failed_payment_during_trial_keeps_trial(self):
+        tid = self._tech(email="tr10@x.co", phone="+224623100010")
+        self._set_trial(tid, ends_in_days=9)
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            row = conn.execute("SELECT id FROM technician_subscriptions WHERE technician_id=?", (tid,)).fetchone()
+            payid = fixpro_app._insert_id(conn,
+                "INSERT INTO subscription_payments (user_id, subscription_id, plan_id, amount,"
+                " currency, payment_method, transaction_reference, status)"
+                " VALUES (?, ?, NULL, 140000, 'GNF', 'orange_money', 'SUB-TR10', 'pending')",
+                (tid, row["id"]))
+            fixpro_app._fail_subscription_payment(conn, payid, "failed")
+        finally:
+            conn.close()
+        e = self._ents(tid)
+        self.assertEqual(e["status"], "TRIAL")
+        self.assertTrue(e["eligible"])
+
+    def test_failed_payment_after_trial_stays_expired(self):
+        tid = self._tech(email="tr11@x.co", phone="+224623100011")
+        self._set_trial(tid, ends_in_days=-2)
+        self.assertEqual(self._ents(tid)["status"], "TRIAL_EXPIRED")
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            row = conn.execute("SELECT id FROM technician_subscriptions WHERE technician_id=?", (tid,)).fetchone()
+            payid = fixpro_app._insert_id(conn,
+                "INSERT INTO subscription_payments (user_id, subscription_id, plan_id, amount,"
+                " currency, payment_method, transaction_reference, status)"
+                " VALUES (?, ?, NULL, 97000, 'GNF', 'orange_money', 'SUB-TR11', 'pending')",
+                (tid, row["id"]))
+            fixpro_app._fail_subscription_payment(conn, payid, "failed")
+        finally:
+            conn.close()
+        e = self._ents(tid)
+        self.assertEqual(e["status"], "TRIAL_EXPIRED")
+        self.assertFalse(e["eligible"])
+
+    def test_subscription_expired_no_new_trial(self):
+        tid = self._tech(email="tr12@x.co", phone="+224623100012")
+        self._set_sub(tid, "tech_premium", "ACTIVE", ends="past")   # -> EXPIRED
+        e = self._ents(tid)
+        self.assertEqual(e["status"], "EXPIRED")
+        self.assertFalse(e["eligible"])
+        self.assertEqual(e["entitlements"], set())
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            fixpro_app._ensure_technician_trial(conn, tid)
+            fixpro_app._ensure_trials_for_verified(conn)
+            statuses = [r["status"] for r in conn.execute(
+                "SELECT status FROM technician_subscriptions WHERE technician_id=?", (tid,)).fetchall()]
+        finally:
+            conn.close()
+        self.assertNotIn("TRIAL", statuses)   # aucun nouvel essai recree
+
+    def test_subscription_priority_over_trial(self):
+        tid = self._tech(email="tr13@x.co", phone="+224623100013")
+        self._set_sub(tid, "tech_premium", "ACTIVE")   # remplace la ligne d'essai potentielle
+        e = self._ents(tid)
+        self.assertTrue(e["active"])
+        self.assertNotIn("trial_visibility_boost", e["entitlements"])
+        self.assertIn("priority_visibility", e["entitlements"])
+
+    def test_frontend_cannot_bypass_trial_expiry_direct_request(self):
+        tid = self._tech(email="tr14@x.co", phone="+224623100014")
+        self._set_trial(tid, ends_in_days=-3)
+        self.assertEqual(self._ents(tid)["status"], "TRIAL_EXPIRED")
+        self.register_client()
+        self.login("+224620000000")
+        self.client.post("/artisans/%d" % tid, data={
+            "action": "request", "title": "Panne", "description": "x",
+            "address": "Conakry", "urgency": "urgent"})
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            n = conn.execute("SELECT COUNT(*) AS n FROM requests WHERE artisan_id=?"
+                             " AND title='Panne'", (tid,)).fetchone()["n"]
+        finally:
+            conn.close()
+        self.assertEqual(n, 0)
+
+    def test_trial_state_stable_across_calls(self):
+        tid = self._tech(email="tr15@x.co", phone="+224623100015")
+        a = self._ents(tid)
+        b = self._ents(tid)
+        self.assertEqual(a["status"], b["status"])
+        self.assertEqual(a["status"], "TRIAL")
+        self.assertLessEqual(abs(a["trial_days_left"] - b["trial_days_left"]), 1)
+
+    def test_no_commission_shown_anywhere(self):
+        tid = self._tech(email="tr16@x.co", phone="+224623100016")
+        self._set_sub(tid, "tech_premium", "ACTIVE")
+        self.login("+224623100016")
+        for path in ("/dashboard/technicien", "/abonnement",
+                     "/abonnement/confirmation?plan=tech_pro",
+                     "/abonnement/confirmation?plan=tech_premium", "/statistiques"):
+            html = self.client.get(path).get_data(as_text=True).lower()
+            self.assertNotIn("commission", html, path)
+
+    def test_dashboard_shows_trial_banner_with_real_counts(self):
+        tid = self._tech(email="tr17@x.co", phone="+224623100017")
+        self._set_trial(tid, ends_in_days=10)
+        self._add_requests(tid, [("completed", datetime_now_month()),
+                                 ("REQUESTED", datetime_now_month())])
+        self.login("+224623100017")
+        html = self.client.get("/dashboard/technicien").get_data(as_text=True)
+        self.assertIn("Période découverte", html)
+        self.assertIn("Il vous reste", html)
+
+    def test_dashboard_shows_trial_expired_message(self):
+        tid = self._tech(email="tr18@x.co", phone="+224623100018")
+        self._set_trial(tid, ends_in_days=-1)
+        self.login("+224623100018")
+        html = self.client.get("/dashboard/technicien").get_data(as_text=True)
+        self.assertIn("Période découverte terminée", html)
+        self.assertIn("Choisir mon abonnement", html)
 
 
 class ClientProfileTests(FixProTestCase):

@@ -982,13 +982,25 @@ def _match_technicians(conn, category, location=None, client_lat=None, client_lo
     if exclude_artisan_id:
         busy_ids.add(exclude_artisan_id)
 
+    # L'essai de 14 jours demarre des que le technicien est approuve : on
+    # materialise ceux qui n'ont pas encore de ligne, puis on fait expirer
+    # les essais arrives a terme. Ainsi la recherche reflete l'etat reel.
+    _ensure_trials_for_verified(conn)
+    _expire_due_trials(conn)
+    try:
+        _expire_due_subscriptions(conn)
+    except Exception:
+        pass
+
     sql = """
         SELECT u.id, u.full_name, u.profession, u.city, u.quartier,
                u.latitude, u.longitude,
                u.zone_intervention, u.mobility, u.years_experience, u.is_verified,
                COALESCE(rating_data.avg_rating, 0) AS avg_rating,
                COALESCE(rating_data.review_count, 0) AS review_count,
-               COALESCE(completed_count.c, 0) AS completed_count
+               COALESCE(completed_count.c, 0) AS completed_count,
+               sub_plan.plan_code AS plan_code,
+               trial_state.in_trial AS in_trial
         FROM users u
         LEFT JOIN (
             SELECT artisan_id, AVG(rating) AS avg_rating, COUNT(*) AS review_count
@@ -998,6 +1010,19 @@ def _match_technicians(conn, category, location=None, client_lat=None, client_lo
             SELECT artisan_id, COUNT(*) AS c
             FROM requests WHERE LOWER(status) = 'completed' GROUP BY artisan_id
         ) completed_count ON completed_count.artisan_id = u.id
+        LEFT JOIN (
+            SELECT s.technician_id, p.code AS plan_code
+            FROM technician_subscriptions s
+            JOIN subscription_plans p ON p.id = s.plan_id
+            WHERE s.status = 'ACTIVE'
+              AND (s.end_date IS NULL OR s.end_date > CURRENT_TIMESTAMP)
+        ) sub_plan ON sub_plan.technician_id = u.id
+        LEFT JOIN (
+            SELECT technician_id, 1 AS in_trial
+            FROM technician_subscriptions
+            WHERE status = 'TRIAL'
+              AND (end_date IS NULL OR end_date > CURRENT_TIMESTAMP)
+        ) trial_state ON trial_state.technician_id = u.id
         WHERE u.role = 'technician'
           AND u.is_verified = 1
           AND u.is_active = 1
@@ -1018,12 +1043,35 @@ def _match_technicians(conn, category, location=None, client_lat=None, client_lo
         return bool(location_norm) and (location_norm in zones or (a.get("mobility") or "").lower() == 'toute_conakry')
 
     candidates = []
+    current_month = datetime.now(timezone.utc).strftime("%Y-%m")
     for a in rows:
         if a["id"] in busy_ids:
             continue
         tech_pos = locations.get(a["id"])
         if require_gps and not tech_pos:
             continue
+
+        # ELIGIBILITE (regle produit) : un technicien n'est propose aux
+        # nouvelles demandes que s'il a un abonnement ACTIVE **ou** un essai
+        # de 14 jours en cours. Essai termine sans abonnement / abonnement
+        # expire -> ecarte (le compte et l'historique restent intacts).
+        if not (a.get("plan_code") or a.get("in_trial")):
+            continue
+
+        # Quota mensuel du plan ACTIF (regle produit : PRO = 30 / mois,
+        # PREMIUM = illimite). Un technicien Pro ayant deja recu 30 demandes
+        # ce mois-ci est ecarte de la selection ; c'est un critere EN PLUS
+        # des autres (dispo, proximite, note...), il n'en remplace aucun.
+        # `plan_code` ne vaut que pour un abonnement ACTIVE non expire
+        # (cf. LEFT JOIN sub_plan) -> aucun impact sur les non-abonnes.
+        plan_limit = _PLAN_MONTHLY_REQUEST_LIMIT.get(a.get("plan_code"))
+        if plan_limit is not None:
+            urow = conn.execute(
+                "SELECT COUNT(*) AS n FROM requests"
+                " WHERE artisan_id = ? AND substr(created_at, 1, 7) = ?",
+                (a["id"], current_month)).fetchone()
+            if (urow["n"] if urow else 0) >= plan_limit:
+                continue
         distance = None
         if client_pos and tech_pos:
             distance = _haversine(client_pos[0], client_pos[1], tech_pos[0], tech_pos[1])
@@ -1046,10 +1094,24 @@ def _match_technicians(conn, category, location=None, client_lat=None, client_lo
         else:
             score -= 25  # penalite si pas de distance fiable
 
+        # Bonus de visibilite - controle et raisonnable : il n'ecrase ni la
+        # note ni la proximite, il departage a criteres comparables. N'exclut
+        # personne. Priorite : Premium > Pro > essai decouverte.
+        plan_code = a.get("plan_code")
+        if "priority_visibility" in _PLAN_ENTITLEMENTS.get(plan_code, ()):
+            score += 35          # Premium actif
+        elif "search_visibility" in _PLAN_ENTITLEMENTS.get(plan_code, ()):
+            score += 12          # Pro actif
+        elif a.get("in_trial"):
+            score += 18          # periode decouverte : coup de pouce temporaire
+
         artisan = dict(a)
         artisan["distance_km"] = round(distance, 1) if distance is not None else None
         artisan["selection_score"] = score
         artisan["gps_source"] = "technician_locations" if tech_pos else "profile"
+        artisan["subscription_badge"] = get_subscription_badge(a.get("plan_code"))
+        artisan["is_featured"] = "featured_profile" in _PLAN_ENTITLEMENTS.get(a.get("plan_code"), ())
+        artisan["is_trial"] = bool(a.get("in_trial")) and not a.get("plan_code")
         candidates.append(artisan)
 
     candidates.sort(key=lambda a: (-a["selection_score"], a["distance_km"] or 9999, a["full_name"]))
@@ -3773,6 +3835,20 @@ def _ts(value=None):
     return str(value).replace(" ", "T")[:19]
 
 
+def _expire_due_subscriptions(conn):
+    """Passe les abonnements ACTIVE dont end_date est depassee en EXPIRED.
+
+    Appele a l'ouverture du tableau de bord / de la page abonnements
+    (pas de vrai cron en serverless)."""
+    now_iso_ = _ts()
+    try:
+        conn.execute(
+            "UPDATE technician_subscriptions SET status = 'EXPIRED'"
+            " WHERE status = 'ACTIVE' AND end_date IS NOT NULL AND end_date < ?",
+            (now_iso_,))
+        conn.commit()
+    except Exception as exc:
+        logger.warning("Expiration abonnements impossible: %s", exc)
 @app.route("/admin/document/<int:doc_id>")
 @login_required
 @admin_required
@@ -4590,6 +4666,9 @@ def artisan_dashboard():
                 (user["id"],)).fetchone()
         except Exception:
             conn.rollback()
+
+        entitlements = get_technician_entitlements(conn, user["id"])
+        request_usage = technician_request_usage(conn, user["id"])
     finally:
         conn.close()
 
@@ -4613,8 +4692,11 @@ def artisan_dashboard():
     verifie = (user.get("verification_status") or "").upper() in (
         "APPROVED", "APPROUVE", "APPROUVÉ", "VERIFIED", "ACTIVE")
 
+    # La carte "abonnement" du dashboard n'affiche un plan que pour un vrai
+    # abonnement (ACTIVE / EXPIRED / PAST_DUE / CANCELLED). L'essai (TRIAL /
+    # TRIAL_EXPIRED) est presente par un bloc dedie pilote par `entitlements`.
     subscription_view = None
-    if sub:
+    if sub and (sub["status"] or "").upper() not in ("TRIAL", "TRIAL_EXPIRED", ""):
         keys = sub.keys()
         price = sub["price_month"] if "price_month" in keys else None
         status = (sub["status"] or "").upper()
@@ -4622,16 +4704,26 @@ def artisan_dashboard():
             "plan_name": sub["plan_name"] or "Abonnement FixPro",
             "price_month": int(price) if price else None,
             "currency": (sub["currency"] if "currency" in keys and sub["currency"] else "GNF"),
-            "active": status in ("ACTIVE", "TRIAL"),
-            "status_label": {"ACTIVE": "Actif", "TRIAL": "Essai", "PAST_DUE": "En attente",
-                             "EXPIRED": "Expire", "CANCELLED": "Annule"}.get(status, sub["status"] or "—"),
+            "active": entitlements["active"],
+            "status_label": {"ACTIVE": "Actif", "PAST_DUE": "En attente",
+                             "EXPIRED": "Expiré", "CANCELLED": "Annulé"}.get(status, sub["status"] or "—"),
             "end_date_label": _format_date_month_fr(sub["end_date"]) if sub["end_date"] else None,
+            "badge": entitlements["badge"],
         }
+
+    # Chiffres reels de la periode (essai comme abonnement).
+    trial_stats = {
+        "demandes": int(demandes_semaine),
+        "interventions": int(interventions_mois),
+        "avis": int(reviews_count),
+    }
 
     return render_template(
         "dashboard_technicien.html", user=user, kpis=kpis,
         upcoming=[dict(r) for r in upcoming], profile_pct=profile_pct,
         verifie=verifie, subscription=subscription_view,
+        entitlements=entitlements, request_usage=request_usage,
+        trial_stats=trial_stats,
         availability=(user.get("availability_status") or "hors_ligne"))
 
 
@@ -4658,6 +4750,257 @@ def api_technicien_status():
 csrf.exempt(api_technicien_status)
 
 
+# Statuts (minuscule) consideres comme "demande acceptee" / "refusee" par le
+# technicien. Sert au calcul du taux d'acceptation.
+_REQ_ACCEPTED_STATES = ("accepted", "en_route", "on_the_way", "arrived",
+                        "in_progress", "completed")
+_REQ_REFUSED_STATES = ("refused", "rejected", "reassignment_required")
+
+
+@app.route("/dashboard/technicien/statistiques")
+@app.route("/statistiques")
+@login_required
+def technician_stats():
+    """Statistiques detaillees (avantage Premium 'detailed_statistics').
+
+    Controle SERVEUR : abonnement ACTIVE + droit detailed_statistics.
+    Pro / sans abonnement -> page verrouillee proposant Premium (200),
+    aucune donnee detaillee n'est calculee ni renvoyee.
+    Toutes les metriques proviennent de donnees reelles (requests, reviews).
+    Une metrique non calculable de facon fiable est marquee indisponible,
+    jamais remplacee par un faux chiffre.
+    """
+    user = get_current_user()
+    if not _is_technician(user):
+        flash("Cet espace est réservé aux techniciens.", "error")
+        return redirect(url_for("dashboard"))
+
+    conn = get_db_connection()
+    try:
+        ent = get_technician_entitlements(conn, user["id"])
+        allowed = "detailed_statistics" in ent["entitlements"]
+
+        if not allowed:
+            return render_template(
+                "technician_stats.html", user=user, allowed=False,
+                entitlements=ent, stats=None,
+                availability=(user.get("availability_status") or "hors_ligne"))
+
+        tid = user["id"]
+
+        def _one(sql, params=()):
+            try:
+                r = conn.execute(sql, params).fetchone()
+                return (r["n"] if r else 0) or 0
+            except Exception:
+                conn.rollback()
+                return 0
+
+        acc_in = ",".join("'%s'" % s for s in _REQ_ACCEPTED_STATES)
+        ref_in = ",".join("'%s'" % s for s in _REQ_REFUSED_STATES)
+
+        recues = _one("SELECT COUNT(*) AS n FROM requests WHERE artisan_id = ?", (tid,))
+        acceptees = _one(
+            "SELECT COUNT(*) AS n FROM requests WHERE artisan_id = ?"
+            " AND LOWER(status) IN (%s)" % acc_in, (tid,))
+        refusees = _one(
+            "SELECT COUNT(*) AS n FROM requests WHERE artisan_id = ?"
+            " AND LOWER(status) IN (%s)" % ref_in, (tid,))
+        terminees = _one(
+            "SELECT COUNT(*) AS n FROM requests WHERE artisan_id = ?"
+            " AND LOWER(status) = 'completed'", (tid,))
+        revenus = _one(
+            "SELECT COALESCE(SUM(COALESCE(professional_amount, final_price,"
+            " quote_amount, 0)), 0) AS n FROM requests WHERE artisan_id = ?"
+            " AND LOWER(status) = 'completed'", (tid,))
+
+        traitees = acceptees + refusees
+        taux_acceptation = round(acceptees * 100 / traitees) if traitees else None
+        taux_completion = round(terminees * 100 / acceptees) if acceptees else None
+
+        note_avg, avis_n = None, 0
+        try:
+            nr = conn.execute(
+                "SELECT ROUND(AVG(rating), 1) AS a, COUNT(*) AS n FROM reviews"
+                " WHERE artisan_id = ?", (tid,)).fetchone()
+            if nr and nr["n"]:
+                note_avg, avis_n = nr["a"], nr["n"]
+        except Exception:
+            conn.rollback()
+
+        # Evolution : 6 derniers mois (demandes recues + interventions terminees).
+        months = []
+        now = datetime.now(timezone.utc)
+        for i in range(5, -1, -1):
+            y = now.year
+            m = now.month - i
+            while m <= 0:
+                m += 12
+                y -= 1
+            key = "%04d-%02d" % (y, m)
+            recv = _one(
+                "SELECT COUNT(*) AS n FROM requests WHERE artisan_id = ?"
+                " AND substr(created_at, 1, 7) = ?", (tid, key))
+            done = _one(
+                "SELECT COUNT(*) AS n FROM requests WHERE artisan_id = ?"
+                " AND LOWER(status) = 'completed'"
+                " AND substr(COALESCE(completed_at, updated_at, created_at), 1, 7) = ?",
+                (tid, key))
+            months.append({
+                "label": ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil",
+                          "Août", "Sep", "Oct", "Nov", "Déc"][m - 1],
+                "received": recv, "completed": done,
+            })
+        months_max = max([mo["received"] for mo in months] + [1])
+
+        recent = []
+        try:
+            recent = conn.execute(
+                "SELECT r.title, r.status, r.created_at, r.category"
+                " FROM requests r WHERE r.artisan_id = ?"
+                " ORDER BY r.created_at DESC LIMIT 8", (tid,)).fetchall()
+        except Exception:
+            conn.rollback()
+
+        stats = {
+            "recues": recues,
+            "acceptees": acceptees,
+            "refusees": refusees,
+            "terminees": terminees,
+            "revenus": int(revenus),
+            "taux_acceptation": taux_acceptation,
+            "taux_completion": taux_completion,
+            "note_avg": note_avg,
+            "avis_n": avis_n,
+            "months": months,
+            "months_max": months_max,
+            "recent": [dict(r) for r in recent],
+            # Metrique non suivie en base : aucune table de vues de profil.
+            "conversion_available": False,
+        }
+    finally:
+        conn.close()
+
+    return render_template(
+        "technician_stats.html", user=user, allowed=True,
+        entitlements=ent, stats=stats,
+        availability=(user.get("availability_status") or "hors_ligne"))
+
+
+_REQUEST_CATEGORY_KEYS = {
+    "plomb": "plomberie", "fuite": "plomberie", "chauffe-eau": "plomberie",
+    "electr": "electricite", "élect": "electricite", "prise": "electricite",
+    "clim": "climatisation", "frigo": "climatisation", "froid": "climatisation",
+    "menuis": "menuiserie", "bois": "menuiserie", "porte": "menuiserie",
+    "peint": "peinture",
+    "macon": "maconnerie", "maçon": "maconnerie", "mur": "maconnerie",
+    "electromenager": "electromenager", "électroménager": "electromenager",
+    "machine": "electromenager", "lave": "electromenager",
+    "serrur": "serrurerie",
+}
+
+
+def _request_category_key(*values):
+    """Normalise categorie/service d'une demande en une cle d'icone connue."""
+    blob = " ".join(str(v or "") for v in values).lower()
+    for needle, key in _REQUEST_CATEGORY_KEYS.items():
+        if needle in blob:
+            return key
+    return "autre"
+
+
+@app.route("/dashboard/technicien/demandes")
+@app.route("/demandes-recues")
+@login_required
+def technician_requests():
+    """Demandes recues par le technicien : liste des demandes clients qui lui
+    sont attribuees et encore ouvertes (a traiter). Filtres Toutes /
+    Aujourd'hui / Cette semaine. Donnees reelles uniquement."""
+    user = get_current_user()
+    if not _is_technician(user):
+        flash("Cet espace est réservé aux techniciens.", "error")
+        return redirect(url_for("dashboard"))
+
+    flt = (request.args.get("f") or "all").lower()
+    if flt not in ("all", "today", "week"):
+        flt = "all"
+
+    conn = get_db_connection()
+    try:
+        rows = conn.execute(
+            "SELECT r.id, r.title, r.description, r.category, r.service, r.status,"
+            " r.address, r.latitude, r.longitude, r.created_at, r.urgency,"
+            " r.phone_contact, c.full_name AS client_name, c.phone AS client_phone"
+            " FROM requests r JOIN users c ON c.id = r.client_id"
+            " WHERE r.artisan_id = ?"
+            "   AND LOWER(r.status) NOT IN"
+            "       ('completed', 'cancelled', 'refused', 'rejected', 'reassignment_required')"
+            " ORDER BY r.created_at DESC LIMIT 80",
+            (user["id"],)).fetchall()
+        entitlements = get_technician_entitlements(conn, user["id"])
+        unread_count = 0
+        try:
+            unread_count = conn.execute(
+                "SELECT COUNT(*) AS n FROM notifications WHERE user_id = ? AND is_read = 0",
+                (user["id"],)).fetchone()["n"]
+        except Exception:
+            conn.rollback()
+    finally:
+        conn.close()
+
+    now = datetime.now(timezone.utc)
+    today = now.strftime("%Y-%m-%d")
+    week_start = (now - timedelta(days=now.weekday())).strftime("%Y-%m-%d")
+    tlat, tlon = _to_float(user.get("latitude")), _to_float(user.get("longitude"))
+
+    items, n_today, n_week = [], 0, 0
+    for r in rows:
+        created_s = str(r["created_at"] or "")[:19].replace("T", " ")
+        cd = created_s[:10]
+        is_today = bool(cd) and cd == today
+        is_week = bool(cd) and cd >= week_start
+        if is_today:
+            n_today += 1
+        if is_week:
+            n_week += 1
+
+        mins = None
+        try:
+            ct = datetime.strptime(created_s, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
+            mins = (now - ct).total_seconds() / 60
+        except (ValueError, TypeError):
+            pass
+
+        if flt == "today" and not is_today:
+            continue
+        if flt == "week" and not is_week:
+            continue
+
+        d = dict(r)
+        d["ago"] = _format_time_ago(r["created_at"])
+        if mins is not None and mins < 60:
+            d["bucket"], d["bucket_label"] = "new", "Nouvelle"
+        elif is_today:
+            d["bucket"], d["bucket_label"] = "today", "Aujourd'hui"
+        else:
+            d["bucket"], d["bucket_label"] = "week", "Cette semaine"
+        d["distance_km"] = None
+        if tlat and tlon and _is_valid_coordinate(r["latitude"], r["longitude"]):
+            d["distance_km"] = round(
+                _haversine(tlat, tlon, float(r["latitude"]), float(r["longitude"])), 1)
+        d["cat_key"] = _request_category_key(r["category"], r["service"], r["title"])
+        d["cat_label"] = (r["service"] or r["category"] or "Intervention").strip()
+        d["call_phone"] = (r["phone_contact"] or r["client_phone"] or "").strip()
+        d["summary"] = (r["description"] or r["title"] or "").strip().split("\n")[0]
+        items.append(d)
+
+    counts = {"all": len(rows), "today": n_today, "week": n_week}
+    return render_template(
+        "technician_requests.html", user=user, items=items, counts=counts,
+        active_filter=flt, entitlements=entitlements, unread_count=unread_count,
+        availability=(user.get("availability_status") or "hors_ligne"))
+
+
 # --- Abonnement technicien -------------------------------------------------
 
 _TECH_PLANS = [
@@ -4667,12 +5010,11 @@ _TECH_PLANS = [
         "price_ref_month": 100000, "price_month": 97000,
         "price_ref_year": 1200000, "price_year": 931200,
         "features": [
-            ("Demandes illimitées", True),
+            ("Jusqu'à 30 demandes reçues par mois", True),
             ("Visibilité dans les recherches", True),
             ("Badge profil vérifié", True),
             ("Statistiques de base", True),
             ("Support en temps réel", True),
-            ("Réduction de 10% sur les commissions", True),
         ],
     },
     {
@@ -4682,12 +5024,12 @@ _TECH_PLANS = [
         "price_ref_year": 2400000, "price_year": 1344000,
         "features": [
             ("Toutes les fonctionnalités Pro", True),
+            ("Demandes illimitées", True),
             ("Visibilité prioritaire", True),
             ("Mise en avant de votre profil", True),
             ("Statistiques détaillées", True),
             ("Support client prioritaire", True),
             ("Plus d'opportunités d'interventions", True),
-            ("Réduction de 20% sur les commissions", True),
         ],
     },
 ]
@@ -4897,6 +5239,371 @@ def _ensure_tech_plan_row(conn, code):
     return got["id"] if got else None
 
 
+# ---------------------------------------------------------------------------
+# SOURCE CENTRALE DES DROITS D'ABONNEMENT (entitlements).
+#
+# Une seule definition, utilisee a la fois par le backend (controle d'acces,
+# classement des recherches) et par l'UI (page "Mon abonnement", dashboard,
+# fiche client). On ne met JAMAIS de `if plan == "premium"` ailleurs :
+# on appelle get_technician_entitlements() / technician_has_entitlement().
+#
+# Un droit n'est accorde QUE si l'abonnement du technicien est ACTIVE et que
+# le droit appartient au plan actif. PENDING / PAST_DUE / EXPIRED / CANCELLED
+# / FAILED -> aucun droit. (Le fait d'avoir choisi Premium ne donne rien :
+# le paiement doit etre confirme et l'abonnement passe a ACTIVE.)
+# ---------------------------------------------------------------------------
+
+# REGLE PRODUIT OFFICIELLE (2026-09-09) : nombre de demandes recues / mois.
+#   PRO     -> 30 maximum
+#   PREMIUM -> illimite (None)
+# SOURCE DE VERITE UNIQUE. Le libelle affiche ("Jusqu'a 30 demandes...") et
+# le controle serveur (technician_request_usage) en decoulent tous les deux.
+_PRO_MONTHLY_REQUEST_LIMIT = 30
+_PLAN_MONTHLY_REQUEST_LIMIT = {
+    "tech_pro": _PRO_MONTHLY_REQUEST_LIMIT,
+    "tech_premium": None,          # None = illimite
+}
+
+# ---------------------------------------------------------------------------
+# PERIODE D'ESSAI GRATUIT (14 jours) - REGLE PRODUIT OFFICIELLE 2026-09-09.
+#
+#   TECHNICIEN APPROUVE  ->  14 jours d'essai (visible + recoit des demandes)
+#   FIN DES 14 JOURS     ->  abonnement requis pour continuer
+#
+# Le trial reutilise la table technician_subscriptions (AUCUNE table en plus,
+# AUCUNE migration) :
+#   status = 'TRIAL'          -> essai en cours   (plan_id NULL)
+#   status = 'TRIAL_EXPIRED'  -> essai termine    (plan_id NULL)
+#   status = 'ACTIVE'         -> abonnement paye  (prend le relais)
+#
+# UNE SEULE FOIS : l'essai n'est cree que si le technicien n'a AUCUNE ligne
+# technician_subscriptions. Une fois cree, il passe TRIAL -> TRIAL_EXPIRED
+# (ou -> ACTIVE si paiement), jamais de nouveau TRIAL.
+# ---------------------------------------------------------------------------
+_TRIAL_DAYS = 14
+
+# Droits accordes pendant l'essai (decouverte intensive). Pas de quota.
+_TRIAL_ENTITLEMENTS = {
+    "receive_requests",
+    "unlimited_requests",       # pas de plafond pendant la decouverte
+    "search_visibility",
+    "verified_badge",
+    "basic_statistics",
+    "realtime_support",
+    "trial_visibility_boost",   # coup de pouce de visibilite temporaire
+}
+
+# Droits communs a tout plan actif (Pro inclut deja "toutes les fonctions Pro"
+# et Premium "toutes les fonctionnalites Pro").
+_PLAN_ENTITLEMENTS = {
+    "tech_pro": {
+        "receive_requests",       # apparait dans la recherche client
+        "monthly_request_quota",  # "Jusqu'a 30 demandes recues / mois"
+        "search_visibility",      # "Visibilite dans les recherches"
+        "verified_badge",         # "Badge profil verifie"
+        "basic_statistics",       # "Statistiques de base"
+        "realtime_support",       # "Support en temps reel"
+    },
+    "tech_premium": {
+        "receive_requests",
+        "unlimited_requests",     # "Demandes illimitees"
+        "search_visibility",
+        "verified_badge",
+        "basic_statistics",
+        "realtime_support",
+        "priority_visibility",    # "Visibilite prioritaire" (bonus de classement)
+        "featured_profile",       # "Mise en avant de votre profil"
+        "detailed_statistics",    # "Statistiques detaillees"
+        "priority_support",       # "Support client prioritaire"
+        "more_opportunities",     # "Plus d'opportunites d'interventions"
+    },
+}
+
+# HISTORIQUE - NON UTILISE. FixPro fonctionne uniquement par ABONNEMENT :
+# aucune commission n'est prelevee ni affichee comme avantage d'un plan.
+# Ce dict est conserve sans etre lu par la couche entitlements (audit requis
+# avant suppression : d'autres modules "payments"/"admin_commissions" heritent
+# encore de l'ancien modele client-paie-par-intervention).
+_PLAN_COMMISSION_DISCOUNT = {"tech_pro": 10, "tech_premium": 20}  # deprecated
+
+# Libelles affichables des droits (UI = meme source que le backend).
+_ENTITLEMENT_LABELS = {
+    "receive_requests": "Recevez les demandes des clients de votre zone",
+    "monthly_request_quota": "Jusqu'à %d demandes reçues par mois" % _PRO_MONTHLY_REQUEST_LIMIT,
+    "unlimited_requests": "Demandes illimitées",
+    "search_visibility": "Visibilité dans les recherches",
+    "verified_badge": "Badge profil vérifié",
+    "basic_statistics": "Statistiques de base",
+    "realtime_support": "Support en temps réel",
+    "priority_visibility": "Visibilité prioritaire dans les recherches",
+    "featured_profile": "Profil mis en avant",
+    "detailed_statistics": "Statistiques détaillées",
+    "priority_support": "Support client prioritaire",
+    "more_opportunities": "Plus d'opportunités d'interventions",
+    "trial_visibility_boost": "Visibilité renforcée pendant la découverte",
+}
+
+# Badge affiche (profil, dashboard, fiche client) selon le plan actif.
+_PLAN_BADGE = {
+    "tech_pro": {"label": "Pro", "icon": "star", "accent": "blue"},
+    "tech_premium": {"label": "Premium", "icon": "crown", "accent": "amber"},
+}
+
+
+def get_subscription_badge(plan_code):
+    """Badge d'un plan (ou None). Pur mapping, aucun acces base.
+    Aucun badge pendant l'essai : le badge Pro/Premium n'apparait que si le
+    technicien a REELLEMENT souscrit et que l'abonnement est ACTIVE."""
+    return _PLAN_BADGE.get(plan_code)
+
+
+def _technician_is_approved(conn, technician_id):
+    """Technicien "valide" = is_verified = 1 (drapeau pose par l'admin a la
+    validation du dossier, en meme temps que verification_status='APPROVED').
+    C'est aussi la porte d'entree de _match_technicians -> coherent."""
+    row = conn.execute(
+        "SELECT is_verified FROM users"
+        " WHERE id = ? AND role = 'technician'", (technician_id,)).fetchone()
+    return bool(row) and int(row["is_verified"] or 0) == 1
+
+
+def _ensure_technician_trial(conn, technician_id):
+    """Demarre l'essai de 14 jours UNE SEULE FOIS.
+
+    Conditions : technicien valide (is_verified=1) ET aucune ligne
+    technician_subscriptions. Idempotent : si une ligne existe deja (TRIAL,
+    TRIAL_EXPIRED, ACTIVE, EXPIRED, ...), on ne touche a rien -> pas de
+    second essai possible. Dates serveur.
+    """
+    try:
+        if not _technician_is_approved(conn, technician_id):
+            return
+        existing = conn.execute(
+            "SELECT 1 FROM technician_subscriptions WHERE technician_id = ? LIMIT 1",
+            (technician_id,)).fetchone()
+        if existing:
+            return
+        now = datetime.now(timezone.utc)
+        conn.execute(
+            "INSERT INTO technician_subscriptions"
+            " (technician_id, plan_id, status, start_date, end_date, auto_renew)"
+            " VALUES (?, NULL, 'TRIAL', ?, ?, 0)",
+            (technician_id,
+             now.strftime("%Y-%m-%d %H:%M:%S"),
+             (now + timedelta(days=_TRIAL_DAYS)).strftime("%Y-%m-%d %H:%M:%S")))
+        conn.commit()
+    except Exception as exc:
+        conn.rollback()
+        logger.warning("Creation essai technicien %s impossible: %s", technician_id, exc)
+
+
+def _ensure_trials_for_verified(conn):
+    """Demarre l'essai de tous les techniciens approuves qui n'en ont pas
+    encore (un seul INSERT ... SELECT, idempotent via NOT EXISTS). Appele
+    en tete de _match_technicians pour que la recherche voie l'essai des
+    profils fraichement valides."""
+    try:
+        now = datetime.now(timezone.utc)
+        conn.execute(
+            "INSERT INTO technician_subscriptions"
+            " (technician_id, plan_id, status, start_date, end_date, auto_renew)"
+            " SELECT u.id, NULL, 'TRIAL', ?, ?, 0 FROM users u"
+            " WHERE u.role = 'technician' AND u.is_verified = 1"
+            "   AND NOT EXISTS (SELECT 1 FROM technician_subscriptions t"
+            "                   WHERE t.technician_id = u.id)",
+            (now.strftime("%Y-%m-%d %H:%M:%S"),
+             (now + timedelta(days=_TRIAL_DAYS)).strftime("%Y-%m-%d %H:%M:%S")))
+        conn.commit()
+    except Exception as exc:
+        conn.rollback()
+        logger.warning("Creation essais en lot impossible: %s", exc)
+
+
+def _expire_due_trials(conn):
+    """TRIAL dont end_date est depassee -> TRIAL_EXPIRED.
+    (Pas de vrai cron en serverless : appele a l'ouverture du dashboard et
+    dans le calcul des droits.)"""
+    try:
+        conn.execute(
+            "UPDATE technician_subscriptions SET status = 'TRIAL_EXPIRED',"
+            " updated_at = CURRENT_TIMESTAMP"
+            " WHERE status = 'TRIAL' AND end_date IS NOT NULL AND end_date < ?",
+            (_ts(),))
+        conn.commit()
+    except Exception as exc:
+        conn.rollback()
+        logger.warning("Expiration essais impossible: %s", exc)
+
+
+def _trial_days_left(end_date):
+    """Jours entiers restants avant end_date (>= 0, jamais negatif)."""
+    if not end_date:
+        return 0
+    try:
+        end = datetime.strptime(str(end_date).replace("T", " ")[:19], "%Y-%m-%d %H:%M:%S")
+        end = end.replace(tzinfo=timezone.utc)
+    except (ValueError, TypeError):
+        return 0
+    delta = end - datetime.now(timezone.utc)
+    if delta.total_seconds() <= 0:
+        return 0
+    # arrondi au jour superieur : il reste "1 jour" tant qu'il reste des heures
+    return max(0, int(-(-delta.total_seconds() // 86400)))
+
+
+def get_technician_entitlements(conn, technician_id):
+    """Contexte complet des droits d'un technicien, calcule depuis la base.
+
+    SOURCE UNIQUE DE VERITE. Enchaine : demarrage de l'essai si besoin ->
+    expiration paresseuse des abonnements -> expiration paresseuse des essais
+    -> lecture de la derniere ligne technician_subscriptions.
+
+    Priorite (cf. regle produit) :
+        abonnement ACTIVE  >  essai en cours  >  rien
+    Un abonnement ACTIVE prend toujours le pas sur l'essai.
+
+    Renvoie un dict :
+      has_subscription : une ligne technician_subscriptions existe (essai inclus)
+      active           : abonnement PAYE et ACTIVE (non expire)
+      trial_active     : essai en cours (TRIAL, non expire)
+      eligible         : peut recevoir des demandes / etre montre aux clients
+                         = active OR trial_active
+      status           : ACTIVE / TRIAL / TRIAL_EXPIRED / EXPIRED / PAST_DUE / ...
+      plan_code        : plan actif ('tech_pro'/'tech_premium') ou None
+      plan_name        : nom du plan actif ou None
+      end_date         : echeance de l'abonnement actif ou None
+      trial_end        : fin de l'essai en cours ou None
+      trial_days_left  : jours entiers restants d'essai (>= 0)
+      entitlements     : set() des droits reellement accordes
+      badge            : {label, icon, accent} ou None (JAMAIS pendant l'essai)
+    """
+    _ensure_technician_trial(conn, technician_id)
+    try:
+        _expire_due_subscriptions(conn)
+    except Exception:
+        pass
+    try:
+        _expire_due_trials(conn)
+    except Exception:
+        pass
+
+    row = None
+    try:
+        row = conn.execute(
+            "SELECT s.status, s.end_date, p.code AS plan_code, p.name AS plan_name"
+            " FROM technician_subscriptions s"
+            " LEFT JOIN subscription_plans p ON p.id = s.plan_id"
+            " WHERE s.technician_id = ?"
+            " ORDER BY s.created_at DESC, s.id DESC LIMIT 1",
+            (technician_id,)).fetchone()
+    except Exception:
+        conn.rollback()
+
+    status = (row["status"] or "").upper() if row and row["status"] else None
+    plan_code = row["plan_code"] if row else None
+
+    sub_active = status == "ACTIVE" and plan_code in _PLAN_ENTITLEMENTS
+    trial_active = status == "TRIAL"        # les TRIAL perimes ont deja bascule
+
+    if sub_active:
+        ents = set(_PLAN_ENTITLEMENTS[plan_code])
+    elif trial_active:
+        ents = set(_TRIAL_ENTITLEMENTS)
+    else:
+        ents = set()
+
+    trial_end = row["end_date"] if (row and trial_active) else None
+
+    return {
+        "has_subscription": bool(row),
+        "active": sub_active,
+        "trial_active": trial_active,
+        "eligible": sub_active or trial_active,
+        "status": status,
+        "plan_code": plan_code if sub_active else None,
+        "plan_name": (row["plan_name"] if row else None) if sub_active else None,
+        "end_date": row["end_date"] if (row and sub_active) else None,
+        "trial_end": trial_end,
+        "trial_days_left": _trial_days_left(trial_end) if trial_active else 0,
+        "entitlements": ents,
+        "badge": get_subscription_badge(plan_code) if sub_active else None,
+    }
+
+
+def technician_has_entitlement(conn, technician_id, key):
+    """True si le technicien beneficie du droit `key` (abonnement ACTIVE ou
+    essai en cours). A utiliser cote serveur avant toute fonctionnalite reservee."""
+    return key in get_technician_entitlements(conn, technician_id)["entitlements"]
+
+
+def entitlement_labels(entitlements):
+    """Libelles UI d'un ensemble de droits, dans l'ordre de reference."""
+    return [(_ENTITLEMENT_LABELS[k], k) for k in _ENTITLEMENT_LABELS if k in entitlements]
+
+
+# ---------------------------------------------------------------------------
+# QUOTA MENSUEL DE DEMANDES (moteur serveur).
+#
+# Une "demande recue" dans FixPro = une ligne `requests` attribuee au
+# technicien (colonne artisan_id), quel que soit le statut ensuite. C'est
+# l'evenement d'attribution (request_new / demande directe / chat Lia) qui
+# compte, sur le mois calendaire courant (substr(created_at, 1, 7)).
+#
+# La limite vient de _PLAN_MONTHLY_REQUEST_LIMIT (defini plus haut, source
+# unique) : PRO = 30, PREMIUM = None (illimite). Elle ne s'applique qu'a un
+# abonnement ACTIVE.
+# ---------------------------------------------------------------------------
+
+
+def technician_request_usage(conn, technician_id, month=None):
+    """Consommation mensuelle de demandes du technicien (calcul serveur).
+
+    Renvoie {month, used, limit, unlimited, remaining, plan_code, over_limit}.
+    `limit` vient du plan ACTIF uniquement (aucun plan actif -> illimite,
+    on n'invente pas de plafond pour les non-abonnes).
+    """
+    ent = get_technician_entitlements(conn, technician_id)
+    plan_code = ent["plan_code"]
+    month = month or datetime.now(timezone.utc).strftime("%Y-%m")
+    used = 0
+    try:
+        row = conn.execute(
+            "SELECT COUNT(*) AS n FROM requests"
+            " WHERE artisan_id = ? AND substr(created_at, 1, 7) = ?",
+            (technician_id, month)).fetchone()
+        used = (row["n"] if row else 0) or 0
+    except Exception:
+        conn.rollback()
+    limit = _PLAN_MONTHLY_REQUEST_LIMIT.get(plan_code) if ent["active"] else None
+    unlimited = limit is None
+    return {
+        "month": month,
+        "used": int(used),
+        "limit": limit,
+        "unlimited": unlimited,
+        "remaining": None if unlimited else max(0, limit - int(used)),
+        "plan_code": plan_code,
+        "over_limit": (not unlimited) and int(used) >= limit,
+    }
+
+
+def technician_can_receive_request(conn, technician_id):
+    """MOTEUR CENTRAL D'ELIGIBILITE - regle serveur unique.
+
+    Ordre de priorite (regle produit) :
+      1. abonnement ACTIVE  -> droits du plan (quota Pro applique)
+      2. essai en cours     -> illimite pendant la decouverte
+      3. sinon (essai termine sans abonnement, abonnement expire, ...)
+         -> FALSE : plus de nouvelles demandes.
+    """
+    ent = get_technician_entitlements(conn, technician_id)
+    if not ent["eligible"]:
+        return False
+    if ent["active"]:
+        return not technician_request_usage(conn, technician_id)["over_limit"]
+    return True   # essai : aucun plafond
+
+
 @app.route("/abonnement")
 @app.route("/dashboard/technicien/abonnement")
 @login_required
@@ -4983,13 +5690,21 @@ def technician_subscription():
          "n'est activé qu'une fois le paiement réellement confirmé par le moyen choisi."),
     ]
 
+    conn2 = get_db_connection()
+    try:
+        entitlements = get_technician_entitlements(conn2, user["id"])
+    finally:
+        conn2.close()
+    my_benefits = entitlement_labels(entitlements["entitlements"])
+
     return render_template("technician_subscription.html", user=user,
                            plans=plans, unread_count=unread_count,
                            max_year_savings=max_year_savings,
                            availability=(user.get("availability_status") or "hors_ligne"),
                            current_code=current_code, current_active=current_active,
                            current_sub=current_sub, faq=faq,
-                           pending_payment=pending_payment)
+                           pending_payment=pending_payment,
+                           entitlements=entitlements, my_benefits=my_benefits)
 
 
 @app.route("/dashboard/technicien/abonnement/paiement", methods=["GET", "POST"])
@@ -5029,18 +5744,27 @@ def technician_subscription_checkout():
         conn = get_db_connection()
         try:
             plan_id = _ensure_tech_plan_row(conn, code)
+            # L'essai a pu ne jamais etre materialise (technicien qui va droit
+            # au paiement) : on le cree ici pour ne pas le perdre si le
+            # paiement echoue avant la fin des 14 jours.
+            _ensure_technician_trial(conn, user["id"])
 
-            # 1 abonnement par technicien. Il RESTE inactif (PAST_DUE) : le clic
-            # "Payer" n'active rien. Les dates ne sont posees qu'a la confirmation.
+            # 1 ligne technician_subscriptions par technicien. Le clic "Payer"
+            # n'active RIEN et NE TOUCHE PAS l'etat courant : un essai en cours
+            # (TRIAL) reste un essai, un essai termine (TRIAL_EXPIRED) reste
+            # termine, tant que le paiement n'est pas confirme. Seul
+            # _activate_subscription_from_payment fera passer la ligne a ACTIVE.
             existing = conn.execute(
                 "SELECT id, status FROM technician_subscriptions WHERE technician_id = ?"
                 " ORDER BY created_at DESC LIMIT 1", (user["id"],)).fetchone()
             if existing:
-                if (existing["status"] or "").upper() != "ACTIVE":
+                st = (existing["status"] or "").upper()
+                if st in ("EXPIRED", "CANCELLED", "PAST_DUE"):
+                    # ancien abonnement termine : on marque l'intention de payer
                     conn.execute(
-                        "UPDATE technician_subscriptions SET plan_id = ?, status = 'PAST_DUE',"
+                        "UPDATE technician_subscriptions SET status = 'PAST_DUE',"
                         " updated_at = CURRENT_TIMESTAMP WHERE id = ?",
-                        (plan_id, existing["id"]))
+                        (existing["id"],))
                 sub_id = existing["id"]
             else:
                 sub_id = _insert_id(
@@ -5876,6 +6600,13 @@ def artisan_detail(artisan_id):
         artisan = dict(artisan)
         artisan["gradient"] = _avatar_gradient(artisan["full_name"])
 
+        # Badge d'abonnement REEL (Premium / Pro) : uniquement si ACTIVE.
+        # Meme source centrale que le reste de l'app.
+        _ent = get_technician_entitlements(conn, artisan_id)
+        artisan["subscription_badge"] = _ent["badge"]     # None pendant l'essai
+        artisan["is_featured"] = "featured_profile" in _ent["entitlements"]
+        artisan["is_new"] = _ent["trial_active"] and not _ent["badge"]
+
         # Services reels du technicien
         artisan_services = conn.execute(
             "SELECT s.name"
@@ -6064,6 +6795,14 @@ def artisan_detail(artisan_id):
                     return redirect(url_for("artisan_detail", artisan_id=artisan_id))
                 if urgency not in ("urgent", "cette_semaine", "pas_presse"):
                     urgency = "cette_semaine"
+
+                # Eligibilite serveur (essai en cours OU abonnement actif, et
+                # quota Pro non atteint). Vaut aussi pour une demande directe.
+                if not technician_can_receive_request(conn, artisan_id):
+                    flash("Ce technicien ne reçoit pas de nouvelles demandes "
+                          "actuellement. Choisissez un autre technicien.", "error")
+                    return redirect(url_for("artisan_detail", artisan_id=artisan_id))
+
                 full_desc = description
                 if date_time:
                     full_desc += f"\n\nDate/heure souhaitée : {date_time}"
@@ -6698,6 +7437,12 @@ def request_new():
             best = _select_best_technician(conn, category, request_address,
                                            client_lat=client_lat,
                                            client_lon=client_lon)
+            # Garde anti-course : le quota mensuel a pu etre atteint entre la
+            # selection et l'attribution. On revalide sur la meme connexion
+            # juste avant l'INSERT ; si c'est plein, la demande part non
+            # attribuee (REQUESTED) au lieu de depasser la limite du plan.
+            if best and not technician_can_receive_request(conn, best["id"]):
+                best = None
             ref = _generate_fixpro_reference(conn)
             status = MISSION_STATUS_REQUESTED if not best else MISSION_STATUS_ASSIGNED
             artisan_id = best["id"] if best else None
