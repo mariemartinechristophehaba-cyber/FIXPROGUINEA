@@ -52,6 +52,17 @@ app.config.from_object(config)
 # pour qu'une mise a jour de style/manifest se propage vite (pas de blocage
 # sur un ancien fichier en cache).
 app.config["SEND_FILE_MAX_AGE_DEFAULT"] = timedelta(hours=1)
+
+# --- Donnees de DEMONSTRATION du tableau de bord admin (temporaire) ---------
+# Tant que la base n'est pas peuplee, le tableau de bord affiche des chiffres
+# fictifs coherents (voir _ADMIN_DASHBOARD_DEMO) pour ressembler a la maquette.
+# Passer ADMIN_DASHBOARD_DEMO=0 (variable d'environnement Vercel) pour revenir
+# immediatement aux vraies donnees de la base. Ces valeurs ne remplacent JAMAIS
+# les vraies donnees cote API/back-office.
+app.config["ADMIN_DASHBOARD_DEMO"] = (
+    os.environ.get("ADMIN_DASHBOARD_DEMO", "1").strip().lower()
+    not in ("0", "false", "no", "off", ""))
+
 _dotenv = dotenv_values(BASE_DIR / ".env")
 if _dotenv.get("DEV_ROLE"):
     app.config["DEV_ROLE"] = _dotenv.get("DEV_ROLE").lower()
@@ -2567,15 +2578,131 @@ def _adm_ago(dt_str):
     return "Il y a %d jour%s" % (days, "s" if days > 1 else "")
 
 
+# ---------------------------------------------------------------------------
+# Donnees de DEMONSTRATION du tableau de bord (fausses donnees coherentes).
+# Activees via app.config["ADMIN_DASHBOARD_DEMO"] (ADMIN_DASHBOARD_DEMO=0 pour
+# revenir aux vraies donnees). NE PAS confondre avec les vraies donnees API.
+# ---------------------------------------------------------------------------
+_ADMIN_DASHBOARD_DEMO = {
+    "kpis": {
+        "users": {"value": 12548, "delta": 12},
+        "techs": {"value": 1892, "delta": 8},
+        "missions": {"value": 3421, "delta": 18},
+        "revenue": {"value": 24560, "delta": 25},
+    },
+    "chart": {
+        "days": [25, 26, 27, 28, 29, 30, 31],
+        "month": 8,  # aout
+        "created": [78, 86, 110, 102, 118, 142, 156],
+        "done": [26, 38, 61, 54, 67, 89, 121],
+    },
+    "status": {"total": 3421, "done": 1890, "prog": 820, "wait": 431, "canc": 280},
+    "notifications": [
+        {"kind": "message", "text": "5 nouveaux messages", "ago": "Il y a 10 min"},
+        {"kind": "tech", "text": "3 nouveaux techniciens", "ago": "Il y a 25 min"},
+        {"kind": "mission", "text": "12 nouvelles missions", "ago": "Il y a 1 heure"},
+        {"kind": "report", "text": "1 signalement", "ago": "Il y a 2 heures"},
+    ],
+    "notif_count": 5,
+    "last_missions": [
+        ("#FP-3241", "Aminata Diallo", "Plomberie", "done", "01/09/2026"),
+        ("#FP-3240", "Mamadou Keita", "Électricité", "prog", "01/09/2026"),
+        ("#FP-3239", "Sarah Camara", "Climatisation", "wait", "01/09/2026"),
+        ("#FP-3238", "Ibrahima Sylla", "Menuiserie", "done", "31/08/2026"),
+        ("#FP-3237", "Fatoumata Barry", "Peinture", "canc", "31/08/2026"),
+    ],
+    "top_techs": [
+        ("Moussa Bah", "Plombier", "4.9"),
+        ("Aïssatou Diallo", "Électricienne", "4.8"),
+        ("Karim Soumah", "Frigoriste", "4.7"),
+        ("Lansana Camara", "Menuisier", "4.7"),
+        ("Mariama Kourouma", "Peintre", "4.6"),
+    ],
+    "recent_messages": [
+        ("Aminata Diallo", "Bonjour, le problème est résolu merci !", "14:25"),
+        ("Mamadou Keita", "Quand pouvez-vous arriver ?", "13:40"),
+        ("Sarah Camara", "D'accord, je vous attends.", "12:18"),
+        ("Ibrahima Sylla", "Le technicien est en route.", "11:05"),
+        ("Fatoumata Barry", "Merci pour votre réactivité !", "10:22"),
+    ],
+}
+
+_ADM_STATUS_LABELS = {"done": "Terminée", "prog": "En cours",
+                      "wait": "En attente", "canc": "Annulée"}
+
+
+def _admin_dashboard_demo_context():
+    """Construit le contexte du template a partir de _ADMIN_DASHBOARD_DEMO."""
+    d = _ADMIN_DASHBOARD_DEMO
+    k = d["kpis"]
+    kpis = {
+        "users": {"value": _fmt_int(k["users"]["value"]), "delta": k["users"]["delta"]},
+        "techs": {"value": _fmt_int(k["techs"]["value"]), "delta": k["techs"]["delta"]},
+        "missions": {"value": _fmt_int(k["missions"]["value"]), "delta": k["missions"]["delta"]},
+        "revenue": {"value": _fmt_int(k["revenue"]["value"]), "delta": k["revenue"]["delta"]},
+    }
+    c = d["chart"]
+    mon = _ADM_MONTHS_FR[c["month"]][:4].capitalize()
+    chart = {
+        "labels": ["%d %s" % (day, mon) for day in c["days"]],
+        "created": list(c["created"]),
+        "done": list(c["done"]),
+    }
+    s = d["status"]
+    total = s["total"] or 1
+    status = {
+        "total": _fmt_int(s["total"]),
+        "done": s["done"], "prog": s["prog"], "wait": s["wait"], "canc": s["canc"],
+        "done_pct": _adm_pct(s["done"], total),
+        "prog_pct": _adm_pct(s["prog"], total),
+        "wait_pct": _adm_pct(s["wait"], total),
+        "canc_pct": _adm_pct(s["canc"], total),
+    }
+    last_missions = [
+        {"code": code, "client": client, "service": svc, "pill": pill,
+         "status_label": _ADM_STATUS_LABELS[pill], "date": date}
+        for code, client, svc, pill, date in d["last_missions"]
+    ]
+    top_techs = [{"name": n, "job": j, "rating": r} for n, j, r in d["top_techs"]]
+    recent_messages = [
+        {"name": n, "preview": (txt[:52] + "…") if len(txt) > 52 else txt, "time": t}
+        for n, txt, t in d["recent_messages"]
+    ]
+    return {
+        "kpis": kpis, "chart": chart, "status": status,
+        "notifications": [dict(x) for x in d["notifications"]],
+        "header_notifs": [dict(x) for x in d["notifications"]],
+        "notif_count": d["notif_count"],
+        "last_missions": last_missions, "top_techs": top_techs,
+        "recent_messages": recent_messages,
+    }
+
+
 @app.route("/admin/dashboard")
 @login_required
 @admin_required
 def admin_dashboard():
-    """Tableau de bord admin : KPI, activite des missions, statuts, listes."""
+    """Tableau de bord admin : KPI, activite des missions, statuts, listes.
+
+    Affiche des donnees de DEMONSTRATION tant que app.config['ADMIN_DASHBOARD_DEMO']
+    est actif (ADMIN_DASHBOARD_DEMO=0 pour repasser aux vraies donnees de la base)."""
     user = get_current_user()
     now = datetime.now(timezone.utc)
     month_prefix = now.strftime("%Y-%m")
     prev_month = (now.replace(day=1) - timedelta(days=1)).strftime("%Y-%m")
+
+    first_name = (user.get("full_name") or "Admin").split(" ")[0] if user else "Admin"
+    today_label = "%s %d %s %d" % (
+        _ADM_DAYS_FR[now.weekday()].capitalize(), now.day,
+        _ADM_MONTHS_FR[now.month].capitalize(), now.year)
+    base_ctx = {
+        "admin_user": user, "admin_first_name": first_name, "current_year": now.year,
+        "today_label": today_label, "demo_mode": bool(app.config.get("ADMIN_DASHBOARD_DEMO")),
+    }
+
+    if app.config.get("ADMIN_DASHBOARD_DEMO"):
+        base_ctx.update(_admin_dashboard_demo_context())
+        return render_template("admin_dashboard.html", **base_ctx)
 
     conn = get_db_connection()
     try:
@@ -2732,17 +2859,11 @@ def admin_dashboard():
     finally:
         conn.close()
 
-    first_name = (user.get("full_name") or "Admin").split(" ")[0] if user else "Admin"
-    today_label = "%s %d %s %d" % (
-        _ADM_DAYS_FR[now.weekday()].capitalize(), now.day,
-        _ADM_MONTHS_FR[now.month].capitalize(), now.year)
-
-    return render_template(
-        "admin_dashboard.html",
-        admin_user=user, admin_first_name=first_name, current_year=now.year,
-        today_label=today_label, notif_count=notif_count, header_notifs=header_notifs,
+    base_ctx.update(
+        notif_count=notif_count, header_notifs=header_notifs,
         kpis=kpis, chart=chart, status=status, notifications=notifications,
         last_missions=last_missions, top_techs=top_techs, recent_messages=recent_messages)
+    return render_template("admin_dashboard.html", **base_ctx)
 
 
 def _ts(value=None):

@@ -234,7 +234,7 @@
         <tbody>
           {% for m in last_missions %}
           <tr data-search-row>
-            <td class="adh-code">{{ m.code|replace('#', '') }}</td>
+            <td class="adh-code">{{ m.code }}</td>
             <td><span class="adh-cli"><span class="adh-av">{{ m.client[0]|upper }}</span><span class="cli-name">{{ m.client }}</span></span></td>
             <td class="svc">{{ m.service }}</td>
             <td><span class="adh-pill {{ m.pill }}">{{ m.status_label }}</span></td>
