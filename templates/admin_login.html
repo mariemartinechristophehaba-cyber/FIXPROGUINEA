@@ -22,21 +22,24 @@
     }
     * { box-sizing: border-box; }
     [hidden] { display: none !important; }
-    html, body { margin: 0; padding: 0; }
+    html, body {
+      margin: 0; padding: 0; width: 100%; height: 100%;
+      height: 100dvh; overflow: hidden;
+    }
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      color: var(--al-ink); background: #F1F5F9; -webkit-font-smoothing: antialiased;
-      min-height: 100dvh;
+      color: var(--al-ink); background: #0F1E3D; -webkit-font-smoothing: antialiased;
     }
     a { text-decoration: none; color: inherit; }
     button { font-family: inherit; }
 
-    .al-wrap { display: flex; min-height: 100dvh; }
+    /* Plein ecran, jamais de scroll : le wrap occupe exactement le viewport. */
+    .al-wrap { display: flex; width: 100%; height: 100dvh; overflow: hidden; }
 
     /* ---------- Panneau gauche ---------- */
     .al-left {
-      position: relative; overflow: hidden; flex: 1 1 50%; color: #fff;
-      padding: 48px 56px;
+      position: relative; overflow: hidden; flex: 1 1 50%; height: 100%; color: #fff;
+      padding: clamp(22px, 4.6vh, 48px) clamp(26px, 4vw, 56px);
       background:
         radial-gradient(circle at 92% 4%, rgba(255,255,255,0.14) 0, transparent 26%),
         radial-gradient(circle at 4% 92%, rgba(255,255,255,0.09) 0, transparent 28%),
@@ -86,39 +89,39 @@
     .al-left > *:not(.al-left-photo) { position: relative; z-index: 2; }
 
     .al-brand { display: flex; align-items: center; gap: 12px; }
-    .al-brand .mark { width: 40px; height: 40px; flex-shrink: 0; }
+    .al-brand .mark { width: clamp(34px, 4.4vh, 40px); height: clamp(34px, 4.4vh, 40px); flex-shrink: 0; }
     .al-brand-txt { line-height: 1; }
-    .al-brand-txt b { font-size: 1.7rem; font-weight: 800; letter-spacing: -0.01em; }
-    .al-brand-txt span { display: block; font-size: 0.74rem; font-weight: 500; color: rgba(255,255,255,0.8); margin-top: 5px; }
+    .al-brand-txt b { font-size: clamp(1.4rem, 3vh, 1.7rem); font-weight: 800; letter-spacing: -0.01em; }
+    .al-brand-txt span { display: block; font-size: 0.72rem; font-weight: 500; color: rgba(255,255,255,0.8); margin-top: 4px; }
 
-    .al-rule { width: 46px; height: 4px; border-radius: 4px; background: rgba(255,255,255,0.85); margin: 40px 0 20px; }
-    .al-left h1 { font-size: 2.4rem; font-weight: 800; margin: 0 0 14px; letter-spacing: -0.02em; }
-    .al-left .lead { font-size: 1.02rem; line-height: 1.5; color: rgba(255,255,255,0.9); margin: 0 0 40px; max-width: 30ch; }
+    .al-rule { width: 46px; height: 4px; border-radius: 4px; background: rgba(255,255,255,0.85); margin: clamp(16px, 4vh, 40px) 0 clamp(10px, 2vh, 20px); }
+    .al-left h1 { font-size: clamp(1.7rem, 3.6vh, 2.4rem); font-weight: 800; margin: 0 0 clamp(8px, 1.5vh, 14px); letter-spacing: -0.02em; }
+    .al-left .lead { font-size: clamp(0.9rem, 1.9vh, 1.02rem); line-height: 1.45; color: rgba(255,255,255,0.9); margin: 0 0 clamp(16px, 3.6vh, 40px); max-width: 30ch; }
 
-    .al-feats { display: flex; flex-direction: column; gap: 22px; margin-bottom: 40px; }
-    .al-feat { display: flex; gap: 16px; }
+    .al-feats { display: flex; flex-direction: column; gap: clamp(12px, 2.4vh, 22px); margin-bottom: clamp(14px, 3vh, 40px); }
+    .al-feat { display: flex; gap: 14px; }
     .al-feat-ic {
-      width: 46px; height: 46px; border-radius: 13px; flex-shrink: 0;
+      width: clamp(38px, 4.8vh, 46px); height: clamp(38px, 4.8vh, 46px); border-radius: 13px; flex-shrink: 0;
       background: rgba(255,255,255,0.16); display: flex; align-items: center; justify-content: center;
     }
-    .al-feat-ic svg { width: 22px; height: 22px; }
-    .al-feat b { display: block; font-size: 1.02rem; font-weight: 700; margin-bottom: 3px; }
-    .al-feat p { margin: 0; font-size: 0.88rem; line-height: 1.45; color: rgba(255,255,255,0.82); max-width: 34ch; }
+    .al-feat-ic svg { width: clamp(18px, 2.4vh, 22px); height: clamp(18px, 2.4vh, 22px); }
+    .al-feat b { display: block; font-size: clamp(0.92rem, 1.9vh, 1.02rem); font-weight: 700; margin-bottom: 2px; }
+    .al-feat p { margin: 0; font-size: clamp(0.8rem, 1.6vh, 0.88rem); line-height: 1.4; color: rgba(255,255,255,0.82); max-width: 34ch; }
 
-    .al-quote { font-size: 0.92rem; font-style: italic; color: rgba(255,255,255,0.88); line-height: 1.5; max-width: 30ch; margin: 0; }
-    .al-quote::after { content: ""; display: block; width: 60px; height: 3px; border-radius: 3px; background: rgba(255,255,255,0.55); margin-top: 14px; }
+    .al-quote { font-size: clamp(0.82rem, 1.7vh, 0.92rem); font-style: italic; color: rgba(255,255,255,0.88); line-height: 1.45; max-width: 30ch; margin: 0; }
+    .al-quote::after { content: ""; display: block; width: 60px; height: 3px; border-radius: 3px; background: rgba(255,255,255,0.55); margin-top: clamp(8px, 1.6vh, 14px); }
 
-    .al-stats { display: flex; gap: 34px; margin-top: auto; padding-top: 40px; }
+    .al-stats { display: flex; gap: clamp(16px, 2.2vw, 34px); margin-top: auto; padding-top: clamp(14px, 3vh, 36px); }
     .al-stat { display: flex; align-items: flex-start; gap: 10px; }
     .al-stat svg { width: 20px; height: 20px; opacity: .9; margin-top: 2px; }
-    .al-stat b { display: block; font-size: 1.15rem; font-weight: 800; line-height: 1.1; }
-    .al-stat span { font-size: 0.76rem; color: rgba(255,255,255,0.8); }
+    .al-stat b { display: block; font-size: clamp(1rem, 2.2vh, 1.15rem); font-weight: 800; line-height: 1.1; }
+    .al-stat span { font-size: 0.75rem; color: rgba(255,255,255,0.8); }
 
     /* ---------- Panneau droit ---------- */
     .al-right {
-      position: relative; flex: 1 1 50%; background: #fff;
+      position: relative; overflow: hidden; flex: 1 1 50%; height: 100%; background: #fff;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
-      padding: 40px 40px 28px;
+      padding: clamp(24px, 4vh, 40px) clamp(24px, 3vw, 40px);
       border-radius: 28px 0 0 28px; margin-left: -28px; box-shadow: -24px 0 60px rgba(15,30,61,0.12);
     }
     .al-lang {
@@ -136,13 +139,13 @@
     }
     .al-watermark { position: absolute; right: -46px; bottom: -52px; width: 300px; height: 300px; color: #EDF3FF; z-index: 0; pointer-events: none; opacity: .85; }
 
-    .al-card { position: relative; z-index: 1; width: 100%; max-width: 400px; }
+    .al-card { position: relative; z-index: 1; width: 100%; max-width: 400px; max-height: 100%; }
 
-    .al-logo { text-align: center; margin-bottom: 8px; }
-    .al-logo .mark { width: 62px; height: 62px; }
-    .al-logo b { display: block; font-size: 2rem; font-weight: 800; color: var(--al-navy); letter-spacing: -0.02em; margin-top: 6px; }
-    .al-title { text-align: center; font-size: 1.15rem; font-weight: 800; margin: 4px 0 8px; }
-    .al-sub { text-align: center; font-size: 0.9rem; color: var(--al-muted); margin: 0 0 26px; }
+    .al-logo { text-align: center; margin-bottom: clamp(4px, 1vh, 8px); }
+    .al-logo .mark { width: clamp(44px, 6.6vh, 62px); height: clamp(44px, 6.6vh, 62px); }
+    .al-logo b { display: block; font-size: clamp(1.55rem, 4vh, 2rem); font-weight: 800; color: var(--al-navy); letter-spacing: -0.02em; margin-top: clamp(3px, 0.8vh, 6px); }
+    .al-title { text-align: center; font-size: clamp(1.02rem, 2.3vh, 1.15rem); font-weight: 800; margin: clamp(2px, 0.6vh, 4px) 0 clamp(5px, 1vh, 8px); }
+    .al-sub { text-align: center; font-size: clamp(0.82rem, 1.8vh, 0.9rem); color: var(--al-muted); margin: 0 0 clamp(14px, 3vh, 26px); }
 
     .al-alert {
       display: flex; align-items: center; gap: 9px; background: #FEF2F2; color: #B91C1C;
@@ -151,12 +154,12 @@
     }
     .al-alert svg { width: 16px; height: 16px; flex-shrink: 0; }
 
-    .al-field { margin-bottom: 16px; }
-    .al-field label { display: block; font-size: 0.86rem; font-weight: 700; margin-bottom: 8px; }
+    .al-field { margin-bottom: clamp(10px, 2vh, 16px); }
+    .al-field label { display: block; font-size: 0.85rem; font-weight: 700; margin-bottom: clamp(5px, 1vh, 8px); }
     .al-input { position: relative; }
     .al-input > svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; color: #94A3B8; }
     .al-input input {
-      width: 100%; height: 52px; border: 1px solid var(--al-line); border-radius: 11px;
+      width: 100%; height: clamp(44px, 6.4vh, 52px); border: 1px solid var(--al-line); border-radius: 11px;
       background: var(--al-field); padding: 0 44px 0 42px; font-size: 0.95rem; color: var(--al-ink);
       outline: none; transition: border-color .15s, box-shadow .15s, background .15s;
     }
@@ -170,11 +173,11 @@
     .al-eye:hover { color: var(--al-muted); background: #F1F5F9; }
     .al-eye svg { width: 18px; height: 18px; }
 
-    .al-forgot { text-align: right; margin: -4px 0 20px; }
+    .al-forgot { text-align: right; margin: clamp(-4px, -0.5vh, -2px) 0 clamp(12px, 2.4vh, 20px); }
     .al-forgot a { font-size: 0.84rem; font-weight: 600; color: var(--al-blue); }
 
     .al-submit {
-      width: 100%; height: 52px; border: 0; border-radius: 11px; cursor: pointer;
+      width: 100%; height: clamp(44px, 6.4vh, 52px); border: 0; border-radius: 11px; cursor: pointer;
       background: linear-gradient(180deg, #2E6BFF 0%, #1D4ED8 100%);
       color: #fff; font-size: 0.98rem; font-weight: 700;
       display: flex; align-items: center; justify-content: center; gap: 9px;
@@ -186,77 +189,63 @@
     .al-submit .spin { width: 17px; height: 17px; border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff; border-radius: 50%; animation: al-rot .7s linear infinite; }
     @keyframes al-rot { to { transform: rotate(360deg); } }
 
-    .al-or { display: flex; align-items: center; gap: 14px; margin: 20px 0; color: var(--al-muted); font-size: 0.82rem; }
+    .al-or { display: flex; align-items: center; gap: 14px; margin: clamp(12px, 2.4vh, 20px) 0; color: var(--al-muted); font-size: 0.82rem; }
     .al-or::before, .al-or::after { content: ""; flex: 1; height: 1px; background: var(--al-line); }
 
     .al-alt {
-      width: 100%; height: 50px; border: 1px solid var(--al-line); border-radius: 11px; cursor: pointer;
+      width: 100%; height: clamp(42px, 6vh, 50px); border: 1px solid var(--al-line); border-radius: 11px; cursor: pointer;
       background: #F5F8FF; color: var(--al-ink); font-size: 0.9rem; font-weight: 700;
       display: flex; align-items: center; justify-content: center; gap: 9px; transition: background .15s;
     }
     .al-alt:hover { background: #EAF1FF; }
     .al-alt svg { width: 17px; height: 17px; color: var(--al-blue); }
 
-    .al-footer { position: relative; z-index: 1; margin-top: 30px; text-align: center; font-size: 0.76rem; color: #94A3B8; }
+    .al-footer { position: relative; z-index: 1; margin-top: clamp(14px, 3vh, 30px); text-align: center; font-size: 0.76rem; color: #94A3B8; }
     .al-footer .sep { margin: 0 8px; }
 
     /* ---------- Responsive ---------- */
-    @media (max-width: 1200px) {
-      .al-left { padding: 44px 44px; }
-      .al-left-photo { background-position: 70% center; }
-    }
+    /* Split-screen conserve tant qu'il reste de la place (>= 861px). Le cadrage
+       de la photo s'adapte ; les tailles/espacements sont deja en clamp(vh). */
+    @media (max-width: 1200px) { .al-left-photo { background-position: 70% 18%; } }
     @media (max-width: 1024px) {
-      .al-left { padding: 40px 36px; }
-      .al-left h1 { font-size: 2rem; }
-      .al-left .lead { margin-bottom: 32px; }
-      .al-feats { gap: 18px; margin-bottom: 32px; }
-      .al-stats { gap: 20px; flex-wrap: wrap; }
-      .al-left-photo { background-position: 76% center; }
+      .al-left-photo { background-position: 78% 16%; }
       .al-left-photo::after {
         background:
           linear-gradient(90deg, #1E52DE 0%, rgba(30,82,222,0.9) 26%, rgba(30,82,222,0.55) 52%, rgba(23,52,127,0.28) 100%),
           linear-gradient(180deg, rgba(23,52,127,0.42) 0%, transparent 20%, transparent 78%, rgba(18,38,96,0.48) 100%);
       }
     }
-    @media (max-width: 860px) {
-      .al-wrap { flex-direction: column; }
-      .al-left {
-        flex: none; min-height: 340px; padding: 30px 24px 40px; border-radius: 0 0 30px 30px;
-        justify-content: flex-start;
-      }
-      /* le technicien devient une texture de fond discrete : fondu tres fort, texte prioritaire */
-      .al-left-photo {
-        background-position: 82% 16%;
-        -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 60%, transparent 98%);
-        mask-image: linear-gradient(180deg, #000 0%, #000 60%, transparent 98%);
-        -webkit-mask-composite: source-over; mask-composite: add;
-      }
-      .al-left-photo::after {
-        background:
-          linear-gradient(180deg, rgba(20,46,116,0.82) 0%, rgba(23,52,132,0.86) 45%, #183BA0 100%),
-          linear-gradient(90deg, rgba(26,66,190,0.7) 0%, rgba(26,66,190,0.35) 55%, rgba(26,66,190,0.1) 100%);
-        mix-blend-mode: normal;
-      }
-      .al-left-photo::before { display: none; }
-      .al-rule { margin: 22px 0 14px; }
-      .al-left h1 { font-size: 1.7rem; }
-      .al-left .lead { margin-bottom: 24px; }
-      .al-feats { gap: 15px; margin-bottom: 22px; }
+    /* Hauteur limitee en mode split : on masque les descriptions (on garde les
+       titres des atouts) pour tenir sans scroll. */
+    @media (min-width: 861px) and (max-height: 660px) {
+      .al-feat p { display: none; }
       .al-quote { display: none; }
-      .al-stats { margin-top: 6px; padding-top: 22px; border-top: 1px solid rgba(255,255,255,0.22); }
-      .al-right {
-        flex: none; margin-left: 0; margin-top: -30px; border-radius: 30px 30px 0 0;
-        box-shadow: 0 -12px 40px rgba(15,30,61,0.1); padding: 42px 22px 24px;
-      }
-      .al-lang { top: 16px; right: 16px; }
     }
-    @media (max-width: 520px) {
-      .al-left { padding: 24px 18px 36px; min-height: 300px; }
-      .al-left-photo { background-position: 72% 24%; }
-      .al-feat p { max-width: none; }
-      .al-stats { gap: 14px; }
-      .al-stat b { font-size: 1rem; }
-      .al-right { padding: 42px 16px 20px; }
+
+    /* Ecran etroit (tablette portrait + mobile) : formulaire plein ecran, sans
+       scroll. Le panneau promotionnel est masque proprement (place insuffisante). */
+    @media (max-width: 860px) {
+      .al-left { display: none; }
+      .al-wrap { background: #fff; }
+      .al-right {
+        flex: 1 1 100%; height: 100dvh; margin-left: 0; border-radius: 0; box-shadow: none;
+        padding: clamp(20px, 5vh, 44px) clamp(18px, 6vw, 44px);
+      }
+      .al-right::before { display: none; }
+      .al-lang { top: clamp(12px, 2.5vh, 20px); right: clamp(12px, 4vw, 24px); }
+      .al-watermark { width: 220px; height: 220px; right: -60px; bottom: -70px; }
+      .al-card { max-width: 380px; }
+      .al-feat p { display: block; }
+    }
+    /* Paysage tres court : on compacte encore (logo/textes) pour rester sans scroll. */
+    @media (max-height: 560px) {
+      .al-left .lead, .al-quote { display: none; }
+      .al-feat p { display: none; }
+      .al-logo b { font-size: 1.5rem; }
+    }
+    @media (max-width: 860px) and (max-height: 620px) {
+      .al-sub { margin-bottom: 12px; }
+      .al-or { margin: 10px 0; }
     }
   </style>
 </head>
