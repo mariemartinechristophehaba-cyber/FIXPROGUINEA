@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#2563EB" />
   <meta name="csrf-token" content="{{ csrf_token() }}" />
   {% include '_pwa_head.html' %}
-  <title>Confirmez votre abonnement - FixPro</title>
+  <title>Procédez au paiement - FixPro</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
@@ -29,16 +29,27 @@
     .topbar {
       position: sticky; top: 0; z-index: 20; background: rgba(244,247,254,.92);
       backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-      display: flex; align-items: center; gap: 12px; max-width: 1080px; margin: 0 auto;
-      padding: calc(10px + env(safe-area-inset-top)) clamp(14px, 4vw, 26px) 10px;
+      display: flex; align-items: center; gap: 10px; max-width: 1080px; margin: 0 auto;
+      padding: calc(10px + env(safe-area-inset-top)) clamp(12px, 4vw, 26px) 10px;
     }
+    .back {
+      width: 40px; height: 40px; border-radius: 999px; background: #fff; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 14px rgba(11,27,59,.07); color: var(--d-ink);
+    }
+    .back svg { width: 19px; height: 19px; }
     .brand { display: flex; align-items: center; gap: 9px; }
-    .brand .ic { width: 34px; height: 34px; color: var(--d-blue); flex-shrink: 0; }
+    .brand .ic { width: 32px; height: 32px; color: var(--d-blue); flex-shrink: 0; }
     .brand .ic svg { width: 100%; height: 100%; }
-    .brand .n { font-size: 1.28rem; font-weight: 800; letter-spacing: -.02em; line-height: 1; }
+    .brand .n { font-size: 1.22rem; font-weight: 800; letter-spacing: -.02em; line-height: 1; }
     .brand .n i { color: var(--d-blue); font-style: normal; }
-    .brand .s { display: block; font-size: .7rem; font-weight: 600; color: var(--d-muted); margin-top: 2px; }
+    .brand .s { display: block; font-size: .68rem; font-weight: 600; color: var(--d-muted); margin-top: 2px; }
     .topbar .sp { flex: 1; }
+    @media (max-width: 360px) {
+      .topbar { gap: 7px; }
+      .brand .s { display: none; }
+      .brand .ic { width: 28px; height: 28px; }
+    }
     .icon-btn {
       position: relative; width: 42px; height: 42px; border-radius: 999px; border: 0; background: #fff;
       color: var(--d-ink); box-shadow: 0 4px 14px rgba(11,27,59,.07);
@@ -51,120 +62,123 @@
       display: flex; align-items: center; justify-content: center; border: 2px solid var(--d-bg);
     }
 
-    /* --- Layout (compact) --- */
+    /* --- Layout --- */
     .page {
-      max-width: 640px; margin: 0 auto;
-      padding: clamp(10px, 2.4vw, 18px) clamp(12px, 4vw, 22px) calc(24px + env(safe-area-inset-bottom));
+      max-width: 620px; margin: 0 auto;
+      padding: clamp(10px, 2.4vw, 18px) clamp(14px, 4vw, 22px) calc(24px + env(safe-area-inset-bottom));
     }
     .h1 {
       margin: 4px 0 0; text-align: center;
-      font-size: clamp(1.3rem, 5vw, 1.75rem); font-weight: 900; letter-spacing: -.03em; line-height: 1.14;
+      font-size: clamp(1.4rem, 5.4vw, 1.9rem); font-weight: 900; letter-spacing: -.03em; line-height: 1.12;
       overflow-wrap: break-word;
     }
-    .sub { margin: 5px 0 0; text-align: center; font-size: clamp(.82rem, 3.3vw, .92rem); color: var(--d-muted); line-height: 1.38; }
+    .sub { margin: 6px 0 0; text-align: center; font-size: clamp(.84rem, 3.4vw, .94rem); color: var(--d-muted); line-height: 1.4; }
 
     /* --- Stepper --- */
-    .steps { display: flex; align-items: flex-start; margin: clamp(12px, 3vw, 20px) auto 0; max-width: 420px; }
+    .steps { display: flex; align-items: flex-start; margin: clamp(14px, 3.4vw, 22px) auto 0; max-width: 420px; }
     .step { flex: 1; display: flex; flex-direction: column; align-items: center; position: relative; min-width: 0; }
     .step .dot {
-      width: clamp(24px, 6.5vw, 30px); height: clamp(24px, 6.5vw, 30px); border-radius: 999px;
+      width: clamp(26px, 7vw, 32px); height: clamp(26px, 7vw, 32px); border-radius: 999px;
       background: #fff; border: 2px solid var(--d-line); color: #94A3B8;
-      display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: clamp(.78rem, 3vw, .9rem);
+      display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: clamp(.8rem, 3vw, .92rem);
       position: relative; z-index: 2;
     }
+    .step .dot svg { width: 55%; height: 55%; }
     .step.on .dot { background: var(--d-blue); border-color: var(--d-blue); color: #fff; box-shadow: 0 6px 14px rgba(37,99,235,.3); }
-    .step .lbl { margin-top: 5px; font-size: clamp(.64rem, 2.7vw, .74rem); font-weight: 700; color: var(--d-muted); text-align: center; }
-    .step.on .lbl { color: var(--d-blue); }
+    .step.done .dot { background: var(--d-blue); border-color: var(--d-blue); color: #fff; }
+    .step .lbl { margin-top: 6px; font-size: clamp(.66rem, 2.7vw, .76rem); font-weight: 700; color: var(--d-muted); text-align: center; }
+    .step.on .lbl, .step.done .lbl { color: var(--d-blue); }
     .step::before {
-      content: ""; position: absolute; top: clamp(11px, 3.2vw, 14px); right: 50%; width: 100%; height: 2px;
+      content: ""; position: absolute; top: clamp(12px, 3.4vw, 15px); right: 50%; width: 100%; height: 2px;
       background: var(--d-line); z-index: 1;
     }
     .step:first-child::before { display: none; }
+    .step.on::before, .step.done::before { background: var(--d-blue); }
 
     /* --- Cartes --- */
     .card {
-      background: #fff; border: 1px solid var(--d-line); border-radius: 15px;
-      padding: clamp(12px, 3vw, 17px); margin-top: clamp(9px, 2.2vw, 13px);
+      background: #fff; border: 1px solid var(--d-line); border-radius: 16px;
+      padding: clamp(13px, 3.4vw, 18px); margin-top: clamp(10px, 2.6vw, 15px);
       box-shadow: 0 8px 22px rgba(11,27,59,.05);
     }
-    .card-title { margin: 0 0 10px; font-size: clamp(.95rem, 3.8vw, 1.08rem); font-weight: 900; letter-spacing: -.02em; }
 
-    /* --- Carte plan --- */
-    .plan { display: grid; grid-template-columns: 1fr; gap: clamp(9px, 2.2vw, 14px); }
-    @media (min-width: 560px) { .plan { grid-template-columns: 132px 1fr; align-items: center; } }
-    .plan-badge-wrap { display: flex; flex-direction: column; align-items: center; gap: 7px; text-align: center; }
-    .plan-ico {
-      width: clamp(58px, 15vw, 92px); aspect-ratio: 1; border-radius: 15px;
+    /* --- Carte plan (compacte, dynamique) --- */
+    .pcard-top {
+      display: grid; grid-template-columns: auto 1fr; gap: 10px 12px; align-items: center;
+    }
+    .pico {
+      width: clamp(48px, 13vw, 60px); aspect-ratio: 1; border-radius: 14px; flex-shrink: 0;
       background: linear-gradient(160deg, #EAF1FE, #DDE9FF);
       display: flex; align-items: center; justify-content: center; color: var(--d-blue);
     }
-    .plan.amber .plan-ico { background: linear-gradient(160deg, #FFF3DC, #FFE7BC); color: var(--d-amber); }
-    .plan-ico svg { width: 44%; height: 44%; }
-    .plan-name { display: block; font-size: clamp(1.02rem, 4.3vw, 1.22rem); font-weight: 900; letter-spacing: -.02em; line-height: 1.15; }
-    .plan-name-sub { display: block; font-size: .78rem; color: var(--d-muted); font-weight: 600; margin-top: 2px; line-height: 1.3; }
-
-    .plan-body { min-width: 0; }
-    .pop {
-      display: inline-flex; align-items: center; gap: 5px;
-      background: var(--d-blue); color: #fff; font-size: .72rem; font-weight: 800;
-      padding: 4px 10px; border-radius: 999px;
+    .pcard.amber .pico { background: linear-gradient(160deg, #FFF3DC, #FFE7BC); color: var(--d-amber); }
+    .pico svg { width: 46%; height: 46%; }
+    .pmeta { min-width: 0; }
+    .pname { display: block; font-size: clamp(1.05rem, 4.4vw, 1.3rem); font-weight: 900; letter-spacing: -.02em; line-height: 1.15; }
+    .ppop {
+      display: inline-flex; align-items: center; gap: 4px; vertical-align: middle; margin-left: 8px;
+      background: var(--d-blue); color: #fff; font-size: .64rem; font-weight: 800; letter-spacing: 0;
+      padding: 3px 8px; border-radius: 999px; white-space: nowrap;
     }
-    .pop svg { width: 12px; height: 12px; }
-    .plan-price { margin-top: 8px; display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 9px; }
-    .plan-price .now { font-size: clamp(1.25rem, 5.4vw, 1.65rem); font-weight: 900; color: var(--d-blue); letter-spacing: -.02em; line-height: 1; }
-    .plan-price .unit { font-size: clamp(.86rem, 3.4vw, 1rem); font-weight: 700; color: var(--d-muted); }
-    .plan-price .disc {
-      background: #DCFCE7; color: #15803D; font-size: .78rem; font-weight: 800;
-      padding: 2px 8px; border-radius: 7px;
+    .ppop svg { width: 9px; height: 9px; }
+    .pdesc { display: block; font-size: clamp(.76rem, 3vw, .84rem); color: var(--d-muted); font-weight: 600; margin-top: 3px; line-height: 1.3; }
+    .pmoney {
+      grid-column: 1 / -1; display: flex; align-items: baseline; flex-wrap: wrap; gap: 3px 10px;
     }
-    .plan-ref { margin-top: 2px; font-size: .84rem; font-weight: 700; color: #94A3B8; text-decoration: line-through; }
-    .plan-tag { margin: 9px 0 0; font-size: clamp(.84rem, 3.4vw, .94rem); font-weight: 700; line-height: 1.34; }
-    .plan-tag span { display: block; font-weight: 500; color: var(--d-muted); font-size: .9em; margin-top: 2px; }
+    .pnow { font-size: clamp(1.3rem, 5.6vw, 1.6rem); font-weight: 900; color: var(--d-blue); letter-spacing: -.02em; line-height: 1.1; }
+    .punit { font-size: clamp(.86rem, 3.4vw, 1rem); font-weight: 700; color: var(--d-muted); }
+    .pmoney-sub { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; width: 100%; margin-top: 2px; }
+    .pref { font-size: .86rem; font-weight: 700; color: #94A3B8; text-decoration: line-through; }
+    .pdisc { background: #DCFCE7; color: #15803D; font-size: .8rem; font-weight: 800; padding: 2px 9px; border-radius: 7px; }
+    @media (min-width: 440px) {
+      .pcard-top { grid-template-columns: auto 1fr auto; }
+      .pmoney { grid-column: auto; flex-direction: column; align-items: flex-end; text-align: right; gap: 2px; }
+      .pmoney-sub { justify-content: flex-end; }
+    }
 
-    .props { display: grid; gap: 9px; margin-top: 11px; padding-top: 11px; border-top: 1px solid var(--d-line); }
-    @media (min-width: 500px) { .props { grid-template-columns: repeat(3, 1fr); } }
-    .prop { display: flex; align-items: flex-start; gap: 8px; }
-    .prop .pi { width: 27px; height: 27px; border-radius: 8px; background: var(--d-ice); color: var(--d-blue); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-    .prop .pi svg { width: 14px; height: 14px; }
-    .prop b { display: block; font-size: .8rem; font-weight: 800; line-height: 1.25; }
-    .prop span { display: block; font-size: .74rem; color: var(--d-muted); margin-top: 1px; line-height: 1.3; }
-
-    /* --- Detail rows --- */
-    .drow { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--d-line); }
-    .drow:last-child { border-bottom: 0; }
-    .drow .di { width: 27px; height: 27px; border-radius: 8px; background: var(--d-ice); color: var(--d-blue); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-    .drow .di svg { width: 14px; height: 14px; }
-    .drow .dk { flex: 1; font-size: .84rem; color: var(--d-muted); font-weight: 600; }
-    .drow .dv { font-size: .88rem; font-weight: 800; text-align: right; }
+    .pprops { display: grid; gap: 9px; margin-top: 13px; padding-top: 13px; border-top: 1px solid var(--d-line); }
+    @media (min-width: 480px) { .pprops { grid-template-columns: repeat(3, 1fr); } }
+    .pprop { display: flex; align-items: flex-start; gap: 8px; min-width: 0; }
+    .pprop .ppi { width: 28px; height: 28px; border-radius: 8px; background: var(--d-ice); color: var(--d-blue); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .pprop .ppi svg { width: 14px; height: 14px; }
+    .pprop b { display: block; font-size: .8rem; font-weight: 800; line-height: 1.25; }
+    .pprop > span > span { display: block; font-size: .74rem; color: var(--d-muted); margin-top: 1px; line-height: 1.3; }
 
     /* --- Paiement --- */
-    .pay-h { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 9px; }
-    .pay-h .card-title { margin: 0; flex: 1; }
-    .pay-secure { display: inline-flex; align-items: center; gap: 4px; font-size: .76rem; font-weight: 800; color: var(--d-blue); }
-    .pay-secure svg { width: 14px; height: 14px; }
+    .pay-title {
+      margin: clamp(16px, 4vw, 24px) 0 0; font-size: clamp(1.05rem, 4.2vw, 1.22rem);
+      font-weight: 900; letter-spacing: -.02em;
+    }
+    .methods { margin-top: 10px; }
     .method {
-      display: flex; align-items: center; gap: 10px; width: 100%;
-      border: 1.5px solid var(--d-line); border-radius: 11px; padding: 8px 10px; margin-top: 6px;
-      cursor: pointer; background: #fff; transition: border-color .12s, background .12s;
+      display: flex; align-items: center; gap: 11px; width: 100%;
+      border: 1.5px solid var(--d-line); border-radius: 13px; padding: 11px 12px; margin-top: 9px;
+      cursor: pointer; background: #fff; transition: border-color .12s, background .12s, box-shadow .12s;
+      box-shadow: 0 3px 10px rgba(11,27,59,.04);
     }
-    .method:first-of-type { margin-top: 0; }
-    .method:has(input:checked) { border-color: var(--d-blue); background: #F4F8FF; }
-    .method.sel { border-color: var(--d-blue); background: #F4F8FF; }
+    .method:first-child { margin-top: 0; }
+    .method:has(input:checked), .method.sel { border-color: var(--d-blue); background: #F4F8FF; box-shadow: 0 6px 16px rgba(37,99,235,.12); }
     .method .mi {
-      width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0; overflow: hidden;
-      display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 900; font-size: .64rem;
+      width: 36px; height: 36px; border-radius: 9px; flex-shrink: 0; overflow: hidden;
+      display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 900; font-size: .7rem;
     }
-    .method .mi.orange { background: #FF7900; }
+    .method .mi.orange { background: #FF7900; position: relative; }
+    .method .mi.orange .ow {
+      position: absolute; left: 3px; right: 3px; bottom: 4px;
+      font-family: Helvetica, Arial, sans-serif; font-weight: 700; font-size: 8px;
+      line-height: 1; letter-spacing: -.01em; color: #fff; text-transform: lowercase;
+    }
+    .method .mi.orange .ow sup { font-size: 4px; font-weight: 700; vertical-align: super; }
     .method .mi.mtn { background: #FFCC00; color: #0B1B3B; }
     .method .mi.unitrade { background: #0B1B3B; letter-spacing: .02em; }
     .method .mi.card { background: var(--d-blue); }
     .method .mi svg { width: 100%; height: 100%; flex-shrink: 0; display: block; }
-    .method .mi.card svg { width: 16px; height: 16px; }
+    .method .mi.card svg { width: 18px; height: 18px; }
     .method .mtx { flex: 1; min-width: 0; }
-    .method .mtx b { display: block; font-size: .86rem; font-weight: 800; line-height: 1.2; }
-    .method .mtx span { display: none; }
+    .method .mtx b { display: block; font-size: .9rem; font-weight: 800; line-height: 1.25; }
+    .method .mtx span { display: block; font-size: .76rem; color: var(--d-muted); margin-top: 2px; line-height: 1.3; }
     .method .radio {
-      width: 18px; height: 18px; border-radius: 999px; border: 2px solid var(--d-line); flex-shrink: 0;
+      width: 20px; height: 20px; border-radius: 999px; border: 2px solid var(--d-line); flex-shrink: 0;
       display: flex; align-items: center; justify-content: center; transition: border-color .12s;
     }
     .method:has(input:checked) .radio, .method.sel .radio { border-color: var(--d-blue); }
@@ -172,45 +186,52 @@
     .method:has(input:checked) .radio::after, .method.sel .radio::after { opacity: 1; }
     .method input { position: absolute; opacity: 0; pointer-events: none; }
 
-    .phone-field { margin-top: 12px; background: #F6F8FC; border: 1px solid var(--d-line); border-radius: 12px; padding: 12px; }
-    .phone-field > label { display: block; font-size: .82rem; font-weight: 800; margin-bottom: 7px; }
-    .phone-in { display: flex; align-items: stretch; background: #fff; border: 1.5px solid var(--d-line); border-radius: 10px; overflow: hidden; }
+    /* --- Champ téléphone (inséré sous le moyen choisi) --- */
+    .phone-field {
+      margin-top: 9px; background: #F4F8FF; border: 1px solid #DBE7FF;
+      border-radius: 13px; padding: 13px;
+    }
+    .phone-field > label { display: block; font-size: .82rem; font-weight: 800; margin-bottom: 8px; }
+    .phone-in { display: flex; align-items: stretch; background: #fff; border: 1.5px solid var(--d-line); border-radius: 11px; overflow: hidden; }
     .phone-in:focus-within { border-color: var(--d-blue); }
-    .phone-in .cc { display: flex; align-items: center; gap: 6px; padding: 0 11px; font-weight: 700; font-size: .88rem; border-right: 1.5px solid var(--d-line); background: #fff; white-space: nowrap; }
+    .phone-in .cc {
+      display: flex; align-items: center; gap: 7px; padding: 0 12px; font-weight: 700; font-size: .9rem;
+      border-right: 1.5px solid var(--d-line); background: #fff; white-space: nowrap;
+    }
     .phone-in .cc .flag { width: 20px; height: 14px; border-radius: 3px; flex-shrink: 0; background: linear-gradient(90deg, #CE1126 0 33.33%, #FCD116 33.33% 66.66%, #009460 66.66%); }
-    .phone-in input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; padding: 11px 12px; font-size: .92rem; color: var(--d-ink); }
-    .phone-note { display: flex; align-items: flex-start; gap: 7px; margin: 9px 0 0; font-size: .78rem; line-height: 1.35; color: var(--d-muted); }
+    .phone-in .cc svg { width: 12px; height: 12px; color: var(--d-muted); flex-shrink: 0; }
+    .phone-in input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; padding: 12px; font-size: .95rem; color: var(--d-ink); }
+    .phone-err { margin: 7px 0 0; font-size: .77rem; font-weight: 700; color: #B91C1C; }
+    .phone-note { display: flex; align-items: flex-start; gap: 7px; margin: 9px 0 0; font-size: .78rem; line-height: 1.4; color: var(--d-muted); }
     .phone-note svg { width: 14px; height: 14px; flex-shrink: 0; margin-top: 1px; color: var(--d-blue); }
 
-    /* --- Total --- */
-    .total {
-      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-      background: #EAF1FE; border-radius: 14px; padding: clamp(11px, 3vw, 15px); margin-top: clamp(9px, 2.2vw, 13px);
+    /* --- Ligne sécurité --- */
+    .secure-line {
+      display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap;
+      margin: clamp(12px, 3vw, 16px) 0 0; text-align: center;
+      font-size: clamp(.8rem, 3.2vw, .88rem); font-weight: 700; color: var(--d-blue);
     }
-    .total .tl { flex: 1; min-width: 110px; }
-    .total .tl b { display: block; font-size: clamp(.9rem, 3.6vw, 1.02rem); font-weight: 900; }
-    .total .tl span { display: block; font-size: .76rem; color: var(--d-muted); margin-top: 1px; }
-    .total .ta { font-size: clamp(1.25rem, 5.6vw, 1.6rem); font-weight: 900; color: var(--d-blue); letter-spacing: -.02em; }
+    .secure-line svg { width: 16px; height: 16px; flex-shrink: 0; }
 
     /* --- Bouton --- */
     .cta {
-      width: 100%; margin-top: clamp(9px, 2.2vw, 13px); border: 0; border-radius: 13px;
-      padding: clamp(12px, 2vh, 15px) 18px;
+      width: 100%; margin-top: clamp(11px, 2.6vw, 15px); border: 0; border-radius: 14px;
+      padding: clamp(13px, 2.2vh, 16px) 18px;
       background: linear-gradient(180deg, #3B76F5, var(--d-blue)); color: #fff;
-      font-size: clamp(.9rem, 3.6vw, 1rem); font-weight: 800; cursor: pointer;
+      font-size: clamp(.95rem, 3.8vw, 1.05rem); font-weight: 800; cursor: pointer;
       display: flex; align-items: center; justify-content: center; gap: 10px;
-      box-shadow: 0 12px 26px rgba(37,99,235,.3);
+      box-shadow: 0 14px 28px rgba(37,99,235,.32);
     }
-    .cta svg { width: 17px; height: 17px; flex-shrink: 0; }
+    .cta svg { width: 18px; height: 18px; flex-shrink: 0; }
     .cta:active { transform: translateY(1px); }
+    .cta[disabled] { opacity: .6; cursor: default; box-shadow: none; }
 
-    /* --- Sécurité --- */
-    .trust { display: grid; gap: 10px; margin-top: clamp(11px, 3vw, 16px); }
-    @media (min-width: 520px) { .trust { grid-template-columns: repeat(3, 1fr); } }
-    .trust-i { display: flex; align-items: flex-start; gap: 8px; }
-    .trust-i svg { width: 18px; height: 18px; color: var(--d-blue); flex-shrink: 0; margin-top: 1px; }
-    .trust-i b { display: block; font-size: .78rem; font-weight: 800; }
-    .trust-i span { display: block; font-size: .73rem; color: var(--d-muted); margin-top: 1px; line-height: 1.3; }
+    .help-line {
+      display: flex; align-items: center; justify-content: center; gap: 7px;
+      margin: clamp(14px, 3.4vw, 20px) 0 0; font-size: .86rem; font-weight: 700; color: var(--d-ink);
+    }
+    .help-line svg { width: 17px; height: 17px; color: var(--d-blue); flex-shrink: 0; }
+    .help-line a { color: var(--d-blue); }
 
     /* --- Flash --- */
     .flash { border-radius: 12px; padding: 11px 14px; margin-top: 12px; font-size: .85rem; font-weight: 700; }
@@ -218,18 +239,21 @@
     .flash.error { background: #FEE2E2; color: #B91C1C; }
 
     /* --- Footer --- */
-    .foot { text-align: center; padding: clamp(20px, 4.5vw, 32px) 16px calc(20px + env(safe-area-inset-bottom)); }
-    .foot .fb { display: inline-flex; align-items: center; gap: 6px; font-size: .98rem; font-weight: 800; color: var(--d-ink); }
-    .foot .fb svg { width: 20px; height: 20px; color: var(--d-blue); }
+    .foot { text-align: center; padding: clamp(22px, 5vw, 34px) 16px calc(20px + env(safe-area-inset-bottom)); }
+    .foot .fb { display: inline-flex; align-items: center; gap: 6px; font-size: .96rem; font-weight: 800; color: var(--d-ink); }
+    .foot .fb svg { width: 19px; height: 19px; color: var(--d-blue); }
     .foot .fb i { color: var(--d-blue); font-style: normal; }
-    .foot p { margin: 5px 0 0; font-size: .8rem; color: var(--d-muted); }
-    .foot nav { margin-top: 10px; display: flex; flex-wrap: wrap; justify-content: center; gap: 5px 16px; }
-    .foot nav a { font-size: .8rem; font-weight: 600; color: var(--d-muted); }
+    .foot p { margin: 5px 0 0; font-size: .78rem; color: var(--d-muted); }
+    .foot nav { margin-top: 9px; display: flex; flex-wrap: wrap; justify-content: center; gap: 5px 16px; }
+    .foot nav a { font-size: .78rem; font-weight: 600; color: var(--d-muted); }
     .foot nav a:hover { color: var(--d-blue); }
   </style>
 </head>
 <body>
   <header class="topbar">
+    <a class="back" href="{{ url_for('technician_subscription') }}" aria-label="Retour">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+    </a>
     <a class="brand" href="{{ url_for('technician_subscription') }}">
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span>
       <span><span class="n">Fix<i>Pro</i></span><span class="s">Espace Technicien</span></span>
@@ -240,8 +264,8 @@
   </header>
 
   <main class="page">
-    <h1 class="h1">Confirmez votre abonnement</h1>
-    <p class="sub">Vérifiez les détails de votre plan avant de continuer.</p>
+    <h1 class="h1">Procédez au paiement</h1>
+    <p class="sub">Choisissez votre moyen de paiement et finalisez votre abonnement.</p>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% for category, message in messages %}
@@ -250,73 +274,52 @@
     {% endwith %}
 
     <div class="steps">
-      {% for n, lbl in [(1, 'Confirmation'), (2, 'Paiement'), (3, 'Activation')] %}
-      <div class="step {{ 'on' if n == 1 }}"><span class="dot">{{ n }}</span><span class="lbl">{{ lbl }}</span></div>
+      {% for n, lbl, state in [(1, 'Confirmation', 'done'), (2, 'Paiement', 'on'), (3, 'Activation', '')] %}
+      <div class="step {{ state }}">
+        <span class="dot">
+          {% if state == 'done' %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>{% else %}{{ n }}{% endif %}
+        </span>
+        <span class="lbl">{{ lbl }}</span>
+      </div>
       {% endfor %}
     </div>
 
-    <!-- Carte plan (dynamique) -->
-    <section class="card plan {{ 'amber' if plan.accent == 'amber' }}">
-      <div class="plan-badge-wrap">
-        <span class="plan-ico">
+    <!-- Carte plan (dynamique : change selon le plan choisi) -->
+    <section class="card pcard {{ 'amber' if plan.accent == 'amber' }}">
+      <div class="pcard-top">
+        <span class="pico">
           {% if plan.icon == 'crown' %}
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7z"/></svg>
           {% else %}
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 17.8 6.2 20.9l1.1-6.5L2.6 9.8l6.5-.9z"/></svg>
           {% endif %}
         </span>
-        <span>
-          <span class="plan-name">{{ plan.name }}</span>
-          {% if plan.desc %}<span class="plan-name-sub">{{ plan.desc }}</span>{% endif %}
-        </span>
-      </div>
-      <div class="plan-body">
-        {% if plan.popular %}
-        <span class="pop"><svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 17.8 6.2 20.9l1.1-6.5L2.6 9.8l6.5-.9z"/></svg> Le plus populaire</span>
-        {% endif %}
-        <div class="plan-price">
-          <span class="now">{{ "{:,}".format(plan.price_now) | replace(",", " ") }} GNF</span>
-          <span class="unit">/ {{ plan.unit }}</span>
-          {% if plan.discount %}<span class="disc">-{{ plan.discount }} %</span>{% endif %}
+        <div class="pmeta">
+          <span class="pname">{{ plan.name }}{% if plan.popular %}<span class="ppop"><svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 17.8 6.2 20.9l1.1-6.5L2.6 9.8l6.5-.9z"/></svg>Le plus populaire</span>{% endif %}</span>
+          {% if plan.desc %}<span class="pdesc">{{ plan.desc }}</span>{% endif %}
         </div>
-        {% if plan.price_ref and plan.price_ref > plan.price_now %}
-        <div class="plan-ref">{{ "{:,}".format(plan.price_ref) | replace(",", " ") }} GNF</div>
-        {% endif %}
-        <p class="plan-tag">{{ plan.tagline }}<span>{{ plan.subtagline }}</span></p>
-
-        <div class="props">
-          {% for title, subtitle in plan.props %}
-          <div class="prop">
-            <span class="pi">
-              {% if loop.index0 == 0 %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="4" width="3" height="14"/></svg>
-              {% elif loop.index0 == 1 %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-              {% else %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 6 13.5 15.5 8.5 10.5 1 18"/><path d="M17 6h6v6"/></svg>{% endif %}
-            </span>
-            <span><b>{{ title }}</b><span>{{ subtitle }}</span></span>
+        <div class="pmoney">
+          <div><span class="pnow">{{ "{:,}".format(plan.price_now) | replace(",", " ") }} GNF</span> <span class="punit">/ {{ plan.unit }}</span></div>
+          <div class="pmoney-sub">
+            {% if plan.price_ref and plan.price_ref > plan.price_now %}
+            <span class="pref">{{ "{:,}".format(plan.price_ref) | replace(",", " ") }} GNF</span>
+            {% endif %}
+            {% if plan.discount %}<span class="pdisc">-{{ plan.discount }} %</span>{% endif %}
           </div>
-          {% endfor %}
         </div>
       </div>
-    </section>
 
-    <!-- Détails -->
-    <section class="card">
-      <h2 class="card-title">Détails de l'abonnement</h2>
-      <div class="drow">
-        <span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8v8a2 2 0 0 1-1 1.73l-7 4a2 2 0 0 1-2 0l-7-4A2 2 0 0 1 3 16V8a2 2 0 0 1 1-1.73l7-4a2 2 0 0 1 2 0l7 4A2 2 0 0 1 21 8z"/><path d="m3.3 7 8.7 5 8.7-5M12 22V12"/></svg></span>
-        <span class="dk">Plan</span><span class="dv">{{ plan.name }}</span>
-      </div>
-      <div class="drow">
-        <span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
-        <span class="dk">Durée</span><span class="dv">{{ plan.duration }}</span>
-      </div>
-      <div class="drow">
-        <span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 12.6 12 21.2a2 2 0 0 1-2.8 0l-6.4-6.4A2 2 0 0 1 2.2 12V4a2 2 0 0 1 2-2h8a2 2 0 0 1 1.4.6l6.8 6.8a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg></span>
-        <span class="dk">Prix {{ 'annuel' if plan.unit == 'an' else 'mensuel' }}</span><span class="dv">{{ "{:,}".format(plan.price_now) | replace(",", " ") }} GNF</span>
-      </div>
-      <div class="drow">
-        <span class="di"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>
-        <span class="dk">Prochaine échéance</span><span class="dv">Après activation</span>
+      <div class="pprops">
+        {% for title, subtitle in plan.props %}
+        <div class="pprop">
+          <span class="ppi">
+            {% if loop.index0 == 0 %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="4" width="3" height="14"/></svg>
+            {% elif loop.index0 == 1 %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            {% else %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 6 13.5 15.5 8.5 10.5 1 18"/><path d="M17 6h6v6"/></svg>{% endif %}
+          </span>
+          <span><b>{{ title }}</b><span>{{ subtitle }}</span></span>
+        </div>
+        {% endfor %}
       </div>
     </section>
 
@@ -325,22 +328,18 @@
       <input type="hidden" name="plan" value="{{ plan.code }}" />
       <input type="hidden" name="period" value="{{ period }}" />
 
-      <section class="card">
-        <div class="pay-h">
-          <h2 class="card-title">Choisissez votre moyen de paiement</h2>
-          <span class="pay-secure"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg> Paiement sécurisé</span>
-        </div>
+      <h2 class="pay-title">Choisissez votre moyen de paiement</h2>
 
+      <div class="methods" id="methods">
         {% for m in methods %}
         <label class="method{{ ' sel' if loop.first }}" data-method="{{ m.code }}">
           <input type="radio" name="payment_method" value="{{ m.code }}" {{ 'checked' if loop.first }} />
           <span class="mi {{ m.brand }}">
             {% if m.brand == 'orange' %}
-            {# logo Orange : carré orange (fond du bloc) + carré blanc en haut à droite #}
-            <svg viewBox="0 0 40 40" aria-hidden="true"><rect x="18" y="5" width="17" height="17" rx="1.5" fill="#fff"/></svg>
+            <span class="ow">orange<sup>™</sup></span>
             {% elif m.brand == 'mtn' %}MTN
             {% elif m.brand == 'unitrade' %}UT
-            {% else %}<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/></svg>{% endif %}
+            {% else %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/></svg>{% endif %}
           </span>
           <span class="mtx"><b>{{ m.label }}</b><span>{{ m.desc }}</span></span>
           <span class="radio"></span>
@@ -350,42 +349,36 @@
         <div class="phone-field" id="phoneField" hidden>
           <label for="payerPhone">Numéro <span id="phoneMethodName">Orange Money</span></label>
           <div class="phone-in">
-            <span class="cc"><span class="flag" aria-hidden="true"></span>+224</span>
+            <span class="cc">
+              <span class="flag" aria-hidden="true"></span>+224
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+            </span>
             <input type="tel" id="payerPhone" name="payer_phone" inputmode="tel" autocomplete="tel-national" placeholder="620 00 00 00" />
           </div>
+          <p class="phone-err" id="phoneErr" hidden>Entrez un numéro guinéen valide (9 chiffres).</p>
           <p class="phone-note">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg>
-            Vous recevrez une demande de paiement sur votre téléphone. Validez-la pour confirmer votre abonnement.
+            Vous allez recevoir une demande de paiement sur votre téléphone. Validez-la pour confirmer votre abonnement.
           </p>
         </div>
-      </section>
-
-      <div class="total">
-        <span class="tl"><b>Total à payer</b><span>Taxes incluses</span></span>
-        <span class="ta">{{ "{:,}".format(amount) | replace(",", " ") }} GNF</span>
       </div>
 
-      <button type="submit" class="cta">
+      <p class="secure-line">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+        Paiement 100% sécurisé. Vos informations sont protégées.
+      </p>
+
+      <button type="submit" class="cta" id="payBtn">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
         Payer {{ "{:,}".format(amount) | replace(",", " ") }} GNF
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
       </button>
-    </form>
 
-    <div class="trust">
-      <div class="trust-i">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-        <span><b>Paiement 100% sécurisé</b><span>Vos informations sont protégées</span></span>
-      </div>
-      <div class="trust-i">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 15v2"/></svg>
-        <span><b>Données cryptées</b><span>Confidentialité garantie</span></span>
-      </div>
-      <div class="trust-i">
+      <p class="help-line">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1v-6h3zM3 19a2 2 0 0 0 2 2h1v-6H3z"/></svg>
-        <span><b>Support disponible</b><span>Une question ? On vous aide</span></span>
-      </div>
-    </div>
+        Une question ? <a href="{{ url_for('contact') }}">On vous aide.</a>
+      </p>
+    </form>
   </main>
 
   <footer class="foot">
@@ -403,19 +396,49 @@
       var MOBILE = { orange_money: 'Orange Money', mtn_mobile_money: 'MTN Mobile Money' };
       var field = document.getElementById('phoneField');
       var nameEl = document.getElementById('phoneMethodName');
-      function sync(code) {
-        if (MOBILE[code]) { field.hidden = false; nameEl.textContent = MOBILE[code]; }
-        else { field.hidden = true; }
+      var input = document.getElementById('payerPhone');
+      var err = document.getElementById('phoneErr');
+      var methods = document.getElementById('methods');
+
+      function currentCode() {
+        var c = document.querySelector('.method input:checked');
+        return c ? c.value : null;
+      }
+      function sync(m) {
+        var code = m.querySelector('input') ? m.querySelector('input').value : null;
+        if (code && MOBILE[code]) {
+          m.insertAdjacentElement('afterend', field);
+          field.hidden = false;
+          nameEl.textContent = MOBILE[code];
+        } else {
+          field.hidden = true;
+        }
+        err.hidden = true;
       }
       document.querySelectorAll('.method').forEach(function (m) {
         m.addEventListener('click', function () {
           document.querySelectorAll('.method').forEach(function (x) { x.classList.remove('sel'); });
           m.classList.add('sel');
-          var r = m.querySelector('input'); if (r) { r.checked = true; sync(r.value); }
+          var r = m.querySelector('input');
+          if (r) { r.checked = true; }
+          sync(m);
         });
       });
-      var checked = document.querySelector('.method input:checked');
-      if (checked) sync(checked.value);
+      var checked = document.querySelector('.method.sel') || document.querySelector('.method');
+      if (checked) sync(checked);
+
+      // Validation legere du numero avant de lancer la tentative (Orange / MTN).
+      document.getElementById('payForm').addEventListener('submit', function (e) {
+        var code = currentCode();
+        if (code && MOBILE[code]) {
+          var digits = (input.value || '').replace(/\D/g, '');
+          if (digits.length < 8 || digits.length > 12) {
+            e.preventDefault();
+            err.hidden = false;
+            input.focus();
+          }
+        }
+      });
     })();
   </script>
 </body>

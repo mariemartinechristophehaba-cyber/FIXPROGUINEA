@@ -3608,9 +3608,11 @@ def technician_subscription():
 @login_required
 @limiter.limit("20 per hour", methods=["POST"])
 def technician_subscription_checkout():
-    """Confirmez votre abonnement : recapitulatif dynamique du plan choisi
-    + choix du moyen de paiement. Fonctionne pour n'importe quel plan de
-    _TECH_PLANS (donnees passees au gabarit, rien en dur)."""
+    """Procedez au paiement : etape 2 du parcours (Confirmation -> Paiement
+    -> Activation). Recapitulatif dynamique du plan choisi + choix du moyen
+    de paiement. Fonctionne pour n'importe quel plan de _TECH_PLANS (donnees
+    passees au gabarit, rien en dur). Le POST cree/reutilise une tentative
+    PENDING et redirige vers "Paiement en cours" (aucune activation ici)."""
     user = get_current_user()
     if not _is_technician(user):
         flash("Cet espace est reserve aux techniciens.", "error")
