@@ -57,19 +57,31 @@
       background: radial-gradient(circle, rgba(46,109,255,0.35) 0, transparent 68%);
     }
     /* Visuel technicien (panneau gauche). Remplacer static/img/admin-login-hero.jpg
-       pour changer la photo : ce bloc gere le cadrage + le fondu bleu, rien d'autre a toucher. */
+       pour changer la photo : ce bloc gere le cadrage + le fondu bleu, rien d'autre a toucher.
+       L'image est fondue dans le panneau via un masque de transparence (bord gauche +
+       haut/bas) et deux overlays bleus en 'multiply'. Aucun bord rectangulaire visible. */
     .al-left-photo {
       position: absolute; inset: 0; z-index: 1;
-      background-position: center right; background-size: cover; background-repeat: no-repeat;
-      -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.35) 18%, #000 55%, #000 100%);
-      mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.35) 18%, #000 55%, #000 100%);
+      background-position: 66% 20%; background-size: cover; background-repeat: no-repeat;
+      -webkit-mask-image:
+        linear-gradient(90deg, transparent 0%, transparent 4%, rgba(0,0,0,0.4) 24%, #000 52%, #000 94%, rgba(0,0,0,0.85) 100%),
+        linear-gradient(180deg, transparent 0%, #000 12%, #000 86%, transparent 100%);
+      -webkit-mask-composite: source-in;
+      mask-image:
+        linear-gradient(90deg, transparent 0%, transparent 4%, rgba(0,0,0,0.4) 24%, #000 52%, #000 94%, rgba(0,0,0,0.85) 100%),
+        linear-gradient(180deg, transparent 0%, #000 12%, #000 86%, transparent 100%);
+      mask-composite: intersect;
     }
     .al-left-photo::after {
       content: ""; position: absolute; inset: 0;
       background:
-        linear-gradient(90deg, #1E52DE 0%, rgba(30,82,222,0.66) 30%, rgba(26,63,174,0.4) 58%, rgba(23,52,127,0.3) 100%),
-        linear-gradient(0deg, rgba(23,52,127,0.42) 0%, transparent 38%);
+        linear-gradient(90deg, #1E52DE 0%, rgba(30,82,222,0.92) 26%, rgba(30,82,222,0.58) 48%, rgba(23,52,127,0.22) 74%, rgba(20,44,110,0.34) 100%),
+        linear-gradient(180deg, rgba(23,52,127,0.5) 0%, transparent 22%, transparent 74%, rgba(18,38,96,0.55) 100%);
       mix-blend-mode: multiply;
+    }
+    .al-left-photo::before {
+      content: ""; position: absolute; inset: 0;
+      background: linear-gradient(90deg, rgba(46,109,255,0.32) 0%, transparent 42%);
     }
     .al-left > *:not(.al-left-photo) { position: relative; z-index: 2; }
 
@@ -189,35 +201,62 @@
     .al-footer .sep { margin: 0 8px; }
 
     /* ---------- Responsive ---------- */
+    @media (max-width: 1200px) {
+      .al-left { padding: 44px 44px; }
+      .al-left-photo { background-position: 70% center; }
+    }
     @media (max-width: 1024px) {
-      .al-left { padding: 40px; }
+      .al-left { padding: 40px 36px; }
       .al-left h1 { font-size: 2rem; }
+      .al-left .lead { margin-bottom: 32px; }
+      .al-feats { gap: 18px; margin-bottom: 32px; }
       .al-stats { gap: 20px; flex-wrap: wrap; }
+      .al-left-photo { background-position: 76% center; }
+      .al-left-photo::after {
+        background:
+          linear-gradient(90deg, #1E52DE 0%, rgba(30,82,222,0.9) 26%, rgba(30,82,222,0.55) 52%, rgba(23,52,127,0.28) 100%),
+          linear-gradient(180deg, rgba(23,52,127,0.42) 0%, transparent 20%, transparent 78%, rgba(18,38,96,0.48) 100%);
+      }
     }
     @media (max-width: 860px) {
       .al-wrap { flex-direction: column; }
       .al-left {
-        flex: none; padding: 32px 24px 44px; border-radius: 0 0 28px 28px;
+        flex: none; min-height: 340px; padding: 30px 24px 40px; border-radius: 0 0 30px 30px;
+        justify-content: flex-start;
       }
-      .al-left-photo { opacity: .22; }
-      .al-rule { margin: 24px 0 16px; }
+      /* le technicien devient une texture de fond discrete : fondu tres fort, texte prioritaire */
+      .al-left-photo {
+        background-position: 82% 16%;
+        -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 60%, transparent 98%);
+        mask-image: linear-gradient(180deg, #000 0%, #000 60%, transparent 98%);
+        -webkit-mask-composite: source-over; mask-composite: add;
+      }
+      .al-left-photo::after {
+        background:
+          linear-gradient(180deg, rgba(20,46,116,0.82) 0%, rgba(23,52,132,0.86) 45%, #183BA0 100%),
+          linear-gradient(90deg, rgba(26,66,190,0.7) 0%, rgba(26,66,190,0.35) 55%, rgba(26,66,190,0.1) 100%);
+        mix-blend-mode: normal;
+      }
+      .al-left-photo::before { display: none; }
+      .al-rule { margin: 22px 0 14px; }
       .al-left h1 { font-size: 1.7rem; }
-      .al-left .lead { margin-bottom: 26px; }
-      .al-feats { gap: 16px; margin-bottom: 26px; }
+      .al-left .lead { margin-bottom: 24px; }
+      .al-feats { gap: 15px; margin-bottom: 22px; }
       .al-quote { display: none; }
-      .al-stats { margin-top: 8px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.2); }
+      .al-stats { margin-top: 6px; padding-top: 22px; border-top: 1px solid rgba(255,255,255,0.22); }
       .al-right {
-        flex: none; margin-left: 0; margin-top: -28px; border-radius: 28px 28px 0 0;
-        box-shadow: 0 -12px 40px rgba(15,30,61,0.1); padding: 40px 22px 24px;
+        flex: none; margin-left: 0; margin-top: -30px; border-radius: 30px 30px 0 0;
+        box-shadow: 0 -12px 40px rgba(15,30,61,0.1); padding: 42px 22px 24px;
       }
       .al-lang { top: 16px; right: 16px; }
     }
     @media (max-width: 520px) {
-      .al-left { padding: 26px 18px 40px; }
+      .al-left { padding: 24px 18px 36px; min-height: 300px; }
+      .al-left-photo { background-position: 72% 24%; }
       .al-feat p { max-width: none; }
       .al-stats { gap: 14px; }
       .al-stat b { font-size: 1rem; }
-      .al-right { padding: 44px 16px 20px; }
+      .al-right { padding: 42px 16px 20px; }
     }
   </style>
 </head>
