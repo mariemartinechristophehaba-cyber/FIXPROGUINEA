@@ -38,25 +38,40 @@
       position: relative; overflow: hidden; flex: 1 1 50%; color: #fff;
       padding: 48px 56px;
       background:
-        radial-gradient(circle at 88% 8%, rgba(255,255,255,0.16) 0, transparent 30%),
-        radial-gradient(circle at 6% 84%, rgba(255,255,255,0.10) 0, transparent 30%),
-        radial-gradient(circle at 120% 60%, rgba(13,32,74,0.55) 0, transparent 45%),
-        linear-gradient(150deg, #2E6BFF 0%, #1D4ED8 45%, #1B3FA8 100%);
+        radial-gradient(circle at 92% 4%, rgba(255,255,255,0.14) 0, transparent 26%),
+        radial-gradient(circle at 4% 92%, rgba(255,255,255,0.09) 0, transparent 28%),
+        linear-gradient(152deg, #2F6DFF 0%, #1E52DE 42%, #1A3FAE 74%, #17347F 100%);
       display: flex; flex-direction: column;
+    }
+    /* formes geometriques subtiles : profondeur du panneau */
+    .al-left::before {
+      content: ""; position: absolute; z-index: 0; pointer-events: none;
+      width: 620px; height: 620px; right: -260px; top: -230px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,255,255,0.10) 0, rgba(255,255,255,0.03) 55%, transparent 70%);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .al-left::after {
+      content: ""; position: absolute; z-index: 0; pointer-events: none;
+      width: 380px; height: 380px; left: -170px; bottom: -170px; border-radius: 50%;
+      border: 1.5px solid rgba(255,255,255,0.10);
+      background: radial-gradient(circle, rgba(46,109,255,0.35) 0, transparent 68%);
     }
     /* Visuel technicien (panneau gauche). Remplacer static/img/admin-login-hero.jpg
        pour changer la photo : ce bloc gere le cadrage + le fondu bleu, rien d'autre a toucher. */
     .al-left-photo {
-      position: absolute; inset: 0; z-index: 0;
-      background-position: right center; background-size: cover; background-repeat: no-repeat;
-      -webkit-mask-image: linear-gradient(90deg, transparent 0%, transparent 40%, #000 80%, #000 100%);
-      mask-image: linear-gradient(90deg, transparent 0%, transparent 40%, #000 80%, #000 100%);
+      position: absolute; inset: 0; z-index: 1;
+      background-position: center right; background-size: cover; background-repeat: no-repeat;
+      -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.35) 18%, #000 55%, #000 100%);
+      mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.35) 18%, #000 55%, #000 100%);
     }
     .al-left-photo::after {
       content: ""; position: absolute; inset: 0;
-      background: linear-gradient(90deg, #1D4ED8 0%, rgba(29,78,216,0.6) 45%, rgba(27,63,168,0.2) 100%);
+      background:
+        linear-gradient(90deg, #1E52DE 0%, rgba(30,82,222,0.66) 30%, rgba(26,63,174,0.4) 58%, rgba(23,52,127,0.3) 100%),
+        linear-gradient(0deg, rgba(23,52,127,0.42) 0%, transparent 38%);
+      mix-blend-mode: multiply;
     }
-    .al-left > *:not(.al-left-photo) { position: relative; z-index: 1; }
+    .al-left > *:not(.al-left-photo) { position: relative; z-index: 2; }
 
     .al-brand { display: flex; align-items: center; gap: 12px; }
     .al-brand .mark { width: 40px; height: 40px; flex-shrink: 0; }
@@ -102,7 +117,12 @@
     }
     .al-lang svg { width: 15px; height: 15px; color: var(--al-muted); }
 
-    .al-watermark { position: absolute; right: -30px; bottom: -30px; width: 260px; height: 260px; color: #EEF3FE; z-index: 0; pointer-events: none; }
+    .al-right::before {
+      content: ""; position: absolute; z-index: 0; pointer-events: none;
+      width: 320px; height: 320px; left: -150px; top: -150px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(37,99,235,0.06) 0, transparent 70%);
+    }
+    .al-watermark { position: absolute; right: -46px; bottom: -52px; width: 300px; height: 300px; color: #EDF3FF; z-index: 0; pointer-events: none; opacity: .85; }
 
     .al-card { position: relative; z-index: 1; width: 100%; max-width: 400px; }
 

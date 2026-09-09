@@ -2358,10 +2358,16 @@ def admin_login():
             return redirect(url_for("admin_dashboard"))
         error = "Email ou mot de passe incorrect."
 
+    # On consomme les messages flash (OAuth, etc.) mais on n'affiche PAS le
+    # rappel generique "connectez-vous" a l'ouverture normale : seule une vraie
+    # erreur doit apparaitre dans l'encart rouge.
+    _flashed = get_flashed_messages()
     if not error:
-        flashed = get_flashed_messages()
-        if flashed:
-            error = flashed[-1]
+        for _msg in _flashed:
+            low = (_msg or "").lower()
+            if "connecter pour" in low or "connectez-vous" in low or "reserve aux" in low:
+                continue
+            error = _msg
 
     # Visuel du panneau gauche : image de remplacement livree dans le depot.
     # Pour changer la photo, remplacer simplement static/img/admin-login-hero.jpg
