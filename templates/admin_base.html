@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="fr" data-adm-theme="{{ 'dark' if request.cookies.get('adm_theme') == 'dark' else 'light' }}">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0B1E3F" />
+  <meta name="robots" content="noindex" />
+  <meta name="csrf-token" content="{{ csrf_token() }}" />
+  <title>{% block title %}Administration - FixPro{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --ad-blue: #2563EB;
+      --ad-blue-d: #1D4ED8;
+      --ad-side: #0B1E3F;
+      --ad-side-2: #0A1832;
+      --ad-side-card: #14294C;
+      --ad-side-fg: #90A4C4;
+      --ad-bg: #F3F6FB;
+      --ad-card: #FFFFFF;
+      --ad-line: #E7ECF3;
+      --ad-ink: #0F172A;
+      --ad-muted: #64748B;
+      --ad-green: #16A34A;
+      --ad-green-bg: #E7F7EF;
+      --ad-blue-bg: #EAF1FE;
+      --ad-shadow: 0 1px 2px rgba(15,23,42,.04), 0 1px 3px rgba(15,23,42,.06);
+    }
+    html[data-adm-theme="dark"] {
+      --ad-bg: #0B1220; --ad-card: #131C2E; --ad-line: #253044; --ad-ink: #E8EDF5;
+      --ad-muted: #94A3B8; --ad-blue-bg: #1B2942; --ad-green-bg: #17301F;
+      --ad-shadow: 0 1px 2px rgba(0,0,0,.3);
+    }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--ad-bg); color: var(--ad-ink); -webkit-font-smoothing: antialiased;
+      display: flex; min-height: 100dvh;
+    }
+    a { text-decoration: none; color: inherit; }
+    button { font-family: inherit; }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-thumb { background: rgba(100,116,139,.35); border-radius: 8px; }
+
+    /* ===== SIDEBAR ===== */
+    .ad-side {
+      width: 232px; flex-shrink: 0; background: linear-gradient(180deg, var(--ad-side) 0%, var(--ad-side-2) 100%);
+      color: var(--ad-side-fg); display: flex; flex-direction: column;
+      position: sticky; top: 0; height: 100dvh; z-index: 40;
+    }
+    .ad-side-head { display: flex; align-items: center; gap: 11px; padding: 20px 20px 18px; }
+    .ad-side-head .mark { width: 34px; height: 34px; flex-shrink: 0; }
+    .ad-side-head .brand { line-height: 1; }
+    .ad-side-head .brand b { font-size: 1.34rem; font-weight: 800; color: #fff; letter-spacing: -0.02em; }
+    .ad-side-head .brand small { display: block; font-size: 0.62rem; letter-spacing: .18em; text-transform: uppercase; color: var(--ad-side-fg); font-weight: 700; margin-top: 4px; }
+    .ad-nav { flex: 1; overflow-y: auto; padding: 6px 12px; }
+    .ad-nav a {
+      display: flex; align-items: center; gap: 12px; padding: 11px 12px; border-radius: 10px;
+      font-size: 0.875rem; font-weight: 500; color: var(--ad-side-fg); margin-bottom: 2px; transition: background .12s, color .12s;
+    }
+    .ad-nav a svg { width: 19px; height: 19px; flex-shrink: 0; }
+    .ad-nav a:hover { background: rgba(255,255,255,.06); color: #fff; }
+    .ad-nav a.active { background: var(--ad-blue); color: #fff; box-shadow: 0 6px 16px rgba(37,99,235,.35); }
+    .ad-side-help {
+      margin: 12px; padding: 16px; border-radius: 14px; background: var(--ad-side-card);
+    }
+    .ad-side-help .h { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; font-weight: 700; color: #fff; }
+    .ad-side-help .h svg { width: 16px; height: 16px; }
+    .ad-side-help p { margin: 6px 0 12px; font-size: 0.72rem; line-height: 1.4; color: var(--ad-side-fg); }
+    .ad-side-help a {
+      display: flex; align-items: center; justify-content: center; gap: 7px; background: var(--ad-blue);
+      color: #fff; border-radius: 10px; padding: 9px; font-size: 0.78rem; font-weight: 700;
+    }
+    .ad-side-help a svg { width: 15px; height: 15px; }
+    .ad-side-foot { padding: 14px 20px 18px; font-size: 0.66rem; line-height: 1.6; color: #55688A; }
+
+    .ad-side-backdrop { display: none; }
+
+    /* ===== SHELL ===== */
+    .ad-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+
+    /* ===== HEADER ===== */
+    .ad-header {
+      position: sticky; top: 0; z-index: 30; background: var(--ad-card); border-bottom: 1px solid var(--ad-line);
+      display: flex; align-items: center; gap: 16px; padding: 12px 24px;
+    }
+    .ad-burger { display: none; background: none; border: 0; color: var(--ad-ink); cursor: pointer; padding: 4px; }
+    .ad-burger svg { width: 22px; height: 22px; }
+    .ad-search { position: relative; flex: 1; max-width: 560px; }
+    .ad-search svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 17px; height: 17px; color: var(--ad-muted); }
+    .ad-search input {
+      width: 100%; height: 42px; border: 1px solid var(--ad-line); border-radius: 11px; background: var(--ad-bg);
+      padding: 0 14px 0 40px; font-size: 0.88rem; color: var(--ad-ink); outline: none;
+    }
+    .ad-search input:focus { border-color: var(--ad-blue); background: var(--ad-card); }
+    .ad-header-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+    .ad-ico-btn {
+      width: 40px; height: 40px; border-radius: 11px; border: 1px solid var(--ad-line); background: var(--ad-card);
+      color: var(--ad-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; position: relative;
+    }
+    .ad-ico-btn:hover { color: var(--ad-ink); background: var(--ad-bg); }
+    .ad-ico-btn svg { width: 19px; height: 19px; }
+    .ad-ico-btn .dot {
+      position: absolute; top: -5px; right: -5px; min-width: 17px; height: 17px; padding: 0 4px;
+      background: #EF4444; color: #fff; font-size: 0.62rem; font-weight: 800; border-radius: 999px;
+      display: flex; align-items: center; justify-content: center; border: 2px solid var(--ad-card);
+    }
+    .ad-user { display: flex; align-items: center; gap: 10px; padding: 5px 8px 5px 5px; border-radius: 11px; border: 1px solid var(--ad-line); background: var(--ad-card); cursor: pointer; }
+    .ad-user:hover { background: var(--ad-bg); }
+    .ad-user img, .ad-user .av { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+    .ad-user .av { background: var(--ad-blue); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.82rem; }
+    .ad-user .txt { line-height: 1.15; text-align: left; }
+    .ad-user .txt b { font-size: 0.82rem; font-weight: 700; display: block; }
+    .ad-user .txt span { font-size: 0.7rem; color: var(--ad-muted); }
+    .ad-user > svg { width: 15px; height: 15px; color: var(--ad-muted); }
+    @media (max-width: 620px) { .ad-user .txt { display: none; } }
+
+    .ad-menu {
+      position: absolute; right: 24px; top: 62px; z-index: 50; background: var(--ad-card); border: 1px solid var(--ad-line);
+      border-radius: 12px; box-shadow: 0 16px 40px rgba(15,23,42,.16); min-width: 220px; overflow: hidden; padding: 6px;
+    }
+    .ad-menu a, .ad-menu button {
+      display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px; border-radius: 8px;
+      font-size: 0.85rem; font-weight: 500; color: var(--ad-ink); background: none; border: 0; cursor: pointer; text-align: left;
+    }
+    .ad-menu a:hover, .ad-menu button:hover { background: var(--ad-bg); }
+    .ad-menu svg { width: 16px; height: 16px; color: var(--ad-muted); }
+    .ad-menu .sep { height: 1px; background: var(--ad-line); margin: 5px 0; }
+
+    .ad-notif-panel {
+      position: absolute; right: 74px; top: 62px; z-index: 50; background: var(--ad-card); border: 1px solid var(--ad-line);
+      border-radius: 12px; box-shadow: 0 16px 40px rgba(15,23,42,.16); width: 320px; overflow: hidden;
+    }
+    .ad-notif-panel .hd { padding: 12px 14px; font-weight: 700; font-size: 0.85rem; border-bottom: 1px solid var(--ad-line); display: flex; justify-content: space-between; align-items: center; }
+    .ad-notif-panel .hd a { font-size: 0.76rem; color: var(--ad-blue); font-weight: 600; }
+    .ad-notif-panel .it { display: flex; gap: 10px; padding: 11px 14px; border-bottom: 1px solid var(--ad-line); }
+    .ad-notif-panel .it:last-child { border-bottom: 0; }
+    .ad-notif-panel .it .ic { width: 32px; height: 32px; border-radius: 9px; background: var(--ad-blue-bg); color: var(--ad-blue); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .ad-notif-panel .it .ic svg { width: 15px; height: 15px; }
+    .ad-notif-panel .it b { font-size: 0.8rem; font-weight: 600; display: block; }
+    .ad-notif-panel .it span { font-size: 0.72rem; color: var(--ad-muted); }
+
+    /* ===== CONTENT ===== */
+    .ad-content { padding: 22px 20px; max-width: 1500px; width: 100%; margin: 0 auto; }
+
+    @media (max-width: 1080px) {
+      .ad-side { position: fixed; left: 0; top: 0; transform: translateX(-100%); transition: transform .22s ease; }
+      body.ad-nav-open .ad-side { transform: translateX(0); }
+      body.ad-nav-open .ad-side-backdrop { display: block; position: fixed; inset: 0; background: rgba(2,6,23,.5); z-index: 39; }
+      .ad-burger { display: flex; }
+    }
+    @media (max-width: 720px) {
+      .ad-header { padding: 10px 14px; gap: 10px; }
+      .ad-content { padding: 16px 14px; }
+    }
+  </style>
+  {% block head_extra %}{% endblock %}
+</head>
+<body>
+  <div class="ad-side-backdrop" onclick="document.body.classList.remove('ad-nav-open')"></div>
+
+  {% set _live = ('admin_dashboard',) %}
+  {% macro navitem(endpoint, label) %}
+    <a href="{{ url_for(endpoint) if endpoint in _live else '#' }}"
+       class="{{ 'active' if request.endpoint == endpoint }}"
+       {% if endpoint not in _live %}data-soon="1" onclick="return admSoon(event)"{% endif %}>{{ caller() }}<span style="flex:1">{{ label }}</span></a>
+  {% endmacro %}
+
+  <aside class="ad-side">
+    <div class="ad-side-head">
+      <svg class="mark" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+        <path d="M8 22 24 8l16 14v16a3 3 0 0 1-3 3H11a3 3 0 0 1-3-3z" fill="#fff"/>
+        <path d="M24 8l16 14v6L24 15 8 28v-6z" fill="#60A5FA"/>
+        <rect x="20" y="27" width="8" height="11" rx="1.5" fill="#1D4ED8"/>
+      </svg>
+      <span class="brand"><b>FixPro</b><small>Admin</small></span>
+    </div>
+
+    <nav class="ad-nav">
+      {% call navitem('admin_dashboard', 'Tableau de bord') %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>{% endcall %}
+      {% call navitem('admin_users', 'Utilisateurs') %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>{% endcall %}
+      {% call navitem('admin_artisans', 'Techniciens') %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>{% endcall %}
+      {% call navitem('admin_requests', 'Demandes & Missions') %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M9 13h6M9 17h4"/></svg>{% endcall %}
+      {% call navitem('admin_messages', 'Messages') %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>{% endcall %}
+      {% call navitem('admin_calls', 'Appels') %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>{% endcall %}
+      {% call navitem('admin_payments', 'Paiements') %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>{% endcall %}
+      {% call navitem('admin_reviews', 'Avis & Notations') %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>{% endcall %}
+      {% call navitem('admin_stats', 'Statistiques') %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>{% endcall %}
+      {% call navitem('admin_reports', 'Signalements') %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>{% endcall %}
+      {% call navitem('admin_content', 'Contenu') %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>{% endcall %}
+      {% call navitem('admin_settings', 'Paramètres') %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>{% endcall %}
+    </nav>
+
+    <div class="ad-side-help">
+      <span class="h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01"/></svg> Besoin d'aide ?</span>
+      <p>Notre équipe est là pour vous.</p>
+      <a href="#" onclick="return admSoon(event)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
+        Contacter le support
+      </a>
+    </div>
+    <div class="ad-side-foot">
+      FixPro Admin v1.0<br />&copy; {{ current_year }} FixPro. Tous droits réservés.
+    </div>
+  </aside>
+
+  <div class="ad-main">
+    <header class="ad-header">
+      <button class="ad-burger" type="button" aria-label="Menu" onclick="document.body.classList.toggle('ad-nav-open')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <form class="ad-search" role="search" onsubmit="return admSearch(event)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="search" id="admSearchInput" placeholder="Rechercher un utilisateur, un technicien, une mission..." autocomplete="off" />
+      </form>
+      <div class="ad-header-actions">
+        <button class="ad-ico-btn" type="button" aria-label="Notifications" onclick="admToggle('admNotif', event)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+          {% if notif_count %}<span class="dot">{{ notif_count if notif_count < 100 else '99+' }}</span>{% endif %}
+        </button>
+        <button class="ad-ico-btn" type="button" aria-label="Changer de thème" onclick="admTheme()">
+          <svg id="admThemeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+        </button>
+        <button class="ad-user" type="button" onclick="admToggle('admMenu', event)">
+          {% if admin_user and admin_user.photo_url %}
+            <img src="{{ admin_user.photo_url }}" alt="" />
+          {% else %}
+            <span class="av">{{ (admin_user.full_name if admin_user else 'A')[0]|upper }}</span>
+          {% endif %}
+          <span class="txt"><b>{{ admin_user.full_name if admin_user else 'Administrateur' }}</b><span>Administrateur</span></span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+      </div>
+
+      <div class="ad-notif-panel" id="admNotif" hidden>
+        <div class="hd">Notifications <a href="#" onclick="return admSoon(event)">Voir tout</a></div>
+        {% for n in header_notifs %}
+        <div class="it">
+          <span class="ic">
+            {% if n.kind == 'message' %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            {% elif n.kind == 'tech' %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            {% elif n.kind == 'mission' %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg>
+            {% else %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>{% endif %}
+          </span>
+          <span><b>{{ n.text }}</b><span>{{ n.ago }}</span></span>
+        </div>
+        {% else %}
+        <div class="it"><span><span>Aucune notification récente.</span></span></div>
+        {% endfor %}
+      </div>
+
+      <div class="ad-menu" id="admMenu" hidden>
+        <a href="#" onclick="return admSoon(event)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Mon profil</a>
+        <a href="{{ url_for('admin_settings') if 'admin_settings' in _live else '#' }}" onclick="return admSoon(event)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82 2 2 0 1 1-2.83 2.83 1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51 2 2 0 0 1-4 0 1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33 2 2 0 1 1-2.83-2.83 1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1 2 2 0 0 1 0-4 1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82 2 2 0 1 1 2.83-2.83 1.65 1.65 0 0 0 1.82.33h.09a1.65 1.65 0 0 0 1-1.51 2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33 2 2 0 1 1 2.83 2.83 1.65 1.65 0 0 0-.33 1.82v.09a1.65 1.65 0 0 0 1.51 1 2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> Paramètres</a>
+        <div class="sep"></div>
+        <a href="{{ url_for('admin_logout') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg> Se déconnecter</a>
+      </div>
+    </header>
+
+    <main class="ad-content">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+  <script>
+    var _live_all = {{ (_live)|tojson }};
+    function admSoon(e){ e.preventDefault(); admFlash('Cette section sera bientôt disponible.'); return false; }
+    function admFlash(msg){
+      var t = document.createElement('div');
+      t.textContent = msg;
+      t.style.cssText = 'position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#0F172A;color:#fff;padding:11px 18px;border-radius:10px;font:600 13px Inter,sans-serif;z-index:999;box-shadow:0 10px 30px rgba(0,0,0,.25)';
+      document.body.appendChild(t);
+      setTimeout(function(){ t.style.opacity='0'; t.style.transition='opacity .3s'; }, 2200);
+      setTimeout(function(){ t.remove(); }, 2600);
+    }
+    function admToggle(id, e){
+      e.stopPropagation();
+      var el = document.getElementById(id);
+      document.querySelectorAll('.ad-menu,.ad-notif-panel').forEach(function(x){ if (x.id !== id) x.hidden = true; });
+      el.hidden = !el.hidden;
+    }
+    document.addEventListener('click', function(){
+      document.querySelectorAll('.ad-menu,.ad-notif-panel').forEach(function(x){ x.hidden = true; });
+    });
+    function admTheme(){
+      var h = document.documentElement;
+      var dark = h.getAttribute('data-adm-theme') !== 'dark';
+      h.setAttribute('data-adm-theme', dark ? 'dark' : 'light');
+      document.cookie = 'adm_theme=' + (dark ? 'dark' : 'light') + ';path=/;max-age=31536000;samesite=lax';
+    }
+    function admSearch(e){
+      e.preventDefault();
+      var q = (document.getElementById('admSearchInput').value || '').trim().toLowerCase();
+      var any = false;
+      document.querySelectorAll('[data-search-row]').forEach(function(row){
+        var hit = !q || row.textContent.toLowerCase().indexOf(q) !== -1;
+        row.style.display = hit ? '' : 'none';
+        if (hit) any = true;
+      });
+      if (q && !document.querySelector('[data-search-row]')) admFlash('Recherche : « ' + q + ' »');
+      return false;
+    }
+    {% block script %}{% endblock %}
+  </script>
+</body>
+</html>

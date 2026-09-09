@@ -2337,7 +2337,7 @@ def admin_login():
     if session.get("user_id"):
         user = get_current_user()
         if user and user["role"] == "admin":
-            return redirect(url_for("admin_root"))
+            return redirect(url_for("admin_dashboard"))
 
     email = ""
     error = ""
@@ -2355,7 +2355,7 @@ def admin_login():
             session.clear()
             session["user_id"] = admin["id"]
             session.permanent = True
-            return redirect(url_for("admin_root"))
+            return redirect(url_for("admin_dashboard"))
         error = "Email ou mot de passe incorrect."
 
     if not error:
@@ -2390,7 +2390,7 @@ def admin_unlock():
     """Etape de deverrouillage retiree : redirige directement vers l'espace admin."""
     user = get_current_user()
     if user and user["role"] == "admin":
-        return redirect(url_for("admin_root"))
+        return redirect(url_for("admin_dashboard"))
     return redirect(url_for("admin_login"))
 
 
@@ -2458,27 +2458,262 @@ def admin_google_callback():
         session.permanent = True
     finally:
         conn.close()
-    return redirect(url_for("admin_root"))
+    return redirect(url_for("admin_dashboard"))
 
 
 @app.route("/admin")
-@app.route("/admin/dashboard")
 @login_required
 @admin_required
 def admin_root():
-    """Espace admin : ancien tableau de bord retire, nouveau a venir."""
-    return (
-        "<!doctype html><html lang=fr><head><meta charset=utf-8>"
-        "<meta name=viewport content='width=device-width,initial-scale=1'>"
-        "<title>Espace admin - FixPro</title></head>"
-        "<body style=\"font-family:system-ui,sans-serif;margin:0;min-height:100vh;"
-        "display:flex;align-items:center;justify-content:center;background:#0b1120;color:#e2e8f0\">"
-        "<div style=\"text-align:center;padding:32px\">"
-        "<h1 style=\"font-size:1.3rem;margin:0 0 8px\">Espace administrateur</h1>"
-        "<p style=\"color:#94a3b8;margin:0 0 20px\">Le nouveau tableau de bord est en cours de construction.</p>"
-        "<a href='" + url_for('admin_logout') + "' style=\"color:#60a5fa\">Se deconnecter</a>"
-        "</div></body></html>"
-    )
+    """Racine de l'espace admin : redirige vers le tableau de bord."""
+    return redirect(url_for("admin_dashboard"))
+
+
+_ADM_STATUS_DONE = ("completed", "termine", "terminee", "done")
+_ADM_STATUS_PROG = ("in_progress", "on_the_way", "en_route", "assigned", "accepted",
+                    "quote_accepted", "intervention")
+_ADM_STATUS_WAIT = ("pending", "requested", "nouvelle demande", "quote_proposed",
+                    "quote_sent", "en attente", "new")
+_ADM_STATUS_CANC = ("cancelled", "canceled", "annulee", "annule", "refused", "rejected",
+                    "expired")
+
+_ADM_MONTHS_FR = ["", "janvier", "février", "mars", "avril", "mai", "juin", "juillet",
+                  "août", "septembre", "octobre", "novembre", "décembre"]
+_ADM_DAYS_FR = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"]
+
+
+def _adm_status_bucket(status):
+    s = (status or "").strip().lower()
+    if s in _ADM_STATUS_DONE:
+        return "done"
+    if s in _ADM_STATUS_CANC:
+        return "canc"
+    if s in _ADM_STATUS_WAIT:
+        return "wait"
+    if s in _ADM_STATUS_PROG:
+        return "prog"
+    return "wait"
+
+
+def _fmt_int(value):
+    """Entier avec separateur de milliers a la francaise (espace insecable fine)."""
+    try:
+        return "{:,}".format(int(value or 0)).replace(",", " ")
+    except (TypeError, ValueError):
+        return "0"
+
+
+def _adm_pct(part, total):
+    return int(round(part / total * 100)) if total else 0
+
+
+def _adm_trend(cur, prev):
+    if prev and prev > 0:
+        return int(round((cur - prev) / prev * 100))
+    if cur > 0:
+        return 100
+    return None
+
+
+def _adm_ago(dt_str):
+    """Libelle 'Il y a N min/h/j' a partir d'une date ISO/texte."""
+    if not dt_str:
+        return ""
+    try:
+        base = datetime.strptime(str(dt_str)[:19].replace("T", " "), "%Y-%m-%d %H:%M:%S")
+    except ValueError:
+        try:
+            base = datetime.strptime(str(dt_str)[:10], "%Y-%m-%d")
+        except ValueError:
+            return ""
+    delta = datetime.now(timezone.utc).replace(tzinfo=None) - base
+    secs = int(delta.total_seconds())
+    if secs < 60:
+        return "À l'instant"
+    if secs < 3600:
+        return "Il y a %d min" % (secs // 60)
+    if secs < 86400:
+        return "Il y a %d heure%s" % (secs // 3600, "s" if secs // 3600 > 1 else "")
+    days = secs // 86400
+    return "Il y a %d jour%s" % (days, "s" if days > 1 else "")
+
+
+@app.route("/admin/dashboard")
+@login_required
+@admin_required
+def admin_dashboard():
+    """Tableau de bord admin : KPI, activite des missions, statuts, listes."""
+    user = get_current_user()
+    now = datetime.now(timezone.utc)
+    month_prefix = now.strftime("%Y-%m")
+    prev_month = (now.replace(day=1) - timedelta(days=1)).strftime("%Y-%m")
+
+    conn = get_db_connection()
+    try:
+        def _n(sql, params=()):
+            try:
+                row = conn.execute(sql, params).fetchone()
+                return int((row["n"] if row else 0) or 0)
+            except Exception:
+                conn.rollback()
+                return 0
+
+        # --- KPI ---
+        users_total = _n("SELECT COUNT(*) AS n FROM users WHERE role = 'client'")
+        users_prev = _n("SELECT COUNT(*) AS n FROM users WHERE role = 'client'"
+                        " AND substr(created_at, 1, 7) <= ?", (prev_month,))
+        techs_total = _n("SELECT COUNT(*) AS n FROM users WHERE role = 'technician'")
+        techs_prev = _n("SELECT COUNT(*) AS n FROM users WHERE role = 'technician'"
+                        " AND substr(created_at, 1, 7) <= ?", (prev_month,))
+        missions_total = _n("SELECT COUNT(*) AS n FROM requests")
+        missions_prev = _n("SELECT COUNT(*) AS n FROM requests"
+                           " WHERE substr(created_at, 1, 7) <= ?", (prev_month,))
+        revenue_month = _n("SELECT COALESCE(SUM(amount), 0) AS n FROM subscription_payments"
+                           " WHERE LOWER(status) IN ('paid', 'completed', 'succeeded')"
+                           " AND substr(COALESCE(paid_at, created_at), 1, 7) = ?", (month_prefix,))
+        revenue_prev = _n("SELECT COALESCE(SUM(amount), 0) AS n FROM subscription_payments"
+                          " WHERE LOWER(status) IN ('paid', 'completed', 'succeeded')"
+                          " AND substr(COALESCE(paid_at, created_at), 1, 7) = ?", (prev_month,))
+
+        kpis = {
+            "users": {"value": _fmt_int(users_total), "delta": _adm_trend(users_total, users_prev)},
+            "techs": {"value": _fmt_int(techs_total), "delta": _adm_trend(techs_total, techs_prev)},
+            "missions": {"value": _fmt_int(missions_total), "delta": _adm_trend(missions_total, missions_prev)},
+            "revenue": {"value": _fmt_int(revenue_month), "delta": _adm_trend(revenue_month, revenue_prev)},
+        }
+
+        # --- Activite des missions : 7 derniers jours ---
+        labels, created, done = [], [], []
+        for i in range(6, -1, -1):
+            day = (now - timedelta(days=i)).strftime("%Y-%m-%d")
+            labels.append("%d %s" % ((now - timedelta(days=i)).day,
+                                     _ADM_MONTHS_FR[(now - timedelta(days=i)).month][:4].capitalize()))
+            created.append(_n("SELECT COUNT(*) AS n FROM requests WHERE substr(created_at, 1, 10) = ?", (day,)))
+            done.append(_n("SELECT COUNT(*) AS n FROM requests WHERE LOWER(status) = 'completed'"
+                           " AND substr(COALESCE(completed_at, updated_at, created_at), 1, 10) = ?", (day,)))
+        chart = {"labels": labels, "created": created, "done": done}
+
+        # --- Statut des missions (ce mois) ---
+        buckets = {"done": 0, "prog": 0, "wait": 0, "canc": 0}
+        try:
+            for r in conn.execute(
+                    "SELECT status, COUNT(*) AS n FROM requests"
+                    " WHERE substr(created_at, 1, 7) = ? GROUP BY status", (month_prefix,)).fetchall():
+                buckets[_adm_status_bucket(r["status"])] += int(r["n"] or 0)
+        except Exception:
+            conn.rollback()
+        s_total = sum(buckets.values())
+        status = {
+            "total": _fmt_int(s_total),
+            "done": buckets["done"], "prog": buckets["prog"],
+            "wait": buckets["wait"], "canc": buckets["canc"],
+            "done_pct": _adm_pct(buckets["done"], s_total),
+            "prog_pct": _adm_pct(buckets["prog"], s_total),
+            "wait_pct": _adm_pct(buckets["wait"], s_total),
+            "canc_pct": _adm_pct(buckets["canc"], s_total),
+        }
+
+        # --- Nouvelles notifications (agrege 24h) ---
+        d1 = (now - timedelta(days=1)).isoformat()
+        n_msg = _n("SELECT COUNT(*) AS n FROM conversation_messages WHERE created_at >= ?", (d1,))
+        n_tech = _n("SELECT COUNT(*) AS n FROM users WHERE role = 'technician' AND created_at >= ?", (d1,))
+        n_miss = _n("SELECT COUNT(*) AS n FROM requests WHERE created_at >= ?", (d1,))
+        n_rep = _n("SELECT COUNT(*) AS n FROM conversation_reports WHERE created_at >= ? AND LOWER(status) IN ('open', 'pending', 'new')", (d1,))
+        notifications = []
+        if n_msg:
+            notifications.append({"kind": "message", "text": "%d nouveau%s message%s" % (n_msg, "x" if n_msg > 1 else "", "s" if n_msg > 1 else ""), "ago": "Dernières 24 h"})
+        if n_tech:
+            notifications.append({"kind": "tech", "text": "%d nouveau%s technicien%s" % (n_tech, "x" if n_tech > 1 else "", "s" if n_tech > 1 else ""), "ago": "Dernières 24 h"})
+        if n_miss:
+            notifications.append({"kind": "mission", "text": "%d nouvelle%s mission%s" % (n_miss, "s" if n_miss > 1 else "", "s" if n_miss > 1 else ""), "ago": "Dernières 24 h"})
+        if n_rep:
+            notifications.append({"kind": "report", "text": "%d signalement%s" % (n_rep, "s" if n_rep > 1 else ""), "ago": "Dernières 24 h"})
+
+        # --- En-tete : dernieres notifications reelles ---
+        header_notifs = []
+        try:
+            for r in conn.execute(
+                    "SELECT title, type, created_at FROM notifications"
+                    " ORDER BY created_at DESC LIMIT 5").fetchall():
+                t = (r["type"] or "").lower()
+                kind = "mission" if "request" in t or "mission" in t else \
+                       "tech" if "tech" in t or "artisan" in t else \
+                       "report" if "report" in t or "signal" in t else "message"
+                header_notifs.append({"kind": kind, "text": r["title"] or "Notification",
+                                      "ago": _adm_ago(r["created_at"])})
+        except Exception:
+            conn.rollback()
+        notif_count = n_msg + n_tech + n_miss + n_rep
+
+        # --- Dernieres missions ---
+        last_missions = []
+        try:
+            for r in conn.execute(
+                    "SELECT r.id, r.reference, r.service, r.category, r.status, r.created_at,"
+                    " c.full_name AS client_name"
+                    " FROM requests r LEFT JOIN users c ON c.id = r.client_id"
+                    " ORDER BY r.created_at DESC LIMIT 6").fetchall():
+                b = _adm_status_bucket(r["status"])
+                iso = str(r["created_at"] or "")[:10]
+                parts = iso.split("-")
+                date_fr = "/".join(reversed(parts)) if len(parts) == 3 else iso
+                last_missions.append({
+                    "code": r["reference"] or ("#FP-%04d" % r["id"]),
+                    "client": r["client_name"] or "Client",
+                    "service": (r["service"] or r["category"] or "—").capitalize(),
+                    "pill": b,
+                    "status_label": {"done": "Terminée", "prog": "En cours",
+                                     "wait": "En attente", "canc": "Annulée"}[b],
+                    "date": date_fr,
+                })
+        except Exception:
+            conn.rollback()
+
+        # --- Techniciens les mieux notes ---
+        top_techs = []
+        try:
+            for r in conn.execute(
+                    "SELECT u.full_name, u.profession, ROUND(AVG(rv.rating), 1) AS note, COUNT(rv.id) AS c"
+                    " FROM users u JOIN reviews rv ON rv.artisan_id = u.id"
+                    " WHERE u.role = 'technician'"
+                    " GROUP BY u.id HAVING c > 0"
+                    " ORDER BY note DESC, c DESC LIMIT 5").fetchall():
+                top_techs.append({"name": r["full_name"] or "Technicien",
+                                  "job": (r["profession"] or "Technicien").capitalize(),
+                                  "rating": ("%.1f" % (r["note"] or 0))})
+        except Exception:
+            conn.rollback()
+
+        # --- Messages recents ---
+        recent_messages = []
+        try:
+            for r in conn.execute(
+                    "SELECT m.content, m.created_at, u.full_name"
+                    " FROM conversation_messages m LEFT JOIN users u ON u.id = m.sender_id"
+                    " WHERE m.sender_role <> 'system'"
+                    " ORDER BY m.created_at DESC LIMIT 5").fetchall():
+                txt = (r["content"] or "").strip().replace("\n", " ")
+                recent_messages.append({
+                    "name": r["full_name"] or "Utilisateur",
+                    "preview": (txt[:52] + "…") if len(txt) > 52 else (txt or "—"),
+                    "time": str(r["created_at"] or "")[11:16] or "—",
+                })
+        except Exception:
+            conn.rollback()
+    finally:
+        conn.close()
+
+    first_name = (user.get("full_name") or "Admin").split(" ")[0] if user else "Admin"
+    today_label = "%s %d %s %d" % (
+        _ADM_DAYS_FR[now.weekday()].capitalize(), now.day,
+        _ADM_MONTHS_FR[now.month].capitalize(), now.year)
+
+    return render_template(
+        "admin_dashboard.html",
+        admin_user=user, admin_first_name=first_name, current_year=now.year,
+        today_label=today_label, notif_count=notif_count, header_notifs=header_notifs,
+        kpis=kpis, chart=chart, status=status, notifications=notifications,
+        last_missions=last_missions, top_techs=top_techs, recent_messages=recent_messages)
 
 
 def _ts(value=None):
@@ -3022,7 +3257,7 @@ def login():
             if user["role"] == "client":
                 return redirect(url_for("artisans_page"))
             if user["role"] == "admin":
-                return redirect(url_for("admin_root"))
+                return redirect(url_for("admin_dashboard"))
             return redirect(url_for("requests_list"))
 
         # Message identique pour ne pas reveler quel identifiant existe.
@@ -5048,7 +5283,7 @@ def ticket_close(ticket_id):
     finally:
         conn.close()
     if user["role"] == "admin":
-        return redirect(url_for("admin_root"))
+        return redirect(url_for("admin_dashboard"))
     return redirect(url_for("client_tickets"))
 
 

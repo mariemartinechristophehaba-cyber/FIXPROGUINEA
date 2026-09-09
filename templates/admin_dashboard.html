@@ -1,0 +1,344 @@
+{% extends "admin_base.html" %}
+{% block title %}Tableau de bord - FixPro Admin{% endblock %}
+
+{% block head_extra %}
+<style>
+  .adh-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+  .adh-top h1 { font-size: 1.6rem; font-weight: 800; margin: 0 0 4px; letter-spacing: -0.02em; }
+  .adh-top p { margin: 0; font-size: 0.9rem; color: var(--ad-muted); }
+  .adh-date {
+    display: inline-flex; align-items: center; gap: 9px; background: var(--ad-card); border: 1px solid var(--ad-line);
+    border-radius: 11px; padding: 10px 14px; font-size: 0.84rem; font-weight: 600; color: var(--ad-ink); white-space: nowrap;
+  }
+  .adh-date svg { width: 16px; height: 16px; color: var(--ad-muted); }
+
+  /* KPI */
+  .adh-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-bottom: 18px; }
+  .adh-kpi { background: var(--ad-card); border: 1px solid var(--ad-line); border-radius: 16px; padding: 18px 20px; box-shadow: var(--ad-shadow); }
+  .adh-kpi-row { display: flex; align-items: center; gap: 14px; min-width: 0; }
+  .adh-kpi-row > span { min-width: 0; }
+  .adh-kpi-ic { width: 52px; height: 52px; border-radius: 14px; background: var(--ad-blue-bg); color: var(--ad-blue); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .adh-kpi.rev .adh-kpi-ic { background: var(--ad-green-bg); color: var(--ad-green); }
+  .adh-kpi-ic svg { width: 24px; height: 24px; }
+  .adh-kpi-lbl { font-size: 0.86rem; color: var(--ad-muted); font-weight: 500; }
+  .adh-kpi-val { font-size: 1.6rem; font-weight: 800; line-height: 1.15; letter-spacing: -0.02em; white-space: nowrap; }
+  .adh-kpi-val .u { font-size: 0.72em; font-weight: 700; }
+  .adh-kpi-trend { margin-top: 12px; display: flex; align-items: center; gap: 6px; font-size: 0.8rem; }
+  .adh-kpi-trend .pct { display: inline-flex; align-items: center; gap: 3px; color: var(--ad-green); font-weight: 700; background: var(--ad-green-bg); border-radius: 7px; padding: 2px 7px; }
+  .adh-kpi-trend .pct.down { color: #DC2626; background: #FEE2E2; }
+  .adh-kpi-trend .pct svg { width: 12px; height: 12px; }
+  .adh-kpi-trend span { color: var(--ad-muted); }
+
+  /* Rows */
+  .adh-row { display: grid; gap: 18px; margin-bottom: 18px; }
+  .adh-row.r1 { grid-template-columns: minmax(0,1.46fr) minmax(0,1.02fr) minmax(0,1fr); }
+  .adh-row.r2 { grid-template-columns: minmax(0,1.58fr) minmax(0,1.05fr) minmax(0,1fr); }
+
+  .adh-card { background: var(--ad-card); border: 1px solid var(--ad-line); border-radius: 16px; padding: 18px 20px; box-shadow: var(--ad-shadow); display: flex; flex-direction: column; }
+  .adh-card-hd { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 16px; }
+  .adh-card-hd h2 { font-size: 0.96rem; font-weight: 700; margin: 0; }
+  .adh-card-hd .see { font-size: 0.78rem; font-weight: 600; color: var(--ad-blue); white-space: nowrap; flex-shrink: 0; }
+  .adh-sel { border: 1px solid var(--ad-line); border-radius: 9px; background: var(--ad-bg); color: var(--ad-ink); font: 500 0.78rem Inter, sans-serif; padding: 6px 10px; cursor: pointer; }
+
+  .adh-legend { display: flex; gap: 18px; margin-bottom: 8px; }
+  .adh-legend span { display: flex; align-items: center; gap: 6px; font-size: 0.78rem; color: var(--ad-muted); }
+  .adh-legend i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+  .adh-chart-wrap { position: relative; flex: 1; min-height: 232px; }
+
+  /* Donut */
+  .adh-donut { display: flex; align-items: center; gap: 14px; flex: 1; }
+  .adh-donut-c { position: relative; width: 116px; height: 116px; flex-shrink: 0; border-radius: 50%; }
+  .adh-donut-c::before { content: ""; position: absolute; inset: 0; border-radius: 50%; border: 13px solid var(--ad-line); }
+  .adh-donut-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .adh-donut-center b { font-size: 1.15rem; font-weight: 800; }
+  .adh-donut-center span { font-size: 0.66rem; color: var(--ad-muted); }
+  .adh-donut-leg { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 11px; }
+  .adh-donut-leg .li { display: flex; align-items: center; gap: 8px; }
+  .adh-donut-leg .li i { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  .adh-donut-leg .li .n { font-size: 0.8rem; color: var(--ad-muted); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .adh-donut-leg .li .v { font-size: 0.82rem; font-weight: 700; white-space: nowrap; flex-shrink: 0; }
+
+  /* Notifications list */
+  .adh-nlist { display: flex; flex-direction: column; gap: 4px; }
+  .adh-nlist .it { display: flex; gap: 12px; padding: 10px 0; }
+  .adh-nlist .it + .it { border-top: 1px solid var(--ad-line); }
+  .adh-nlist .it .ic { width: 38px; height: 38px; border-radius: 11px; background: var(--ad-blue-bg); color: var(--ad-blue); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .adh-nlist .it.warn .ic { background: #FEF2E2; color: #D97706; }
+  .adh-nlist .it .ic svg { width: 17px; height: 17px; }
+  .adh-nlist .it b { font-size: 0.85rem; font-weight: 600; display: block; }
+  .adh-nlist .it span { font-size: 0.75rem; color: var(--ad-muted); }
+
+  /* Table */
+  .adh-table { width: 100%; border-collapse: collapse; }
+  .adh-table th { text-align: left; font-size: 0.72rem; font-weight: 600; color: var(--ad-muted); text-transform: uppercase; letter-spacing: .04em; padding: 0 10px 10px; }
+  .adh-table td { padding: 11px 8px; border-top: 1px solid var(--ad-line); font-size: 0.82rem; vertical-align: middle; white-space: nowrap; }
+  .adh-table td:first-child, .adh-table th:first-child { padding-left: 2px; }
+  .adh-table td:last-child, .adh-table th:last-child { padding-right: 2px; }
+  .adh-table-scroll { overflow-x: auto; }
+  .adh-table .cli-name { max-width: 118px; overflow: hidden; text-overflow: ellipsis; display: inline-block; vertical-align: middle; }
+  .adh-table td.svc { max-width: 110px; overflow: hidden; text-overflow: ellipsis; }
+  .adh-cli { display: flex; align-items: center; gap: 9px; }
+  .adh-av { width: 27px; height: 27px; border-radius: 50%; object-fit: cover; flex-shrink: 0; background: var(--ad-blue); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.68rem; }
+  .adh-code { font-weight: 600; color: var(--ad-muted); font-size: 0.8rem; }
+  .adh-pill { display: inline-block; font-size: 0.72rem; font-weight: 700; padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
+  .adh-pill.done { background: #DCFCE7; color: #15803D; }
+  .adh-pill.prog { background: #DBEAFE; color: #1D4ED8; }
+  .adh-pill.wait { background: #FEF3C7; color: #B45309; }
+  .adh-pill.canc { background: #FEE2E2; color: #DC2626; }
+  html[data-adm-theme="dark"] .adh-pill.done { background: #14331F; color: #4ADE80; }
+  html[data-adm-theme="dark"] .adh-pill.prog { background: #172542; color: #93C5FD; }
+  html[data-adm-theme="dark"] .adh-pill.wait { background: #33270E; color: #FCD34D; }
+  html[data-adm-theme="dark"] .adh-pill.canc { background: #3A1414; color: #FCA5A5; }
+
+  /* Top techs / messages lists */
+  .adh-rows { display: flex; flex-direction: column; }
+  .adh-prow { display: flex; align-items: center; gap: 9px; padding: 10px 0; }
+  .adh-prow + .adh-prow { border-top: 1px solid var(--ad-line); }
+  .adh-prow .adh-av { width: 34px; height: 34px; font-size: 0.76rem; }
+  .adh-prow .info { flex: 1; min-width: 0; }
+  .adh-prow .info b { font-size: 0.83rem; font-weight: 600; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .adh-prow .info span { font-size: 0.73rem; color: var(--ad-muted); display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .adh-rate { display: flex; align-items: center; gap: 3px; font-size: 0.8rem; font-weight: 700; flex-shrink: 0; }
+  .adh-rate svg { width: 13px; height: 13px; color: #F59E0B; }
+  .adh-see-btn { font-size: 0.72rem; font-weight: 700; color: var(--ad-blue); background: var(--ad-blue-bg); border-radius: 8px; padding: 6px 9px; white-space: nowrap; flex-shrink: 0; }
+  .adh-mtime { font-size: 0.72rem; color: var(--ad-muted); flex-shrink: 0; }
+  .adh-empty { text-align: center; color: var(--ad-muted); font-size: 0.83rem; padding: 20px 0; }
+
+  @media (max-width: 1240px) {
+    .adh-row.r1, .adh-row.r2 { grid-template-columns: 1fr 1fr; }
+    .adh-row.r1 > :first-child, .adh-row.r2 > :first-child { grid-column: 1 / -1; }
+  }
+  @media (max-width: 980px) {
+    .adh-kpis { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 680px) {
+    .adh-kpis, .adh-row.r1, .adh-row.r2 { grid-template-columns: 1fr; }
+    .adh-row.r1 > :first-child, .adh-row.r2 > :first-child { grid-column: auto; }
+    .adh-top h1 { font-size: 1.35rem; }
+    .adh-table-scroll { overflow-x: auto; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="adh-top">
+  <div>
+    <h1>Bonjour {{ admin_first_name }} 👋</h1>
+    <p>Voici un aperçu de l'activité de FixPro aujourd'hui.</p>
+  </div>
+  <span class="adh-date">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+    {{ today_label }}
+  </span>
+</div>
+
+<div class="adh-kpis">
+  <div class="adh-kpi">
+    <div class="adh-kpi-row">
+      <span class="adh-kpi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+      <span><span class="adh-kpi-lbl">Utilisateurs</span><div class="adh-kpi-val">{{ kpis.users.value }}</div></span>
+    </div>
+    {{ trend(kpis.users.delta) }}
+  </div>
+  <div class="adh-kpi">
+    <div class="adh-kpi-row">
+      <span class="adh-kpi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+      <span><span class="adh-kpi-lbl">Techniciens</span><div class="adh-kpi-val">{{ kpis.techs.value }}</div></span>
+    </div>
+    {{ trend(kpis.techs.delta) }}
+  </div>
+  <div class="adh-kpi">
+    <div class="adh-kpi-row">
+      <span class="adh-kpi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M9 13h6M9 17h4"/></svg></span>
+      <span><span class="adh-kpi-lbl">Missions</span><div class="adh-kpi-val">{{ kpis.missions.value }}</div></span>
+    </div>
+    {{ trend(kpis.missions.delta) }}
+  </div>
+  <div class="adh-kpi rev">
+    <div class="adh-kpi-row">
+      <span class="adh-kpi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v12M15 9.5c0-1.4-1.3-2.5-3-2.5s-3 1.1-3 2.5 1.3 2.5 3 2.5 3 1.1 3 2.5-1.3 2.5-3 2.5-3-1.1-3-2.5"/></svg></span>
+      <span><span class="adh-kpi-lbl">Revenus</span><div class="adh-kpi-val">{{ kpis.revenue.value }} <span class="u">GNF</span></div></span>
+    </div>
+    {{ trend(kpis.revenue.delta) }}
+  </div>
+</div>
+
+<div class="adh-row r1">
+  <!-- Activité des missions -->
+  <div class="adh-card">
+    <div class="adh-card-hd">
+      <h2>Activité des missions</h2>
+      <select class="adh-sel" disabled><option>7 derniers jours</option></select>
+    </div>
+    <div class="adh-legend">
+      <span><i style="background:#2563EB"></i> Missions créées</span>
+      <span><i style="background:#93C5FD"></i> Missions terminées</span>
+    </div>
+    <div class="adh-chart-wrap"><canvas id="adhLine"></canvas></div>
+  </div>
+
+  <!-- Statut des missions -->
+  <div class="adh-card">
+    <div class="adh-card-hd">
+      <h2>Statut des missions</h2>
+      <select class="adh-sel" disabled><option>Ce mois</option></select>
+    </div>
+    <div class="adh-donut">
+      <div class="adh-donut-c">
+        <canvas id="adhDonut"></canvas>
+        <div class="adh-donut-center"><b>{{ status.total }}</b><span>Missions</span></div>
+      </div>
+      <div class="adh-donut-leg">
+        <div class="li"><i style="background:#2563EB"></i><span class="n">Terminées</span><span class="v">{{ status.done }} ({{ status.done_pct }}%)</span></div>
+        <div class="li"><i style="background:#60A5FA"></i><span class="n">En cours</span><span class="v">{{ status.prog }} ({{ status.prog_pct }}%)</span></div>
+        <div class="li"><i style="background:#FBBF24"></i><span class="n">En attente</span><span class="v">{{ status.wait }} ({{ status.wait_pct }}%)</span></div>
+        <div class="li"><i style="background:#F87171"></i><span class="n">Annulées</span><span class="v">{{ status.canc }} ({{ status.canc_pct }}%)</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Nouvelles notifications -->
+  <div class="adh-card">
+    <div class="adh-card-hd">
+      <h2>Nouvelles notifications</h2>
+      <a href="#" class="see" onclick="return admSoon(event)">Voir tout</a>
+    </div>
+    <div class="adh-nlist">
+      {% for n in notifications %}
+      <div class="it {{ 'warn' if n.kind == 'report' }}">
+        <span class="ic">
+          {% if n.kind == 'message' %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          {% elif n.kind == 'tech' %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+          {% elif n.kind == 'mission' %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg>
+          {% else %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>{% endif %}
+        </span>
+        <span><b>{{ n.text }}</b><span>{{ n.ago }}</span></span>
+      </div>
+      {% else %}
+      <div class="adh-empty">Aucune notification récente.</div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="adh-row r2">
+  <!-- Dernières missions -->
+  <div class="adh-card">
+    <div class="adh-card-hd">
+      <h2>Dernières missions</h2>
+      <a href="#" class="see" onclick="return admSoon(event)">Voir tout</a>
+    </div>
+    <div class="adh-table-scroll">
+      <table class="adh-table">
+        <thead><tr><th>#</th><th>Client</th><th>Service</th><th>Statut</th><th>Date</th></tr></thead>
+        <tbody>
+          {% for m in last_missions %}
+          <tr data-search-row>
+            <td class="adh-code">{{ m.code|replace('#', '') }}</td>
+            <td><span class="adh-cli"><span class="adh-av">{{ m.client[0]|upper }}</span><span class="cli-name">{{ m.client }}</span></span></td>
+            <td class="svc">{{ m.service }}</td>
+            <td><span class="adh-pill {{ m.pill }}">{{ m.status_label }}</span></td>
+            <td>{{ m.date }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5" class="adh-empty">Aucune mission pour le moment.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Techniciens les mieux notés -->
+  <div class="adh-card">
+    <div class="adh-card-hd">
+      <h2>Techniciens les mieux notés</h2>
+      <a href="#" class="see" onclick="return admSoon(event)">Voir tout</a>
+    </div>
+    <div class="adh-rows">
+      {% for t in top_techs %}
+      <div class="adh-prow" data-search-row>
+        <span class="adh-av">{{ t.name[0]|upper }}</span>
+        <span class="info"><b>{{ t.name }}</b><span>{{ t.job }}</span></span>
+        <span class="adh-rate"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>{{ t.rating }}</span>
+        <a href="#" class="adh-see-btn" onclick="return admSoon(event)">Voir profil</a>
+      </div>
+      {% else %}
+      <div class="adh-empty">Aucun technicien noté pour le moment.</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Messages récents -->
+  <div class="adh-card">
+    <div class="adh-card-hd">
+      <h2>Messages récents</h2>
+      <a href="#" class="see" onclick="return admSoon(event)">Voir tout</a>
+    </div>
+    <div class="adh-rows">
+      {% for msg in recent_messages %}
+      <div class="adh-prow" data-search-row>
+        <span class="adh-av">{{ msg.name[0]|upper }}</span>
+        <span class="info"><b>{{ msg.name }}</b><span>{{ msg.preview }}</span></span>
+        <span class="adh-mtime">{{ msg.time }}</span>
+      </div>
+      {% else %}
+      <div class="adh-empty">Aucun message récent.</div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% macro trend(delta) %}
+  <div class="adh-kpi-trend">
+    {% if delta is not none %}
+    <span class="pct {{ 'down' if delta < 0 }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">{% if delta < 0 %}<path d="m6 9 6 6 6-6"/>{% else %}<path d="m18 15-6-6-6 6"/>{% endif %}</svg>
+      {{ delta|abs }}%
+    </span>
+    <span>ce mois</span>
+    {% else %}
+    <span>—</span>
+    {% endif %}
+  </div>
+{% endmacro %}
+
+{% block script %}
+(function () {
+  if (typeof Chart === 'undefined') return;
+  var css = getComputedStyle(document.documentElement);
+  var grid = (document.documentElement.getAttribute('data-adm-theme') === 'dark') ? 'rgba(148,163,184,.16)' : 'rgba(15,23,42,.07)';
+  var tick = (document.documentElement.getAttribute('data-adm-theme') === 'dark') ? '#94A3B8' : '#94A3B8';
+
+  var line = document.getElementById('adhLine');
+  if (line) new Chart(line.getContext('2d'), {
+    type: 'line',
+    data: {
+      labels: {{ chart.labels|tojson }},
+      datasets: [
+        { label: 'Missions créées', data: {{ chart.created|tojson }}, borderColor: '#2563EB', backgroundColor: 'rgba(37,99,235,.10)', fill: true, tension: .38, borderWidth: 2.5, pointRadius: 3, pointBackgroundColor: '#2563EB' },
+        { label: 'Missions terminées', data: {{ chart.done|tojson }}, borderColor: '#93C5FD', backgroundColor: 'rgba(147,197,253,.12)', fill: true, tension: .38, borderWidth: 2.5, pointRadius: 3, pointBackgroundColor: '#93C5FD' }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: tick, font: { size: 11 } } },
+        y: { beginAtZero: true, grid: { color: grid }, ticks: { color: tick, font: { size: 11 }, precision: 0 } }
+      }
+    }
+  });
+
+  var donut = document.getElementById('adhDonut');
+  if (donut) new Chart(donut.getContext('2d'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Terminées', 'En cours', 'En attente', 'Annulées'],
+      datasets: [{ data: [{{ status.done }}, {{ status.prog }}, {{ status.wait }}, {{ status.canc }}],
+        backgroundColor: ['#2563EB', '#60A5FA', '#FBBF24', '#F87171'], borderWidth: 0 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, cutout: '72%', plugins: { legend: { display: false }, tooltip: { enabled: true } } }
+  });
+})();
+{% endblock %}
