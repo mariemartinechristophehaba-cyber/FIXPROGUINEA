@@ -75,6 +75,11 @@ app.config["ADMIN_USERS_DEMO"] = (
     os.environ.get("ADMIN_USERS_DEMO", "1").strip().lower()
     not in ("0", "false", "no", "off", ""))
 
+# Idem pour la page admin "Techniciens" (voir _admin_techs_demo_all).
+app.config["ADMIN_TECHNICIANS_DEMO"] = (
+    os.environ.get("ADMIN_TECHNICIANS_DEMO", "1").strip().lower()
+    not in ("0", "false", "no", "off", ""))
+
 _dotenv = dotenv_values(BASE_DIR / ".env")
 if _dotenv.get("DEV_ROLE"):
     app.config["DEV_ROLE"] = _dotenv.get("DEV_ROLE").lower()
@@ -3358,6 +3363,400 @@ def admin_user_detail(code):
         "demo_mode": bool(app.config.get("ADMIN_USERS_DEMO")),
     }
     resp = make_response(render_template("admin_user_detail.html", **ctx))
+    resp.headers["Cache-Control"] = "no-store"
+    return resp
+
+
+# ===========================================================================
+# ADMIN - Page "Techniciens" (liste, filtres, pagination, export, fiche).
+# Meme patron que /admin/utilisateurs. ADMIN_TECHNICIANS_DEMO=0 -> vraie table
+# `users` (role technician). Ajouts / changements de statut vivent en session.
+# ===========================================================================
+_ADMIN_TECHS_DEMO_TOTAL = 1892
+_ADMIN_TECHS_SPECIALTIES = [
+    "Plombier", "Électricien", "Frigoriste", "Menuisier", "Peintre",
+    "Climaticien", "Nettoyage", "Maçon", "Jardinier",
+]
+_ADMIN_TECHS_AVAIL_LABELS = {
+    "available": "Disponible", "busy": "En intervention", "offline": "Indisponible",
+}
+_ADMIN_TECHS_STATUS_LABELS = {
+    "active": "Actif", "pending": "En attente", "suspended": "Suspendu", "blocked": "Bloqué",
+}
+_ADMIN_TECHS_KPIS = {
+    "total": {"value": 1892, "delta": 8, "note": "ce mois"},
+    "available": {"value": 1246, "delta": 12, "note": "ce mois"},
+    "busy": {"value": 428, "delta": 6, "note": "aujourd'hui"},
+    "pending": {"value": 218, "delta": 15, "note": "ce mois"},
+}
+
+# Les 10 premieres lignes = celles de la maquette (source de verite visuelle).
+_ADMIN_TECHS_DEMO_HEAD = [
+    ("Moussa Bah", "Plombier", "Kaloum", "4.9", 128, "available", "active", "01/08/2026"),
+    ("Aïssatou Diallo", "Électricienne", "Dixinn", "4.8", 114, "busy", "active", "28/07/2026"),
+    ("Karim Soumah", "Frigoriste", "Ratoma", "4.7", 96, "available", "active", "25/07/2026"),
+    ("Lansana Camara", "Menuisier", "Matam", "4.7", 87, "offline", "pending", "20/07/2026"),
+    ("Mariama Kourouma", "Peintre", "Dixinn", "4.6", 75, "available", "active", "18/07/2026"),
+    ("Alpha Diallo", "Climaticien", "Kaloum", "4.5", 62, "busy", "active", "15/07/2026"),
+    ("Fatoumata Sylla", "Nettoyage", "Ratoma", "4.4", 48, "available", "active", "12/07/2026"),
+    ("Ibrahima Bah", "Maçon", "Matam", "4.3", 39, "offline", "suspended", "10/07/2026"),
+    ("Saran Keita", "Jardinier", "Kaloum", "4.2", 27, "available", "active", "05/07/2026"),
+    ("Mamadou Kaba", "Menuisier", "Ratoma", "4.1", 22, "busy", "blocked", "01/07/2026"),
+]
+
+
+def _admin_tech_demo_row(i):
+    """Un technicien de demo deterministe pour l'index 0-based i."""
+    fn = _ADMIN_USERS_FIRST[i % len(_ADMIN_USERS_FIRST)]
+    ln = _ADMIN_USERS_LAST[(i // len(_ADMIN_USERS_FIRST)) % len(_ADMIN_USERS_LAST)]
+    n = i + 1
+    avail = ("available", "available", "available", "available", "available",
+             "available", "busy", "busy", "offline")[i % 9]
+    if n % 9 == 4:
+        status = "pending"
+    elif n % 53 == 7:
+        status = "suspended"
+    elif n % 331 == 3:
+        status = "blocked"
+    else:
+        status = "active"
+    rating = round(3.6 + ((i * 7) % 14) / 10.0, 1)
+    month = (i % 9) + 1
+    day = (i % 27) + 1
+    return {
+        "code": "#TC-%04d" % (1000 + n),
+        "name": "%s %s" % (fn, ln),
+        "specialty": _ADMIN_TECHS_SPECIALTIES[(i * 5 + 2) % len(_ADMIN_TECHS_SPECIALTIES)],
+        "phone": "+224 610 %02d %02d %02d" % (i % 100, (i * 3) % 100, (i * 7) % 100),
+        "zone": _ADMIN_USERS_ZONES[i % len(_ADMIN_USERS_ZONES)],
+        "rating": "%.1f" % rating,
+        "missions": (i * 13) % 160,
+        "availability": avail,
+        "status": status,
+        "joined": "%02d/%02d/2026" % (day, month),
+        "photo": None,
+    }
+
+
+def _admin_techs_demo_all():
+    rows = []
+    for idx, (name, spec, zone, rating, miss, avail, status, joined) in enumerate(_ADMIN_TECHS_DEMO_HEAD):
+        rows.append({
+            "code": "#TC-%04d" % (1001 + idx), "name": name, "specialty": spec,
+            "phone": "+224 620 10 00 %02d" % (idx + 1), "zone": zone,
+            "rating": rating, "missions": miss, "availability": avail,
+            "status": status, "joined": joined, "photo": None,
+        })
+    for i in range(len(_ADMIN_TECHS_DEMO_HEAD), _ADMIN_TECHS_DEMO_TOTAL):
+        rows.append(_admin_tech_demo_row(i))
+
+    extras = session.get("admin_techs_extra") or []
+    rows = list(extras) + rows
+
+    overrides = session.get("admin_techs_status") or {}
+    if overrides:
+        for r in rows:
+            if r["code"] in overrides:
+                r["status"] = overrides[r["code"]]
+    return rows
+
+
+def _admin_techs_real_rows():
+    """Vraie table users (role technician) mappee au format de la page."""
+    conn = get_db_connection()
+    out = []
+    try:
+        cur = conn.execute(
+            "SELECT id, full_name, phone, profession, city, quartier, account_status,"
+            " verification_status, availability_status, is_active, created_at"
+            " FROM users WHERE role = 'technician' ORDER BY created_at DESC")
+        for r in cur.fetchall():
+            vs = (r["verification_status"] or "").upper()
+            st = (r["account_status"] or "").lower()
+            if "block" in st:
+                status = "blocked"
+            elif "suspend" in st:
+                status = "suspended"
+            elif vs in ("PENDING_REVIEW", "PENDING", "") and not r["is_active"]:
+                status = "pending"
+            elif vs in ("PENDING_REVIEW", "PENDING"):
+                status = "pending"
+            else:
+                status = "active"
+            av = (r["availability_status"] or "").lower()
+            availability = ("busy" if "route" in av or "mission" in av or "busy" in av
+                            or "occup" in av else
+                            "offline" if "indispo" in av or "offline" in av or "off" in av
+                            else "available")
+            rating, missions = 0.0, 0
+            try:
+                rr = conn.execute(
+                    "SELECT COALESCE(AVG(rating),0) AS a, COUNT(*) AS n FROM reviews"
+                    " WHERE artisan_id = ?", (r["id"],)).fetchone()
+                rating = float(rr["a"] or 0)
+                missions = int(conn.execute(
+                    "SELECT COUNT(*) AS n FROM requests WHERE artisan_id = ?"
+                    " AND LOWER(status) = 'completed'", (r["id"],)).fetchone()["n"] or 0)
+            except Exception:
+                conn.rollback()
+            raw = str(r["created_at"] or "")[:10]
+            joined = ("%s/%s/%s" % (raw[8:10], raw[5:7], raw[0:4])
+                      if len(raw) == 10 and raw[4] == "-" else "")
+            out.append({
+                "code": "#TC-%04d" % (1000 + int(r["id"])),
+                "name": r["full_name"] or "Technicien",
+                "specialty": r["profession"] or "—",
+                "phone": r["phone"] or "—",
+                "zone": r["quartier"] or r["city"] or "—",
+                "rating": "%.1f" % rating if rating else "—",
+                "missions": missions, "availability": availability,
+                "status": status, "joined": joined, "photo": None, "uid": int(r["id"]),
+            })
+    except Exception:
+        conn.rollback()
+    finally:
+        conn.close()
+    return out
+
+
+def _admin_techs_filter(rows, q, specialty, status, availability, zone, note):
+    q = (q or "").strip().lower()
+    if q:
+        rows = [r for r in rows if q in r["name"].lower() or q in r["phone"].lower()
+                or q in r["code"].lower() or q in (r["specialty"] or "").lower()]
+    if specialty:
+        rows = [r for r in rows if (r["specialty"] or "").lower().startswith(specialty.lower()[:6])]
+    if status in _ADMIN_TECHS_STATUS_LABELS:
+        rows = [r for r in rows if r["status"] == status]
+    if availability in _ADMIN_TECHS_AVAIL_LABELS:
+        rows = [r for r in rows if r["availability"] == availability]
+    if zone in _ADMIN_USERS_ZONES:
+        rows = [r for r in rows if r["zone"] == zone]
+    if note in ("4.5", "4.0", "3.5"):
+        try:
+            mn = float(note)
+            rows = [r for r in rows if r["rating"] not in ("", "—") and float(r["rating"]) >= mn]
+        except ValueError:
+            pass
+    return rows
+
+
+def _admin_techs_query_args():
+    return {
+        "q": (request.args.get("q") or "").strip()[:80],
+        "specialty": request.args.get("specialty") or "",
+        "status": request.args.get("status") or "",
+        "availability": request.args.get("availability") or "",
+        "zone": request.args.get("zone") or "",
+        "note": request.args.get("note") or "",
+    }
+
+
+@app.route("/admin/techniciens")
+@app.route("/admin/technicians")
+@login_required
+@admin_required
+def admin_technicians():
+    """Page admin de gestion des techniciens (liste + filtres + pagination)."""
+    user = get_current_user()
+    now = datetime.now(timezone.utc)
+    fa = _admin_techs_query_args()
+    try:
+        per_page = int(request.args.get("per_page") or 10)
+    except (TypeError, ValueError):
+        per_page = 10
+    per_page = per_page if per_page in (10, 25, 50, 100) else 10
+    try:
+        page = max(1, int(request.args.get("page") or 1))
+    except (TypeError, ValueError):
+        page = 1
+    demo = bool(app.config.get("ADMIN_TECHNICIANS_DEMO"))
+
+    if demo:
+        all_rows = _admin_techs_demo_all()
+        kpis = {k: {"value": _fmt_int(v["value"]), "delta": v["delta"], "note": v["note"]}
+                for k, v in _ADMIN_TECHS_KPIS.items()}
+        headline_total = _ADMIN_TECHS_KPIS["total"]["value"]
+    else:
+        all_rows = _admin_techs_real_rows()
+        n_total = len(all_rows)
+        n_avail = sum(1 for r in all_rows if r["availability"] == "available")
+        n_busy = sum(1 for r in all_rows if r["availability"] == "busy")
+        n_pending = sum(1 for r in all_rows if r["status"] == "pending")
+        kpis = {
+            "total": {"value": _fmt_int(n_total), "delta": None, "note": ""},
+            "available": {"value": _fmt_int(n_avail), "delta": None, "note": ""},
+            "busy": {"value": _fmt_int(n_busy), "delta": None, "note": ""},
+            "pending": {"value": _fmt_int(n_pending), "delta": None, "note": ""},
+        }
+        headline_total = n_total
+
+    rows = _admin_techs_filter(all_rows, fa["q"], fa["specialty"], fa["status"],
+                               fa["availability"], fa["zone"], fa["note"])
+    total_filtered = len(rows)
+    pages = max(1, -(-total_filtered // per_page))
+    page = min(page, pages)
+    start = (page - 1) * per_page
+    page_rows = rows[start:start + per_page]
+
+    def _page_url(p):
+        args = {"page": p, "per_page": per_page}
+        args.update({k: v for k, v in fa.items() if v})
+        return url_for("admin_technicians", **args)
+
+    window = list(range(max(1, page - 2), min(pages, page + 2) + 1))
+
+    ctx = {
+        "admin_user": user, "current_year": now.year,
+        "notif_count": 0, "header_notifs": [],
+        "kpis": kpis, "techs": page_rows,
+        "avail_labels": _ADMIN_TECHS_AVAIL_LABELS,
+        "status_labels": _ADMIN_TECHS_STATUS_LABELS,
+        "specialties": _ADMIN_TECHS_SPECIALTIES, "zones": _ADMIN_USERS_ZONES,
+        "f": fa, "per_page": per_page, "page": page, "pages": pages,
+        "page_window": window, "total_filtered": total_filtered,
+        "headline_total": _fmt_int(headline_total),
+        "prev_url": _page_url(page - 1) if page > 1 else None,
+        "next_url": _page_url(page + 1) if page < pages else None,
+        "page_url_tpl": _page_url("__P__"),
+        "demo_mode": demo,
+    }
+    resp = make_response(render_template("admin_technicians.html", **ctx))
+    resp.headers["Cache-Control"] = "no-store"
+    return resp
+
+
+@app.route("/admin/techniciens/export")
+@login_required
+@admin_required
+def admin_technicians_export():
+    fa = _admin_techs_query_args()
+    rows = (_admin_techs_demo_all() if app.config.get("ADMIN_TECHNICIANS_DEMO")
+            else _admin_techs_real_rows())
+    rows = _admin_techs_filter(rows, fa["q"], fa["specialty"], fa["status"],
+                               fa["availability"], fa["zone"], fa["note"])
+    buf = io.StringIO()
+    w = csv.writer(buf, delimiter=";")
+    w.writerow(["Identifiant", "Nom", "Specialite", "Telephone", "Zone", "Note",
+                "Missions", "Disponibilite", "Statut", "Inscription"])
+    for r in rows:
+        w.writerow([r["code"], r["name"], r["specialty"], r["phone"], r["zone"],
+                    r["rating"], r["missions"],
+                    _ADMIN_TECHS_AVAIL_LABELS.get(r["availability"], r["availability"]),
+                    _ADMIN_TECHS_STATUS_LABELS.get(r["status"], r["status"]), r["joined"]])
+    out = make_response("﻿" + buf.getvalue())
+    out.headers["Content-Type"] = "text/csv; charset=utf-8"
+    out.headers["Content-Disposition"] = (
+        "attachment; filename=fixpro-techniciens-%s.csv" % datetime.now().strftime("%Y%m%d"))
+    return out
+
+
+@app.route("/admin/techniciens/creer", methods=["POST"])
+@login_required
+@admin_required
+def admin_technicians_create():
+    if not app.config.get("ADMIN_TECHNICIANS_DEMO"):
+        flash("La creation directe est desactivee hors mode demonstration.", "error")
+        return redirect(url_for("admin_technicians"))
+    first = (request.form.get("first_name") or "").strip()[:40]
+    last = (request.form.get("last_name") or "").strip()[:40]
+    phone = (request.form.get("phone") or "").strip()[:30]
+    specialty = request.form.get("specialty") or ""
+    zone = request.form.get("zone") or ""
+    status = request.form.get("status") or "pending"
+    if not first or not last or not phone:
+        flash("Prénom, nom et téléphone sont obligatoires.", "error")
+        return redirect(url_for("admin_technicians"))
+    if specialty not in _ADMIN_TECHS_SPECIALTIES:
+        specialty = _ADMIN_TECHS_SPECIALTIES[0]
+    if zone not in _ADMIN_USERS_ZONES:
+        zone = _ADMIN_USERS_ZONES[0]
+    if status not in _ADMIN_TECHS_STATUS_LABELS:
+        status = "pending"
+    extras = session.get("admin_techs_extra") or []
+    extras.insert(0, {
+        "code": "#TC-%04d" % (9000 + len(extras) + 1),
+        "name": "%s %s" % (first, last), "specialty": specialty,
+        "phone": phone, "zone": zone, "rating": "—", "missions": 0,
+        "availability": "offline", "status": status,
+        "joined": datetime.now().strftime("%d/%m/2026"), "photo": None,
+    })
+    session["admin_techs_extra"] = extras[:50]
+    session.modified = True
+    flash("Technicien « %s %s » créé (données de démonstration)." % (first, last), "success")
+    return redirect(url_for("admin_technicians"))
+
+
+@app.route("/admin/techniciens/<code>/statut", methods=["POST"])
+@login_required
+@admin_required
+def admin_technician_set_status(code):
+    code = ("#" + code) if not code.startswith("#") else code
+    new_status = request.form.get("status") or "suspended"
+    if new_status not in _ADMIN_TECHS_STATUS_LABELS:
+        new_status = "suspended"
+    if app.config.get("ADMIN_TECHNICIANS_DEMO"):
+        ov = session.get("admin_techs_status") or {}
+        ov[code] = new_status
+        session["admin_techs_status"] = ov
+        session.modified = True
+    else:
+        try:
+            uid = int(code.split("-")[-1].lstrip("0") or "0") - 1000
+            conn = get_db_connection()
+            conn.execute("UPDATE users SET account_status = ? WHERE id = ?", (new_status, uid))
+            conn.commit()
+            conn.close()
+        except Exception as exc:
+            logger.warning("admin_technician_set_status: %s", exc)
+    flash("Statut mis à jour : %s." % _ADMIN_TECHS_STATUS_LABELS[new_status], "success")
+    return redirect(request.form.get("next") or url_for("admin_technicians"))
+
+
+@app.route("/admin/techniciens/<code>")
+@login_required
+@admin_required
+def admin_technician_detail(code):
+    user = get_current_user()
+    now = datetime.now(timezone.utc)
+    code = ("#" + code) if not code.startswith("#") else code
+    rows = (_admin_techs_demo_all() if app.config.get("ADMIN_TECHNICIANS_DEMO")
+            else _admin_techs_real_rows())
+    t = next((r for r in rows if r["code"] == code), None)
+    if not t:
+        flash("Technicien introuvable.", "error")
+        return redirect(url_for("admin_technicians"))
+
+    missions = t["missions"]
+    done = int(round(missions * 0.88))
+    prog = 1 if t["availability"] == "busy" else 0
+    seed = sum(ord(c) for c in t["code"])
+    clients = ["Aminata Diallo", "Mamadou Keita", "Sarah Camara", "Ibrahima Sylla",
+               "Fatoumata Barry", "Karim Soumah"]
+    pills = ["done", "done", "done", "prog", "canc"]
+    labels = {"done": "Terminée", "prog": "En cours", "wait": "En attente", "canc": "Annulée"}
+    history = []
+    for k in range(min(missions, 6)):
+        p = pills[(seed + k) % len(pills)]
+        history.append({
+            "code": "#FP-%d" % (3300 - seed % 80 - k),
+            "client": clients[(seed + k) % len(clients)],
+            "service": t["specialty"],
+            "pill": p, "status_label": labels[p],
+            "date": "%02d/%02d/2026" % (1 + (seed + k) % 27, 1 + (seed + k) % 9),
+        })
+
+    ctx = {
+        "admin_user": user, "current_year": now.year,
+        "notif_count": 0, "header_notifs": [],
+        "t": t, "avail_labels": _ADMIN_TECHS_AVAIL_LABELS,
+        "status_labels": _ADMIN_TECHS_STATUS_LABELS,
+        "stats": {"missions": missions, "done": done, "prog": prog,
+                  "rating": t["rating"]},
+        "history": history,
+        "demo_mode": bool(app.config.get("ADMIN_TECHNICIANS_DEMO")),
+    }
+    resp = make_response(render_template("admin_technician_detail.html", **ctx))
     resp.headers["Cache-Control"] = "no-store"
     return resp
 

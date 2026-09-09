@@ -1,0 +1,159 @@
+{% extends "admin_base.html" %}
+{% block title %}{{ t.name }} - Techniciens - FixPro Admin{% endblock %}
+
+{% block head_extra %}
+<style>
+  .ud-back { display: inline-flex; align-items: center; gap: 7px; font-size: 0.83rem; font-weight: 600; color: var(--ad-muted); margin-bottom: 16px; }
+  .ud-back:hover { color: var(--ad-ink); }
+  .ud-back svg { width: 15px; height: 15px; }
+  .ud-grid { display: grid; grid-template-columns: minmax(0,340px) minmax(0,1fr); gap: 18px; }
+  .ud-grid > * { min-width: 0; }
+  .ud-card { background: var(--ad-card); border: 1px solid var(--ad-line); border-radius: 16px; box-shadow: var(--ad-shadow); padding: 20px; }
+  .ud-card h2 { font-size: 0.96rem; font-weight: 700; margin: 0 0 14px; }
+
+  .ud-id { text-align: center; padding: 26px 20px; }
+  .ud-av { width: 82px; height: 82px; border-radius: 50%; margin: 0 auto 12px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 800; font-size: 1.7rem; background: var(--ad-blue); }
+  .ud-av img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+  .ud-id h1 { font-size: 1.25rem; font-weight: 800; margin: 0 0 4px; }
+  .ud-id .code { font-size: 0.8rem; color: var(--ad-muted); }
+  .ud-id .spec { font-size: 0.86rem; color: var(--ad-muted); margin-top: 2px; }
+  .ud-badges { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 10px; }
+  .ud-pill { display: inline-flex; align-items: center; gap: 6px; font-size: 0.74rem; font-weight: 700; padding: 4px 12px; border-radius: 999px; }
+  .ud-pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .ud-pill.active { background: #DCFCE7; color: #15803D; }
+  .ud-pill.pending { background: #FEF3C7; color: #B45309; }
+  .ud-pill.suspended { background: #EEF2F7; color: #64748B; }
+  .ud-pill.blocked { background: #FEE2E2; color: #DC2626; }
+  .ud-pill.available { background: #DCFCE7; color: #15803D; }
+  .ud-pill.busy { background: #DBEAFE; color: #1D4ED8; }
+  .ud-pill.offline { background: #EEF2F7; color: #64748B; }
+  html[data-adm-theme="dark"] .ud-pill.active, html[data-adm-theme="dark"] .ud-pill.available { background: #14331F; color: #4ADE80; }
+  html[data-adm-theme="dark"] .ud-pill.blocked { background: #3A1414; color: #FCA5A5; }
+  html[data-adm-theme="dark"] .ud-pill.pending { background: #33270E; color: #FCD34D; }
+
+  .ud-info { list-style: none; margin: 0; padding: 0; }
+  .ud-info li { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-top: 1px solid var(--ad-line); font-size: 0.86rem; flex-wrap: wrap; }
+  .ud-info li:first-child { border-top: 0; }
+  .ud-info svg { width: 16px; height: 16px; color: var(--ad-muted); flex-shrink: 0; }
+  .ud-info .k { color: var(--ad-muted); }
+  .ud-info .v { margin-left: auto; font-weight: 600; text-align: right; overflow-wrap: anywhere; min-width: 0; }
+
+  .ud-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+  .ud-btn { display: inline-flex; align-items: center; gap: 7px; border-radius: 10px; padding: 9px 14px; font-size: 0.82rem; font-weight: 700; cursor: pointer; border: 1px solid var(--ad-line); background: var(--ad-card); color: var(--ad-ink); font-family: inherit; }
+  .ud-btn:hover { background: var(--ad-bg); }
+  .ud-btn.primary { background: var(--ad-blue); border-color: var(--ad-blue); color: #fff; }
+  .ud-btn.ok { background: #DCFCE7; border-color: #BBF7D0; color: #15803D; }
+  .ud-btn.danger { background: #FEE2E2; border-color: #FECACA; color: #DC2626; }
+  .ud-btn svg { width: 15px; height: 15px; }
+
+  .ud-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 18px; }
+  .ud-stat { background: var(--ad-card); border: 1px solid var(--ad-line); border-radius: 14px; padding: 16px; box-shadow: var(--ad-shadow); }
+  .ud-stat b { font-size: 1.5rem; font-weight: 800; display: block; letter-spacing: -0.02em; }
+  .ud-stat span { font-size: 0.78rem; color: var(--ad-muted); }
+
+  .ud-table { width: 100%; border-collapse: collapse; min-width: 520px; }
+  .ud-table th { text-align: left; font-size: 0.72rem; font-weight: 600; color: var(--ad-muted); text-transform: uppercase; letter-spacing: .04em; padding: 0 10px 10px; }
+  .ud-table td { padding: 12px 10px; border-top: 1px solid var(--ad-line); font-size: 0.84rem; white-space: nowrap; }
+  .ud-table-scroll { overflow-x: auto; }
+  .ud-code2 { font-weight: 600; color: var(--ad-muted); font-size: 0.8rem; }
+  .ud-mpill { display: inline-block; font-size: 0.72rem; font-weight: 700; padding: 3px 10px; border-radius: 999px; }
+  .ud-mpill.done { background: #DCFCE7; color: #15803D; }
+  .ud-mpill.prog { background: #DBEAFE; color: #1D4ED8; }
+  .ud-mpill.wait { background: #FEF3C7; color: #B45309; }
+  .ud-mpill.canc { background: #FEE2E2; color: #DC2626; }
+  .ud-empty { text-align: center; color: var(--ad-muted); font-size: 0.84rem; padding: 26px 0; }
+
+  @media (max-width: 940px) { .ud-grid { grid-template-columns: 1fr; } .ud-stats { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 520px) { .ud-stats { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}
+
+{% block content %}
+{% set d = t.code.lstrip('#') %}
+<a class="ud-back" href="{{ url_for('admin_technicians') }}">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+  Retour aux techniciens
+</a>
+
+<div class="ud-grid">
+  <div>
+    <div class="ud-card ud-id">
+      <div class="ud-av">{% if t.photo %}<img src="{{ t.photo }}" alt="" />{% else %}{{ t.name[0]|upper }}{% endif %}</div>
+      <h1>{{ t.name }}</h1>
+      <div class="code">{{ t.code }}</div>
+      <div class="spec">{{ t.specialty }}</div>
+      <div class="ud-badges">
+        <span class="ud-pill {{ t.status }}">{{ status_labels[t.status] }}</span>
+        <span class="ud-pill {{ t.availability }}">{{ avail_labels[t.availability] }}</span>
+      </div>
+      <div class="ud-actions">
+        <a class="ud-btn primary" href="tel:{{ t.phone }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.6A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8.1 11.9a16 16 0 0 0 6 6l1.2-1.2a2 2 0 0 1 2.1-.5c.9.3 1.9.6 2.9.7a2 2 0 0 1 1.7 2z"/></svg> Appeler</a>
+        <form method="post" action="{{ url_for('admin_technician_set_status', code=d) }}" style="display:contents">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+          <input type="hidden" name="next" value="{{ url_for('admin_technician_detail', code=d) }}" />
+          {% if t.status == 'pending' %}
+          <input type="hidden" name="status" value="active" />
+          <button class="ud-btn ok" type="submit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m22 4-10 10.01L9 11"/></svg> Valider</button>
+          {% elif t.status in ('suspended', 'blocked') %}
+          <input type="hidden" name="status" value="active" />
+          <button class="ud-btn ok" type="submit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 11V7a5 5 0 0 1 9.9-1"/><rect x="3" y="11" width="18" height="11" rx="2"/></svg> Réactiver</button>
+          {% else %}
+          <input type="hidden" name="status" value="suspended" />
+          <button class="ud-btn danger" type="submit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9 9h.01M15 9h.01M9 15h6"/></svg> Suspendre</button>
+          {% endif %}
+        </form>
+      </div>
+    </div>
+
+    <div class="ud-card" style="margin-top:18px" id="edit">
+      <h2>Informations</h2>
+      <ul class="ud-info">
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.6A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8.1 11.9a16 16 0 0 0 6 6l1.2-1.2a2 2 0 0 1 2.1-.5c.9.3 1.9.6 2.9.7a2 2 0 0 1 1.7 2z"/></svg><span class="k">Téléphone</span><span class="v">{{ t.phone }}</span></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg><span class="k">Spécialité</span><span class="v">{{ t.specialty }}</span></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg><span class="k">Zone</span><span class="v">{{ t.zone }}</span></li>
+        <li><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg><span class="k">Note moyenne</span><span class="v">{{ t.rating }}</span></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span class="k">Inscription</span><span class="v">{{ t.joined }}</span></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg><span class="k">Missions</span><span class="v">{{ t.missions }}</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <div>
+    <div class="ud-stats">
+      <div class="ud-stat"><b>{{ stats.missions }}</b><span>Missions au total</span></div>
+      <div class="ud-stat"><b>{{ stats.done }}</b><span>Missions terminées</span></div>
+      <div class="ud-stat"><b>{{ stats.prog }}</b><span>En cours</span></div>
+      <div class="ud-stat"><b>{{ stats.rating }}</b><span>Note moyenne</span></div>
+    </div>
+
+    <div class="ud-card" id="missions">
+      <h2>Historique des missions</h2>
+      {% if history %}
+      <div class="ud-table-scroll">
+        <table class="ud-table">
+          <thead><tr><th>#</th><th>Client</th><th>Service</th><th>Statut</th><th>Date</th></tr></thead>
+          <tbody>
+            {% for h in history %}
+            <tr>
+              <td class="ud-code2">{{ h.code }}</td>
+              <td>{{ h.client }}</td>
+              <td>{{ h.service }}</td>
+              <td><span class="ud-mpill {{ h.pill }}">{{ h.status_label }}</span></td>
+              <td class="ud-code2">{{ h.date }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="ud-empty">Ce technicien n'a pas encore de mission.</div>
+      {% endif %}
+    </div>
+
+    <div class="ud-card" style="margin-top:18px" id="avis">
+      <h2>Avis clients</h2>
+      <div class="ud-empty">Aucun avis à afficher pour le moment.</div>
+    </div>
+  </div>
+</div>
+{% endblock %}

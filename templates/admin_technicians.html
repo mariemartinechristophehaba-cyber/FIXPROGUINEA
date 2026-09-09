@@ -1,0 +1,431 @@
+{% extends "admin_base.html" %}
+{% block title %}Techniciens - FixPro Admin{% endblock %}
+
+{% block head_extra %}
+<style>
+  .au-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+  .au-top h1 { font-size: 1.6rem; font-weight: 800; margin: 0 0 4px; letter-spacing: -0.02em; }
+  .au-top p { margin: 0; font-size: 0.9rem; color: var(--ad-muted); }
+  .au-btn { display: inline-flex; align-items: center; gap: 8px; background: var(--ad-blue); color: #fff; border: 0; border-radius: 11px; padding: 11px 16px; font-size: 0.85rem; font-weight: 700; cursor: pointer; white-space: nowrap; box-shadow: 0 6px 16px rgba(37,99,235,.28); }
+  .au-btn:hover { background: var(--ad-blue-d); }
+  .au-btn svg { width: 16px; height: 16px; }
+  .au-btn.ghost { background: var(--ad-card); color: var(--ad-ink); border: 1px solid var(--ad-line); box-shadow: none; }
+  .au-btn.ghost:hover { background: var(--ad-bg); }
+
+  .au-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-bottom: 18px; }
+  .au-kpi { background: var(--ad-card); border: 1px solid var(--ad-line); border-radius: 16px; padding: 18px 20px; box-shadow: var(--ad-shadow); }
+  .au-kpi-row { display: flex; align-items: center; gap: 14px; min-width: 0; }
+  .au-kpi-ic { width: 52px; height: 52px; border-radius: 14px; background: var(--ad-blue-bg); color: var(--ad-blue); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .au-kpi-ic svg { width: 24px; height: 24px; }
+  .au-kpi.g .au-kpi-ic { background: var(--ad-green-bg); color: var(--ad-green); }
+  .au-kpi.o .au-kpi-ic { background: #FEF2E2; color: #D97706; }
+  html[data-adm-theme="dark"] .au-kpi.o .au-kpi-ic { background: #33270E; color: #FCD34D; }
+  .au-kpi-lbl { font-size: 0.86rem; color: var(--ad-muted); font-weight: 500; }
+  .au-kpi-val { font-size: 1.6rem; font-weight: 800; line-height: 1.15; letter-spacing: -0.02em; white-space: nowrap; }
+  .au-kpi-trend { margin-top: 12px; display: flex; align-items: center; gap: 6px; font-size: 0.8rem; }
+  .au-kpi-trend .pct { display: inline-flex; align-items: center; gap: 3px; color: var(--ad-green); font-weight: 700; background: var(--ad-green-bg); border-radius: 7px; padding: 2px 7px; }
+  .au-kpi-trend .pct.down { color: #DC2626; background: #FEE2E2; }
+  .au-kpi-trend .pct svg { width: 12px; height: 12px; }
+  .au-kpi-trend span { color: var(--ad-muted); }
+
+  .au-card { background: var(--ad-card); border: 1px solid var(--ad-line); border-radius: 16px; box-shadow: var(--ad-shadow); }
+
+  .au-filters { padding: 16px 18px; margin-bottom: 18px; display: flex; flex-wrap: wrap; gap: 12px; align-items: end; }
+  .au-filters .au-field { flex: 1 1 148px; min-width: 0; }
+  .au-filters .au-search-wrap { flex: 2 1 240px; }
+  .au-field label { display: block; font-size: 0.74rem; font-weight: 600; color: var(--ad-muted); margin-bottom: 6px; }
+  .au-input, .au-select { width: 100%; height: 42px; border: 1px solid var(--ad-line); border-radius: 10px; background: var(--ad-bg); padding: 0 12px; font-size: 0.85rem; color: var(--ad-ink); outline: none; font-family: inherit; }
+  .au-input:focus, .au-select:focus { border-color: var(--ad-blue); background: var(--ad-card); }
+  .au-search-wrap { position: relative; }
+  .au-search-wrap svg { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--ad-muted); }
+  .au-search-wrap .au-input { padding-left: 38px; }
+  .au-reset { display: inline-flex; align-items: center; gap: 7px; height: 42px; padding: 0 15px; border: 1px solid var(--ad-line); border-radius: 10px; background: var(--ad-card); color: var(--ad-blue); font-size: 0.82rem; font-weight: 700; white-space: nowrap; }
+  .au-reset:hover { background: var(--ad-bg); }
+  .au-reset svg { width: 15px; height: 15px; }
+
+  .au-list-hd { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 18px; border-bottom: 1px solid var(--ad-line); flex-wrap: wrap; }
+  .au-list-hd h2 { font-size: 0.98rem; font-weight: 700; margin: 0; }
+  .au-list-hd .right { display: flex; align-items: center; gap: 14px; }
+  .au-count { font-size: 0.82rem; color: var(--ad-muted); }
+
+  .au-table-scroll { overflow-x: auto; }
+  table.au-table { width: 100%; border-collapse: collapse; min-width: 1060px; }
+  .au-table th { text-align: left; font-size: 0.7rem; font-weight: 600; color: var(--ad-muted); text-transform: uppercase; letter-spacing: .03em; padding: 12px 8px; background: var(--ad-bg); border-bottom: 1px solid var(--ad-line); white-space: nowrap; }
+  .au-table td { padding: 11px 8px; border-bottom: 1px solid var(--ad-line); font-size: 0.83rem; vertical-align: middle; white-space: nowrap; }
+  .au-table tbody tr:last-child td { border-bottom: 0; }
+  .au-table tbody tr:hover { background: var(--ad-bg); }
+  .au-table td:first-child, .au-table th:first-child { padding-left: 18px; }
+  .au-table td:last-child, .au-table th:last-child { padding-right: 18px; }
+  .au-check { width: 16px; height: 16px; accent-color: var(--ad-blue); cursor: pointer; }
+  .au-code { font-weight: 600; color: var(--ad-muted); font-size: 0.8rem; }
+  .au-user-cell { display: flex; align-items: center; gap: 10px; }
+  .au-av { width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 0.74rem; }
+  .au-name { font-weight: 600; }
+  .au-muted { color: var(--ad-muted); }
+  .au-rate { display: inline-flex; align-items: center; gap: 4px; font-weight: 700; }
+  .au-rate svg { width: 14px; height: 14px; color: #F59E0B; }
+
+  .au-pill { display: inline-flex; align-items: center; gap: 6px; font-size: 0.74rem; font-weight: 700; padding: 4px 11px; border-radius: 999px; }
+  .au-pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .au-pill.active { background: #DCFCE7; color: #15803D; }
+  .au-pill.pending { background: #FEF3C7; color: #B45309; }
+  .au-pill.suspended { background: #EEF2F7; color: #64748B; }
+  .au-pill.blocked { background: #FEE2E2; color: #DC2626; }
+  html[data-adm-theme="dark"] .au-pill.active { background: #14331F; color: #4ADE80; }
+  html[data-adm-theme="dark"] .au-pill.pending { background: #33270E; color: #FCD34D; }
+  html[data-adm-theme="dark"] .au-pill.suspended { background: #1E293B; color: #94A3B8; }
+  html[data-adm-theme="dark"] .au-pill.blocked { background: #3A1414; color: #FCA5A5; }
+  .au-av-dot { display: inline-flex; align-items: center; gap: 7px; font-size: 0.8rem; font-weight: 600; }
+  .au-av-dot::before { content: ""; width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .au-av-dot.available::before { background: #16A34A; }
+  .au-av-dot.busy::before { background: #2563EB; }
+  .au-av-dot.offline::before { background: #94A3B8; }
+
+  .au-actions { position: relative; text-align: right; }
+  .au-dots { width: 32px; height: 32px; border-radius: 9px; border: 1px solid transparent; background: none; color: var(--ad-muted); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+  .au-dots:hover { background: var(--ad-bg); border-color: var(--ad-line); color: var(--ad-ink); }
+  .au-dots svg { width: 18px; height: 18px; }
+  .au-menu { position: absolute; right: 8px; top: 40px; z-index: 20; background: var(--ad-card); border: 1px solid var(--ad-line); border-radius: 12px; box-shadow: 0 16px 40px rgba(15,23,42,.16); min-width: 214px; overflow: hidden; padding: 6px; text-align: left; }
+  .au-menu a, .au-menu button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 11px; border-radius: 8px; font-size: 0.83rem; font-weight: 500; color: var(--ad-ink); background: none; border: 0; cursor: pointer; text-align: left; font-family: inherit; }
+  .au-menu a:hover, .au-menu button:hover { background: var(--ad-bg); }
+  .au-menu svg { width: 15px; height: 15px; color: var(--ad-muted); flex-shrink: 0; }
+  .au-menu .sep { height: 1px; background: var(--ad-line); margin: 5px 0; }
+  .au-menu .danger { color: #DC2626; }
+  .au-menu .danger svg { color: #DC2626; }
+  .au-menu .ok { color: #15803D; }
+  .au-menu .ok svg { color: #15803D; }
+
+  .au-empty { text-align: center; padding: 50px 20px; color: var(--ad-muted); }
+  .au-empty svg { width: 38px; height: 38px; margin-bottom: 10px; color: var(--ad-line); }
+  .au-empty b { display: block; font-size: 0.95rem; color: var(--ad-ink); margin-bottom: 4px; }
+
+  .au-foot { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 18px; border-top: 1px solid var(--ad-line); flex-wrap: wrap; }
+  .au-perpage { display: flex; align-items: center; gap: 9px; font-size: 0.82rem; color: var(--ad-muted); }
+  .au-perpage select { height: 36px; border: 1px solid var(--ad-line); border-radius: 9px; background: var(--ad-bg); color: var(--ad-ink); padding: 0 8px; font-family: inherit; font-size: 0.82rem; cursor: pointer; }
+  .au-pager { display: flex; align-items: center; gap: 6px; }
+  .au-pager a, .au-pager span { min-width: 34px; height: 34px; padding: 0 8px; border-radius: 9px; border: 1px solid var(--ad-line); background: var(--ad-card); display: inline-flex; align-items: center; justify-content: center; font-size: 0.82rem; font-weight: 600; color: var(--ad-ink); }
+  .au-pager a:hover { background: var(--ad-bg); }
+  .au-pager .cur { background: var(--ad-blue); border-color: var(--ad-blue); color: #fff; }
+  .au-pager .dots { border: 0; background: none; color: var(--ad-muted); min-width: 20px; }
+  .au-pager .nav[aria-disabled="true"] { opacity: .4; pointer-events: none; }
+  .au-pageinfo { font-size: 0.82rem; color: var(--ad-muted); }
+
+  .au-modal-bg { position: fixed; inset: 0; background: rgba(2,6,23,.55); z-index: 100; display: flex; align-items: flex-start; justify-content: center; padding: 40px 16px; overflow-y: auto; }
+  .au-modal { background: var(--ad-card); border-radius: 18px; width: 100%; max-width: 520px; box-shadow: 0 30px 80px rgba(0,0,0,.35); }
+  .au-modal-hd { display: flex; align-items: center; justify-content: space-between; padding: 20px 22px; border-bottom: 1px solid var(--ad-line); }
+  .au-modal-hd h3 { margin: 0; font-size: 1.05rem; font-weight: 800; }
+  .au-modal-hd button { background: none; border: 0; color: var(--ad-muted); cursor: pointer; padding: 4px; }
+  .au-modal-hd button svg { width: 20px; height: 20px; }
+  .au-modal-bd { padding: 20px 22px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .au-modal-bd .full { grid-column: 1 / -1; }
+  .au-modal-bd label { display: block; font-size: 0.78rem; font-weight: 600; color: var(--ad-muted); margin-bottom: 6px; }
+  .au-modal-ft { padding: 16px 22px 20px; display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--ad-line); }
+  .au-err { grid-column: 1 / -1; background: #FEE2E2; color: #DC2626; border-radius: 9px; padding: 9px 12px; font-size: 0.8rem; font-weight: 600; }
+
+  @media (max-width: 1080px) { .au-kpis { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 680px) {
+    .au-kpis { grid-template-columns: 1fr; }
+    .au-filters .au-field, .au-filters .au-search-wrap, .au-filters .au-reset { flex: 1 1 100%; }
+    .au-filters .au-reset { justify-content: center; }
+    .au-top h1 { font-size: 1.35rem; }
+    .au-modal-bd { grid-template-columns: 1fr; }
+    .au-foot { justify-content: center; }
+  }
+  @media (max-width: 600px) {
+    .au-table-scroll { overflow-x: visible; }
+    table.au-table { min-width: 0; }
+    .au-table th:nth-child(1), .au-table td:nth-child(1),
+    .au-table th:nth-child(2), .au-table td:nth-child(2),
+    .au-table th:nth-child(4), .au-table td:nth-child(4),
+    .au-table th:nth-child(5), .au-table td:nth-child(5),
+    .au-table th:nth-child(6), .au-table td:nth-child(6),
+    .au-table th:nth-child(7), .au-table td:nth-child(7),
+    .au-table th:nth-child(8), .au-table td:nth-child(8),
+    .au-table th:nth-child(9), .au-table td:nth-child(9),
+    .au-table th:nth-child(11), .au-table td:nth-child(11) { display: none; }
+    .au-table td:first-child, .au-table th:first-child { padding-left: 14px; }
+    .au-name { white-space: normal; }
+    .au-table td:nth-child(3) { white-space: normal; min-width: 130px; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="au-top">
+  <div>
+    <h1>Techniciens</h1>
+    <p>Gérez les techniciens et suivez leur activité sur FixPro.</p>
+  </div>
+  <button class="au-btn" type="button" onclick="auOpenModal()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+    Ajouter un technicien
+  </button>
+</div>
+
+{% with msgs = get_flashed_messages(with_categories=true) %}
+  {% for cat, m in msgs %}
+  <div style="padding:12px 16px;border-radius:11px;margin-bottom:16px;font-size:.85rem;font-weight:600;
+              background:{{ '#FEE2E2' if cat=='error' else '#E7F7EF' }};color:{{ '#DC2626' if cat=='error' else '#15803D' }}">{{ m }}</div>
+  {% endfor %}
+{% endwith %}
+
+<div class="au-kpis">
+  {% set kdefs = [
+    ('total','Techniciens total','', '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>'),
+    ('available','Techniciens disponibles','g', '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><path d="m22 11-3 3-1.5-1.5"/>'),
+    ('busy','En intervention','', '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>'),
+    ('pending','En attente de validation','o', '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>')
+  ] %}
+  {% for key, label, cls, path in kdefs %}
+  {% set k = kpis[key] %}
+  <div class="au-kpi {{ cls }}">
+    <div class="au-kpi-row">
+      <span class="au-kpi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">{{ path|safe }}</svg></span>
+      <span><span class="au-kpi-lbl">{{ label }}</span><div class="au-kpi-val">{{ k.value }}</div></span>
+    </div>
+    <div class="au-kpi-trend">
+      {% if k.delta is not none %}
+      <span class="pct {{ 'down' if k.delta < 0 }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">{% if k.delta < 0 %}<path d="m6 9 6 6 6-6"/>{% else %}<path d="m18 15-6-6-6 6"/>{% endif %}</svg>
+        {{ k.delta|abs }}%
+      </span>
+      <span>{{ k.note or 'ce mois' }}</span>
+      {% else %}<span>—</span>{% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<form class="au-card au-filters" method="get" action="{{ url_for('admin_technicians') }}" id="auFilters">
+  <input type="hidden" name="per_page" value="{{ per_page }}" />
+  <div class="au-field au-search-wrap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+    <input class="au-input" type="search" name="q" value="{{ f.q }}" placeholder="Rechercher un technicien, un nom, un téléphone..." />
+  </div>
+  <div class="au-field">
+    <label>Spécialité</label>
+    <select class="au-select" name="specialty" onchange="this.form.submit()">
+      <option value="">Toutes les spécialités</option>
+      {% for s in specialties %}<option value="{{ s }}" {{ 'selected' if f.specialty == s }}>{{ s }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="au-field">
+    <label>Statut</label>
+    <select class="au-select" name="status" onchange="this.form.submit()">
+      <option value="">Tous</option>
+      {% for sv, sl in status_labels.items() %}<option value="{{ sv }}" {{ 'selected' if f.status == sv }}>{{ sl }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="au-field">
+    <label>Disponibilité</label>
+    <select class="au-select" name="availability" onchange="this.form.submit()">
+      <option value="">Tous</option>
+      {% for av, al in avail_labels.items() %}<option value="{{ av }}" {{ 'selected' if f.availability == av }}>{{ al }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="au-field">
+    <label>Localisation</label>
+    <select class="au-select" name="zone" onchange="this.form.submit()">
+      <option value="">Toutes les zones</option>
+      {% for z in zones %}<option value="{{ z }}" {{ 'selected' if f.zone == z }}>{{ z }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="au-field">
+    <label>Note</label>
+    <select class="au-select" name="note" onchange="this.form.submit()">
+      <option value="">Toutes les notes</option>
+      <option value="4.5" {{ 'selected' if f.note == '4.5' }}>4,5 et +</option>
+      <option value="4.0" {{ 'selected' if f.note == '4.0' }}>4,0 et +</option>
+      <option value="3.5" {{ 'selected' if f.note == '3.5' }}>3,5 et +</option>
+    </select>
+  </div>
+  <a class="au-reset" href="{{ url_for('admin_technicians') }}">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+    Réinitialiser
+  </a>
+</form>
+
+<div class="au-card">
+  <div class="au-list-hd">
+    <h2>Liste des techniciens</h2>
+    <div class="right">
+      <span class="au-count">{{ headline_total }} techniciens</span>
+      <a class="au-btn ghost" href="{{ url_for('admin_technicians_export', **f) }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg>
+        Exporter
+      </a>
+    </div>
+  </div>
+
+  {% if techs %}
+  <div class="au-table-scroll">
+    <table class="au-table">
+      <thead>
+        <tr>
+          <th><input type="checkbox" class="au-check" onclick="auCheckAll(this)" aria-label="Tout sélectionner" /></th>
+          <th>#</th><th>Technicien</th><th>Spécialité</th><th>Téléphone</th><th>Zone</th>
+          <th>Note</th><th>Missions</th><th>Disponibilité</th><th>Statut</th><th>Inscription</th>
+          <th style="text-align:right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% set palette = ['#2563EB','#7C3AED','#0891B2','#DB2777','#EA580C','#16A34A','#4F46E5','#D97706'] %}
+        {% for t in techs %}
+        {% set d = t.code.lstrip('#') %}
+        <tr>
+          <td><input type="checkbox" class="au-check" aria-label="Sélectionner {{ t.name }}" /></td>
+          <td class="au-code">{{ t.code }}</td>
+          <td>
+            <span class="au-user-cell">
+              {% if t.photo %}<img class="au-av" src="{{ t.photo }}" alt="" />
+              {% else %}<span class="au-av" style="background:{{ palette[loop.index0 % 8] }}">{{ t.name[0]|upper }}</span>{% endif %}
+              <a class="au-name" href="{{ url_for('admin_technician_detail', code=d) }}">{{ t.name }}</a>
+            </span>
+          </td>
+          <td class="au-muted">{{ t.specialty }}</td>
+          <td class="au-muted">{{ t.phone }}</td>
+          <td>{{ t.zone }}</td>
+          <td>
+            {% if t.rating in ('', '—') %}<span class="au-muted">—</span>
+            {% else %}<span class="au-rate"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>{{ t.rating }}</span>{% endif %}
+          </td>
+          <td class="au-muted">{{ t.missions }}</td>
+          <td><span class="au-av-dot {{ t.availability }}">{{ avail_labels[t.availability] }}</span></td>
+          <td><span class="au-pill {{ t.status }}">{{ status_labels[t.status] }}</span></td>
+          <td class="au-muted">{{ t.joined }}</td>
+          <td class="au-actions">
+            <button class="au-dots" type="button" onclick="auMenu(event, this)" aria-label="Actions">
+              <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg>
+            </button>
+            <div class="au-menu" hidden>
+              <a href="{{ url_for('admin_technician_detail', code=d) }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg> Voir le profil</a>
+              <a href="{{ url_for('admin_technician_detail', code=d) }}#edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg> Modifier</a>
+              <a href="{{ url_for('admin_technician_detail', code=d) }}#missions"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg> Voir les missions</a>
+              <a href="{{ url_for('admin_technician_detail', code=d) }}#avis"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> Voir les avis</a>
+              <div class="sep"></div>
+              <form method="post" action="{{ url_for('admin_technician_set_status', code=d) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <input type="hidden" name="next" value="{{ request.full_path }}" />
+                {% if t.status == 'pending' %}
+                <input type="hidden" name="status" value="active" />
+                <button type="submit" class="ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m22 4-10 10.01L9 11"/></svg> Valider le technicien</button>
+                {% elif t.status in ('suspended', 'blocked') %}
+                <input type="hidden" name="status" value="active" />
+                <button type="submit" class="ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 11V7a5 5 0 0 1 9.9-1"/><rect x="3" y="11" width="18" height="11" rx="2"/></svg> Réactiver le technicien</button>
+                {% else %}
+                <input type="hidden" name="status" value="suspended" />
+                <button type="submit" class="danger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9 9h.01M15 9h.01M9 15h6"/></svg> Suspendre le technicien</button>
+                {% endif %}
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="au-empty">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+    <b>Aucun technicien trouvé.</b>
+    Modifiez votre recherche ou vos filtres.
+  </div>
+  {% endif %}
+
+  <div class="au-foot">
+    <form class="au-perpage" method="get" action="{{ url_for('admin_technicians') }}">
+      {% for k, v in f.items() %}{% if v %}<input type="hidden" name="{{ k }}" value="{{ v }}" />{% endif %}{% endfor %}
+      Afficher
+      <select name="per_page" onchange="this.form.submit()">
+        {% for pp in [10, 25, 50, 100] %}<option value="{{ pp }}" {{ 'selected' if per_page == pp }}>{{ pp }}</option>{% endfor %}
+      </select>
+      techniciens par page
+    </form>
+
+    <div class="au-pager">
+      <a class="nav" href="{{ prev_url or '#' }}" aria-disabled="{{ 'true' if not prev_url else 'false' }}" aria-label="Précédent">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      </a>
+      {% if page_window[0] > 1 %}
+        <a href="{{ page_url_tpl.replace('__P__', '1') }}">1</a>
+        {% if page_window[0] > 2 %}<span class="dots">…</span>{% endif %}
+      {% endif %}
+      {% for p in page_window %}
+        {% if p == page %}<span class="cur">{{ p }}</span>
+        {% else %}<a href="{{ page_url_tpl.replace('__P__', p|string) }}">{{ p }}</a>{% endif %}
+      {% endfor %}
+      {% if page_window[-1] < pages %}
+        {% if page_window[-1] < pages - 1 %}<span class="dots">…</span>{% endif %}
+        <a href="{{ page_url_tpl.replace('__P__', pages|string) }}">{{ pages }}</a>
+      {% endif %}
+      <a class="nav" href="{{ next_url or '#' }}" aria-disabled="{{ 'true' if not next_url else 'false' }}" aria-label="Suivant">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </a>
+    </div>
+
+    <span class="au-pageinfo">Page {{ page }} sur {{ pages }}</span>
+  </div>
+</div>
+
+<div class="au-modal-bg" id="auModal" hidden>
+  <form class="au-modal" method="post" action="{{ url_for('admin_technicians_create') }}" onsubmit="return auValidate(this)">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+    <div class="au-modal-hd">
+      <h3>Ajouter un technicien</h3>
+      <button type="button" onclick="auCloseModal()" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="au-modal-bd">
+      <div class="au-err" id="auErr" hidden></div>
+      <div><label>Prénom</label><input class="au-input" name="first_name" required maxlength="40" /></div>
+      <div><label>Nom</label><input class="au-input" name="last_name" required maxlength="40" /></div>
+      <div class="full"><label>Téléphone</label><input class="au-input" name="phone" required placeholder="+224 6.. .. .. .." maxlength="30" /></div>
+      <div>
+        <label>Spécialité</label>
+        <select class="au-select" name="specialty">{% for s in specialties %}<option value="{{ s }}">{{ s }}</option>{% endfor %}</select>
+      </div>
+      <div>
+        <label>Zone</label>
+        <select class="au-select" name="zone">{% for z in zones %}<option value="{{ z }}">{{ z }}</option>{% endfor %}</select>
+      </div>
+      <div class="full">
+        <label>Statut</label>
+        <select class="au-select" name="status">{% for sv, sl in status_labels.items() %}<option value="{{ sv }}" {{ 'selected' if sv == 'pending' }}>{{ sl }}</option>{% endfor %}</select>
+      </div>
+    </div>
+    <div class="au-modal-ft">
+      <button type="button" class="au-btn ghost" onclick="auCloseModal()">Annuler</button>
+      <button type="submit" class="au-btn">Créer le technicien</button>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block script %}
+function auMenu(e, btn){
+  e.stopPropagation();
+  var m = btn.nextElementSibling;
+  document.querySelectorAll('.au-menu').forEach(function(x){ if (x !== m) x.hidden = true; });
+  m.hidden = !m.hidden;
+}
+document.addEventListener('click', function(){ document.querySelectorAll('.au-menu').forEach(function(x){ x.hidden = true; }); });
+function auCheckAll(box){ document.querySelectorAll('tbody .au-check').forEach(function(c){ c.checked = box.checked; }); }
+function auOpenModal(){ document.getElementById('auModal').hidden = false; document.body.style.overflow = 'hidden'; }
+function auCloseModal(){ document.getElementById('auModal').hidden = true; document.body.style.overflow = ''; }
+document.getElementById('auModal').addEventListener('click', function(e){ if (e.target === this) auCloseModal(); });
+function auValidate(f){
+  var err = document.getElementById('auErr');
+  if (!f.first_name.value.trim() || !f.last_name.value.trim()){ err.textContent = 'Prénom et nom obligatoires.'; err.hidden = false; return false; }
+  if (f.phone.value.trim().replace(/[^0-9]/g, '').length < 8){ err.textContent = 'Numéro de téléphone invalide.'; err.hidden = false; return false; }
+  return true;
+}
+(function(){
+  var input = document.querySelector('#auFilters input[name=q]');
+  if (!input) return;
+  input.addEventListener('input', function(){
+    var q = this.value.trim().toLowerCase();
+    document.querySelectorAll('.au-table tbody tr').forEach(function(row){
+      row.style.display = (!q || row.textContent.toLowerCase().indexOf(q) !== -1) ? '' : 'none';
+    });
+  });
+})();
+{% endblock %}
