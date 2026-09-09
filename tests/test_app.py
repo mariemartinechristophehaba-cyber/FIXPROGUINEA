@@ -699,11 +699,11 @@ class TechnicianDashboardTests(FixProTestCase):
         self.login("cf1@example.com")
         pro = self.client.get(
             "/abonnement/confirmation?plan=tech_pro&period=month").get_data(as_text=True)
-        self.assertIn("Confirmez votre abonnement", pro)
+        self.assertIn("Procédez au paiement", pro)
         self.assertIn("97 000 GNF", pro)
         self.assertIn("100 000 GNF", pro)          # ancien prix barre
         self.assertIn("-3 %", pro)
-        self.assertIn("1 mois", pro)
+        self.assertIn("/ mois", pro)
         prem = self.client.get(
             "/abonnement/confirmation?plan=tech_premium&period=month").get_data(as_text=True)
         self.assertIn("140 000 GNF", prem)
@@ -731,7 +731,7 @@ class TechnicianDashboardTests(FixProTestCase):
                      "/dashboard/technicien/abonnement/paiement"):
             r = self.client.get(path + "?plan=tech_premium")
             self.assertEqual(r.status_code, 200, path)
-            self.assertIn("Confirmez votre abonnement", r.get_data(as_text=True))
+            self.assertIn("Procédez au paiement", r.get_data(as_text=True))
 
     def test_confirmation_rejects_fake_payment_method(self):
         self.register_artisan("cf4@example.com", phone="+224621114004")
