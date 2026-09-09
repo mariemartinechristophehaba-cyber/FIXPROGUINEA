@@ -11,6 +11,7 @@ d'ecrire les requetes une seule fois pour les deux moteurs.
 import base64
 import csv
 import io
+import hashlib
 import json
 import os
 import math
@@ -522,6 +523,24 @@ def _split_zones(zones_str):
 
 
 oauth = OAuth(app)
+
+
+_static_version_cache = {}
+
+
+def _static_asset_version(rel_path):
+    """Empreinte courte du contenu d'un fichier statique, pour le cache-busting
+    (?v=...). Mise en cache par processus : recalculee a chaque deploiement."""
+    if rel_path in _static_version_cache:
+        return _static_version_cache[rel_path]
+    tag = "1"
+    try:
+        with open(os.path.join(app.static_folder, rel_path), "rb") as fh:
+            tag = hashlib.md5(fh.read()).hexdigest()[:10]
+    except OSError:
+        pass
+    _static_version_cache[rel_path] = tag
+    return tag
 
 
 _google_client_cache = []
@@ -2369,17 +2388,21 @@ def admin_login():
                 continue
             error = _msg
 
-    # Visuel du panneau gauche : image de remplacement livree dans le depot.
-    # Pour changer la photo, remplacer simplement static/img/admin-login-hero.jpg
-    # (meme nom, meme emplacement) — aucun autre changement necessaire.
-    hero = url_for("static", filename="img/admin-login-hero.jpg")
+    # Visuel du panneau gauche. Pour changer la photo : remplacer simplement
+    # static/img/admin-login-hero.jpg (meme nom, meme emplacement). Le suffixe ?v=
+    # est calcule sur la date du fichier -> le navigateur recharge la nouvelle
+    # image automatiquement, jamais de cache perime.
+    hero = url_for("static", filename="img/admin-login-hero.jpg",
+                   v=_static_asset_version("img/admin-login-hero.jpg"))
 
     security_code_url = (url_for("admin_google_login")
                          if _get_google_client() else url_for("admin_forgot_password"))
 
-    return render_template(
+    resp = make_response(render_template(
         "admin_login.html", email=email, error=error, hero_image=hero,
-        security_code_url=security_code_url, year=datetime.now(timezone.utc).year)
+        security_code_url=security_code_url, year=datetime.now(timezone.utc).year))
+    resp.headers["Cache-Control"] = "no-store, must-revalidate"
+    return resp
 
 
 @app.route("/admin/mot-de-passe-oublie")
