@@ -63,6 +63,12 @@ app.config["ADMIN_DASHBOARD_DEMO"] = (
     os.environ.get("ADMIN_DASHBOARD_DEMO", "1").strip().lower()
     not in ("0", "false", "no", "off", ""))
 
+# Idem pour le tableau de bord CLIENT (voir _CLIENT_DASHBOARD_DEMO).
+# CLIENT_DASHBOARD_DEMO=0 -> vraies donnees du client (demandes, paiements...).
+app.config["CLIENT_DASHBOARD_DEMO"] = (
+    os.environ.get("CLIENT_DASHBOARD_DEMO", "1").strip().lower()
+    not in ("0", "false", "no", "off", ""))
+
 _dotenv = dotenv_values(BASE_DIR / ".env")
 if _dotenv.get("DEV_ROLE"):
     app.config["DEV_ROLE"] = _dotenv.get("DEV_ROLE").lower()
@@ -2678,6 +2684,81 @@ def _admin_dashboard_demo_context():
     }
 
 
+# ---------------------------------------------------------------------------
+# Donnees de DEMONSTRATION du tableau de bord CLIENT (fausses donnees
+# coherentes, cf. maquette). Activees par app.config["CLIENT_DASHBOARD_DEMO"]
+# (CLIENT_DASHBOARD_DEMO=0 -> vraies donnees du client). Ne remplacent JAMAIS
+# les vraies donnees en production.
+# ---------------------------------------------------------------------------
+_CLIENT_DASHBOARD_DEMO = {
+    "stats": {
+        "requests": {"value": 12, "delta": "+3", "note": "ce mois", "trend": "up"},
+        "done": {"value": 8, "delta": "+2", "note": "ce mois", "trend": "up"},
+        "progress": {"value": 2, "delta": "stable", "note": "", "trend": "flat"},
+        "spent": {"value": 1250000, "delta": "+15%", "note": "ce mois", "trend": "up"},
+    },
+    "address": "Kaloum, Conakry",
+    "technician": {
+        "name": "Moussa Bah", "job": "Plombier", "rating": "4.9",
+        "reviews": 128, "phone": "+224620112233",
+    },
+    "requests": [
+        ("#FP-3241", "Plomberie", "Moussa Bah", "done", "01/09/2026"),
+        ("#FP-3240", "Électricité", "Aïssatou Diallo", "prog", "29/08/2026"),
+        ("#FP-3239", "Climatisation", "Karim Soumah", "wait", "25/08/2026"),
+        ("#FP-3238", "Menuiserie", "Lansana Camara", "done", "20/08/2026"),
+        ("#FP-3237", "Peinture", "Mariama Kourouma", "canc", "18/08/2026"),
+    ],
+    "notifications": [
+        ("success", "Votre demande #FP-3241 est terminée", "Il y a 10 min"),
+        ("tech", "Le technicien arrive bientôt", "Il y a 25 min"),
+        ("pay", "Votre paiement a été confirmé", "Il y a 1 heure"),
+        ("msg", "Nouveau message de Moussa Bah", "Il y a 2 heures"),
+    ],
+}
+
+_CLIENT_STATUS_LABELS = {"done": "Terminée", "prog": "En cours",
+                         "wait": "En attente", "canc": "Annulée"}
+
+# Services affiches dans la carte "Nos services" (nom + cle d'icone CSS).
+_CLIENT_SERVICES = [
+    ("Plomberie", "plumb"), ("Électricité", "elec"), ("Climatisation", "clim"),
+    ("Menuiserie", "wood"), ("Peinture", "paint"), ("Nettoyage", "clean"),
+]
+
+
+def _client_dashboard_demo_context():
+    """Construit le contexte du template a partir de _CLIENT_DASHBOARD_DEMO."""
+    d = _CLIENT_DASHBOARD_DEMO
+    s = d["stats"]
+
+    def _stat(key, suffix=""):
+        v = s[key]
+        return {"value": _fmt_int(v["value"]).replace(" ", " ") + suffix,
+                "delta": v["delta"], "note": v["note"], "trend": v["trend"]}
+
+    stats = {
+        "requests": _stat("requests"), "done": _stat("done"),
+        "progress": _stat("progress"), "spent": _stat("spent", " GNF"),
+    }
+    recent_requests = [
+        {"code": c, "service": sv, "tech": t, "pill": p,
+         "status_label": _CLIENT_STATUS_LABELS[p], "date": dt}
+        for c, sv, t, p, dt in d["requests"]
+    ]
+    notifications = [{"kind": k, "text": tx, "ago": ag}
+                     for k, tx, ag in d["notifications"]]
+    return {
+        "stats": stats,
+        "recent_requests": recent_requests,
+        "notifications": notifications,
+        "my_tech": dict(d["technician"]),
+        "my_address": d["address"],
+        "unread_count": len(notifications),
+        "demo_identity": {"full_name": "Aminata Diallo", "first_name": "Aminata"},
+    }
+
+
 @app.route("/admin/dashboard")
 @login_required
 @admin_required
@@ -3427,75 +3508,185 @@ def logout():
 # Espace connecte
 # ---------------------------------------------------------------------------
 
+def _client_dashboard_real_context(user):
+    """Vrai contexte du tableau de bord client (demandes, paiements, technicien...)."""
+    uid = user["id"] if user else 0
+    now = datetime.now(timezone.utc)
+    month_prefix = now.strftime("%Y-%m")
+    empty = {
+        "stats": {
+            "requests": {"value": "0", "delta": "", "note": "", "trend": "flat"},
+            "done": {"value": "0", "delta": "", "note": "", "trend": "flat"},
+            "progress": {"value": "0", "delta": "", "note": "", "trend": "flat"},
+            "spent": {"value": "0 GNF", "delta": "", "note": "", "trend": "flat"},
+        },
+        "recent_requests": [], "notifications": [], "my_tech": None,
+        "my_address": None, "unread_count": 0,
+    }
+    if not uid:
+        return empty
+
+    conn = get_db_connection()
+    try:
+        def _n(sql, params=()):
+            try:
+                row = conn.execute(sql, params).fetchone()
+                return int((row["n"] if row else 0) or 0)
+            except Exception:
+                conn.rollback()
+                return 0
+
+        total = _n("SELECT COUNT(*) AS n FROM requests WHERE client_id = ?", (uid,))
+        month_new = _n("SELECT COUNT(*) AS n FROM requests WHERE client_id = ?"
+                       " AND substr(created_at, 1, 7) = ?", (uid, month_prefix))
+        buckets = {"done": 0, "prog": 0, "wait": 0, "canc": 0}
+        try:
+            for r in conn.execute(
+                    "SELECT status, COUNT(*) AS n FROM requests WHERE client_id = ?"
+                    " GROUP BY status", (uid,)).fetchall():
+                buckets[_adm_status_bucket(r["status"])] += int(r["n"] or 0)
+        except Exception:
+            conn.rollback()
+        spent = _n("SELECT COALESCE(SUM(p.amount), 0) AS n FROM payments p"
+                   " JOIN requests r ON r.id = p.request_id"
+                   " WHERE r.client_id = ? AND LOWER(p.status) IN"
+                   " ('paid', 'completed', 'succeeded')", (uid,))
+
+        def _delta(cur):
+            return ("+%d" % cur) if cur else "stable"
+
+        stats = {
+            "requests": {"value": _fmt_int(total), "delta": _delta(month_new),
+                         "note": "ce mois" if month_new else "", "trend": "up" if month_new else "flat"},
+            "done": {"value": _fmt_int(buckets["done"]), "delta": "", "note": "", "trend": "flat"},
+            "progress": {"value": _fmt_int(buckets["prog"]), "delta": "stable" if not buckets["prog"] else "",
+                         "note": "", "trend": "flat"},
+            "spent": {"value": _fmt_int(spent) + " GNF", "delta": "", "note": "", "trend": "flat"},
+        }
+
+        recent_requests = []
+        try:
+            rows = conn.execute(
+                "SELECT r.reference, r.service, r.category, r.status, r.created_at,"
+                " u.full_name AS tech FROM requests r"
+                " LEFT JOIN users u ON u.id = r.artisan_id"
+                " WHERE r.client_id = ? ORDER BY r.created_at DESC LIMIT 5", (uid,)).fetchall()
+        except Exception:
+            conn.rollback()
+            rows = []
+        for r in rows:
+            pill = _adm_status_bucket(r["status"])
+            ref = r["reference"] or ""
+            recent_requests.append({
+                "code": ("#" + ref) if ref and not str(ref).startswith("#") else (ref or "—"),
+                "service": r["service"] or r["category"] or "Service",
+                "tech": r["tech"] or "—", "pill": pill,
+                "status_label": _CLIENT_STATUS_LABELS[pill],
+                "date": str(r["created_at"] or "")[:10],
+            })
+
+        my_tech = None
+        try:
+            t = conn.execute(
+                "SELECT u.full_name, u.profession, u.phone, u.photo_url,"
+                " COALESCE(AVG(rv.rating), 0) AS rating, COUNT(rv.id) AS reviews"
+                " FROM requests r JOIN users u ON u.id = r.artisan_id"
+                " LEFT JOIN reviews rv ON rv.artisan_id = u.id"
+                " WHERE r.client_id = ? AND r.artisan_id IS NOT NULL"
+                " GROUP BY u.id ORDER BY MAX(r.created_at) DESC LIMIT 1", (uid,)).fetchone()
+            if t:
+                my_tech = {
+                    "name": t["full_name"] or "Technicien",
+                    "job": t["profession"] or "Technicien",
+                    "rating": "%.1f" % (t["rating"] or 0) if t["rating"] else "—",
+                    "reviews": int(t["reviews"] or 0), "phone": t["phone"] or "",
+                    "photo_url": t["photo_url"] or "",
+                }
+        except Exception:
+            conn.rollback()
+
+        notifications = []
+        try:
+            for row in conn.execute(
+                    "SELECT title, type, created_at FROM notifications"
+                    " WHERE user_id = ? ORDER BY created_at DESC LIMIT 4", (uid,)).fetchall():
+                notifications.append({
+                    "kind": _client_notif_kind(row["type"]),
+                    "text": row["title"] or "Notification",
+                    "ago": _adm_ago(row["created_at"]),
+                })
+        except Exception:
+            conn.rollback()
+        unread_count = _n("SELECT COUNT(*) AS n FROM notifications"
+                          " WHERE user_id = ? AND is_read = 0", (uid,))
+
+        return {
+            "stats": stats, "recent_requests": recent_requests,
+            "notifications": notifications, "my_tech": my_tech,
+            "my_address": (user.get("quartier") or user.get("city")) if user else None,
+            "unread_count": unread_count,
+        }
+    except Exception as exc:
+        logger.exception("Erreur dashboard client: %s", exc)
+        return empty
+    finally:
+        conn.close()
+
+
+def _client_notif_kind(raw):
+    s = (raw or "").lower()
+    if "pay" in s:
+        return "pay"
+    if "message" in s or "chat" in s:
+        return "msg"
+    if "complete" in s or "termin" in s or "done" in s:
+        return "success"
+    return "tech"
+
+
 @app.route("/dashboard")
 def dashboard():
     user = get_current_user()
     if user and _is_technician(user):
         return redirect(url_for("artisan_dashboard"))
-    if user is None:
-        user = {"id": 0, "full_name": "Visiteur", "role": "client", "city": "Conakry"}
-    try:
-        conn = get_db_connection()
-        # Categories de services
-        categories = conn.execute(
-            "SELECT name, diagnostic_price FROM service_categories"
-            " ORDER BY name").fetchall()
 
-        # Nombre d'artisans par categorie (estimation)
-        artisan_counts = {}
-        for c in categories:
-            count = conn.execute(
-                "SELECT COUNT(*) AS n FROM users"
-                " WHERE role = 'technician' AND profession LIKE ?",
-                (f"%{c['name']}%",)).fetchone()["n"]
-            artisan_counts[c["name"]] = count
+    now = datetime.now(timezone.utc)
+    raw_name = (user.get("full_name") if user else None) or ""
+    first_name = raw_name.split(" ")[0].strip()
+    today_label = "%s %d %s %d" % (
+        _ADM_DAYS_FR[now.weekday()].capitalize(), now.day,
+        _ADM_MONTHS_FR[now.month].capitalize(), now.year)
+    hero = url_for("static", filename="img/admin-login-hero.jpg",
+                   v=_static_asset_version("img/admin-login-hero.jpg"))
 
-        # Tous les artisans verifies avec notes et avis (fallback si reviews non prete)
-        try:
-            artisans = conn.execute("""
-                SELECT u.id, u.full_name, u.profession, u.city, u.quartier,
-                       u.hourly_rate, u.is_verified, u.photo_url,
-                       u.availability_status, u.estimated_delay,
-                       COALESCE(AVG(r.rating), 0) AS avg_rating,
-                       COUNT(DISTINCT r.id) AS review_count
-                FROM users u
-                LEFT JOIN reviews r ON r.artisan_id = u.id
-                WHERE u.role = 'technician' AND u.is_verified = 1
-                GROUP BY u.id
-                ORDER BY u.full_name
-            """).fetchall()
-        except Exception:
-            artisans = conn.execute(
-                "SELECT id, full_name, profession, city, quartier, hourly_rate, is_verified,"
-                " photo_url, availability_status, estimated_delay"
-                " FROM users WHERE role = 'technician' AND is_verified = 1"
-                " ORDER BY full_name").fetchall()
+    base_ctx = {
+        "user": user, "client_first_name": first_name,
+        "today_label": today_label, "hero_img": hero,
+        "current_year": now.year, "services": _CLIENT_SERVICES,
+        "demo_mode": bool(app.config.get("CLIENT_DASHBOARD_DEMO")),
+    }
+    # Adresse : geoloc de session (systeme FixPro) puis profil.
+    zone = (session.get("client_zone")
+            or ((user.get("quartier") or user.get("city")) if user else None))
 
-        # Unread messages count
-        try:
-            unread = conn.execute(
-                "SELECT COUNT(*) AS n FROM messages"
-                " WHERE sender_id != ? AND request_id IN"
-                " (SELECT id FROM requests WHERE client_id = ?)",
-                (user["id"], user["id"])).fetchone()
-            unread_count = unread["n"] if unread else 0
-        except Exception:
-            unread_count = 0
-    except Exception as exc:
-        logger.exception("Erreur dashboard client: %s", exc)
-        flash("Une erreur est survenue lors du chargement du tableau de bord.", "error")
-        return render_template("dashboard_client.html", user=user,
-                               categories=categories if 'categories' in locals() else [],
-                               artisans=artisans if 'artisans' in locals() else [],
-                               unread_count=0)
-    finally:
-        if 'conn' in locals() and conn:
-            conn.close()
+    if app.config.get("CLIENT_DASHBOARD_DEMO"):
+        ctx = _client_dashboard_demo_context()
+        ident = ctx.pop("demo_identity", {})
+        if not first_name:
+            base_ctx["client_first_name"] = ident.get("first_name", "")
+        base_ctx["display_name"] = (user.get("full_name") if user and user.get("full_name")
+                                    else ident.get("full_name", "Mon compte"))
+    else:
+        ctx = _client_dashboard_real_context(user)
+        base_ctx["display_name"] = (user.get("full_name")
+                                    if user and user.get("full_name") else "Mon compte")
+    if zone:
+        ctx["my_address"] = zone
+    base_ctx.update(ctx)
 
-    return render_template("dashboard_client.html", user=user,
-                           categories=categories,
-                           artisans=artisans,
-                           unread_count=unread_count)
+    resp = make_response(render_template("dashboard_client.html", **base_ctx))
+    resp.headers["Cache-Control"] = "no-store"
+    return resp
 
 
 @app.route("/mobile_dashboard")
