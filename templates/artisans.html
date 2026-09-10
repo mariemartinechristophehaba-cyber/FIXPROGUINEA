@@ -296,6 +296,94 @@
     .sr-header { padding-bottom: 88px; }
     .sr-main { margin-top: -54px; }
   }
+
+  /* Wrappers transparents en mobile : la mise en page mobile est inchangee. */
+  .sr-hero, .sr-toolbar, .sr-results { display: contents; }
+  .dsk-only { display: none; }
+
+  /* ==========================================================================
+     VERSION BUREAU (>= 1024px) : sidebar principale (base.html) + hero section
+     + resultats en grille. Aucune divergence fonctionnelle avec le mobile.
+     ========================================================================== */
+  @media (min-width: 1024px) {
+    body { padding-bottom: 0 !important; }
+    .sr-bottom-nav { display: none !important; }
+
+    /* Connecte : la topbar + sidebar de base.html remplacent l'en-tete bleu.
+       Visiteur (no-sidebar) : on garde l'en-tete bleu. */
+    body:not(.no-sidebar) .sr-header { display: none; }
+    body.no-sidebar .sr-main { max-width: 1040px; }
+
+    body:not(.no-sidebar) .page { max-width: 1400px; padding: 26px 32px 48px; }
+    .sr-main { max-width: none; margin: 0; padding: 0; position: static; }
+
+    /* ---- HERO SECTION ---- */
+    .sr-hero {
+      display: block; position: relative; overflow: hidden;
+      background: linear-gradient(135deg, #1E63D8 0%, var(--sr-primary) 52%, #2A79F0 100%);
+      color: #fff; border-radius: 22px; padding: 32px 34px 28px; margin-bottom: 22px;
+    }
+    .sr-hero::after {
+      content: ""; position: absolute; top: -90px; right: -70px;
+      width: 260px; height: 260px; border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.18), rgba(255,255,255,0) 70%);
+    }
+    .sr-hero-head { display: block; position: relative; z-index: 1; margin-bottom: 18px; }
+    .sr-hero-head h1 { font-size: 1.85rem; font-weight: 800; margin: 0 0 5px; }
+    .sr-hero-head p { font-size: 0.92rem; opacity: .9; margin: 0; }
+    .sr-hero .sr-search { position: relative; z-index: 1; max-width: 660px; margin: 0 0 12px; }
+    .sr-hero .sr-loc {
+      position: relative; z-index: 1; max-width: 660px; margin: 0;
+      background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.22);
+    }
+    .sr-hero .sr-loc-text span { color: rgba(255,255,255,.82); }
+    .sr-hero .sr-loc-text strong { color: #fff; }
+    .sr-hero .sr-loc-edit { background: rgba(255,255,255,.18); border-color: transparent; color: #fff; }
+    .sr-hero .sr-loc-edit:hover { background: rgba(255,255,255,.28); }
+
+    /* ---- Categories : chips sur une ligne, plus de defilement ---- */
+    .sr-section-head { margin-bottom: 12px; }
+    .sr-cats { flex-wrap: wrap; overflow: visible; margin: 0 0 20px; padding: 0; gap: 10px; }
+    .sr-cat { width: auto; flex-direction: row; gap: 8px; padding: 9px 16px; border-radius: 999px; }
+    .sr-cat svg { width: 18px; height: 18px; }
+    .sr-cat span:last-child { font-size: 0.82rem; }
+
+    /* ---- Barre d'outils : compteur a gauche, filtres a droite ---- */
+    .sr-toolbar {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 16px; margin-bottom: 18px;
+    }
+    .sr-count { order: -1; margin: 0; font-size: 1.1rem; }
+    .sr-toolbar .sr-filters { margin: 0; width: auto; flex-shrink: 0; }
+
+    /* ---- Resultats : grille de cartes ---- */
+    .sr-results {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px;
+      align-items: start;
+    }
+    .sr-results .sr-empty { grid-column: 1 / -1; }
+    .sr-pro {
+      flex-direction: column; align-items: center; text-align: center;
+      gap: 0; margin: 0; padding: 22px 18px;
+    }
+    .sr-pro-avatar { width: 74px; height: 74px; margin: 0 0 12px; }
+    .sr-pro-avatar img, .sr-pro-avatar .fallback { width: 74px; height: 74px; }
+    .sr-pro-body { width: 100%; }
+    .sr-pro-meta { justify-content: center; }
+    .sr-pro-avail { margin-bottom: 4px; }
+    .sr-pro-cta {
+      display: block; align-self: stretch; width: 100%; margin-top: 14px;
+      padding: 11px; text-align: center; border-radius: 12px;
+    }
+    .sr-pro:hover .sr-pro-cta { background: var(--sr-primary); color: #fff; }
+  }
+
+  @media (min-width: 1024px) and (max-width: 1240px) {
+    .sr-results { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (min-width: 1560px) {
+    .sr-results { grid-template-columns: repeat(4, 1fr); }
+  }
 </style>
 
 <header class="sr-header">
@@ -337,6 +425,11 @@
 </header>
 
 <main class="sr-main">
+  <section class="sr-hero">
+    <div class="sr-hero-head dsk-only">
+      <h1>Trouvez le bon professionnel</h1>
+      <p>Des artisans verifies pres de chez vous, disponibles pour vos travaux.</p>
+    </div>
   <form class="sr-search" method="get" action="{{ url_for('artisans_page') }}">
     {% if category_filter %}<input type="hidden" name="category" value="{{ category_filter }}" />{% endif %}
     <div class="sr-search-field">
@@ -358,6 +451,7 @@
     </span>
     <button type="button" class="sr-loc-edit" id="locEditBtn">Modifier</button>
   </div>
+  </section>
 
   <div class="sr-section-head">
     <h2 class="sr-section-title">Catégories</h2>
@@ -378,6 +472,7 @@
     {% endfor %}
   </div>
 
+  <div class="sr-toolbar">
   <div class="sr-filters">
     <span class="sr-filters-left">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/><line x1="14" x2="14" y1="2" y2="6"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="16" x2="16" y1="18" y2="22"/></svg>
@@ -392,7 +487,9 @@
   </div>
 
   <h3 class="sr-count">{{ artisans|length }} professionnel{{ 's' if artisans|length != 1 }} disponible{{ 's' if artisans|length != 1 }}</h3>
+  </div>
 
+  <div class="sr-results">
   {% for a in artisans %}
   <a href="{{ url_for('artisan_detail', artisan_id=a.id) }}" class="sr-pro">
     <div class="sr-pro-avatar">
@@ -438,6 +535,7 @@
   {% else %}
   <div class="sr-empty">Aucun professionnel ne correspond à votre recherche.</div>
   {% endfor %}
+  </div>
 </main>
 
 <nav class="sr-bottom-nav">
