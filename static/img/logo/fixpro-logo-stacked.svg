@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 108" fill="none" role="img" aria-label="FixPro">
+  <svg x="36" y="0" width="48" height="48" viewBox="0 0 48 48" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 33 33 13" stroke="#0C34A0" stroke-width="7.6"/>
+    <path d="M14 16 24 26 39 11" stroke="#2E6BFF" stroke-width="7.6"/>
+  </svg>
+  <text x="60" y="92" text-anchor="middle" font-family="Sora, 'Space Grotesk', 'Segoe UI', Arial, sans-serif" font-weight="700" font-size="30" letter-spacing="-1">
+    <tspan fill="#0C34A0">Fix</tspan><tspan fill="#2E6BFF">Pro</tspan>
+  </text>
+</svg>
