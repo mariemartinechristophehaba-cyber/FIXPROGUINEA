@@ -8290,12 +8290,32 @@ def _migrate_messaging(conn):
 def _migrate_notifications(conn):
     """Table des notifications in-app.
 
-    Absente de schema.sql : sur une base PostgreSQL creee sans cette table
-    (ou avec une definition incompatible), chaque INSERT echouait en silence
-    et le badge restait bloque a 0. Compatible SQLite et PostgreSQL.
+    Historique du bug : sur la base PostgreSQL de prod, `notifications.user_id`
+    etait de type **uuid** alors que `users.id` est un entier. Resultat :
+    - `INSERT ... VALUES (<id entier>, ...)` echouait ("invalid input syntax
+      for type uuid") -> create_notification avalait l'erreur -> aucune
+      notification jamais creee ;
+    - `WHERE user_id = <entier>` faisait planter ("operator does not exist:
+      uuid = integer") -> compteur du badge degrade a 0 partout.
+    La table ne contenait donc que des lignes inexploitables (ou rien) : on la
+    reconstruit avec le bon type. Compatible SQLite et PostgreSQL.
     """
     pk = "SERIAL PRIMARY KEY" if conn.is_postgres else "INTEGER PRIMARY KEY AUTOINCREMENT"
     ts = "TIMESTAMP" if conn.is_postgres else "TEXT"
+
+    if conn.is_postgres:
+        try:
+            row = conn.execute(
+                "SELECT data_type FROM information_schema.columns"
+                " WHERE table_name = 'notifications' AND column_name = 'user_id'").fetchone()
+            if row and row["data_type"] not in ("integer", "bigint", "smallint"):
+                logger.warning(
+                    "notifications.user_id de type %s (attendu: entier) -> "
+                    "reconstruction de la table", row["data_type"])
+                conn.execute("DROP TABLE IF EXISTS notifications CASCADE")
+                conn.commit()
+        except Exception:
+            conn.rollback()
 
     conn.execute(
         f"CREATE TABLE IF NOT EXISTS notifications ("
