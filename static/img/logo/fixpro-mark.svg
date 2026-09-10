@@ -1,4 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" role="img" aria-label="FixPro">
-  <path d="M12 33 33 13" stroke="#0C34A0" stroke-width="7.6" stroke-linecap="round"/>
-  <path d="M14 16 24 26 39 11" stroke="#2E6BFF" stroke-width="7.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M8 42V21L24 6l16 15v21M31 12V6.4h5.2V17" stroke="#152A6E" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M17 42V30l7-6 7 6v12Z" fill="#152A6E"/>
+  <path d="M31 42V31l9 5v6Z" fill="#2E77E6"/>
 </svg>

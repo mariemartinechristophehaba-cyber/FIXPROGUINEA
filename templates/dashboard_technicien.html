@@ -341,7 +341,7 @@
 
   <header class="topbar">
     <a class="brand" href="{{ url_for('artisan_dashboard') }}">
-      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16.5 16.5 6.5M7 8 12 13 19.5 5.5"/></svg></span>
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V10.5L12 3l8 7.5V21M15.5 6V3.2h2.6V8.5M8.5 21v-6l3.5-3 3.5 3v6"/></svg></span>
       <span><span class="n">Fix<i>Pro</i></span><span class="s">Espace Technicien</span></span>
     </a>
     <span class="sp"></span>
@@ -397,7 +397,7 @@
         <svg class="spark" viewBox="0 0 54 22" fill="none" stroke="var(--d-blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 18 12 12 22 15 33 6 43 9 53 3"/></svg>
       </div>
       <div class="kpi g">
-        <span class="ki"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16.5 16.5 6.5M7 8 12 13 19.5 5.5"/></svg></span>
+        <span class="ki"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V10.5L12 3l8 7.5V21M15.5 6V3.2h2.6V8.5M8.5 21v-6l3.5-3 3.5 3v6"/></svg></span>
         <span class="v">{{ kpis.interventions }}</span>
         <span class="l">Interventions</span>
         <span class="sl">Ce mois-ci</span>
@@ -457,7 +457,7 @@
         {% if upcoming %}
           {% for r in upcoming %}
           <a class="req" href="{{ url_for('request_detail', request_id=r.id) }}">
-            <span class="ri"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16.5 16.5 6.5M7 8 12 13 19.5 5.5"/></svg></span>
+            <span class="ri"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V10.5L12 3l8 7.5V21M15.5 6V3.2h2.6V8.5M8.5 21v-6l3.5-3 3.5 3v6"/></svg></span>
             <span class="rt">
               <b>{{ r.title or r.service or r.category or 'Demande' }}</b>
               <span>{{ r.client_name or 'Client' }}{% if r.address %} · {{ r.address }}{% endif %}</span>

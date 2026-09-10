@@ -1,9 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 214 56" fill="none" role="img" aria-label="FixPro">
   <svg x="2" y="4" width="48" height="48" viewBox="0 0 48 48" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M12 33 33 13" stroke="#0C34A0" stroke-width="7.6"/>
-    <path d="M14 16 24 26 39 11" stroke="#2E6BFF" stroke-width="7.6"/>
+    <path d="M8 42V21L24 6l16 15v21M31 12V6.4h5.2V17" stroke="#152A6E" stroke-width="4.4"/>
+    <path d="M17 42V30l7-6 7 6v12Z" fill="#152A6E"/>
+    <path d="M31 42V31l9 5v6Z" fill="#2E77E6"/>
   </svg>
   <text x="60" y="39" font-family="Sora, 'Space Grotesk', 'Segoe UI', Arial, sans-serif" font-weight="700" font-size="34" letter-spacing="-1.2">
-    <tspan fill="#0C34A0">Fix</tspan><tspan fill="#2E6BFF">Pro</tspan>
+    <tspan fill="#152A6E">Fix</tspan><tspan fill="#2E77E6">Pro</tspan>
   </text>
 </svg>
