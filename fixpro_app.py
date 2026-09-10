@@ -80,6 +80,11 @@ app.config["ADMIN_TECHNICIANS_DEMO"] = (
     os.environ.get("ADMIN_TECHNICIANS_DEMO", "1").strip().lower()
     not in ("0", "false", "no", "off", ""))
 
+# Idem pour la page admin "Paiements" (voir _admin_payments_demo_all).
+app.config["ADMIN_PAYMENTS_DEMO"] = (
+    os.environ.get("ADMIN_PAYMENTS_DEMO", "1").strip().lower()
+    not in ("0", "false", "no", "off", ""))
+
 _dotenv = dotenv_values(BASE_DIR / ".env")
 if _dotenv.get("DEV_ROLE"):
     app.config["DEV_ROLE"] = _dotenv.get("DEV_ROLE").lower()
@@ -3821,6 +3826,343 @@ def admin_technician_detail(code):
     resp = make_response(render_template("admin_technician_detail.html", **ctx))
     resp.headers["Cache-Control"] = "no-store"
     return resp
+
+
+# ===========================================================================
+# ADMIN - Page "Paiements" (liste, filtres, pagination, export, repartition).
+# Meme patron que /admin/utilisateurs. ADMIN_PAYMENTS_DEMO=0 -> vraies tables
+# `payments` + `subscription_payments`.
+# ===========================================================================
+_ADMIN_PAY_TOTAL = 1842
+_ADMIN_PAY_METHODS = ["Mobile Money", "Carte bancaire", "Orange Money", "Espèces"]
+_ADMIN_PAY_TYPES = {"intervention": "Intervention", "subscription": "Abonnement"}
+_ADMIN_PAY_STATUS_LABELS = {"paid": "Réussi", "pending": "En attente", "failed": "Échoué"}
+_ADMIN_PAY_SERVICES = ["Plomberie", "Électricité", "Climatisation", "Menuiserie",
+                       "Peinture", "Nettoyage", "Maçonnerie", "Frigoriste"]
+_ADMIN_PAY_CLIENTS = ["Aminata Diallo", "Mamadou Keita", "Sarah Camara", "Ibrahima Sylla",
+                      "Fatoumata Barry", "Alpha Diallo", "Sira Condé", "Lansana Camara",
+                      "Aïssatou Diallo", "Mamadou Kaba", "Hawa Baldé", "Ousmane Touré"]
+_ADMIN_PAY_TECHS = ["Moussa Bah", "Aïssatou Diallo", "Karim Soumah", "Lansana Camara",
+                    "Mariama Kourouma", "Ibrahima Bah", "Saran Keita", "Alpha Barry"]
+_ADMIN_PAY_KPIS = {
+    "revenue": {"value": 24560000, "delta": 25},
+    "paid": {"value": 1842, "delta": 12},
+    "pending": {"value": 126, "delta": 8},
+    "failed": {"value": 34, "delta": -15},
+}
+_ADMIN_PAY_BREAKDOWN = {"paid": 1622, "pending": 126, "failed": 34}
+_ADMIN_PAY_METHOD_SPLIT = [
+    ("Mobile Money", 1020, 55), ("Carte bancaire", 542, 29),
+    ("Orange Money", 214, 12), ("Espèces", 66, 4),
+]
+_ADMIN_PAY_ACTIVITY = [
+    ("paid", "Paiement de 250 000 GNF réussi", "Aminata Diallo", "Il y a 10 min"),
+    ("pending", "Nouveau paiement en attente", "Sarah Camara", "Il y a 25 min"),
+    ("failed", "Échec de paiement", "Alpha Diallo", "Il y a 1 heure"),
+    ("paid", "Paiement de 180 000 GNF réussi", "Ibrahima Sylla", "Il y a 2 heures"),
+]
+
+_ADMIN_PAY_DEMO_HEAD = [
+    ("Aminata Diallo", "Moussa Bah", "Plomberie", 250000, "Mobile Money", "paid", "01/09/2026"),
+    ("Mamadou Keita", "Aïssatou Diallo", "Électricité", 320000, "Carte bancaire", "paid", "31/08/2026"),
+    ("Sarah Camara", "Karim Soumah", "Climatisation", 450000, "Mobile Money", "pending", "31/08/2026"),
+    ("Ibrahima Sylla", "Lansana Camara", "Menuiserie", 180000, "Carte bancaire", "paid", "30/08/2026"),
+    ("Fatoumata Barry", "Mariama Kourouma", "Peinture", 220000, "Mobile Money", "paid", "29/08/2026"),
+    ("Alpha Diallo", "Karim Soumah", "Climatisation", 390000, "Orange Money", "failed", "29/08/2026"),
+    ("Sira Condé", "Moussa Bah", "Plomberie", 275000, "Mobile Money", "paid", "28/08/2026"),
+    ("Lansana Camara", "Ibrahima Bah", "Maçonnerie", 310000, "Carte bancaire", "pending", "28/08/2026"),
+    ("Aïssatou Diallo", "Mariama Kourouma", "Nettoyage", 150000, "Mobile Money", "paid", "27/08/2026"),
+    ("Mamadou Kaba", "Karim Soumah", "Frigoriste", 500000, "Orange Money", "paid", "26/08/2026"),
+]
+
+
+def _admin_pay_demo_row(i):
+    n = i + 1
+    st = ("paid", "paid", "paid", "paid", "paid", "paid", "paid",
+          "pending", "pending", "failed")[i % 10]
+    method = _ADMIN_PAY_METHODS[(i * 3) % 4] if i % 7 else "Espèces"
+    amount = 60000 + ((i * 37) % 46) * 10000
+    month = (i % 9) + 1
+    day = (i % 27) + 1
+    ptype = "subscription" if i % 6 == 5 else "intervention"
+    return {
+        "code": "#PAY-%04d" % (2000 + n),
+        "client": _ADMIN_PAY_CLIENTS[i % len(_ADMIN_PAY_CLIENTS)],
+        "tech": "—" if ptype == "subscription" else _ADMIN_PAY_TECHS[i % len(_ADMIN_PAY_TECHS)],
+        "mission": "Abonnement Pro" if ptype == "subscription"
+        else _ADMIN_PAY_SERVICES[i % len(_ADMIN_PAY_SERVICES)],
+        "amount": amount,
+        "method": method,
+        "status": st,
+        "type": ptype,
+        "date": "%02d/%02d/2026" % (day, month),
+    }
+
+
+def _admin_payments_demo_all():
+    rows = []
+    for idx, (cli, tech, svc, amt, meth, st, dt) in enumerate(_ADMIN_PAY_DEMO_HEAD):
+        rows.append({
+            "code": "#PAY-%04d" % (3241 - idx), "client": cli, "tech": tech,
+            "mission": svc, "amount": amt, "method": meth, "status": st,
+            "type": "intervention", "date": dt,
+        })
+    for i in range(len(_ADMIN_PAY_DEMO_HEAD), _ADMIN_PAY_TOTAL):
+        rows.append(_admin_pay_demo_row(i))
+    overrides = session.get("admin_pay_status") or {}
+    if overrides:
+        for r in rows:
+            if r["code"] in overrides:
+                r["status"] = overrides[r["code"]]
+    return rows
+
+
+def _admin_payments_real_all():
+    """Vraies tables payments + subscription_payments mappees au format de la page."""
+    conn = get_db_connection()
+    out = []
+    try:
+        for r in conn.execute(
+                "SELECT p.reference, p.amount, p.method, p.status, p.created_at,"
+                " c.full_name AS client, a.full_name AS tech, rq.service, rq.category"
+                " FROM payments p"
+                " LEFT JOIN requests rq ON rq.id = p.request_id"
+                " LEFT JOIN users c ON c.id = rq.client_id"
+                " LEFT JOIN users a ON a.id = rq.artisan_id"
+                " ORDER BY p.created_at DESC").fetchall():
+            st = (r["status"] or "").lower()
+            status = ("paid" if st in ("paid", "completed", "succeeded", "success")
+                      else "failed" if st in ("failed", "error", "declined", "cancelled", "canceled")
+                      else "pending")
+            raw = str(r["created_at"] or "")[:10]
+            date = ("%s/%s/%s" % (raw[8:10], raw[5:7], raw[0:4])
+                    if len(raw) == 10 and raw[4] == "-" else "")
+            out.append({
+                "code": ("#" + r["reference"]) if r["reference"] and not str(r["reference"]).startswith("#")
+                else (r["reference"] or "—"),
+                "client": r["client"] or "—", "tech": r["tech"] or "—",
+                "mission": r["service"] or r["category"] or "Intervention",
+                "amount": int(r["amount"] or 0), "method": r["method"] or "—",
+                "status": status, "type": "intervention", "date": date,
+            })
+    except Exception:
+        conn.rollback()
+    try:
+        for r in conn.execute(
+                "SELECT sp.transaction_reference, sp.amount, sp.payment_method, sp.status,"
+                " sp.created_at, u.full_name FROM subscription_payments sp"
+                " LEFT JOIN users u ON u.id = sp.user_id"
+                " ORDER BY sp.created_at DESC").fetchall():
+            st = (r["status"] or "").lower()
+            status = ("paid" if st in ("paid", "completed", "succeeded")
+                      else "failed" if st in ("failed", "cancelled", "canceled", "expired")
+                      else "pending")
+            raw = str(r["created_at"] or "")[:10]
+            date = ("%s/%s/%s" % (raw[8:10], raw[5:7], raw[0:4])
+                    if len(raw) == 10 and raw[4] == "-" else "")
+            out.append({
+                "code": r["transaction_reference"] or "—",
+                "client": r["full_name"] or "—", "tech": "—",
+                "mission": "Abonnement", "amount": int(r["amount"] or 0),
+                "method": r["payment_method"] or "—", "status": status,
+                "type": "subscription", "date": date,
+            })
+    except Exception:
+        conn.rollback()
+    finally:
+        conn.close()
+    return out
+
+
+def _admin_payments_filter(rows, q, ptype, status, method, period):
+    q = (q or "").strip().lower()
+    if q:
+        rows = [r for r in rows if q in r["code"].lower() or q in r["client"].lower()
+                or q in (r["tech"] or "").lower() or q in (r["mission"] or "").lower()]
+    if ptype in _ADMIN_PAY_TYPES:
+        rows = [r for r in rows if r["type"] == ptype]
+    if status in _ADMIN_PAY_STATUS_LABELS:
+        rows = [r for r in rows if r["status"] == status]
+    if method in _ADMIN_PAY_METHODS:
+        rows = [r for r in rows if r["method"] == method]
+    if period in ("7", "30", "90"):
+        today = datetime.now(timezone.utc).date()
+
+        def _keep(r):
+            try:
+                d, m, y = (int(x) for x in str(r["date"]).split("/"))
+                return 0 <= (today - date(y, m, d)).days <= int(period)
+            except (ValueError, TypeError):
+                return False
+        rows = [r for r in rows if _keep(r)]
+    return rows
+
+
+def _admin_payments_query_args():
+    return {
+        "q": (request.args.get("q") or "").strip()[:80],
+        "ptype": request.args.get("ptype") or "",
+        "status": request.args.get("status") or "",
+        "method": request.args.get("method") or "",
+        "period": request.args.get("period") or "",
+    }
+
+
+def _fmt_gnf(v):
+    return _fmt_int(v) + " GNF"
+
+
+@app.route("/admin/paiements")
+@app.route("/admin/payments")
+@login_required
+@admin_required
+def admin_payments():
+    """Page admin de suivi des paiements (liste + filtres + pagination + repartition)."""
+    user = get_current_user()
+    now = datetime.now(timezone.utc)
+    fa = _admin_payments_query_args()
+    try:
+        per_page = int(request.args.get("per_page") or 10)
+    except (TypeError, ValueError):
+        per_page = 10
+    per_page = per_page if per_page in (10, 25, 50, 100) else 10
+    try:
+        page = max(1, int(request.args.get("page") or 1))
+    except (TypeError, ValueError):
+        page = 1
+    demo = bool(app.config.get("ADMIN_PAYMENTS_DEMO"))
+
+    if demo:
+        all_rows = _admin_payments_demo_all()
+        kpis = {
+            "revenue": {"value": _fmt_gnf(_ADMIN_PAY_KPIS["revenue"]["value"]),
+                        "delta": _ADMIN_PAY_KPIS["revenue"]["delta"]},
+            "paid": {"value": _fmt_int(_ADMIN_PAY_KPIS["paid"]["value"]),
+                     "delta": _ADMIN_PAY_KPIS["paid"]["delta"]},
+            "pending": {"value": _fmt_int(_ADMIN_PAY_KPIS["pending"]["value"]),
+                        "delta": _ADMIN_PAY_KPIS["pending"]["delta"]},
+            "failed": {"value": _fmt_int(_ADMIN_PAY_KPIS["failed"]["value"]),
+                       "delta": _ADMIN_PAY_KPIS["failed"]["delta"]},
+        }
+        headline_total = _ADMIN_PAY_KPIS["paid"]["value"]
+        bd = dict(_ADMIN_PAY_BREAKDOWN)
+        methods = [{"name": n, "count": c, "pct": p} for n, c, p in _ADMIN_PAY_METHOD_SPLIT]
+        activity = [{"kind": k, "text": t, "who": w, "ago": a}
+                    for k, t, w, a in _ADMIN_PAY_ACTIVITY]
+    else:
+        all_rows = _admin_payments_real_all()
+        headline_total = len(all_rows)
+        rev = sum(r["amount"] for r in all_rows if r["status"] == "paid")
+        bd = {"paid": sum(1 for r in all_rows if r["status"] == "paid"),
+              "pending": sum(1 for r in all_rows if r["status"] == "pending"),
+              "failed": sum(1 for r in all_rows if r["status"] == "failed")}
+        kpis = {
+            "revenue": {"value": _fmt_gnf(rev), "delta": None},
+            "paid": {"value": _fmt_int(bd["paid"]), "delta": None},
+            "pending": {"value": _fmt_int(bd["pending"]), "delta": None},
+            "failed": {"value": _fmt_int(bd["failed"]), "delta": None},
+        }
+        mcount = {}
+        for r in all_rows:
+            mcount[r["method"]] = mcount.get(r["method"], 0) + 1
+        mtot = sum(mcount.values()) or 1
+        methods = [{"name": k, "count": v, "pct": int(round(v / mtot * 100))}
+                   for k, v in sorted(mcount.items(), key=lambda kv: -kv[1])[:5]]
+        activity = []
+
+    rows = _admin_payments_filter(all_rows, fa["q"], fa["ptype"], fa["status"],
+                                  fa["method"], fa["period"])
+    total_filtered = len(rows)
+    pages = max(1, -(-total_filtered // per_page))
+    page = min(page, pages)
+    start = (page - 1) * per_page
+    page_rows = [dict(r, amount_fmt=_fmt_gnf(r["amount"]))
+                 for r in rows[start:start + per_page]]
+
+    bd_total = sum(bd.values()) or 1
+    breakdown = {
+        "total": _fmt_int(sum(bd.values())),
+        "paid": bd["paid"], "pending": bd["pending"], "failed": bd["failed"],
+        "paid_pct": int(round(bd["paid"] / bd_total * 100)),
+        "pending_pct": int(round(bd["pending"] / bd_total * 100)),
+        "failed_pct": int(round(bd["failed"] / bd_total * 100)),
+    }
+
+    def _page_url(p):
+        args = {"page": p, "per_page": per_page}
+        args.update({k: v for k, v in fa.items() if v})
+        return url_for("admin_payments", **args)
+
+    window = list(range(max(1, page - 2), min(pages, page + 2) + 1))
+
+    ctx = {
+        "admin_user": user, "current_year": now.year,
+        "notif_count": 0, "header_notifs": [],
+        "kpis": kpis, "payments": page_rows,
+        "status_labels": _ADMIN_PAY_STATUS_LABELS,
+        "type_labels": _ADMIN_PAY_TYPES, "methods_list": _ADMIN_PAY_METHODS,
+        "breakdown": breakdown, "methods": methods, "activity": activity,
+        "f": fa, "per_page": per_page, "page": page, "pages": pages,
+        "page_window": window, "total_filtered": total_filtered,
+        "headline_total": _fmt_int(headline_total),
+        "prev_url": _page_url(page - 1) if page > 1 else None,
+        "next_url": _page_url(page + 1) if page < pages else None,
+        "page_url_tpl": _page_url("__P__"),
+        "demo_mode": demo,
+    }
+    resp = make_response(render_template("admin_payments.html", **ctx))
+    resp.headers["Cache-Control"] = "no-store"
+    return resp
+
+
+@app.route("/admin/paiements/export")
+@login_required
+@admin_required
+def admin_payments_export():
+    fa = _admin_payments_query_args()
+    rows = (_admin_payments_demo_all() if app.config.get("ADMIN_PAYMENTS_DEMO")
+            else _admin_payments_real_all())
+    rows = _admin_payments_filter(rows, fa["q"], fa["ptype"], fa["status"],
+                                  fa["method"], fa["period"])
+    buf = io.StringIO()
+    w = csv.writer(buf, delimiter=";")
+    w.writerow(["Reference", "Client", "Technicien", "Mission", "Montant (GNF)",
+                "Methode", "Statut", "Type", "Date"])
+    for r in rows:
+        w.writerow([r["code"], r["client"], r["tech"], r["mission"], r["amount"],
+                    r["method"], _ADMIN_PAY_STATUS_LABELS.get(r["status"], r["status"]),
+                    _ADMIN_PAY_TYPES.get(r["type"], r["type"]), r["date"]])
+    out = make_response("﻿" + buf.getvalue())
+    out.headers["Content-Type"] = "text/csv; charset=utf-8"
+    out.headers["Content-Disposition"] = (
+        "attachment; filename=fixpro-paiements-%s.csv" % datetime.now().strftime("%Y%m%d"))
+    return out
+
+
+@app.route("/admin/paiements/<code>/statut", methods=["POST"])
+@login_required
+@admin_required
+def admin_payment_set_status(code):
+    code = ("#" + code) if not code.startswith("#") else code
+    new_status = request.form.get("status") or "paid"
+    if new_status not in _ADMIN_PAY_STATUS_LABELS:
+        new_status = "paid"
+    if app.config.get("ADMIN_PAYMENTS_DEMO"):
+        ov = session.get("admin_pay_status") or {}
+        ov[code] = new_status
+        session["admin_pay_status"] = ov
+        session.modified = True
+    else:
+        try:
+            conn = get_db_connection()
+            conn.execute("UPDATE payments SET status = ? WHERE reference = ?",
+                         (new_status, code.lstrip("#")))
+            conn.commit()
+            conn.close()
+        except Exception as exc:
+            logger.warning("admin_payment_set_status: %s", exc)
+    flash("Paiement %s : %s." % (code, _ADMIN_PAY_STATUS_LABELS[new_status]), "success")
+    return redirect(request.form.get("next") or url_for("admin_payments"))
 
 
 def _ts(value=None):

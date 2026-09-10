@@ -1,0 +1,445 @@
+{% extends "admin_base.html" %}
+{% block title %}Paiements - FixPro Admin{% endblock %}
+
+{% block head_extra %}
+<style>
+  .au-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+  .au-top h1 { font-size: 1.6rem; font-weight: 800; margin: 0 0 4px; letter-spacing: -0.02em; }
+  .au-top p { margin: 0; font-size: 0.9rem; color: var(--ad-muted); }
+  .au-btn { display: inline-flex; align-items: center; gap: 8px; background: var(--ad-blue); color: #fff; border: 0; border-radius: 11px; padding: 11px 16px; font-size: 0.85rem; font-weight: 700; cursor: pointer; white-space: nowrap; box-shadow: 0 6px 16px rgba(37,99,235,.28); }
+  .au-btn:hover { background: var(--ad-blue-d); }
+  .au-btn svg { width: 16px; height: 16px; }
+  .au-btn.ghost { background: var(--ad-card); color: var(--ad-ink); border: 1px solid var(--ad-line); box-shadow: none; }
+  .au-btn.ghost:hover { background: var(--ad-bg); }
+
+  .au-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-bottom: 18px; }
+  .au-kpi { background: var(--ad-card); border: 1px solid var(--ad-line); border-radius: 16px; padding: 18px 20px; box-shadow: var(--ad-shadow); }
+  .au-kpi-row { display: flex; align-items: center; gap: 14px; min-width: 0; }
+  .au-kpi-ic { width: 50px; height: 50px; border-radius: 14px; background: var(--ad-blue-bg); color: var(--ad-blue); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .au-kpi-ic svg { width: 23px; height: 23px; }
+  .au-kpi.g .au-kpi-ic { background: var(--ad-green-bg); color: var(--ad-green); }
+  .au-kpi.o .au-kpi-ic { background: #FEF2E2; color: #D97706; }
+  .au-kpi.r .au-kpi-ic { background: #FEE2E2; color: #DC2626; }
+  html[data-adm-theme="dark"] .au-kpi.o .au-kpi-ic { background: #33270E; color: #FCD34D; }
+  html[data-adm-theme="dark"] .au-kpi.r .au-kpi-ic { background: #3A1414; color: #FCA5A5; }
+  .au-kpi-lbl { font-size: 0.85rem; color: var(--ad-muted); font-weight: 500; }
+  .au-kpi-val { font-size: 1.42rem; font-weight: 800; line-height: 1.15; letter-spacing: -0.02em; white-space: nowrap; }
+  .au-kpi-trend { margin-top: 12px; display: flex; align-items: center; gap: 6px; font-size: 0.8rem; }
+  .au-kpi-trend .pct { display: inline-flex; align-items: center; gap: 3px; color: var(--ad-green); font-weight: 700; background: var(--ad-green-bg); border-radius: 7px; padding: 2px 7px; }
+  .au-kpi-trend .pct.down { color: #DC2626; background: #FEE2E2; }
+  .au-kpi-trend .pct svg { width: 12px; height: 12px; }
+  .au-kpi-trend span { color: var(--ad-muted); }
+
+  .au-card { background: var(--ad-card); border: 1px solid var(--ad-line); border-radius: 16px; box-shadow: var(--ad-shadow); }
+
+  .au-filters { padding: 16px 18px; margin-bottom: 18px; display: flex; flex-wrap: wrap; gap: 12px; align-items: end; }
+  .au-filters .au-field { flex: 1 1 150px; min-width: 0; }
+  .au-filters .au-search-wrap { flex: 2 1 240px; }
+  .au-field label { display: block; font-size: 0.74rem; font-weight: 600; color: var(--ad-muted); margin-bottom: 6px; }
+  .au-input, .au-select { width: 100%; height: 42px; border: 1px solid var(--ad-line); border-radius: 10px; background: var(--ad-bg); padding: 0 12px; font-size: 0.85rem; color: var(--ad-ink); outline: none; font-family: inherit; }
+  .au-input:focus, .au-select:focus { border-color: var(--ad-blue); background: var(--ad-card); }
+  .au-search-wrap { position: relative; }
+  .au-search-wrap svg { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--ad-muted); }
+  .au-search-wrap .au-input { padding-left: 38px; }
+  .au-reset { display: inline-flex; align-items: center; gap: 7px; height: 42px; padding: 0 15px; border: 1px solid var(--ad-line); border-radius: 10px; background: var(--ad-card); color: var(--ad-blue); font-size: 0.82rem; font-weight: 700; white-space: nowrap; }
+  .au-reset:hover { background: var(--ad-bg); }
+  .au-reset svg { width: 15px; height: 15px; }
+
+  .au-layout { display: grid; grid-template-columns: minmax(0,1fr) 320px; gap: 18px; align-items: start; }
+  .au-layout > * { min-width: 0; }
+  .au-layout canvas { max-width: 100%; }
+
+  .au-list-hd { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 18px; border-bottom: 1px solid var(--ad-line); flex-wrap: wrap; }
+  .au-list-hd h2 { font-size: 0.98rem; font-weight: 700; margin: 0; }
+  .au-list-hd .right { display: flex; align-items: center; gap: 14px; }
+  .au-count { font-size: 0.82rem; color: var(--ad-muted); }
+
+  .au-table-scroll { overflow-x: auto; }
+  table.au-table { width: 100%; border-collapse: collapse; min-width: 940px; }
+  .au-table th { text-align: left; font-size: 0.7rem; font-weight: 600; color: var(--ad-muted); text-transform: uppercase; letter-spacing: .03em; padding: 12px 8px; background: var(--ad-bg); border-bottom: 1px solid var(--ad-line); white-space: nowrap; }
+  .au-table td { padding: 11px 8px; border-bottom: 1px solid var(--ad-line); font-size: 0.83rem; vertical-align: middle; white-space: nowrap; }
+  .au-table tbody tr:last-child td { border-bottom: 0; }
+  .au-table tbody tr:hover { background: var(--ad-bg); }
+  .au-table td:first-child, .au-table th:first-child { padding-left: 18px; }
+  .au-table td:last-child, .au-table th:last-child { padding-right: 18px; }
+  .au-check { width: 16px; height: 16px; accent-color: var(--ad-blue); cursor: pointer; }
+  .au-code { font-weight: 600; color: var(--ad-blue); font-size: 0.8rem; }
+  .au-cli { display: flex; align-items: center; gap: 9px; }
+  .au-av { width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 0.7rem; }
+  .au-amount { font-weight: 700; }
+  .au-muted { color: var(--ad-muted); }
+  .au-mission { color: var(--ad-blue); }
+  .au-pill { display: inline-flex; align-items: center; gap: 6px; font-size: 0.74rem; font-weight: 700; padding: 4px 11px; border-radius: 999px; }
+  .au-pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .au-pill.paid { background: #DCFCE7; color: #15803D; }
+  .au-pill.pending { background: #FEF3C7; color: #B45309; }
+  .au-pill.failed { background: #FEE2E2; color: #DC2626; }
+  html[data-adm-theme="dark"] .au-pill.paid { background: #14331F; color: #4ADE80; }
+  html[data-adm-theme="dark"] .au-pill.pending { background: #33270E; color: #FCD34D; }
+  html[data-adm-theme="dark"] .au-pill.failed { background: #3A1414; color: #FCA5A5; }
+
+  .au-actions { position: relative; text-align: right; }
+  .au-dots { width: 32px; height: 32px; border-radius: 9px; border: 1px solid transparent; background: none; color: var(--ad-muted); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+  .au-dots:hover { background: var(--ad-bg); border-color: var(--ad-line); color: var(--ad-ink); }
+  .au-dots svg { width: 18px; height: 18px; }
+  .au-menu { position: absolute; right: 8px; top: 40px; z-index: 20; background: var(--ad-card); border: 1px solid var(--ad-line); border-radius: 12px; box-shadow: 0 16px 40px rgba(15,23,42,.16); min-width: 210px; overflow: hidden; padding: 6px; text-align: left; }
+  .au-menu a, .au-menu button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 11px; border-radius: 8px; font-size: 0.83rem; font-weight: 500; color: var(--ad-ink); background: none; border: 0; cursor: pointer; text-align: left; font-family: inherit; }
+  .au-menu a:hover, .au-menu button:hover { background: var(--ad-bg); }
+  .au-menu svg { width: 15px; height: 15px; color: var(--ad-muted); flex-shrink: 0; }
+  .au-menu .sep { height: 1px; background: var(--ad-line); margin: 5px 0; }
+  .au-menu .ok { color: #15803D; } .au-menu .ok svg { color: #15803D; }
+  .au-menu .danger { color: #DC2626; } .au-menu .danger svg { color: #DC2626; }
+
+  .au-empty { text-align: center; padding: 46px 20px; color: var(--ad-muted); }
+  .au-empty svg { width: 36px; height: 36px; margin-bottom: 10px; color: var(--ad-line); }
+  .au-empty b { display: block; font-size: 0.95rem; color: var(--ad-ink); margin-bottom: 4px; }
+
+  .au-foot { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 18px; border-top: 1px solid var(--ad-line); flex-wrap: wrap; }
+  .au-perpage { display: flex; align-items: center; gap: 9px; font-size: 0.82rem; color: var(--ad-muted); }
+  .au-perpage select { height: 36px; border: 1px solid var(--ad-line); border-radius: 9px; background: var(--ad-bg); color: var(--ad-ink); padding: 0 8px; font-family: inherit; font-size: 0.82rem; cursor: pointer; }
+  .au-pager { display: flex; align-items: center; gap: 6px; }
+  .au-pager a, .au-pager span { min-width: 34px; height: 34px; padding: 0 8px; border-radius: 9px; border: 1px solid var(--ad-line); background: var(--ad-card); display: inline-flex; align-items: center; justify-content: center; font-size: 0.82rem; font-weight: 600; color: var(--ad-ink); }
+  .au-pager a:hover { background: var(--ad-bg); }
+  .au-pager .cur { background: var(--ad-blue); border-color: var(--ad-blue); color: #fff; }
+  .au-pager .dots { border: 0; background: none; color: var(--ad-muted); min-width: 20px; }
+  .au-pager .nav[aria-disabled="true"] { opacity: .4; pointer-events: none; }
+  .au-pageinfo { font-size: 0.82rem; color: var(--ad-muted); }
+
+  /* Right column widgets */
+  .aw { padding: 18px; }
+  .aw + .aw { margin-top: 18px; }
+  .aw-hd { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .aw-hd h3 { font-size: 0.92rem; font-weight: 700; margin: 0; }
+  .aw-hd .sel { font-size: 0.74rem; color: var(--ad-muted); border: 1px solid var(--ad-line); border-radius: 8px; padding: 4px 8px; background: var(--ad-bg); }
+  .aw-donut { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .aw-donut-c { position: relative; width: 116px; height: 116px; flex-shrink: 0; }
+  .aw-donut-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .aw-donut-center b { font-size: 1.1rem; font-weight: 800; }
+  .aw-donut-center span { font-size: 0.64rem; color: var(--ad-muted); }
+  .aw-leg { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+  .aw-leg .li { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; }
+  .aw-leg .li i { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  .aw-leg .li .n { color: var(--ad-muted); flex: 1; }
+  .aw-leg .li .v { font-weight: 700; white-space: nowrap; }
+
+  .aw-mrow { display: flex; align-items: center; gap: 11px; padding: 9px 0; }
+  .aw-mrow + .aw-mrow { border-top: 1px solid var(--ad-line); }
+  .aw-mrow .mi { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .aw-mrow .mi svg { width: 15px; height: 15px; }
+  .aw-mrow .mid { flex: 1; min-width: 0; }
+  .aw-mrow .mid b { display: block; font-size: 0.82rem; font-weight: 600; }
+  .aw-bar { height: 5px; border-radius: 3px; background: var(--ad-line); margin-top: 5px; overflow: hidden; }
+  .aw-bar > i { display: block; height: 100%; background: var(--ad-blue); border-radius: 3px; }
+  .aw-mrow .mv { text-align: right; flex-shrink: 0; }
+  .aw-mrow .mv b { display: block; font-size: 0.82rem; font-weight: 700; }
+  .aw-mrow .mv span { font-size: 0.72rem; color: var(--ad-muted); }
+
+  .aw-act { display: flex; gap: 11px; padding: 11px 0; }
+  .aw-act + .aw-act { border-top: 1px solid var(--ad-line); }
+  .aw-act .ai { width: 30px; height: 30px; border-radius: 999px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .aw-act .ai svg { width: 15px; height: 15px; }
+  .aw-act .ai.paid { background: var(--ad-green-bg); color: var(--ad-green); }
+  .aw-act .ai.pending { background: #FEF2E2; color: #D97706; }
+  .aw-act .ai.failed { background: #FEE2E2; color: #DC2626; }
+  .aw-act b { display: block; font-size: 0.82rem; font-weight: 600; }
+  .aw-act span { font-size: 0.74rem; color: var(--ad-muted); }
+  .aw-viewall { font-size: 0.76rem; color: var(--ad-blue); font-weight: 600; }
+
+  @media (max-width: 1300px) { .au-layout { grid-template-columns: 1fr; } }
+  @media (max-width: 1080px) { .au-kpis { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 680px) {
+    .au-kpis { grid-template-columns: 1fr; }
+    .au-filters .au-field, .au-filters .au-search-wrap, .au-filters .au-reset { flex: 1 1 100%; }
+    .au-filters .au-reset { justify-content: center; }
+    .au-top h1 { font-size: 1.35rem; }
+    .au-foot { justify-content: center; }
+  }
+  @media (max-width: 600px) {
+    .au-table-scroll { overflow-x: visible; }
+    table.au-table { min-width: 0; }
+    .au-table th:nth-child(1), .au-table td:nth-child(1),
+    .au-table th:nth-child(2), .au-table td:nth-child(2),
+    .au-table th:nth-child(4), .au-table td:nth-child(4),
+    .au-table th:nth-child(5), .au-table td:nth-child(5),
+    .au-table th:nth-child(7), .au-table td:nth-child(7),
+    .au-table th:nth-child(9), .au-table td:nth-child(9) { display: none; }
+    .au-table th:nth-child(3), .au-table td:first-child { padding-left: 12px; }
+    .au-table td:last-child, .au-table th:last-child { padding-right: 8px; }
+    .au-table td, .au-table th { padding-left: 6px; padding-right: 6px; }
+    .au-table td:nth-child(3) { white-space: normal; }
+    .au-table td:nth-child(6) { white-space: normal; }
+    .au-dots { width: 28px; height: 28px; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="au-top">
+  <div>
+    <h1>Paiements</h1>
+    <p>Suivez et gérez tous les paiements effectués sur FixPro.</p>
+  </div>
+  <a class="au-btn" href="{{ url_for('admin_payments_export', **f) }}">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg>
+    Exporter les paiements
+  </a>
+</div>
+
+{% with msgs = get_flashed_messages(with_categories=true) %}
+  {% for cat, m in msgs %}
+  <div style="padding:12px 16px;border-radius:11px;margin-bottom:16px;font-size:.85rem;font-weight:600;
+              background:{{ '#FEE2E2' if cat=='error' else '#E7F7EF' }};color:{{ '#DC2626' if cat=='error' else '#15803D' }}">{{ m }}</div>
+  {% endfor %}
+{% endwith %}
+
+<div class="au-kpis">
+  {% set kdefs = [
+    ('revenue','Revenus total','', '<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/>'),
+    ('paid','Paiements réussis','g', '<circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.5 2.5 4.5-5"/>'),
+    ('pending','En attente','o', '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),
+    ('failed','Paiements échoués','r', '<circle cx="12" cy="12" r="9"/><path d="m15 9-6 6M9 9l6 6"/>')
+  ] %}
+  {% for key, label, cls, path in kdefs %}
+  {% set k = kpis[key] %}
+  <div class="au-kpi {{ cls }}">
+    <div class="au-kpi-row">
+      <span class="au-kpi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">{{ path|safe }}</svg></span>
+      <span><span class="au-kpi-lbl">{{ label }}</span><div class="au-kpi-val">{{ k.value }}</div></span>
+    </div>
+    <div class="au-kpi-trend">
+      {% if k.delta is not none %}
+      <span class="pct {{ 'down' if k.delta < 0 }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">{% if k.delta < 0 %}<path d="m6 9 6 6 6-6"/>{% else %}<path d="m18 15-6-6-6 6"/>{% endif %}</svg>
+        {{ k.delta|abs }}%
+      </span>
+      <span>ce mois</span>
+      {% else %}<span>—</span>{% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<form class="au-card au-filters" method="get" action="{{ url_for('admin_payments') }}" id="auFilters">
+  <input type="hidden" name="per_page" value="{{ per_page }}" />
+  <div class="au-field au-search-wrap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+    <input class="au-input" type="search" name="q" value="{{ f.q }}" placeholder="Rechercher par référence, client, technicien..." />
+  </div>
+  <div class="au-field">
+    <label>Type de paiement</label>
+    <select class="au-select" name="ptype" onchange="this.form.submit()">
+      <option value="">Tous</option>
+      {% for tv, tl in type_labels.items() %}<option value="{{ tv }}" {{ 'selected' if f.ptype == tv }}>{{ tl }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="au-field">
+    <label>Statut</label>
+    <select class="au-select" name="status" onchange="this.form.submit()">
+      <option value="">Tous</option>
+      {% for sv, sl in status_labels.items() %}<option value="{{ sv }}" {{ 'selected' if f.status == sv }}>{{ sl }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="au-field">
+    <label>Période</label>
+    <select class="au-select" name="period" onchange="this.form.submit()">
+      <option value="">Toutes les dates</option>
+      <option value="7" {{ 'selected' if f.period == '7' }}>7 derniers jours</option>
+      <option value="30" {{ 'selected' if f.period == '30' }}>30 derniers jours</option>
+      <option value="90" {{ 'selected' if f.period == '90' }}>90 derniers jours</option>
+    </select>
+  </div>
+  <div class="au-field">
+    <label>Méthode</label>
+    <select class="au-select" name="method" onchange="this.form.submit()">
+      <option value="">Toutes les méthodes</option>
+      {% for m in methods_list %}<option value="{{ m }}" {{ 'selected' if f.method == m }}>{{ m }}</option>{% endfor %}
+    </select>
+  </div>
+  <a class="au-reset" href="{{ url_for('admin_payments') }}">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+    Réinitialiser
+  </a>
+</form>
+
+<div class="au-layout">
+  <div class="au-card">
+    <div class="au-list-hd">
+      <h2>Liste des paiements</h2>
+      <div class="right">
+        <span class="au-count">{{ headline_total }} paiements</span>
+        <a class="au-btn ghost" href="{{ url_for('admin_payments_export', **f) }}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg>
+          Exporter
+        </a>
+      </div>
+    </div>
+
+    {% if payments %}
+    <div class="au-table-scroll">
+      <table class="au-table">
+        <thead>
+          <tr>
+            <th><input type="checkbox" class="au-check" onclick="auCheckAll(this)" aria-label="Tout sélectionner" /></th>
+            <th>#</th><th>Client</th><th>Technicien</th><th>Mission</th><th>Montant</th>
+            <th>Méthode</th><th>Statut</th><th>Date</th><th style="text-align:right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% set palette = ['#2563EB','#7C3AED','#0891B2','#DB2777','#EA580C','#16A34A','#4F46E5','#D97706'] %}
+          {% for p in payments %}
+          {% set d = p.code.lstrip('#') %}
+          <tr>
+            <td><input type="checkbox" class="au-check" aria-label="Sélectionner {{ p.code }}" /></td>
+            <td class="au-code">{{ p.code }}</td>
+            <td><span class="au-cli"><span class="au-av" style="background:{{ palette[loop.index0 % 8] }}">{{ p.client[0]|upper }}</span>{{ p.client }}</span></td>
+            <td class="au-muted">{{ p.tech }}</td>
+            <td class="au-mission">{{ p.mission }}</td>
+            <td class="au-amount">{{ p.amount_fmt }}</td>
+            <td class="au-muted">{{ p.method }}</td>
+            <td><span class="au-pill {{ p.status }}">{{ status_labels[p.status] }}</span></td>
+            <td class="au-muted">{{ p.date }}</td>
+            <td class="au-actions">
+              <button class="au-dots" type="button" onclick="auMenu(event, this)" aria-label="Actions">
+                <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg>
+              </button>
+              <div class="au-menu" hidden>
+                <a href="#" onclick="return admSoon(event)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg> Voir le détail</a>
+                <a href="#" onclick="return admSoon(event)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 15h6"/></svg> Télécharger le reçu</a>
+                <div class="sep"></div>
+                <form method="post" action="{{ url_for('admin_payment_set_status', code=d) }}">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                  <input type="hidden" name="next" value="{{ request.full_path }}" />
+                  {% if p.status != 'paid' %}
+                  <input type="hidden" name="status" value="paid" />
+                  <button type="submit" class="ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m22 4-10 10.01L9 11"/></svg> Marquer comme réussi</button>
+                  {% endif %}
+                  {% if p.status != 'failed' %}
+                  <button type="submit" class="danger" name="status" value="failed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6M9 9l6 6"/></svg> Marquer comme échoué</button>
+                  {% endif %}
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="au-empty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <b>Aucun paiement trouvé.</b>
+      Modifiez votre recherche ou vos filtres.
+    </div>
+    {% endif %}
+
+    <div class="au-foot">
+      <form class="au-perpage" method="get" action="{{ url_for('admin_payments') }}">
+        {% for k, v in f.items() %}{% if v %}<input type="hidden" name="{{ k }}" value="{{ v }}" />{% endif %}{% endfor %}
+        Afficher
+        <select name="per_page" onchange="this.form.submit()">
+          {% for pp in [10, 25, 50, 100] %}<option value="{{ pp }}" {{ 'selected' if per_page == pp }}>{{ pp }}</option>{% endfor %}
+        </select>
+        paiements par page
+      </form>
+      <div class="au-pager">
+        <a class="nav" href="{{ prev_url or '#' }}" aria-disabled="{{ 'true' if not prev_url else 'false' }}" aria-label="Précédent">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        </a>
+        {% if page_window[0] > 1 %}<a href="{{ page_url_tpl.replace('__P__', '1') }}">1</a>{% if page_window[0] > 2 %}<span class="dots">…</span>{% endif %}{% endif %}
+        {% for pnum in page_window %}
+          {% if pnum == page %}<span class="cur">{{ pnum }}</span>{% else %}<a href="{{ page_url_tpl.replace('__P__', pnum|string) }}">{{ pnum }}</a>{% endif %}
+        {% endfor %}
+        {% if page_window[-1] < pages %}{% if page_window[-1] < pages - 1 %}<span class="dots">…</span>{% endif %}<a href="{{ page_url_tpl.replace('__P__', pages|string) }}">{{ pages }}</a>{% endif %}
+        <a class="nav" href="{{ next_url or '#' }}" aria-disabled="{{ 'true' if not next_url else 'false' }}" aria-label="Suivant">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        </a>
+      </div>
+      <span class="au-pageinfo">Page {{ page }} sur {{ pages }}</span>
+    </div>
+  </div>
+
+  <div>
+    <div class="au-card aw">
+      <div class="aw-hd"><h3>Répartition des paiements</h3><span class="sel">Ce mois</span></div>
+      <div class="aw-donut">
+        <div class="aw-donut-c">
+          <canvas id="awDonut"></canvas>
+          <div class="aw-donut-center"><b>{{ breakdown.total }}</b><span>Paiements</span></div>
+        </div>
+        <div class="aw-leg">
+          <div class="li"><i style="background:#16A34A"></i><span class="n">Réussis</span><span class="v">{{ '{:,}'.format(breakdown.paid).replace(',', ' ') }} ({{ breakdown.paid_pct }}%)</span></div>
+          <div class="li"><i style="background:#F59E0B"></i><span class="n">En attente</span><span class="v">{{ breakdown.pending }} ({{ breakdown.pending_pct }}%)</span></div>
+          <div class="li"><i style="background:#EF4444"></i><span class="n">Échoués</span><span class="v">{{ breakdown.failed }} ({{ breakdown.failed_pct }}%)</span></div>
+        </div>
+      </div>
+    </div>
+
+    {% if methods %}
+    <div class="au-card aw">
+      <div class="aw-hd"><h3>Méthodes de paiement</h3><span class="sel">Ce mois</span></div>
+      {% set micons = {
+        'Mobile Money': '<rect x="7" y="4" width="10" height="16" rx="2"/><path d="M11 18h2"/>',
+        'Carte bancaire': '<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>',
+        'Orange Money': '<circle cx="12" cy="12" r="9"/><path d="M8 12h8"/>',
+        'Espèces': '<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/>'
+      } %}
+      {% set mbg = {'Mobile Money':'#FEF3C7;color:#B45309','Carte bancaire':'#EAF1FE;color:#2563EB','Orange Money':'#FFEDD5;color:#EA580C','Espèces':'#DCFCE7;color:#15803D'} %}
+      {% for m in methods %}
+      <div class="aw-mrow">
+        <span class="mi" style="background:{{ mbg.get(m.name, '#EAF1FE;color:#2563EB') }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">{{ micons.get(m.name, micons['Carte bancaire'])|safe }}</svg></span>
+        <div class="mid">
+          <b>{{ m.name }}</b>
+          <div class="aw-bar"><i style="width:{{ m.pct }}%"></i></div>
+        </div>
+        <div class="mv"><b>{{ '{:,}'.format(m.count).replace(',', ' ') }}</b><span>{{ m.pct }}%</span></div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if activity %}
+    <div class="au-card aw">
+      <div class="aw-hd"><h3>Dernières activités</h3><a href="#" class="aw-viewall" onclick="return admSoon(event)">Voir tout</a></div>
+      {% set aic = {'paid':'<path d="m8.5 12 2.5 2.5 4.5-5"/><circle cx="12" cy="12" r="9"/>','pending':'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>','failed':'<circle cx="12" cy="12" r="9"/><path d="m15 9-6 6M9 9l6 6"/>'} %}
+      {% for a in activity %}
+      <div class="aw-act">
+        <span class="ai {{ a.kind }}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">{{ aic[a.kind]|safe }}</svg></span>
+        <div><b>{{ a.text }}</b><span>{{ a.who }} · {{ a.ago }}</span></div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block script %}
+function auMenu(e, btn){
+  e.stopPropagation();
+  var m = btn.nextElementSibling;
+  document.querySelectorAll('.au-menu').forEach(function(x){ if (x !== m) x.hidden = true; });
+  m.hidden = !m.hidden;
+}
+document.addEventListener('click', function(){ document.querySelectorAll('.au-menu').forEach(function(x){ x.hidden = true; }); });
+function auCheckAll(box){ document.querySelectorAll('tbody .au-check').forEach(function(c){ c.checked = box.checked; }); }
+(function(){
+  var input = document.querySelector('#auFilters input[name=q]');
+  if (input) input.addEventListener('input', function(){
+    var q = this.value.trim().toLowerCase();
+    document.querySelectorAll('.au-table tbody tr').forEach(function(row){
+      row.style.display = (!q || row.textContent.toLowerCase().indexOf(q) !== -1) ? '' : 'none';
+    });
+  });
+  if (typeof Chart !== 'undefined') {
+    var el = document.getElementById('awDonut');
+    if (el) new Chart(el.getContext('2d'), {
+      type: 'doughnut',
+      data: { labels: ['Réussis','En attente','Échoués'],
+        datasets: [{ data: [{{ breakdown.paid }}, {{ breakdown.pending }}, {{ breakdown.failed }}],
+          backgroundColor: ['#16A34A','#F59E0B','#EF4444'], borderWidth: 0 }] },
+      options: { cutout: '70%', responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { enabled: true } } }
+    });
+  }
+})();
+{% endblock %}

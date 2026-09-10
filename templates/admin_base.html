@@ -164,7 +164,7 @@
 <body>
   <div class="ad-side-backdrop" onclick="document.body.classList.remove('ad-nav-open')"></div>
 
-  {% set _live = ('admin_dashboard', 'admin_users', 'admin_technicians') %}
+  {% set _live = ('admin_dashboard', 'admin_users', 'admin_technicians', 'admin_payments') %}
   {% set _detail_map = {'admin_user_detail': 'admin_users', 'admin_technician_detail': 'admin_technicians'} %}
   {% set _active_ep = _detail_map.get(request.endpoint, request.endpoint) %}
   {% macro navitem(endpoint, label) %}
