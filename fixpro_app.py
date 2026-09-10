@@ -1322,7 +1322,7 @@ def create_notification(user_id, title, body, notif_type="info", data=None, conn
         if own:
             conn.commit()
     except Exception as exc:
-        logger.warning("Notification non creee : user_id=%s - %s", user_id, exc)
+        logger.error("Notification non creee (badge bloque a 0 ?) : user_id=%s - %s", user_id, exc)
     finally:
         if own:
             conn.close()
@@ -7832,7 +7832,7 @@ def _load_settings():
         conn.close()
 
 
-_SCHEMA_VERSION = "2026-09-05"
+_SCHEMA_VERSION = "2026-09-10-notifications"
 
 
 def _migrate_db():
@@ -8084,6 +8084,16 @@ def _migrate_db():
             except Exception:
                 pass
 
+        try:
+            _migrate_notifications(conn)
+            conn.commit()
+        except Exception as e:
+            logger.warning("Migration notifications impossible: %s", e)
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+
         # --- Compte administrateur (a partir des variables d'env) -----------
         try:
             _bootstrap_admin(conn)
@@ -8274,6 +8284,30 @@ def _migrate_messaging(conn):
         f" status TEXT NOT NULL DEFAULT 'new',"
         f" created_at {ts} DEFAULT CURRENT_TIMESTAMP)")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_conv_reports_status ON conversation_reports(status)")
+    conn.commit()
+
+
+def _migrate_notifications(conn):
+    """Table des notifications in-app.
+
+    Absente de schema.sql : sur une base PostgreSQL creee sans cette table
+    (ou avec une definition incompatible), chaque INSERT echouait en silence
+    et le badge restait bloque a 0. Compatible SQLite et PostgreSQL.
+    """
+    pk = "SERIAL PRIMARY KEY" if conn.is_postgres else "INTEGER PRIMARY KEY AUTOINCREMENT"
+    ts = "TIMESTAMP" if conn.is_postgres else "TEXT"
+
+    conn.execute(
+        f"CREATE TABLE IF NOT EXISTS notifications ("
+        f" id {pk},"
+        f" user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,"
+        f" title TEXT NOT NULL,"
+        f" body TEXT,"
+        f" type TEXT DEFAULT 'info',"
+        f" is_read INTEGER DEFAULT 0,"
+        f" data TEXT,"
+        f" created_at {ts} DEFAULT CURRENT_TIMESTAMP)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, is_read)")
     conn.commit()
 
 
