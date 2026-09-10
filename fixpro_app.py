@@ -2087,12 +2087,26 @@ def _signup_doc_pop(token, kind):
     return data or None
 
 
+def _already_technician_redirect():
+    """Un compte deja technicien n'a rien a faire dans le wizard d'inscription :
+    on le renvoie vers son espace pro. Retourne une reponse de redirection, ou
+    None si l'utilisateur peut poursuivre l'inscription."""
+    user = get_current_user()
+    if user and user.get("role") in ("artisan", "technician"):
+        _clear_tech_signup_session()
+        return redirect(url_for("artisan_dashboard"))
+    return None
+
+
 @app.route("/devenir-technicien", methods=["GET", "POST"])
 @limiter.limit("15 per hour", methods=["POST"])
 def devenir_technicien():
     """Wizard d'inscription technicien -- etape 1 sur 5 : le profil
     (identite, telephone, e-mail, mot de passe). Public. Au POST valide,
     memorise l'etape 1 en session et passe a l'etape 2 (Services)."""
+    _done = _already_technician_redirect()
+    if _done:
+        return _done
     data = dict(session.get("tech_signup", {}))
     errors = {}
 
@@ -2140,6 +2154,9 @@ def technician_signup_trade():
     (selection unique, exclusive). Un technicien = un seul metier. L'etape 1
     doit avoir ete remplie. Au POST valide, memorise le metier et passe a
     l'etape 3 (Documents)."""
+    _done = _already_technician_redirect()
+    if _done:
+        return _done
     if not session.get("tech_signup"):
         return redirect(url_for("devenir_technicien"))
 
@@ -2178,6 +2195,9 @@ def technician_signup_documents():
     Les etapes 4 et 5 (Localisation, Finalisation) sont en cours de
     conception : "Continuer" memorise l'etat des documents puis affiche un
     message d'attente."""
+    _done = _already_technician_redirect()
+    if _done:
+        return _done
     if not session.get("tech_signup"):
         return redirect(url_for("devenir_technicien"))
     if not session.get("tech_signup_trade"):
@@ -2238,6 +2258,9 @@ def technician_signup_location():
     enregistree dans users.latitude / users.longitude a la finalisation
     (aucune migration -- colonnes deja presentes). Au POST valide, passe a
     l'etape 5 (Finalisation)."""
+    _done = _already_technician_redirect()
+    if _done:
+        return _done
     if not session.get("tech_signup"):
         return redirect(url_for("devenir_technicien"))
     if not session.get("tech_signup_trade"):
@@ -2296,6 +2319,9 @@ def technician_signup_finalize():
     enregistre les documents dans technician_documents (statut 'pending',
     dossier a verifier par l'admin), connecte le nouvel utilisateur et le
     redirige vers son tableau de bord. Aucune migration SQL."""
+    _done = _already_technician_redirect()
+    if _done:
+        return _done
     ts = session.get("tech_signup") or {}
     trade = session.get("tech_signup_trade")
     docs = session.get("tech_signup_docs") or {}

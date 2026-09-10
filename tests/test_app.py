@@ -262,6 +262,18 @@ class TechnicianSignupTests(FixProTestCase):
         self.assertIn("/technician/dashboard", html)   # lien vers l'espace technicien existant
         self.assertNotIn("S'inscrire en tant que technicien", html)
 
+    def test_technician_cannot_reenter_signup_wizard(self):
+        self.register_artisan("dr-tech3@example.com", phone="+224621119503")
+        self.login("+224621119503")
+        for path in ("/devenir-technicien",
+                     "/devenir-technicien/services",
+                     "/devenir-technicien/documents",
+                     "/devenir-technicien/localisation",
+                     "/devenir-technicien/finalisation"):
+            r = self.client.get(path, follow_redirects=False)
+            self.assertEqual(r.status_code, 302, path)
+            self.assertIn("technician/dashboard", r.location, path)
+
     def test_menu_technician_link_persists_after_relogin(self):
         self.register_artisan("dr-tech2@example.com", phone="+224621119502")
         self.login("+224621119502")
@@ -607,6 +619,7 @@ class TechnicianSignupTests(FixProTestCase):
         with self.client as c:
             self._do_steps_1_4(c)
             c.post("/devenir-technicien/finalisation", data={"accept_cgu": "1"})
+            c.get("/logout")  # la finalisation connecte le nouveau technicien
         with self.client as c:
             self._do_steps_1_4(c)
             r = c.post("/devenir-technicien/finalisation", data={"accept_cgu": "1"})
