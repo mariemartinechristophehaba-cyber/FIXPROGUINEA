@@ -321,6 +321,10 @@ class TechnicianSignupTests(FixProTestCase):
         self.assertIn("Compte client actif", html)
         self.assertNotIn("Accéder à mon espace technicien", html)  # client -> jamais
         self.assertNotIn("Revenir à mon espace client", html)
+        # le raccourci "Mes demandes / reservations" a ete retire du menu avatar
+        self.assertNotIn("Suivre mes demandes et rendez-vous", html)
+        # ... mais la fonctionnalite Demandes reste accessible ailleurs
+        self.assertEqual(self.client.get("/requests").status_code, 200)
 
     def test_home_avatar_menu_technician_separates_profile_and_pro_space(self):
         self.register_artisan("hpm-tech@example.com", phone="+224621119520")
