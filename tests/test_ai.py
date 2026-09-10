@@ -98,6 +98,17 @@ class AIToolsTests(unittest.TestCase):
         ticket_id = create_support_ticket(1, "Sujet", "Message")
         self.assertIsNotNone(ticket_id)
 
+    def test_cancel_request_reachable(self):
+        """cancel_request reference fixpro_app : le chemin ne doit pas planter."""
+        from ai.tools import create_request, cancel_request
+        req_id = create_request(1, "Fuite", "Sous l'evier", "Plomberie",
+                                "Conakry", "urgent")
+        ok, msg = cancel_request(req_id, 1)
+        self.assertTrue(ok, msg)
+        # Demande d'un autre client : refuse, sans planter non plus
+        ok2, _ = cancel_request(req_id, 999)
+        self.assertFalse(ok2)
+
 
 class AIAssistantTests(unittest.TestCase):
     """Tests de l'assistant conversationnel."""

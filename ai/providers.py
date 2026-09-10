@@ -4,7 +4,6 @@ Permet de changer de modele/fournisseur sans reecrire le reste
 de l'application.
 """
 
-import json
 import logging
 import os
 
