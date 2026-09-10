@@ -519,7 +519,7 @@
         <span>{{ nav_user.email or nav_user.phone or '' }}</span>
         <span class="hpm-status">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-          Compte client actif
+          {{ 'Compte technicien actif' if _is_tech else 'Compte client actif' }}
         </span>
       </span>
       <button type="button" class="hpm-x" id="hpmClose" aria-label="Fermer">
@@ -527,21 +527,27 @@
       </button>
     </div>
     <div class="hpm-list">
-      <a href="{{ url_for('edit_profile') }}" class="hpm-item" role="menuitem">
+      <a href="{{ url_for('profile') }}" class="hpm-item" role="menuitem">
         <span class="hpm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
-        <span class="hpm-tx"><b>Mon profil client</b><span>Voir et modifier mes informations</span></span>
+        <span class="hpm-tx"><b>Mon profil</b><span>Gérer mes informations</span></span>
         <svg class="hpm-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
       </a>
 
-      {% if _is_tech %}
       <div class="hpm-sep"></div>
+      {% if _is_tech %}
       <a href="{{ url_for('artisan_dashboard') }}" class="hpm-item tech" role="menuitem">
         <span class="hpm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span>
-        <span class="hpm-tx"><b>Accéder à mon espace technicien</b><span>Basculer vers mon compte technicien</span></span>
+        <span class="hpm-tx"><b>Accéder à mon espace technicien</b><span>Gérer mes interventions</span></span>
         <svg class="hpm-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
       </a>
-      <div class="hpm-sep"></div>
+      {% else %}
+      <a href="{{ url_for('devenir_technicien') }}" class="hpm-item" role="menuitem">
+        <span class="hpm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg></span>
+        <span class="hpm-tx"><b>Devenir technicien</b><span>Rejoindre le réseau FixPro</span></span>
+        <svg class="hpm-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </a>
       {% endif %}
+      <div class="hpm-sep"></div>
 
       <a href="{{ url_for('requests_list') }}" class="hpm-item" role="menuitem">
         <span class="hpm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4M16 2v4"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18M9 16h6"/></svg></span>

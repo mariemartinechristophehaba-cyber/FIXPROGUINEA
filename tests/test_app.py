@@ -314,9 +314,30 @@ class TechnicianSignupTests(FixProTestCase):
         self._set_client_location()
         html = self.client.get("/").get_data(as_text=True)
         self.assertIn('id="hpmBtn"', html)                  # menu avatar present
-        self.assertIn("Mon profil client", html)
+        self.assertIn("Mon profil", html)
+        self.assertNotIn("Mon profil client", html)         # jamais le mot "client" pour le profil
+        self.assertIn('href="/profile"', html)              # profil -> page profil
+        self.assertIn("Devenir technicien", html)
+        self.assertIn("Compte client actif", html)
         self.assertNotIn("Accéder à mon espace technicien", html)  # client -> jamais
         self.assertNotIn("Revenir à mon espace client", html)
+
+    def test_home_avatar_menu_technician_separates_profile_and_pro_space(self):
+        self.register_artisan("hpm-tech@example.com", phone="+224621119520")
+        self.login("+224621119520")
+        self._set_client_location()
+        html = self.client.get("/?c=1").get_data(as_text=True)
+        self.assertIn("Mon profil", html)
+        self.assertNotIn("Mon profil client", html)
+        self.assertIn('href="/profile"', html)              # profil personnel
+        self.assertIn("Accéder à mon espace technicien", html)
+        self.assertIn("Gérer mes interventions", html)
+        self.assertIn("Compte technicien actif", html)
+        self.assertNotIn("Devenir technicien", html)
+        # destinations reellement separees, aucune redirection croisee
+        self.assertEqual(self.client.get("/profile", follow_redirects=False).status_code, 200)
+        r = self.client.get("/technician/dashboard", follow_redirects=False)
+        self.assertEqual(r.status_code, 200)
 
     def test_technician_home_redirects_to_pro_space_by_default(self):
         self.register_artisan("av-tech@example.com", phone="+224621119510")
