@@ -212,6 +212,9 @@
       </section>
     </main>
 
+    {% if nav_user and nav_user.role in ('technician', 'artisan') %}
+    {% include '_tech_tabbar.html' %}
+    {% else %}
     <nav class="p-nav">
       <a href="{{ url_for('home') }}">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
@@ -233,6 +236,7 @@
         Profil
       </a>
     </nav>
+    {% endif %}
 
     <div id="logoutModal" class="p-modal">
       <div class="p-modal-card">

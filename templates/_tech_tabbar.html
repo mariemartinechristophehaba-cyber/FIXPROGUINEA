@@ -1,0 +1,99 @@
+{#
+  Barre de navigation basse — ESPACE TECHNICIEN.
+  Unique pour tout l'espace technicien. Onglet actif detecte via request.endpoint.
+  Ordre : Accueil | Demandes | Messages | Abonnement | Profil.
+  2e appui sur l'onglet deja actif = pas de navigation, remonte en haut de page.
+#}
+{% set _ep = request.endpoint %}
+{% set _msg_eps = ('client_messages', 'client_conversation', 'client_message_new',
+                   'client_message_artisan') %}
+{% set _sub_eps = ('technician_subscription', 'technician_subscription_checkout',
+                   'subscription_payment_status', 'subscription_payment_cancel') %}
+{% set _prof_eps = ('profile', 'edit_profile', 'client_security') %}
+<style>
+  .tt-nav {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+    display: flex; background: #fff;
+    border-top: 1px solid #E4EAF4;
+    box-shadow: 0 -6px 20px rgba(11, 27, 59, .07);
+    padding: 8px 4px calc(8px + env(safe-area-inset-bottom));
+  }
+  .tt-item {
+    flex: 1 1 0; min-width: 0;
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    padding: 4px 2px; text-decoration: none;
+    color: #64748B; font-weight: 700;
+    font-size: clamp(.58rem, 2.6vw, .68rem); letter-spacing: -.01em;
+    -webkit-tap-highlight-color: transparent;
+    transition: color .18s ease;
+  }
+  .tt-item svg {
+    width: 23px; height: 23px; flex-shrink: 0;
+    transition: transform .18s ease;
+  }
+  .tt-item span {
+    max-width: 100%;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .tt-item.is-active { color: #2563EB; }
+  .tt-item.is-active svg { transform: translateY(-1px); }
+  .tt-badge {
+    position: absolute; top: -2px; left: calc(50% + 6px);
+    min-width: 15px; height: 15px; padding: 0 3px;
+    border-radius: 999px; background: #EF4444; color: #fff;
+    font-size: .58rem; font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .tt-item { position: relative; }
+</style>
+
+<nav class="tt-nav" aria-label="Navigation espace technicien">
+  <a class="tt-item{% if _ep == 'artisan_dashboard' %} is-active{% endif %}"
+     href="{{ url_for('artisan_dashboard') }}"
+     {% if _ep == 'artisan_dashboard' %}data-active="1"{% endif %}>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
+    <span>Accueil</span>
+  </a>
+
+  <a class="tt-item{% if _ep == 'technician_requests' %} is-active{% endif %}"
+     href="{{ url_for('technician_requests') }}"
+     {% if _ep == 'technician_requests' %}data-active="1"{% endif %}>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h4"/></svg>
+    <span>Demandes</span>
+  </a>
+
+  <a class="tt-item{% if _ep in _msg_eps %} is-active{% endif %}"
+     href="{{ url_for('client_messages') }}"
+     {% if _ep in _msg_eps %}data-active="1"{% endif %}>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    <span>Messages</span>
+    {% if messages_unread %}<span class="tt-badge">{{ messages_unread if messages_unread < 100 else '99+' }}</span>{% endif %}
+  </a>
+
+  <a class="tt-item{% if _ep in _sub_eps %} is-active{% endif %}"
+     href="{{ url_for('technician_subscription') }}"
+     {% if _ep in _sub_eps %}data-active="1"{% endif %}>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l4.2 3.6L12 5l4.8 6.6L21 8l-1.7 10.4a1 1 0 0 1-1 .6H5.7a1 1 0 0 1-1-.6z"/></svg>
+    <span>Abonnement</span>
+  </a>
+
+  <a class="tt-item{% if _ep in _prof_eps %} is-active{% endif %}"
+     href="{{ url_for('profile') }}"
+     {% if _ep in _prof_eps %}data-active="1"{% endif %}>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
+    <span>Profil</span>
+  </a>
+</nav>
+
+<script>
+  (function () {
+    document.querySelectorAll('.tt-nav .tt-item').forEach(function (a) {
+      a.addEventListener('click', function (e) {
+        if (a.dataset.active === '1') {
+          e.preventDefault();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      });
+    });
+  })();
+</script>
