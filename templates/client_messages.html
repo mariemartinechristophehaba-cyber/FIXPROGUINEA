@@ -117,7 +117,7 @@
   </main>
   {% endif %}
 
-  {% if nav_user and nav_user.role in ('technician', 'artisan') %}
+  {% if nav_user and nav_user.role in ('technician', 'artisan') and session.get('fixpro_space') != 'client' %}
   {% include '_tech_tabbar.html' %}
   {% else %}
   <nav class="cm-nav">
