@@ -447,6 +447,21 @@ body {
 }
 .cd-refresh:active { background: #EEF2FF; }
 
+/* Action mise en avant : "Devenir technicien" / "Acceder a mon espace technicien" */
+.cd-tech {
+  background: #EAF1FF; border: 1px solid #D6E4FF;
+  border-radius: 16px; padding: 14px 13px; margin-bottom: 16px;
+}
+.cd-tech .cd-item-ico { background: #1D4ED8; color: #fff; }
+.cd-tech .t { color: #1D4ED8; font-weight: 800; }
+.cd-tech .s { color: #4B78C8; }
+.cd-tech .cd-chev { color: #93B4F0; }
+.cd-tech:active, .cd-tech.active { background: #DEEAFF; }
+
+/* En-tete du menu quand l'utilisateur n'est pas connecte */
+.cd-account--guest .cd-avatar { background: #EEF2FF; color: #1D4ED8; }
+.cd-account--guest .cd-hello { white-space: normal; line-height: 1.35; margin-top: 2px; }
+
 .cd-logout {
   display: flex; align-items: center; gap: 13px;
   padding: 14px 15px; margin-bottom: 14px; border-radius: 16px;

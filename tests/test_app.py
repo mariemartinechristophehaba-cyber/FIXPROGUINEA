@@ -251,16 +251,30 @@ class TechnicianSignupTests(FixProTestCase):
         self.login("+224620000000")
         html = self.client.get("/artisans").get_data(as_text=True)
         self.assertIn("/devenir-technicien", html)
-        self.assertIn("S'inscrire en tant que technicien", html)
+        self.assertIn("Devenir technicien", html)
+        self.assertIn("Inscrivez-vous comme technicien", html)   # libelle du menu client
+        self.assertIn("Compte client actif", html)
         self.assertNotIn("Accéder à mon espace technicien", html)
+        self.assertNotIn("Gérer mes interventions", html)
 
     def test_menu_shows_technician_space_link_for_technician(self):
         self.register_artisan("dr-tech@example.com", phone="+224621119501")
         self.login("+224621119501")
         html = self.client.get("/artisans").get_data(as_text=True)
         self.assertIn("Accéder à mon espace technicien", html)
+        self.assertIn("Gérer mes interventions", html)
         self.assertIn("/technician/dashboard", html)   # lien vers l'espace technicien existant
+        self.assertIn("Compte technicien actif", html)
+        self.assertNotIn("Inscrivez-vous comme technicien", html)
         self.assertNotIn("S'inscrire en tant que technicien", html)
+
+    def test_drawer_guest_state(self):
+        html = self.client.get("/contact").get_data(as_text=True)
+        self.assertIn("Bienvenue sur FixPro", html)
+        self.assertIn("Rejoindre le réseau de professionnels", html)   # Devenir technicien (invite)
+        self.assertNotIn("Se déconnecter", html)
+        self.assertNotIn("Compte client actif", html)
+        self.assertNotIn("Accéder à mon espace technicien", html)
 
     def test_technician_cannot_reenter_signup_wizard(self):
         self.register_artisan("dr-tech3@example.com", phone="+224621119503")
