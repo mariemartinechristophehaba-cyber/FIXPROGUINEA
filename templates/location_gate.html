@@ -161,7 +161,7 @@
     </div>
   </div>
 
-  <script src="{{ url_for('static', filename='js/geo-auto.js') }}"></script>
+  <script src="{{ asset('js/geo-auto.js') }}"></script>
   <script>
     (function () {
       var NEXT = {{ (next or '/artisans') | tojson }};

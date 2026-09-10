@@ -576,6 +576,15 @@ def _static_asset_version(rel_path):
     return tag
 
 
+@app.template_global()
+def asset(filename):
+    """URL d'un fichier statique avec cache-busting automatique (?v=empreinte
+    du contenu). A utiliser dans les gabarits a la place de
+    url_for('static', ...) pour tout CSS/JS : plus besoin de bumper un numero
+    de version a la main quand le fichier change."""
+    return url_for("static", filename=filename, v=_static_asset_version(filename))
+
+
 _google_client_cache = []
 
 

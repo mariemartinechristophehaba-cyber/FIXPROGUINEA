@@ -3283,4 +3283,39 @@ class InterventionTests(FixProTestCase):
         self.assertIn("cree", r["response"].lower())
 
 
+class StaticAssetVersioningTests(FixProTestCase):
+    """Cache-busting automatique des fichiers statiques : plus jamais de CSS
+    obsolete servi apres un changement (fini le ?v=N a bumper a la main)."""
+
+    def test_css_url_carries_content_hash(self):
+        import hashlib
+        html = self.client.get("/").get_data(as_text=True)
+        css = (Path(fixpro_app.app.static_folder) / "css" / "fixpro.css").read_bytes()
+        expected = hashlib.md5(css).hexdigest()[:10]
+        self.assertIn("css/fixpro.css?v=" + expected, html)
+
+    def test_version_changes_when_file_changes(self):
+        css_path = Path(fixpro_app.app.static_folder) / "css" / "fixpro.css"
+        original = css_path.read_bytes()
+        fixpro_app._static_version_cache.clear()
+        v1 = fixpro_app._static_asset_version("css/fixpro.css")
+        try:
+            css_path.write_bytes(original + b"\n/* touch */\n")
+            fixpro_app._static_version_cache.clear()
+            v2 = fixpro_app._static_asset_version("css/fixpro.css")
+        finally:
+            css_path.write_bytes(original)
+            fixpro_app._static_version_cache.clear()
+        self.assertNotEqual(v1, v2)
+
+    def test_no_template_hardcodes_a_static_version(self):
+        import re
+        offenders = []
+        for tpl in (ROOT / "templates").rglob("*.html"):
+            txt = tpl.read_text(encoding="utf-8")
+            if re.search(r"url_for\(\s*['\"]static['\"][^)]*\bv\s*=", txt):
+                offenders.append(tpl.name)
+        self.assertEqual(offenders, [], "utiliser asset() au lieu d'un ?v= fige")
+
+
 
