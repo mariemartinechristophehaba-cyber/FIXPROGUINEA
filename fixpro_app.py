@@ -1310,6 +1310,15 @@ def get_payment_provider(payment_method=None):
     return _UnconfiguredProvider()
 
 
+# Categories systeme d'une notification (consultatif uniquement, jamais une
+# conversation). Une notification hors de cette liste reste affichee mais
+# tombe sur l'icone/lien generique.
+NOTIF_CATEGORIES = (
+    "system", "subscription", "payment", "announcement",
+    "update", "security", "account",
+)
+
+
 def create_notification(user_id, title, body, notif_type="info", data=None, conn=None):
     """Cree une notification in-app pour un utilisateur.
 
@@ -1346,6 +1355,57 @@ def create_admin_notification(conn, title, body, notif_type="admin_alert", data=
         conn.commit()
     except Exception as exc:
         logger.warning("Notification admin non creee : %s", exc)
+
+
+def _notify_once(conn, user_id, marker, title, body, notif_type="system"):
+    """Cree une notification seulement si aucune notification portant le meme
+    `marker` (stocke dans `data` sous la forme 'once:<marker>') n'existe deja
+    pour cet utilisateur. Sert aux evenements recurrents du cycle de vie
+    (abonnement bientot expire, etc.) pour ne pas spammer la cloche."""
+    tag = "once:%s" % marker
+    try:
+        exists = conn.execute(
+            "SELECT 1 FROM notifications WHERE user_id = ? AND data = ? LIMIT 1",
+            (user_id, tag)).fetchone()
+        if exists:
+            return False
+        conn.execute(
+            "INSERT INTO notifications (user_id, title, body, type, data)"
+            " VALUES (?, ?, ?, ?, ?)",
+            (user_id, title, body, notif_type, tag))
+        return True
+    except Exception as exc:
+        logger.warning("_notify_once impossible (user=%s, %s) : %s", user_id, marker, exc)
+        return False
+
+
+def broadcast_notification(conn, audience, title, body, notif_type="announcement", data=None):
+    """Envoie une meme notification a tout un public.
+
+    audience : 'technicians' | 'clients' | 'all'. Ne cree jamais de
+    conversation : information descendante uniquement. Retourne le nombre
+    de destinataires touches."""
+    where = "account_status IS NULL OR account_status != 'DELETED'"
+    if audience == "technicians":
+        role_clause = "role IN ('technician', 'artisan')"
+    elif audience == "clients":
+        role_clause = "role = 'client'"
+    else:
+        role_clause = "role IN ('technician', 'artisan', 'client')"
+    try:
+        rows = conn.execute(
+            "SELECT id FROM users WHERE %s AND (%s)" % (role_clause, where)).fetchall()
+        for r in rows:
+            conn.execute(
+                "INSERT INTO notifications (user_id, title, body, type, data)"
+                " VALUES (?, ?, ?, ?, ?)",
+                (r["id"], title, body, notif_type, data or "broadcast"))
+        conn.commit()
+        return len(rows)
+    except Exception as exc:
+        conn.rollback()
+        logger.warning("broadcast_notification impossible : %s", exc)
+        return 0
 
 
 def _log_intervention_history(conn, request_id, old_status, new_status, actor, note="", label=None):
@@ -2403,6 +2463,15 @@ def technician_signup_finalize():
                             (new_id, dtype, f"{kind}{ext}",
                              mime or "application/octet-stream",
                              len(encoded) if encoded else 0, encoded))
+                    create_notification(
+                        new_id, "Compte technicien créé",
+                        "Bienvenue sur FixPro ! Votre compte technicien a bien "
+                        "été créé.", "account", data="account", conn=conn)
+                    create_notification(
+                        new_id, "Profil en cours de vérification",
+                        "Nous vérifions actuellement vos informations et vos "
+                        "documents. Vous serez notifié dès la validation.",
+                        "verification", data="dossier", conn=conn)
                     conn.commit()
             finally:
                 conn.close()
@@ -4217,13 +4286,48 @@ def _expire_due_subscriptions(conn):
     (pas de vrai cron en serverless)."""
     now_iso_ = _ts()
     try:
+        due = conn.execute(
+            "SELECT technician_id FROM technician_subscriptions"
+            " WHERE status = 'ACTIVE' AND end_date IS NOT NULL AND end_date < ?",
+            (now_iso_,)).fetchall()
         conn.execute(
             "UPDATE technician_subscriptions SET status = 'EXPIRED'"
             " WHERE status = 'ACTIVE' AND end_date IS NOT NULL AND end_date < ?",
             (now_iso_,))
+        for r in due:
+            create_notification(
+                r["technician_id"], "Abonnement expiré",
+                "Votre abonnement FixPro est arrivé à expiration. Renouvelez-le "
+                "pour continuer à recevoir des demandes.",
+                "subscription_expired", data="abonnement", conn=conn)
         conn.commit()
     except Exception as exc:
         logger.warning("Expiration abonnements impossible: %s", exc)
+
+
+def _notify_subscriptions_expiring_soon(conn):
+    """Previent une seule fois chaque technicien dont l'abonnement ACTIVE
+    arrive a echeance dans <= 3 jours (idempotent via _notify_once)."""
+    try:
+        soon = conn.execute(
+            "SELECT technician_id, end_date FROM technician_subscriptions"
+            " WHERE status = 'ACTIVE' AND end_date IS NOT NULL"
+            "   AND end_date >= ? AND end_date <= ?",
+            (_ts(), _ts(datetime.now(timezone.utc) + timedelta(days=3)))).fetchall()
+        for r in soon:
+            day = str(r["end_date"])[:10]
+            _notify_once(
+                conn, r["technician_id"], "sub_expiring:%s" % day,
+                "Votre abonnement expire bientôt",
+                "Votre abonnement FixPro expire le %s. Pensez à le renouveler "
+                "pour ne pas perdre l'accès aux demandes." % _format_date_month_fr(r["end_date"]),
+                "subscription_expiring")
+        conn.commit()
+    except Exception as exc:
+        conn.rollback()
+        logger.warning("Notif expiration proche impossible: %s", exc)
+
+
 @app.route("/admin/document/<int:doc_id>")
 @login_required
 @admin_required
@@ -5513,6 +5617,9 @@ def _activate_subscription_from_payment(conn, payment_id):
             and sub["plan_id"] == pay["plan_id"]):
         return True
 
+    prev_status = (sub["status"] or "").upper() if sub else ""
+    is_renewal = bool(sub and sub["plan_id"] and prev_status in ("ACTIVE", "EXPIRED", "PAST_DUE"))
+
     if sub:
         conn.execute(
             "UPDATE technician_subscriptions SET plan_id = ?, status = 'ACTIVE',"
@@ -5536,10 +5643,21 @@ def _activate_subscription_from_payment(conn, payment_id):
 
     try:
         create_notification(
-            pay["user_id"], "Abonnement activé",
-            "Votre paiement a été confirmé. Votre abonnement est actif jusqu'au %s."
-            % _format_date_month_fr(end_s),
-            "success", data="abonnement", conn=conn)
+            pay["user_id"], "Paiement confirmé",
+            "Votre paiement de l'abonnement a bien été enregistré.",
+            "payment", data="abonnement", conn=conn)
+        if is_renewal:
+            create_notification(
+                pay["user_id"], "Abonnement renouvelé",
+                "Votre abonnement FixPro a été renouvelé. Il est actif jusqu'au %s."
+                % _format_date_month_fr(end_s),
+                "subscription", data="abonnement", conn=conn)
+        else:
+            create_notification(
+                pay["user_id"], "Abonnement activé",
+                "Votre abonnement FixPro a bien été activé jusqu'au %s. "
+                "Merci pour votre confiance !" % _format_date_month_fr(end_s),
+                "subscription", data="abonnement", conn=conn)
         conn.commit()
     except Exception:
         conn.rollback()
@@ -5802,11 +5920,22 @@ def _expire_due_trials(conn):
     (Pas de vrai cron en serverless : appele a l'ouverture du dashboard et
     dans le calcul des droits.)"""
     try:
+        due = conn.execute(
+            "SELECT technician_id FROM technician_subscriptions"
+            " WHERE status = 'TRIAL' AND end_date IS NOT NULL AND end_date < ?",
+            (_ts(),)).fetchall()
         conn.execute(
             "UPDATE technician_subscriptions SET status = 'TRIAL_EXPIRED',"
             " updated_at = CURRENT_TIMESTAMP"
             " WHERE status = 'TRIAL' AND end_date IS NOT NULL AND end_date < ?",
             (_ts(),))
+        for r in due:
+            _notify_once(
+                conn, r["technician_id"], "trial_expired",
+                "Votre période d'essai est terminée",
+                "Votre essai gratuit FixPro est arrivé à son terme. Souscrivez "
+                "un abonnement pour continuer à recevoir des demandes.",
+                "trial_expired")
         conn.commit()
     except Exception as exc:
         conn.rollback()
@@ -5858,6 +5987,7 @@ def get_technician_entitlements(conn, technician_id):
     _ensure_technician_trial(conn, technician_id)
     try:
         _expire_due_subscriptions(conn)
+        _notify_subscriptions_expiring_soon(conn)
     except Exception:
         pass
     try:
@@ -7574,6 +7704,29 @@ def _notif_target(notif):
     data = _f("data")
     kind, _, val = data.partition(":")
 
+    # --- Categories systeme canoniques (voir NOTIF_CATEGORIES) ---------------
+    # SYSTEM / SUBSCRIPTION / PAYMENT / ANNOUNCEMENT / UPDATE / SECURITY / ACCOUNT
+    _CAT = {
+        "subscription": ("crown", "technician_subscription"),
+        "subscription_expiring": ("clock", "technician_subscription"),
+        "subscription_expired": ("card", "technician_subscription"),
+        "trial_expired": ("clock", "technician_subscription"),
+        "payment": ("card", "technician_subscription"),
+        "promo": ("percent", "technician_subscription"),
+        "announcement": ("megaphone", "notifications"),
+        "update": ("download", "notifications"),
+        "security": ("shield", "profile"),
+        "account": ("user", "artisan_dashboard"),
+        "verification": ("shield", "profile"),
+        "system": ("info", "notifications"),
+    }
+    if typ in _CAT:
+        icon, ep = _CAT[typ]
+        try:
+            return icon, url_for(ep)
+        except Exception:
+            return icon, url_for("notifications")
+
     if kind == "request_id" and val.isdigit():
         href = url_for("request_detail", request_id=int(val))
     elif typ == "new_request" or "demande" in title or "mission" in title:
@@ -7619,7 +7772,9 @@ def _notif_target(notif):
 @app.route("/notifications")
 @login_required
 def notifications():
-    """Liste complete des notifications in-app de l'utilisateur connecte."""
+    """Liste complete des notifications in-app de l'utilisateur connecte.
+    Consultatif uniquement : aucune reponse n'est possible depuis cette page
+    (les conversations restent dans la section Messages)."""
     user = get_current_user()
     conn = get_db_connection()
     try:
@@ -7647,6 +7802,14 @@ def notifications():
         items.append(d)
     return render_template("notifications.html", user=user,
                            notifications=items, unread=unread)
+
+
+@app.route("/technician/notifications")
+@login_required
+def technician_notifications():
+    """Alias de la page notifications pour l'espace technicien (meme contenu,
+    toujours consultatif)."""
+    return notifications()
 
 
 @app.route("/api/notifications")
@@ -7713,6 +7876,89 @@ def mark_all_notifications_read():
     finally:
         conn.close()
     return jsonify({"ok": True, "unread": 0})
+
+
+_ADMIN_NOTIF_TYPES = [
+    ("announcement", "Annonce / information"),
+    ("update", "Mise à jour FixPro"),
+    ("promo", "Offre / promotion"),
+    ("security", "Sécurité"),
+    ("system", "Information système"),
+]
+_ADMIN_NOTIF_AUDIENCES = [
+    ("technicians", "Tous les techniciens"),
+    ("clients", "Tous les clients"),
+    ("all", "Tout le monde"),
+]
+
+
+@app.route("/admin/notifications", methods=["GET"])
+@login_required
+@admin_required
+def admin_notifications():
+    """Console d'envoi de notifications descendantes (annonces, MAJ, promos).
+    Consultatif cote destinataire : aucune reponse possible."""
+    user = get_current_user()
+    now = datetime.now(timezone.utc)
+    sent = []
+    conn = get_db_connection()
+    try:
+        rows = conn.execute(
+            "SELECT title, body, type, data, MIN(created_at) AS created_at,"
+            " COUNT(*) AS n FROM notifications"
+            " WHERE data = 'broadcast' OR data LIKE 'broadcast:%'"
+            " GROUP BY title, body, type, data"
+            " ORDER BY created_at DESC LIMIT 20").fetchall()
+        for r in rows:
+            sent.append({
+                "title": r["title"], "body": r["body"], "type": r["type"],
+                "count": r["n"], "ago": _format_time_ago(r["created_at"]),
+            })
+    except Exception as exc:
+        logger.warning("admin_notifications list: %s", exc)
+    finally:
+        conn.close()
+    ctx = {
+        "admin_user": user, "current_year": now.year,
+        "notif_count": 0, "header_notifs": [],
+        "notif_types": _ADMIN_NOTIF_TYPES,
+        "audiences": _ADMIN_NOTIF_AUDIENCES,
+        "sent": sent,
+    }
+    resp = make_response(render_template("admin_notifications.html", **ctx))
+    resp.headers["Cache-Control"] = "no-store"
+    return resp
+
+
+@app.route("/admin/notifications/send", methods=["POST"])
+@login_required
+@admin_required
+@limiter.limit("30 per hour")
+def admin_notifications_send():
+    audience = request.form.get("audience") or "technicians"
+    ntype = request.form.get("type") or "announcement"
+    title = (request.form.get("title") or "").strip()
+    body = (request.form.get("body") or "").strip()
+    valid_aud = {a for a, _ in _ADMIN_NOTIF_AUDIENCES}
+    valid_typ = {t for t, _ in _ADMIN_NOTIF_TYPES}
+    if audience not in valid_aud:
+        audience = "technicians"
+    if ntype not in valid_typ:
+        ntype = "announcement"
+    if not title or not body:
+        flash("Le titre et le message sont obligatoires.", "error")
+        return redirect(url_for("admin_notifications"))
+    if len(title) > 120 or len(body) > 600:
+        flash("Titre (120) ou message (600) trop long.", "error")
+        return redirect(url_for("admin_notifications"))
+    conn = get_db_connection()
+    try:
+        n = broadcast_notification(conn, audience, title, body, ntype, data="broadcast")
+    finally:
+        conn.close()
+    label = dict(_ADMIN_NOTIF_AUDIENCES).get(audience, audience)
+    flash("Notification envoyée à %d destinataire(s) — %s." % (n, label), "success")
+    return redirect(url_for("admin_notifications"))
 
 
 # ---------------------------------------------------------------------------
@@ -9334,8 +9580,17 @@ def api_admin_verify_artisan(artisan_id):
         return auth
     conn = get_db_connection()
     try:
-        conn.execute("UPDATE users SET is_verified = 1 WHERE id = ? AND role = 'technician'", (artisan_id,))
+        cur = conn.execute(
+            "UPDATE users SET is_verified = 1, verification_status = 'APPROVED'"
+            " WHERE id = ? AND role = 'technician'", (artisan_id,))
         conn.commit()
+        if getattr(cur, "rowcount", 0):
+            create_notification(
+                artisan_id, "Compte activé",
+                "Votre profil technicien a été vérifié et validé. Votre compte "
+                "est maintenant actif : vous pouvez recevoir des demandes.",
+                "account", data="account", conn=conn)
+            conn.commit()
     finally:
         conn.close()
     return jsonify({"ok": True})

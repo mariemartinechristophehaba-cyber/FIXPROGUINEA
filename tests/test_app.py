@@ -2768,6 +2768,122 @@ class AdminPanelTests(FixProTestCase):
             conn.close()
         self.assertIsNone(row["admin_role"])
 
+
+class NotificationCenterTests(FixProTestCase):
+    """Centre de notifications technicien : bottom sheet, categories, diffusion
+    admin, cycle de vie de l'abonnement. Consultatif uniquement."""
+
+    def _admin(self):
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute(
+                "INSERT INTO users (email, phone, password_hash, role, full_name,"
+                " is_verified, is_active) VALUES (?, ?, ?, 'admin', 'Admin', 1, 1)",
+                ("adm@fixpro.local", "+224000000001",
+                 fixpro_app.generate_password_hash("x")))
+            conn.commit()
+            return conn.execute("SELECT id FROM users WHERE email = 'adm@fixpro.local'").fetchone()["id"]
+        finally:
+            conn.close()
+
+    def test_bell_is_a_bottom_sheet_with_handle(self):
+        self.register_artisan("sheet@x.co", phone="+224621119001")
+        self.login("sheet@x.co")
+        html = self.client.get("/dashboard/technicien").get_data(as_text=True)
+        self.assertIn('id="ntfbSheet"', html)
+        self.assertIn('id="ntfbGrip"', html)          # poignee
+        self.assertIn("Voir toutes les notifications", html)
+        # aucune zone de reponse dans la cloche
+        self.assertNotIn('name="reply"', html)
+
+    def test_technician_notifications_page_alias(self):
+        self.register_artisan("alias@x.co", phone="+224621119002")
+        self.login("alias@x.co")
+        r = self.client.get("/technician/notifications")
+        self.assertEqual(r.status_code, 200)
+        body = r.get_data(as_text=True)
+        self.assertIn("Notifications", body)
+        # page consultative : pas de formulaire de reponse
+        self.assertNotIn("Répondre", body)
+
+    def test_admin_broadcast_reaches_all_technicians_only(self):
+        self._admin()
+        self.register_artisan("t1@x.co", phone="+224621119010")
+        self.register_artisan("t2@x.co", phone="+224621119011")
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute(
+                "INSERT INTO users (email, phone, password_hash, role, full_name, is_active)"
+                " VALUES ('c1@x.co', '+224621119012', 'x', 'client', 'C1', 1)")
+            conn.commit()
+        finally:
+            conn.close()
+        with self.client.session_transaction() as sess:
+            sess["user_id"] = 1
+            sess["admin_unlocked"] = True
+        r = self.client.post("/admin/notifications/send", data={
+            "audience": "technicians", "type": "announcement",
+            "title": "Maintenance", "body": "Dimanche de 00h a 06h.",
+        }, follow_redirects=True)
+        self.assertEqual(r.status_code, 200)
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            rows = conn.execute(
+                "SELECT u.role FROM notifications n JOIN users u ON u.id = n.user_id"
+                " WHERE n.title = 'Maintenance'").fetchall()
+        finally:
+            conn.close()
+        roles = sorted(r["role"] for r in rows)
+        self.assertEqual(roles, ["technician", "technician"])
+
+    def test_admin_broadcast_requires_title_and_body(self):
+        self._admin()
+        with self.client.session_transaction() as sess:
+            sess["user_id"] = 1
+            sess["admin_unlocked"] = True
+        self.client.post("/admin/notifications/send", data={
+            "audience": "all", "type": "announcement", "title": "", "body": ""})
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            n = conn.execute("SELECT COUNT(*) AS n FROM notifications").fetchone()["n"]
+        finally:
+            conn.close()
+        self.assertEqual(n, 0)
+
+    def test_notify_once_dedups(self):
+        self.register_artisan("once@x.co", phone="+224621119020")
+        uid = self.client_artisan_id = None
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            uid = conn.execute("SELECT id FROM users WHERE phone = '+224621119020'").fetchone()["id"]
+            a = fixpro_app._notify_once(conn, uid, "m1", "T", "B", "system")
+            b = fixpro_app._notify_once(conn, uid, "m1", "T", "B", "system")
+            conn.commit()
+            n = conn.execute(
+                "SELECT COUNT(*) AS n FROM notifications WHERE user_id = ?", (uid,)).fetchone()["n"]
+        finally:
+            conn.close()
+        self.assertTrue(a)
+        self.assertFalse(b)
+        self.assertEqual(n, 1)
+
+    def test_canonical_category_icon_and_link(self):
+        self.register_artisan("cat@x.co", phone="+224621119030")
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            uid = conn.execute("SELECT id FROM users WHERE phone = '+224621119030'").fetchone()["id"]
+            conn.execute(
+                "INSERT INTO notifications (user_id, title, body, type, data)"
+                " VALUES (?, 'Offre', 'Promo', 'subscription', 'abonnement')", (uid,))
+            conn.commit()
+        finally:
+            conn.close()
+        self.login("cat@x.co")
+        item = self.client.get("/api/notifications").get_json()["items"][0]
+        self.assertEqual(item["icon"], "crown")
+        self.assertIn("abonnement", item["href"])
+
+
 class DatabaseLayerTests(unittest.TestCase):
     """La traduction SQLite -> PostgreSQL doit etre fiable."""
 
