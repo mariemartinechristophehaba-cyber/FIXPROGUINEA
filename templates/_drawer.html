@@ -132,8 +132,35 @@
 
     <p class="cd-footer">
       FixPro v1.0.0<br>
-      Des pros. Des solutions.
+      {{ 'Merci de faire confiance à FixPro' if nav_user else 'Des pros. Des solutions.' }}
       <svg width="13" height="13" viewBox="0 0 24 24" fill="#2563EB" stroke="none"><path d="M12 21s-7.5-4.7-10-9.3C.5 8.5 2 4.8 5.6 4.1c2-.4 4 .5 5.2 2.2C12 4.6 14 3.7 16 4.1c3.6.7 5.1 4.4 3.6 7.6C19.5 16.3 12 21 12 21Z"/></svg>
     </p>
   </div>
 </nav>
+<script>
+/* Fermeture du menu par geste : glissement vers la gauche sur le panneau ouvert.
+   L'ouverture / fermeture (X, overlay, Echap) reste geree par base.html. */
+(function () {
+  var d = document.getElementById('mobileDrawer');
+  var o = document.getElementById('mobileDrawerOverlay');
+  if (!d || d.dataset.swipeBound) return;
+  d.dataset.swipeBound = '1';
+  var x0 = 0, y0 = 0, on = false;
+  function close() {
+    d.classList.remove('open');
+    if (o) o.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  d.addEventListener('touchstart', function (e) {
+    if (!d.classList.contains('open') || e.touches.length !== 1) return;
+    x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; on = true;
+  }, { passive: true });
+  d.addEventListener('touchend', function (e) {
+    if (!on) return;
+    on = false;
+    var t = e.changedTouches[0];
+    var dx = t.clientX - x0, dy = t.clientY - y0;
+    if (dx < -55 && Math.abs(dx) > Math.abs(dy) * 1.5) close();
+  }, { passive: true });
+})();
+</script>
