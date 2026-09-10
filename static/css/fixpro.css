@@ -283,13 +283,13 @@ body {
   .sidebar {
     display: flex;
     position: fixed;
-    inset: 0 auto 0 0;
+    inset: var(--dtopbar-h, 0) auto 0 0;
     width: 252px;
     z-index: 60;
     overflow-y: auto;
   }
 
-  body:not(.no-sidebar) .app-wrap { margin-left: 252px; }
+  body:not(.no-sidebar) .app-wrap { margin-left: 252px; padding-top: var(--dtopbar-h, 0); }
 
   /* Chrome mobile masquee sur bureau */
   .tabbar,
@@ -317,6 +317,155 @@ body {
 @media (min-width: 1440px) {
   body:not(.no-sidebar) .page { max-width: 1320px; }
 }
+
+/* ==========================================================================
+   COQUILLE BUREAU (>=1024px) - barre superieure + pied de sidebar enrichi.
+   Reutilisable par toutes les pages de l'espace client connecte.
+   Rien de tout ceci n'est visible en mobile (<1024px).
+   ========================================================================== */
+.dtopbar { display: none; }
+.sidebar-foot { display: none; }
+
+@media (min-width: 1024px) {
+  :root { --dtopbar-h: 64px; }
+
+  .dtopbar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: var(--dtopbar-h);
+    z-index: 80;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 0 22px;
+    background: var(--f-white);
+    border-bottom: 1px solid var(--f-line);
+  }
+  .dtopbar-brand {
+    display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+    width: 210px;
+    text-decoration: none; color: var(--f-text);
+    font-family: var(--f-display); font-weight: 800; font-size: 19px;
+  }
+  .dtopbar-brand em { font-style: normal; color: var(--f-primary); }
+  .dtopbar-brand small {
+    display: block; font-family: var(--f-font); font-weight: 500;
+    font-size: 10px; color: var(--f-text-2); letter-spacing: .01em;
+  }
+  .dtopbar-brand .brand-mark {
+    width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0;
+    background: var(--f-primary); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .dtopbar-brand .brand-mark svg { width: 20px; height: 20px; }
+
+  .dtopbar-search {
+    flex: 1; max-width: 520px;
+    display: flex; align-items: center; gap: 10px;
+    height: 40px; padding: 0 14px;
+    background: var(--f-bg); border: 1px solid var(--f-line);
+    border-radius: 11px;
+  }
+  .dtopbar-search svg { width: 17px; height: 17px; color: var(--f-text-2); flex-shrink: 0; }
+  .dtopbar-search input {
+    flex: 1; min-width: 0; border: none; outline: none; background: transparent;
+    font: inherit; font-size: 14px; color: var(--f-text);
+  }
+
+  .dtopbar-loc {
+    display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+    height: 40px; padding: 0 12px; margin-left: auto;
+    background: var(--f-white); border: 1px solid var(--f-line); border-radius: 11px;
+    text-decoration: none; color: var(--f-text);
+    font-size: 13.5px; font-weight: 600;
+    max-width: 220px;
+  }
+  .dtopbar-loc svg { width: 16px; height: 16px; color: var(--f-primary); flex-shrink: 0; }
+  .dtopbar-loc svg.chev { color: var(--f-text-2); width: 14px; height: 14px; }
+  .dtopbar-loc span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .dtopbar-ic {
+    position: relative; flex-shrink: 0;
+    width: 40px; height: 40px; border-radius: 11px;
+    border: 1px solid var(--f-line); background: var(--f-white); color: var(--f-text-2);
+    display: flex; align-items: center; justify-content: center; text-decoration: none;
+  }
+  .dtopbar-ic:hover { color: var(--f-primary); }
+  .dtopbar-ic svg { width: 19px; height: 19px; }
+  .dtopbar-ic .dot-badge {
+    position: absolute; top: -5px; right: -5px; min-width: 17px; height: 17px; padding: 0 4px;
+    border-radius: 999px; background: #EF4444; color: #fff;
+    font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center;
+  }
+
+  .dtopbar-user { position: relative; flex-shrink: 0; }
+  .dtopbar-user .user-menu-trigger {
+    display: flex; align-items: center; gap: 9px;
+    padding: 4px 8px 4px 4px; border: none; background: transparent; cursor: pointer;
+    border-radius: 12px;
+  }
+  .dtopbar-user .user-menu-trigger:hover { background: var(--f-bg); }
+  .dtopbar-av {
+    width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0; overflow: hidden;
+    background: rgba(21,94,239,.12); color: var(--f-primary);
+    font-weight: 800; font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .dtopbar-av img { width: 100%; height: 100%; object-fit: cover; }
+  .dtopbar-hi { display: flex; flex-direction: column; line-height: 1.2; text-align: left; }
+  .dtopbar-hi small { font-size: 11px; color: var(--f-text-2); }
+  .dtopbar-hi strong { font-size: 13.5px; color: var(--f-text); font-weight: 700; }
+  .dtopbar-user > svg,
+  .dtopbar-user .user-menu-trigger > svg { width: 15px; height: 15px; color: var(--f-text-2); flex-shrink: 0; }
+  .dtopbar-user .user-menu-dropdown {
+    position: absolute; right: 0; top: calc(100% + 8px);
+    min-width: 190px; background: var(--f-white);
+    border: 1px solid var(--f-line); border-radius: 12px;
+    box-shadow: var(--f-shadow-card); padding: 6px; z-index: 90;
+    opacity: 0; visibility: hidden; transform: translateY(-4px);
+    transition: opacity .14s, transform .14s, visibility .14s;
+  }
+  .dtopbar-user.open .user-menu-dropdown { opacity: 1; visibility: visible; transform: none; }
+  .dtopbar-user .user-menu-dropdown a {
+    display: block; padding: 9px 12px; border-radius: 8px;
+    font-size: 13.5px; font-weight: 600; color: var(--f-text); text-decoration: none;
+  }
+  .dtopbar-user .user-menu-dropdown a:hover { background: var(--f-bg); color: var(--f-primary); }
+
+  /* --- Sidebar : pied enrichi (promo + aide + parametres + deconnexion) --- */
+  .sidebar { padding-bottom: 14px; padding-top: 16px; }
+  /* Le logo est deja dans la topbar : on masque l'en-tete de la sidebar. */
+  .sidebar .sidebar-top { display: none; }
+  .sidebar-nav { flex: 0 0 auto; gap: 3px; }
+  .sidebar-link { font-size: 13.5px; padding: 9px 12px; }
+  .sidebar-foot {
+    display: flex; flex-direction: column; gap: 2px;
+    margin-top: auto; padding-top: 12px;
+    border-top: 1px solid var(--f-line);
+  }
+  .sidebar-promo {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px; margin-bottom: 8px;
+    background: #EAF1FF; border: 1px solid #D6E4FF; border-radius: 14px;
+    text-decoration: none;
+  }
+  .sidebar-promo img {
+    width: 44px; height: 44px; border-radius: 10px; object-fit: cover; flex-shrink: 0;
+    background: #fff;
+  }
+  .sidebar-promo strong {
+    font-size: 12px; font-weight: 700; color: var(--f-primary); line-height: 1.35;
+  }
+  .sidebar-link--danger { color: #DC2626; }
+  .sidebar-link--danger:hover { background: #FEF2F2; color: #DC2626; }
+  .sidebar-link .s-badge {
+    margin-left: auto; min-width: 18px; height: 18px; padding: 0 5px;
+    border-radius: 999px; background: #EF4444; color: #fff;
+    font-size: 11px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+}
+
 /* Categories supplementaires */
 
 /* Categories populaires */

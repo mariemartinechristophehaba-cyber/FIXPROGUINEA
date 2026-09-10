@@ -1518,6 +1518,27 @@ def is_prohibited_message(content):
     return any(phrase in normalized for phrase in _FORBIDDEN_PHRASES)
 
 
+def _client_recent_requests(conn, user, limit=3):
+    """Dernieres demandes du client, pour la colonne laterale de l'accueil bureau.
+
+    Reutilise la table `requests` (meme source que requests_list()). Aucune
+    logique nouvelle : simple lecture en lecture seule, jamais bloquante.
+    """
+    if not user:
+        return []
+    try:
+        rows = conn.execute(
+            "SELECT r.id, r.title, r.service, r.category, r.status, r.reference,"
+            " r.created_at, u.full_name AS artisan_name, u.profession AS artisan_profession"
+            " FROM requests r LEFT JOIN users u ON u.id = r.artisan_id"
+            " WHERE r.client_id = ? ORDER BY r.created_at DESC LIMIT ?",
+            (user["id"], int(limit))).fetchall()
+        return [dict(r) for r in rows]
+    except Exception:
+        conn.rollback()
+        return []
+
+
 # ---------------------------------------------------------------------------
 # Pages publiques
 # ---------------------------------------------------------------------------
@@ -1594,11 +1615,14 @@ def index():
                 a["distance"] = _haversine(client_lat, client_lon, a_lat, a_lon) if _is_valid_coordinate(a_lat, a_lon) else None
             artisans.sort(key=lambda a: a.get("distance") if a.get("distance") is not None else 999)
         artisans = artisans[:4]
+        recent_requests = _client_recent_requests(conn, user)
     finally:
         conn.close()
     response = make_response(render_template("index.html", artisans=artisans, unread_count=unread_count,
                            loc_permission=session.get("loc_permission", "prompt"),
                            client_zone=session.get("client_zone"),
+                           client_lat=client_lat, client_lon=client_lon,
+                           recent_requests=recent_requests,
                            category_counts=counts,
                            popular=popular))
     response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
@@ -1879,11 +1903,14 @@ def home():
                 a["distance"] = _haversine(client_lat, client_lon, a_lat, a_lon) if _is_valid_coordinate(a_lat, a_lon) else None
             artisans.sort(key=lambda a: a.get("distance") if a.get("distance") is not None else 999)
         artisans = artisans[:4]
+        recent_requests = _client_recent_requests(conn, user)
     finally:
         conn.close()
     return render_template("home.html", user=user, artisans=artisans, unread_count=unread_count,
                            loc_permission=session.get("loc_permission", "prompt"),
                            client_zone=session.get("client_zone"),
+                           client_lat=client_lat, client_lon=client_lon,
+                           recent_requests=recent_requests,
                            category_counts=counts,
                            popular=popular)
 
