@@ -41,6 +41,11 @@
     </div>
 
     <nav class="tpm-list">
+      <a class="tpm-item tpm-back" role="menuitem" href="{{ url_for('index', c=1) }}">
+        <span class="tpm-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></span>
+        <span class="tpm-tx"><b>Revenir à mon espace client</b><span>Retour à l'accueil FixPro</span></span>
+        <svg class="tpm-ch" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </a>
       <a class="tpm-item" role="menuitem" href="{{ url_for('profile') }}">
         <span class="tpm-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
         <span class="tpm-tx"><b>Mon profil</b><span>Voir et modifier mes informations</span></span>
@@ -142,6 +147,9 @@
     padding: 10px 10px; border-radius: 12px; text-decoration: none; color: inherit;
   }
   .tpm-item:hover, .tpm-item:focus-visible { background: #F4F8FF; outline: none; }
+  .tpm-item.tpm-back { background: #EAF1FE; margin-bottom: 4px; }
+  .tpm-item.tpm-back .tpm-ic { background: #2563EB; color: #fff; }
+  .tpm-item.tpm-back .tpm-tx b { color: #1D4ED8; }
   .tpm-ic {
     width: 38px; height: 38px; border-radius: 11px; background: #EAF1FE; color: #2563EB;
     display: flex; align-items: center; justify-content: center;

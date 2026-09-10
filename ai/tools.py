@@ -162,6 +162,7 @@ def create_request(client_id, title, description, category, address, urgency,
 
 def cancel_request(request_id, client_id):
     """Annule une demande si elle appartient au client et n'a pas debute."""
+    import fixpro_app  # import local : evite un import circulaire au chargement
     conn = _conn()
     try:
         row = conn.execute(

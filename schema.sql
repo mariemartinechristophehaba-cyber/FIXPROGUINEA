@@ -507,6 +507,18 @@ CREATE TABLE IF NOT EXISTS complaints (
 );
 CREATE INDEX IF NOT EXISTS idx_complaints_status ON complaints(status);
 
+CREATE TABLE IF NOT EXISTS notifications (
+    id          SERIAL PRIMARY KEY,
+    user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title       TEXT NOT NULL,
+    body        TEXT,
+    type        TEXT DEFAULT 'info',
+    is_read     INTEGER DEFAULT 0,
+    data        TEXT,
+    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, is_read);
+
 INSERT INTO subscription_plans (code, name, price_month, sort_order, features)
 SELECT 'basic', 'Basic', 50000, 1, E'Profil verifie\nApparait dans la recherche\nMessagerie avec les clients'
 WHERE NOT EXISTS (SELECT 1 FROM subscription_plans WHERE code = 'basic');

@@ -1,4 +1,7 @@
-name: CI/CD Pipeline
+name: CI
+
+# Garde-fou : lance les tests + un lint critique a chaque push et PR sur main.
+# Le deploiement est gere par l'integration Git native de Vercel (pas ici).
 
 on:
   push:
@@ -22,30 +25,12 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install -r requirements.txt flake8
+
+      - name: Lint critique (syntaxe, noms indefinis)
+        run: |
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
 
       - name: Run tests
         run: |
-          python -m pytest tests/ -v
-
-      - name: Check code style
-        run: |
-          pip install flake8
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-
-  deploy:
-    needs: test
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Deploy to Vercel
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: '--prod'
+          python -m pytest tests/ -q

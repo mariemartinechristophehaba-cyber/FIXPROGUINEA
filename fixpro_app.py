@@ -1327,7 +1327,7 @@ def create_notification(user_id, title, body, notif_type="info", data=None, conn
         if own:
             conn.commit()
     except Exception as exc:
-        logger.warning("Notification non creee : user_id=%s - %s", user_id, exc)
+        logger.error("Notification non creee (badge bloque a 0 ?) : user_id=%s - %s", user_id, exc)
     finally:
         if own:
             conn.close()
@@ -1465,8 +1465,15 @@ def is_prohibited_message(content):
 @app.route("/")
 def index():
     _u = get_current_user()
+    # Un technicien atterrit sur son espace pro par defaut. Mais il peut
+    # explicitement "revenir a son espace client" (bascule dans le menu profil,
+    # lien ?c=1) : on memorise ce choix en session jusqu'a ce qu'il rouvre son
+    # espace technicien. Le meme compte reste connecte, aucune reconnexion.
     if _u and _is_technician(_u):
-        return redirect(url_for("artisan_dashboard"))
+        if request.args.get("c") == "1":
+            session["fixpro_space"] = "client"
+        if session.get("fixpro_space") != "client":
+            return redirect(url_for("artisan_dashboard"))
     conn = get_db_connection()
     try:
         artisans = conn.execute("""
@@ -2085,12 +2092,26 @@ def _signup_doc_pop(token, kind):
     return data or None
 
 
+def _already_technician_redirect():
+    """Un compte deja technicien n'a rien a faire dans le wizard d'inscription :
+    on le renvoie vers son espace pro. Retourne une reponse de redirection, ou
+    None si l'utilisateur peut poursuivre l'inscription."""
+    user = get_current_user()
+    if user and user.get("role") in ("artisan", "technician"):
+        _clear_tech_signup_session()
+        return redirect(url_for("artisan_dashboard"))
+    return None
+
+
 @app.route("/devenir-technicien", methods=["GET", "POST"])
 @limiter.limit("15 per hour", methods=["POST"])
 def devenir_technicien():
     """Wizard d'inscription technicien -- etape 1 sur 5 : le profil
     (identite, telephone, e-mail, mot de passe). Public. Au POST valide,
     memorise l'etape 1 en session et passe a l'etape 2 (Services)."""
+    _done = _already_technician_redirect()
+    if _done:
+        return _done
     data = dict(session.get("tech_signup", {}))
     errors = {}
 
@@ -2138,6 +2159,9 @@ def technician_signup_trade():
     (selection unique, exclusive). Un technicien = un seul metier. L'etape 1
     doit avoir ete remplie. Au POST valide, memorise le metier et passe a
     l'etape 3 (Documents)."""
+    _done = _already_technician_redirect()
+    if _done:
+        return _done
     if not session.get("tech_signup"):
         return redirect(url_for("devenir_technicien"))
 
@@ -2176,6 +2200,9 @@ def technician_signup_documents():
     Les etapes 4 et 5 (Localisation, Finalisation) sont en cours de
     conception : "Continuer" memorise l'etat des documents puis affiche un
     message d'attente."""
+    _done = _already_technician_redirect()
+    if _done:
+        return _done
     if not session.get("tech_signup"):
         return redirect(url_for("devenir_technicien"))
     if not session.get("tech_signup_trade"):
@@ -2236,6 +2263,9 @@ def technician_signup_location():
     enregistree dans users.latitude / users.longitude a la finalisation
     (aucune migration -- colonnes deja presentes). Au POST valide, passe a
     l'etape 5 (Finalisation)."""
+    _done = _already_technician_redirect()
+    if _done:
+        return _done
     if not session.get("tech_signup"):
         return redirect(url_for("devenir_technicien"))
     if not session.get("tech_signup_trade"):
@@ -2294,6 +2324,9 @@ def technician_signup_finalize():
     enregistre les documents dans technician_documents (statut 'pending',
     dossier a verifier par l'admin), connecte le nouvel utilisateur et le
     redirige vers son tableau de bord. Aucune migration SQL."""
+    _done = _already_technician_redirect()
+    if _done:
+        return _done
     ts = session.get("tech_signup") or {}
     trade = session.get("tech_signup_trade")
     docs = session.get("tech_signup_docs") or {}
@@ -4941,6 +4974,9 @@ def artisan_dashboard():
     if not _is_technician(user):
         flash("Cet espace est reserve aux techniciens.", "error")
         return redirect(url_for("dashboard"))
+    # Le technicien est dans son espace pro : on annule une eventuelle bascule
+    # "vue client" pour que "/" le ramene ici par defaut aux visites suivantes.
+    session.pop("fixpro_space", None)
 
     now = datetime.now(timezone.utc)
     month_prefix = now.strftime("%Y-%m")
@@ -8174,7 +8210,7 @@ def _load_settings():
         conn.close()
 
 
-_SCHEMA_VERSION = "2026-09-05"
+_SCHEMA_VERSION = "2026-09-10-notifications"
 
 
 def _migrate_db():
@@ -8426,6 +8462,16 @@ def _migrate_db():
             except Exception:
                 pass
 
+        try:
+            _migrate_notifications(conn)
+            conn.commit()
+        except Exception as e:
+            logger.warning("Migration notifications impossible: %s", e)
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+
         # --- Compte administrateur (a partir des variables d'env) -----------
         try:
             _bootstrap_admin(conn)
@@ -8616,6 +8662,50 @@ def _migrate_messaging(conn):
         f" status TEXT NOT NULL DEFAULT 'new',"
         f" created_at {ts} DEFAULT CURRENT_TIMESTAMP)")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_conv_reports_status ON conversation_reports(status)")
+    conn.commit()
+
+
+def _migrate_notifications(conn):
+    """Table des notifications in-app.
+
+    Historique du bug : sur la base PostgreSQL de prod, `notifications.user_id`
+    etait de type **uuid** alors que `users.id` est un entier. Resultat :
+    - `INSERT ... VALUES (<id entier>, ...)` echouait ("invalid input syntax
+      for type uuid") -> create_notification avalait l'erreur -> aucune
+      notification jamais creee ;
+    - `WHERE user_id = <entier>` faisait planter ("operator does not exist:
+      uuid = integer") -> compteur du badge degrade a 0 partout.
+    La table ne contenait donc que des lignes inexploitables (ou rien) : on la
+    reconstruit avec le bon type. Compatible SQLite et PostgreSQL.
+    """
+    pk = "SERIAL PRIMARY KEY" if conn.is_postgres else "INTEGER PRIMARY KEY AUTOINCREMENT"
+    ts = "TIMESTAMP" if conn.is_postgres else "TEXT"
+
+    if conn.is_postgres:
+        try:
+            row = conn.execute(
+                "SELECT data_type FROM information_schema.columns"
+                " WHERE table_name = 'notifications' AND column_name = 'user_id'").fetchone()
+            if row and row["data_type"] not in ("integer", "bigint", "smallint"):
+                logger.warning(
+                    "notifications.user_id de type %s (attendu: entier) -> "
+                    "reconstruction de la table", row["data_type"])
+                conn.execute("DROP TABLE IF EXISTS notifications CASCADE")
+                conn.commit()
+        except Exception:
+            conn.rollback()
+
+    conn.execute(
+        f"CREATE TABLE IF NOT EXISTS notifications ("
+        f" id {pk},"
+        f" user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,"
+        f" title TEXT NOT NULL,"
+        f" body TEXT,"
+        f" type TEXT DEFAULT 'info',"
+        f" is_read INTEGER DEFAULT 0,"
+        f" data TEXT,"
+        f" created_at {ts} DEFAULT CURRENT_TIMESTAMP)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, is_read)")
     conn.commit()
 
 
