@@ -252,6 +252,83 @@ class TechnicianSignupTests(FixProTestCase):
         html = self.client.get("/artisans").get_data(as_text=True)
         self.assertIn("/devenir-technicien", html)
         self.assertIn("S'inscrire en tant que technicien", html)
+        self.assertNotIn("Accéder à mon espace technicien", html)
+
+    def test_menu_shows_technician_space_link_for_technician(self):
+        self.register_artisan("dr-tech@example.com", phone="+224621119501")
+        self.login("+224621119501")
+        html = self.client.get("/artisans").get_data(as_text=True)
+        self.assertIn("Accéder à mon espace technicien", html)
+        self.assertIn("/technician/dashboard", html)   # lien vers l'espace technicien existant
+        self.assertNotIn("S'inscrire en tant que technicien", html)
+
+    def test_menu_technician_link_persists_after_relogin(self):
+        self.register_artisan("dr-tech2@example.com", phone="+224621119502")
+        self.login("+224621119502")
+        self.assertIn("Accéder à mon espace technicien",
+                      self.client.get("/artisans").get_data(as_text=True))
+        self.client.get("/logout")
+        # reconnexion : le statut vient de la base, pas d'une variable locale
+        self.login("+224621119502")
+        self.assertIn("Accéder à mon espace technicien",
+                      self.client.get("/artisans").get_data(as_text=True))
+
+    def test_technician_space_denied_to_normal_user_by_url(self):
+        self.register_client()
+        self.login("+224620000000")
+        r = self.client.get("/dashboard/technicien", follow_redirects=False)
+        self.assertEqual(r.status_code, 302)
+        self.assertNotIn("/dashboard/technicien", r.location)
+
+    # --- Menu profil de l'avatar (accueil) + bascule client <-> technicien ---
+
+    def test_home_avatar_menu_client_only(self):
+        self.register_client()
+        self.login("+224620000000")
+        self._set_client_location()
+        html = self.client.get("/").get_data(as_text=True)
+        self.assertIn('id="hpmBtn"', html)                  # menu avatar present
+        self.assertIn("Mon profil client", html)
+        self.assertNotIn("Accéder à mon espace technicien", html)  # client -> jamais
+        self.assertNotIn("Revenir à mon espace client", html)
+
+    def test_technician_home_redirects_to_pro_space_by_default(self):
+        self.register_artisan("av-tech@example.com", phone="+224621119510")
+        self.login("+224621119510")
+        r = self.client.get("/", follow_redirects=False)
+        self.assertEqual(r.status_code, 302)
+        self.assertIn("technician/dashboard", r.location)
+
+    def test_technician_can_switch_to_client_view_and_it_persists(self):
+        self.register_artisan("av-tech2@example.com", phone="+224621119511")
+        self.login("+224621119511")
+        self._set_client_location()
+        # bascule "revenir a mon espace client"
+        r = self.client.get("/?c=1", follow_redirects=False)
+        self.assertEqual(r.status_code, 200)
+        html = r.get_data(as_text=True)
+        self.assertIn('id="hpmBtn"', html)
+        self.assertIn("Accéder à mon espace technicien", html)   # peut re-basculer
+        # la vue client persiste (session), pas juste le parametre d'URL
+        self.assertEqual(self.client.get("/").status_code, 200)
+        # ouvrir l'espace pro remet le comportement par defaut
+        self.assertEqual(self.client.get("/technician/dashboard").status_code, 200)
+        self.assertEqual(self.client.get("/", follow_redirects=False).status_code, 302)
+
+    def test_tech_avatar_menu_has_back_to_client(self):
+        self.register_artisan("av-tech3@example.com", phone="+224621119512")
+        self.login("+224621119512")
+        html = self.client.get("/technician/dashboard").get_data(as_text=True)
+        self.assertIn("Revenir à mon espace client", html)
+        self.assertIn('href="/?c=1"', html)
+
+    def test_same_account_after_space_switch(self):
+        self.register_artisan("av-tech4@example.com", phone="+224621119513")
+        self.login("+224621119513")
+        self._set_client_location()
+        self.client.get("/?c=1")
+        # toujours connecte, meme compte : /technician/dashboard reste accessible
+        self.assertEqual(self.client.get("/technician/dashboard").status_code, 200)
 
     _STEP1_OK = {
         "first_name": "Mohamed", "last_name": "Diallo",

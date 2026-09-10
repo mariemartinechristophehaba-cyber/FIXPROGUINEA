@@ -97,12 +97,53 @@
     border-radius: 50px; display: flex; align-items: center; justify-content: center;
   }
   .hp-avatar {
-    width: 40px; height: 40px; border-radius: 50%; overflow: hidden;
+    width: 40px; height: 40px; border-radius: 50%; overflow: hidden; padding: 0;
     display: flex; align-items: center; justify-content: center;
     background: rgba(255,255,255,0.15); color: #fff; font-size: 14px; font-weight: 700;
-    border: 2px solid #fff; text-decoration: none; flex-shrink: 0;
+    border: 2px solid #fff; text-decoration: none; flex-shrink: 0; cursor: pointer;
   }
   .hp-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+  /* --- Panneau profil (ouvert depuis l'avatar) --- */
+  .hpm-overlay[hidden], .hpm-panel[hidden] { display: none !important; }
+  .hpm-overlay { position: fixed; inset: 0; z-index: 300; background: rgba(11,27,59,.28); }
+  .hpm-panel {
+    position: fixed; z-index: 301; top: 62px; right: 12px;
+    width: min(340px, calc(100vw - 24px)); max-height: calc(100vh - 84px);
+    background: #fff; border-radius: 20px; overflow: hidden;
+    box-shadow: 0 24px 60px rgba(11,27,59,.28); display: flex; flex-direction: column;
+    color: var(--hp-text);
+  }
+  .hpm-head { display: flex; align-items: flex-start; gap: 12px; padding: 14px 14px 14px 16px; border-bottom: 1px solid #EEF2F9; }
+  .hpm-x { flex-shrink: 0; width: 30px; height: 30px; border: 0; border-radius: 999px; background: #F1F5FC; color: var(--hp-muted); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+  .hpm-x svg { width: 15px; height: 15px; }
+  .hpm-panel svg { pointer-events: none; }   /* icones decoratives : le clic passe au bouton/lien */
+  .hpm-head-av { width: 46px; height: 46px; border-radius: 999px; overflow: hidden; flex-shrink: 0; background: var(--hp-light-blue); }
+  .hpm-head-av img { width: 100%; height: 100%; object-fit: cover; }
+  .hpm-head-tx { min-width: 0; flex: 1; }
+  .hpm-head-tx b { display: block; font-size: .96rem; font-weight: 800; letter-spacing: -.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hpm-head-tx span { display: block; font-size: .76rem; color: var(--hp-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
+  .hpm-status { display: inline-flex; align-items: center; gap: 5px; margin-top: 5px; font-size: .74rem; font-weight: 700; color: #15803D; }
+  .hpm-status svg { width: 13px; height: 13px; }
+  .hpm-list { overflow-y: auto; padding: 8px; }
+  .hpm-item {
+    display: flex; align-items: center; gap: 12px; padding: 11px 10px; border-radius: 13px;
+    text-decoration: none; color: var(--hp-text); background: transparent;
+  }
+  .hpm-item:active { background: #F1F5FC; }
+  .hpm-ico { width: 36px; height: 36px; border-radius: 11px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: var(--hp-light-blue); color: var(--hp-primary); }
+  .hpm-ico svg { width: 18px; height: 18px; }
+  .hpm-tx { flex: 1; min-width: 0; }
+  .hpm-tx b { display: block; font-size: .86rem; font-weight: 700; line-height: 1.25; }
+  .hpm-tx span { display: block; font-size: .72rem; color: var(--hp-muted); margin-top: 1px; line-height: 1.3; }
+  .hpm-item > svg.hpm-chev { width: 16px; height: 16px; color: #C3CEDF; flex-shrink: 0; }
+  .hpm-sep { height: 1px; margin: 6px 10px; background: #EEF2F9; }
+  .hpm-item.tech { background: #EAF1FF; }
+  .hpm-item.tech .hpm-ico { background: var(--hp-primary); color: #fff; }
+  .hpm-item.tech .hpm-tx b { color: var(--hp-primary); }
+  .hpm-item.danger { color: #DC2626; }
+  .hpm-item.danger .hpm-ico { background: #FEE2E2; color: #DC2626; }
+  .hpm-item.danger .hpm-tx span { color: #F0A3A3; }
 
   .hp-header-waves { position: absolute; left: 0; right: 0; bottom: -1px; z-index: 1; line-height: 0; }
   .hp-header-waves svg { display: block; width: 100%; height: 70px; }
@@ -448,15 +489,90 @@
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></svg>
         {% if unread_count %}<span class="hp-notif-badge">{{ unread_count }}</span>{% endif %}
       </a>
-      <a href="{% if nav_user %}{{ url_for('profile') }}{% else %}{{ url_for('login') }}{% endif %}" class="hp-avatar" aria-label="Mon profil">
-        {% if nav_user and nav_user.photo_url %}
+      {% if nav_user %}
+      <button type="button" class="hp-avatar" id="hpmBtn" aria-label="Mon compte" aria-haspopup="menu" aria-expanded="false">
+        {% if nav_user.photo_url %}
           <img src="{{ nav_user.photo_url }}" alt="{{ nav_user.full_name }}" />
         {% else %}
           <img src="{{ url_for('static', filename='img/fixpro-avatar.png') }}" alt="Profil" />
         {% endif %}
+      </button>
+      {% else %}
+      <a href="{{ url_for('login') }}" class="hp-avatar" aria-label="Se connecter">
+        <img src="{{ url_for('static', filename='img/fixpro-avatar.png') }}" alt="Profil" />
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if nav_user %}
+  {% set _is_tech = nav_user.role in ('technician', 'artisan') %}
+  <div class="hpm-overlay" id="hpmOverlay" hidden></div>
+  <div class="hpm-panel" id="hpmPanel" role="menu" aria-label="Mon compte" hidden>
+    <div class="hpm-head">
+      <span class="hpm-head-av">
+        {% if nav_user.photo_url %}<img src="{{ nav_user.photo_url }}" alt="" />
+        {% else %}<img src="{{ url_for('static', filename='img/fixpro-avatar.png') }}" alt="" />{% endif %}
+      </span>
+      <span class="hpm-head-tx">
+        <b>{{ nav_user.full_name or 'Utilisateur' }}</b>
+        <span>{{ nav_user.email or nav_user.phone or '' }}</span>
+        <span class="hpm-status">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+          Compte client actif
+        </span>
+      </span>
+      <button type="button" class="hpm-x" id="hpmClose" aria-label="Fermer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="hpm-list">
+      <a href="{{ url_for('edit_profile') }}" class="hpm-item" role="menuitem">
+        <span class="hpm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+        <span class="hpm-tx"><b>Mon profil client</b><span>Voir et modifier mes informations</span></span>
+        <svg class="hpm-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </a>
+
+      {% if _is_tech %}
+      <div class="hpm-sep"></div>
+      <a href="{{ url_for('artisan_dashboard') }}" class="hpm-item tech" role="menuitem">
+        <span class="hpm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span>
+        <span class="hpm-tx"><b>Accéder à mon espace technicien</b><span>Basculer vers mon compte technicien</span></span>
+        <svg class="hpm-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </a>
+      <div class="hpm-sep"></div>
+      {% endif %}
+
+      <a href="{{ url_for('requests_list') }}" class="hpm-item" role="menuitem">
+        <span class="hpm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4M16 2v4"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18M9 16h6"/></svg></span>
+        <span class="hpm-tx"><b>Mes demandes / réservations</b><span>Suivre mes demandes et rendez-vous</span></span>
+        <svg class="hpm-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </a>
+      <a href="{{ url_for('notifications') }}" class="hpm-item" role="menuitem">
+        <span class="hpm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></svg></span>
+        <span class="hpm-tx"><b>Notifications</b><span>Consulter mes notifications</span></span>
+        {% if notif_unread|default(0) > 0 %}<span class="hpm-tx" style="flex:0;font-weight:800;color:var(--hp-primary)">{{ notif_unread }}</span>{% endif %}
+        <svg class="hpm-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </a>
+      <a href="{{ url_for('client_security') }}" class="hpm-item" role="menuitem">
+        <span class="hpm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.04 1.56V21a2 2 0 0 1-4 0v-.09A1.7 1.7 0 0 0 9 19.35a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.65 15a1.7 1.7 0 0 0-1.56-1.04H3a2 2 0 0 1 0-4h.09A1.7 1.7 0 0 0 4.65 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.65a1.7 1.7 0 0 0 1.04-1.56V3a2 2 0 0 1 4 0v.09A1.7 1.7 0 0 0 15 4.65a1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.35 9a1.7 1.7 0 0 0 1.56 1.04H21a2 2 0 0 1 0 4h-.09A1.7 1.7 0 0 0 19.4 15Z"/></svg></span>
+        <span class="hpm-tx"><b>Paramètres</b><span>Préférences de l'application</span></span>
+        <svg class="hpm-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </a>
+      <a href="{{ url_for('contact') }}" class="hpm-item" role="menuitem">
+        <span class="hpm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></span>
+        <span class="hpm-tx"><b>Aide et support</b><span>Une question ? On vous répond</span></span>
+        <svg class="hpm-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </a>
+      <div class="hpm-sep"></div>
+      <a href="{{ url_for('logout') }}" class="hpm-item danger" role="menuitem">
+        <span class="hpm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg></span>
+        <span class="hpm-tx"><b>Se déconnecter</b><span>Quitter votre compte FixPro</span></span>
+        <svg class="hpm-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
       </a>
     </div>
   </div>
+  {% endif %}
 
   <div class="hp-header-waves" aria-hidden="true">
     <svg viewBox="0 0 400 70" preserveAspectRatio="none" fill="none">
@@ -723,4 +839,44 @@
   });
 
   if (locTarget) locTarget.addEventListener('click', requestLocation);
+</script>
+
+<script>
+(function () {
+  var btn = document.getElementById('hpmBtn');
+  var panel = document.getElementById('hpmPanel');
+  var overlay = document.getElementById('hpmOverlay');
+  if (!btn || !panel || !overlay) return;
+
+  // Sortir panneau + overlay du header pour eviter tout clipping.
+  document.body.appendChild(overlay);
+  document.body.appendChild(panel);
+
+  function place() {
+    var r = btn.getBoundingClientRect();
+    var vw = document.documentElement.clientWidth;
+    var pw = panel.getBoundingClientRect().width;
+    var right = Math.max(10, Math.min(Math.round(vw - r.right), Math.round(vw - pw - 10)));
+    panel.style.top = Math.round(r.bottom + 8) + 'px';
+    panel.style.right = right + 'px';
+  }
+  function open() {
+    overlay.hidden = false; panel.hidden = false;
+    place();
+    btn.setAttribute('aria-expanded', 'true');
+  }
+  function close() {
+    overlay.hidden = true; panel.hidden = true;
+    btn.setAttribute('aria-expanded', 'false');
+  }
+  btn.addEventListener('click', function (e) {
+    e.preventDefault();
+    panel.hidden ? open() : close();
+  });
+  overlay.addEventListener('click', close);
+  var x = document.getElementById('hpmClose');
+  if (x) x.addEventListener('click', close);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !panel.hidden) close(); });
+  window.addEventListener('resize', function () { if (!panel.hidden) place(); });
+})();
 </script>

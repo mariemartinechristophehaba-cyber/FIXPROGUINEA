@@ -1460,8 +1460,15 @@ def is_prohibited_message(content):
 @app.route("/")
 def index():
     _u = get_current_user()
+    # Un technicien atterrit sur son espace pro par defaut. Mais il peut
+    # explicitement "revenir a son espace client" (bascule dans le menu profil,
+    # lien ?c=1) : on memorise ce choix en session jusqu'a ce qu'il rouvre son
+    # espace technicien. Le meme compte reste connecte, aucune reconnexion.
     if _u and _is_technician(_u):
-        return redirect(url_for("artisan_dashboard"))
+        if request.args.get("c") == "1":
+            session["fixpro_space"] = "client"
+        if session.get("fixpro_space") != "client":
+            return redirect(url_for("artisan_dashboard"))
     conn = get_db_connection()
     try:
         artisans = conn.execute("""
@@ -4599,6 +4606,9 @@ def artisan_dashboard():
     if not _is_technician(user):
         flash("Cet espace est reserve aux techniciens.", "error")
         return redirect(url_for("dashboard"))
+    # Le technicien est dans son espace pro : on annule une eventuelle bascule
+    # "vue client" pour que "/" le ramene ici par defaut aux visites suivantes.
+    session.pop("fixpro_space", None)
 
     now = datetime.now(timezone.utc)
     month_prefix = now.strftime("%Y-%m")
