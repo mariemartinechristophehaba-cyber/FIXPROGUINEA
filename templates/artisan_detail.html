@@ -94,6 +94,24 @@
     {{ S|safe }}<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
   {%- endif -%}
 {%- endmacro -%}
+{%- macro svc_desc(name) -%}
+  {#- Courte description generique du service (pas propre au technicien --
+     aucune donnee inventee sur SA prestation, seulement le type d'intervention). -#}
+  {%- set n = (name or '') | lower -%}
+  {%- if 'débou' in n or 'debou' in n or 'ventouse' in n -%}
+    Intervention rapide sur canalisations bouchées
+  {%- elif 'wc' in n or 'toilette' in n or 'sanitaire' in n -%}
+    Pose et remplacement d'équipements sanitaires
+  {%- elif 'fuite' in n or 'étanch' in n or 'etanch' in n -%}
+    Détection et réparation de fuites
+  {%- elif 'chauffe' in n or 'ballon' in n or 'chaudi' in n or 'cumulus' in n -%}
+    Installation et remplacement de chauffe-eau
+  {%- elif 'robinet' in n or 'mitigeur' in n -%}
+    Réparation et pose de robinetterie
+  {%- elif 'tuyau' in n or 'canalis' in n -%}
+    Installation et remplacement de tuyauterie
+  {%- endif -%}
+{%- endmacro -%}
 <!doctype html>
 <html lang="fr">
 <head>
@@ -132,88 +150,103 @@
     img { max-width: 100%; }
     .pl-wrap { max-width: 680px; margin: 0 auto; }
 
-    /* ---------- Header ---------- */
-    .pl-header {
-      position: relative; overflow: hidden;
+    /* ---------- Hero (grande photo) ---------- */
+    .pl-hero {
+      position: relative; overflow: hidden; height: 250px;
       background: linear-gradient(165deg, #2E6BFF 0%, #1B54E6 55%, #143FC4 100%);
-      color: #fff;
-      padding: calc(34px + env(safe-area-inset-top)) 18px 74px;
       border-radius: 0 0 26px 26px;
     }
-    .pl-header::after {
-      content: ""; position: absolute; inset: 0;
-      background:
-        radial-gradient(150px 150px at 88% 8%, rgba(255,255,255,0.15), transparent 70%),
-        radial-gradient(180px 180px at 10% 34%, rgba(255,255,255,0.08), transparent 70%);
-      pointer-events: none;
+    .pl-hero-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+    .pl-hero-fallback {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      color: rgba(255,255,255,0.32);
+    }
+    .pl-hero-fallback svg { width: 92px; height: 92px; }
+    .pl-hero-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(180deg, rgba(8,20,48,0.28) 0%, rgba(8,20,48,0.02) 32%, rgba(8,20,48,0.72) 100%);
     }
     .pl-topbar {
-      position: relative; z-index: 2;
+      position: absolute; z-index: 3; left: 16px; right: 16px;
+      top: calc(16px + env(safe-area-inset-top));
       display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 20px;
     }
     .pl-icon-btn {
       width: 40px; height: 40px; border-radius: 50%;
-      background: rgba(255,255,255,0.16); border: 1px solid rgba(255,255,255,0.22);
+      background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.28);
+      backdrop-filter: blur(6px);
       color: #fff; display: flex; align-items: center; justify-content: center;
       cursor: pointer; padding: 0;
     }
     .pl-icon-btn svg { width: 20px; height: 20px; }
     .pl-top-actions { display: flex; gap: 10px; }
     .pl-fav.on svg { fill: #fff; }
+    .pl-hero-status {
+      position: absolute; z-index: 3; left: 16px; bottom: 16px;
+      display: inline-flex; align-items: center; gap: 7px;
+      background: rgba(8,20,48,0.4); backdrop-filter: blur(6px);
+      border: 1px solid rgba(255,255,255,0.3); color: #fff;
+      font-size: 0.78rem; font-weight: 700; padding: 7px 14px; border-radius: 50px;
+    }
+    .pl-hero-status .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--pl-green); flex-shrink: 0; }
 
-    .pl-identity { position: relative; z-index: 2; display: flex; gap: 16px; align-items: flex-start; }
-    .pl-ava-wrap { position: relative; flex-shrink: 0; }
+    /* ---------- Carte d'identite (flottante sous le hero) ---------- */
+    .pl-idcard {
+      position: relative; z-index: 3; margin: -34px 16px 14px;
+      background: #fff; border-radius: 18px; box-shadow: var(--pl-card-shadow);
+      padding: 16px; display: flex; gap: 14px; align-items: flex-start;
+    }
+    .pl-ava-wrap { position: relative; flex-shrink: 0; margin-top: -46px; }
     .pl-ava {
-      width: 104px; height: 104px; border-radius: 20px; overflow: hidden;
-      background: #fff; border: 3px solid rgba(255,255,255,0.92);
+      width: 78px; height: 78px; border-radius: 18px; overflow: hidden;
+      background: var(--pl-soft); border: 3px solid #fff; box-shadow: 0 4px 14px rgba(15,42,90,0.14);
       display: flex; align-items: center; justify-content: center;
     }
     .pl-ava img { width: 100%; height: 100%; object-fit: cover; }
-    .pl-ava .initial { font-size: 2.4rem; font-weight: 800; color: var(--pl-primary); }
+    .pl-ava .initial { font-size: 1.9rem; font-weight: 800; color: var(--pl-primary); }
     .pl-ava-dot {
       position: absolute; right: -3px; bottom: -3px;
-      width: 22px; height: 22px; border-radius: 50%;
-      background: var(--pl-green); border: 3px solid #1B54E6;
+      width: 19px; height: 19px; border-radius: 50%;
+      background: var(--pl-green); border: 3px solid #fff;
     }
-    .pl-id-main { padding-top: 4px; min-width: 0; }
+    .pl-id-main { min-width: 0; padding-top: 2px; }
     .pl-name {
       display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
-      font-size: 1.4rem; font-weight: 800; margin: 0 0 3px; line-height: 1.2;
+      font-size: 1.22rem; font-weight: 800; margin: 0 0 2px; line-height: 1.2; color: var(--pl-text);
     }
     .pl-name .check {
-      width: 21px; height: 21px; border-radius: 50%; background: #fff;
+      width: 20px; height: 20px; border-radius: 50%; background: var(--pl-primary);
       display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
-    .pl-name .check svg { width: 12px; height: 12px; color: var(--pl-primary); }
-    .pl-role { font-size: 0.95rem; font-weight: 600; opacity: 0.94; margin: 0 0 10px; }
+    .pl-name .check svg { width: 12px; height: 12px; color: #fff; }
+    .pl-role { font-size: 0.88rem; font-weight: 600; color: var(--pl-muted); margin: 0 0 8px; }
     .pl-subline {
       display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
-      font-size: 0.84rem; opacity: 0.96; margin-bottom: 10px;
+      font-size: 0.82rem; color: var(--pl-muted); margin-bottom: 9px;
     }
-    .pl-subline .star { display: inline-flex; align-items: center; gap: 4px; font-weight: 700; }
+    .pl-subline .star { display: inline-flex; align-items: center; gap: 4px; font-weight: 700; color: var(--pl-text); }
     .pl-subline .star svg { width: 14px; height: 14px; fill: var(--pl-star); }
-    .pl-subline .sep { opacity: 0.55; }
+    .pl-subline .sep { opacity: 0.6; }
     .pl-verified-pill {
       display: inline-flex; align-items: center; gap: 6px;
-      background: rgba(22,163,74,0.18); border: 1px solid rgba(255,255,255,0.25);
-      color: #C7F9D9; font-weight: 700; font-size: 0.76rem;
+      background: #ECFDF5; border: 1px solid #BBF7D0;
+      color: #15803D; font-weight: 700; font-size: 0.74rem;
       padding: 5px 12px; border-radius: 50px;
     }
     .pl-verified-pill svg { width: 13px; height: 13px; }
     .pl-badges { display: flex; flex-wrap: wrap; gap: 6px; }
     .pl-plan-pill {
       display: inline-flex; align-items: center; gap: 5px;
-      font-weight: 800; font-size: 0.76rem; padding: 5px 12px; border-radius: 50px;
-      background: rgba(255,255,255,0.16); border: 1px solid rgba(255,255,255,0.28); color: #fff;
+      font-weight: 800; font-size: 0.74rem; padding: 5px 12px; border-radius: 50px;
+      background: var(--pl-soft); border: 1px solid #D6E4FF; color: var(--pl-primary);
     }
-    .pl-plan-pill.amber { background: rgba(245,158,11,0.28); border-color: rgba(245,158,11,0.5); color: #FFE7BC; }
-    .pl-plan-pill.new { background: rgba(96,165,250,0.24); border-color: rgba(96,165,250,0.45); color: #DBEAFE; }
+    .pl-plan-pill.amber { background: #FEF3C7; border-color: #FDE68A; color: #92400E; }
+    .pl-plan-pill.new { background: var(--pl-soft); border-color: #D6E4FF; color: var(--pl-primary); }
 
     /* ---------- Stats card ---------- */
     .pl-stats {
       position: relative; z-index: 3;
-      margin: -54px 16px 14px; background: #fff; border-radius: 18px;
+      margin: 0 16px 14px; background: #fff; border-radius: 18px;
       box-shadow: var(--pl-card-shadow);
       display: grid; grid-template-columns: repeat(4, 1fr);
       padding: 18px 6px;
@@ -266,9 +299,25 @@
     .pl-svc svg { width: 25px; height: 25px; color: var(--pl-primary); }
     .pl-svc span { font-size: 0.72rem; font-weight: 600; line-height: 1.25; color: var(--pl-text); }
 
-    /* Réalisations */
+    /* Services -- grille de cartes (icone en vignette + nom + description) */
+    .pl-svc-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .pl-svc-card {
+      background: #F4F7FD; border-radius: 16px; padding: 14px 13px;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .pl-svc-tile {
+      width: 44px; height: 44px; border-radius: 12px; background: var(--pl-soft);
+      color: var(--pl-primary); display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .pl-svc-tile svg { width: 24px; height: 24px; }
+    .pl-svc-card strong { font-size: 0.86rem; font-weight: 700; color: var(--pl-text); line-height: 1.25; }
+    .pl-svc-card span { font-size: 0.74rem; color: var(--pl-muted); line-height: 1.35; }
+
+    /* Réalisations -- grille 2 colonnes */
+    .pl-real-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
     .pl-real {
-      flex: 0 0 172px; height: 128px; border-radius: 14px; overflow: hidden;
+      height: 132px; border-radius: 14px; overflow: hidden;
       position: relative; background: #DDE6F5;
     }
     .pl-real img { width: 100%; height: 100%; object-fit: cover; }
@@ -334,7 +383,10 @@
     @media (min-width: 720px) {
       body { padding-bottom: 40px; }
       .pl-wrap { padding: 24px 0 0; }
-      .pl-header { border-radius: 22px; }
+      .pl-hero { border-radius: 22px; height: 320px; }
+      .pl-svc-grid { grid-template-columns: repeat(3, 1fr); }
+      .pl-real-grid { grid-template-columns: repeat(3, 1fr); }
+      .pl-real { height: 150px; }
       .pl-actionbar {
         position: static; border: none; background: none; padding: 0 16px;
         margin: 0 auto 32px; max-width: 680px;
@@ -345,7 +397,13 @@
 </head>
 <body>
   <div class="pl-wrap">
-    <header class="pl-header">
+    <header class="pl-hero">
+      {% if artisan.photo_url %}
+        <img class="pl-hero-img" src="{{ artisan.photo_url }}" alt="{{ artisan.full_name }}" />
+      {% else %}
+        <span class="pl-hero-fallback">{{ metier_icon() }}</span>
+      {% endif %}
+      <span class="pl-hero-overlay"></span>
       <div class="pl-topbar">
         <button class="pl-icon-btn" type="button" aria-label="Retour"
           onclick="if(history.length>1){history.back()}else{location.href='{{ url_for('artisans_page') }}'}">
@@ -360,53 +418,56 @@
           </button>
         </div>
       </div>
+      {% if is_online %}
+      <span class="pl-hero-status"><span class="dot" aria-hidden="true"></span>Disponible aujourd'hui</span>
+      {% endif %}
+    </header>
 
-      <div class="pl-identity">
-        <div class="pl-ava-wrap">
-          <div class="pl-ava">
-            {% if artisan.photo_url %}
-              <img src="{{ artisan.photo_url }}" alt="{{ artisan.full_name }}" />
-            {% else %}
-              <span class="initial">{{ (artisan.full_name or 'T')[0]|upper }}</span>
-            {% endif %}
-          </div>
-          {% if is_online %}<span class="pl-ava-dot" aria-label="En ligne"></span>{% endif %}
+    <div class="pl-idcard">
+      <div class="pl-ava-wrap">
+        <div class="pl-ava">
+          {% if artisan.photo_url %}
+            <img src="{{ artisan.photo_url }}" alt="{{ artisan.full_name }}" />
+          {% else %}
+            <span class="initial">{{ (artisan.full_name or 'T')[0]|upper }}</span>
+          {% endif %}
         </div>
-        <div class="pl-id-main">
-          <h1 class="pl-name">
-            {{ artisan.full_name }}
-            {% if artisan.is_verified %}
-            <span class="check" aria-label="Vérifié"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
-            {% endif %}
-          </h1>
-          <p class="pl-role">{{ prof }} professionnel</p>
-          <div class="pl-subline">
-            <span class="star">
-              <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-              {% if rcount > 0 %}{{ ("%.1f"|format(ravg))|replace('.', ',') }}{% else %}Nouveau{% endif %}
-            </span>
-            {% if rcount > 0 %}<span>({{ rcount }} avis)</span>{% endif %}
-            {% if member_year %}<span class="sep">•</span><span>Membre depuis {{ member_year }}</span>{% endif %}
-          </div>
-          <div class="pl-badges">
-            {% if artisan.is_verified %}
-            <span class="pl-verified-pill">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>
-              Vérifié par FixPro
-            </span>
-            {% endif %}
-            {% if artisan.subscription_badge %}
-            <span class="pl-plan-pill {{ artisan.subscription_badge.accent }}">
-              {% if artisan.subscription_badge.icon == 'crown' %}👑{% else %}⭐{% endif %}
-              {{ artisan.subscription_badge.label }}
-            </span>
-            {% elif artisan.is_new %}
-            <span class="pl-plan-pill new">✨ Nouveau sur FixPro</span>
-            {% endif %}
-          </div>
+        {% if is_online %}<span class="pl-ava-dot" aria-label="En ligne"></span>{% endif %}
+      </div>
+      <div class="pl-id-main">
+        <h1 class="pl-name">
+          {{ artisan.full_name }}
+          {% if artisan.is_verified %}
+          <span class="check" aria-label="Vérifié"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+          {% endif %}
+        </h1>
+        <p class="pl-role">{{ prof }} professionnel</p>
+        <div class="pl-subline">
+          <span class="star">
+            <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            {% if rcount > 0 %}{{ ("%.1f"|format(ravg))|replace('.', ',') }}{% else %}Nouveau{% endif %}
+          </span>
+          {% if rcount > 0 %}<span>({{ rcount }} avis)</span>{% endif %}
+          {% if member_year %}<span class="sep">•</span><span>Membre depuis {{ member_year }}</span>{% endif %}
+        </div>
+        <div class="pl-badges">
+          {% if artisan.is_verified %}
+          <span class="pl-verified-pill">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>
+            Vérifié par FixPro
+          </span>
+          {% endif %}
+          {% if artisan.subscription_badge %}
+          <span class="pl-plan-pill {{ artisan.subscription_badge.accent }}">
+            {% if artisan.subscription_badge.icon == 'crown' %}👑{% else %}⭐{% endif %}
+            {{ artisan.subscription_badge.label }}
+          </span>
+          {% elif artisan.is_new %}
+          <span class="pl-plan-pill new">✨ Nouveau sur FixPro</span>
+          {% endif %}
         </div>
       </div>
-    </header>
+    </div>
 
     <section class="pl-stats" aria-label="Informations clés">
       <div class="pl-stat">
@@ -454,11 +515,13 @@
         {% if svc_names|length > 4 %}<span class="muted-note">{{ svc_names|length }}</span>{% endif %}
       </div>
       {% if svc_names %}
-      <div class="pl-hscroll">
+      <div class="pl-svc-grid">
         {% for name in svc_names %}
-        <div class="pl-svc">
-          {{ svc_icon(name) }}
-          <span>{{ name }}</span>
+        <div class="pl-svc-card">
+          <span class="pl-svc-tile">{{ svc_icon(name) }}</span>
+          <strong>{{ name }}</strong>
+          {% set _desc = svc_desc(name)|trim %}
+          {% if _desc %}<span>{{ _desc }}</span>{% endif %}
         </div>
         {% endfor %}
       </div>
@@ -479,7 +542,7 @@
         {% if portfolio and portfolio|length > 2 %}<span class="muted-note">{{ portfolio|length }}</span>{% endif %}
       </div>
       {% if portfolio %}
-      <div class="pl-hscroll">
+      <div class="pl-real-grid">
         {% for p in portfolio %}
         <div class="pl-real">
           <img src="{{ p.photo_url }}" alt="{{ p.caption or 'Réalisation' }}" loading="lazy" />

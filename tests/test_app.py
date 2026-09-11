@@ -3496,6 +3496,123 @@ class ParametresApparenceTests(FixProTestCase):
             return fixpro_app.url_for(endpoint, **kw)
 
 
+class ArtisanPublicProfileTests(FixProTestCase):
+    """Fiche publique du technicien (/artisans/<id>), vue par le CLIENT :
+    UN SEUL template dynamique (artisan_detail.html), donnees reelles
+    uniquement (bio, services, avis, realisations) -- jamais un profil
+    technicien prive (revenus, parametres pro, gestion des missions)."""
+
+    def _plumber_id(self, phone="+224621119900",
+                    email="plombier-profil@example.com"):
+        self.register_artisan(email, phone=phone)
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            return conn.execute(
+                "SELECT id FROM users WHERE phone = ?", (phone,)).fetchone()["id"]
+        finally:
+            conn.close()
+
+    def test_profile_has_hero_idcard_and_stats(self):
+        aid = self._plumber_id()
+        r = self.client.get(f"/artisans/{aid}")
+        self.assertEqual(r.status_code, 200)
+        html = r.get_data(as_text=True)
+        self.assertIn('class="pl-hero"', html)
+        self.assertIn('class="pl-idcard"', html)
+        self.assertIn('class="pl-stats"', html)
+        self.assertIn("Disponible aujourd'hui", html)   # technicien en_ligne (donnee reelle)
+        self.assertIn("Plombier professionnel", html)
+        self.assertIn("Interventions réalisées", html)
+        self.assertIn("Message", html)
+        self.assertIn("Contacter", html)
+
+    def test_real_plumbing_services_shown_as_a_card_grid(self):
+        aid = self._plumber_id(phone="+224621119901", email="plombier2@example.com")
+        html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
+        self.assertIn('class="pl-svc-grid"', html)
+        # services standards du metier "Plombier" (seed reel schema_sqlite.sql)
+        self.assertIn("Debouchage", html)
+        self.assertIn("Installation sanitaire", html)
+        # jamais un service d'un autre metier
+        self.assertNotIn("climatisation", html.lower())
+        self.assertNotIn("électricité", html.lower())
+        self.assertNotIn("peinture", html.lower())
+
+    def test_no_portfolio_shows_honest_empty_state_not_fake_photos(self):
+        aid = self._plumber_id(phone="+224621119902", email="plombier3@example.com")
+        html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
+        self.assertIn("Aucune réalisation publiée pour le moment.", html)
+        self.assertNotIn('class="pl-real-grid"', html)
+
+    def test_real_portfolio_photo_renders_in_the_grid(self):
+        aid = self._plumber_id(phone="+224621119903", email="plombier4@example.com")
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute(
+                "INSERT INTO artisan_portfolio (artisan_id, photo_url, caption)"
+                " VALUES (?, ?, ?)",
+                (aid, "https://example.com/vraie-photo-chantier.jpg",
+                 "Débouchage d'une canalisation"))
+            conn.commit()
+        finally:
+            conn.close()
+        html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
+        self.assertIn('class="pl-real-grid"', html)
+        self.assertIn("https://example.com/vraie-photo-chantier.jpg", html)
+        self.assertIn("Débouchage d&#39;une canalisation", html)
+
+    def test_bio_is_real_data_not_hardcoded_per_technician(self):
+        aid = self._plumber_id(phone="+224621119904", email="plombier5@example.com")
+        # sans bio -> message generique honnete, jamais un texte invente specifique
+        empty_html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
+        self.assertIn("n'a pas encore rédigé sa présentation", empty_html)
+        self.assertNotIn("Ibrahim Sory", empty_html)
+
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute("UPDATE users SET bio = ? WHERE id = ?",
+                        ("Plombier de Kaloum depuis 12 ans.", aid))
+            conn.commit()
+        finally:
+            conn.close()
+        filled_html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
+        self.assertIn("Plombier de Kaloum depuis 12 ans.", filled_html)
+
+    def test_public_profile_never_leaks_private_technician_data(self):
+        aid = self._plumber_id(phone="+224621119905", email="plombier6@example.com")
+        html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
+        for private_term in ("Mes revenus", "revenus", "Espace professionnel",
+                             "Préférences technicien", "Zone d'intervention",
+                             "Abonnement"):
+            self.assertNotIn(private_term, html, private_term)
+
+    def test_reusable_for_other_trades_same_single_template(self):
+        """Le meme template doit fonctionner pour un autre metier sans etre
+        code en dur pour le plombier -- verifie l'architecture reutilisable."""
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute(
+                "INSERT INTO users (email, phone, password_hash, role, full_name,"
+                " profession, city, is_verified, is_active, verification_status,"
+                " availability_status)"
+                " VALUES ('electricien-profil@example.com', '+224621119906', ?,"
+                " 'technician', 'Amara Conde', 'Électricien', 'Conakry', 1, 1,"
+                " 'APPROVED', 'en_ligne')",
+                (fixpro_app.generate_password_hash("FixPro2026!"),))
+            conn.commit()
+            eid = conn.execute(
+                "SELECT id FROM users WHERE phone = '+224621119906'").fetchone()["id"]
+        finally:
+            conn.close()
+        html = self.client.get(f"/artisans/{eid}").get_data(as_text=True)
+        self.assertEqual(self.client.get(f"/artisans/{eid}").status_code, 200)
+        self.assertIn("Électricien professionnel", html)
+        self.assertIn('class="pl-svc-grid"', html)
+        # services electricien reels, jamais de plomberie
+        self.assertIn("Depannage electrique", html)
+        self.assertNotIn("Debouchage", html)
+
+
 class RefreshRolePersistenceTests(FixProTestCase):
     """Le role vient TOUJOURS d'une lecture serveur fraiche (users.role en
     base), jamais d'un etat client qui pourrait disparaitre/perimer :
