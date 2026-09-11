@@ -3334,6 +3334,24 @@ class RefreshRolePersistenceTests(FixProTestCase):
         self.assertNotIn("Nos services", r.get_data(as_text=True))
         self.assertNotIn("Mon technicien", r.get_data(as_text=True))
 
+    # Correction definitive demandee : le mecanisme de fausses donnees est
+    # efface, pas juste contourne -- il ne doit plus exister nulle part.
+    def test_client_dashboard_demo_data_generator_no_longer_exists(self):
+        self.assertFalse(hasattr(fixpro_app, "_client_dashboard_demo_context"))
+        self.assertFalse(hasattr(fixpro_app, "_CLIENT_DASHBOARD_DEMO"))
+        self.assertNotIn("CLIENT_DASHBOARD_DEMO", fixpro_app.app.config)
+
+    def test_client_dashboard_always_shows_the_real_logged_in_identity(self):
+        """Plus aucun mode demo : le prenom/l'identite affiches sont
+        toujours ceux du compte reellement connecte, jamais "Aminata"."""
+        self.register_client(phone="+224620222010", first_name="Souleymane",
+                             last_name="Kaba")
+        self.login("+224620222010")
+        html = self.client.get("/dashboard").get_data(as_text=True)
+        self.assertIn("Souleymane", html)
+        self.assertNotIn("Aminata", html)
+        self.assertNotIn("Moussa Bah", html)   # ex-"mon technicien" fictif
+
 
 class NotificationCenterTests(FixProTestCase):
     """Centre de notifications technicien : bottom sheet, categories, diffusion

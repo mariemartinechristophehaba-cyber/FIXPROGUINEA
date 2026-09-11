@@ -63,12 +63,6 @@ app.config["ADMIN_DASHBOARD_DEMO"] = (
     os.environ.get("ADMIN_DASHBOARD_DEMO", "1").strip().lower()
     not in ("0", "false", "no", "off", ""))
 
-# Idem pour le tableau de bord CLIENT (voir _CLIENT_DASHBOARD_DEMO).
-# CLIENT_DASHBOARD_DEMO=0 -> vraies donnees du client (demandes, paiements...).
-app.config["CLIENT_DASHBOARD_DEMO"] = (
-    os.environ.get("CLIENT_DASHBOARD_DEMO", "1").strip().lower()
-    not in ("0", "false", "no", "off", ""))
-
 # Idem pour la page admin "Utilisateurs" (voir _admin_users_demo_all).
 # ADMIN_USERS_DEMO=0 -> vraie table users.
 app.config["ADMIN_USERS_DEMO"] = (
@@ -2954,39 +2948,6 @@ def _admin_dashboard_demo_context():
     }
 
 
-# ---------------------------------------------------------------------------
-# Donnees de DEMONSTRATION du tableau de bord CLIENT (fausses donnees
-# coherentes, cf. maquette). Activees par app.config["CLIENT_DASHBOARD_DEMO"]
-# (CLIENT_DASHBOARD_DEMO=0 -> vraies donnees du client). Ne remplacent JAMAIS
-# les vraies donnees en production.
-# ---------------------------------------------------------------------------
-_CLIENT_DASHBOARD_DEMO = {
-    "stats": {
-        "requests": {"value": 12, "delta": "+3", "note": "ce mois", "trend": "up"},
-        "done": {"value": 8, "delta": "+2", "note": "ce mois", "trend": "up"},
-        "progress": {"value": 2, "delta": "stable", "note": "", "trend": "flat"},
-        "spent": {"value": 1250000, "delta": "+15%", "note": "ce mois", "trend": "up"},
-    },
-    "address": "Kaloum, Conakry",
-    "technician": {
-        "name": "Moussa Bah", "job": "Plombier", "rating": "4.9",
-        "reviews": 128, "phone": "+224620112233",
-    },
-    "requests": [
-        ("#FP-3241", "Plomberie", "Moussa Bah", "done", "01/09/2026"),
-        ("#FP-3240", "Électricité", "Aïssatou Diallo", "prog", "29/08/2026"),
-        ("#FP-3239", "Climatisation", "Karim Soumah", "wait", "25/08/2026"),
-        ("#FP-3238", "Menuiserie", "Lansana Camara", "done", "20/08/2026"),
-        ("#FP-3237", "Peinture", "Mariama Kourouma", "canc", "18/08/2026"),
-    ],
-    "notifications": [
-        ("success", "Votre demande #FP-3241 est terminée", "Il y a 10 min"),
-        ("tech", "Le technicien arrive bientôt", "Il y a 25 min"),
-        ("pay", "Votre paiement a été confirmé", "Il y a 1 heure"),
-        ("msg", "Nouveau message de Moussa Bah", "Il y a 2 heures"),
-    ],
-}
-
 _CLIENT_STATUS_LABELS = {"done": "Terminée", "prog": "En cours",
                          "wait": "En attente", "canc": "Annulée"}
 
@@ -2995,38 +2956,6 @@ _CLIENT_SERVICES = [
     ("Plomberie", "plumb"), ("Électricité", "elec"), ("Climatisation", "clim"),
     ("Menuiserie", "wood"), ("Peinture", "paint"), ("Nettoyage", "clean"),
 ]
-
-
-def _client_dashboard_demo_context():
-    """Construit le contexte du template a partir de _CLIENT_DASHBOARD_DEMO."""
-    d = _CLIENT_DASHBOARD_DEMO
-    s = d["stats"]
-
-    def _stat(key, suffix=""):
-        v = s[key]
-        return {"value": _fmt_int(v["value"]).replace(" ", " ") + suffix,
-                "delta": v["delta"], "note": v["note"], "trend": v["trend"]}
-
-    stats = {
-        "requests": _stat("requests"), "done": _stat("done"),
-        "progress": _stat("progress"), "spent": _stat("spent", " GNF"),
-    }
-    recent_requests = [
-        {"code": c, "service": sv, "tech": t, "pill": p,
-         "status_label": _CLIENT_STATUS_LABELS[p], "date": dt}
-        for c, sv, t, p, dt in d["requests"]
-    ]
-    notifications = [{"kind": k, "text": tx, "ago": ag}
-                     for k, tx, ag in d["notifications"]]
-    return {
-        "stats": stats,
-        "recent_requests": recent_requests,
-        "notifications": notifications,
-        "my_tech": dict(d["technician"]),
-        "my_address": d["address"],
-        "unread_count": len(notifications),
-        "demo_identity": {"full_name": "Aminata Diallo", "first_name": "Aminata"},
-    }
 
 
 @app.route("/admin/dashboard")
@@ -5117,7 +5046,7 @@ def dashboard():
         return redirect(url_for("login"))
 
     now = datetime.now(timezone.utc)
-    raw_name = (user.get("full_name") if user else None) or ""
+    raw_name = user.get("full_name") or ""
     first_name = raw_name.split(" ")[0].strip()
     today_label = "%s %d %s %d" % (
         _ADM_DAYS_FR[now.weekday()].capitalize(), now.day,
@@ -5129,23 +5058,12 @@ def dashboard():
         "user": user, "client_first_name": first_name,
         "today_label": today_label, "hero_img": hero,
         "current_year": now.year, "services": _CLIENT_SERVICES,
-        "demo_mode": bool(app.config.get("CLIENT_DASHBOARD_DEMO")),
+        "display_name": user.get("full_name") or "Mon compte",
     }
     # Adresse : geoloc de session (systeme FixPro) puis profil.
-    zone = (session.get("client_zone")
-            or ((user.get("quartier") or user.get("city")) if user else None))
+    zone = (session.get("client_zone") or user.get("quartier") or user.get("city"))
 
-    if app.config.get("CLIENT_DASHBOARD_DEMO"):
-        ctx = _client_dashboard_demo_context()
-        ident = ctx.pop("demo_identity", {})
-        if not first_name:
-            base_ctx["client_first_name"] = ident.get("first_name", "")
-        base_ctx["display_name"] = (user.get("full_name") if user and user.get("full_name")
-                                    else ident.get("full_name", "Mon compte"))
-    else:
-        ctx = _client_dashboard_real_context(user)
-        base_ctx["display_name"] = (user.get("full_name")
-                                    if user and user.get("full_name") else "Mon compte")
+    ctx = _client_dashboard_real_context(user)
     if zone:
         ctx["my_address"] = zone
     base_ctx.update(ctx)
