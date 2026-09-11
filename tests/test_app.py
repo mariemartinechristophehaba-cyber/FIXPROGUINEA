@@ -2870,6 +2870,38 @@ class RoleSeparationTests(FixProTestCase):
         self.assertEqual(r.status_code, 302)
         self.assertIn("/admin/login", r.location)
 
+    def test_removed_legacy_routes_return_clean_404(self):
+        """Les anciennes routes retirees (mobile stub, ancien contact artisan,
+        fermeture de ticket, export demandes) ne doivent jamais faire
+        reapparaitre une ancienne page : 404 propre, pas d'erreur serveur."""
+        for url in ("/mobile_welcome", "/mobile_dashboard",
+                    "/artisans/1/contact", "/tickets/1/close",
+                    "/export/requests"):
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 404, url)
+            self.assertNotIn(b"Traceback", r.data)
+
+    def test_admin_real_login_logout_relogin_keeps_admin_access(self):
+        """Cycle reel deconnexion/reconnexion (formulaire /login, pas un
+        raccourci de session) : le role admin est retrouve depuis la base,
+        pas depuis une variable navigateur."""
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute(
+                "INSERT INTO users (email, phone, password_hash, role, full_name,"
+                " is_verified, is_active) VALUES (?, ?, ?, 'admin', 'Admin Réel', 1, 1)",
+                ("relog-admin@x.co", "+224621120005",
+                 fixpro_app.generate_password_hash("FixPro2026!")))
+            conn.commit()
+        finally:
+            conn.close()
+        self.login("relog-admin@x.co")
+        self.assertEqual(self.client.get("/admin/dashboard").status_code, 200)
+        self.client.get("/logout")
+        self.assertEqual(self.client.get("/admin/dashboard", follow_redirects=False).status_code, 302)
+        self.login("relog-admin@x.co")
+        self.assertEqual(self.client.get("/admin/dashboard").status_code, 200)
+
 
 class NotificationCenterTests(FixProTestCase):
     """Centre de notifications technicien : bottom sheet, categories, diffusion
