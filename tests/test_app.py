@@ -3388,6 +3388,114 @@ class ParametresPageTests(FixProTestCase):
         self.assertIn('href="{}"'.format(self._url("parametres")), html)
 
 
+class ParametresApparenceTests(FixProTestCase):
+    """Parametres > Apparence : Clair / Sombre / Selon le systeme, meme
+    comportement pour invite/client/technicien, preference persistee par
+    cookie (pas de nouveau systeme de stockage, pas lie a un compte)."""
+
+    def _upgrade_to_technician(self, c, phone):
+        self.register_client(phone=phone)
+        self.login(phone)
+        c.get("/devenir-technicien", follow_redirects=False)
+        c.post("/devenir-technicien/services", data={"trade": "plomberie"})
+        c.post("/devenir-technicien/documents", data={})
+        c.post("/devenir-technicien/localisation", data={})
+        return c.post("/devenir-technicien/finalisation",
+                      data={"accept_cgu": "1"}, follow_redirects=False)
+
+    # TEST 1-2 : ouvrir Parametres -> Apparence, les 3 choix sont proposes
+    def test_apparence_page_shows_the_three_choices(self):
+        html = self.client.get("/parametres/apparence").get_data(as_text=True)
+        self.assertIn("Clair", html)
+        self.assertIn("Sombre", html)
+        self.assertIn("Selon le système", html)
+        self.assertIn("Appliquer le thème", html)
+        self.assertIn("Mode clair", html)
+        self.assertIn("Mode sombre", html)
+
+    # TEST 3-5 : choisir Clair, appliquer, verifier le resultat
+    def test_choosing_light_persists_via_cookie(self):
+        r = self.client.post("/parametres/apparence", data={"theme": "light"},
+                             follow_redirects=False)
+        self.assertEqual(r.status_code, 302)
+        self.assertTrue(r.location.endswith("/parametres"))
+        self.assertIn("fp_theme=light", r.headers.get("Set-Cookie", ""))
+        self.client.set_cookie("fp_theme", "light")
+        html = self.client.get("/parametres").get_data(as_text=True)
+        self.assertIn('<html lang="fr" data-theme="light">', html)
+        self.assertIn("Thème clair", html)
+
+    # TEST 6-8 : choisir Sombre, appliquer, verifier le resultat
+    def test_choosing_dark_persists_via_cookie(self):
+        r = self.client.post("/parametres/apparence", data={"theme": "dark"},
+                             follow_redirects=False)
+        self.assertIn("fp_theme=dark", r.headers.get("Set-Cookie", ""))
+        self.client.set_cookie("fp_theme", "dark")
+        html = self.client.get("/parametres").get_data(as_text=True)
+        self.assertIn('<html lang="fr" data-theme="dark">', html)
+        self.assertIn("Thème sombre", html)
+        # bleu nuit, pas noir pur
+        self.assertIn("#081B3A", html)
+        self.assertNotIn("#000000", html)
+        self.assertIn("#0066FF", html)   # bleu FixPro reste l'accent en sombre
+
+    # TEST 9-11 : "Selon le systeme" -> aucun data-theme force, la mediaquery decide
+    def test_system_choice_lets_the_device_decide(self):
+        r = self.client.post("/parametres/apparence", data={"theme": "system"},
+                             follow_redirects=False)
+        self.assertIn("fp_theme=system", r.headers.get("Set-Cookie", ""))
+        self.client.set_cookie("fp_theme", "system")
+        html = self.client.get("/parametres").get_data(as_text=True)
+        self.assertIn('<html lang="fr">', html)   # aucun data-theme force sur <html>
+        self.assertIn("prefers-color-scheme: dark", html)
+
+    # TEST 12-13 : fermeture/reouverture -> la preference reste memorisee
+    # (meme mecanisme que la session : cookie persistant, pas une variable
+    # en memoire qui disparaitrait)
+    def test_preference_survives_new_browser_session(self):
+        self.client.post("/parametres/apparence", data={"theme": "dark"})
+        self.client.set_cookie("fp_theme", "dark")
+        reopened = self.client  # meme pot de cookies, "nouvel onglet"
+        html = reopened.get("/parametres").get_data(as_text=True)
+        self.assertIn('<html lang="fr" data-theme="dark">', html)
+
+    # TEST : fonctionne de la meme maniere pour les 3 types d'utilisateurs
+    def test_same_behavior_for_guest_client_and_technician(self):
+        self.client.set_cookie("fp_theme", "dark")
+        guest_html = self.client.get("/parametres").get_data(as_text=True)
+        self.assertIn('<html lang="fr" data-theme="dark">', guest_html)
+
+        self.register_client(phone="+224620444001")
+        self.login("+224620444001")
+        self.client.set_cookie("fp_theme", "dark")
+        client_html = self.client.get("/parametres").get_data(as_text=True)
+        self.assertIn('<html lang="fr" data-theme="dark">', client_html)
+
+        with self.client as c:
+            self._upgrade_to_technician(c, "+224620444002")
+            c.set_cookie("fp_theme", "dark")
+            tech_html = c.get("/parametres").get_data(as_text=True)
+        self.assertIn('<html lang="fr" data-theme="dark">', tech_html)
+
+    # NE PAS creer de route derivee : une seule /parametres/apparence
+    def test_only_one_apparence_route(self):
+        for bad in ("/parametres/apparence/client", "/parametres/apparence/technicien"):
+            self.assertEqual(self.client.get(bad).status_code, 404, bad)
+
+    def test_back_arrow_returns_to_parametres(self):
+        html = self.client.get("/parametres/apparence").get_data(as_text=True)
+        self.assertIn(self._url("parametres"), html)
+
+    def test_apparence_no_horizontal_overflow_marker(self):
+        html = self.client.get("/parametres/apparence").get_data(as_text=True)
+        self.assertIn("overflow-x: hidden", html)
+        self.assertIn("max-width: 480px", html)
+
+    def _url(self, endpoint, **kw):
+        with fixpro_app.app.test_request_context():
+            return fixpro_app.url_for(endpoint, **kw)
+
+
 class RefreshRolePersistenceTests(FixProTestCase):
     """Le role vient TOUJOURS d'une lecture serveur fraiche (users.role en
     base), jamais d'un etat client qui pourrait disparaitre/perimer :

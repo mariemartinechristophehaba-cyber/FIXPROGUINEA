@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr">
+<html lang="fr"{% if theme_pref == 'dark' %} data-theme="dark"{% elif theme_pref == 'light' %} data-theme="light"{% endif %}>
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -12,16 +12,40 @@
   <style>
     * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; height: 100%; }
+
+    /* --- Jetons de theme (voir Parametres > Apparence) --- */
+    :root {
+      --pm-bg: #F1F5F9; --pm-card: #FFFFFF; --pm-text: #0F172A; --pm-text-2: #64748B;
+      --pm-line: #F1F5F9; --pm-accent: #155EEF; --pm-accent-soft: #EEF4FF;
+      --pm-danger-bg: #FEF2F2; --pm-danger: #DC2626; --pm-shadow: rgba(0,0,0,.04);
+      --pm-grad-1: #2563EB; --pm-grad-2: #155EEF;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --pm-bg: #081B3A; --pm-card: #1E293B; --pm-text: #FFFFFF; --pm-text-2: #94A3B8;
+        --pm-line: rgba(255,255,255,.08); --pm-accent: #0066FF; --pm-accent-soft: rgba(0,102,255,.18);
+        --pm-danger-bg: rgba(220,38,38,.16); --pm-danger: #F87171; --pm-shadow: rgba(0,0,0,.35);
+        --pm-grad-1: #0F2A57; --pm-grad-2: #081B3A;
+      }
+    }
+    :root[data-theme="dark"] {
+      --pm-bg: #081B3A; --pm-card: #1E293B; --pm-text: #FFFFFF; --pm-text-2: #94A3B8;
+      --pm-line: rgba(255,255,255,.08); --pm-accent: #0066FF; --pm-accent-soft: rgba(0,102,255,.18);
+      --pm-danger-bg: rgba(220,38,38,.16); --pm-danger: #F87171; --pm-shadow: rgba(0,0,0,.35);
+      --pm-grad-1: #0F2A57; --pm-grad-2: #081B3A;
+    }
+
     body {
-      font-family: 'Inter', sans-serif; background: #F1F5F9; color: #0F172A;
+      font-family: 'Inter', sans-serif; background: var(--pm-bg); color: var(--pm-text);
       -webkit-font-smoothing: antialiased; overflow-x: hidden;
+      transition: background-color .25s ease, color .25s ease;
     }
     a, button { text-decoration: none; color: inherit; font-family: inherit; }
 
-    .pm-wrap { position: relative; max-width: 480px; margin: 0 auto; min-height: 100vh; background: #F1F5F9; padding-bottom: 48px; }
+    .pm-wrap { position: relative; max-width: 480px; margin: 0 auto; min-height: 100vh; background: var(--pm-bg); padding-bottom: 48px; }
 
     .pm-header {
-      background: linear-gradient(135deg, #2563EB, #155EEF);
+      background: linear-gradient(135deg, var(--pm-grad-1), var(--pm-grad-2));
       color: #fff; padding: 16px; padding-top: calc(20px + env(safe-area-inset-top));
       padding-bottom: 28px; display: flex; align-items: center; gap: 12px;
       border-radius: 0 0 22px 22px;
@@ -41,56 +65,57 @@
     .pm-main { padding: 14px 16px 0; margin-top: -18px; }
 
     .pm-hero {
-      background: #fff; border-radius: 18px; padding: 16px; display: flex; align-items: center; gap: 13px;
+      background: var(--pm-card); border-radius: 18px; padding: 16px; display: flex; align-items: center; gap: 13px;
       margin-bottom: 18px; box-shadow: 0 6px 20px rgba(21,94,239,.12);
     }
     .pm-avatar {
       width: 56px; height: 56px; border-radius: 50%; overflow: hidden; flex-shrink: 0;
-      background: #EEF4FF; color: #155EEF; display: flex; align-items: center; justify-content: center;
+      background: var(--pm-accent-soft); color: var(--pm-accent); display: flex; align-items: center; justify-content: center;
       font-size: 21px; font-weight: 700;
     }
     .pm-avatar img { width: 100%; height: 100%; object-fit: cover; }
     .pm-hero-info { flex: 1; min-width: 0; }
     .pm-hero-name { margin: 0; font-size: 15.5px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .pm-hero-mail { margin: 2px 0 0; font-size: 12.5px; color: #64748B; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .pm-hero-mail { margin: 2px 0 0; font-size: 12.5px; color: var(--pm-text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .pm-badge {
       display: inline-flex; align-items: center; gap: 5px; margin-top: 7px;
       font-size: 11.5px; font-weight: 700; padding: 3px 10px 3px 8px; border-radius: 999px;
     }
-    .pm-badge.client { background: #EEF4FF; color: #155EEF; }
+    .pm-badge.client { background: var(--pm-accent-soft); color: var(--pm-accent); }
     .pm-badge.technician { background: #ECFDF5; color: #15803D; }
     .pm-badge svg { width: 12px; height: 12px; }
-    .pm-chev { width: 16px; height: 16px; color: #94A3B8; flex-shrink: 0; }
+    .pm-chev { width: 16px; height: 16px; color: var(--pm-text-2); flex-shrink: 0; }
 
     .pm-section { margin-bottom: 18px; }
-    .pm-section-title { font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: .03em; margin: 0 0 8px 2px; }
-    .pm-card { background: #fff; border-radius: 18px; padding: 0 14px; box-shadow: 0 2px 12px rgba(0,0,0,.04); }
+    .pm-section-title { font-size: 12px; font-weight: 700; color: var(--pm-text-2); text-transform: uppercase; letter-spacing: .03em; margin: 0 0 8px 2px; }
+    .pm-card { background: var(--pm-card); border-radius: 18px; padding: 0 14px; box-shadow: 0 2px 12px var(--pm-shadow); }
     .pm-item {
-      display: flex; align-items: center; gap: 12px; padding: 13px 0; border-bottom: 1px solid #F1F5F9;
+      display: flex; align-items: center; gap: 12px; padding: 13px 0; border-bottom: 1px solid var(--pm-line);
       width: 100%; background: none; border-left: 0; border-right: 0; border-top: 0; text-align: left; cursor: pointer;
+      color: var(--pm-text);
     }
     .pm-item:last-child { border-bottom: none; }
-    .pm-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: #EEF4FF; color: #155EEF; }
+    .pm-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: var(--pm-accent-soft); color: var(--pm-accent); }
     .pm-icon svg { width: 19px; height: 19px; }
     .pm-icon.amber { background: #FEF3C7; color: #B45309; }
     .pm-icon.violet { background: #F3E8FF; color: #7C3AED; }
     .pm-icon.green { background: #ECFDF5; color: #15803D; }
     .pm-text { flex: 1; min-width: 0; }
     .pm-text strong { display: block; font-size: 14px; font-weight: 600; margin-bottom: 1px; }
-    .pm-text span { font-size: 12px; color: #64748B; }
+    .pm-text span { font-size: 12px; color: var(--pm-text-2); }
 
-    .pm-static .pm-text span.pm-value { color: #155EEF; font-weight: 600; }
+    .pm-static .pm-text span.pm-value { color: var(--pm-accent); font-weight: 600; }
 
     .pm-cta {
       display: flex; align-items: center; justify-content: center; gap: 8px;
       width: 100%; margin-top: 6px; padding: 15px; border-radius: 16px; border: 0;
       font-size: 15px; font-weight: 700; cursor: pointer;
     }
-    .pm-cta.primary { background: #155EEF; color: #fff; }
-    .pm-cta.danger { background: #FEF2F2; color: #DC2626; }
+    .pm-cta.primary { background: var(--pm-accent); color: #fff; }
+    .pm-cta.danger { background: var(--pm-danger-bg); color: var(--pm-danger); }
     .pm-cta svg { width: 18px; height: 18px; }
 
-    .pm-foot { text-align: center; font-size: 11.5px; color: #94A3B8; margin: 22px 0 0; }
+    .pm-foot { text-align: center; font-size: 11.5px; color: var(--pm-text-2); margin: 22px 0 0; }
   </style>
 </head>
 <body>
@@ -204,11 +229,11 @@
             <span class="pm-icon amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10Z"/></svg></span>
             <span class="pm-text"><strong>Langue</strong><span class="pm-value">Français</span></span>
           </div>
-          <button type="button" class="pm-item" id="pmThemeBtn" onclick="pmToggleTheme()">
+          <a href="{{ url_for('parametres_apparence') }}" class="pm-item">
             <span class="pm-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg></span>
-            <span class="pm-text"><strong>Apparence</strong><span id="pmThemeLabel">{{ 'Thème sombre' if theme == 'dark' else 'Thème clair' }}</span></span>
+            <span class="pm-text"><strong>Apparence</strong><span>{{ {'light': 'Thème clair', 'dark': 'Thème sombre', 'system': 'Selon le système'}[theme_pref] }}</span></span>
             <svg class="pm-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-          </button>
+          </a>
           {% if mode != 'guest' %}
           <a href="{{ url_for('profile') }}" class="pm-item">
             <span class="pm-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></span>
@@ -255,18 +280,5 @@
       <p class="pm-foot">FixPro v{{ app_version }} — Des pros. Des solutions.</p>
     </div>
   </div>
-
-  <script>
-    (function () {
-      function pmToggleTheme() {
-        var current = document.cookie.match(/(?:^|; )pm_theme=(dark|light)/);
-        var next = current && current[1] === 'dark' ? 'light' : 'dark';
-        document.cookie = 'pm_theme=' + next + ';path=/;max-age=31536000;samesite=lax';
-        document.getElementById('pmThemeLabel').textContent =
-          next === 'dark' ? 'Thème sombre' : 'Thème clair';
-      }
-      window.pmToggleTheme = pmToggleTheme;
-    })();
-  </script>
 </body>
 </html>

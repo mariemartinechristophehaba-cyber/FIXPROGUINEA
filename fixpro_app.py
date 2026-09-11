@@ -1948,10 +1948,50 @@ def parametres():
         mode = "technician"
     else:
         mode = "client"
-    theme = "dark" if request.cookies.get("pm_theme") == "dark" else "light"
     return render_template(
-        "parametres.html", user=user, mode=mode, theme=theme,
+        "parametres.html", user=user, mode=mode, theme_pref=_theme_preference(),
         app_version="1.0.0")
+
+
+_THEME_CHOICES = ("light", "dark", "system")
+
+
+def _theme_preference():
+    """Preference d'apparence (clair/sombre/systeme), memorisee par cookie.
+
+    Meme comportement pour tout le monde (invite/client/technicien) : ce
+    n'est pas lie au role du compte."""
+    value = request.cookies.get("fp_theme")
+    return value if value in _THEME_CHOICES else "system"
+
+
+@app.route("/parametres/apparence", methods=["GET", "POST"])
+def parametres_apparence():
+    """Parametres > Apparence : Clair / Sombre / Selon le systeme.
+
+    Persistance via cookie (pas de nouveau systeme de stockage : la
+    preference n'est pas liee a un compte, elle doit deja s'appliquer a un
+    visiteur non connecte)."""
+    user = get_current_user()
+    if not user:
+        mode = "guest"
+    elif _is_technician(user):
+        mode = "technician"
+    else:
+        mode = "client"
+
+    if request.method == "POST":
+        choice = request.form.get("theme")
+        if choice not in _THEME_CHOICES:
+            choice = "system"
+        resp = redirect(url_for("parametres"))
+        resp.set_cookie("fp_theme", choice, max_age=31536000, samesite="Lax")
+        flash("Thème appliqué.", "success")
+        return resp
+
+    return render_template(
+        "parametres_apparence.html", user=user, mode=mode,
+        theme_pref=_theme_preference())
 
 
 @app.route("/health")

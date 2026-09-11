@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="fr"{% if theme_pref == 'dark' %} data-theme="dark"{% elif theme_pref == 'light' %} data-theme="light"{% endif %}>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#155EEF" />
+  {% include '_pwa_head.html' %}
+  <title>Apparence - FixPro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; }
+
+    :root {
+      --pm-bg: #F1F5F9; --pm-card: #FFFFFF; --pm-text: #0F172A; --pm-text-2: #64748B;
+      --pm-line: #E2E8F0; --pm-accent: #155EEF; --pm-accent-soft: #EEF4FF;
+      --pm-shadow: rgba(0,0,0,.04);
+      --pm-grad-1: #2563EB; --pm-grad-2: #155EEF;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --pm-bg: #081B3A; --pm-card: #1E293B; --pm-text: #FFFFFF; --pm-text-2: #94A3B8;
+        --pm-line: rgba(255,255,255,.1); --pm-accent: #0066FF; --pm-accent-soft: rgba(0,102,255,.18);
+        --pm-shadow: rgba(0,0,0,.35);
+        --pm-grad-1: #0F2A57; --pm-grad-2: #081B3A;
+      }
+    }
+    :root[data-theme="dark"] {
+      --pm-bg: #081B3A; --pm-card: #1E293B; --pm-text: #FFFFFF; --pm-text-2: #94A3B8;
+      --pm-line: rgba(255,255,255,.1); --pm-accent: #0066FF; --pm-accent-soft: rgba(0,102,255,.18);
+      --pm-shadow: rgba(0,0,0,.35);
+      --pm-grad-1: #0F2A57; --pm-grad-2: #081B3A;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif; background: var(--pm-bg); color: var(--pm-text);
+      -webkit-font-smoothing: antialiased; overflow-x: hidden;
+      transition: background-color .25s ease, color .25s ease;
+    }
+    a, button, label { text-decoration: none; color: inherit; font-family: inherit; }
+
+    .pm-wrap { position: relative; max-width: 480px; margin: 0 auto; min-height: 100vh; background: var(--pm-bg); padding-bottom: 48px; }
+
+    .pm-header {
+      background: linear-gradient(135deg, var(--pm-grad-1), var(--pm-grad-2));
+      color: #fff; padding: 16px; padding-top: calc(20px + env(safe-area-inset-top));
+      padding-bottom: 20px; display: flex; align-items: center; gap: 12px;
+    }
+    .pm-back {
+      width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(255,255,255,.15); border: 0; cursor: pointer;
+    }
+    .pm-back svg { width: 20px; height: 20px; color: #fff; }
+    .pm-header h1 { margin: 0; font-size: 18px; font-weight: 800; }
+    .pm-hspacer { width: 40px; flex-shrink: 0; }
+
+    .pm-main { padding: 18px 16px 0; }
+
+    .pm-intro { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 18px; }
+    .pm-intro-ico {
+      width: 46px; height: 46px; border-radius: 13px; flex-shrink: 0; background: var(--pm-accent-soft);
+      color: var(--pm-accent); display: flex; align-items: center; justify-content: center;
+    }
+    .pm-intro-ico svg { width: 24px; height: 24px; }
+    .pm-intro h2 { margin: 6px 0 4px; font-size: 16.5px; font-weight: 800; }
+    .pm-intro p { margin: 0; font-size: 13px; color: var(--pm-text-2); line-height: 1.5; }
+
+    form { margin: 0; }
+
+    .pm-choices { display: flex; flex-direction: column; gap: 10px; margin-bottom: 22px; }
+    .pm-choice {
+      display: flex; align-items: center; gap: 13px; background: var(--pm-card); border-radius: 16px;
+      padding: 14px; box-shadow: 0 2px 12px var(--pm-shadow); cursor: pointer;
+      border: 2px solid transparent; transition: border-color .15s ease, background-color .2s ease;
+    }
+    .pm-choice input { position: absolute; opacity: 0; width: 0; height: 0; }
+    .pm-choice.is-selected { border-color: var(--pm-accent); background: var(--pm-accent-soft); }
+    .pm-choice-ico {
+      width: 40px; height: 40px; border-radius: 11px; flex-shrink: 0; background: var(--pm-accent-soft);
+      color: var(--pm-accent); display: flex; align-items: center; justify-content: center;
+    }
+    .pm-choice-ico svg { width: 21px; height: 21px; }
+    .pm-choice-tx { flex: 1; min-width: 0; }
+    .pm-choice-tx strong { display: block; font-size: 14.5px; font-weight: 700; }
+    .pm-choice-tx span { display: block; font-size: 12px; color: var(--pm-text-2); margin-top: 1px; }
+    .pm-radio {
+      width: 21px; height: 21px; border-radius: 50%; border: 2px solid #CBD5E1; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .pm-choice.is-selected .pm-radio { border-color: var(--pm-accent); }
+    .pm-radio-dot { width: 11px; height: 11px; border-radius: 50%; background: var(--pm-accent); opacity: 0; transform: scale(.4); transition: opacity .15s ease, transform .15s ease; }
+    .pm-choice.is-selected .pm-radio-dot { opacity: 1; transform: scale(1); }
+
+    .pm-preview-title { font-size: 12px; font-weight: 700; color: var(--pm-text-2); text-transform: uppercase; letter-spacing: .03em; margin: 0 0 10px 2px; }
+    .pm-previews { display: flex; gap: 12px; margin-bottom: 22px; }
+    .pm-preview { flex: 1; min-width: 0; text-align: center; }
+    .pm-preview-box {
+      border-radius: 14px; padding: 12px; height: 92px; display: flex; flex-direction: column; gap: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,.08);
+    }
+    .pm-preview-box.is-light { background: #fff; border: 1px solid #E2E8F0; }
+    .pm-preview-box.is-dark { background: #0B2245; }
+    .pm-preview-brand { display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 800; }
+    .pm-preview-brand svg { width: 15px; height: 15px; flex-shrink: 0; }
+    .pm-preview-box.is-light .pm-preview-brand { color: #0F172A; }
+    .pm-preview-box.is-light .pm-preview-brand svg { color: #155EEF; }
+    .pm-preview-box.is-dark .pm-preview-brand { color: #fff; }
+    .pm-preview-box.is-dark .pm-preview-brand svg { color: #4C8DFF; }
+    .pm-preview-bar { height: 7px; border-radius: 4px; }
+    .pm-preview-box.is-light .pm-preview-bar.b1 { background: #DBEAFE; width: 70%; }
+    .pm-preview-box.is-light .pm-preview-bar.b2 { background: #EEF2F7; width: 90%; }
+    .pm-preview-box.is-dark .pm-preview-bar.b1 { background: #14345F; width: 70%; }
+    .pm-preview-box.is-dark .pm-preview-bar.b2 { background: #1B3A66; width: 90%; }
+    .pm-preview-label { margin: 8px 0 0; font-size: 12px; color: var(--pm-text-2); font-weight: 600; }
+
+    .pm-apply {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      width: 100%; padding: 15px; border-radius: 16px; border: 0; background: var(--pm-accent); color: #fff;
+      font-size: 15px; font-weight: 700; cursor: pointer;
+    }
+    .pm-apply svg { width: 18px; height: 18px; }
+  </style>
+</head>
+<body>
+  <div class="pm-wrap">
+    <header class="pm-header">
+      <button type="button" class="pm-back" aria-label="Retour vers Paramètres"
+        onclick="location.href='{{ url_for('parametres') }}'">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      </button>
+      <h1>Apparence</h1>
+      <span class="pm-hspacer"></span>
+    </header>
+
+    <div class="pm-main">
+      <div class="pm-intro">
+        <span class="pm-intro-ico">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg>
+        </span>
+        <div>
+          <h2>Choisissez le thème de l'application</h2>
+          <p>Personnalisez l'apparence de FixPro selon vos préférences. Le thème sera appliqué immédiatement et mémorisé pour vos prochaines connexions.</p>
+        </div>
+      </div>
+
+      <form method="post" action="{{ url_for('parametres_apparence') }}" id="pmThemeForm">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <div class="pm-choices">
+          <label class="pm-choice {{ 'is-selected' if theme_pref == 'light' }}" data-choice="light">
+            <input type="radio" name="theme" value="light" {{ 'checked' if theme_pref == 'light' }} />
+            <span class="pm-choice-ico">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+            </span>
+            <span class="pm-choice-tx"><strong>Clair</strong><span>Interface claire et moderne</span></span>
+            <span class="pm-radio"><span class="pm-radio-dot"></span></span>
+          </label>
+
+          <label class="pm-choice {{ 'is-selected' if theme_pref == 'dark' }}" data-choice="dark">
+            <input type="radio" name="theme" value="dark" {{ 'checked' if theme_pref == 'dark' }} />
+            <span class="pm-choice-ico">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg>
+            </span>
+            <span class="pm-choice-tx"><strong>Sombre</strong><span>Interface sombre et confortable</span></span>
+            <span class="pm-radio"><span class="pm-radio-dot"></span></span>
+          </label>
+
+          <label class="pm-choice {{ 'is-selected' if theme_pref == 'system' }}" data-choice="system">
+            <input type="radio" name="theme" value="system" {{ 'checked' if theme_pref == 'system' }} />
+            <span class="pm-choice-ico">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+            </span>
+            <span class="pm-choice-tx"><strong>Selon le système</strong><span>Suit les paramètres de votre téléphone</span></span>
+            <span class="pm-radio"><span class="pm-radio-dot"></span></span>
+          </label>
+        </div>
+
+        <p class="pm-preview-title">Aperçu</p>
+        <div class="pm-previews">
+          <div class="pm-preview">
+            <div class="pm-preview-box is-light">
+              <span class="pm-preview-brand">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 4 5v6c0 5.2 3.4 9.9 8 11 4.6-1.1 8-5.8 8-11V5l-8-3Z"/></svg>
+                FixPro
+              </span>
+              <span class="pm-preview-bar b1"></span>
+              <span class="pm-preview-bar b2"></span>
+            </div>
+            <p class="pm-preview-label">Mode clair</p>
+          </div>
+          <div class="pm-preview">
+            <div class="pm-preview-box is-dark">
+              <span class="pm-preview-brand">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 4 5v6c0 5.2 3.4 9.9 8 11 4.6-1.1 8-5.8 8-11V5l-8-3Z"/></svg>
+                FixPro
+              </span>
+              <span class="pm-preview-bar b1"></span>
+              <span class="pm-preview-bar b2"></span>
+            </div>
+            <p class="pm-preview-label">Mode sombre</p>
+          </div>
+        </div>
+
+        <button type="submit" class="pm-apply">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+          Appliquer le thème
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var choices = document.querySelectorAll('.pm-choice');
+      choices.forEach(function (el) {
+        el.addEventListener('click', function () {
+          choices.forEach(function (c) { c.classList.remove('is-selected'); });
+          el.classList.add('is-selected');
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
