@@ -2472,7 +2472,8 @@ def technician_signup_finalize():
                             "UPDATE users SET role = 'technician', profession = ?,"
                             " city = COALESCE(?, city), zone_intervention = COALESCE(?, zone_intervention),"
                             " latitude = COALESCE(?, latitude), longitude = COALESCE(?, longitude),"
-                            " availability_status = 'hors_ligne', verification_status = ?"
+                            " availability_status = 'hors_ligne', verification_status = ?,"
+                            " is_verified = 0"
                             " WHERE id = ?",
                             (profession, zone_label or None, zone_label or None,
                              float(loc["lat"]) if has_location else None,
@@ -4772,17 +4773,11 @@ def complete_profile():
         phone = request.form.get("phone", "").strip()
         city = request.form.get("city", "").strip()
         quartier = request.form.get("quartier", "").strip()
-        role = request.form.get("role", "client").strip()
-
-        if role not in ("client", "technician"):
-            flash("Veuillez choisir un type de compte.", "error")
-            return redirect(url_for("complete_profile"))
+        wants_technician = request.form.get("role", "client").strip() == "technician"
 
         if not phone or not city:
             flash("Veuillez remplir tous les champs.", "error")
             return redirect(url_for("complete_profile"))
-
-        is_verified = 1 if role == "client" else 0
 
         conn = get_db_connection()
         try:
@@ -4792,11 +4787,17 @@ def complete_profile():
                 flash("Ce numéro de téléphone est déjà utilisé.", "error")
                 return redirect(url_for("complete_profile"))
 
+            # UN SEUL parcours de creation de compte technicien (metier,
+            # documents, zone, dossier a verifier) : Google ne fait que
+            # creer le compte FixPro de base, toujours en tant que client.
+            # "Je suis technicien" redirige ensuite vers le wizard officiel,
+            # qui reutilise ce meme compte (voir _use_existing_account_for_signup)
+            # au lieu de creer un second profil technicien incomplet.
             conn.execute(
                 "INSERT INTO users (email, phone, password_hash, role, full_name, city, quartier, is_verified, photo_url)"
-                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                " VALUES (?, ?, ?, 'client', ?, ?, ?, ?, ?)",
                 (email, phone, generate_password_hash("google_oauth"),
-                 role, full_name, city, quartier, is_verified, picture_url or None),
+                 full_name, city, quartier, 1, picture_url or None),
             )
             conn.commit()
 
@@ -4807,6 +4808,8 @@ def complete_profile():
             session["user_id"] = new_user["id"]
             session.permanent = True
             flash("Bienvenue dans FixPro.", "success")
+            if wants_technician:
+                return redirect(url_for("devenir_technicien"))
             return redirect(next_url or url_for("dashboard"))
         finally:
             conn.close()

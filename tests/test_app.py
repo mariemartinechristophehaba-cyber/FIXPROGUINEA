@@ -3087,6 +3087,80 @@ class ClientToTechnicianUpgradeTests(FixProTestCase):
         self.assertIn("/devenir-technicien/services", r.location)
         self.assertEqual(self._count_users(), before)   # compte cree seulement a la finalisation
 
+    # Un ex-client deja "verifie" (is_verified=1) qui devient technicien
+    # repart en attente d'examen : jamais de passe-droit sur la moderation.
+    def test_upgrade_resets_is_verified_pending_admin_review(self):
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute(
+                "INSERT INTO users (email, phone, password_hash, role, full_name,"
+                " is_verified, is_active) VALUES (?, ?, ?, 'client', 'Deja Verifie', 1, 1)",
+                ("verif-up@x.co", "+224620111008",
+                 fixpro_app.generate_password_hash("FixPro2026!")))
+            conn.commit()
+        finally:
+            conn.close()
+        with self.client as c:
+            self.login("verif-up@x.co")
+            self._upgrade(c)
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            row = conn.execute(
+                "SELECT is_verified, verification_status FROM users WHERE phone = '+224620111008'"
+            ).fetchone()
+        finally:
+            conn.close()
+        self.assertEqual(row["is_verified"], 0)
+        self.assertEqual(row["verification_status"], "PENDING_REVIEW")
+
+    # TEST C/D : rafraichissement / nouvelle session (fermeture-reouverture)
+    def test_dashboard_stays_technician_space_across_refresh_and_new_session(self):
+        with self.client as c:
+            self.register_client(phone="+224620111009")
+            self.login("+224620111009")
+            self._upgrade(c)
+            # "actualisation" : re-requeter la meme route
+            self.assertEqual(c.get("/technician/dashboard").status_code, 200)
+            self.assertEqual(c.get("/technician/dashboard").status_code, 200)
+        # "fermeture puis reouverture" : nouveau client de test, meme cookies
+        reopened = self.client
+        r = reopened.get("/", follow_redirects=False)
+        self.assertEqual(r.status_code, 302)
+        self.assertIn("technician/dashboard", r.location)
+
+
+class GoogleSignupTechnicianTests(FixProTestCase):
+    """L'inscription rapide via Google ne cree jamais un compte technicien
+    incomplet a part : "Je suis technicien" cree le compte FixPro (client)
+    puis renvoie vers le wizard officiel /devenir-technicien, qui reutilise
+    ce meme compte -- un seul parcours de creation de profil technicien."""
+
+    def _complete_as(self, role):
+        with self.client.session_transaction() as sess:
+            sess["google_email"] = "g-user@example.com"
+            sess["google_name"] = "Google User"
+        return self.client.post("/complete-profile", data={
+            "phone": "620555444", "city": "Conakry", "role": role,
+        }, follow_redirects=False)
+
+    def test_choosing_technician_creates_a_client_account_then_sends_to_wizard(self):
+        r = self._complete_as("technician")
+        self.assertEqual(r.status_code, 302)
+        self.assertIn("/devenir-technicien", r.location)
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            row = conn.execute(
+                "SELECT role FROM users WHERE email = 'g-user@example.com'").fetchone()
+        finally:
+            conn.close()
+        self.assertIsNotNone(row)
+        self.assertEqual(row["role"], "client")   # jamais 'technician' directement
+
+    def test_choosing_client_goes_straight_to_dashboard(self):
+        r = self._complete_as("client")
+        self.assertEqual(r.status_code, 302)
+        self.assertNotIn("/devenir-technicien", r.location)
+
 
 class NotificationCenterTests(FixProTestCase):
     """Centre de notifications technicien : bottom sheet, categories, diffusion
