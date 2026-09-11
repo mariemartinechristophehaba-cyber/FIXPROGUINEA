@@ -3290,6 +3290,50 @@ class RefreshRolePersistenceTests(FixProTestCase):
             r = self.client.get(path)
             self.assertIn("no-store", r.headers.get("Cache-Control", ""), path)
 
+    # Signalement exact : apres inscription, "Acceder a mon espace" ne doit
+    # jamais faire atterrir sur le tableau de bord CLIENT (avec ou sans
+    # donnees de demonstration) -- ni immediatement, ni en cas d'anomalie.
+    def test_technician_never_lands_on_client_dashboard_after_signup(self):
+        with self.client as c:
+            r = self._upgrade_to_technician(c, "+224620222009")
+            self.assertTrue(
+                r.location.endswith("/dashboard/technicien")
+                or r.location.endswith("/technician/dashboard"), r.location)
+            followed = c.get(r.location)
+            html = followed.get_data(as_text=True)
+            self.assertIn("Espace Technicien", html)
+            # signatures propres au dashboard CLIENT (demo ou reel) : absentes
+            self.assertNotIn("Nos services", html)
+            self.assertNotIn("Mon technicien", html)
+
+    # /dashboard ne doit JAMAIS fabriquer un faux contenu (mode demo ou pas)
+    # pour un visiteur non identifie : c'est exactement ce qui masquait le
+    # vrai probleme derriere une page "normale".
+    def test_dashboard_requires_real_login_never_fakes_content(self):
+        r = self.client.get("/dashboard", follow_redirects=False)
+        self.assertEqual(r.status_code, 302)
+        self.assertIn("/login", r.location)
+
+    def test_dashboard_with_dangling_session_redirects_to_login_not_demo(self):
+        """session['user_id'] pointant vers rien (compte supprime, ligne pas
+        encore relisible...) : jamais le contenu demo, une reconnexion propre."""
+        with self.client.session_transaction() as sess:
+            sess["user_id"] = 999999
+        r = self.client.get("/dashboard", follow_redirects=False)
+        self.assertEqual(r.status_code, 302)
+        self.assertIn("/login", r.location)
+        with self.client.session_transaction() as sess:
+            self.assertNotIn("user_id", sess)   # session nettoyee, pas juste ignoree
+
+    def test_technician_with_dangling_session_never_reaches_client_demo(self):
+        """Meme scenario pendant que l'espace technicien est vise : jamais
+        de rebond silencieux vers le dashboard client demo."""
+        with self.client.session_transaction() as sess:
+            sess["user_id"] = 999999
+        r = self.client.get("/technician/dashboard", follow_redirects=True)
+        self.assertNotIn("Nos services", r.get_data(as_text=True))
+        self.assertNotIn("Mon technicien", r.get_data(as_text=True))
+
 
 class NotificationCenterTests(FixProTestCase):
     """Centre de notifications technicien : bottom sheet, categories, diffusion

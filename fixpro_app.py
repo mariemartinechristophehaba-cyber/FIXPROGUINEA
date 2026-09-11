@@ -2574,6 +2574,27 @@ def technician_signup_finalize():
                 session["user_id"] = new_id
                 session.permanent = True
                 g.pop("_current_user", None)
+
+                # Verification finale sur une connexion neuve, avant de
+                # promettre l'espace technicien : si le role vient d'etre
+                # ecrit mais n'est pas encore relisible (connexion groupee,
+                # replique en retard...), on ne laisse jamais filer vers un
+                # dashboard qui ne le reconnaitrait pas -- reconnexion propre.
+                _verify_conn = get_db_connection()
+                try:
+                    _confirmed = _verify_conn.execute(
+                        "SELECT role FROM users WHERE id = ?", (new_id,)).fetchone()
+                finally:
+                    _verify_conn.close()
+                if not _confirmed or _confirmed["role"] not in ("technician", "artisan"):
+                    logger.error(
+                        "Finalisation technicien : verification post-creation"
+                        " echouee pour id=%s (role lu: %s)", new_id,
+                        _confirmed["role"] if _confirmed else None)
+                    flash("Votre compte technicien a été créé. Reconnectez-vous"
+                          " pour accéder à votre espace.", "success")
+                    return redirect(url_for("login"))
+
                 if existing_user_id:
                     flash("Votre compte est maintenant un compte technicien. Votre"
                           " dossier est en cours de vérification.", "success")
@@ -5074,10 +5095,26 @@ def _client_notif_kind(raw):
 
 
 @app.route("/dashboard")
+@login_required
 def dashboard():
+    """Tableau de bord CLIENT. Necessite une session reelle : cette page ne
+    doit JAMAIS fabriquer un faux tableau de bord (meme en mode demo) pour
+    un visiteur non identifie -- get_current_user() retournerait None et le
+    contenu de demonstration masquerait le probleme au lieu de le signaler."""
     user = get_current_user()
     if user and _is_technician(user):
         return redirect(url_for("artisan_dashboard"))
+    if not user:
+        # session["user_id"] present mais la ligne users correspondante
+        # n'a pas ete relue (compte tout juste cree/modifie, connexion
+        # coupee...) : ne JAMAIS retomber sur le contenu de demonstration,
+        # qui ferait croire a un vrai tableau de bord. Reconnexion propre.
+        logger.warning("dashboard() : session['user_id']=%s mais aucun "
+                       "utilisateur charge -- reconnexion demandee",
+                       session.get("user_id"))
+        session.clear()
+        flash("Votre session a expiré. Veuillez vous reconnecter.", "error")
+        return redirect(url_for("login"))
 
     now = datetime.now(timezone.utc)
     raw_name = (user.get("full_name") if user else None) or ""
@@ -5130,7 +5167,12 @@ def artisan_dashboard():
     prochaines demandes, profil et abonnement."""
     user = get_current_user()
     if not _is_technician(user):
-        flash("Cet espace est reserve aux techniciens.", "error")
+        # Ne pas affirmer "reserve aux techniciens" si le role n'a meme pas
+        # pu etre lu (session["user_id"] present mais aucune ligne chargee) :
+        # dashboard() gere ce cas precis en redemandant une reconnexion
+        # propre plutot que d'afficher un faux contenu.
+        if user is not None:
+            flash("Cet espace est reserve aux techniciens.", "error")
         return redirect(url_for("dashboard"))
     # Le technicien est dans son espace pro : on annule une eventuelle bascule
     # "vue client" pour que "/" le ramene ici par defaut aux visites suivantes.
