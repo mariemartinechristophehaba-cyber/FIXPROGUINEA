@@ -3133,6 +3133,42 @@ class ClientToTechnicianUpgradeTests(FixProTestCase):
             fixpro_app.time.sleep = orig_sleep
         self.assertGreaterEqual(calls["n"], 3)   # a vraiment retente, pas eu de chance au 1er coup
 
+    # LE VRAI BUG signale plusieurs fois de suite en prod : la creation du
+    # compte et les notifications partageaient la meme transaction, validee
+    # (commit) seulement a la toute fin. Quand la notification echouait (ex.
+    # bug connu notifications.user_id), Postgres marquait la transaction
+    # entiere en echec : le commit() final ne validait alors plus RIEN, pas
+    # meme la creation du compte technicien -- silencieusement annulee. Ce
+    # test reproduit exactement ca (create_notification qui echoue) et
+    # verifie que le compte est neanmoins bel et bien cree.
+    def test_finalize_survives_notification_failure_account_still_created(self):
+        def _boom(*a, **k):
+            raise RuntimeError("notifications.user_id : simulation du bug uuid connu")
+
+        real_create_notification = fixpro_app.create_notification
+        fixpro_app.create_notification = _boom
+        try:
+            with self.client as c:
+                self.register_client(phone="+224620111011")
+                self.login("+224620111011")
+                r = self._upgrade(c)
+                self.assertEqual(r.status_code, 302)
+                self.assertTrue(
+                    r.location.endswith("/dashboard/technicien")
+                    or r.location.endswith("/technician/dashboard"), r.location)
+                with c.session_transaction() as sess:
+                    self.assertIn("user_id", sess)
+        finally:
+            fixpro_app.create_notification = real_create_notification
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            row = conn.execute(
+                "SELECT role FROM users WHERE phone = '+224620111011'").fetchone()
+        finally:
+            conn.close()
+        self.assertIsNotNone(row)
+        self.assertEqual(row["role"], "technician")   # jamais annule par l'echec de la notif
+
     # Un ex-client deja "verifie" (is_verified=1) qui devient technicien
     # repart en attente d'examen : jamais de passe-droit sur la moderation.
     def test_upgrade_resets_is_verified_pending_admin_review(self):

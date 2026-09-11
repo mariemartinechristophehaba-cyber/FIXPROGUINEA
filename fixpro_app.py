@@ -2519,6 +2519,27 @@ def technician_signup_finalize():
                     freshly_written = True
 
                 if new_id and freshly_written and not error:
+                    # CRITIQUE : le compte technicien (role, profession, zone)
+                    # est valide MAINTENANT, seul, avant tout autre ecriture.
+                    # Signale en prod : une erreur plus loin (notification --
+                    # cf. le bug connu notifications.user_id) mettait la
+                    # transaction Postgres en echec ; le commit() final,
+                    # execute APRES ces ecritures secondaires, ne validait
+                    # alors plus rien -- y compris la creation du compte lui-
+                    # meme, silencieusement annulee. En committant ici, la
+                    # creation du compte ne peut plus jamais dependre de la
+                    # reussite d'une notification ou d'un document.
+                    conn.commit()
+            finally:
+                conn.close()
+
+            if new_id and freshly_written and not error:
+                # Documents + notifications : best-effort, dans une
+                # transaction separee de la creation du compte (deja actee
+                # ci-dessus). Un echec ici est journalise mais ne remet
+                # jamais en cause le compte technicien deja cree.
+                conn = get_db_connection()
+                try:
                     token = session.get("tech_signup_doc_token")
                     for kind, dtype in (("identity", DOC_IDENTITY),
                                         ("diploma", DOC_PROFESSIONAL)):
@@ -2553,8 +2574,14 @@ def technician_signup_finalize():
                         "documents. Vous serez notifié dès la validation.",
                         "verification", data="dossier", conn=conn)
                     conn.commit()
-            finally:
-                conn.close()
+                except Exception:
+                    logger.exception(
+                        "Finalisation technicien : documents/notifications non"
+                        " enregistres pour id=%s (compte deja cree, sans impact)",
+                        new_id)
+                    conn.rollback()
+                finally:
+                    conn.close()
 
             if new_id and not error:
                 _clear_tech_signup_session()
