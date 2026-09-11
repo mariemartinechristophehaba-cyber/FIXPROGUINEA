@@ -3162,6 +3162,135 @@ class GoogleSignupTechnicianTests(FixProTestCase):
         self.assertNotIn("/devenir-technicien", r.location)
 
 
+class RefreshRolePersistenceTests(FixProTestCase):
+    """Le role vient TOUJOURS d'une lecture serveur fraiche (users.role en
+    base), jamais d'un etat client qui pourrait disparaitre/perimer :
+    l'actualisation, la fermeture/reouverture d'onglet ou une nouvelle
+    session ne doivent jamais faire apparaitre le mauvais espace, meme
+    brievement. Les reponses des pages authentifiees portent aussi
+    Cache-Control: no-store pour qu'un navigateur ne puisse pas re-afficher
+    une ancienne page (autre role) depuis son cache ou le bfcache."""
+
+    def _upgrade_to_technician(self, c, phone):
+        self.register_client(phone=phone)
+        self.login(phone)
+        c.get("/devenir-technicien", follow_redirects=False)
+        c.post("/devenir-technicien/services", data={"trade": "plomberie"})
+        c.post("/devenir-technicien/documents", data={})
+        c.post("/devenir-technicien/localisation", data={})
+        return c.post("/devenir-technicien/finalisation",
+                      data={"accept_cgu": "1"}, follow_redirects=False)
+
+    # TEST 1 : inscription -> espace technicien -> F5 -> toujours l'espace technicien
+    def test_new_technician_stays_in_technician_space_after_refresh(self):
+        with self.client as c:
+            r = self._upgrade_to_technician(c, "+224620222001")
+            self.assertTrue(
+                r.location.endswith("/dashboard/technicien")
+                or r.location.endswith("/technician/dashboard"), r.location)
+            first = c.get("/technician/dashboard")
+            self.assertEqual(first.status_code, 200)
+            self.assertIn("no-store", first.headers.get("Cache-Control", ""))
+            # F5 : nouvelle requete serveur, jamais une page en cache
+            refreshed = c.get("/technician/dashboard")
+            self.assertEqual(refreshed.status_code, 200)
+            self.assertIn("Espace Technicien", refreshed.get_data(as_text=True))
+
+    # TEST 2 : F5 plusieurs fois de suite -> toujours le meme espace
+    def test_technician_repeated_refresh_never_flips_space(self):
+        with self.client as c:
+            self._upgrade_to_technician(c, "+224620222002")
+            for _ in range(5):
+                r = c.get("/technician/dashboard")
+                self.assertEqual(r.status_code, 200)
+                html = r.get_data(as_text=True)
+                self.assertIn("Espace Technicien", html)
+                self.assertNotIn("Tableau de bord administrateur", html)
+
+    # TEST 3 : fermeture/reouverture de l'onglet (nouvelle requete, memes
+    # cookies de session -- il n'existe pas d'etat "en memoire" a perdre)
+    def test_technician_space_survives_new_browser_session(self):
+        with self.client as c:
+            self._upgrade_to_technician(c, "+224620222003")
+        reopened = self.client  # meme pot de cookies, "nouvel onglet"
+        r = reopened.get("/", follow_redirects=False)
+        self.assertEqual(r.status_code, 302)
+        self.assertIn("technician/dashboard", r.location)
+        self.assertEqual(reopened.get("/technician/dashboard").status_code, 200)
+
+    # TEST 4 : deconnexion / reconnexion -> espace technicien retrouve
+    def test_technician_space_after_logout_login_cycle(self):
+        phone = "+224620222004"
+        with self.client as c:
+            self._upgrade_to_technician(c, phone)
+            c.get("/logout")
+        self.login(phone)
+        r = self.client.get("/technician/dashboard")
+        self.assertEqual(r.status_code, 200)
+        self.assertIn("Espace Technicien", r.get_data(as_text=True))
+
+    # TEST 5 : un CLIENT qui actualise reste dans son espace, jamais technicien/admin
+    def test_client_repeated_refresh_stays_in_client_space(self):
+        self.register_client(phone="+224620222005")
+        self.login("+224620222005")
+        for _ in range(3):
+            r = self.client.get("/dashboard")
+            self.assertEqual(r.status_code, 200)
+            self.assertIn("no-store", r.headers.get("Cache-Control", ""))
+            html = r.get_data(as_text=True)
+            self.assertNotIn("Espace Technicien", html)
+            self.assertNotIn("Tableau de bord administrateur", html)
+
+    # TEST 6 : un ADMIN qui actualise reste dans son dashboard admin
+    def test_admin_repeated_refresh_stays_in_admin_dashboard(self):
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute(
+                "INSERT INTO users (email, phone, password_hash, role, full_name,"
+                " is_verified, is_active) VALUES (?, ?, ?, 'admin', 'Admin Test', 1, 1)",
+                ("refresh-admin@x.co", "+224620222006",
+                 fixpro_app.generate_password_hash("FixPro2026!")))
+            conn.commit()
+        finally:
+            conn.close()
+        self.login("refresh-admin@x.co")
+        for _ in range(3):
+            r = self.client.get("/admin/dashboard")
+            self.assertEqual(r.status_code, 200)
+            self.assertIn("no-store", r.headers.get("Cache-Control", ""))
+
+    # TEST 7 : aucune session -> jamais de contenu technicien/admin par defaut,
+    # toujours renvoye vers la connexion (fail-safe, pas de fallback ambigu)
+    def test_no_session_never_falls_back_to_a_dashboard(self):
+        r = self.client.get("/technician/dashboard", follow_redirects=False)
+        self.assertEqual(r.status_code, 302)
+        self.assertIn("/login", r.location)
+        r2 = self.client.get("/admin/dashboard", follow_redirects=False)
+        self.assertEqual(r2.status_code, 302)
+        self.assertIn("/admin/login", r2.location)
+
+    # Cas important explicitement demande : ouverture directe de l'URL
+    # technicien en etant authentifie technicien -> toujours l'espace correct,
+    # jamais une page intermediaire erronee.
+    def test_direct_url_to_technician_space_while_authenticated_shows_it_immediately(self):
+        with self.client as c:
+            self._upgrade_to_technician(c, "+224620222007")
+        r = self.client.get("/technician/dashboard", follow_redirects=False)
+        self.assertEqual(r.status_code, 200)
+        self.assertIn("Espace Technicien", r.get_data(as_text=True))
+
+    def test_authenticated_pages_are_never_cacheable(self):
+        """Choix architectural definitif : toute page rendue pour une
+        session authentifiee porte Cache-Control: no-store (regle globale
+        dans add_security_headers), pas un correctif page par page qu'on
+        pourrait oublier d'ajouter a une nouvelle route."""
+        self.register_client(phone="+224620222008")
+        self.login("+224620222008")
+        for path in ("/dashboard", "/profile", "/requests", "/notifications"):
+            r = self.client.get(path)
+            self.assertIn("no-store", r.headers.get("Cache-Control", ""), path)
+
+
 class NotificationCenterTests(FixProTestCase):
     """Centre de notifications technicien : bottom sheet, categories, diffusion
     admin, cycle de vie de l'abonnement. Consultatif uniquement."""

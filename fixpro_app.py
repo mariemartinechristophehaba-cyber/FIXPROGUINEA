@@ -737,6 +737,16 @@ def add_security_headers(response):
     if not app.config.get("DEBUG"):
         response.headers["Strict-Transport-Security"] = (
             "max-age=31536000; includeSubDomains")
+    # Toute page rendue pour une session authentifiee (espace client,
+    # technicien ou admin) ne doit JAMAIS pouvoir revenir depuis le cache du
+    # navigateur ou le bfcache : un F5, une fermeture/reouverture d'onglet ou
+    # un retour arriere doivent systematiquement repasser par le serveur et
+    # relire le role reel en base, jamais reafficher un ancien role/espace en
+    # cache. Les fichiers statiques (CSS/JS/images, cache-busted par ailleurs)
+    # ne sont pas concernes.
+    if session.get("user_id") and request.endpoint != "static":
+        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
     return response
 
 
