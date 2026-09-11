@@ -144,27 +144,6 @@ def _format_day_label(value):
     return d.strftime('%d/%m/%Y')
 
 
-@app.template_filter('date_long_fr')
-def _format_date_long_fr(value):
-    """Affiche une date au format '30 sept. 2026'."""
-    if not value:
-        return ''
-    mois = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.',
-            'août', 'sept.', 'oct.', 'nov.', 'déc.']
-    try:
-        if hasattr(value, 'year'):
-            dt = value
-        else:
-            dt = datetime.strptime(str(value).replace('T', ' ')[:19], '%Y-%m-%d %H:%M:%S')
-    except (ValueError, TypeError):
-        try:
-            dt = datetime.strptime(str(value)[:10], '%Y-%m-%d')
-        except (ValueError, TypeError):
-            return str(value)
-    return "%d %s %d" % (dt.day, mois[dt.month - 1], dt.year)
-
-
-@app.template_filter('date_month_fr')
 def _format_date_month_fr(value):
     """Affiche une date au format '28 Avril 2024'."""
     if not value:
@@ -184,7 +163,6 @@ def _format_date_month_fr(value):
     return "%d %s %d" % (dt.day, mois[dt.month - 1], dt.year)
 
 
-@app.template_filter('time_ago')
 def _format_time_ago(value):
     """Duree relative en francais : 'Il y a 2 h', 'Il y a 3 j'..."""
     if not value:
@@ -212,16 +190,6 @@ def _format_time_ago(value):
     if secs < 31536000:
         return "Il y a %d mois" % (secs // 2592000)
     return "Il y a %d an%s" % (secs // 31536000, 's' if secs // 31536000 > 1 else '')
-
-
-@app.template_filter('gnf')
-def _format_gnf(value):
-    """Formate un entier en 'GNF 1 234 567'."""
-    try:
-        n = int(value or 0)
-    except (ValueError, TypeError):
-        n = 0
-    return "GNF " + format(n, ',').replace(',', ' ')
 
 
 _ratelimit_storage = app.config.get("RATELIMIT_STORAGE_URI", "memory://")
@@ -831,17 +799,6 @@ def admin_required(view_func):
     return wrapper
 
 
-def log_admin_action(admin_id, admin_email, action, target_type=None, target_id=None, details=None):
-    """Enregistre une action sensible dans admin_logs."""
-    conn = get_db_connection()
-    try:
-        conn.execute(
-            "INSERT INTO admin_logs (admin_id, admin_email, action, target_type, target_id, details)"
-            " VALUES (?, ?, ?, ?, ?, ?)",
-            (admin_id, admin_email, action, target_type, target_id, details))
-        conn.commit()
-    finally:
-        conn.close()
 
 
 def get_current_user():
@@ -1970,11 +1927,6 @@ def contact():
     return render_template("contact.html")
 
 
-@app.route("/mobile_welcome")
-def mobile_welcome():
-    return render_template("mobile_welcome.html")
-
-
 @app.route("/health")
 def health_check():
     """Point de controle utilise par Vercel et la supervision."""
@@ -2552,34 +2504,6 @@ VERIF_REVISION = "REVISION_REQUIRED"
 
 DOC_IDENTITY = "identity"
 DOC_PROFESSIONAL = "professional"
-REQUIRED_DOC_TYPES = (DOC_IDENTITY, DOC_PROFESSIONAL)
-
-
-def _technician_documents_by_type(conn, tech_id):
-    """Retourne {document_type: derniere ligne} pour un technicien."""
-    rows = conn.execute(
-        "SELECT * FROM technician_documents WHERE technician_id = ? ORDER BY id",
-        (tech_id,)).fetchall()
-    latest = {}
-    for row in rows:
-        latest[row["document_type"]] = row
-    return latest
-
-
-def _technician_docs_all_approved(conn, tech_id):
-    """Vrai si les deux documents obligatoires existent et sont approuves."""
-    docs = _technician_documents_by_type(conn, tech_id)
-    return all(
-        docs.get(t) and (docs[t]["status"] or "").lower() == "approved"
-        for t in REQUIRED_DOC_TYPES)
-
-
-def _technician_has_documents(conn, tech_id):
-    """Vrai si le technicien a soumis au moins un document de verification."""
-    row = conn.execute(
-        "SELECT COUNT(*) AS n FROM technician_documents WHERE technician_id = ?",
-        (tech_id,)).fetchone()
-    return bool(row and row["n"])
 
 
 @app.route("/admin/login", methods=["GET", "POST"])
@@ -4813,17 +4737,6 @@ def _can_login(user):
     return True
 
 
-_ACTIVATION_MAX_AGE = 7 * 24 * 60 * 60  # 7 jours
-_activation_serializer = URLSafeTimedSerializer(
-    app.config.get("SECRET_KEY") or "fallback-secret",
-    salt="technician-activation")
-
-
-def _generate_activation_token(user_id):
-    """Genere un jeton d'activation securise pour un technicien."""
-    return _activation_serializer.dumps({"user_id": user_id})
-
-
 _MOBILE_TOKEN_MAX_AGE = 7 * 24 * 60 * 60  # 7 jours
 _mobile_serializer = URLSafeTimedSerializer(
     app.config.get("SECRET_KEY") or "fallback-secret",
@@ -5092,12 +5005,6 @@ def dashboard():
     resp = make_response(render_template("dashboard_client.html", **base_ctx))
     resp.headers["Cache-Control"] = "no-store"
     return resp
-
-
-@app.route("/mobile_dashboard")
-@login_required
-def mobile_dashboard():
-    return render_template("mobile_dashboard.html", user=get_current_user())
 
 
 # ---------------------------------------------------------------------------
@@ -5850,13 +5757,6 @@ _PLAN_ENTITLEMENTS = {
         "more_opportunities",     # "Plus d'opportunites d'interventions"
     },
 }
-
-# HISTORIQUE - NON UTILISE. FixPro fonctionne uniquement par ABONNEMENT :
-# aucune commission n'est prelevee ni affichee comme avantage d'un plan.
-# Ce dict est conserve sans etre lu par la couche entitlements (audit requis
-# avant suppression : d'autres modules "payments"/"admin_commissions" heritent
-# encore de l'ancien modele client-paie-par-intervention).
-_PLAN_COMMISSION_DISCOUNT = {"tech_pro": 10, "tech_premium": 20}  # deprecated
 
 # Libelles affichables des droits (UI = meme source que le backend).
 _ENTITLEMENT_LABELS = {
@@ -7093,32 +6993,6 @@ def api_techniciens():
         return jsonify({"error": "Impossible de charger les artisans."}), 500
 
 
-@app.route("/artisans/<int:artisan_id>/contact")
-@login_required
-def artisan_contact(artisan_id):
-    user = get_current_user()
-    if user["role"] != "client":
-        flash("Cette action est réservée aux clients.", "error")
-        return redirect(url_for("artisans_page"))
-
-    conn = get_db_connection()
-    try:
-        req = conn.execute(
-            "SELECT id FROM requests WHERE client_id = ? AND artisan_id = ?"
-            " AND status IN ('assigned', 'quote_proposed', 'quote_accepted')"
-            " ORDER BY updated_at DESC LIMIT 1",
-            (user["id"], artisan_id)).fetchone()
-    finally:
-        conn.close()
-
-    if req:
-        return redirect(url_for("request_detail", request_id=req["id"]))
-
-    flash("Aucun contrat actif avec ce technicien. Créez d'abord une demande "
-          "pour démarrer une conversation.", "info")
-    return redirect(url_for("request_new"))
-
-
 @app.route("/artisans/<int:artisan_id>", methods=["GET", "POST"])
 @app.route("/technicien/<int:artisan_id>", methods=["GET", "POST"])
 def artisan_detail(artisan_id):
@@ -7700,31 +7574,6 @@ def client_tickets():
     return render_template("tickets.html", tickets=tickets, user=user)
 
 
-@app.route("/tickets/<int:ticket_id>/close", methods=["POST"])
-@login_required
-def ticket_close(ticket_id):
-    """Client ou admin ferme un ticket de support."""
-    user = get_current_user()
-    conn = get_db_connection()
-    try:
-        ticket = conn.execute(
-            "SELECT * FROM admin_tickets WHERE id = ?", (ticket_id,)).fetchone()
-        if not ticket:
-            flash("Ticket introuvable.", "error")
-            return redirect(url_for("client_tickets"))
-        if user["role"] != "admin" and ticket["client_id"] != user["id"]:
-            flash("Acces refuse.", "error")
-            return redirect(url_for("client_tickets"))
-        conn.execute("UPDATE admin_tickets SET status = 'resolved' WHERE id = ?", (ticket_id,))
-        conn.commit()
-        flash("Ticket marque comme resolu.", "success")
-    finally:
-        conn.close()
-    if user["role"] == "admin":
-        return redirect(url_for("admin_dashboard"))
-    return redirect(url_for("client_tickets"))
-
-
 def _notif_target(notif):
     """Deduit (icone, lien) pour une notification a partir de son type,
     de son champ `data` ('cle:valeur') et de son titre. Le lien renvoie
@@ -8028,33 +7877,6 @@ def requests_list():
     finally:
         conn.close()
     return render_template("requests.html", requests=rows, user=user, unread_count=unread_count)
-
-
-@app.route("/export/requests")
-@login_required
-def export_requests():
-    """Exporte les demandes du client en CSV."""
-    user = get_current_user()
-    conn = get_db_connection()
-    try:
-        rows = conn.execute(
-            "SELECT id, title, category, status, budget, created_at"
-            " FROM requests WHERE client_id = ? ORDER BY created_at DESC",
-            (user["id"],)).fetchall()
-    finally:
-        conn.close()
-
-    output = io.StringIO()
-    writer = csv.writer(output)
-    writer.writerow(["ID", "Titre", "Categorie", "Statut", "Budget", "Date"])
-    for row in rows:
-        writer.writerow([row["id"], row["title"], row["category"],
-                         row["status"], row["budget"], row["created_at"]])
-
-    response = app.make_response(output.getvalue())
-    response.headers["Content-Type"] = "text/csv; charset=utf-8"
-    response.headers["Content-Disposition"] = "attachment; filename=demandes_fixpro.csv"
-    return response
 
 
 @app.route("/requests/new", methods=["GET", "POST"])

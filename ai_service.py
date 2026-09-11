@@ -782,11 +782,3 @@ def analyze_message(content, collected=None):
         "action": action,
         "data": data,
     }
-
-
-def _is_ready_to_confirm(collected):
-    """Indique si toutes les informations techniques sont collectees."""
-    if collected.get("mode") != "fixpro":
-        return False
-    missing = _has_missing(collected)
-    return all(k not in missing for k in ["category", "location", "urgency", "availability"])
