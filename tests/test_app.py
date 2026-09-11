@@ -631,6 +631,11 @@ class TechnicianSignupTests(FixProTestCase):
             r = c.post("/devenir-technicien/finalisation",
                        data={"accept_cgu": "1"}, follow_redirects=False)
             self.assertEqual(r.status_code, 302)
+            # Point critique : jamais vers l'admin, toujours l'espace technicien reel.
+            self.assertNotIn("/admin", r.location)
+            self.assertTrue(
+                r.location.endswith("/dashboard/technicien") or r.location.endswith("/technician/dashboard"),
+                r.location)
             with c.session_transaction() as sess:
                 self.assertIn("user_id", sess)
                 self.assertNotIn("tech_signup", sess)
@@ -2806,6 +2811,64 @@ class AdminPanelTests(FixProTestCase):
         finally:
             conn.close()
         self.assertIsNone(row["admin_role"])
+
+
+class RoleSeparationTests(FixProTestCase):
+    """GUEST / CLIENT / TECHNICIAN / ADMIN sont des espaces strictement
+    separes : un technicien ne doit jamais pouvoir atteindre l'admin, meme
+    en changeant l'URL a la main, et l'inscription technicien ne redirige
+    jamais vers l'admin."""
+
+    def test_technician_hitting_admin_dashboard_is_redirected_to_admin_login(self):
+        self.register_artisan("role1@x.co", phone="+224621120001")
+        self.login("role1@x.co")
+        r = self.client.get("/admin/dashboard", follow_redirects=False)
+        self.assertEqual(r.status_code, 302)
+        self.assertIn("/admin/login", r.location)
+        # jamais le contenu du dashboard admin ne fuite dans la reponse suivie
+        r2 = self.client.get("/admin/dashboard", follow_redirects=True)
+        self.assertNotIn("Tableau de bord", r2.get_data(as_text=True))
+
+    def test_technician_hitting_admin_users_is_redirected_to_admin_login(self):
+        self.register_artisan("role2@x.co", phone="+224621120002")
+        self.login("role2@x.co")
+        r = self.client.get("/admin/utilisateurs", follow_redirects=False)
+        self.assertEqual(r.status_code, 302)
+        self.assertIn("/admin/login", r.location)
+
+    def test_client_hitting_admin_dashboard_is_redirected_to_admin_login(self):
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute(
+                "INSERT INTO users (email, phone, password_hash, role, full_name, is_active)"
+                " VALUES ('cl@x.co', '+224621120003', ?, 'client', 'Cl', 1)",
+                (fixpro_app.generate_password_hash("FixPro2026!"),))
+            conn.commit()
+        finally:
+            conn.close()
+        self.login("cl@x.co")
+        r = self.client.get("/admin/dashboard", follow_redirects=False)
+        self.assertEqual(r.status_code, 302)
+        self.assertIn("/admin/login", r.location)
+
+    def test_technician_signup_never_redirects_to_admin(self):
+        """Bout en bout : le wizard d'inscription technicien ne peut, a aucune
+        etape, terminer sur une route admin."""
+        r = self.client.post("/devenir-technicien", data={
+            "first_name": "Rose", "last_name": "Diallo", "phone": "620999888",
+            "email": "rose@x.co", "password": "FixPro2026!"}, follow_redirects=False)
+        self.assertNotIn("/admin", (r.location or ""))
+
+    def test_admin_session_cannot_be_forged_by_role_string_alone(self):
+        """Le controle est fait sur users.role en base, pas sur une simple
+        variable de session bricolable."""
+        self.register_artisan("role3@x.co", phone="+224621120004")
+        self.login("role3@x.co")
+        with self.client.session_transaction() as sess:
+            sess["role"] = "admin"  # cle de session sans effet : non lue par admin_required
+        r = self.client.get("/admin/dashboard", follow_redirects=False)
+        self.assertEqual(r.status_code, 302)
+        self.assertIn("/admin/login", r.location)
 
 
 class NotificationCenterTests(FixProTestCase):

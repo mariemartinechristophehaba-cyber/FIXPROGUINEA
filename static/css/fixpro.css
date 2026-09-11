@@ -256,29 +256,6 @@ body {
   display: flex; align-items: center; justify-content: center;
 }
 
-.sidebar-bottom {
-  display: flex; align-items: center; gap: 10px;
-  padding: 12px 8px 0; border-top: 1px solid var(--f-line); margin-top: 10px;
-}
-.sidebar-bottom .icon-btn {
-  position: relative; width: 40px; height: 40px; border-radius: 11px;
-  background: var(--f-bg); color: var(--f-text-2);
-  display: flex; align-items: center; justify-content: center; text-decoration: none;
-}
-.sidebar-bottom .icon-btn:hover { color: var(--f-primary); }
-.sidebar-bottom .dot-badge {
-  position: absolute; top: 4px; right: 4px; min-width: 16px; height: 16px; padding: 0 4px;
-  border-radius: 999px; background: #EF4444; color: #fff;
-  font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center;
-}
-.sidebar-bottom .avatar {
-  width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
-  background: rgba(21,94,239,.12); color: var(--f-primary);
-  font-weight: 800; font-size: 15px;
-  display: flex; align-items: center; justify-content: center; text-decoration: none;
-  margin-left: auto;
-}
-
 @media (min-width: 1024px) {
   .sidebar {
     display: flex;
@@ -532,11 +509,6 @@ body {
   font-size: 20px; font-weight: 800;
 }
 .cd-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
-.cd-avatar-edit {
-  position: absolute; right: -2px; bottom: -2px; width: 19px; height: 19px; border-radius: 50%;
-  background: #1D4ED8; color: #fff; display: flex; align-items: center; justify-content: center;
-  border: 2px solid #fff;
-}
 .cd-account-info { flex: 1; min-width: 0; }
 .cd-hello { display: block; font-size: 12.5px; color: #64748B; }
 .cd-role { display: block; font-size: 15.5px; font-weight: 700; color: #0F172A; margin: 1px 0 3px; }
@@ -553,10 +525,6 @@ body {
 /* Bloc "Mon espace professionnel" (statut d'inscription technicien) */
 
 .cd-section { background: #fff; border-radius: 16px; padding: 4px 4px; margin-bottom: 16px; }
-.cd-section-title {
-  font-size: 11px; color: #64748B; text-transform: uppercase; letter-spacing: .06em;
-  font-weight: 700; margin: 0 8px 8px;
-}
 
 .cd-item {
   display: flex; align-items: center; gap: 13px;
@@ -588,13 +556,6 @@ body {
   min-width: 20px; height: 20px; border-radius: 10px; padding: 0 6px;
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
-
-.cd-loc { cursor: pointer; }
-.cd-refresh {
-  flex-shrink: 0; border: 1px solid #C7D6F5; background: #fff; color: #1D4ED8;
-  font-size: 12.5px; font-weight: 700; padding: 7px 13px; border-radius: 999px; cursor: pointer;
-}
-.cd-refresh:active { background: #EEF2FF; }
 
 /* Action mise en avant : "Devenir technicien" / "Acceder a mon espace technicien" */
 .cd-tech {
