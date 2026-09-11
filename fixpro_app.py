@@ -33,7 +33,7 @@ from flask import (Flask, flash, g, get_flashed_messages, has_request_context,
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_cors import CORS
-from flask_wtf.csrf import CSRFProtect
+from flask_wtf.csrf import CSRFError, CSRFProtect
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -2126,12 +2126,21 @@ def _signup_doc_stash(token, kind, data_uri):
 
 
 def _signup_doc_pop(token, kind):
-    """Relit puis supprime une piece jointe temporaire. None si absente."""
+    """Relit puis supprime une piece jointe temporaire. None si absente.
+
+    Limite connue : en serverless, /tmp n'est pas partage entre instances --
+    si l'etape 3 (upload) et l'etape 5 (finalisation) tombent sur deux
+    machines differentes, le fichier est introuvable ici. Les documents sont
+    facultatifs a ce stade : la creation du compte n'est jamais bloquee pour
+    autant, mais on le journalise pour pouvoir le diagnostiquer."""
     path = os.path.join(_signup_doc_dir(), f"{token}_{kind}")
     try:
         with open(path, "r", encoding="ascii") as fh:
             data = fh.read()
     except OSError:
+        logger.warning("Piece jointe %s introuvable pour le jeton %s (probable"
+                       " changement d'instance serverless entre les etapes)",
+                       kind, token)
         return None
     try:
         os.remove(path)
@@ -2444,6 +2453,7 @@ def technician_signup_finalize():
             error = "Vous devez accepter les conditions d'utilisation pour créer votre compte."
         else:
             new_id = None
+            freshly_written = False
             conn = get_db_connection()
             try:
                 profession = _TECH_TRADE_PROFESSION.get(trade, trade.capitalize())
@@ -2469,11 +2479,23 @@ def technician_signup_finalize():
                              float(loc["lon"]) if has_location else None,
                              VERIF_PENDING, existing_user_id))
                         new_id = existing_user_id
-                elif conn.execute("SELECT id FROM users WHERE phone = ?", (phone,)).fetchone():
-                    error = "Ce numéro de téléphone est déjà utilisé."
-                elif email and conn.execute(
-                        "SELECT id FROM users WHERE email = ?", (email,)).fetchone():
-                    error = "Cette adresse e-mail est déjà utilisée."
+                        freshly_written = True
+                elif (_dup_phone := conn.execute(
+                        "SELECT id, role FROM users WHERE phone = ?", (phone,)).fetchone()):
+                    if _dup_phone["role"] in ("technician", "artisan"):
+                        # Double soumission (retour arriere, bouton double-clique,
+                        # nouvel essai apres une coupure) : ce numero a deja un
+                        # compte technicien -> on le reutilise, jamais d'erreur
+                        # bloquante pour une simple re-tentative.
+                        new_id = _dup_phone["id"]
+                    else:
+                        error = "Ce numéro de téléphone est déjà utilisé."
+                elif email and (_dup_email := conn.execute(
+                        "SELECT id, role FROM users WHERE email = ?", (email,)).fetchone()):
+                    if _dup_email["role"] in ("technician", "artisan"):
+                        new_id = _dup_email["id"]
+                    else:
+                        error = "Cette adresse e-mail est déjà utilisée."
                 else:
                     new_id = _insert_id(
                         conn,
@@ -2488,8 +2510,9 @@ def technician_signup_finalize():
                          float(loc["lat"]) if has_location else None,
                          float(loc["lon"]) if has_location else None,
                          VERIF_PENDING))
+                    freshly_written = True
 
-                if new_id and not error:
+                if new_id and freshly_written and not error:
                     token = session.get("tech_signup_doc_token")
                     for kind, dtype in (("identity", DOC_IDENTITY),
                                         ("diploma", DOC_PROFESSIONAL)):
@@ -2529,9 +2552,17 @@ def technician_signup_finalize():
 
             if new_id and not error:
                 _clear_tech_signup_session()
+                # session.clear() protege contre la fixation de session, mais
+                # la position deja autorisee par le visiteur (ecran de
+                # localisation) n'a aucune raison d'etre perdue avec elle.
+                _saved_loc = {k: session.get(k) for k in
+                             ("client_lat", "client_lon", "client_zone")
+                             if session.get(k) is not None}
                 session.clear()
+                session.update(_saved_loc)
                 session["user_id"] = new_id
                 session.permanent = True
+                g.pop("_current_user", None)
                 if existing_user_id:
                     flash("Votre compte est maintenant un compte technicien. Votre"
                           " dossier est en cours de vérification.", "success")
@@ -8349,6 +8380,40 @@ def api_messages(request_id):
 @app.errorhandler(404)
 def page_not_found(error):
     return render_template("404.html"), 404
+
+
+# Endpoints du wizard d'inscription technicien : une erreur CSRF y renvoie
+# l'utilisateur sur la meme etape (jeton neuf) plutot que sur une page 400.
+_CSRF_RESUME_ENDPOINTS = {
+    "devenir_technicien", "technician_signup_trade",
+    "technician_signup_documents", "technician_signup_location",
+    "technician_signup_finalize",
+}
+
+
+@app.errorhandler(CSRFError)
+def handle_csrf_error(error):
+    """Jamais d'ecran brut "The CSRF tokens do not match".
+
+    Cas typiques : page restee ouverte trop longtemps, bouton clique deux
+    fois, retour arriere du navigateur, session repartie de zero. On
+    explique et on propose de reprendre la ou l'utilisateur en etait, avec
+    un jeton neuf plutot qu'une erreur 400 brute et bloquante.
+    """
+    logger.warning("CSRF refuse sur %s (%s) : %s",
+                   request.path, request.endpoint, error.description)
+    # Les gabarits du wizard technicien sont des pages autonomes qui
+    # n'affichent pas les messages flash : une simple redirection y serait
+    # invisible. On renvoie donc vers cette meme page d'erreur dediee, avec
+    # un lien "Reprendre" qui recharge l'etape en cours (jeton neuf).
+    if request.endpoint in _CSRF_RESUME_ENDPOINTS:
+        try:
+            back = url_for(request.endpoint)
+        except Exception:
+            back = url_for("devenir_technicien")
+    else:
+        back = _safe_next_url(request.referrer) or url_for("index")
+    return render_template("csrf.html", back=back), 400
 
 
 @app.errorhandler(500)

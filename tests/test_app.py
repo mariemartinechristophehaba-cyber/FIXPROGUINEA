@@ -659,11 +659,41 @@ class TechnicianSignupTests(FixProTestCase):
         finally:
             conn.close()
 
-    def test_step5_rejects_duplicate_phone(self):
+    def test_step5_resubmit_with_same_phone_reuses_technician_account(self):
+        """Double soumission (retour arriere, bouton double-clique, nouvel
+        essai) avec le meme numero : jamais de blocage ni de second compte,
+        on se reconnecte simplement sur le technicien deja cree. C'est ce qui
+        transformait avant un simple retour arriere en 'Ce numero est deja
+        utilise' bloquant, voire en jeton CSRF perime sur la page en cache."""
         with self.client as c:
             self._do_steps_1_4(c)
             c.post("/devenir-technicien/finalisation", data={"accept_cgu": "1"})
             c.get("/logout")  # la finalisation connecte le nouveau technicien
+        with self.client as c:
+            self._do_steps_1_4(c)
+            r = c.post("/devenir-technicien/finalisation",
+                       data={"accept_cgu": "1"}, follow_redirects=False)
+            self.assertEqual(r.status_code, 302)
+            self.assertTrue(
+                r.location.endswith("/dashboard/technicien")
+                or r.location.endswith("/technician/dashboard"), r.location)
+            with c.session_transaction() as sess:
+                self.assertIn("user_id", sess)
+        self.assertEqual(self._count_users(), 1)
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            docs = conn.execute(
+                "SELECT COUNT(*) AS n FROM technician_documents").fetchone()
+            self.assertEqual(docs["n"], 1)  # pas de doublon de piece jointe
+        finally:
+            conn.close()
+
+    def test_step5_rejects_phone_already_used_by_a_client(self):
+        """Le numero appartient a un AUTRE client (visiteur non connecte
+        pendant le wizard) : toujours refuse, contrairement a une reprise de
+        son propre compte technicien deja connecte."""
+        self.register_client(phone="+224620112233")
+        self.client.get("/logout")
         with self.client as c:
             self._do_steps_1_4(c)
             r = c.post("/devenir-technicien/finalisation", data={"accept_cgu": "1"})
@@ -3570,6 +3600,77 @@ class StaticAssetVersioningTests(FixProTestCase):
             if re.search(r"url_for\(\s*['\"]static['\"][^)]*\bv\s*=", txt):
                 offenders.append(tpl.name)
         self.assertEqual(offenders, [], "utiliser asset() au lieu d'un ?v= fige")
+
+
+class CSRFErrorHandlingTests(FixProTestCase):
+    """Plus jamais d'ecran brut "Bad Request / The CSRF tokens do not
+    match" : un jeton perime doit toujours ramener l'utilisateur vers une
+    page FixPro exploitable (jeton neuf pour le wizard, page dediee ailleurs)."""
+
+    def setUp(self):
+        super().setUp()
+        fixpro_app.app.config["WTF_CSRF_ENABLED"] = True
+
+    def test_stale_token_on_wizard_step_offers_to_resume_it(self):
+        # Le gabarit du wizard est autonome (pas de rendu des flash messages) :
+        # la recuperation doit donc etre visible sur la reponse elle-meme,
+        # avec un lien qui recharge la MEME etape (jeton neuf).
+        r = self.client.post("/devenir-technicien", data={
+            "first_name": "Mohamed", "last_name": "Diallo",
+            "phone": "620112233", "email": "m@gmail.com",
+            "password": "FixPro2026!",
+        })  # pas de csrf_token -> refuse par Flask-WTF
+        self.assertEqual(r.status_code, 400)
+        html = r.get_data(as_text=True)
+        self.assertIn("session a expiré", html)
+        self.assertIn('href="/devenir-technicien"', html)
+        self.assertNotIn("CSRF tokens do not match", html)
+        self.assertNotIn("Bad Request", html)
+        # cliquer "Reprendre" doit rendre l'etape normalement, avec un jeton frais
+        resumed = self.client.get("/devenir-technicien").get_data(as_text=True)
+        self.assertIn('name="csrf_token"', resumed)
+        self.assertNotIn("session a expiré", resumed)
+
+    def test_stale_token_outside_wizard_shows_branded_page_not_raw_400(self):
+        r = self.client.post("/login", data={
+            "identifier": "+224620000000", "password": "whatever",
+        })
+        self.assertEqual(r.status_code, 400)
+        html = r.get_data(as_text=True)
+        self.assertIn("session a expiré", html)
+        self.assertNotIn("CSRF tokens do not match", html)
+        self.assertNotIn("<title>Redirecting", html)  # jamais l'ecran Werkzeug brut
+
+    def test_double_submit_of_finalize_form_never_500s_or_raw_400s(self):
+        """Reproduit le scenario signale : jeton perime sur la page de
+        finalisation (retour arriere / double clic) -> recuperation propre,
+        jamais l'ecran blanc "Bad Request"."""
+        with self.client as c:
+            c.post("/devenir-technicien", data={
+                "first_name": "Mohamed", "last_name": "Diallo",
+                "phone": "620119988", "email": "mm@gmail.com",
+                "password": "FixPro2026!", "csrf_token": self._token(c, "/devenir-technicien"),
+            })
+            c.post("/devenir-technicien/services", data={
+                "trade": "plomberie", "csrf_token": self._token(c, "/devenir-technicien/services")})
+            c.post("/devenir-technicien/documents", data={
+                "csrf_token": self._token(c, "/devenir-technicien/documents")})
+            c.post("/devenir-technicien/localisation", data={
+                "latitude": "9.5370", "longitude": "-13.6785",
+                "csrf_token": self._token(c, "/devenir-technicien/localisation")})
+            # jeton volontairement absent : page de finalisation restee ouverte
+            r = c.post("/devenir-technicien/finalisation", data={"accept_cgu": "1"})
+            self.assertEqual(r.status_code, 400)
+            html = r.get_data(as_text=True)
+            self.assertIn("session a expiré", html)
+            self.assertIn('href="/devenir-technicien/finalisation"', html)
+            self.assertNotIn("CSRF tokens do not match", html)
+
+    def _token(self, client, path):
+        import re
+        html = client.get(path).get_data(as_text=True)
+        m = re.search(r'name="csrf_token" value="([^"]+)"', html)
+        return m.group(1) if m else ""
 
 
 

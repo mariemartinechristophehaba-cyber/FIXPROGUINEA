@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block header_title %}Session expirée{% endblock %}
+{% block content %}
+<section class="card">
+  <h1>Votre session a expiré</h1>
+  <p>Cette page est restée ouverte trop longtemps ou le bouton a été validé
+    deux fois. Aucune donnée n'a été perdue&nbsp;: revenez en arrière et
+    réessayez, la page sera rafraîchie.</p>
+  <a class="btn btn-primary" href="{{ back or url_for('index') }}">Reprendre</a>
+</section>
+{% endblock %}
