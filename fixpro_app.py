@@ -1932,6 +1932,28 @@ def contact():
     return render_template("contact.html")
 
 
+@app.route("/parametres")
+def parametres():
+    """Page Parametres : UNE SEULE route, contenu adapte selon le compte reel.
+
+    guest -> pas connecte ; client -> role != technicien ; technician ->
+    role technicien/artisan. Le role vient toujours de la base (get_current_user
+    -> users.role), jamais d'un etat local. Chaque bouton renvoie vers une
+    route deja existante (profil, securite, abonnement, notifications...) --
+    aucune page fictive n'est creee ici."""
+    user = get_current_user()
+    if not user:
+        mode = "guest"
+    elif _is_technician(user):
+        mode = "technician"
+    else:
+        mode = "client"
+    theme = "dark" if request.cookies.get("pm_theme") == "dark" else "light"
+    return render_template(
+        "parametres.html", user=user, mode=mode, theme=theme,
+        app_version="1.0.0")
+
+
 @app.route("/health")
 def health_check():
     """Point de controle utilise par Vercel et la supervision."""

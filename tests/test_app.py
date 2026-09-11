@@ -3244,6 +3244,150 @@ class GoogleSignupTechnicianTests(FixProTestCase):
         self.assertNotIn("/devenir-technicien", r.location)
 
 
+class ParametresPageTests(FixProTestCase):
+    """/parametres : UNE SEULE page, contenu adapte au role reel du compte
+    (guest / client / technician). Aucune route /parametres/client etc."""
+
+    def _upgrade_to_technician(self, c, phone):
+        self.register_client(phone=phone)
+        self.login(phone)
+        c.get("/devenir-technicien", follow_redirects=False)
+        c.post("/devenir-technicien/services", data={"trade": "plomberie"})
+        c.post("/devenir-technicien/documents", data={})
+        c.post("/devenir-technicien/localisation", data={})
+        return c.post("/devenir-technicien/finalisation",
+                      data={"accept_cgu": "1"}, follow_redirects=False)
+
+    # TEST 1 : non connecte -> version invite
+    def test_guest_sees_guest_version(self):
+        html = self.client.get("/parametres").get_data(as_text=True)
+        self.assertIn("Personnalisez votre expérience FixPro", html)
+        self.assertIn("Se connecter", html)
+        self.assertNotIn("Se déconnecter", html)
+        self.assertNotIn("Informations personnelles", html)
+        self.assertNotIn("Sécurité", html)
+        self.assertNotIn("Préférences technicien", html)
+
+    # TEST 2 : client connecte -> version client
+    def test_client_sees_client_version(self):
+        self.register_client(phone="+224620333001")
+        self.login("+224620333001")
+        html = self.client.get("/parametres").get_data(as_text=True)
+        self.assertIn("Informations personnelles", html)
+        self.assertIn("Sécurité", html)
+        self.assertIn("Se déconnecter", html)
+        self.assertNotIn("Se connecter", html)
+        self.assertIn('pm-badge client', html)
+
+    # TEST 3 : technicien connecte -> version technicien
+    def test_technician_sees_technician_version(self):
+        with self.client as c:
+            self._upgrade_to_technician(c, "+224620333002")
+            html = c.get("/parametres").get_data(as_text=True)
+        self.assertIn("Préférences technicien", html)
+        self.assertIn("Notifications professionnelles", html)
+        self.assertIn("Zone d'intervention", html)
+        self.assertIn("Abonnement", html)
+        self.assertIn('pm-badge technician', html)
+
+    # TEST 4 : client devient technicien -> meme compte, /parametres bascule
+    def test_client_becoming_technician_flips_parametres_automatically(self):
+        with self.client as c:
+            self.register_client(phone="+224620333003")
+            self.login("+224620333003")
+            before = self.client.get("/parametres").get_data(as_text=True)
+            self.assertNotIn("Préférences technicien", before)
+            self._upgrade_to_technician(c, "+224620333003")
+            after = c.get("/parametres").get_data(as_text=True)
+        self.assertIn("Préférences technicien", after)
+
+    # TEST 5 : deconnexion -> version invite
+    def test_logout_returns_to_guest_version(self):
+        self.register_client(phone="+224620333004")
+        self.login("+224620333004")
+        self.client.get("/logout")
+        html = self.client.get("/parametres").get_data(as_text=True)
+        self.assertIn("Se connecter", html)
+        self.assertNotIn("Se déconnecter", html)
+
+    # TEST 6 : le client ne voit jamais d'option professionnelle
+    def test_client_never_sees_professional_options(self):
+        self.register_client(phone="+224620333005")
+        self.login("+224620333005")
+        html = self.client.get("/parametres").get_data(as_text=True)
+        self.assertNotIn("Préférences technicien", html)
+        self.assertNotIn("Notifications professionnelles", html)
+        self.assertNotIn("Zone d'intervention", html)
+        self.assertNotIn("Espace professionnel", html)
+
+    # TEST 7 : le technicien voit bien les options professionnelles (redondant
+    # avec TEST 3, garde explicitement la formulation demandee)
+    def test_technician_sees_professional_options(self):
+        with self.client as c:
+            self._upgrade_to_technician(c, "+224620333006")
+            html = c.get("/parametres").get_data(as_text=True)
+        self.assertIn("Espace professionnel", html)
+
+    # TEST 8 : une seule route /parametres, aucune route derivee
+    def test_only_one_parametres_route_exists(self):
+        for bad in ("/parametres/client", "/parametres/technicien", "/parametres/guest"):
+            r = self.client.get(bad)
+            self.assertEqual(r.status_code, 404, bad)
+        self.assertEqual(self.client.get("/parametres").status_code, 200)
+
+    # TEST 9 : aucune duplication de la page Profil -- les boutons renvoient
+    # vers les vraies routes existantes, rien n'est recree ici.
+    def _url(self, endpoint, **kw):
+        with fixpro_app.app.test_request_context():
+            return fixpro_app.url_for(endpoint, **kw)
+
+    def test_settings_links_to_real_existing_pages_not_duplicates(self):
+        self.register_client(phone="+224620333007")
+        self.login("+224620333007")
+        html = self.client.get("/parametres").get_data(as_text=True)
+        self.assertIn('href="{}"'.format(self._url("profile")), html)
+        self.assertIn('href="{}"'.format(self._url("client_security")), html)
+        self.assertIn('href="{}"'.format(self._url("contact")), html)
+        # la page elle-meme ne reconstruit pas les champs du profil
+        self.assertNotIn('name="first_name"', html)
+        self.assertNotIn('name="current_password"', html)
+
+    def test_technician_settings_link_to_real_subscription_and_dashboard(self):
+        with self.client as c:
+            self._upgrade_to_technician(c, "+224620333008")
+            html = c.get("/parametres").get_data(as_text=True)
+        self.assertIn('href="{}"'.format(self._url("artisan_dashboard")), html)
+        self.assertIn('href="{}"'.format(self._url("technician_subscription")), html)
+        self.assertIn('href="{}"'.format(self._url("technician_notifications")), html)
+
+    # TEST 10 : securite serveur -- un client ne peut pas obtenir le contenu
+    # technicien en bricolant la session (le role vient de la base)
+    def test_professional_options_gated_on_real_role_not_session_tampering(self):
+        self.register_client(phone="+224620333009")
+        self.login("+224620333009")
+        with self.client.session_transaction() as sess:
+            sess["role"] = "technician"   # bricolage cote navigateur : sans effet
+        html = self.client.get("/parametres").get_data(as_text=True)
+        self.assertNotIn("Préférences technicien", html)
+
+    def test_responsive_no_horizontal_overflow_markers(self):
+        """Verification statique de base : le CSS de la page interdit tout
+        debordement horizontal (page centree, largeur bornee)."""
+        self.register_client(phone="+224620333010")
+        self.login("+224620333010")
+        html = self.client.get("/parametres").get_data(as_text=True)
+        self.assertIn("overflow-x: hidden", html)
+        self.assertIn("max-width: 480px", html)
+
+    def test_menu_links_now_point_to_parametres_not_directly_to_security(self):
+        """Depuis le menu : Paramètres -> /parametres (pas directement vers
+        la page securite, qui reste un sous-item accessible depuis /parametres)."""
+        self.register_client(phone="+224620333011")
+        self.login("+224620333011")
+        html = self.client.get("/artisans").get_data(as_text=True)
+        self.assertIn('href="{}"'.format(self._url("parametres")), html)
+
+
 class RefreshRolePersistenceTests(FixProTestCase):
     """Le role vient TOUJOURS d'une lecture serveur fraiche (users.role en
     base), jamais d'un etat client qui pourrait disparaitre/perimer :
