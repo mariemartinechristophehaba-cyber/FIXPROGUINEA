@@ -3087,6 +3087,52 @@ class ClientToTechnicianUpgradeTests(FixProTestCase):
         self.assertIn("/devenir-technicien/services", r.location)
         self.assertEqual(self._count_users(), before)   # compte cree seulement a la finalisation
 
+    # Signalement reel : juste apres la creation du compte, une premiere
+    # relecture du role peut echouer (connexion groupee/replique en retard) --
+    # la finalisation doit retenter quelques instants avant d'abandonner vers
+    # la reconnexion, pour que l'ecran "Reconnectez-vous" reste l'exception,
+    # pas ce que voit systematiquement un technicien qui vient de s'inscrire.
+    def test_finalize_retries_role_verification_before_giving_up(self):
+        real_get_db_connection = fixpro_app.get_db_connection
+        calls = {"n": 0}
+
+        class _FlakyConn:
+            def __init__(self, real_conn):
+                self._real = real_conn
+
+            def execute(self, sql, params=()):
+                if sql == "SELECT role FROM users WHERE id = ?":
+                    calls["n"] += 1
+                    if calls["n"] <= 2:
+                        class _Empty:
+                            def fetchone(self_inner):
+                                return None
+                        return _Empty()
+                return self._real.execute(sql, params)
+
+            def __getattr__(self, name):
+                return getattr(self._real, name)
+
+        def flaky_get_db_connection():
+            return _FlakyConn(real_get_db_connection())
+
+        fixpro_app.get_db_connection = flaky_get_db_connection
+        orig_sleep = fixpro_app.time.sleep
+        fixpro_app.time.sleep = lambda *_: None
+        try:
+            with self.client as c:
+                self.register_client(phone="+224620111010")
+                self.login("+224620111010")
+                r = self._upgrade(c)
+                self.assertEqual(r.status_code, 302)
+                self.assertTrue(
+                    r.location.endswith("/dashboard/technicien")
+                    or r.location.endswith("/technician/dashboard"), r.location)
+        finally:
+            fixpro_app.get_db_connection = real_get_db_connection
+            fixpro_app.time.sleep = orig_sleep
+        self.assertGreaterEqual(calls["n"], 3)   # a vraiment retente, pas eu de chance au 1er coup
+
     # Un ex-client deja "verifie" (is_verified=1) qui devient technicien
     # repart en attente d'examen : jamais de passe-droit sur la moderation.
     def test_upgrade_resets_is_verified_pending_admin_review(self):

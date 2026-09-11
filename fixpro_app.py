@@ -21,6 +21,7 @@ import tempfile
 import urllib.parse
 import urllib.request
 import secrets
+import time
 from datetime import date, datetime, timedelta, timezone
 from functools import wraps
 
@@ -2571,19 +2572,27 @@ def technician_signup_finalize():
 
                 # Verification finale sur une connexion neuve, avant de
                 # promettre l'espace technicien : si le role vient d'etre
-                # ecrit mais n'est pas encore relisible (connexion groupee,
-                # replique en retard...), on ne laisse jamais filer vers un
-                # dashboard qui ne le reconnaitrait pas -- reconnexion propre.
-                _verify_conn = get_db_connection()
-                try:
-                    _confirmed = _verify_conn.execute(
-                        "SELECT role FROM users WHERE id = ?", (new_id,)).fetchone()
-                finally:
-                    _verify_conn.close()
+                # ecrit mais n'est pas encore relisible (connexion groupee
+                # Supabase/PgBouncer, replique en retard...), quelques
+                # nouvelles tentatives tres rapprochees suffisent presque
+                # toujours -- on ne renvoie vers une reconnexion que si le
+                # role reste introuvable apres ces tentatives.
+                _confirmed = None
+                for _attempt in range(4):
+                    if _attempt:
+                        time.sleep(0.2)
+                    _verify_conn = get_db_connection()
+                    try:
+                        _confirmed = _verify_conn.execute(
+                            "SELECT role FROM users WHERE id = ?", (new_id,)).fetchone()
+                    finally:
+                        _verify_conn.close()
+                    if _confirmed and _confirmed["role"] in ("technician", "artisan"):
+                        break
                 if not _confirmed or _confirmed["role"] not in ("technician", "artisan"):
                     logger.error(
                         "Finalisation technicien : verification post-creation"
-                        " echouee pour id=%s (role lu: %s)", new_id,
+                        " echouee pour id=%s apres relances (role lu: %s)", new_id,
                         _confirmed["role"] if _confirmed else None)
                     flash("Votre compte technicien a été créé. Reconnectez-vous"
                           " pour accéder à votre espace.", "success")
