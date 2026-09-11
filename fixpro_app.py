@@ -2151,15 +2151,47 @@ def _already_technician_redirect():
     return None
 
 
+def _use_existing_account_for_signup():
+    """Un CLIENT deja connecte qui lance le wizard ne cree jamais un second
+    compte : on reutilise directement son identite (id, e-mail, telephone,
+    mot de passe deja hache en base) et on saute l'etape 1. Retourne une
+    reponse de redirection vers l'etape 2 si applicable, sinon None (visiteur
+    non connecte -> parcours de creation de compte inchange)."""
+    user = get_current_user()
+    if not user or user.get("role") != "client":
+        return None
+    parts = (user.get("full_name") or "").strip().split(" ", 1)
+    session["tech_signup"] = {
+        "first_name": parts[0] if parts else "",
+        "last_name": parts[1] if len(parts) > 1 else "",
+        "phone": user.get("phone") or "",
+        "email": (user.get("email") or "").lower(),
+        "existing_user_id": user["id"],
+    }
+    session.modified = True
+    return redirect(url_for("technician_signup_trade"))
+
+
 @app.route("/devenir-technicien", methods=["GET", "POST"])
 @limiter.limit("15 per hour", methods=["POST"])
 def devenir_technicien():
     """Wizard d'inscription technicien -- etape 1 sur 5 : le profil
     (identite, telephone, e-mail, mot de passe). Public. Au POST valide,
-    memorise l'etape 1 en session et passe a l'etape 2 (Services)."""
+    memorise l'etape 1 en session et passe a l'etape 2 (Services).
+
+    Un utilisateur FixPro n'a qu'UN SEUL compte : un CLIENT deja connecte
+    qui devient technicien reutilise automatiquement son compte existant
+    (meme id, meme e-mail, meme telephone) -- il ne recree jamais une
+    identite. Cette etape est alors sautee entierement (voir
+    _use_existing_account_for_signup) ; seules les etapes professionnelles
+    (metier, documents, zone) restent a remplir. Un visiteur non connecte
+    garde le parcours de creation de compte classique ci-dessous."""
     _done = _already_technician_redirect()
     if _done:
         return _done
+    _existing = _use_existing_account_for_signup()
+    if _existing:
+        return _existing
     data = dict(session.get("tech_signup", {}))
     errors = {}
 
@@ -2379,8 +2411,9 @@ def technician_signup_finalize():
     trade = session.get("tech_signup_trade")
     docs = session.get("tech_signup_docs") or {}
     loc = session.get("tech_signup_location") or {}
+    existing_user_id = ts.get("existing_user_id")
 
-    if not ts.get("pwd_hash"):
+    if not ts.get("pwd_hash") and not existing_user_id:
         return redirect(url_for("devenir_technicien"))
     if not trade:
         return redirect(url_for("technician_signup_trade"))
@@ -2413,13 +2446,35 @@ def technician_signup_finalize():
             new_id = None
             conn = get_db_connection()
             try:
-                if conn.execute("SELECT id FROM users WHERE phone = ?", (phone,)).fetchone():
+                profession = _TECH_TRADE_PROFESSION.get(trade, trade.capitalize())
+
+                if existing_user_id:
+                    # UN SEUL COMPTE FixPro : le client garde son id, son e-mail,
+                    # son telephone et son mot de passe -- on ne fait QUE changer
+                    # son role et ajouter les infos professionnelles. Jamais de
+                    # second utilisateur cree pour cette meme personne.
+                    current_row = conn.execute(
+                        "SELECT id, role FROM users WHERE id = ?", (existing_user_id,)).fetchone()
+                    if not current_row or current_row["role"] != "client":
+                        error = "Compte introuvable ou déjà mis à jour. Reconnectez-vous."
+                    else:
+                        conn.execute(
+                            "UPDATE users SET role = 'technician', profession = ?,"
+                            " city = COALESCE(?, city), zone_intervention = COALESCE(?, zone_intervention),"
+                            " latitude = COALESCE(?, latitude), longitude = COALESCE(?, longitude),"
+                            " availability_status = 'hors_ligne', verification_status = ?"
+                            " WHERE id = ?",
+                            (profession, zone_label or None, zone_label or None,
+                             float(loc["lat"]) if has_location else None,
+                             float(loc["lon"]) if has_location else None,
+                             VERIF_PENDING, existing_user_id))
+                        new_id = existing_user_id
+                elif conn.execute("SELECT id FROM users WHERE phone = ?", (phone,)).fetchone():
                     error = "Ce numéro de téléphone est déjà utilisé."
                 elif email and conn.execute(
                         "SELECT id FROM users WHERE email = ?", (email,)).fetchone():
                     error = "Cette adresse e-mail est déjà utilisée."
                 else:
-                    profession = _TECH_TRADE_PROFESSION.get(trade, trade.capitalize())
                     new_id = _insert_id(
                         conn,
                         "INSERT INTO users (full_name, phone, email, password_hash,"
@@ -2434,6 +2489,7 @@ def technician_signup_finalize():
                          float(loc["lon"]) if has_location else None,
                          VERIF_PENDING))
 
+                if new_id and not error:
                     token = session.get("tech_signup_doc_token")
                     for kind, dtype in (("identity", DOC_IDENTITY),
                                         ("diploma", DOC_PROFESSIONAL)):
@@ -2451,10 +2507,17 @@ def technician_signup_finalize():
                             (new_id, dtype, f"{kind}{ext}",
                              mime or "application/octet-stream",
                              len(encoded) if encoded else 0, encoded))
-                    create_notification(
-                        new_id, "Compte technicien créé",
-                        "Bienvenue sur FixPro ! Votre compte technicien a bien "
-                        "été créé.", "account", data="account", conn=conn)
+                    if existing_user_id:
+                        create_notification(
+                            new_id, "Espace technicien activé",
+                            "Votre compte FixPro est désormais aussi un compte "
+                            "technicien. Même identifiants, nouvelles "
+                            "possibilités.", "account", data="account", conn=conn)
+                    else:
+                        create_notification(
+                            new_id, "Compte technicien créé",
+                            "Bienvenue sur FixPro ! Votre compte technicien a bien "
+                            "été créé.", "account", data="account", conn=conn)
                     create_notification(
                         new_id, "Profil en cours de vérification",
                         "Nous vérifions actuellement vos informations et vos "
@@ -2469,8 +2532,12 @@ def technician_signup_finalize():
                 session.clear()
                 session["user_id"] = new_id
                 session.permanent = True
-                flash("Votre compte technicien a été créé. Votre dossier est"
-                      " en cours de vérification.", "success")
+                if existing_user_id:
+                    flash("Votre compte est maintenant un compte technicien. Votre"
+                          " dossier est en cours de vérification.", "success")
+                else:
+                    flash("Votre compte technicien a été créé. Votre dossier est"
+                          " en cours de vérification.", "success")
                 return redirect(url_for("artisan_dashboard"))
 
     return render_template(

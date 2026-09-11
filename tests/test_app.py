@@ -2903,6 +2903,161 @@ class RoleSeparationTests(FixProTestCase):
         self.assertEqual(self.client.get("/admin/dashboard").status_code, 200)
 
 
+class ClientToTechnicianUpgradeTests(FixProTestCase):
+    """UN UTILISATEUR FIXPRO = UN SEUL COMPTE. Un client deja connecte qui
+    devient technicien doit garder le meme user.id / e-mail / telephone :
+    le wizard met a jour son compte existant, il n'en cree jamais un second.
+    Un visiteur non connecte garde, lui, le parcours de creation classique."""
+
+    def _client_id(self, phone="+224620000000"):
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            return conn.execute(
+                "SELECT id FROM users WHERE phone = ?", (phone,)).fetchone()["id"]
+        finally:
+            conn.close()
+
+    def _count_users(self):
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            return conn.execute("SELECT COUNT(*) AS n FROM users").fetchone()["n"]
+        finally:
+            conn.close()
+
+    def _upgrade(self, c, trade="plomberie"):
+        """Parcours complet cote client deja connecte : etape 1 sautee
+        automatiquement (compte reutilise), etapes 2-5 remplies."""
+        r0 = c.get("/devenir-technicien", follow_redirects=False)
+        self.assertEqual(r0.status_code, 302)
+        self.assertIn("/devenir-technicien/services", r0.location)
+        c.post("/devenir-technicien/services", data={"trade": trade})
+        c.post("/devenir-technicien/documents", data={})
+        c.post("/devenir-technicien/localisation", data={})
+        return c.post("/devenir-technicien/finalisation",
+                      data={"accept_cgu": "1"}, follow_redirects=False)
+
+    # TEST 1 + TEST 4 : meme user.id, aucun deuxieme compte cree
+    def test_same_user_id_no_second_account_created(self):
+        with self.client as c:
+            self.register_client(phone="+224620111001")
+            self.login("+224620111001")
+            before_id = self._client_id("+224620111001")
+            before_count = self._count_users()
+            r = self._upgrade(c)
+            self.assertEqual(r.status_code, 302)
+        after_id = self._client_id("+224620111001")
+        after_count = self._count_users()
+        self.assertEqual(before_id, after_id)          # TEST 1
+        self.assertEqual(before_count, after_count)     # TEST 4 : pas de doublon
+
+    # TEST 2 + TEST 3 : e-mail et telephone inchanges
+    def test_same_email_and_phone_after_upgrade(self):
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute(
+                "INSERT INTO users (email, phone, password_hash, role, full_name, is_active)"
+                " VALUES ('client-up@x.co', '+224620111002', ?, 'client', 'Client Up', 1)",
+                (fixpro_app.generate_password_hash("FixPro2026!"),))
+            conn.commit()
+        finally:
+            conn.close()
+        with self.client as c:
+            self.login("client-up@x.co")
+            self._upgrade(c)
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            row = conn.execute(
+                "SELECT email, phone, role FROM users WHERE phone = '+224620111002'").fetchone()
+        finally:
+            conn.close()
+        self.assertEqual(row["email"], "client-up@x.co")   # TEST 2
+        self.assertEqual(row["phone"], "+224620111002")    # TEST 3
+        self.assertEqual(row["role"], "technician")
+
+    # TEST 5 : le role passe reellement de client a technician en base
+    def test_role_actually_changes_in_database(self):
+        with self.client as c:
+            self.register_client(phone="+224620111003")
+            self.login("+224620111003")
+            uid = self._client_id("+224620111003")
+            conn = db.connect(sqlite_path=self.db_path)
+            try:
+                self.assertEqual(
+                    conn.execute("SELECT role FROM users WHERE id = ?", (uid,)).fetchone()["role"],
+                    "client")
+            finally:
+                conn.close()
+            self._upgrade(c)
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            row = conn.execute("SELECT role, profession, verification_status FROM users WHERE id = ?",
+                              (uid,)).fetchone()
+        finally:
+            conn.close()
+        self.assertEqual(row["role"], "technician")
+        self.assertEqual(row["profession"], "Plombier")
+        self.assertEqual(row["verification_status"], "PENDING_REVIEW")
+
+    # TEST 6 : deconnexion / reconnexion -> role technicien conserve
+    def test_role_persists_after_logout_login(self):
+        with self.client as c:
+            self.register_client(phone="+224620111004")
+            self.login("+224620111004")
+            self._upgrade(c)
+            c.get("/logout")
+        self.login("+224620111004")
+        html = self.client.get("/artisans").get_data(as_text=True)
+        self.assertIn("Accéder à mon espace technicien", html)   # TEST 10
+        self.assertNotIn("Devenir technicien", html)
+
+    # TEST 7 + TEST 8 : redirection finale = dashboard technicien, jamais /admin
+    def test_finalize_redirects_to_technician_dashboard_never_admin(self):
+        with self.client as c:
+            self.register_client(phone="+224620111005")
+            self.login("+224620111005")
+            r = self._upgrade(c)
+            self.assertEqual(r.status_code, 302)
+            self.assertNotIn("/admin", r.location)             # TEST 8
+            self.assertTrue(
+                r.location.endswith("/dashboard/technicien")
+                or r.location.endswith("/technician/dashboard"), r.location)  # TEST 7
+
+    # TEST 9 : menu avant transformation = "Devenir technicien"
+    def test_menu_shows_devenir_technicien_before_upgrade(self):
+        self.register_client(phone="+224620111006")
+        self.login("+224620111006")
+        html = self.client.get("/artisans").get_data(as_text=True)
+        self.assertIn("Devenir technicien", html)
+        self.assertNotIn("Accéder à mon espace technicien", html)
+
+    # Securite : le role ne peut pas etre change cote client / session bricolee
+    def test_role_change_is_not_client_side_only(self):
+        self.register_client(phone="+224620111007")
+        self.login("+224620111007")
+        with self.client.session_transaction() as sess:
+            sess["role"] = "technician"   # bricolage cote navigateur : sans effet
+        uid = self._client_id("+224620111007")
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            role = conn.execute("SELECT role FROM users WHERE id = ?", (uid,)).fetchone()["role"]
+        finally:
+            conn.close()
+        self.assertEqual(role, "client")
+        r = self.client.get("/dashboard/technicien", follow_redirects=False)
+        self.assertEqual(r.status_code, 302)   # toujours refuse : la session seule ne suffit pas
+
+    # Cas non connecte : parcours de creation de compte classique, inchange
+    def test_guest_signup_still_creates_a_new_account(self):
+        before = self._count_users()
+        r = self.client.post("/devenir-technicien", data={
+            "first_name": "Nouveau", "last_name": "Technicien",
+            "phone": "620999777", "email": "nouveau@x.co",
+            "password": "FixPro2026!"}, follow_redirects=False)
+        self.assertEqual(r.status_code, 302)
+        self.assertIn("/devenir-technicien/services", r.location)
+        self.assertEqual(self._count_users(), before)   # compte cree seulement a la finalisation
+
+
 class NotificationCenterTests(FixProTestCase):
     """Centre de notifications technicien : bottom sheet, categories, diffusion
     admin, cycle de vie de l'abonnement. Consultatif uniquement."""
