@@ -2957,16 +2957,6 @@ def _admin_dashboard_demo_context():
     }
 
 
-_CLIENT_STATUS_LABELS = {"done": "Terminée", "prog": "En cours",
-                         "wait": "En attente", "canc": "Annulée"}
-
-# Services affiches dans la carte "Nos services" (nom + cle d'icone CSS).
-_CLIENT_SERVICES = [
-    ("Plomberie", "plumb"), ("Électricité", "elec"), ("Climatisation", "clim"),
-    ("Menuiserie", "wood"), ("Peinture", "paint"), ("Nettoyage", "clean"),
-]
-
-
 @app.route("/admin/dashboard")
 @login_required
 @admin_required
@@ -4896,190 +4886,29 @@ def logout():
 # Espace connecte
 # ---------------------------------------------------------------------------
 
-def _client_dashboard_real_context(user):
-    """Vrai contexte du tableau de bord client (demandes, paiements, technicien...)."""
-    uid = user["id"] if user else 0
-    now = datetime.now(timezone.utc)
-    month_prefix = now.strftime("%Y-%m")
-    empty = {
-        "stats": {
-            "requests": {"value": "0", "delta": "", "note": "", "trend": "flat"},
-            "done": {"value": "0", "delta": "", "note": "", "trend": "flat"},
-            "progress": {"value": "0", "delta": "", "note": "", "trend": "flat"},
-            "spent": {"value": "0 GNF", "delta": "", "note": "", "trend": "flat"},
-        },
-        "recent_requests": [], "notifications": [], "my_tech": None,
-        "my_address": None, "unread_count": 0,
-    }
-    if not uid:
-        return empty
-
-    conn = get_db_connection()
-    try:
-        def _n(sql, params=()):
-            try:
-                row = conn.execute(sql, params).fetchone()
-                return int((row["n"] if row else 0) or 0)
-            except Exception:
-                conn.rollback()
-                return 0
-
-        total = _n("SELECT COUNT(*) AS n FROM requests WHERE client_id = ?", (uid,))
-        month_new = _n("SELECT COUNT(*) AS n FROM requests WHERE client_id = ?"
-                       " AND substr(created_at, 1, 7) = ?", (uid, month_prefix))
-        buckets = {"done": 0, "prog": 0, "wait": 0, "canc": 0}
-        try:
-            for r in conn.execute(
-                    "SELECT status, COUNT(*) AS n FROM requests WHERE client_id = ?"
-                    " GROUP BY status", (uid,)).fetchall():
-                buckets[_adm_status_bucket(r["status"])] += int(r["n"] or 0)
-        except Exception:
-            conn.rollback()
-        spent = _n("SELECT COALESCE(SUM(p.amount), 0) AS n FROM payments p"
-                   " JOIN requests r ON r.id = p.request_id"
-                   " WHERE r.client_id = ? AND LOWER(p.status) IN"
-                   " ('paid', 'completed', 'succeeded')", (uid,))
-
-        def _delta(cur):
-            return ("+%d" % cur) if cur else "stable"
-
-        stats = {
-            "requests": {"value": _fmt_int(total), "delta": _delta(month_new),
-                         "note": "ce mois" if month_new else "", "trend": "up" if month_new else "flat"},
-            "done": {"value": _fmt_int(buckets["done"]), "delta": "", "note": "", "trend": "flat"},
-            "progress": {"value": _fmt_int(buckets["prog"]), "delta": "stable" if not buckets["prog"] else "",
-                         "note": "", "trend": "flat"},
-            "spent": {"value": _fmt_int(spent) + " GNF", "delta": "", "note": "", "trend": "flat"},
-        }
-
-        recent_requests = []
-        try:
-            rows = conn.execute(
-                "SELECT r.reference, r.service, r.category, r.status, r.created_at,"
-                " u.full_name AS tech FROM requests r"
-                " LEFT JOIN users u ON u.id = r.artisan_id"
-                " WHERE r.client_id = ? ORDER BY r.created_at DESC LIMIT 5", (uid,)).fetchall()
-        except Exception:
-            conn.rollback()
-            rows = []
-        for r in rows:
-            pill = _adm_status_bucket(r["status"])
-            ref = r["reference"] or ""
-            recent_requests.append({
-                "code": ("#" + ref) if ref and not str(ref).startswith("#") else (ref or "—"),
-                "service": r["service"] or r["category"] or "Service",
-                "tech": r["tech"] or "—", "pill": pill,
-                "status_label": _CLIENT_STATUS_LABELS[pill],
-                "date": str(r["created_at"] or "")[:10],
-            })
-
-        my_tech = None
-        try:
-            t = conn.execute(
-                "SELECT u.full_name, u.profession, u.phone, u.photo_url,"
-                " COALESCE(AVG(rv.rating), 0) AS rating, COUNT(rv.id) AS reviews"
-                " FROM requests r JOIN users u ON u.id = r.artisan_id"
-                " LEFT JOIN reviews rv ON rv.artisan_id = u.id"
-                " WHERE r.client_id = ? AND r.artisan_id IS NOT NULL"
-                " GROUP BY u.id ORDER BY MAX(r.created_at) DESC LIMIT 1", (uid,)).fetchone()
-            if t:
-                my_tech = {
-                    "name": t["full_name"] or "Technicien",
-                    "job": t["profession"] or "Technicien",
-                    "rating": "%.1f" % (t["rating"] or 0) if t["rating"] else "—",
-                    "reviews": int(t["reviews"] or 0), "phone": t["phone"] or "",
-                    "photo_url": t["photo_url"] or "",
-                }
-        except Exception:
-            conn.rollback()
-
-        notifications = []
-        try:
-            for row in conn.execute(
-                    "SELECT title, type, created_at FROM notifications"
-                    " WHERE user_id = ? ORDER BY created_at DESC LIMIT 4", (uid,)).fetchall():
-                notifications.append({
-                    "kind": _client_notif_kind(row["type"]),
-                    "text": row["title"] or "Notification",
-                    "ago": _adm_ago(row["created_at"]),
-                })
-        except Exception:
-            conn.rollback()
-        unread_count = _n("SELECT COUNT(*) AS n FROM notifications"
-                          " WHERE user_id = ? AND is_read = 0", (uid,))
-
-        return {
-            "stats": stats, "recent_requests": recent_requests,
-            "notifications": notifications, "my_tech": my_tech,
-            "my_address": (user.get("quartier") or user.get("city")) if user else None,
-            "unread_count": unread_count,
-        }
-    except Exception as exc:
-        logger.exception("Erreur dashboard client: %s", exc)
-        return empty
-    finally:
-        conn.close()
-
-
-def _client_notif_kind(raw):
-    s = (raw or "").lower()
-    if "pay" in s:
-        return "pay"
-    if "message" in s or "chat" in s:
-        return "msg"
-    if "complete" in s or "termin" in s or "done" in s:
-        return "success"
-    return "tech"
-
 
 @app.route("/dashboard")
 @login_required
 def dashboard():
-    """Tableau de bord CLIENT. Necessite une session reelle : cette page ne
-    doit JAMAIS fabriquer un faux tableau de bord (meme en mode demo) pour
-    un visiteur non identifie -- get_current_user() retournerait None et le
-    contenu de demonstration masquerait le probleme au lieu de le signaler."""
+    """Redirige vers l'espace de l'utilisateur connecte.
+
+    L'ancien tableau de bord client autonome (dashboard_client.html) a ete
+    retire de l'application sur demande explicite -- l'espace client, c'est
+    l'accueil (/). Ne doit JAMAIS fabriquer de contenu pour un visiteur non
+    identifie -- get_current_user() peut retourner None (session["user_id"]
+    present mais ligne non relue) : reconnexion propre plutot qu'un contenu
+    invente."""
     user = get_current_user()
     if user and _is_technician(user):
         return redirect(url_for("artisan_dashboard"))
     if not user:
-        # session["user_id"] present mais la ligne users correspondante
-        # n'a pas ete relue (compte tout juste cree/modifie, connexion
-        # coupee...) : ne JAMAIS retomber sur le contenu de demonstration,
-        # qui ferait croire a un vrai tableau de bord. Reconnexion propre.
         logger.warning("dashboard() : session['user_id']=%s mais aucun "
                        "utilisateur charge -- reconnexion demandee",
                        session.get("user_id"))
         session.clear()
         flash("Votre session a expiré. Veuillez vous reconnecter.", "error")
         return redirect(url_for("login"))
-
-    now = datetime.now(timezone.utc)
-    raw_name = user.get("full_name") or ""
-    first_name = raw_name.split(" ")[0].strip()
-    today_label = "%s %d %s %d" % (
-        _ADM_DAYS_FR[now.weekday()].capitalize(), now.day,
-        _ADM_MONTHS_FR[now.month].capitalize(), now.year)
-    hero = url_for("static", filename="img/admin-login-hero.jpg",
-                   v=_static_asset_version("img/admin-login-hero.jpg"))
-
-    base_ctx = {
-        "user": user, "client_first_name": first_name,
-        "today_label": today_label, "hero_img": hero,
-        "current_year": now.year, "services": _CLIENT_SERVICES,
-        "display_name": user.get("full_name") or "Mon compte",
-    }
-    # Adresse : geoloc de session (systeme FixPro) puis profil.
-    zone = (session.get("client_zone") or user.get("quartier") or user.get("city"))
-
-    ctx = _client_dashboard_real_context(user)
-    if zone:
-        ctx["my_address"] = zone
-    base_ctx.update(ctx)
-
-    resp = make_response(render_template("dashboard_client.html", **base_ctx))
-    resp.headers["Cache-Control"] = "no-store"
-    return resp
+    return redirect(url_for("index"))
 
 
 # ---------------------------------------------------------------------------

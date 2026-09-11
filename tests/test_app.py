@@ -3275,15 +3275,18 @@ class RefreshRolePersistenceTests(FixProTestCase):
         self.assertEqual(r.status_code, 200)
         self.assertIn("Espace Technicien", r.get_data(as_text=True))
 
-    # TEST 5 : un CLIENT qui actualise reste dans son espace, jamais technicien/admin
+    # TEST 5 : un CLIENT qui actualise reste dans son espace (l'accueil),
+    # jamais technicien/admin. /dashboard n'est plus une page autonome --
+    # l'espace client, c'est l'accueil (/) -- il redirige seulement.
     def test_client_repeated_refresh_stays_in_client_space(self):
         self.register_client(phone="+224620222005")
         self.login("+224620222005")
         for _ in range(3):
-            r = self.client.get("/dashboard")
-            self.assertEqual(r.status_code, 200)
+            r = self.client.get("/dashboard", follow_redirects=False)
+            self.assertEqual(r.status_code, 302)
             self.assertIn("no-store", r.headers.get("Cache-Control", ""))
-            html = r.get_data(as_text=True)
+            self.assertTrue(r.location.endswith("/"), r.location)
+            html = self.client.get(r.location).get_data(as_text=True)
             self.assertNotIn("Espace Technicien", html)
             self.assertNotIn("Tableau de bord administrateur", html)
 
@@ -3388,15 +3391,26 @@ class RefreshRolePersistenceTests(FixProTestCase):
         self.assertNotIn("CLIENT_DASHBOARD_DEMO", fixpro_app.app.config)
 
     def test_client_dashboard_always_shows_the_real_logged_in_identity(self):
-        """Plus aucun mode demo : le prenom/l'identite affiches sont
-        toujours ceux du compte reellement connecte, jamais "Aminata"."""
+        """L'ancien tableau de bord client autonome (dashboard_client.html)
+        est supprime -- /dashboard redirige simplement vers l'accueil, qui
+        n'affiche plus jamais de fausse identite ("Aminata") ni de donnees
+        inventees ("Moussa Bah")."""
         self.register_client(phone="+224620222010", first_name="Souleymane",
                              last_name="Kaba")
         self.login("+224620222010")
-        html = self.client.get("/dashboard").get_data(as_text=True)
-        self.assertIn("Souleymane", html)
+        r = self.client.get("/dashboard", follow_redirects=False)
+        self.assertEqual(r.status_code, 302)
+        self.assertTrue(r.location.endswith("/"), r.location)
+        html = self.client.get(r.location).get_data(as_text=True)
         self.assertNotIn("Aminata", html)
         self.assertNotIn("Moussa Bah", html)   # ex-"mon technicien" fictif
+
+    def test_client_dashboard_page_removed_from_the_application(self):
+        """La page elle-meme n'existe plus dans le projet -- supprimee, pas
+        juste debranchee."""
+        self.assertFalse(
+            (ROOT / "templates" / "dashboard_client.html").exists())
+        self.assertFalse(hasattr(fixpro_app, "_client_dashboard_real_context"))
 
 
 class NotificationCenterTests(FixProTestCase):
