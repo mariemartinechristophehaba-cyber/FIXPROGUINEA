@@ -1,0 +1,394 @@
+<!--
+  Profil public mobile d'un professionnel (ProfessionalPublicProfile).
+  Vu par le CLIENT quand il clique sur "Voir le profil". Architecture
+  reutilisable pour tous les metiers : seules les donnees (professional)
+  changent d'un metier a l'autre, ce gabarit reste identique.
+  Etape 1 : PLOMBIER uniquement.
+-->
+{%- set p = professional -%}
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#1250D8" />
+  {% include '_pwa_head.html' %}
+  <title>{{ p.name }} - {{ p.category }} - FixPro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --pl-primary: #1A5CFF;
+      --pl-night: #0B1B3A;
+      --pl-bg: #EEF2F9;
+      --pl-text: #0F172A;
+      --pl-muted: #64748B;
+      --pl-line: #E6ECF5;
+      --pl-soft: #EAF1FF;
+      --pl-green: #16A34A;
+      --pl-star: #F5A623;
+      --pl-card-shadow: 0 10px 30px rgba(15, 42, 90, 0.08);
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--pl-bg); color: var(--pl-text);
+      -webkit-font-smoothing: antialiased;
+      padding-bottom: calc(96px + env(safe-area-inset-bottom));
+    }
+    a { text-decoration: none; color: inherit; }
+    button { font-family: inherit; }
+    img { max-width: 100%; }
+    .pl-wrap { max-width: 680px; margin: 0 auto; }
+
+    /* ---------- Hero (vraie photo du professionnel) ---------- */
+    .pl-hero {
+      position: relative; overflow: hidden; height: 230px;
+      background: var(--pl-night);
+      border-radius: 0 0 26px 26px;
+    }
+    .pl-hero-img {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      object-fit: cover; object-position: center 22%; display: block;
+    }
+    .pl-topbar {
+      position: absolute; z-index: 3; left: 16px; right: 16px;
+      top: calc(16px + env(safe-area-inset-top));
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .pl-icon-btn {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.28);
+      backdrop-filter: blur(6px);
+      color: #fff; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; padding: 0;
+    }
+    .pl-icon-btn svg { width: 20px; height: 20px; }
+    .pl-top-actions { display: flex; gap: 10px; }
+    .pl-fav.on svg { fill: #fff; }
+    .pl-hero-status {
+      position: absolute; z-index: 3; left: 16px; bottom: 16px;
+      display: inline-flex; align-items: center; gap: 7px;
+      background: rgba(8,20,48,0.45); backdrop-filter: blur(6px);
+      border: 1px solid rgba(255,255,255,0.3); color: #fff;
+      font-size: 0.78rem; font-weight: 700; padding: 7px 14px; border-radius: 50px;
+    }
+    .pl-hero-status .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--pl-green); flex-shrink: 0; }
+
+    /* ---------- Carte d'identite (flottante sous le hero) ---------- */
+    .pl-idcard {
+      position: relative; z-index: 3; margin: -34px 16px 14px;
+      background: #fff; border-radius: 18px; box-shadow: var(--pl-card-shadow);
+      padding: 16px; display: flex; gap: 14px; align-items: center;
+    }
+    .pl-ava-wrap { position: relative; flex-shrink: 0; }
+    .pl-ava {
+      width: 68px; height: 68px; border-radius: 18px; overflow: hidden;
+      background: var(--pl-soft); border: 3px solid #fff; box-shadow: 0 4px 14px rgba(15,42,90,0.14);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .pl-ava img { width: 100%; height: 100%; object-fit: cover; }
+    .pl-ava .initial { font-size: 1.5rem; font-weight: 800; color: var(--pl-primary); }
+    .pl-ava-dot {
+      position: absolute; right: -3px; bottom: -3px;
+      width: 19px; height: 19px; border-radius: 50%;
+      background: var(--pl-green); border: 3px solid #fff;
+    }
+    .pl-id-main { min-width: 0; }
+    .pl-name {
+      display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
+      font-size: 1.22rem; font-weight: 800; margin: 0 0 2px; line-height: 1.2; color: var(--pl-text);
+    }
+    .pl-name .check {
+      width: 20px; height: 20px; border-radius: 50%; background: var(--pl-primary);
+      display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .pl-name .check svg { width: 12px; height: 12px; color: #fff; }
+    .pl-role { font-size: 0.88rem; font-weight: 600; color: var(--pl-muted); margin: 0 0 8px; }
+    .pl-subline {
+      display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
+      font-size: 0.82rem; color: var(--pl-muted); margin-bottom: 9px;
+    }
+    .pl-subline .star { display: inline-flex; align-items: center; gap: 4px; font-weight: 700; color: var(--pl-text); }
+    .pl-subline .star svg { width: 14px; height: 14px; fill: var(--pl-star); }
+    .pl-verified-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #ECFDF5; border: 1px solid #BBF7D0;
+      color: #15803D; font-weight: 700; font-size: 0.74rem;
+      padding: 5px 12px; border-radius: 50px;
+    }
+    .pl-verified-pill svg { width: 13px; height: 13px; }
+
+    /* ---------- Stats card ---------- */
+    .pl-stats {
+      position: relative; z-index: 3;
+      margin: 0 16px 14px; background: #fff; border-radius: 18px;
+      box-shadow: var(--pl-card-shadow);
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      padding: 18px 6px;
+    }
+    .pl-stat {
+      text-align: center; padding: 0 4px;
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+    }
+    .pl-stat + .pl-stat { border-left: 1px solid var(--pl-line); }
+    .pl-stat svg { width: 21px; height: 21px; color: var(--pl-primary); }
+    .pl-stat b { font-size: 0.92rem; font-weight: 800; line-height: 1.15; overflow-wrap: break-word; }
+    .pl-stat span { font-size: 0.66rem; color: var(--pl-muted); line-height: 1.25; }
+
+    /* ---------- Sections ---------- */
+    .pl-section {
+      background: #fff; border-radius: 18px; padding: 18px;
+      box-shadow: var(--pl-card-shadow); margin: 0 16px 14px;
+    }
+    .pl-section h2 { font-size: 1.08rem; font-weight: 800; margin: 0 0 12px; }
+    .pl-sec-head {
+      display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 14px; gap: 12px;
+    }
+    .pl-sec-head h2 { margin: 0; }
+    .pl-sec-head a, .pl-sec-head button.pl-seeall {
+      color: var(--pl-primary); font-weight: 700; font-size: 0.84rem; white-space: nowrap;
+      display: inline-flex; align-items: center; gap: 3px; background: none; border: none; cursor: pointer; padding: 0;
+    }
+    .pl-sec-head svg { width: 15px; height: 15px; }
+
+    .pl-about p { margin: 0; color: #475569; font-size: 0.9rem; line-height: 1.6; }
+    .pl-about p.clamped {
+      display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .pl-about-more {
+      display: inline-block; margin-top: 6px; color: var(--pl-primary); font-weight: 700; font-size: 0.83rem;
+      background: none; border: none; cursor: pointer; padding: 0;
+    }
+    .pl-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .pl-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--pl-soft); color: var(--pl-primary);
+      font-size: 0.79rem; font-weight: 600; padding: 7px 13px; border-radius: 50px;
+    }
+    .pl-chip svg { width: 13px; height: 13px; flex-shrink: 0; }
+
+    /* Services -- vraies photos, grille de cartes */
+    .pl-svc-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .pl-svc-card {
+      border-radius: 16px; overflow: hidden; position: relative;
+      background: #F4F7FD; aspect-ratio: 4 / 3;
+    }
+    .pl-svc-card[hidden] { display: none; }
+    .pl-svc-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .pl-svc-card .cap {
+      position: absolute; left: 0; right: 0; bottom: 0; padding: 20px 10px 9px;
+      background: linear-gradient(transparent, rgba(6,17,40,0.82));
+      color: #fff; font-size: 0.78rem; font-weight: 700; line-height: 1.25;
+    }
+
+    [hidden] { display: none !important; }
+
+    /* ---------- Bottom action bar ---------- */
+    .pl-actionbar {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 90;
+      background: #fff; border-top: 1px solid var(--pl-line);
+      display: flex; gap: 12px; padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+    }
+    .pl-actionbar-inner { max-width: 680px; margin: 0 auto; width: 100%; display: flex; gap: 12px; }
+    .pl-btn {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      border-radius: 13px; padding: 14px 12px; font-size: 0.94rem; font-weight: 700;
+      cursor: pointer;
+    }
+    .pl-btn svg { width: 18px; height: 18px; }
+    .pl-btn-ghost { flex: 0 0 42%; background: #fff; color: var(--pl-primary); border: 1.6px solid var(--pl-primary); }
+    .pl-btn-primary { flex: 1; background: var(--pl-primary); color: #fff; border: none; box-shadow: 0 10px 22px rgba(26,92,255,0.3); }
+
+    /* ---------- Desktop ---------- */
+    @media (min-width: 720px) {
+      body { padding-bottom: 40px; }
+      .pl-wrap { padding: 24px 0 0; }
+      .pl-hero { border-radius: 22px; height: 300px; }
+      .pl-svc-grid { grid-template-columns: repeat(4, 1fr); }
+      .pl-actionbar {
+        position: static; border: none; background: none; padding: 0 16px;
+        margin: 0 auto 32px; max-width: 680px;
+      }
+      .pl-actionbar-inner { padding: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="pl-wrap">
+    <header class="pl-hero">
+      <img class="pl-hero-img" src="{{ p.heroImage }}" alt="{{ p.name }}" />
+      <div class="pl-topbar">
+        <button class="pl-icon-btn" type="button" aria-label="Retour"
+          onclick="if(history.length>1){history.back()}else{location.href='{{ url_for('artisans_page') }}'}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
+        <div class="pl-top-actions">
+          <button class="pl-icon-btn pl-fav" type="button" id="favBtn" aria-label="Ajouter aux favoris">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          </button>
+          <button class="pl-icon-btn" type="button" id="shareBtn" aria-label="Partager">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.59 13.51 6.83 3.98M15.41 6.51 8.59 10.49"/></svg>
+          </button>
+        </div>
+      </div>
+      {% if p.available %}
+      <span class="pl-hero-status"><span class="dot" aria-hidden="true"></span>Disponible aujourd'hui</span>
+      {% endif %}
+    </header>
+
+    <div class="pl-idcard">
+      <div class="pl-ava-wrap">
+        <div class="pl-ava">
+          {% if p.profileImage %}
+            <img src="{{ p.profileImage }}" alt="{{ p.name }}" />
+          {% else %}
+            <span class="initial">{{ (p.name or 'T')[0]|upper }}</span>
+          {% endif %}
+        </div>
+        {% if p.available %}<span class="pl-ava-dot" aria-label="En ligne"></span>{% endif %}
+      </div>
+      <div class="pl-id-main">
+        <h1 class="pl-name">
+          {{ p.name }}
+          {% if p.verified %}
+          <span class="check" aria-label="Vérifié"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+          {% endif %}
+        </h1>
+        <p class="pl-role">{{ p.category }} professionnel</p>
+        <div class="pl-subline">
+          <span class="star">
+            <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            {% if p.reviewCount > 0 %}{{ ("%.1f"|format(p.rating))|replace('.', ',') }}{% else %}Nouveau{% endif %}
+          </span>
+          {% if p.reviewCount > 0 %}<span>({{ p.reviewCount }} avis)</span>{% endif %}
+        </div>
+        {% if p.verified %}
+        <span class="pl-verified-pill">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>
+          Vérifié par FixPro
+        </span>
+        {% endif %}
+      </div>
+    </div>
+
+    <section class="pl-stats" aria-label="Informations clés">
+      <div class="pl-stat">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+        <b>{% if p.distance is not none %}{{ ("%.1f"|format(p.distance))|replace('.', ',') }} km{% else %}—{% endif %}</b>
+        <span>{% if p.distance is not none %}À proximité{% else %}Distance inconnue{% endif %}</span>
+      </div>
+      <div class="pl-stat">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        <b>{{ p.responseTime if p.responseTime else '—' }}</b>
+        <span>Temps de réponse</span>
+      </div>
+      <div class="pl-stat">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-3V5a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v2H4a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1ZM9 5h6v2H9Z"/></svg>
+        <b>{{ p.interventionCount }}{% if p.interventionCount >= 20 %}+{% endif %}</b>
+        <span>Interventions</span>
+      </div>
+      <div class="pl-stat">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        {% if p.available %}<b>Disponible</b><span>Aujourd'hui</span>{% else %}<b>Sur RDV</b><span>Planifier</span>{% endif %}
+      </div>
+    </section>
+
+    <section class="pl-section pl-about">
+      <h2>À propos</h2>
+      {% set about_text = p.about or (p.category ~ " expérimenté, je vous accompagne pour tous vos travaux de " ~ p.category|lower ~ ".") %}
+      <p id="aboutText" class="clamped">{{ about_text }}</p>
+      <button type="button" class="pl-about-more" id="aboutMoreBtn" hidden>Voir plus</button>
+      <div class="pl-chips">
+        {% for tag in p.badges[:3] %}
+        <span class="pl-chip">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+          {{ tag }}
+        </span>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="pl-section">
+      <div class="pl-sec-head">
+        <h2>Services proposés</h2>
+        {% if p.services|length > 4 %}
+        <button type="button" class="pl-seeall" id="svcSeeAll">Voir tout
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        </button>
+        {% endif %}
+      </div>
+      <div class="pl-svc-grid">
+        {% for s in p.services %}
+        <div class="pl-svc-card" {% if loop.index0 >= 4 %}data-extra-svc hidden{% endif %}>
+          <img src="{{ s.image }}" alt="{{ s.title }}" loading="lazy" />
+          <span class="cap">{{ s.title }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+
+  <div class="pl-actionbar">
+    <div class="pl-actionbar-inner">
+      <a class="pl-btn pl-btn-ghost" href="{{ url_for('client_message_artisan', artisan_id=p.id) }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z"/></svg>
+        Message
+      </a>
+      <a class="pl-btn pl-btn-primary" href="{{ url_for('contact_artisan', artisan_id=p.id) }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        Contacter
+      </a>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var fav = document.getElementById('favBtn');
+      if (fav) {
+        var KEY = 'fixpro_fav_{{ p.id }}';
+        try { if (localStorage.getItem(KEY)) fav.classList.add('on'); } catch (e) {}
+        fav.addEventListener('click', function () {
+          fav.classList.toggle('on');
+          try {
+            if (fav.classList.contains('on')) localStorage.setItem(KEY, '1');
+            else localStorage.removeItem(KEY);
+          } catch (e) {}
+        });
+      }
+      var share = document.getElementById('shareBtn');
+      if (share) {
+        share.addEventListener('click', function () {
+          var data = { title: '{{ p.name }} - FixPro', url: location.href };
+          if (navigator.share) { navigator.share(data).catch(function () {}); }
+          else if (navigator.clipboard) {
+            navigator.clipboard.writeText(location.href);
+            share.setAttribute('aria-label', 'Lien copié');
+          }
+        });
+      }
+      var seeAll = document.getElementById('svcSeeAll');
+      if (seeAll) {
+        seeAll.addEventListener('click', function () {
+          document.querySelectorAll('[data-extra-svc]').forEach(function (el) { el.hidden = false; });
+          seeAll.hidden = true;
+        });
+      }
+      var aboutText = document.getElementById('aboutText');
+      var aboutMore = document.getElementById('aboutMoreBtn');
+      if (aboutText && aboutMore) {
+        // n'affiche "Voir plus" que si le texte deborde reellement (3 lignes)
+        if (aboutText.scrollHeight > aboutText.clientHeight + 2) {
+          aboutMore.hidden = false;
+          aboutMore.addEventListener('click', function () {
+            aboutText.classList.remove('clamped');
+            aboutMore.hidden = true;
+          });
+        }
+      }
+    })();
+  </script>
+</body>
+</html>
