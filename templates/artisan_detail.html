@@ -58,7 +58,10 @@
     }
     .pl-hero-img {
       position: absolute; inset: 0; width: 100%; height: 100%;
-      object-fit: cover; object-position: center 22%; display: block;
+      /* cadrage decale a gauche pour garder le slogan "Un service fiable
+         pour votre confort !" entierement visible (l'image source est plus
+         large que la zone hero mobile, un centrage strict le coupait). */
+      object-fit: cover; object-position: 22% 35%; display: block;
     }
     .pl-topbar {
       position: absolute; z-index: 3; left: 16px; right: 16px;
@@ -92,7 +95,7 @@
     }
     .pl-ava-wrap { position: relative; flex-shrink: 0; }
     .pl-ava {
-      width: 68px; height: 68px; border-radius: 18px; overflow: hidden;
+      width: 68px; height: 68px; border-radius: 50%; overflow: hidden;
       background: var(--pl-soft); border: 3px solid #fff; box-shadow: 0 4px 14px rgba(15,42,90,0.14);
       display: flex; align-items: center; justify-content: center;
     }
@@ -305,7 +308,10 @@
 
     <section class="pl-section pl-about">
       <h2>À propos</h2>
-      {% set about_text = p.about or (p.category ~ " expérimenté, je vous accompagne pour tous vos travaux de " ~ p.category|lower ~ ".") %}
+      {% set _about_fallbacks = {
+        'Plombier': "Plombier expérimenté, je vous accompagne pour tous vos travaux de plomberie. Travail propre, rapide et garanti.",
+      } %}
+      {% set about_text = p.about or _about_fallbacks.get(p.category, p.category ~ " expérimenté, je vous accompagne pour tous vos travaux. Travail propre, rapide et garanti.") %}
       <p id="aboutText" class="clamped">{{ about_text }}</p>
       <button type="button" class="pl-about-more" id="aboutMoreBtn" hidden>Voir plus</button>
       <div class="pl-chips">
