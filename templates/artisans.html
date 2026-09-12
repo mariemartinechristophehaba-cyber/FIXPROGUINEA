@@ -309,12 +309,11 @@
     body { padding-bottom: 0 !important; }
     .sr-bottom-nav { display: none !important; }
 
-    /* Connecte : la topbar + sidebar de base.html remplacent l'en-tete bleu.
-       Visiteur (no-sidebar) : on garde l'en-tete bleu. */
-    body:not(.no-sidebar) .sr-header { display: none; }
-    body.no-sidebar .sr-main { max-width: 1040px; }
+    /* La topbar de base.html remplace toujours l'en-tete bleu mobile,
+       connecte ou non : une seule experience desktop. */
+    .sr-header { display: none; }
 
-    body:not(.no-sidebar) .page { max-width: 1400px; padding: 26px 32px 48px; }
+    .page { max-width: 1400px; padding: 26px 32px 48px; }
     .sr-main { max-width: none; margin: 0; padding: 0; position: static; }
 
     /* ---- HERO SECTION ---- */

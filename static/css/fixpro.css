@@ -257,17 +257,20 @@ body {
 }
 
 @media (min-width: 1024px) {
-  body:not(.no-sidebar) .app-wrap { padding-top: var(--dtopbar-h, 0); }
+  body:not(.admin-page):not(.chat-view) .app-wrap { padding-top: var(--dtopbar-h, 0); }
 
   /* Chrome mobile masquee sur bureau : le hamburger bureau (.dtopbar-burger)
-     ouvre le meme drawer (.cd-drawer), garde visible ici. */
+     ouvre le meme drawer (.cd-drawer), garde visible ici. La .dtopbar
+     remplace aussi l'ancien en-tete invite/generique (guest-appbar/appbar). */
   .tabbar,
   .support-fab,
   .burger,
-  .f-menu-btn { display: none !important; }
+  .f-menu-btn,
+  .appbar,
+  .guest-appbar { display: none !important; }
 
   /* Cadre de contenu confortable sur bureau */
-  body:not(.no-sidebar) .page {
+  body:not(.admin-page):not(.chat-view) .page {
     max-width: 1160px;
     margin: 0 auto;
     padding: 28px 40px 56px;
@@ -280,7 +283,7 @@ body {
 }
 
 @media (min-width: 1440px) {
-  body:not(.no-sidebar) .page { max-width: 1320px; }
+  body:not(.admin-page):not(.chat-view) .page { max-width: 1320px; }
 }
 
 /* ==========================================================================
@@ -361,6 +364,16 @@ body {
   }
 
   .dtopbar-right { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+
+  .dtopbar-guest-btn {
+    flex-shrink: 0; white-space: nowrap;
+    padding: 9px 18px; border-radius: 10px;
+    font-size: 13.5px; font-weight: 700; text-decoration: none;
+  }
+  .dtopbar-guest-btn.soft { color: var(--f-primary); background: var(--f-bg); }
+  .dtopbar-guest-btn.soft:hover { background: #E8EDF5; }
+  .dtopbar-guest-btn.primary { color: #fff; background: var(--f-primary); }
+  .dtopbar-guest-btn.primary:hover { background: var(--f-primary-dark); }
 
   .dtopbar-loc {
     display: flex; align-items: center; gap: 8px; flex-shrink: 0;

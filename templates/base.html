@@ -21,7 +21,7 @@
   </head>
   {% set is_admin_route = request.endpoint and request.endpoint.startswith('admin') %}
   {% set chat_view = request.endpoint in ('client_conversation', 'client_message_new', 'client_message_artisan') %}
-  {% set is_client_shell = nav_user and not is_admin_route and not chat_view %}
+  {% set is_desktop_shell = not is_admin_route and not chat_view %}
   {% set _home_active = request.endpoint in ('home', 'index', 'dashboard') %}
   {% set _is_tech_nav = nav_user and nav_user.role in ('technician', 'artisan') %}
   <body class="{% if not nav_user or request.endpoint in ('index', 'ticket_detail') %} no-tabbar{% endif %}{% if not nav_user or is_admin_route or chat_view %} no-sidebar{% endif %}{% if request.endpoint == 'index' %} landing{% endif %}{% if is_admin_route %} admin-page{% endif %}{% if chat_view %} chat-view{% endif %}">
@@ -29,14 +29,16 @@
     {% block header %}{% endblock %}
 
     {# --- En-tete bureau (>=1024px). Masque en mobile via CSS.
-       Pas de sidebar fixe : le hamburger ouvre le meme drawer que sur mobile
-       (_drawer.html, plus bas), le profil est sur l'avatar a droite. --- #}
-    {% if is_client_shell %}
+       Meme en-tete connecte ou non (evite d'avoir deux experiences bureau
+       differentes). Pas de sidebar fixe : le hamburger ouvre le meme
+       drawer que sur mobile (_drawer.html, plus bas ; contenu deja
+       adapte invite/client/technicien). --- #}
+    {% if is_desktop_shell %}
     <header class="dtopbar">
       <button class="dtopbar-burger" id="dtBurger" type="button" aria-label="Ouvrir le menu">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
       </button>
-      <a class="dtopbar-brand" href="{{ url_for('home') }}">
+      <a class="dtopbar-brand" href="{{ url_for('home') if nav_user else url_for('index') }}">
         <span class="brand-mark">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
         </span>
@@ -47,8 +49,9 @@
         <input type="search" name="q" placeholder="Rechercher un professionnel, un service..." value="{{ request.args.get('q', '') }}" aria-label="Rechercher" />
       </form>
       <nav class="dtopbar-nav">
-        <a class="{{ 'active' if _home_active }}" href="{{ url_for('home') }}">Accueil</a>
+        <a class="{{ 'active' if _home_active }}" href="{{ url_for('home') if nav_user else url_for('index') }}">Accueil</a>
         <a class="{{ 'active' if request.endpoint == 'artisans_page' }}" href="{{ url_for('artisans_page') }}">Rechercher</a>
+        {% if nav_user %}
         <a class="{{ 'active' if request.endpoint in ('requests_list', 'request_new', 'request_detail') }}" href="{{ url_for('requests_list') }}">Mes demandes</a>
         <a class="{{ 'active' if request.endpoint in ('lia', 'client_messages', 'client_message_new', 'client_conversation', 'client_message_artisan') }}" href="{{ url_for('client_messages') }}">Messages
           {% if messages_unread %}<span class="s-badge">{{ messages_unread }}</span>{% endif %}
@@ -58,13 +61,17 @@
         {% else %}
         <a class="{{ 'active' if request.endpoint == 'devenir_technicien' }}" href="{{ url_for('devenir_technicien') }}">Devenir pro</a>
         {% endif %}
+        {% else %}
+        <a class="{{ 'active' if request.endpoint == 'devenir_technicien' }}" href="{{ url_for('devenir_technicien') }}">Devenir pro</a>
+        {% endif %}
       </nav>
       <div class="dtopbar-right">
         <a class="dtopbar-loc" href="{{ url_for('location_gate', next=request.path) }}">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>
-          <span>{{ client_zone or (nav_user.quartier or nav_user.city) or 'Ma position' }}</span>
+          <span>{{ client_zone or (nav_user.quartier or nav_user.city if nav_user else None) or 'Ma position' }}</span>
           <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
         </a>
+        {% if nav_user %}
         <a class="dtopbar-ic" href="{{ url_for('notifications') }}" aria-label="Notifications">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
           {% if notif_unread %}<span class="dot-badge">{{ notif_unread if notif_unread < 10 else '9+' }}</span>{% endif %}
@@ -81,6 +88,10 @@
             <a href="{{ url_for('profile') }}">Mon profil</a>
           </div>
         </div>
+        {% else %}
+        <a class="dtopbar-guest-btn soft" href="{{ url_for('login') }}">Connexion</a>
+        <a class="dtopbar-guest-btn primary" href="{{ url_for('client_signup') }}">Inscription</a>
+        {% endif %}
       </div>
     </header>
     {% endif %}

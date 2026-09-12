@@ -369,9 +369,9 @@
     body { padding-bottom: 0 !important; background: var(--hp-bg); }
     .hp-bottom-nav { display: none !important; }
 
-    /* Connecte : en-tete gere par base.html. Visiteur : on garde .hp-header. */
-    body:not(.no-sidebar) .hp-header { display: none !important; }
-    body.no-sidebar .hp-header { border-radius: 0; }
+    /* L'en-tete bleu mobile est toujours remplace par la topbar bureau
+       (base.html), connecte ou non : une seule experience desktop. */
+    .hp-header { display: none !important; }
 
     /* Colonne unique centree */
     .page { max-width: 1120px; margin: 0 auto; padding: 26px 28px 56px; }
