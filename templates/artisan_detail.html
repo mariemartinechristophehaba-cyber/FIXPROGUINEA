@@ -50,46 +50,29 @@
     img { max-width: 100%; }
     .pl-wrap { max-width: 680px; margin: 0 auto; }
 
-    /* ---------- Hero (vraie photo du professionnel) ---------- */
-    .pl-hero {
-      position: relative; overflow: hidden; height: 180px;
-      background: var(--pl-night);
-      border-radius: 0 0 26px 26px;
-    }
-    .pl-hero-img {
-      position: absolute; inset: 0; width: 100%; height: 100%;
-      /* cadrage decale a gauche pour garder le slogan "Un service fiable
-         pour votre confort !" entierement visible (l'image source est plus
-         large que la zone hero mobile, un centrage strict le coupait). */
-      object-fit: cover; object-position: 22% 35%; display: block;
-    }
-    .pl-topbar {
-      position: absolute; z-index: 3; left: 16px; right: 16px;
-      top: calc(16px + env(safe-area-inset-top));
+    /* ---------- Header bleu simple ---------- */
+    .pl-header {
+      position: relative; background: var(--pl-primary);
+      padding: calc(16px + env(safe-area-inset-top)) 16px 16px;
       display: flex; align-items: center; justify-content: space-between;
+    }
+    .pl-header-title {
+      flex: 1; text-align: center; font-size: 1.1rem; font-weight: 700;
+      color: #fff; margin: 0 40px;
     }
     .pl-icon-btn {
       width: 40px; height: 40px; border-radius: 50%;
-      background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.28);
-      backdrop-filter: blur(6px);
+      background: rgba(255,255,255,0.2); border: none;
       color: #fff; display: flex; align-items: center; justify-content: center;
       cursor: pointer; padding: 0;
     }
     .pl-icon-btn svg { width: 20px; height: 20px; }
     .pl-top-actions { display: flex; gap: 10px; }
     .pl-fav.on svg { fill: #fff; }
-    .pl-hero-status {
-      position: absolute; z-index: 3; left: 16px; bottom: 16px;
-      display: inline-flex; align-items: center; gap: 7px;
-      background: rgba(8,20,48,0.45); backdrop-filter: blur(6px);
-      border: 1px solid rgba(255,255,255,0.3); color: #fff;
-      font-size: 0.78rem; font-weight: 700; padding: 7px 14px; border-radius: 50px;
-    }
-    .pl-hero-status .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--pl-green); flex-shrink: 0; }
 
-    /* ---------- Carte d'identite (flottante sous le hero) ---------- */
+    /* ---------- Carte d'identite ---------- */
     .pl-idcard {
-      position: relative; z-index: 3; margin: -34px 16px 14px;
+      position: relative; z-index: 3; margin: 16px 16px 14px;
       background: #fff; border-radius: 18px; box-shadow: var(--pl-card-shadow);
       padding: 16px; display: flex; gap: 14px; align-items: center;
     }
@@ -164,6 +147,13 @@
     }
     .pl-sec-head svg { width: 15px; height: 15px; }
 
+    .pl-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .pl-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--pl-soft); color: var(--pl-primary);
+      font-size: 0.79rem; font-weight: 600; padding: 7px 13px; border-radius: 50px;
+    }
+
     /* Services -- vraies photos, grille de cartes */
     .pl-svc-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
     .pl-svc-card {
@@ -200,7 +190,6 @@
     @media (min-width: 720px) {
       body { padding-bottom: 40px; }
       .pl-wrap { padding: 24px 0 0; }
-      .pl-hero { border-radius: 22px; height: 240px; }
       .pl-svc-grid { grid-template-columns: repeat(4, 1fr); }
       .pl-actionbar {
         position: static; border: none; background: none; padding: 0 16px;
@@ -212,25 +201,20 @@
 </head>
 <body>
   <div class="pl-wrap">
-    <header class="pl-hero">
-      <img class="pl-hero-img" src="{{ p.heroImage }}" alt="{{ p.name }}" />
-      <div class="pl-topbar">
-        <button class="pl-icon-btn" type="button" aria-label="Retour"
-          onclick="if(history.length>1){history.back()}else{location.href='{{ url_for('artisans_page') }}'}">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+    <header class="pl-header">
+      <button class="pl-icon-btn" type="button" aria-label="Retour"
+        onclick="if(history.length>1){history.back()}else{location.href='{{ url_for('artisans_page') }}'}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      </button>
+      <h1 class="pl-header-title">Profil</h1>
+      <div class="pl-top-actions">
+        <button class="pl-icon-btn pl-fav" type="button" id="favBtn" aria-label="Ajouter aux favoris">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
         </button>
-        <div class="pl-top-actions">
-          <button class="pl-icon-btn pl-fav" type="button" id="favBtn" aria-label="Ajouter aux favoris">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-          </button>
-          <button class="pl-icon-btn" type="button" id="shareBtn" aria-label="Partager">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.59 13.51 6.83 3.98M15.41 6.51 8.59 10.49"/></svg>
-          </button>
-        </div>
+        <button class="pl-icon-btn" type="button" id="shareBtn" aria-label="Partager">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.59 13.51 6.83 3.98M15.41 6.51 8.59 10.49"/></svg>
+        </button>
       </div>
-      {% if p.available %}
-      <span class="pl-hero-status"><span class="dot" aria-hidden="true"></span>Disponible aujourd'hui</span>
-      {% endif %}
     </header>
 
     <div class="pl-idcard">
@@ -271,8 +255,8 @@
     <section class="pl-stats" aria-label="Informations clés">
       <div class="pl-stat">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-        <b>{% if p.distance is not none %}{{ ("%.1f"|format(p.distance))|replace('.', ',') }} km{% else %}Non renseignée{% endif %}</b>
-        <span>{% if p.distance is not none %}À proximité{% else %}Distance{% endif %}</span>
+        <b>{% if p.distance is not none %}{{ ("%.1f"|format(p.distance))|replace('.', ',') }} km{% else %}Non renseigné{% endif %}</b>
+        <span>Distance</span>
       </div>
       <div class="pl-stat">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
@@ -281,12 +265,21 @@
       </div>
       <div class="pl-stat">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-3V5a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v2H4a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1ZM9 5h6v2H9Z"/></svg>
-        <b>{{ p.interventionCount }}{% if p.interventionCount >= 20 %}+{% endif %}</b>
+        <b>{{ p.interventionCount if p.interventionCount is not none else 'Non renseigné' }}{% if p.interventionCount is not none and p.interventionCount >= 20 %}+{% endif %}</b>
         <span>Interventions</span>
       </div>
       <div class="pl-stat">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
         {% if p.available %}<b>Disponible</b><span>Aujourd'hui</span>{% else %}<b>Sur RDV</b><span>Planifier</span>{% endif %}
+      </div>
+    </section>
+
+    <section class="pl-section">
+      <h2>À propos</h2>
+      <div class="pl-chips">
+        <span class="pl-chip">Rapide</span>
+        <span class="pl-chip">Sérieux</span>
+        <span class="pl-chip">Propre</span>
       </div>
     </section>
 

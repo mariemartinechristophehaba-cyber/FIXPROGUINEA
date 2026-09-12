@@ -3526,12 +3526,14 @@ class ArtisanPublicProfilePlombierTests(FixProTestCase):
                      "reparation-robinetterie.jpg", "installation-tuyauterie.jpg"):
             self.assertTrue((base / "services" / name).exists(), name)
 
-    def test_profile_shows_hero_idcard_stats_and_real_hero_photo(self):
+    def test_profile_shows_header_idcard_stats_and_avatar(self):
+        """Le profil utilise un header bleu simple au lieu du hero avec grande photo."""
         aid = self._plumber_id()
         r = self.client.get(f"/artisans/{aid}")
         self.assertEqual(r.status_code, 200)
         html = r.get_data(as_text=True)
-        self.assertIn("hero-plombier.jpg", html)
+        self.assertNotIn("hero-plombier.jpg", html)
+        self.assertIn('class="pl-header"', html)
         self.assertIn('class="pl-idcard"', html)
         self.assertIn('class="pl-stats"', html)
         self.assertIn("Plombier professionnel", html)
@@ -3567,12 +3569,14 @@ class ArtisanPublicProfilePlombierTests(FixProTestCase):
             self.assertNotIn(banned, html, banned)
 
     def test_bio_is_real_data_not_hardcoded_per_technician(self):
-        """La section 'À propos' a ete supprimee du profil public."""
+        """La section 'À propos' affiche les badges fixes Rapide, Sérieux, Propre."""
         aid = self._plumber_id(phone="+224621119904", email="plombier5@example.com")
         html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
         self.assertNotIn("Ibrahim Sory", html)
-        self.assertNotIn("À propos", html)
-        self.assertNotIn("Plombier de Kaloum depuis 12 ans.", html)
+        self.assertIn("À propos", html)
+        self.assertIn("Rapide", html)
+        self.assertIn("Sérieux", html)
+        self.assertIn("Propre", html)
 
     def test_public_profile_never_leaks_private_technician_data(self):
         aid = self._plumber_id(phone="+224621119905", email="plombier6@example.com")

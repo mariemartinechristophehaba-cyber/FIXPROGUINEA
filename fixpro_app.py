@@ -7092,7 +7092,6 @@ def artisan_detail(artisan_id):
         "name": artisan["full_name"],
         "category": "Plombier",
         "profileImage": artisan.get("photo_url") or None,
-        "heroImage": url_for("static", filename=PROFESSIONAL_HERO_IMAGE[trade]),
         "verified": _to_bool(artisan.get("is_verified")),
         "rating": float(review_stats["avg_rating"] or 0),
         "reviewCount": int(review_stats["count"] or 0),
