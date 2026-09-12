@@ -6994,28 +6994,414 @@ def api_techniciens():
 @app.route("/artisans/<int:artisan_id>", methods=["GET", "POST"])
 @app.route("/technicien/<int:artisan_id>", methods=["GET", "POST"])
 def artisan_detail(artisan_id):
-    """Route temporaire - ancienne interface désactivée en attente de la nouvelle implémentation."""
+    user = get_current_user()
+
+    if request.method == "POST" and not user:
+        return redirect(url_for("login"))
+
+    if request.method == "POST" and user["role"] != "client":
+        flash("Cette action est reservee aux clients.", "error")
+        return redirect(url_for("artisans_page"))
+
     conn = get_db_connection()
     try:
         artisan = conn.execute(
-            "SELECT id, full_name, profession FROM users WHERE id = ? AND role IN ('artisan','technician')"
+            "SELECT * FROM users WHERE id = ? AND role IN ('artisan','technician')"
             " AND is_verified = 1 AND is_active = 1 AND account_status != 'DELETED'",
             (artisan_id,)).fetchone()
         if not artisan:
             flash("Technicien introuvable.", "error")
             return redirect(url_for("artisans_page"))
+
         artisan = dict(artisan)
+        artisan["gradient"] = _avatar_gradient(artisan["full_name"])
+
+        # Badge d'abonnement REEL (Premium / Pro) : uniquement si ACTIVE.
+        # Meme source centrale que le reste de l'app.
+        _ent = get_technician_entitlements(conn, artisan_id)
+        artisan["subscription_badge"] = _ent["badge"]     # None pendant l'essai
+        artisan["is_featured"] = "featured_profile" in _ent["entitlements"]
+        artisan["is_new"] = _ent["trial_active"] and not _ent["badge"]
+
+        # Services reels du technicien
+        artisan_services = conn.execute(
+            "SELECT s.name"
+            " FROM services s"
+            " JOIN artisan_services a ON a.service_id = s.id"
+            " WHERE a.artisan_id = ? AND s.is_active = 1"
+            " ORDER BY s.name",
+            (artisan_id,)).fetchall()
+
+        # Si le technicien n'a pas encore selectionne ses services, on affiche
+        # les services standards de SON metier (jamais ceux d'un autre metier).
+        services_are_standard = False
+        if not artisan_services:
+            _prof_key = {
+                "plombier": "%lombier%", "plomberie": "%lombier%",
+                "électricien": "%lectricien%", "electricien": "%lectricien%",
+                "electricite": "%lectricien%", "électricité": "%lectricien%",
+                "frigoriste": "%rigoriste%", "froid": "%rigoriste%",
+                "climatisation": "%rigoriste%",
+                "menuisier": "%enuisier%", "menuiserie": "%enuisier%",
+                "peintre": "%eintre%", "peinture": "%eintre%",
+                "chauffagiste": "%hauffagiste%",
+                "serrurier": "%errurier%", "serrurerie": "%errurier%",
+            }.get((artisan.get("profession") or "").strip().lower())
+            if _prof_key:
+                artisan_services = conn.execute(
+                    "SELECT DISTINCT s.name FROM services s"
+                    " JOIN service_categories sc ON sc.id = s.category_id"
+                    " WHERE s.is_active = 1 AND lower(sc.name) LIKE ?"
+                    " ORDER BY s.name",
+                    (_prof_key,)).fetchall()
+                services_are_standard = bool(artisan_services)
+
+        # Avis
+        reviews = conn.execute(
+            "SELECT r.id, r.rating, r.comment, r.created_at, u.full_name AS client_name"
+            " FROM reviews r JOIN users u ON u.id = r.client_id"
+            " WHERE r.artisan_id = ? ORDER BY r.created_at DESC",
+            (artisan_id,)).fetchall()
+        review_stats = conn.execute(
+            "SELECT COALESCE(AVG(rating), 0) AS avg_rating, COUNT(*) AS count"
+            " FROM reviews WHERE artisan_id = ?",
+            (artisan_id,)).fetchone()
+
+        review_bars_raw = conn.execute(
+            "SELECT rating, COUNT(*) AS n FROM reviews WHERE artisan_id = ? GROUP BY rating",
+            (artisan_id,)).fetchall()
+        review_counts = {1:0,2:0,3:0,4:0,5:0}
+        for row in review_bars_raw:
+            review_counts[row["rating"]] = row["n"]
+        total = review_stats["count"] or 1
+        review_bars = {k: round(v / total * 100, 1) for k, v in review_counts.items()}
+        review_bars_count = review_counts
+
+        # Taux de satisfaction
+        if review_stats["count"]:
+            positive = conn.execute(
+                "SELECT COUNT(*) AS n FROM reviews WHERE artisan_id = ? AND rating >= 4",
+                (artisan_id,)).fetchone()["n"]
+            satisfaction_rate = round(positive / review_stats["count"] * 100)
+        else:
+            satisfaction_rate = 0
+
+        # Interventions realisees (status completed)
+        completed = conn.execute(
+            "SELECT COUNT(*) AS n FROM requests"
+            " WHERE artisan_id = ? AND status = 'completed'",
+            (artisan_id,)).fetchone()["n"]
+
+        # Documents verifies du technicien
+        documents = conn.execute(
+            "SELECT document_type, status"
+            " FROM technician_documents"
+            " WHERE technician_id = ?",
+            (artisan_id,)).fetchall()
+        verified_docs = {d["document_type"]: d["status"] for d in documents}
+
+        # Distance approximative (position temps reel si disponible, sinon profil)
+        distance = None
+        client_lat = _to_float(user.get("latitude")) if user else _to_float(session.get("client_lat"))
+        client_lon = _to_float(user.get("longitude")) if user else _to_float(session.get("client_lon"))
+
+        artisan_position = None
+        if artisan.get("availability_status") == "en_ligne":
+            loc = conn.execute(
+                "SELECT latitude, longitude, updated_at FROM technician_locations"
+                " WHERE technician_id = ? ORDER BY updated_at DESC LIMIT 1",
+                (artisan_id,)).fetchone()
+            if loc:
+                try:
+                    updated = datetime.fromisoformat(
+                        str(loc["updated_at"]).replace("Z", "+00:00"))
+                    if updated.tzinfo is None:
+                        updated = updated.replace(tzinfo=timezone.utc)
+                    if (datetime.now(timezone.utc) - updated).total_seconds() <= 180:
+                        artisan_position = (
+                            float(loc["latitude"]),
+                            float(loc["longitude"]),
+                            loc["updated_at"])
+                except (TypeError, ValueError):
+                    pass
+
+        artisan_lat = _to_float(artisan.get("latitude"))
+        artisan_lon = _to_float(artisan.get("longitude"))
+        if artisan_position:
+            artisan_lat, artisan_lon = artisan_position[0], artisan_position[1]
+        if (_is_valid_coordinate(client_lat, client_lon)
+                and _is_valid_coordinate(artisan_lat, artisan_lon)):
+            distance = _haversine(client_lat, client_lon, artisan_lat, artisan_lon)
+
+        # Conversation client - FixPro pour ce technicien
+        ticket_id = None
+        if user:
+            ticket = conn.execute(
+                "SELECT id FROM admin_tickets"
+                " WHERE client_id = ? AND artisan_id = ?"
+                " ORDER BY created_at DESC LIMIT 1",
+                (user["id"], artisan_id)).fetchone()
+            if ticket:
+                ticket_id = ticket["id"]
+
+        # Le client peut-il laisser un avis ?
+        can_review = False
+        review_request_id = None
+        if user:
+            req = conn.execute(
+                "SELECT id FROM requests"
+                " WHERE client_id = ? AND artisan_id = ? AND status = 'completed'"
+                " AND id NOT IN (SELECT request_id FROM reviews WHERE client_id = ?)"
+                " ORDER BY updated_at DESC LIMIT 1",
+                (user["id"], artisan_id, user["id"])).fetchone()
+            if req:
+                can_review = True
+                review_request_id = req["id"]
+
+        if request.method == "POST":
+            action = request.form.get("action")
+
+            if action == "chat":
+                content = (request.form.get("content") or "").strip()
+                if not content:
+                    return redirect(url_for("artisan_detail", artisan_id=artisan_id))
+
+                conv = conn.execute(
+                    "SELECT id FROM conversations WHERE client_id = ? AND artisan_id = ?",
+                    (user["id"], artisan_id)).fetchone()
+                if not conv:
+                    conv_id = _insert_id(
+                        conn,
+                        "INSERT INTO conversations (client_id, artisan_id, subject)"
+                        " VALUES (?, ?, ?)",
+                        (user["id"], artisan_id, artisan["full_name"]))
+                    conn.execute(
+                        "INSERT INTO conversation_messages"
+                        " (conversation_id, sender_id, sender_role, content)"
+                        " VALUES (?, ?, ?, ?)",
+                        (conv_id, user["id"], "client",
+                         f"Conversation demarree pour {artisan['full_name']}."))
+                    conn.commit()
+                else:
+                    conv_id = conv["id"]
+
+                conn.execute(
+                    "INSERT INTO conversation_messages"
+                    " (conversation_id, sender_id, sender_role, content)"
+                    " VALUES (?, ?, ?, ?)",
+                    (conv_id, user["id"], "client", content))
+                conn.execute(
+                    "UPDATE conversations SET updated_at = ? WHERE id = ?",
+                    (datetime.now(timezone.utc).isoformat(), conv_id))
+                conn.commit()
+
+                if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                    return jsonify({"ok": True})
+                return redirect(url_for("client_conversation", conversation_id=conv_id))
+
+            if action == "request":
+                title = (request.form.get("title") or "").strip()
+                description = (request.form.get("description") or "").strip()
+                address = (request.form.get("address") or "").strip()
+                date_time = (request.form.get("date_time") or "").strip()
+                urgency = (request.form.get("urgency") or "").strip()
+                phone_contact = (request.form.get("phone_contact") or "").strip()
+                if not title or not description:
+                    flash("Veuillez remplir le service et la description.", "error")
+                    return redirect(url_for("artisan_detail", artisan_id=artisan_id))
+                if urgency not in ("urgent", "cette_semaine", "pas_presse"):
+                    urgency = "cette_semaine"
+
+                # Eligibilite serveur (essai en cours OU abonnement actif, et
+                # quota Pro non atteint). Vaut aussi pour une demande directe.
+                if not technician_can_receive_request(conn, artisan_id):
+                    flash("Ce technicien ne reçoit pas de nouvelles demandes "
+                          "actuellement. Choisissez un autre technicien.", "error")
+                    return redirect(url_for("artisan_detail", artisan_id=artisan_id))
+
+                full_desc = description
+                if date_time:
+                    full_desc += f"\n\nDate/heure souhaitée : {date_time}"
+
+                lat, lon = _geocode_zone("Conakry", address)
+                if not _is_valid_coordinate(lat, lon):
+                    lat, lon = _geocode_query(address)[:2]
+                lat = float(lat) if _is_valid_coordinate(lat) else 0.0
+                lon = float(lon) if _is_valid_coordinate(lon) else 0.0
+
+                ref = _generate_fixpro_reference(conn)
+                request_id = _insert_id(
+                    conn,
+                    "INSERT INTO requests"
+                    " (client_id, artisan_id, reference, title, description, category, address, latitude, longitude, status, urgency, phone_contact, created_at, updated_at)"
+                    " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))",
+                    (user["id"], artisan_id, ref, title, full_desc,
+                     artisan["profession"] or "Autre", address, lat, lon,
+                     MISSION_STATUS_ASSIGNED, urgency, phone_contact))
+                _log_intervention_history(conn, request_id, MISSION_STATUS_REQUESTED, MISSION_STATUS_ASSIGNED,
+                                         f"Client {user['full_name']}",
+                                         f"Demande directe assignee au technicien {artisan['full_name']}",
+                                         label="Technicien attribue")
+                create_notification(
+                    artisan_id, "Nouvelle demande",
+                    f"Nouvelle demande : {title} - {address or 'Conakry'}",
+                    "new_request", f"request_id:{request_id}",
+                    conn=conn)
+                conn.commit()
+                flash("Demande d'intervention creee. Le technicien en sera informe.", "success")
+                return redirect(url_for("request_detail", request_id=request_id))
+
+            if action == "review" and can_review:
+                rating = request.form.get("rating")
+                comment = (request.form.get("comment") or "").strip()
+                try:
+                    rating_int = int(rating)
+                    if not 1 <= rating_int <= 5:
+                        raise ValueError
+                except (TypeError, ValueError):
+                    flash("Veuillez sélectionner une note entre 1 et 5.", "error")
+                    return redirect(url_for("artisan_detail", artisan_id=artisan_id))
+                conn.execute(
+                    "INSERT INTO reviews (request_id, client_id, artisan_id, rating, comment)"
+                    " VALUES (?, ?, ?, ?, ?)",
+                    (review_request_id, user["id"], artisan_id, rating_int, comment))
+                conn.commit()
+                flash("Avis enregistré. Merci pour votre retour.", "success")
+                return redirect(url_for("artisan_detail", artisan_id=artisan_id))
+
+        # Date d'inscription lisible
+        member_since = (str(artisan["created_at"])[:7] if artisan["created_at"]
+                        else "Date inconnue")
+
+        # Photos de realisations (table ignoree si non migree)
+        try:
+            portfolio = conn.execute(
+                "SELECT id, photo_url, caption FROM artisan_portfolio"
+                " WHERE artisan_id = ? ORDER BY created_at DESC LIMIT 6",
+                (artisan_id,)).fetchall()
+        except Exception:
+            portfolio = []
+
+        # Zones d'intervention
+        zones = _split_zones(
+            artisan.get("zone_intervention")
+            or artisan.get("quartier")
+            or artisan.get("city"))
+        zone_center = None
+        for z in zones:
+            zone_center = _zone_coordinate(z)
+            if zone_center:
+                break
     finally:
         conn.close()
 
-    user = get_current_user()
-    return render_template("artisan_detail.html", user=user, artisan=artisan)
+    client_zone = session.get("client_zone") or (user.get("city") if user else None)
+
+    # Une seule fiche technicien, dynamique, identique pour tous les metiers.
+    # Toutes les donnees (services, realisations, avis, stats) sont filtrees
+    # par artisan_id : aucune donnee d'un autre technicien n'apparait.
+    return render_template("artisan_detail.html",
+                           user=user,
+                           client_zone=client_zone,
+                           artisan=artisan,
+                           reviews=reviews,
+                           review_stats=review_stats,
+                           completed=completed,
+                           distance=distance,
+                           can_review=can_review,
+                           ticket_id=ticket_id,
+                           verified_docs=verified_docs,
+                           member_since=member_since,
+                           portfolio=portfolio,
+                           review_bars=review_bars,
+                           review_bars_count=review_bars_count,
+                           satisfaction_rate=satisfaction_rate,
+                           artisan_services=artisan_services,
+                           services_are_standard=services_are_standard,
+                           artisan_position=artisan_position,
+                           zone_center=zone_center,
+                           zones=zones)
 
 
 @app.route("/artisans/<int:artisan_id>/contacter", methods=["GET", "POST"])
 def contact_artisan(artisan_id):
-    """Route temporaire désactivée - fonctionnalité de contact en attente de la nouvelle interface."""
-    return render_template("contact_artisan.html")
+    """Page de contact client -> enregistrement en base + notification."""
+    conn = get_db_connection()
+    try:
+        artisan = conn.execute(
+            "SELECT id, full_name, profession, phone, photo_url, is_verified"
+            " FROM users WHERE id = ? AND role IN ('artisan','technician')"
+            " AND is_active = 1 AND account_status != 'DELETED'",
+            (artisan_id,)).fetchone()
+    finally:
+        conn.close()
+    if not artisan:
+        flash("Technicien introuvable.", "error")
+        return redirect(url_for("artisans_page"))
+
+    artisan = dict(artisan)
+    user = get_current_user()
+    client_user_id = user["id"] if user and user.get("role") == "client" else None
+
+    if request.method == "POST":
+        first_name = (request.form.get("first_name") or "").strip()
+        last_name = (request.form.get("last_name") or "").strip()
+        phone = (request.form.get("phone") or "").replace(" ", "")
+        country = (request.form.get("country") or "+224").strip()
+
+        if not first_name or not last_name:
+            flash("Veuillez renseigner votre prénom et votre nom.", "error")
+            return redirect(url_for("contact_artisan", artisan_id=artisan_id))
+        if not phone or not phone.isdigit() or len(phone) < 8:
+            flash("Veuillez saisir un numéro de téléphone valide.", "error")
+            return redirect(url_for("contact_artisan", artisan_id=artisan_id))
+
+        full_phone = f"{country} {phone}"
+
+        conn = get_db_connection()
+        try:
+            # Recherche d'un contact existant pour ce client et ce technicien
+            existing = conn.execute(
+                "SELECT id FROM client_contacts"
+                " WHERE artisan_id = ? AND REPLACE(phone, ' ', '') = ?",
+                (artisan_id, full_phone.replace(" ", ""))).fetchone()
+
+            if existing:
+                contact_id = existing["id"]
+                conn.execute(
+                    "UPDATE client_contacts SET updated_at = CURRENT_TIMESTAMP,"
+                    " first_name = ?, last_name = ?, phone = ?, client_user_id = COALESCE(client_user_id, ?)"
+                    " WHERE id = ?",
+                    (first_name, last_name, full_phone, client_user_id, contact_id))
+            else:
+                result = conn.execute(
+                    "INSERT INTO client_contacts"
+                    " (client_user_id, artisan_id, first_name, last_name, phone, status, source)"
+                    " VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    (client_user_id, artisan_id, first_name, last_name,
+                     full_phone, "nouveau", "profil_artisan"))
+                contact_id = result.lastrowid
+
+            conn.execute(
+                "INSERT INTO client_contact_events (contact_id, event_type, details)"
+                " VALUES (?, ?, ?)",
+                (contact_id, "creation", f"Contact depuis le profil de {artisan['full_name']}"))
+
+            create_notification(
+                artisan_id, "Nouveau contact",
+                f"{first_name} {last_name} ({full_phone}) vous a contacté depuis votre profil.",
+                "new_contact", f"contact_id:{contact_id}", conn=conn)
+
+            conn.commit()
+        finally:
+            conn.close()
+
+        flash("Votre demande de contact a bien été envoyée. Le technicien vous rappellera.", "success")
+        return redirect(url_for("artisan_detail", artisan_id=artisan_id))
+
+    return render_template("contact_artisan.html",
+                           artisan=artisan,
+                           back_url=request.referrer or url_for("artisan_detail", artisan_id=artisan_id))
 
 
 def _services_for_profession(profession):
