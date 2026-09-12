@@ -257,26 +257,14 @@ body {
 }
 
 @media (min-width: 1024px) {
-  .sidebar {
-    display: flex;
-    position: fixed;
-    inset: var(--dtopbar-h, 0) auto 0 0;
-    width: 252px;
-    z-index: 60;
-    overflow-y: auto;
-  }
+  body:not(.no-sidebar) .app-wrap { padding-top: var(--dtopbar-h, 0); }
 
-  body:not(.no-sidebar) .app-wrap { margin-left: 252px; padding-top: var(--dtopbar-h, 0); }
-
-  /* Chrome mobile masquee sur bureau */
+  /* Chrome mobile masquee sur bureau : le hamburger bureau (.dtopbar-burger)
+     ouvre le meme drawer (.cd-drawer), garde visible ici. */
   .tabbar,
   .support-fab,
   .burger,
-  .f-menu-btn,
-  #mobileDrawer,
-  #mobileDrawerOverlay,
-  .cd-drawer,
-  .cd-overlay { display: none !important; }
+  .f-menu-btn { display: none !important; }
 
   /* Cadre de contenu confortable sur bureau */
   body:not(.no-sidebar) .page {
@@ -318,9 +306,16 @@ body {
     background: var(--f-white);
     border-bottom: 1px solid var(--f-line);
   }
+  .dtopbar-burger {
+    flex-shrink: 0; width: 40px; height: 40px; border-radius: 11px;
+    border: 1px solid var(--f-line); background: var(--f-white); color: var(--f-text);
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+  }
+  .dtopbar-burger:hover { background: var(--f-bg); }
+  .dtopbar-burger svg { width: 20px; height: 20px; }
+
   .dtopbar-brand {
     display: flex; align-items: center; gap: 10px; flex-shrink: 0;
-    width: 210px;
     text-decoration: none; color: var(--f-text);
     font-family: var(--f-display); font-weight: 800; font-size: 19px;
   }
@@ -336,18 +331,24 @@ body {
   }
   .dtopbar-brand .brand-mark svg { width: 20px; height: 20px; }
 
-  .dtopbar-search {
-    flex: 1; max-width: 520px;
-    display: flex; align-items: center; gap: 10px;
-    height: 40px; padding: 0 14px;
-    background: var(--f-bg); border: 1px solid var(--f-line);
-    border-radius: 11px;
+  /* Navigation principale centree */
+  .dtopbar-nav {
+    flex: 1; display: flex; align-items: center; justify-content: center; gap: 30px;
+    height: 100%;
   }
-  .dtopbar-search svg { width: 17px; height: 17px; color: var(--f-text-2); flex-shrink: 0; }
-  .dtopbar-search input {
-    flex: 1; min-width: 0; border: none; outline: none; background: transparent;
-    font: inherit; font-size: 14px; color: var(--f-text);
+  .dtopbar-nav a {
+    position: relative; display: flex; align-items: center; gap: 6px;
+    height: 100%; text-decoration: none; color: var(--f-text-2);
+    font-size: 14.5px; font-weight: 600;
   }
+  .dtopbar-nav a:hover { color: var(--f-text); }
+  .dtopbar-nav a.active { color: var(--f-primary); font-weight: 700; }
+  .dtopbar-nav a.active::after {
+    content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3px;
+    border-radius: 3px 3px 0 0; background: var(--f-primary);
+  }
+
+  .dtopbar-right { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
 
   .dtopbar-loc {
     display: flex; align-items: center; gap: 8px; flex-shrink: 0;
@@ -585,7 +586,7 @@ body {
 .cd-footer { text-align: center; font-size: 11.5px; color: #94A3B8; line-height: 1.7; margin: 4px 0 0; }
 .cd-footer svg { vertical-align: -2px; }
 
-@media (min-width: 768px) {
+@media (min-width: 768px) and (max-width: 1023px) {
   .cd-drawer, .cd-overlay { display: none !important; }
 }
 

@@ -4,49 +4,6 @@
 {% block footer %}{% endblock %}
 {% block tabbar %}{% endblock %}
 
-{% block extra_head %}
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-{% endblock %}
-
 {% block content %}
 {% include '_home_new.html' %}
-{% endblock %}
-
-{% block scripts %}
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
-<script>
-  window.addEventListener('load', function () {
-    var el = document.getElementById('homeMap');
-    if (!el || typeof L === 'undefined') return;
-    if (window.matchMedia('(max-width: 1023px)').matches) return;
-    var lat = parseFloat(el.dataset.lat), lon = parseFloat(el.dataset.lon);
-    var has = !isNaN(lat) && !isNaN(lon);
-    var map = L.map(el, { zoomControl: false }).setView(
-      has ? [lat, lon] : [9.535, -13.68], has ? 14 : 12);
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19, attribution: '&copy; OpenStreetMap'
-    }).addTo(map);
-    var marker = has ? L.marker([lat, lon]).addTo(map) : null;
-    var btn = document.getElementById('railLocBtn');
-    if (btn) btn.addEventListener('click', function () {
-      if (!navigator.geolocation) return;
-      navigator.geolocation.getCurrentPosition(function (p) {
-        var la = p.coords.latitude, lo = p.coords.longitude;
-        map.setView([la, lo], 15);
-        if (marker) { marker.setLatLng([la, lo]); } else { marker = L.marker([la, lo]).addTo(map); }
-        var t = document.querySelector('meta[name="csrf-token"]');
-        fetch('/api/location', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': t ? t.content : '' },
-          body: JSON.stringify({ lat: la, lon: lo, accuracy: p.coords.accuracy || 0 })
-        }).then(function (r) { return r.json(); }).then(function (d) {
-          if (d && d.ok && d.zone) {
-            document.querySelectorAll('#locDisplay, .hp-rail-zone').forEach(function (n) { n.textContent = d.zone; });
-          }
-        }).catch(function () {});
-      });
-    });
-    setTimeout(function () { map.invalidateSize(); }, 200);
-  });
-</script>
 {% endblock %}

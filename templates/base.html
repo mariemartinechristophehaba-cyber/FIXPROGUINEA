@@ -28,130 +28,56 @@
 
     {% block header %}{% endblock %}
 
-    {# --- Barre superieure bureau (>=1024px). Masquee en mobile via CSS. --- #}
+    {# --- En-tete bureau (>=1024px). Masque en mobile via CSS.
+       Pas de sidebar fixe : le hamburger ouvre le meme drawer que sur mobile
+       (_drawer.html, plus bas), le profil est sur l'avatar a droite. --- #}
     {% if is_client_shell %}
     <header class="dtopbar">
+      <button class="dtopbar-burger" id="dtBurger" type="button" aria-label="Ouvrir le menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
       <a class="dtopbar-brand" href="{{ url_for('home') }}">
         <span class="brand-mark">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
         </span>
         <span>Fix<em>Pro</em><small>Des pros. Des solutions.</small></span>
       </a>
-      <form class="dtopbar-search" action="{{ url_for('artisans_page') }}" method="get" role="search">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-        <input type="search" name="q" placeholder="Rechercher un service, un professionnel..." value="{{ request.args.get('q', '') }}" aria-label="Rechercher" />
-      </form>
-      <a class="dtopbar-loc" href="{{ url_for('location_gate', next=request.path) }}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>
-        <span>{{ client_zone or (nav_user.quartier or nav_user.city) or 'Ma position' }}</span>
-        <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-      </a>
-      <a class="dtopbar-ic" href="{{ url_for('notifications') }}" aria-label="Notifications">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-        {% if notif_unread %}<span class="dot-badge">{{ notif_unread if notif_unread < 10 else '9+' }}</span>{% endif %}
-      </a>
-      <div class="user-menu dtopbar-user">
-        <button class="user-menu-trigger" type="button" aria-label="Mon compte">
-          <span class="dtopbar-av">
-            {% if nav_user.photo_url %}<img src="{{ nav_user.photo_url }}" alt="" />{% else %}{{ (nav_user.full_name or 'U')[0]|upper }}{% endif %}
-          </span>
-          <span class="dtopbar-hi"><small>Bonjour,</small><strong>{{ (nav_user.full_name or 'Mon compte').split(' ')[0] }}</strong></span>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-        </button>
-        <div class="user-menu-dropdown">
-          <a href="{{ url_for('profile') }}">Mon profil</a>
-          <a href="{{ url_for('parametres') }}">Parametres</a>
-          <a href="{{ url_for('logout') }}">Deconnexion</a>
+      <nav class="dtopbar-nav">
+        <a class="{{ 'active' if _home_active }}" href="{{ url_for('home') }}">Accueil</a>
+        <a class="{{ 'active' if request.endpoint in ('requests_list', 'request_new', 'request_detail') }}" href="{{ url_for('requests_list') }}">Demandes</a>
+        <a class="{{ 'active' if request.endpoint in ('lia', 'client_messages', 'client_message_new', 'client_conversation', 'client_message_artisan') }}" href="{{ url_for('client_messages') }}">Messages
+          {% if messages_unread %}<span class="s-badge">{{ messages_unread }}</span>{% endif %}
+        </a>
+        {% if _is_tech_nav %}
+        <a class="{{ 'active' if request.endpoint == 'technician_subscription' }}" href="{{ url_for('technician_subscription') }}">Abonnement</a>
+        {% endif %}
+      </nav>
+      <div class="dtopbar-right">
+        <a class="dtopbar-loc" href="{{ url_for('location_gate', next=request.path) }}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          <span>{{ client_zone or (nav_user.quartier or nav_user.city) or 'Ma position' }}</span>
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </a>
+        <a class="dtopbar-ic" href="{{ url_for('notifications') }}" aria-label="Notifications">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          {% if notif_unread %}<span class="dot-badge">{{ notif_unread if notif_unread < 10 else '9+' }}</span>{% endif %}
+        </a>
+        <div class="user-menu dtopbar-user">
+          <button class="user-menu-trigger" type="button" aria-label="Mon compte">
+            <span class="dtopbar-av">
+              {% if nav_user.photo_url %}<img src="{{ nav_user.photo_url }}" alt="" />{% else %}{{ (nav_user.full_name or 'U')[0]|upper }}{% endif %}
+            </span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="user-menu-dropdown">
+            <a href="{{ url_for('profile') }}">Mon profil</a>
+          </div>
         </div>
       </div>
     </header>
     {% endif %}
 
-    {% block sidebar %}
-    {% if is_client_shell %}
-    <aside class="sidebar" id="sidebar">
-      <div class="sidebar-top">
-        <a class="brand" href="{{ url_for('home') }}">
-          <span class="brand-mark">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
-            </svg>
-          </span>
-          Fix<em>Pro</em>
-        </a>
-        <p class="sidebar-tagline">Votre technicien a portee de main.</p>
-      </div>
-
-      <nav class="sidebar-nav">
-        <a class="sidebar-link {{ 'active' if _home_active }}" href="{{ url_for('home') }}">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
-          Accueil
-        </a>
-        <a class="sidebar-link {{ 'active' if request.endpoint == 'artisans_page' }}" href="{{ url_for('artisans_page') }}">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-          Rechercher un pro
-        </a>
-        {% if _is_tech_nav %}
-        <a class="sidebar-link {{ 'active' if request.endpoint == 'artisan_dashboard' }}" href="{{ url_for('artisan_dashboard') }}">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
-          Mon espace technicien
-        </a>
-        {% endif %}
-        <a class="sidebar-link {{ 'active' if request.endpoint in ('requests_list', 'request_new', 'request_detail') }}" href="{{ url_for('requests_list') }}">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M9 14h6M9 17h4"/></svg>
-          Mes demandes
-        </a>
-        <a class="sidebar-link {{ 'active' if request.endpoint in ('lia', 'client_messages', 'client_message_new', 'client_conversation', 'client_message_artisan') }}" href="{{ url_for('client_messages') }}">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 21l1.9-5.1A8.4 8.4 0 0 1 4 11.5a8.5 8.5 0 0 1 8.5-8.5A8.5 8.5 0 0 1 21 11.5z"/></svg>
-          Messages
-          {% if messages_unread %}<span class="s-badge">{{ messages_unread }}</span>{% endif %}
-        </a>
-        <a class="sidebar-link {{ 'active' if request.endpoint == 'payments' }}" href="{{ url_for('payments') }}">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
-          Paiements
-        </a>
-        <a class="sidebar-link" href="{{ url_for('home') }}" data-soon="1">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 1 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>
-          Favoris
-        </a>
-        <a class="sidebar-link {{ 'active' if request.endpoint == 'notifications' }}" href="{{ url_for('notifications') }}">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-          Notifications
-          {% if notif_unread %}<span class="s-badge">{{ notif_unread }}</span>{% endif %}
-        </a>
-        <a class="sidebar-link {{ 'active' if request.endpoint in ('profile', 'edit_profile') }}" href="{{ url_for('edit_profile') }}">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>
-          Mon profil
-        </a>
-      </nav>
-
-      <div class="sidebar-foot">
-        <a class="sidebar-promo" href="{{ url_for('artisans_page') }}">
-          <img src="{{ url_for('static', filename='img/fixpro-avatar.png') }}" alt="" />
-          <span><strong>Des professionnels de confiance pres de vous.</strong></span>
-        </a>
-        {% if not _is_tech_nav %}
-        <a class="sidebar-link {{ 'active' if request.endpoint == 'devenir_technicien' }}" href="{{ url_for('devenir_technicien') }}">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
-          Devenir technicien
-        </a>
-        {% endif %}
-        <a class="sidebar-link" href="{{ url_for('contact') }}">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
-          Aide &amp; support
-        </a>
-        <a class="sidebar-link {{ 'active' if request.endpoint == 'parametres' }}" href="{{ url_for('parametres') }}">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-2.7-1.1l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></svg>
-          Parametres
-        </a>
-        <a class="sidebar-link sidebar-link--danger" href="{{ url_for('logout') }}">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/></svg>
-          Se deconnecter
-        </a>
-      </div>
-    </aside>
-    {% endif %}
-    {% endblock %}
+    {% block sidebar %}{% endblock %}
 
     <div class="app-wrap">
       {% block appbar %}
@@ -266,6 +192,7 @@
     <script>
       document.addEventListener('DOMContentLoaded', function() {
         const burger = document.getElementById('burgerBtn');
+        const dtBurger = document.getElementById('dtBurger');
         const drawer = document.getElementById('mobileDrawer');
         const overlay = document.getElementById('mobileDrawerOverlay');
         const closeBtn = document.getElementById('mobileDrawerClose');
@@ -280,12 +207,12 @@
           if (overlay) overlay.classList.remove('open');
           document.body.style.overflow = '';
         }
-
-        if (burger) {
-          burger.addEventListener('click', function() {
-            if (drawer && drawer.classList.contains('open')) { closeDrawer(); } else { openDrawer(); }
-          });
+        function toggleDrawer() {
+          if (drawer && drawer.classList.contains('open')) { closeDrawer(); } else { openDrawer(); }
         }
+
+        if (burger) burger.addEventListener('click', toggleDrawer);
+        if (dtBurger) dtBurger.addEventListener('click', toggleDrawer);
         if (closeBtn) closeBtn.addEventListener('click', closeDrawer);
         if (overlay) overlay.addEventListener('click', closeDrawer);
         document.addEventListener('keydown', function(e) {
