@@ -331,15 +331,27 @@ body {
   }
   .dtopbar-brand .brand-mark svg { width: 20px; height: 20px; }
 
+  .dtopbar-search {
+    flex: 0 1 260px; min-width: 0;
+    display: flex; align-items: center; gap: 8px;
+    height: 38px; padding: 0 12px;
+    background: var(--f-bg); border: 1px solid var(--f-line); border-radius: 10px;
+  }
+  .dtopbar-search svg { width: 16px; height: 16px; color: var(--f-text-2); flex-shrink: 0; }
+  .dtopbar-search input {
+    flex: 1; min-width: 0; border: none; outline: none; background: transparent;
+    font: inherit; font-size: 13px; color: var(--f-text);
+  }
+
   /* Navigation principale centree */
   .dtopbar-nav {
-    flex: 1; display: flex; align-items: center; justify-content: center; gap: 30px;
-    height: 100%;
+    flex: 1; display: flex; align-items: center; justify-content: center; gap: 20px;
+    height: 100%; min-width: 0;
   }
   .dtopbar-nav a {
     position: relative; display: flex; align-items: center; gap: 6px;
     height: 100%; text-decoration: none; color: var(--f-text-2);
-    font-size: 14.5px; font-weight: 600;
+    font-size: 13.5px; font-weight: 600; white-space: nowrap;
   }
   .dtopbar-nav a:hover { color: var(--f-text); }
   .dtopbar-nav a.active { color: var(--f-primary); font-weight: 700; }
@@ -389,6 +401,7 @@ body {
     font-weight: 800; font-size: 14px;
     display: flex; align-items: center; justify-content: center;
   }
+  .dtopbar-name { font-size: 13.5px; font-weight: 700; color: var(--f-text); white-space: nowrap; }
   .dtopbar-av img { width: 100%; height: 100%; object-fit: cover; }
   .dtopbar-hi { display: flex; flex-direction: column; line-height: 1.2; text-align: left; }
   .dtopbar-hi small { font-size: 11px; color: var(--f-text-2); }
@@ -442,6 +455,14 @@ body {
     font-size: 11px; font-weight: 700;
     display: flex; align-items: center; justify-content: center;
   }
+}
+
+/* En-tete bureau : sur ecran plus etroit, on retire la recherche et le
+   slogan pour eviter tout chevauchement (nav + localisation restent). */
+@media (min-width: 1024px) and (max-width: 1365px) {
+  .dtopbar-search, .dtopbar-brand small { display: none; }
+  .dtopbar-nav { gap: 14px; }
+  .dtopbar-loc { max-width: 150px; }
 }
 
 /* Categories supplementaires */

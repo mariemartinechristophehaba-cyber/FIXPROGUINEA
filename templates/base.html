@@ -42,14 +42,21 @@
         </span>
         <span>Fix<em>Pro</em><small>Des pros. Des solutions.</small></span>
       </a>
+      <form class="dtopbar-search" action="{{ url_for('artisans_page') }}" method="get" role="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input type="search" name="q" placeholder="Rechercher un professionnel, un service..." value="{{ request.args.get('q', '') }}" aria-label="Rechercher" />
+      </form>
       <nav class="dtopbar-nav">
         <a class="{{ 'active' if _home_active }}" href="{{ url_for('home') }}">Accueil</a>
-        <a class="{{ 'active' if request.endpoint in ('requests_list', 'request_new', 'request_detail') }}" href="{{ url_for('requests_list') }}">Demandes</a>
+        <a class="{{ 'active' if request.endpoint == 'artisans_page' }}" href="{{ url_for('artisans_page') }}">Rechercher</a>
+        <a class="{{ 'active' if request.endpoint in ('requests_list', 'request_new', 'request_detail') }}" href="{{ url_for('requests_list') }}">Mes demandes</a>
         <a class="{{ 'active' if request.endpoint in ('lia', 'client_messages', 'client_message_new', 'client_conversation', 'client_message_artisan') }}" href="{{ url_for('client_messages') }}">Messages
           {% if messages_unread %}<span class="s-badge">{{ messages_unread }}</span>{% endif %}
         </a>
         {% if _is_tech_nav %}
-        <a class="{{ 'active' if request.endpoint == 'technician_subscription' }}" href="{{ url_for('technician_subscription') }}">Abonnement</a>
+        <a class="{{ 'active' if request.endpoint == 'artisan_dashboard' }}" href="{{ url_for('artisan_dashboard') }}">Mon espace technicien</a>
+        {% else %}
+        <a class="{{ 'active' if request.endpoint == 'devenir_technicien' }}" href="{{ url_for('devenir_technicien') }}">Devenir pro</a>
         {% endif %}
       </nav>
       <div class="dtopbar-right">
@@ -67,6 +74,7 @@
             <span class="dtopbar-av">
               {% if nav_user.photo_url %}<img src="{{ nav_user.photo_url }}" alt="" />{% else %}{{ (nav_user.full_name or 'U')[0]|upper }}{% endif %}
             </span>
+            <span class="dtopbar-name">{{ (nav_user.full_name or 'Mon compte').split(' ')[0] }}</span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
           <div class="user-menu-dropdown">
