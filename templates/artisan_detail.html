@@ -29,6 +29,10 @@
       --pl-green: #16A34A;
       --pl-star: #F5A623;
       --pl-card-shadow: 0 10px 30px rgba(15, 42, 90, 0.08);
+      /* hauteur reelle de la barre d'actions fixe (padding 12px+12px +
+         boutons ~46px + marge de securite) -- reutilisee pour reserver
+         exactement cet espace en bas de la page. */
+      --pl-actionbar-h: 86px;
     }
     * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; }
@@ -36,7 +40,10 @@
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       background: var(--pl-bg); color: var(--pl-text);
       -webkit-font-smoothing: antialiased;
-      padding-bottom: calc(96px + env(safe-area-inset-bottom));
+      /* espace reserve pour la barre d'actions fixe (Message/Contacter) :
+         sa hauteur reelle + la safe area, pour que la derniere section
+         (services) ne soit jamais cachee derriere elle. */
+      padding-bottom: calc(var(--pl-actionbar-h, 82px) + env(safe-area-inset-bottom));
     }
     a { text-decoration: none; color: inherit; }
     button { font-family: inherit; }
@@ -45,7 +52,7 @@
 
     /* ---------- Hero (vraie photo du professionnel) ---------- */
     .pl-hero {
-      position: relative; overflow: hidden; height: 230px;
+      position: relative; overflow: hidden; height: 180px;
       background: var(--pl-night);
       border-radius: 0 0 26px 26px;
     }
@@ -206,7 +213,7 @@
     @media (min-width: 720px) {
       body { padding-bottom: 40px; }
       .pl-wrap { padding: 24px 0 0; }
-      .pl-hero { border-radius: 22px; height: 300px; }
+      .pl-hero { border-radius: 22px; height: 240px; }
       .pl-svc-grid { grid-template-columns: repeat(4, 1fr); }
       .pl-actionbar {
         position: static; border: none; background: none; padding: 0 16px;
@@ -277,12 +284,12 @@
     <section class="pl-stats" aria-label="Informations clés">
       <div class="pl-stat">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-        <b>{% if p.distance is not none %}{{ ("%.1f"|format(p.distance))|replace('.', ',') }} km{% else %}—{% endif %}</b>
-        <span>{% if p.distance is not none %}À proximité{% else %}Distance inconnue{% endif %}</span>
+        <b>{% if p.distance is not none %}{{ ("%.1f"|format(p.distance))|replace('.', ',') }} km{% else %}Non renseignée{% endif %}</b>
+        <span>{% if p.distance is not none %}À proximité{% else %}Distance{% endif %}</span>
       </div>
       <div class="pl-stat">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-        <b>{{ p.responseTime if p.responseTime else '—' }}</b>
+        <b>{{ p.responseTime if p.responseTime else 'Non renseigné' }}</b>
         <span>Temps de réponse</span>
       </div>
       <div class="pl-stat">
