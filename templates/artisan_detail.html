@@ -164,22 +164,6 @@
     }
     .pl-sec-head svg { width: 15px; height: 15px; }
 
-    .pl-about p { margin: 0; color: #475569; font-size: 0.9rem; line-height: 1.6; }
-    .pl-about p.clamped {
-      display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
-    }
-    .pl-about-more {
-      display: inline-block; margin-top: 6px; color: var(--pl-primary); font-weight: 700; font-size: 0.83rem;
-      background: none; border: none; cursor: pointer; padding: 0;
-    }
-    .pl-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
-    .pl-chip {
-      display: inline-flex; align-items: center; gap: 6px;
-      background: var(--pl-soft); color: var(--pl-primary);
-      font-size: 0.79rem; font-weight: 600; padding: 7px 13px; border-radius: 50px;
-    }
-    .pl-chip svg { width: 13px; height: 13px; flex-shrink: 0; }
-
     /* Services -- vraies photos, grille de cartes */
     .pl-svc-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
     .pl-svc-card {
@@ -306,24 +290,6 @@
       </div>
     </section>
 
-    <section class="pl-section pl-about">
-      <h2>À propos</h2>
-      {% set _about_fallbacks = {
-        'Plombier': "Plombier expérimenté, je vous accompagne pour tous vos travaux de plomberie. Travail propre, rapide et garanti.",
-      } %}
-      {% set about_text = p.about or _about_fallbacks.get(p.category, p.category ~ " expérimenté, je vous accompagne pour tous vos travaux. Travail propre, rapide et garanti.") %}
-      <p id="aboutText" class="clamped">{{ about_text }}</p>
-      <button type="button" class="pl-about-more" id="aboutMoreBtn" hidden>Voir plus</button>
-      <div class="pl-chips">
-        {% for tag in p.badges[:3] %}
-        <span class="pl-chip">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
-          {{ tag }}
-        </span>
-        {% endfor %}
-      </div>
-    </section>
-
     <section class="pl-section">
       <div class="pl-sec-head">
         <h2>Services proposés</h2>
@@ -388,18 +354,6 @@
           document.querySelectorAll('[data-extra-svc]').forEach(function (el) { el.hidden = false; });
           seeAll.hidden = true;
         });
-      }
-      var aboutText = document.getElementById('aboutText');
-      var aboutMore = document.getElementById('aboutMoreBtn');
-      if (aboutText && aboutMore) {
-        // n'affiche "Voir plus" que si le texte deborde reellement (3 lignes)
-        if (aboutText.scrollHeight > aboutText.clientHeight + 2) {
-          aboutMore.hidden = false;
-          aboutMore.addEventListener('click', function () {
-            aboutText.classList.remove('clamped');
-            aboutMore.hidden = true;
-          });
-        }
       }
     })();
   </script>

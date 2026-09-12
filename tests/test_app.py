@@ -3567,18 +3567,12 @@ class ArtisanPublicProfilePlombierTests(FixProTestCase):
             self.assertNotIn(banned, html, banned)
 
     def test_bio_is_real_data_not_hardcoded_per_technician(self):
+        """La section 'À propos' a ete supprimee du profil public."""
         aid = self._plumber_id(phone="+224621119904", email="plombier5@example.com")
-        empty_html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
-        self.assertNotIn("Ibrahim Sory", empty_html)
-        conn = db.connect(sqlite_path=self.db_path)
-        try:
-            conn.execute("UPDATE users SET bio = ? WHERE id = ?",
-                        ("Plombier de Kaloum depuis 12 ans.", aid))
-            conn.commit()
-        finally:
-            conn.close()
-        filled_html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
-        self.assertIn("Plombier de Kaloum depuis 12 ans.", filled_html)
+        html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
+        self.assertNotIn("Ibrahim Sory", html)
+        self.assertNotIn("À propos", html)
+        self.assertNotIn("Plombier de Kaloum depuis 12 ans.", html)
 
     def test_public_profile_never_leaks_private_technician_data(self):
         aid = self._plumber_id(phone="+224621119905", email="plombier6@example.com")
