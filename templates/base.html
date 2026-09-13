@@ -50,8 +50,8 @@
       </form>
       <nav class="dtopbar-nav">
         <a class="{{ 'active' if _home_active }}" href="{{ url_for('home') if nav_user else url_for('index') }}">Accueil</a>
-        <a class="{{ 'active' if request.endpoint == 'artisans_page' }}" href="{{ url_for('artisans_page') }}">Rechercher</a>
         {% if nav_user %}
+        <a class="{{ 'active' if request.endpoint == 'artisans_page' }}" href="{{ url_for('artisans_page') }}">Rechercher</a>
         <a class="{{ 'active' if request.endpoint in ('requests_list', 'request_new', 'request_detail') }}" href="{{ url_for('requests_list') }}">Mes demandes</a>
         <a class="{{ 'active' if request.endpoint in ('lia', 'client_messages', 'client_message_new', 'client_conversation', 'client_message_artisan') }}" href="{{ url_for('client_messages') }}">Messages
           {% if messages_unread %}<span class="s-badge">{{ messages_unread }}</span>{% endif %}
@@ -61,8 +61,13 @@
         {% else %}
         <a class="{{ 'active' if request.endpoint == 'devenir_technicien' }}" href="{{ url_for('devenir_technicien') }}">Devenir pro</a>
         {% endif %}
-        {% else %}
-        <a class="{{ 'active' if request.endpoint == 'devenir_technicien' }}" href="{{ url_for('devenir_technicien') }}">Devenir pro</a>
+        {% elif request.endpoint == 'index' %}
+        {# Visiteur sur l'accueil : nav vers les sections de _home_new.html.
+           Ailleurs (connexion, inscription...) on ne montre que "Accueil"
+           pour ne pas alourdir ces pages. #}
+        <a href="{{ url_for('index') }}#services">Nos services</a>
+        <a href="{{ url_for('index') }}#comment-ca-marche">Comment ça marche</a>
+        <a class="{{ 'active' if request.endpoint == 'contact' }}" href="{{ url_for('contact') }}">À propos</a>
         {% endif %}
       </nav>
       <div class="dtopbar-right">
