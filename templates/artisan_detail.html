@@ -54,7 +54,9 @@
     }
     .pl-hero-img {
       position: absolute; inset: 0; width: 100%; height: 100%;
-      object-fit: cover; object-position: center 30%; display: block;
+      /* ancre a droite : la banniere contient le slogan decoratif sur son
+         bord droit, qu'un centrage strict coupait sur les petits ecrans. */
+      object-fit: cover; object-position: 100% 32%; display: block;
     }
     .pl-topbar {
       position: absolute; z-index: 3; left: 16px; right: 16px;
@@ -113,14 +115,6 @@
       padding: 5px 12px; border-radius: 50px;
     }
     .pl-verified-pill svg { width: 13px; height: 13px; }
-    .pl-pill-new {
-      align-self: flex-start; flex-shrink: 0;
-      display: inline-flex; align-items: center; gap: 5px;
-      background: var(--pl-soft); color: var(--pl-primary);
-      font-weight: 700; font-size: 0.74rem; padding: 5px 12px; border-radius: 50px;
-      white-space: nowrap;
-    }
-    .pl-pill-new svg { width: 12px; height: 12px; }
 
     .pl-location-row {
       display: flex; align-items: center; justify-content: space-between; gap: 10px;
@@ -288,12 +282,9 @@
         </span>
         {% endif %}
       </div>
-      {% if p.isNew %}
-      <span class="pl-pill-new">
-        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-        Nouveau
-      </span>
-      {% endif %}
+      {# Le statut "Nouveau" (aucun avis) est deja communique par la ligne
+         de note juste au-dessus ("Nouveau" a la place d'une moyenne) --
+         un second badge ferait doublon et surchargerait la carte. #}
     </div>
 
     {% if p.zone or p.yearsExperience %}
