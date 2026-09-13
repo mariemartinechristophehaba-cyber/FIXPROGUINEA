@@ -5,7 +5,6 @@ Lancement : python -m pytest tests/ -v
 """
 
 import os
-import re
 import sys
 import tempfile
 import unittest
@@ -3502,15 +3501,16 @@ class ParametresApparenceTests(FixProTestCase):
             return fixpro_app.url_for(endpoint, **kw)
 
 
-class ArtisanPublicProfilePlombierTests(FixProTestCase):
-    """Nouveau profil public mobile (ProfessionalPublicProfile), etape 1 :
-    PLOMBIER uniquement. Vraies photos (hero + 6 services), donnees
-    dynamiques, aucune section Realisations, meme composant reutilisable
-    pour les autres metiers plus tard (qui redirigent en attendant)."""
+class ArtisanPublicProfileRemovedTests(FixProTestCase):
+    """Le profil public technicien (Plombier inclus) a ete retire de
+    l'application sur demande explicite -- en attente d'une nouvelle
+    maquette. La route reste en place (pour ne casser aucun lien existant :
+    recherche, accueil, messagerie...) mais redirige simplement vers la
+    recherche -- plus aucune page ne s'affiche a cette adresse."""
 
     def _plumber_id(self, phone="+224621119900",
                     email="plombier-profil@example.com"):
-        self.register_artisan(email, phone=phone)   # profession="Plombier" par defaut
+        self.register_artisan(email, phone=phone)
         conn = db.connect(sqlite_path=self.db_path)
         try:
             return conn.execute(
@@ -3518,96 +3518,13 @@ class ArtisanPublicProfilePlombierTests(FixProTestCase):
         finally:
             conn.close()
 
-    def test_real_hero_and_service_image_files_exist_on_disk(self):
-        base = ROOT / "static" / "img" / "technicians" / "plombier"
-        self.assertTrue((base / "profile" / "hero-plombier.jpg").exists())
-        for name in ("debouchage-canalisations.jpg", "installation-sanitaire.jpg",
-                     "reparation-fuites.jpg", "installation-chauffe-eau.jpg",
-                     "reparation-robinetterie.jpg", "installation-tuyauterie.jpg"):
-            self.assertTrue((base / "services" / name).exists(), name)
+    def test_page_and_assets_removed_from_the_application(self):
+        self.assertFalse((ROOT / "templates" / "artisan_detail.html").exists())
+        self.assertFalse((ROOT / "static" / "img" / "technicians" / "plombier").exists())
 
-    def test_profile_shows_hero_idcard_stats_and_real_hero_photo(self):
+    def test_route_redirects_instead_of_rendering_a_profile(self):
         aid = self._plumber_id()
-        r = self.client.get(f"/artisans/{aid}")
-        self.assertEqual(r.status_code, 200)
-        html = r.get_data(as_text=True)
-        self.assertIn("hero-plombier.jpg", html)
-        self.assertIn('class="pl-idcard"', html)
-        self.assertIn('class="pl-stats"', html)
-        self.assertIn("Plombier professionnel", html)
-        self.assertIn("Interventions", html)
-        self.assertIn("Message", html)
-        self.assertIn("Contacter", html)
-
-    def test_first_four_services_shown_last_two_behind_voir_tout(self):
-        aid = self._plumber_id(phone="+224621119901", email="plombier2@example.com")
-        html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
-        self.assertIn("debouchage-canalisations.jpg", html)
-        self.assertIn("installation-sanitaire.jpg", html)
-        self.assertIn("reparation-fuites.jpg", html)
-        self.assertIn("installation-chauffe-eau.jpg", html)
-        # les 2 derniers sont bien presents dans le HTML (caches en JS), pas absents
-        self.assertIn("reparation-robinetterie.jpg", html)
-        self.assertIn("installation-tuyauterie.jpg", html)
-        self.assertIn("Voir tout", html)
-        self.assertIn("data-extra-svc", html)
-
-    def test_each_service_has_its_own_distinct_image(self):
-        aid = self._plumber_id(phone="+224621119902", email="plombier3@example.com")
-        html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
-        images = re.findall(r'src="[^"]*/(services/[a-z-]+\.jpg)"', html)
-        self.assertEqual(len(images), 6)
-        self.assertEqual(len(set(images)), 6)   # jamais la meme image deux fois
-
-    def test_no_realisations_section_at_all(self):
-        aid = self._plumber_id(phone="+224621119903", email="plombier4@example.com")
-        html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
-        for banned in ("Réalisations", "Realisations", "Avant / Après",
-                       "portfolio", "pl-real"):
-            self.assertNotIn(banned, html, banned)
-
-    def test_bio_is_real_data_not_hardcoded_per_technician(self):
-        aid = self._plumber_id(phone="+224621119904", email="plombier5@example.com")
-        empty_html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
-        self.assertNotIn("Ibrahim Sory", empty_html)
-        conn = db.connect(sqlite_path=self.db_path)
-        try:
-            conn.execute("UPDATE users SET bio = ? WHERE id = ?",
-                        ("Plombier de Kaloum depuis 12 ans.", aid))
-            conn.commit()
-        finally:
-            conn.close()
-        filled_html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
-        self.assertIn("Plombier de Kaloum depuis 12 ans.", filled_html)
-
-    def test_public_profile_never_leaks_private_technician_data(self):
-        aid = self._plumber_id(phone="+224621119905", email="plombier6@example.com")
-        html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
-        for private_term in ("Mes revenus", "Espace professionnel",
-                             "Préférences technicien", "Zone d'intervention",
-                             "Abonnement"):
-            self.assertNotIn(private_term, html, private_term)
-
-    def test_other_trades_not_yet_implemented_redirect_instead_of_fake_page(self):
-        """Architecture reutilisable, mais SEUL le plombier est branche pour
-        l'instant : un electricien ne doit jamais afficher une page fausse/
-        incomplete -- il redirige vers la recherche en attendant son tour."""
-        conn = db.connect(sqlite_path=self.db_path)
-        try:
-            conn.execute(
-                "INSERT INTO users (email, phone, password_hash, role, full_name,"
-                " profession, city, is_verified, is_active, verification_status,"
-                " availability_status)"
-                " VALUES ('electricien-profil@example.com', '+224621119906', ?,"
-                " 'technician', 'Amara Conde', 'Électricien', 'Conakry', 1, 1,"
-                " 'APPROVED', 'en_ligne')",
-                (fixpro_app.generate_password_hash("FixPro2026!"),))
-            conn.commit()
-            eid = conn.execute(
-                "SELECT id FROM users WHERE phone = '+224621119906'").fetchone()["id"]
-        finally:
-            conn.close()
-        r = self.client.get(f"/artisans/{eid}", follow_redirects=False)
+        r = self.client.get(f"/artisans/{aid}", follow_redirects=False)
         self.assertEqual(r.status_code, 302)
         self.assertIn("/artisans", r.headers.get("Location", ""))
 
