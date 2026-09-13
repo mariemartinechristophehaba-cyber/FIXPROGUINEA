@@ -1561,22 +1561,16 @@ def index():
         canonical = [
             ("Plomberie", ["Plombier", "Plomberie"]),
             ("Électricité", ["Électricien", "Electricien", "Electricite"]),
-            ("Climatisation", ["Frigoriste", "Climatisation", "Climatiseur"]),
+            ("Frigoriste", ["Frigoriste"]),
             ("Menuiserie", ["Menuisier", "Menuiserie"]),
             ("Peinture", ["Peintre", "Peinture"]),
             ("Maçonnerie", ["Maçon", "Maçonnerie"]),
-            ("Réparation d'appareils", ["Électroménager", "Electromenager",
-                                        "Réparateur électroménager"]),
         ]
         popular = []
         for label, keys in canonical:
             n = sum(counts.get(k, 0) for k in keys)
             href_key = next((k for k in keys if counts.get(k, 0)), keys[0])
             popular.append({"label": label, "count": n, "category": href_key})
-        # "Autres services" : parcourt tous les professionnels sans filtre de
-        # metier (category vide -> artisans_page() n'applique aucun WHERE
-        # profession). Toujours affichee, meme sans technicien dans ce cas.
-        popular.append({"label": "Autres services", "count": 0, "category": ""})
 
         artisans = [dict(a) for a in artisans]
 
