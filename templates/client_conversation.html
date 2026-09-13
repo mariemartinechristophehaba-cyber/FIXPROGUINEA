@@ -176,7 +176,7 @@
 
 <div class="c-wrap">
   <header class="c-head">
-    {% set c_back_url = url_for('client_messages') if (is_direct and me_role == 'artisan') else (url_for('artisan_detail', artisan_id=cp.id) if cp else url_for('client_messages')) %}
+    {% set c_back_url = url_for('client_messages') %}
     <button type="button" class="c-iconbtn" aria-label="Retour"
       onclick="if(history.length>1){history.back()}else{location.href='{{ c_back_url }}'}">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
@@ -297,7 +297,7 @@
 
 <script>
   const CID = {{ conversation.id | tojson }};
-  const PEER_PROFILE_URL = {{ (url_for('artisan_detail', artisan_id=cp.id) if (cp and cp.role in ('artisan','technician')) else '') | tojson }};
+  const PEER_PROFILE_URL = '';
   const MINE_ROLE = {{ mine_role | tojson }};
   const IS_DIRECT = {{ is_direct | tojson }};
   const PEER_NAME = {{ peer_name | tojson }};

@@ -6995,200 +6995,17 @@ def _to_bool(value):
     return bool(value)
 
 
-# Catalogue de services par metier -- architecture reutilisable pour le
-# profil public mobile (ProfessionalPublicProfile) : chaque metier possede
-# son propre catalogue avec ses propres images reelles (jamais partagees
-# entre metiers). Seul le Plombier est implemente pour l'instant.
-PROFESSIONAL_SERVICE_CATALOG = {
-    "plombier": [
-        {"id": "debouchage", "title": "Débouchage canalisations",
-         "image": "img/technicians/plombier/services/debouchage-canalisations.jpg"},
-        {"id": "sanitaire", "title": "Installation sanitaire",
-         "image": "img/technicians/plombier/services/installation-sanitaire.jpg"},
-        {"id": "fuites", "title": "Réparation de fuites",
-         "image": "img/technicians/plombier/services/reparation-fuites.jpg"},
-        {"id": "chauffe-eau", "title": "Installation chauffe-eau",
-         "image": "img/technicians/plombier/services/installation-chauffe-eau.jpg"},
-        {"id": "robinetterie", "title": "Réparation robinetterie",
-         "image": "img/technicians/plombier/services/reparation-robinetterie.jpg"},
-        {"id": "tuyauterie", "title": "Installation de tuyauterie",
-         "image": "img/technicians/plombier/services/installation-tuyauterie.jpg"},
-    ],
-}
-PROFESSIONAL_HERO_IMAGE = {
-    "plombier": "img/technicians/plombier/profile/hero-plombier.jpg",
-}
-
-
-def _professional_trade_key(profession):
-    p = (profession or "").strip().lower()
-    if p in ("plombier", "plomberie"):
-        return "plombier"
-    return None
-
-
 @app.route("/artisans/<int:artisan_id>", methods=["GET", "POST"])
 @app.route("/technicien/<int:artisan_id>", methods=["GET", "POST"])
 def artisan_detail(artisan_id):
-    """Profil public mobile d'un professionnel (vu par le CLIENT quand il
-    clique sur "Voir le profil"). Architecture reutilisable pour tous les
-    metiers (ProfessionalPublicProfile) ; seul le Plombier est implemente
-    pour l'instant -- un metier sans catalogue redirige vers la recherche
-    plutot que d'afficher une page incomplete/fausse."""
-    user = get_current_user()
-    conn = get_db_connection()
-    try:
-        artisan = conn.execute(
-            "SELECT * FROM users WHERE id = ? AND role IN ('artisan','technician')"
-            " AND is_verified = 1 AND is_active = 1 AND account_status != 'DELETED'",
-            (artisan_id,)).fetchone()
-        if not artisan:
-            flash("Technicien introuvable.", "error")
-            return redirect(url_for("artisans_page"))
-        artisan = dict(artisan)
-
-        trade = _professional_trade_key(artisan.get("profession"))
-        if not trade:
-            # Metier pas encore implemente dans le nouveau profil public --
-            # on ne fabrique pas une page incomplete/fausse pour lui.
-            return redirect(url_for("artisans_page"))
-
-        review_stats = conn.execute(
-            "SELECT COALESCE(AVG(rating), 0) AS avg_rating, COUNT(*) AS count"
-            " FROM reviews WHERE artisan_id = ?", (artisan_id,)).fetchone()
-
-        completed = conn.execute(
-            "SELECT COUNT(*) AS n FROM requests"
-            " WHERE artisan_id = ? AND status = 'completed'",
-            (artisan_id,)).fetchone()["n"]
-
-        # Distance (position temps reel si disponible, sinon profil)
-        distance = None
-        client_lat = _to_float(user.get("latitude")) if user else _to_float(session.get("client_lat"))
-        client_lon = _to_float(user.get("longitude")) if user else _to_float(session.get("client_lon"))
-        artisan_lat = _to_float(artisan.get("latitude"))
-        artisan_lon = _to_float(artisan.get("longitude"))
-        if artisan.get("availability_status") == "en_ligne":
-            loc = conn.execute(
-                "SELECT latitude, longitude FROM technician_locations"
-                " WHERE technician_id = ? ORDER BY updated_at DESC LIMIT 1",
-                (artisan_id,)).fetchone()
-            if loc:
-                artisan_lat = _to_float(loc["latitude"])
-                artisan_lon = _to_float(loc["longitude"])
-        if (_is_valid_coordinate(client_lat, client_lon)
-                and _is_valid_coordinate(artisan_lat, artisan_lon)):
-            distance = _haversine(client_lat, client_lon, artisan_lat, artisan_lon)
-    finally:
-        conn.close()
-
-    is_online = (artisan.get("availability_status") or "") in ("en_ligne", "certains_jours")
-    resp_delay = (artisan.get("estimated_delay") or "").strip()
-    skill_tags = [t.strip() for t in
-                  (artisan.get("skills") or "").replace(";", ",").split(",") if t.strip()]
-
-    professional = {
-        "id": artisan["id"],
-        "name": artisan["full_name"],
-        "category": "Plombier",
-        "profileImage": artisan.get("photo_url") or None,
-        "verified": _to_bool(artisan.get("is_verified")),
-        "rating": float(review_stats["avg_rating"] or 0),
-        "reviewCount": int(review_stats["count"] or 0),
-        "distance": distance,
-        "responseTime": resp_delay or None,
-        "interventionCount": completed,
-        "available": is_online,
-        "about": (artisan.get("bio") or "").strip() or None,
-        "badges": skill_tags[:3] if skill_tags else ["Rapide", "Sérieux", "Propre"],
-        "services": [
-            dict(s, image=url_for("static", filename=s["image"]))
-            for s in PROFESSIONAL_SERVICE_CATALOG[trade]
-        ],
-    }
-
-    return render_template("artisan_detail.html", user=user, professional=professional)
+    """Route desactivee - profil public technicien supprime."""
+    return redirect(url_for("artisans_page"))
 
 
 @app.route("/artisans/<int:artisan_id>/contacter", methods=["GET", "POST"])
 def contact_artisan(artisan_id):
-    """Page de contact client -> enregistrement en base + notification."""
-    conn = get_db_connection()
-    try:
-        artisan = conn.execute(
-            "SELECT id, full_name, profession, phone, photo_url, is_verified"
-            " FROM users WHERE id = ? AND role IN ('artisan','technician')"
-            " AND is_active = 1 AND account_status != 'DELETED'",
-            (artisan_id,)).fetchone()
-    finally:
-        conn.close()
-    if not artisan:
-        flash("Technicien introuvable.", "error")
-        return redirect(url_for("artisans_page"))
-
-    artisan = dict(artisan)
-    user = get_current_user()
-    client_user_id = user["id"] if user and user.get("role") == "client" else None
-
-    if request.method == "POST":
-        first_name = (request.form.get("first_name") or "").strip()
-        last_name = (request.form.get("last_name") or "").strip()
-        phone = (request.form.get("phone") or "").replace(" ", "")
-        country = (request.form.get("country") or "+224").strip()
-
-        if not first_name or not last_name:
-            flash("Veuillez renseigner votre prénom et votre nom.", "error")
-            return redirect(url_for("contact_artisan", artisan_id=artisan_id))
-        if not phone or not phone.isdigit() or len(phone) < 8:
-            flash("Veuillez saisir un numéro de téléphone valide.", "error")
-            return redirect(url_for("contact_artisan", artisan_id=artisan_id))
-
-        full_phone = f"{country} {phone}"
-
-        conn = get_db_connection()
-        try:
-            # Recherche d'un contact existant pour ce client et ce technicien
-            existing = conn.execute(
-                "SELECT id FROM client_contacts"
-                " WHERE artisan_id = ? AND REPLACE(phone, ' ', '') = ?",
-                (artisan_id, full_phone.replace(" ", ""))).fetchone()
-
-            if existing:
-                contact_id = existing["id"]
-                conn.execute(
-                    "UPDATE client_contacts SET updated_at = CURRENT_TIMESTAMP,"
-                    " first_name = ?, last_name = ?, phone = ?, client_user_id = COALESCE(client_user_id, ?)"
-                    " WHERE id = ?",
-                    (first_name, last_name, full_phone, client_user_id, contact_id))
-            else:
-                result = conn.execute(
-                    "INSERT INTO client_contacts"
-                    " (client_user_id, artisan_id, first_name, last_name, phone, status, source)"
-                    " VALUES (?, ?, ?, ?, ?, ?, ?)",
-                    (client_user_id, artisan_id, first_name, last_name,
-                     full_phone, "nouveau", "profil_artisan"))
-                contact_id = result.lastrowid
-
-            conn.execute(
-                "INSERT INTO client_contact_events (contact_id, event_type, details)"
-                " VALUES (?, ?, ?)",
-                (contact_id, "creation", f"Contact depuis le profil de {artisan['full_name']}"))
-
-            create_notification(
-                artisan_id, "Nouveau contact",
-                f"{first_name} {last_name} ({full_phone}) vous a contacté depuis votre profil.",
-                "new_contact", f"contact_id:{contact_id}", conn=conn)
-
-            conn.commit()
-        finally:
-            conn.close()
-
-        flash("Votre demande de contact a bien été envoyée. Le technicien vous rappellera.", "success")
-        return redirect(url_for("artisan_detail", artisan_id=artisan_id))
-
-    return render_template("contact_artisan.html",
-                           artisan=artisan,
-                           back_url=request.referrer or url_for("artisan_detail", artisan_id=artisan_id))
+    """Route desactivee - contact technicien supprime."""
+    return redirect(url_for("artisans_page"))
 
 
 def _services_for_profession(profession):
@@ -9882,7 +9699,7 @@ def _get_or_create_guest_user(conn):
 def client_message_artisan(artisan_id):
     """Ouvre (ou cree) la conversation directe entre le client et CE technicien.
 
-    Cible du bouton "Message" sur le profil technicien : jamais l'assistant IA,
+    Cible du bouton "Message" : jamais l'assistant IA,
     jamais l'administration -- un dialogue 1-a-1 avec le technicien affiche.
     Accessible sans inscription : un compte visiteur anonyme est cree a la
     volee (limite en debit pour empecher un robot de gonfler la table users).
@@ -9905,7 +9722,7 @@ def client_message_artisan(artisan_id):
             return redirect(url_for("artisans_page"))
         if user["id"] == artisan_id:
             flash("Vous ne pouvez pas vous ecrire a vous-meme.", "error")
-            return redirect(url_for("artisan_detail", artisan_id=artisan_id))
+            return redirect(url_for("artisans_page"))
 
         now_iso = datetime.now(timezone.utc).isoformat()
         conv = conn.execute(
@@ -9927,6 +9744,7 @@ def client_message_artisan(artisan_id):
         conn.commit()
     finally:
         conn.close()
+
     return redirect(url_for("client_conversation", conversation_id=conv_id))
 
 

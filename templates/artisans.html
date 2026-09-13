@@ -491,7 +491,7 @@
 
   <div class="sr-results">
   {% for a in artisans %}
-  <a href="{{ url_for('artisan_detail', artisan_id=a.id) }}" class="sr-pro">
+  <a href="{{ url_for('artisans_page') }}" class="sr-pro">
     <div class="sr-pro-avatar">
       {% if a.photo_url %}
         <img src="{{ a.photo_url }}" alt="{{ a.full_name }}" />
