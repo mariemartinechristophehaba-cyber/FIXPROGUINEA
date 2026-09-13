@@ -60,7 +60,7 @@
     position: relative;
     background: linear-gradient(160deg, #1F6BFF 0%, #1250D8 55%, #0F3DBB 100%);
     color: #fff;
-    padding: 14px 16px 58px;
+    padding: 14px 16px 16px;
     padding-top: calc(34px + env(safe-area-inset-top));
     overflow: visible;
   }
@@ -82,11 +82,11 @@
     display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff;
   }
   .hp-logo-badge {
-    width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
+    width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
   }
-  .hp-logo-badge svg { width: 30px; height: 30px; }
+  .hp-logo-badge svg { width: 36px; height: 36px; }
   .hp-logo-text { display: flex; flex-direction: column; line-height: 1.05; }
-  .hp-logo-name { font-size: 22px; font-weight: 800; letter-spacing: .01em; }
+  .hp-logo-name { font-size: 26px; font-weight: 800; letter-spacing: .01em; }
   .hp-logo-name em { color: var(--hp-yellow); font-style: normal; }
   .hp-logo-text small { font-size: 9px; font-weight: 400; opacity: .9; letter-spacing: .02em; margin-top: 2px; }
   .hp-actions { display: flex; align-items: center; gap: 14px; }
@@ -145,59 +145,73 @@
   .hpm-item.danger .hpm-ico { background: #FEE2E2; color: #DC2626; }
   .hpm-item.danger .hpm-tx span { color: #F0A3A3; }
 
-  .hp-header-waves { position: absolute; left: 0; right: 0; bottom: -1px; z-index: 1; line-height: 0; }
-  .hp-header-waves svg { display: block; width: 100%; height: 70px; }
-
-  /* --- hero --- */
+  /* --- hero (fondu dans le header, meme bloc bleu continu) --- */
   .hp-hero {
     position: relative; z-index: 2;
-    background: #F4F7FD;
-    padding: 16px 16px 20px;
-    min-height: 300px;
+    background: linear-gradient(180deg, #0F3DBB 0%, #0B2E82 100%);
+    padding: 18px 16px 0;
+    min-height: 250px;
     overflow: hidden;
   }
-  .hp-hero-bg {
-    position: absolute; top: 0; right: -8%; z-index: 0;
-    width: 142%; height: 100%;
-    object-fit: cover; object-position: 58% 6%;
-    pointer-events: none;
-  }
-  .hp-hero::after {
-    content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
-    background:
-      linear-gradient(100deg, #F4F7FD 22%, rgba(244,247,253,0.9) 42%, rgba(244,247,253,0) 68%),
-      linear-gradient(to bottom, transparent 72%, #F4F7FD 100%);
-  }
   .hp-hero-inner { position: relative; z-index: 3; max-width: 1100px; margin: 0 auto; }
-  .hp-hero-text { max-width: 55%; position: relative; }
+  .hp-hero-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(255,255,255,0.16); border: 1px solid rgba(255,255,255,0.3);
+    color: #fff; font-size: 0.74rem; font-weight: 700; letter-spacing: .01em;
+    padding: 6px 12px; border-radius: 50px; margin-bottom: 12px;
+  }
+  .hp-hero-badge svg { width: 13px; height: 13px; flex-shrink: 0; }
+  .hp-hero-text { max-width: 58%; position: relative; }
   .hp-hero h1 {
-    font-size: 1.22rem; font-weight: 800; color: var(--hp-text);
-    margin: 0 0 8px; line-height: 1.32;
+    font-size: 1.3rem; font-weight: 800; color: #fff;
+    margin: 0 0 10px; line-height: 1.3;
   }
-  .hp-hero h1 strong { color: var(--hp-primary); font-weight: 800; }
-  .hp-hero-pin {
-    position: absolute; top: 34px; right: -16px; z-index: 4; line-height: 0; color: var(--hp-primary);
+  .hp-hero h1 strong { color: var(--hp-yellow); font-weight: 800; }
+  .hp-hero-tagline {
+    position: absolute; top: -4px; right: -4px; z-index: 4;
+    text-align: right; font-size: 0.72rem; font-weight: 700; color: #fff;
+    line-height: 1.3;
   }
-  .hp-hero-pin svg { width: 26px; height: 26px; display: block; filter: drop-shadow(0 4px 8px rgba(21,94,239,.28)); }
-  .hp-hero-sub { margin: 0; color: var(--hp-muted); font-size: 0.8rem; font-weight: 500; }
-  .hp-hero-sub b { color: var(--hp-primary); font-weight: 700; }
+  .hp-hero-tagline svg { display: block; width: 70px; height: 10px; margin: 3px 0 0 auto; }
 
-  .hp-hero-chips { display: flex; flex-wrap: nowrap; gap: 8px; margin-top: 14px; max-width: 78%; }
-  .hp-chip {
-    flex: 1 1 0; min-width: 0;
-    display: flex; align-items: center; gap: 6px;
-    background: rgba(255,255,255,0.97); border: 1px solid #DEE7F5; border-radius: 12px;
-    padding: 7px 9px; box-shadow: 0 6px 16px rgba(16,42,67,0.08);
+  .hp-hero-figure {
+    position: absolute; right: -6%; bottom: 0; top: 30px; z-index: 1;
+    width: 60%; overflow: hidden; pointer-events: none;
   }
-  .hp-chip-icon {
-    width: 26px; height: 26px; border-radius: 8px; flex-shrink: 0;
-    background: var(--hp-light-blue); color: var(--hp-primary);
-    display: flex; align-items: center; justify-content: center;
+  .hp-hero-blob {
+    position: absolute; border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.18), rgba(255,255,255,0) 70%);
   }
-  .hp-chip-icon svg { width: 15px; height: 15px; }
-  .hp-chip-text { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; }
-  .hp-chip-text strong { font-size: 0.6rem; color: var(--hp-text); white-space: nowrap; }
-  .hp-chip-text span { font-size: 0.53rem; color: var(--hp-muted); white-space: nowrap; }
+  .hp-hero-blob.b1 { width: 220px; height: 220px; right: -40px; top: -30px; }
+  .hp-hero-blob.b2 { width: 140px; height: 140px; right: 60px; bottom: -30px; background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.12), rgba(255,255,255,0) 70%); }
+  .hp-hero-photo {
+    position: relative; z-index: 2; display: block;
+    width: 100%; height: 100%; object-fit: cover; object-position: 50% 12%;
+    -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.5) 26%, #000 48%);
+    mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.5) 26%, #000 48%);
+  }
+  .hp-hero-wave { display: block; width: 100%; height: 46px; margin-top: 14px; }
+  .hp-hero-wave path { fill: var(--hp-bg); }
+
+  .hp-float-search {
+    position: relative; z-index: 10; margin: -32px 16px 16px;
+    background: #fff; border-radius: 18px; box-shadow: 0 14px 34px rgba(16,42,86,.16);
+    padding: 12px 14px; display: flex; align-items: center; gap: 10px;
+  }
+  .hp-float-search-ic { color: var(--hp-primary); flex-shrink: 0; display: flex; }
+  .hp-float-search-ic svg { width: 20px; height: 20px; }
+  .hp-float-search-field { flex: 1; min-width: 0; }
+  .hp-float-search-field label { display: block; font-size: 0.68rem; font-weight: 700; color: var(--hp-muted); margin-bottom: 1px; }
+  .hp-float-search-field input {
+    width: 100%; border: none; outline: none; background: transparent;
+    font-size: 0.88rem; color: var(--hp-text); font-family: inherit; padding: 0;
+  }
+  .hp-float-search-field input::placeholder { color: #A6B1C4; }
+  .hp-float-search-btn {
+    flex-shrink: 0; width: 40px; height: 40px; border-radius: 12px; border: none; cursor: pointer;
+    background: var(--hp-primary); color: #fff; display: flex; align-items: center; justify-content: center;
+  }
+  .hp-float-search-btn svg { width: 18px; height: 18px; }
 
   /* --- main --- */
   .hp-main { padding: 0 16px 24px; position: relative; z-index: 2; }
@@ -416,7 +430,7 @@
     .dl-hero-badges svg { width: 16px; height: 16px; color: #8FC2FF; }
 
     .dl-hero-visual { position: relative; }
-    .dl-hero-visual img { width: 100%; height: 320px; object-fit: cover; border-radius: 20px; display: block; box-shadow: 0 20px 50px rgba(6,20,60,.35); }
+    .dl-hero-visual img { width: 100%; height: 320px; object-fit: cover; object-position: 70% 20%; border-radius: 20px; display: block; }
     .dl-hero-quote {
       position: absolute; right: -10px; top: -18px; background: #fff; color: var(--hp-text);
       border-radius: 14px; padding: 12px 16px; font-size: .82rem; font-style: italic;
@@ -566,7 +580,7 @@
         </div>
       </div>
       <div class="dl-hero-visual">
-        <img src="{{ asset('img/hero-technicien.jpg') }}" alt="Technicien FixPro" />
+        <img src="{{ asset('img/hero-technicien-desktop.jpg') }}" alt="Technicien FixPro" />
         <span class="dl-hero-quote">"Un service fiable pour votre confort !"</span>
         <div class="dl-hero-card">
           <div class="dl-hero-avatars">
@@ -854,51 +868,46 @@
     </div>
   </div>
   {% endif %}
-
-  <div class="hp-header-waves" aria-hidden="true">
-    <svg viewBox="0 0 400 70" preserveAspectRatio="none" fill="none">
-      <path d="M0 44 C 60 10, 140 10, 200 34 C 260 58, 340 58, 400 30 L400 70 L0 70 Z" fill="#BAD1FF" opacity="0.55"/>
-      <path d="M0 52 C 70 24, 150 24, 210 44 C 270 64, 340 64, 400 44 L400 70 L0 70 Z" fill="#DCE8FF" opacity="0.7"/>
-      <path d="M0 58 C 80 38, 150 38, 220 52 C 290 66, 350 62, 400 54 L400 70 L0 70 Z" fill="#F4F7FD"/>
-    </svg>
-  </div>
 </header>
 
 <section class="hp-hero">
-  <img class="hp-hero-bg" src="{{ asset('img/hero-technicien.jpg') }}" alt="Technicien FixPro" />
+  <div class="hp-hero-figure" aria-hidden="true">
+    <span class="hp-hero-blob b1"></span>
+    <span class="hp-hero-blob b2"></span>
+    <img class="hp-hero-photo" src="{{ asset('img/hero-technicien.jpg') }}" alt="" />
+  </div>
   <div class="hp-hero-inner">
+    <span class="hp-hero-badge">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>
+      Rapide&nbsp;•&nbsp;Fiable&nbsp;•&nbsp;Proche de vous
+    </span>
+    <div class="hp-hero-tagline" aria-hidden="true">
+      Votre projet,<br/>notre priorité
+      <svg viewBox="0 0 70 10" fill="none"><path d="M2 6c10-6 20-6 30 0s20 6 30 0" stroke="var(--hp-yellow)" stroke-width="2.4" stroke-linecap="round"/></svg>
+    </div>
     <div class="hp-hero-text">
       <h1>Trouvez rapidement<br/>le <strong>bon professionnel</strong><br/>pour vos travaux</h1>
-      <p class="hp-hero-sub">Fiable <b>&nbsp;•&nbsp;</b> Rapide <b>&nbsp;•&nbsp;</b> Professionnel</p>
-      <span class="hp-hero-pin" aria-hidden="true">
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"><path d="M12 2C7.86 2 4.5 5.36 4.5 9.5c0 5.05 5.78 11.06 6.79 12.06.4.4 1.03.4 1.42 0C13.72 20.56 19.5 14.55 19.5 9.5 19.5 5.36 16.14 2 12 2Z"/><circle cx="12" cy="9.5" r="2.6" fill="#fff" stroke="none"/></svg>
-      </span>
     </div>
-    <div class="hp-hero-chips">
-      <div class="hp-chip">
-        <span class="hp-chip-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>
-        </span>
-        <span class="hp-chip-text"><strong>Professionnels vérifiés</strong><span>100% de confiance</span></span>
-      </div>
-      <div class="hp-chip">
-        <span class="hp-chip-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 21a8 8 0 0 0-16 0"/><circle cx="10" cy="8" r="5"/><path d="M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3"/></svg>
-        </span>
-        <span class="hp-chip-text"><strong>+5 000 clients</strong><span>Nous font confiance</span></span>
-      </div>
-      <div class="hp-chip dsk-only">
-        <span class="hp-chip-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></svg>
-        </span>
-        <span class="hp-chip-text"><strong>Intervention rapide</strong><span>Pres de chez vous</span></span>
-      </div>
-    </div>
-    <span class="hp-hero-bubble dsk-only" aria-hidden="true">Un probleme&nbsp;? <b>On trouve la solution&nbsp;!</b></span>
   </div>
+  <svg class="hp-hero-wave" viewBox="0 0 400 46" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M0 30 C 90 6, 160 46, 260 24 C 320 11, 360 34, 400 22 L400 46 L0 46 Z"/>
+  </svg>
 </section>
 
 <main class="hp-main">
+  <form class="hp-float-search" action="{{ url_for('artisans_page') }}" method="get">
+    <span class="hp-float-search-ic" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    </span>
+    <span class="hp-float-search-field">
+      <label for="hpFloatSearchQ">Que recherchez-vous ?</label>
+      <input type="text" name="q" id="hpFloatSearchQ" placeholder="Ex. Plombier, électricien, frigoriste..." value="{{ request.args.get('q', '') }}" />
+    </span>
+    <button type="submit" class="hp-float-search-btn" aria-label="Rechercher">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </button>
+  </form>
+
   <section class="hp-card">
     <div class="hp-card-head">
       <h2>De quoi avez-vous besoin ?</h2>
