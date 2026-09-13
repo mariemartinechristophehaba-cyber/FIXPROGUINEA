@@ -89,12 +89,12 @@
   }
   .hp-menu-btn { background: transparent; border: none; color: #fff; padding: 4px; cursor: pointer; }
   .hp-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #fff; }
-  .hp-logo-badge { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  .hp-logo-badge svg { width: 34px; height: 34px; }
+  .hp-logo-badge { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .hp-logo-badge svg { width: 42px; height: 42px; }
   .hp-logo-text { display: flex; flex-direction: column; line-height: 1.05; }
-  .hp-logo-name { font-size: 21px; font-weight: 800; letter-spacing: .01em; }
+  .hp-logo-name { font-size: 24px; font-weight: 800; letter-spacing: .01em; }
   .hp-logo-name em { color: var(--hp-yellow); font-style: normal; }
-  .hp-logo-text small { font-size: 9px; font-weight: 400; opacity: .9; letter-spacing: .02em; margin-top: 2px; }
+  .hp-logo-text small { font-size: 9.5px; font-weight: 400; opacity: .9; letter-spacing: .02em; margin-top: 2px; }
   .hp-actions { display: flex; align-items: center; gap: 14px; }
   .hp-notif { position: relative; display: flex; align-items: center; color: #fff; }
   .hp-notif-dot {
@@ -154,42 +154,47 @@
 
   /* --- heros (dans le meme bloc bleu que l'en-tete) --- */
   .hp-hero-badge {
-    display: inline-flex; align-items: center; gap: 7px; margin: 16px 0 0;
-    background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.28);
-    border-radius: 999px; padding: 7px 13px 7px 10px; font-size: .74rem; font-weight: 700;
+    display: inline-flex; align-items: center; gap: 7px;
+    background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.3);
+    border-radius: 999px; padding: 7px 14px 7px 10px; font-size: .72rem; font-weight: 800;
+    color: #fff; white-space: nowrap;
   }
   .hp-hero-badge svg { width: 15px; height: 15px; flex-shrink: 0; }
-  .hp-hero-grid { position: relative; z-index: 2; margin-top: 16px; min-height: 215px; }
-  .hp-hero-text { max-width: 56%; position: relative; z-index: 2; }
+  .hp-hero-grid { position: relative; z-index: 2; margin-top: 14px; }
+  .hp-hero-row { position: relative; margin-top: 12px; min-height: 186px; }
+  .hp-hero-text { max-width: 58%; position: relative; z-index: 2; }
   .hp-hero-text h1 {
-    font-size: 1.2rem; font-weight: 800; color: #fff;
-    margin: 0 0 10px; line-height: 1.32;
+    font-size: 1.14rem; font-weight: 800; color: #fff;
+    margin: 0 0 8px; line-height: 1.28;
   }
   .hp-hero-text h1 em { color: var(--hp-yellow); font-style: normal; }
-  .hp-hero-text p { margin: 0; color: rgba(255,255,255,.82); font-size: .76rem; font-weight: 500; line-height: 1.45; }
+  .hp-hero-text p { margin: 0; color: rgba(255,255,255,.82); font-size: .72rem; font-weight: 500; line-height: 1.4; }
   .hp-hero-photo {
-    position: absolute; right: -14px; top: 38px; bottom: -6px; z-index: 1;
-    width: 44%; display: flex; align-items: flex-end; justify-content: flex-end;
+    position: absolute; right: -18px; top: 36px; bottom: -8px; z-index: 1;
+    width: 46%; display: flex; align-items: flex-end; justify-content: flex-end;
     pointer-events: none;
   }
   .hp-hero-photo img {
     width: 100%; height: 100%; object-fit: cover; object-position: top center;
-    -webkit-mask-image: linear-gradient(to bottom, #000 78%, transparent 100%);
-    mask-image: linear-gradient(to bottom, #000 78%, transparent 100%);
+    -webkit-mask-image: radial-gradient(ellipse 78% 74% at 54% 44%, #000 0%, #000 56%, transparent 96%);
+    mask-image: radial-gradient(ellipse 78% 74% at 54% 44%, #000 0%, #000 56%, transparent 96%);
+    -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+    -webkit-mask-size: 100% 100%; mask-size: 100% 100%;
+    -webkit-mask-position: center; mask-position: center;
   }
   .hp-hero-quote {
-    position: absolute; z-index: 2; right: 2px; top: -10px;
-    max-width: 122px; text-align: right;
+    position: absolute; z-index: 2; right: 2px; top: -6px;
+    max-width: 118px; text-align: right;
     font-family: Georgia, 'Times New Roman', serif; font-style: italic;
-    font-size: .8rem; line-height: 1.3; color: #fff;
+    font-size: .78rem; line-height: 1.28; color: #fff;
   }
   .hp-hero-quote .u { position: relative; display: inline-block; white-space: nowrap; }
-  .hp-hero-quote .u svg { position: absolute; left: 0; bottom: -6px; width: 100%; height: 8px; }
+  .hp-hero-quote .u svg { position: absolute; left: 0; bottom: -7px; width: 100%; height: 10px; }
 
-  .hp-search-spacer { height: 46px; }
+  .hp-search-spacer { height: 26px; }
 
   /* --- barre de recherche : flotte a cheval sur le bas du bloc bleu --- */
-  .hp-search-wrap { position: relative; z-index: 5; padding: 0 16px; margin-top: -34px; }
+  .hp-search-wrap { position: relative; z-index: 5; padding: 0 16px; margin-top: -46px; }
   .hp-search {
     display: flex; align-items: center; gap: 10px;
     background: #fff; border-radius: 18px; padding: 12px 8px 12px 16px;
@@ -891,23 +896,25 @@
   {% endif %}
 
   <div class="hp-hero-grid">
-    <div class="hp-hero-text">
-      <span class="hp-hero-badge">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
-        Rapide&nbsp;•&nbsp;Fiable&nbsp;•&nbsp;Proche de vous
-      </span>
-      <h1>Trouvez rapidement<br/>le <em>bon professionnel</em><br/>pour vos travaux</h1>
-      <p>Plomberie, électricité, climatisation,<br/>menuiserie et bien plus encore.</p>
-    </div>
-    <div class="hp-hero-photo">
-      <img src="{{ asset('img/hero-technicien.jpg') }}" alt="Technicien FixPro" />
-    </div>
-    <span class="hp-hero-quote" aria-hidden="true">
-      Votre projet,<br/>
-      <span class="u">notre priorité
-        <svg viewBox="0 0 100 8" preserveAspectRatio="none"><path d="M2 5.5C20 1.5 45 1 65 4.5C78 6.8 90 4 98 2" stroke="#F7B718" stroke-width="2.4" stroke-linecap="round" fill="none"/></svg>
-      </span>
+    <span class="hp-hero-badge">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+      Rapide&nbsp;•&nbsp;Fiable&nbsp;•&nbsp;Proche de vous
     </span>
+    <div class="hp-hero-row">
+      <div class="hp-hero-text">
+        <h1>Trouvez rapidement<br/>le <em>bon professionnel</em><br/>pour vos travaux</h1>
+        <p>Plomberie, électricité, climatisation,<br/>menuiserie et bien plus encore.</p>
+      </div>
+      <div class="hp-hero-photo">
+        <img src="{{ asset('img/hero-technicien.jpg') }}" alt="Technicien FixPro" />
+      </div>
+      <span class="hp-hero-quote" aria-hidden="true">
+        Votre projet,<br/>
+        <span class="u">notre priorité
+          <svg viewBox="0 0 100 10" preserveAspectRatio="none"><path d="M2 6C15 0 30 0 45 3C55 5 65 7 75 4C85 1 92 3 98 1" stroke="#F7B718" stroke-width="2.4" stroke-linecap="round" fill="none"/></svg>
+        </span>
+      </span>
+    </div>
   </div>
   <div class="hp-search-spacer" aria-hidden="true"></div>
 </header>
