@@ -7079,7 +7079,6 @@ def artisan_detail(artisan_id):
         "verified": bool(artisan.get("is_verified")),
         "rating": float(review_stats["avg_rating"] or 0),
         "reviewCount": review_stats_count,
-        "isNew": review_stats_count == 0,
         "zone": zone or None,
         "radiusKm": radius_km,
         "yearsExperience": int(years_exp) if years_exp else None,
