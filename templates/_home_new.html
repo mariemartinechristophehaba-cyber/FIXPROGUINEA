@@ -532,8 +532,12 @@
   }
 
   @media (min-width: 1024px) and (max-width: 1280px) {
-    .dl-hero-grid { grid-template-columns: 1fr; }
-    .dl-hero-visual { display: none; }
+    /* La photo du hero reste toujours visible : reduite, jamais masquee.
+       Les pastilles (citation, avis) se chevauchaient a cette largeur
+       reduite : on les retire, la photo seule suffit ici. */
+    .dl-hero-grid { grid-template-columns: minmax(0, 1fr) 300px; gap: 20px; }
+    .dl-hero-visual img { height: 230px; }
+    .dl-hero-quote, .dl-hero-card { display: none; }
     .dl-services, .dl-pros, .dl-stats { grid-template-columns: repeat(2, 1fr); }
     .dl-steps { grid-template-columns: repeat(2, 1fr); gap: 28px; }
     .dl-step-chev { display: none; }
