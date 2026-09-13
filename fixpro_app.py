@@ -54,31 +54,32 @@ app.config.from_object(config)
 # sur un ancien fichier en cache).
 app.config["SEND_FILE_MAX_AGE_DEFAULT"] = timedelta(hours=1)
 
-# --- Donnees de DEMONSTRATION du tableau de bord admin (temporaire) ---------
-# Tant que la base n'est pas peuplee, le tableau de bord affiche des chiffres
-# fictifs coherents (voir _ADMIN_DASHBOARD_DEMO) pour ressembler a la maquette.
-# Passer ADMIN_DASHBOARD_DEMO=0 (variable d'environnement Vercel) pour revenir
-# immediatement aux vraies donnees de la base. Ces valeurs ne remplacent JAMAIS
-# les vraies donnees cote API/back-office.
+# --- Donnees REELLES par defaut sur toutes les pages admin -----------------
+# Un tableau de bord qui affiche parfois du vrai et parfois du fictif selon
+# la config du serveur est une source d'erreurs de gestion. Le mode
+# demonstration (chiffres coherents pour previsualiser une maquette hors
+# donnees) reste disponible mais doit etre explicitement demande :
+# ADMIN_*_DEMO=1. Une base vide affiche un etat vide, jamais des chiffres
+# inventes en secours silencieux.
 app.config["ADMIN_DASHBOARD_DEMO"] = (
-    os.environ.get("ADMIN_DASHBOARD_DEMO", "1").strip().lower()
-    not in ("0", "false", "no", "off", ""))
+    os.environ.get("ADMIN_DASHBOARD_DEMO", "0").strip().lower()
+    in ("1", "true", "yes", "on"))
 
 # Idem pour la page admin "Utilisateurs" (voir _admin_users_demo_all).
-# ADMIN_USERS_DEMO=0 -> vraie table users.
+# ADMIN_USERS_DEMO=1 pour activer explicitement la demonstration.
 app.config["ADMIN_USERS_DEMO"] = (
-    os.environ.get("ADMIN_USERS_DEMO", "1").strip().lower()
-    not in ("0", "false", "no", "off", ""))
+    os.environ.get("ADMIN_USERS_DEMO", "0").strip().lower()
+    in ("1", "true", "yes", "on"))
 
 # Idem pour la page admin "Techniciens" (voir _admin_techs_demo_all).
 app.config["ADMIN_TECHNICIANS_DEMO"] = (
-    os.environ.get("ADMIN_TECHNICIANS_DEMO", "1").strip().lower()
-    not in ("0", "false", "no", "off", ""))
+    os.environ.get("ADMIN_TECHNICIANS_DEMO", "0").strip().lower()
+    in ("1", "true", "yes", "on"))
 
 # Idem pour la page admin "Paiements" (voir _admin_payments_demo_all).
 app.config["ADMIN_PAYMENTS_DEMO"] = (
-    os.environ.get("ADMIN_PAYMENTS_DEMO", "1").strip().lower()
-    not in ("0", "false", "no", "off", ""))
+    os.environ.get("ADMIN_PAYMENTS_DEMO", "0").strip().lower()
+    in ("1", "true", "yes", "on"))
 
 _dotenv = dotenv_values(BASE_DIR / ".env")
 if _dotenv.get("DEV_ROLE"):
