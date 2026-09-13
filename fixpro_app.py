@@ -7086,6 +7086,9 @@ def artisan_detail(artisan_id):
     resp_delay = (artisan.get("estimated_delay") or "").strip()
     skill_tags = [t.strip() for t in
                   (artisan.get("skills") or "").replace(";", ",").split(",") if t.strip()]
+    zone = (artisan.get("zone_intervention") or artisan.get("city") or "").strip()
+    years_exp = artisan.get("years_experience")
+    review_stats_count = int(review_stats["count"] or 0)
 
     professional = {
         "id": artisan["id"],
@@ -7095,7 +7098,11 @@ def artisan_detail(artisan_id):
         "heroImage": url_for("static", filename=PROFESSIONAL_HERO_IMAGE[trade]),
         "verified": _to_bool(artisan.get("is_verified")),
         "rating": float(review_stats["avg_rating"] or 0),
-        "reviewCount": int(review_stats["count"] or 0),
+        "reviewCount": review_stats_count,
+        "isNew": review_stats_count == 0,
+        "zone": zone or None,
+        "radiusKm": app.config.get("LOCAL_RADIUS_KM", 15.0),
+        "yearsExperience": int(years_exp) if years_exp else None,
         "distance": distance,
         "responseTime": resp_delay or None,
         "interventionCount": completed,
