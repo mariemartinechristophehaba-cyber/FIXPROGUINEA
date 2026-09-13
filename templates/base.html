@@ -94,8 +94,11 @@
           </div>
         </div>
         {% else %}
-        <a class="dtopbar-guest-btn soft" href="{{ url_for('login') }}">Connexion</a>
-        <a class="dtopbar-guest-btn primary" href="{{ url_for('client_signup') }}">Inscription</a>
+        <a class="dtopbar-ic" href="{{ url_for('artisans_page') }}" aria-label="Rechercher">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        </a>
+        <a class="dtopbar-guest-btn soft" href="{{ url_for('login') }}">Se connecter</a>
+        <a class="dtopbar-guest-btn primary" href="{{ url_for('client_signup') }}">S'inscrire</a>
         {% endif %}
       </div>
     </header>

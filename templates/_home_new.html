@@ -448,16 +448,14 @@
       transition: transform .16s, box-shadow .16s;
     }
     .dl-service:hover { transform: translateY(-4px); box-shadow: 0 16px 32px rgba(16,42,67,.12); }
-    .dl-service-ic {
-      width: 56px; height: 56px; border-radius: 14px; margin: 22px 0 16px 22px;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .dl-service-ic svg { width: 26px; height: 26px; }
-    .dl-service h3 { font-size: 1.02rem; font-weight: 700; margin: 0 22px 6px; }
+    .dl-service-photo { position: relative; display: block; height: 130px; overflow: hidden; }
+    .dl-service-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .dl-service h3 { font-size: 1.02rem; font-weight: 700; margin: 16px 22px 6px; }
     .dl-service p { font-size: .82rem; color: var(--hp-muted); margin: 0 22px 20px; line-height: 1.4; min-height: 34px; }
     .dl-service-arrow {
-      width: 34px; height: 34px; border-radius: 50%; background: var(--hp-light-blue); color: var(--hp-primary);
-      display: flex; align-items: center; justify-content: center; margin: 0 22px 22px;
+      position: absolute; right: 12px; bottom: 12px;
+      width: 34px; height: 34px; border-radius: 50%; background: #fff; color: var(--hp-primary);
+      display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 16px rgba(16,42,67,.18);
     }
     .dl-service-arrow svg { width: 15px; height: 15px; }
 
@@ -496,7 +494,9 @@
     .dl-pro:hover .dl-pro-btn { background: var(--hp-light-blue); }
 
     /* ---- Promo PWA (pas de badges App Store/Google Play : FixPro est une PWA, pas une app publiee) ---- */
-    .dl-promo { background: linear-gradient(120deg, var(--hp-primary-dark), var(--hp-primary)); border-radius: 24px; padding: 40px 44px; display: flex; align-items: center; justify-content: space-between; gap: 24px; color: #fff; }
+    .dl-promo { background: linear-gradient(120deg, var(--hp-primary-dark), var(--hp-primary)); border-radius: 24px; padding: 30px 44px; display: flex; align-items: center; gap: 28px; color: #fff; }
+    .dl-promo-phone { width: 90px; height: 88px; object-fit: cover; border-radius: 12px; flex-shrink: 0; }
+    .dl-promo-text { flex: 1; min-width: 0; }
     .dl-promo h2 { font-size: 1.5rem; font-weight: 800; margin: 0 0 8px; }
     .dl-promo p { font-size: .92rem; color: rgba(255,255,255,.88); margin: 0; max-width: 420px; }
     .dl-promo-btn { flex-shrink: 0; display: inline-flex; align-items: center; gap: 8px; background: #fff; color: var(--hp-primary); font-weight: 700; font-size: .88rem; padding: 13px 22px; border-radius: 11px; text-decoration: none; white-space: nowrap; }
@@ -570,7 +570,7 @@
         </div>
       </div>
       <div class="dl-hero-visual">
-        <img src="{{ asset('img/hero-technicien.jpg') }}" alt="Technicien FixPro" />
+        <img src="{{ asset('img/hero-desktop-technicien.jpg') }}" alt="Technicien FixPro" />
         <span class="dl-hero-quote">"Un service fiable pour votre confort !"</span>
         <div class="dl-hero-card">
           <div class="dl-hero-avatars">
@@ -591,14 +591,22 @@
       <h2>Nos services principaux</h2>
       <p>Des professionnels qualifies pour tous vos besoins</p>
     </div>
+    {% set dl_service_img = {
+      'Plomberie': 'service-plomberie.jpg',
+      'Électricité': 'service-electricite.jpg',
+      'Frigoriste': 'service-climatisation.jpg',
+      'Peinture': 'service-peinture.jpg'
+    } %}
     <div class="dl-services">
       {% for p in popular if p.label in ('Plomberie', 'Électricité', 'Frigoriste', 'Peinture') %}
       {% set meta = cat_meta.get(p.label, {'color':'#64748B','bg':'#F1F5F9','desc':'','svg':''}) %}
       <a class="dl-service" href="{{ url_for('artisans_page', category=p.category) }}">
-        <span class="dl-service-ic" style="background:{{ meta.bg }};color:{{ meta.color }};"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">{{ meta.svg | safe }}</svg></span>
+        <span class="dl-service-photo">
+          <img src="{{ asset('img/' ~ dl_service_img.get(p.label, '')) }}" alt="{{ p.label }}" loading="lazy" />
+          <span class="dl-service-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+        </span>
         <h3>{{ 'Froid & Climatisation' if p.label == 'Frigoriste' else p.label }}</h3>
         <p>{{ meta.desc }}</p>
-        <span class="dl-service-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
       </a>
       {% endfor %}
     </div>
@@ -680,7 +688,8 @@
 
   <section class="dl-section" style="padding-top:0">
     <div class="dl-promo">
-      <div>
+      <img class="dl-promo-phone" src="{{ asset('img/app-promo-phone.jpg') }}" alt="" aria-hidden="true" />
+      <div class="dl-promo-text">
         <h2>FixPro toujours avec vous !</h2>
         <p>Installez FixPro sur votre telephone ou votre ordinateur pour reserver encore plus facilement.</p>
       </div>
