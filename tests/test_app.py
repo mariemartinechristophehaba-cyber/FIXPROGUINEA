@@ -3502,9 +3502,10 @@ class ParametresApparenceTests(FixProTestCase):
 
 
 class ArtisanPublicProfilePlombierTests(FixProTestCase):
-    """Profil public mobile (ProfessionalPublicProfile), version banniere +
-    avatar + services (fuite/sanitaire/chauffe-eau/debouchage). Aucune
-    section Realisations, aucun prix, donnees dynamiques."""
+    """Profil public mobile (ProfessionalPublicProfile), version en-tete bleu
+    FixPro + avatar + services (fuite/sanitaire/chauffe-eau/debouchage/
+    entretien) + avis clients reels. Aucune section Realisations, aucun
+    prix, donnees dynamiques. Plus de banniere photo (retiree)."""
 
     def _plumber_id(self, phone="+224621119900",
                     email="plombier-profil@example.com"):
@@ -3518,26 +3519,63 @@ class ArtisanPublicProfilePlombierTests(FixProTestCase):
 
     def test_real_assets_exist_on_disk(self):
         base = ROOT / "static" / "img" / "technicians" / "plombier"
-        self.assertTrue((base / "profile" / "01_banner_plombier.png").exists())
         self.assertTrue((base / "profile" / "02_avatar_plombier.png").exists())
         for name in ("03_service_fuite_eau.jpg", "04_service_sanitaire.jpg",
                      "05_service_chauffe_eau.jpg", "06_service_debouchage.jpg"):
             self.assertTrue((base / "services" / name).exists(), name)
 
-    def test_profile_shows_banner_idcard_stats_and_real_images(self):
+    def test_no_leftover_banner_asset_or_reference(self):
+        base = ROOT / "static" / "img" / "technicians" / "plombier"
+        self.assertFalse((base / "profile" / "01_banner_plombier.png").exists())
+        aid = self._plumber_id(phone="+224621119990", email="plombier-noban@example.com")
+        html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
+        self.assertNotIn("01_banner_plombier.png", html)
+        self.assertNotIn('class="pl-hero"', html)
+        self.assertNotIn('class="pl-idcard"', html)
+
+    def test_profile_shows_blue_header_idblock_stats_and_real_images(self):
         aid = self._plumber_id()
         r = self.client.get(f"/artisans/{aid}")
         self.assertEqual(r.status_code, 200)
         html = r.get_data(as_text=True)
-        self.assertIn("01_banner_plombier.png", html)
         self.assertIn("02_avatar_plombier.png", html)
-        self.assertIn('class="pl-idcard"', html)
+        self.assertIn('class="pl-idblock"', html)
         self.assertIn('class="pl-stats"', html)
+        self.assertIn("Profil du technicien", html)
         self.assertIn("Plombier professionnel", html)
         self.assertIn("Zone d'intervention", html)
-        self.assertIn("Interventions réalisées", html)
+        self.assertIn("Interventions", html)
+        self.assertIn("Clients satisfaits", html)
+        self.assertIn("Avis clients", html)
         self.assertIn("Message", html)
         self.assertIn("Contacter", html)
+
+    def test_fifth_service_entretien_uses_icon_not_a_fake_photo(self):
+        aid = self._plumber_id(phone="+224621119991", email="plombier-entretien@example.com")
+        html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
+        self.assertIn("Entretien général", html)
+
+    def test_reviews_are_real_data_from_db(self):
+        aid = self._plumber_id(phone="+224621119992", email="plombier-avis@example.com")
+        empty_html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
+        self.assertIn("Aucun avis pour le moment.", empty_html)
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute(
+                "INSERT INTO users (email, phone, password_hash, role, full_name, is_active)"
+                " VALUES ('client-avis@example.com', '+224621119993', ?, 'client', 'Aminata Sow', 1)",
+                (fixpro_app.generate_password_hash("FixPro2026!"),))
+            cid = conn.execute(
+                "SELECT id FROM users WHERE phone = ?", ("+224621119993",)).fetchone()["id"]
+            conn.execute(
+                "INSERT INTO reviews (client_id, artisan_id, rating, comment)"
+                " VALUES (?, ?, 5, 'Travail impeccable, je recommande.')", (cid, aid))
+            conn.commit()
+        finally:
+            conn.close()
+        filled_html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
+        self.assertIn("Aminata Sow", filled_html)
+        self.assertIn("Travail impeccable, je recommande.", filled_html)
 
     def test_four_services_each_with_its_own_distinct_image(self):
         aid = self._plumber_id(phone="+224621119901", email="plombier2@example.com")

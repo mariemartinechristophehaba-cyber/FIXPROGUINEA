@@ -7010,9 +7010,11 @@ PROFESSIONAL_SERVICE_CATALOG = {
         {"id": "debouchage", "title": "Débouchage canalisations",
          "desc": "Débouchage rapide et efficace des canalisations",
          "image": "img/technicians/plombier/services/06_service_debouchage.jpg"},
+        {"id": "entretien", "title": "Entretien général",
+         "desc": "Maintenance et entretien de vos installations",
+         "image": None},
     ],
 }
-PROFESSIONAL_BANNER_IMAGE = {"plombier": "img/technicians/plombier/profile/01_banner_plombier.png"}
 PROFESSIONAL_AVATAR_IMAGE = {"plombier": "img/technicians/plombier/profile/02_avatar_plombier.png"}
 
 
@@ -7030,8 +7032,10 @@ def artisan_detail(artisan_id):
     clique sur "Voir le profil"). Architecture reutilisable pour tous les
     metiers (ProfessionalPublicProfile) ; seul le Plombier est implemente
     pour l'instant -- un metier sans catalogue redirige vers la recherche
-    plutot que d'afficher une page incomplete/fausse. Pas de prix, pas de
-    section Realisations (retire explicitement de cette version)."""
+    plutot que d'afficher une page incomplete/fausse. En-tete bleu FixPro
+    (plus de banniere photo) + avatar + stats + a propos + services + avis
+    clients reels. Pas de prix, pas de section Realisations (aucune donnee
+    avant/apres n'existe encore cote technicien -- pas de contenu invente)."""
     user = get_current_user()
     conn = get_db_connection()
     try:
@@ -7054,6 +7058,17 @@ def artisan_detail(artisan_id):
             "SELECT COALESCE(AVG(rating), 0) AS avg_rating, COUNT(*) AS count"
             " FROM reviews WHERE artisan_id = ?", (artisan_id,)).fetchone()
 
+        satisfaction = conn.execute(
+            "SELECT COUNT(*) AS n FROM reviews"
+            " WHERE artisan_id = ? AND rating >= 4", (artisan_id,)).fetchone()["n"]
+
+        review_rows = conn.execute(
+            "SELECT r.rating, r.comment, r.created_at,"
+            " u.full_name AS client_name, u.photo_url AS client_photo"
+            " FROM reviews r JOIN users u ON u.id = r.client_id"
+            " WHERE r.artisan_id = ? AND r.comment IS NOT NULL AND r.comment != ''"
+            " ORDER BY r.created_at DESC LIMIT 5", (artisan_id,)).fetchall()
+
         completed = conn.execute(
             "SELECT COUNT(*) AS n FROM requests"
             " WHERE artisan_id = ? AND status = 'completed'",
@@ -7068,6 +7083,15 @@ def artisan_detail(artisan_id):
     zone = (artisan.get("zone_intervention") or artisan.get("city") or "").strip()
     years_exp = artisan.get("years_experience")
     review_stats_count = int(review_stats["count"] or 0)
+    satisfaction_pct = (round(satisfaction * 100 / review_stats_count)
+                        if review_stats_count else None)
+    reviews = [{
+        "name": r["client_name"] or "Client FixPro",
+        "photo": r["client_photo"],
+        "rating": r["rating"],
+        "comment": r["comment"],
+        "ago": _format_time_ago(r["created_at"]),
+    } for r in review_rows]
     radius_km = app.config.get("LOCAL_RADIUS_KM", 15.0)
 
     professional = {
@@ -7076,7 +7100,6 @@ def artisan_detail(artisan_id):
         "category": "Plombier",
         "avatarImage": (artisan.get("photo_url") or
                         url_for("static", filename=PROFESSIONAL_AVATAR_IMAGE[trade])),
-        "bannerImage": url_for("static", filename=PROFESSIONAL_BANNER_IMAGE[trade]),
         "verified": bool(artisan.get("is_verified")),
         "rating": float(review_stats["avg_rating"] or 0),
         "reviewCount": review_stats_count,
@@ -7085,13 +7108,15 @@ def artisan_detail(artisan_id):
         "yearsExperience": int(years_exp) if years_exp else None,
         "responseTime": resp_delay or None,
         "interventionCount": completed,
+        "satisfactionPct": satisfaction_pct,
         "available": is_online,
         "about": (artisan.get("bio") or "").strip() or None,
-        "badges": skill_tags[:3] if skill_tags else ["Rapide", "Sérieux", "Propre"],
+        "badges": skill_tags[:4] if skill_tags else ["Rapide", "Sérieux", "Travail soigné", "À l'écoute"],
         "services": [
-            dict(s, image=url_for("static", filename=s["image"]))
+            dict(s, image=(url_for("static", filename=s["image"]) if s.get("image") else None))
             for s in PROFESSIONAL_SERVICE_CATALOG[trade]
         ],
+        "reviews": reviews,
     }
 
     return render_template("artisan_detail.html", user=user, professional=professional)
