@@ -3501,16 +3501,14 @@ class ParametresApparenceTests(FixProTestCase):
             return fixpro_app.url_for(endpoint, **kw)
 
 
-class ArtisanPublicProfileRemovedTests(FixProTestCase):
-    """Le profil public technicien (Plombier inclus) a ete retire de
-    l'application sur demande explicite -- en attente d'une nouvelle
-    maquette. La route reste en place (pour ne casser aucun lien existant :
-    recherche, accueil, messagerie...) mais redirige simplement vers la
-    recherche -- plus aucune page ne s'affiche a cette adresse."""
+class ArtisanPublicProfilePlombierTests(FixProTestCase):
+    """Profil public mobile (ProfessionalPublicProfile), version banniere +
+    avatar + services (fuite/sanitaire/chauffe-eau/debouchage). Aucune
+    section Realisations, aucun prix, donnees dynamiques."""
 
     def _plumber_id(self, phone="+224621119900",
                     email="plombier-profil@example.com"):
-        self.register_artisan(email, phone=phone)
+        self.register_artisan(email, phone=phone)   # profession="Plombier" par defaut
         conn = db.connect(sqlite_path=self.db_path)
         try:
             return conn.execute(
@@ -3518,13 +3516,87 @@ class ArtisanPublicProfileRemovedTests(FixProTestCase):
         finally:
             conn.close()
 
-    def test_page_and_assets_removed_from_the_application(self):
-        self.assertFalse((ROOT / "templates" / "artisan_detail.html").exists())
-        self.assertFalse((ROOT / "static" / "img" / "technicians" / "plombier").exists())
+    def test_real_assets_exist_on_disk(self):
+        base = ROOT / "static" / "img" / "technicians" / "plombier"
+        self.assertTrue((base / "profile" / "01_banner_plombier.png").exists())
+        self.assertTrue((base / "profile" / "02_avatar_plombier.png").exists())
+        for name in ("03_service_fuite_eau.jpg", "04_service_sanitaire.jpg",
+                     "05_service_chauffe_eau.jpg", "06_service_debouchage.jpg"):
+            self.assertTrue((base / "services" / name).exists(), name)
 
-    def test_route_redirects_instead_of_rendering_a_profile(self):
+    def test_profile_shows_banner_idcard_stats_and_real_images(self):
         aid = self._plumber_id()
-        r = self.client.get(f"/artisans/{aid}", follow_redirects=False)
+        r = self.client.get(f"/artisans/{aid}")
+        self.assertEqual(r.status_code, 200)
+        html = r.get_data(as_text=True)
+        self.assertIn("01_banner_plombier.png", html)
+        self.assertIn("02_avatar_plombier.png", html)
+        self.assertIn('class="pl-idcard"', html)
+        self.assertIn('class="pl-stats"', html)
+        self.assertIn("Plombier professionnel", html)
+        self.assertIn("Zone d'intervention", html)
+        self.assertIn("Interventions réalisées", html)
+        self.assertIn("Message", html)
+        self.assertIn("Contacter", html)
+
+    def test_four_services_each_with_its_own_distinct_image(self):
+        aid = self._plumber_id(phone="+224621119901", email="plombier2@example.com")
+        html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
+        self.assertIn("03_service_fuite_eau.jpg", html)
+        self.assertIn("04_service_sanitaire.jpg", html)
+        self.assertIn("05_service_chauffe_eau.jpg", html)
+        self.assertIn("06_service_debouchage.jpg", html)
+        import re
+        images = re.findall(r'src="[^"]*/(services/[a-z0-9_]+\.jpg)"', html)
+        self.assertEqual(len(images), 4)
+        self.assertEqual(len(set(images)), 4)   # jamais la meme image deux fois
+
+    def test_no_realisations_and_no_price_anywhere(self):
+        aid = self._plumber_id(phone="+224621119902", email="plombier3@example.com")
+        html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
+        for banned in ("Réalisations", "Realisations", "Avant / Après",
+                       "portfolio", "pl-real", "GNF", "FCFA", "À partir de"):
+            self.assertNotIn(banned, html, banned)
+
+    def test_bio_is_real_data_not_hardcoded_per_technician(self):
+        aid = self._plumber_id(phone="+224621119903", email="plombier4@example.com")
+        empty_html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
+        self.assertNotIn("Ibrahim Sory", empty_html)
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute("UPDATE users SET bio = ? WHERE id = ?",
+                        ("Plombier de Kaloum depuis 12 ans.", aid))
+            conn.commit()
+        finally:
+            conn.close()
+        filled_html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
+        self.assertIn("Plombier de Kaloum depuis 12 ans.", filled_html)
+
+    def test_public_profile_never_leaks_private_technician_data(self):
+        aid = self._plumber_id(phone="+224621119904", email="plombier5@example.com")
+        html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
+        for private_term in ("Mes revenus", "Espace professionnel",
+                             "Préférences technicien", "Zone d'intervention client",
+                             "Abonnement"):
+            self.assertNotIn(private_term, html, private_term)
+
+    def test_other_trades_not_yet_implemented_redirect_instead_of_fake_page(self):
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute(
+                "INSERT INTO users (email, phone, password_hash, role, full_name,"
+                " profession, city, is_verified, is_active, verification_status,"
+                " availability_status)"
+                " VALUES ('electricien-profil@example.com', '+224621119905', ?,"
+                " 'technician', 'Amara Conde', 'Électricien', 'Conakry', 1, 1,"
+                " 'APPROVED', 'en_ligne')",
+                (fixpro_app.generate_password_hash("FixPro2026!"),))
+            conn.commit()
+            eid = conn.execute(
+                "SELECT id FROM users WHERE phone = '+224621119905'").fetchone()["id"]
+        finally:
+            conn.close()
+        r = self.client.get(f"/artisans/{eid}", follow_redirects=False)
         self.assertEqual(r.status_code, 302)
         self.assertIn("/artisans", r.headers.get("Location", ""))
 

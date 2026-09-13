@@ -6991,14 +6991,110 @@ def api_techniciens():
         return jsonify({"error": "Impossible de charger les artisans."}), 500
 
 
+# Catalogue de services par metier -- architecture reutilisable pour le
+# profil public mobile (ProfessionalPublicProfile) : chaque metier possede
+# son propre catalogue avec ses propres images/textes reels (jamais
+# partages entre metiers). Seul le Plombier est implemente pour l'instant.
+PROFESSIONAL_SERVICE_CATALOG = {
+    "plombier": [
+        {"id": "fuite", "title": "Dépannage fuites",
+         "desc": "Réparation rapide de fuites d'eau",
+         "image": "img/technicians/plombier/services/03_service_fuite_eau.jpg"},
+        {"id": "sanitaire", "title": "Installation sanitaire",
+         "desc": "Installation de WC, lavabos, douches, etc.",
+         "image": "img/technicians/plombier/services/04_service_sanitaire.jpg"},
+        {"id": "chauffe-eau", "title": "Installation chauffe-eau",
+         "desc": "Installation et entretien de chauffe-eau",
+         "image": "img/technicians/plombier/services/05_service_chauffe_eau.jpg"},
+        {"id": "debouchage", "title": "Débouchage canalisations",
+         "desc": "Débouchage rapide et efficace des canalisations",
+         "image": "img/technicians/plombier/services/06_service_debouchage.jpg"},
+    ],
+}
+PROFESSIONAL_BANNER_IMAGE = {"plombier": "img/technicians/plombier/profile/01_banner_plombier.png"}
+PROFESSIONAL_AVATAR_IMAGE = {"plombier": "img/technicians/plombier/profile/02_avatar_plombier.png"}
+
+
+def _professional_trade_key(profession):
+    p = (profession or "").strip().lower()
+    if p in ("plombier", "plomberie"):
+        return "plombier"
+    return None
+
+
 @app.route("/artisans/<int:artisan_id>", methods=["GET", "POST"])
 @app.route("/technicien/<int:artisan_id>", methods=["GET", "POST"])
 def artisan_detail(artisan_id):
-    """Profil public technicien retire de l'application sur demande explicite.
-    Route conservee uniquement pour ne pas casser les liens existants
-    ("Voir le profil" depuis la recherche, l'accueil, la messagerie, etc.) --
-    elle redirige vers la recherche en attendant la prochaine implementation."""
-    return redirect(url_for("artisans_page"))
+    """Profil public mobile d'un professionnel (vu par le CLIENT quand il
+    clique sur "Voir le profil"). Architecture reutilisable pour tous les
+    metiers (ProfessionalPublicProfile) ; seul le Plombier est implemente
+    pour l'instant -- un metier sans catalogue redirige vers la recherche
+    plutot que d'afficher une page incomplete/fausse. Pas de prix, pas de
+    section Realisations (retire explicitement de cette version)."""
+    user = get_current_user()
+    conn = get_db_connection()
+    try:
+        artisan = conn.execute(
+            "SELECT * FROM users WHERE id = ? AND role IN ('artisan','technician')"
+            " AND is_verified = 1 AND is_active = 1 AND account_status != 'DELETED'",
+            (artisan_id,)).fetchone()
+        if not artisan:
+            flash("Technicien introuvable.", "error")
+            return redirect(url_for("artisans_page"))
+        artisan = dict(artisan)
+
+        trade = _professional_trade_key(artisan.get("profession"))
+        if not trade:
+            # Metier pas encore implemente dans le nouveau profil public --
+            # on ne fabrique pas une page incomplete/fausse pour lui.
+            return redirect(url_for("artisans_page"))
+
+        review_stats = conn.execute(
+            "SELECT COALESCE(AVG(rating), 0) AS avg_rating, COUNT(*) AS count"
+            " FROM reviews WHERE artisan_id = ?", (artisan_id,)).fetchone()
+
+        completed = conn.execute(
+            "SELECT COUNT(*) AS n FROM requests"
+            " WHERE artisan_id = ? AND status = 'completed'",
+            (artisan_id,)).fetchone()["n"]
+    finally:
+        conn.close()
+
+    is_online = (artisan.get("availability_status") or "") in ("en_ligne", "certains_jours")
+    resp_delay = (artisan.get("estimated_delay") or "").strip()
+    skill_tags = [t.strip() for t in
+                  (artisan.get("skills") or "").replace(";", ",").split(",") if t.strip()]
+    zone = (artisan.get("zone_intervention") or artisan.get("city") or "").strip()
+    years_exp = artisan.get("years_experience")
+    review_stats_count = int(review_stats["count"] or 0)
+    radius_km = app.config.get("LOCAL_RADIUS_KM", 15.0)
+
+    professional = {
+        "id": artisan["id"],
+        "name": artisan["full_name"],
+        "category": "Plombier",
+        "avatarImage": (artisan.get("photo_url") or
+                        url_for("static", filename=PROFESSIONAL_AVATAR_IMAGE[trade])),
+        "bannerImage": url_for("static", filename=PROFESSIONAL_BANNER_IMAGE[trade]),
+        "verified": bool(artisan.get("is_verified")),
+        "rating": float(review_stats["avg_rating"] or 0),
+        "reviewCount": review_stats_count,
+        "isNew": review_stats_count == 0,
+        "zone": zone or None,
+        "radiusKm": radius_km,
+        "yearsExperience": int(years_exp) if years_exp else None,
+        "responseTime": resp_delay or None,
+        "interventionCount": completed,
+        "available": is_online,
+        "about": (artisan.get("bio") or "").strip() or None,
+        "badges": skill_tags[:3] if skill_tags else ["Rapide", "Sérieux", "Propre"],
+        "services": [
+            dict(s, image=url_for("static", filename=s["image"]))
+            for s in PROFESSIONAL_SERVICE_CATALOG[trade]
+        ],
+    }
+
+    return render_template("artisan_detail.html", user=user, professional=professional)
 
 
 @app.route("/artisans/<int:artisan_id>/contacter", methods=["GET", "POST"])
