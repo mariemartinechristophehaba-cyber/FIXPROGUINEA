@@ -3505,14 +3505,17 @@ class ParametresApparenceTests(FixProTestCase):
 
 class ArtisanPublicProfilePlombierTests(FixProTestCase):
     """Profil public mobile (ProfessionalPublicProfile), version finale
-    v8 : carte identite bleu pale (badge Verifie en icone seule, note en
-    ligne, bloc info 3 colonnes, pastille disponibilite dupliquee) +
-    boutons Contacter/Appeler dans le flux + services en liste a coche +
-    Realisations recentes (vraie table artisan_portfolio, etat vide
-    honnete) + Evaluations clients (resume compact) + Prendre
-    rendez-vous (reutilise le vrai flux de demande existant). Toujours un
-    seul gabarit reutilisable pour tous les metiers, une seule route
-    officielle, aucune section A propos, aucun prix ni avis invente."""
+    v9 : carte identite bleu pale (badge Verifie en icone seule, note en
+    ligne, chips info 2x2 -- zone/experience/verifie/disponibilite --
+    pastille disponibilite dupliquee) + boutons Contacter/Appeler avec
+    sous-titre ("Discuter maintenant"/"Appel gratuit") + services en
+    liste a coche + Realisations recentes (vraie table artisan_portfolio,
+    etat vide honnete) + Evaluations clients (resume compact + aperçu
+    d'un vrai avis quand il existe) + bloc final "Besoin d'une
+    intervention ?" -> Prendre rendez-vous (reutilise le vrai flux de
+    demande existant). Toujours un seul gabarit reutilisable pour tous
+    les metiers, une seule route officielle, aucune section A propos,
+    aucun prix invente, aucun faux avis."""
 
     def _plumber_id(self, phone="+224621119900",
                     email="plombier-profil@example.com"):
@@ -3568,15 +3571,28 @@ class ArtisanPublicProfilePlombierTests(FixProTestCase):
         html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
         self.assertLess(html.index("Contacter"), html.index("Appeler"))
 
-    def test_availability_info_column_and_pill_both_present(self):
+    def test_availability_info_chip_and_pill_both_present(self):
         """La maquette montre la disponibilite a deux endroits de la
-        carte identite : la pastille en haut a droite et la 3e colonne
-        du bloc info en bas -- les deux doivent etre coherentes."""
+        carte identite : la pastille en haut a droite et la puce du
+        bloc info en bas -- les deux doivent etre coherentes."""
         aid = self._plumber_id(phone="+224621119996", email="plombier-dispo@example.com")
         html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
         self.assertIn('class="pl-avail-pill"', html)
-        self.assertIn('class="pl-info-col avail"', html)
+        self.assertIn('class="pl-info-chip avail"', html)
         self.assertIn("Disponible", html)
+
+    def test_verified_info_chip_and_button_subtitles_present(self):
+        aid = self._plumber_id(phone="+224621119912", email="plombier-chip@example.com")
+        html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
+        self.assertIn('class="pl-info-chip verified"', html)
+        self.assertIn("Discuter maintenant", html)
+        self.assertIn("Appel gratuit", html)
+
+    def test_final_cta_block_uses_real_first_name(self):
+        aid = self._plumber_id(phone="+224621119913", email="plombier-cta@example.com")
+        html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
+        self.assertIn("Besoin d'une intervention ?", html)
+        self.assertIn("Planifiez maintenant avec Mamadou", html)
 
     def test_section_headers_have_chevron_and_verified_badge_is_icon_only(self):
         aid = self._plumber_id(phone="+224621119997", email="plombier-chevron@example.com")
@@ -3651,10 +3667,10 @@ class ArtisanPublicProfilePlombierTests(FixProTestCase):
         html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
         self.assertNotIn("À propos", html)
 
-    def test_real_review_average_and_count_appear_compactly(self):
-        """La maquette v6 affiche un resume compact (note + etoiles +
-        nombre d'avis + bouton), pas une liste de commentaires -- mais la
-        donnee doit rester reelle (calculee depuis la table reviews)."""
+    def test_real_review_average_count_and_preview_quote(self):
+        """Resume compact (note + etoiles + nombre d'avis + bouton) +
+        aperçu d'un vrai avis (nom abrege "Prenom I." + commentaire reel,
+        jamais invente) quand un avis avec commentaire existe."""
         aid = self._plumber_id(phone="+224621119992", email="plombier-avis@example.com")
         conn = db.connect(sqlite_path=self.db_path)
         try:
@@ -3674,9 +3690,9 @@ class ArtisanPublicProfilePlombierTests(FixProTestCase):
         self.assertIn("Évaluations clients", html)
         self.assertIn("(1 avis)", html)
         self.assertIn("Voir tous les avis", html)
-        # pas de liste de commentaires individuels dans ce design compact
+        self.assertIn("Travail impeccable, je recommande.", html)
+        self.assertIn("Aminata S.", html)   # nom abrege, pas le nom complet du client
         self.assertNotIn("Aminata Sow", html)
-        self.assertNotIn("Travail impeccable", html)
 
     def test_no_reviews_shows_honest_empty_state(self):
         aid = self._plumber_id(phone="+224621119909", email="plombier-noavis@example.com")

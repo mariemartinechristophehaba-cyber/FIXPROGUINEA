@@ -7043,6 +7043,12 @@ def artisan_detail(artisan_id):
             "SELECT COALESCE(AVG(rating), 0) AS avg_rating, COUNT(*) AS count"
             " FROM reviews WHERE artisan_id = ?", (artisan_id,)).fetchone()
 
+        preview_review = conn.execute(
+            "SELECT r.rating, r.comment, u.full_name AS client_name"
+            " FROM reviews r JOIN users u ON u.id = r.client_id"
+            " WHERE r.artisan_id = ? AND r.comment IS NOT NULL AND r.comment != ''"
+            " ORDER BY r.created_at DESC LIMIT 1", (artisan_id,)).fetchone()
+
         portfolio_rows = conn.execute(
             "SELECT photo_url, caption FROM artisan_portfolio"
             " WHERE artisan_id = ? ORDER BY created_at DESC LIMIT 12", (artisan_id,)).fetchall()
@@ -7055,10 +7061,21 @@ def artisan_detail(artisan_id):
     radius_km = app.config.get("LOCAL_RADIUS_KM", 15.0)
     review_count = int(review_stats["count"] or 0)
     portfolio = [{"photo": row["photo_url"], "caption": row["caption"]} for row in portfolio_rows]
+    full_name = artisan["full_name"] or ""
+    review_preview = None
+    if preview_review:
+        reviewer_name = preview_review["client_name"] or "Client FixPro"
+        review_preview = {
+            "rating": preview_review["rating"],
+            "comment": preview_review["comment"],
+            "name": f"{reviewer_name.split()[0]} {reviewer_name.split()[-1][0]}."
+                    if len(reviewer_name.split()) > 1 else reviewer_name,
+        }
 
     professional = {
         "id": artisan["id"],
-        "name": artisan["full_name"],
+        "name": full_name,
+        "firstName": full_name.split()[0] if full_name else "",
         "category": "Plombier",
         "phone": artisan.get("phone"),
         "avatarImage": (artisan.get("photo_url") or
@@ -7070,6 +7087,7 @@ def artisan_detail(artisan_id):
         "available": is_online,
         "rating": float(review_stats["avg_rating"] or 0),
         "reviewCount": review_count,
+        "reviewPreview": review_preview,
         "services": PROFESSIONAL_SERVICE_CATALOG[trade],
         "portfolio": portfolio,
     }
