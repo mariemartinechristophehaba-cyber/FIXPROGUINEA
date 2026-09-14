@@ -26,7 +26,6 @@
       --pl-soft: #EAF1FF;
       --pl-green: #16A34A;
       --pl-star: #F5A623;
-      --pl-actionbar-h: 86px;
     }
     * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; }
@@ -34,7 +33,7 @@
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       background: #fff; color: var(--pl-text);
       -webkit-font-smoothing: antialiased;
-      padding-bottom: calc(var(--pl-actionbar-h, 82px) + env(safe-area-inset-bottom));
+      padding-bottom: calc(24px + env(safe-area-inset-bottom));
     }
     a { text-decoration: none; color: inherit; }
     button { font-family: inherit; }
@@ -61,119 +60,121 @@
 
     /* ---------- Carte identite (fond bleu pale) ---------- */
     .pl-idcard {
-      margin: 4px 16px 14px; padding: 16px;
+      margin: 4px 16px 16px; padding: 18px;
       background: var(--pl-soft); border-radius: 20px;
-      display: grid; grid-template-columns: 78px minmax(0, 1fr);
-      align-items: start; column-gap: 14px;
+    }
+    .pl-idcard-top {
+      display: grid; grid-template-columns: 84px minmax(0, 1fr);
+      align-items: start; column-gap: 14px; margin-bottom: 16px;
     }
     .pl-ava-wrap { position: relative; }
     .pl-ava {
-      width: 78px; height: 78px; border-radius: 50%; overflow: hidden;
+      width: 84px; height: 84px; border-radius: 50%; overflow: hidden;
       background: #fff; border: 3px solid #fff; box-shadow: 0 4px 12px rgba(15,42,90,.12);
       display: flex; align-items: center; justify-content: center;
     }
     .pl-ava img { width: 100%; height: 100%; object-fit: cover; }
     .pl-ava-dot {
       position: absolute; right: 1px; bottom: 1px;
-      width: 17px; height: 17px; border-radius: 50%;
+      width: 18px; height: 18px; border-radius: 50%;
       background: var(--pl-green); border: 3px solid #fff;
     }
     .pl-id-main { min-width: 0; padding-top: 2px; }
+    .pl-id-head {
+      display: flex; align-items: flex-start; flex-wrap: wrap; gap: 8px 10px;
+      margin-bottom: 2px;
+    }
     .pl-name {
-      display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
-      font-size: 1.14rem; font-weight: 800; margin: 0 0 2px; line-height: 1.22; color: var(--pl-text);
+      display: flex; align-items: center; gap: 6px; flex-wrap: wrap; min-width: 0;
+      font-size: 1.2rem; font-weight: 800; margin: 0; line-height: 1.22; color: var(--pl-text);
+      flex: 1 1 130px;
     }
-    .pl-badge {
-      display: inline-flex; align-items: center; gap: 4px;
-      background: #fff; color: var(--pl-primary); font-weight: 700; font-size: 0.68rem;
-      padding: 3px 9px; border-radius: 50px; margin-bottom: 4px;
-    }
-    .pl-badge svg { width: 11px; height: 11px; }
-    .pl-role { font-size: 0.84rem; font-weight: 600; color: var(--pl-muted); margin: 0 0 6px; }
+    .pl-name .check { width: 19px; height: 19px; flex-shrink: 0; color: var(--pl-primary); }
+    .pl-role { font-size: 0.86rem; font-weight: 600; color: var(--pl-muted); margin: 0 0 8px; }
     .pl-rating-line {
-      display: flex; align-items: center; gap: 6px; font-size: 0.9rem; font-weight: 800;
-      color: var(--pl-text); margin-bottom: 10px;
+      display: flex; align-items: center; gap: 6px; font-size: 1rem; font-weight: 800;
+      color: var(--pl-text);
     }
-    .pl-rating-line svg { width: 16px; height: 16px; fill: var(--pl-star); }
-    .pl-rating-line span.n { color: var(--pl-muted); font-weight: 600; font-size: 0.8rem; }
-    .pl-meta-row {
-      display: flex; align-items: flex-start; gap: 7px;
-      color: var(--pl-text); font-size: 0.8rem; line-height: 1.4; margin-bottom: 6px;
-    }
-    .pl-meta-row svg { width: 16px; height: 16px; flex-shrink: 0; margin-top: 1px; color: var(--pl-primary); }
-    .pl-meta-row b { font-weight: 700; }
-    .pl-meta-row span.muted { color: var(--pl-muted); }
+    .pl-rating-line svg { width: 18px; height: 18px; fill: var(--pl-star); }
+    .pl-rating-line span.n { color: var(--pl-muted); font-weight: 600; font-size: 0.82rem; }
     .pl-avail-pill {
-      display: inline-flex; align-items: center; gap: 6px;
-      background: #DCFCE7; border: 1px solid #BBF7D0;
-      color: #15803D; font-weight: 700; font-size: 0.76rem;
-      padding: 6px 12px; border-radius: 50px; margin-top: 4px;
+      display: inline-flex; align-items: center; gap: 6px; text-align: left;
+      background: #DCFCE7; color: #15803D; font-weight: 700; font-size: 0.72rem;
+      padding: 7px 12px; border-radius: 50px; white-space: nowrap; flex-shrink: 0;
     }
-    .pl-avail-pill .d { width: 8px; height: 8px; border-radius: 50%; background: var(--pl-green); }
+    .pl-avail-pill svg { width: 13px; height: 13px; flex-shrink: 0; }
+
+    .pl-idcard-info {
+      display: grid; grid-template-columns: 1fr 1fr 1fr;
+      border-top: 1px solid rgba(15,42,90,.1);
+      padding-top: 14px;
+    }
+    .pl-info-col {
+      display: flex; flex-direction: column; align-items: center; text-align: center;
+      gap: 5px; padding: 0 6px; position: relative;
+    }
+    .pl-info-col + .pl-info-col::before {
+      content: ""; position: absolute; left: 0; top: 4px; bottom: 4px;
+      width: 1px; background: rgba(15,42,90,.12);
+    }
+    .pl-info-col svg { width: 20px; height: 20px; color: var(--pl-primary); }
+    .pl-info-col b { font-size: 0.82rem; font-weight: 800; color: var(--pl-text); line-height: 1.25; }
+    .pl-info-col span { font-size: 0.7rem; color: var(--pl-muted); font-weight: 600; line-height: 1.25; }
+    .pl-info-col.avail b { color: #15803D; }
+
+    /* ---------- Boutons d'action (dans le flux) ---------- */
+    .pl-actions { margin: 0 16px 20px; display: flex; flex-direction: column; gap: 12px; }
+    .pl-btn {
+      display: flex; align-items: center; justify-content: center; gap: 9px;
+      border-radius: 14px; padding: 15px 16px; font-size: 0.95rem; font-weight: 700;
+      cursor: pointer; width: 100%;
+    }
+    .pl-btn svg { width: 19px; height: 19px; flex-shrink: 0; }
+    .pl-btn-primary { background: var(--pl-primary); color: #fff; border: none; box-shadow: 0 10px 22px rgba(26,92,255,0.3); }
+    .pl-btn-ghost { background: #fff; color: var(--pl-primary); border: 1.6px solid var(--pl-primary); }
 
     /* ---------- Sections ---------- */
-    .pl-section { margin: 0 16px 16px; }
+    .pl-section { margin: 0 16px 16px; background: #fff; border-radius: 18px; padding: 16px; border: 1px solid var(--pl-line); }
     .pl-sec-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
     .pl-sec-icon {
       width: 32px; height: 32px; border-radius: 50%; background: var(--pl-soft); color: var(--pl-primary);
       display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
     .pl-sec-icon svg { width: 16px; height: 16px; }
-    .pl-sec-head h2 { font-size: 1.08rem; font-weight: 800; margin: 0; flex: 1; color: var(--pl-text); }
+    .pl-sec-head h2 { font-size: 1.02rem; font-weight: 800; margin: 0; flex: 1; color: var(--pl-text); }
+    .pl-chev { width: 19px; height: 19px; color: var(--pl-primary); flex-shrink: 0; }
 
-    /* Services -- carte simple, liste a puces coche */
-    .pl-svc-card {
-      background: var(--pl-soft); border-radius: 16px; padding: 6px 16px;
-    }
+    /* Services -- liste a coche */
     .pl-svc-row {
-      display: flex; align-items: center; gap: 10px; padding: 12px 0;
-      border-bottom: 1px solid rgba(15,42,90,.08);
+      display: flex; align-items: center; gap: 10px; padding: 10px 0;
+      border-bottom: 1px solid var(--pl-line);
     }
-    .pl-svc-row:last-child { border-bottom: none; }
+    .pl-svc-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .pl-svc-row:first-child { padding-top: 0; }
     .pl-svc-row .ck {
-      width: 22px; height: 22px; border-radius: 50%; background: var(--pl-green); color: #fff;
+      width: 22px; height: 22px; border-radius: 50%; background: var(--pl-primary); color: #fff;
       display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
     .pl-svc-row .ck svg { width: 13px; height: 13px; }
     .pl-svc-row span { font-size: 0.9rem; font-weight: 600; color: var(--pl-text); }
 
     /* Evaluations clients -- resume compact */
-    .pl-rating-card {
-      background: var(--pl-soft); border-radius: 16px; padding: 20px 16px;
-      text-align: center;
-    }
-    .pl-rating-card .big { font-size: 2.1rem; font-weight: 800; color: var(--pl-text); line-height: 1; }
-    .pl-rating-card .stars { display: flex; gap: 3px; justify-content: center; margin: 8px 0; }
-    .pl-rating-card .stars svg { width: 20px; height: 20px; fill: var(--pl-star); }
-    .pl-rating-card .count { font-size: 0.82rem; color: var(--pl-muted); font-weight: 600; margin-bottom: 14px; }
-    .pl-rating-card button {
-      background: #fff; color: var(--pl-primary); border: none; border-radius: 12px;
-      padding: 11px 18px; font-weight: 700; font-size: 0.86rem; cursor: pointer;
-      box-shadow: 0 4px 10px rgba(15,42,90,.08);
+    .pl-rating-summary { text-align: center; }
+    .pl-rating-summary .big { font-size: 2.3rem; font-weight: 800; color: var(--pl-text); line-height: 1; margin-bottom: 8px; }
+    .pl-rating-summary .stars { display: flex; gap: 3px; justify-content: center; margin-bottom: 6px; }
+    .pl-rating-summary .stars svg { width: 20px; height: 20px; fill: var(--pl-star); }
+    .pl-rating-summary .count { font-size: 0.84rem; color: var(--pl-muted); font-weight: 600; margin-bottom: 14px; }
+    .pl-see-all {
+      display: block; width: 100%; background: var(--pl-soft); color: var(--pl-primary); border: none;
+      border-radius: 12px; padding: 13px; font-weight: 700; font-size: 0.88rem; cursor: pointer;
     }
     .pl-rating-empty { color: var(--pl-muted); font-size: 0.86rem; margin: 0; text-align: center; }
 
     [hidden] { display: none !important; }
 
-    /* ---------- Bottom action bar ---------- */
-    .pl-actionbar {
-      position: fixed; left: 0; right: 0; bottom: 0; z-index: 90;
-      background: #fff; border-top: 1px solid var(--pl-line);
-      display: flex; gap: 12px; padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
-    }
-    .pl-actionbar-inner { max-width: 680px; margin: 0 auto; width: 100%; display: flex; gap: 12px; }
-    .pl-btn {
-      display: flex; align-items: center; justify-content: center; gap: 7px;
-      border-radius: 13px; padding: 14px 8px; font-size: 0.88rem; font-weight: 700;
-      cursor: pointer; flex: 1; min-width: 0; white-space: nowrap;
-    }
-    .pl-btn svg { width: 18px; height: 18px; flex-shrink: 0; }
-    .pl-btn-ghost { background: #fff; color: var(--pl-primary); border: 1.6px solid var(--pl-primary); }
-    .pl-btn-primary { background: var(--pl-primary); color: #fff; border: none; box-shadow: 0 10px 22px rgba(26,92,255,0.3); }
-
     /* ---------- Toast discret ---------- */
     .pl-toast {
-      position: fixed; left: 50%; bottom: calc(var(--pl-actionbar-h) + 16px + env(safe-area-inset-bottom));
+      position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom));
       transform: translateX(-50%) translateY(8px); z-index: 200;
       background: rgba(11,27,58,.94); color: #fff; font-size: .82rem; font-weight: 600;
       padding: 10px 16px; border-radius: 12px; opacity: 0; pointer-events: none;
@@ -183,13 +184,7 @@
 
     /* ---------- Desktop / tablette ---------- */
     @media (min-width: 720px) {
-      body { padding-bottom: 40px; }
       .pl-wrap { padding: 24px 0 0; }
-      .pl-actionbar {
-        position: static; border: none; background: none; padding: 0 16px;
-        margin: 0 auto 32px; max-width: 680px;
-      }
-      .pl-actionbar-inner { padding: 0; }
     }
   </style>
 </head>
@@ -207,83 +202,61 @@
     </header>
 
     <section class="pl-idcard">
-      <div class="pl-ava-wrap">
-        <div class="pl-ava"><img src="{{ p.avatarImage }}" alt="{{ p.name }}" /></div>
-        {% if p.available %}<span class="pl-ava-dot" aria-label="En ligne"></span>{% endif %}
-      </div>
-      <div class="pl-id-main">
-        {% if p.verified %}
-        <span class="pl-badge">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-          Vérifié
-        </span>
-        {% endif %}
-        <h2 class="pl-name">{{ p.name }}</h2>
-        <p class="pl-role">{{ p.category }} professionnel</p>
-        {% if p.reviewCount > 0 %}
-        <div class="pl-rating-line">
-          <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-          {{ ("%.1f"|format(p.rating))|replace('.', ',') }}
-          <span class="n">({{ p.reviewCount }} avis)</span>
+      <div class="pl-idcard-top">
+        <div class="pl-ava-wrap">
+          <div class="pl-ava"><img src="{{ p.avatarImage }}" alt="{{ p.name }}" /></div>
+          {% if p.available %}<span class="pl-ava-dot" aria-label="En ligne"></span>{% endif %}
         </div>
-        {% endif %}
+        <div class="pl-id-main">
+          <div class="pl-id-head">
+            <h2 class="pl-name">
+              {{ p.name }}
+              {% if p.verified %}
+              <span class="check" aria-label="Vérifié"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 3.5 6v6c0 5.2 3.6 9.9 8.5 11 4.9-1.1 8.5-5.8 8.5-11V6L12 2Zm-1.2 13.3-3.3-3.3 1.4-1.4 1.9 1.9 4.9-4.9 1.4 1.4-6.3 6.3Z"/></svg></span>
+              {% endif %}
+            </h2>
+            <span class="pl-avail-pill">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm4.7 8.3-5.6 5.6a1 1 0 0 1-1.4 0l-2.8-2.8a1 1 0 0 1 1.4-1.4l2.1 2.1 4.9-4.9a1 1 0 0 1 1.4 1.4Z"/></svg>
+              {{ 'Disponible aujourd\'hui' if p.available else 'Sur rendez-vous' }}
+            </span>
+          </div>
+          <p class="pl-role">{{ p.category }} professionnel</p>
+          {% if p.reviewCount > 0 %}
+          <div class="pl-rating-line">
+            <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            {{ ("%.1f"|format(p.rating))|replace('.', ',') }}
+            <span class="n">({{ p.reviewCount }} avis)</span>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="pl-idcard-info">
         {% if p.zone %}
-        <div class="pl-meta-row">
+        <div class="pl-info-col">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-          <span><b>{{ p.zone }}</b><br /><span class="muted">Dans un rayon de {{ p.radiusKm|int }} km</span></span>
+          <b>{{ p.zone }}</b>
+          <span>Dans un rayon<br />de {{ p.radiusKm|int }} km</span>
         </div>
         {% endif %}
         {% if p.yearsExperience %}
-        <div class="pl-meta-row">
+        <div class="pl-info-col">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
-          <span>{{ p.yearsExperience }} an{{ 's' if p.yearsExperience > 1 }} d'expérience</span>
+          <b>{{ p.yearsExperience }} an{{ 's' if p.yearsExperience > 1 }}</b>
+          <span>d'expérience</span>
         </div>
         {% endif %}
-        <span class="pl-avail-pill"><span class="d"></span>{{ 'Disponible aujourd\'hui' if p.available else 'Sur rendez-vous' }}</span>
-      </div>
-    </section>
-
-    <section class="pl-section">
-      <div class="pl-sec-head">
-        <span class="pl-sec-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span>
-        <h2>Services proposés</h2>
-      </div>
-      <div class="pl-svc-card">
-        {% for s in p.services %}
-        <div class="pl-svc-row">
-          <span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
-          <span>{{ s.title }}</span>
+        <div class="pl-info-col avail">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="m9 16 2 2 4-4"/></svg>
+          <b>{{ 'Disponible' if p.available else 'Sur rendez' }}</b>
+          <span>{{ "aujourd'hui" if p.available else "-vous" }}</span>
         </div>
-        {% endfor %}
       </div>
     </section>
 
-    <section class="pl-section">
-      <div class="pl-sec-head">
-        <span class="pl-sec-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></span>
-        <h2>Évaluations clients</h2>
-      </div>
-      {% if p.reviewCount > 0 %}
-      <div class="pl-rating-card">
-        <div class="big">{{ ("%.1f"|format(p.rating))|replace('.', ',') }}</div>
-        <div class="stars" aria-label="{{ p.rating }}/5">
-          {% for i in range(1, 6) %}
-          <svg viewBox="0 0 24 24" fill="{{ 'currentColor' if i <= p.rating|round(0, 'floor') else '#fff' }}" stroke="currentColor" stroke-width="1"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-          {% endfor %}
-        </div>
-        <div class="count">({{ p.reviewCount }} avis)</div>
-        <button type="button" id="seeAllReviewsBtn">Voir tous les avis</button>
-      </div>
-      {% else %}
-      <p class="pl-rating-empty">Aucun avis pour le moment.</p>
-      {% endif %}
-    </section>
-  </div>
-
-  <div class="pl-actionbar">
-    <div class="pl-actionbar-inner">
+    <div class="pl-actions">
       <a class="pl-btn pl-btn-primary" href="{{ url_for('contact_artisan', artisan_id=p.id) }}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
         Contacter
       </a>
       {% if p.phone %}
@@ -293,6 +266,42 @@
       </a>
       {% endif %}
     </div>
+
+    <section class="pl-section">
+      <div class="pl-sec-head">
+        <span class="pl-sec-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span>
+        <h2>Services proposés</h2>
+        <svg class="pl-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </div>
+      {% for s in p.services %}
+      <div class="pl-svc-row">
+        <span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+        <span>{{ s.title }}</span>
+      </div>
+      {% endfor %}
+    </section>
+
+    <section class="pl-section">
+      <div class="pl-sec-head">
+        <span class="pl-sec-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></span>
+        <h2>Évaluations clients</h2>
+        <svg class="pl-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </div>
+      {% if p.reviewCount > 0 %}
+      <div class="pl-rating-summary">
+        <div class="big">{{ ("%.1f"|format(p.rating))|replace('.', ',') }}</div>
+        <div class="stars" aria-label="{{ p.rating }}/5">
+          {% for i in range(1, 6) %}
+          <svg viewBox="0 0 24 24" fill="{{ 'currentColor' if i <= p.rating|round(0, 'floor') else '#E2E8F0' }}"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          {% endfor %}
+        </div>
+        <div class="count">({{ p.reviewCount }} avis)</div>
+        <button type="button" class="pl-see-all" id="seeAllReviewsBtn">Voir tous les avis</button>
+      </div>
+      {% else %}
+      <p class="pl-rating-empty">Aucun avis pour le moment.</p>
+      {% endif %}
+    </section>
   </div>
 
   <div class="pl-toast" id="toast" role="status" aria-live="polite"></div>

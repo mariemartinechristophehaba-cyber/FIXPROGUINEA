@@ -3503,12 +3503,15 @@ class ParametresApparenceTests(FixProTestCase):
 
 class ArtisanPublicProfilePlombierTests(FixProTestCase):
     """Profil public mobile (ProfessionalPublicProfile), version finale
-    v6 validee sur maquette : carte identite bleu pale + avatar + badge
-    Verifie + note/avis reels + services en icones (liste a coche) +
-    section Evaluations clients (resume compact, pas de liste de
-    commentaires) + boutons Contacter/Appeler. Toujours un seul gabarit
-    reutilisable pour tous les metiers, une seule route officielle,
-    aucune section A propos/Realisations, aucun prix invente."""
+    v7 reproduisant la maquette telephone fournie : carte identite bleu
+    pale (badge Verifie en icone seule, note en ligne, bloc info 3
+    colonnes avec separateurs, pastille disponibilite dupliquee en haut
+    a droite) + boutons Contacter/Appeler dans le flux (plus de barre
+    fixe) + services en liste a coche + section Evaluations clients
+    (resume compact, chevrons sur les en-tetes de section). Toujours un
+    seul gabarit reutilisable pour tous les metiers, une seule route
+    officielle, aucune section A propos/Realisations, aucun prix
+    invente."""
 
     def _plumber_id(self, phone="+224621119900",
                     email="plombier-profil@example.com"):
@@ -3563,6 +3566,22 @@ class ArtisanPublicProfilePlombierTests(FixProTestCase):
         aid = self._plumber_id(phone="+224621119991", email="plombier-order@example.com")
         html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
         self.assertLess(html.index("Contacter"), html.index("Appeler"))
+
+    def test_availability_info_column_and_pill_both_present(self):
+        """La maquette montre la disponibilite a deux endroits de la
+        carte identite : la pastille en haut a droite et la 3e colonne
+        du bloc info en bas -- les deux doivent etre coherentes."""
+        aid = self._plumber_id(phone="+224621119996", email="plombier-dispo@example.com")
+        html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
+        self.assertIn('class="pl-avail-pill"', html)
+        self.assertIn('class="pl-info-col avail"', html)
+        self.assertIn("Disponible", html)
+
+    def test_section_headers_have_chevron_and_verified_badge_is_icon_only(self):
+        aid = self._plumber_id(phone="+224621119997", email="plombier-chevron@example.com")
+        html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
+        self.assertEqual(html.count('class="pl-chev"'), 2)
+        self.assertIn('aria-label="Vérifié"', html)
 
     def test_appeler_button_is_a_real_tel_link(self):
         aid = self._plumber_id(phone="+224621119991", email="plombier-tel@example.com")
@@ -3630,7 +3649,8 @@ class ArtisanPublicProfilePlombierTests(FixProTestCase):
         finally:
             conn.close()
         html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
-        self.assertIn("7 ans d'expérience", html)
+        self.assertIn("7 ans", html)
+        self.assertIn("d'expérience", html)
 
     def test_no_realisations_and_no_price_anywhere(self):
         aid = self._plumber_id(phone="+224621119902", email="plombier3@example.com")
