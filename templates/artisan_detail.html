@@ -76,8 +76,15 @@
     }
     .pl-icon-btn svg { width: 19px; height: 19px; }
 
-    .pl-idblock { position: relative; z-index: 3; margin-top: 22px; display: flex; flex-wrap: wrap; gap: 10px 14px; }
-    .pl-ava-wrap { position: relative; flex-shrink: 0; }
+    /* Grid (pas flex-wrap) : les 3 colonnes ne se replient jamais l'une
+       sous l'autre quel que soit le nom du technicien ou la largeur de
+       l'ecran -- seul le texte a l'interieur de chaque colonne s'adapte. */
+    .pl-idblock {
+      position: relative; z-index: 3; margin-top: 22px;
+      display: grid; grid-template-columns: 84px minmax(0, 1fr) minmax(0, 120px);
+      align-items: start; column-gap: 12px;
+    }
+    .pl-ava-wrap { position: relative; }
     .pl-ava {
       width: 84px; height: 84px; border-radius: 50%; overflow: hidden;
       background: var(--pl-soft); border: 3px solid rgba(255,255,255,.9);
@@ -89,9 +96,9 @@
       width: 18px; height: 18px; border-radius: 50%;
       background: var(--pl-green); border: 3px solid #fff;
     }
-    .pl-id-main { min-width: 0; flex: 1 1 160px; padding-top: 2px; }
+    .pl-id-main { min-width: 0; padding-top: 2px; }
     .pl-side {
-      flex: 0 0 auto; margin-left: auto; max-width: 132px; display: flex; flex-direction: column;
+      min-width: 0; display: flex; flex-direction: column;
       align-items: flex-end; gap: 10px; padding-top: 2px;
     }
     .pl-name {
@@ -123,8 +130,8 @@
     .pl-verified-badge {
       display: inline-flex; align-items: center; gap: 6px;
       background: rgba(255,255,255,.95); color: var(--pl-primary);
-      font-weight: 700; font-size: 0.72rem; padding: 7px 12px; border-radius: 50px;
-      box-shadow: 0 6px 16px rgba(6,17,50,.18); white-space: nowrap;
+      font-weight: 700; font-size: 0.68rem; padding: 6px 11px; border-radius: 50px;
+      box-shadow: 0 6px 16px rgba(6,17,50,.18); text-align: left;
     }
     .pl-verified-badge svg { width: 13px; height: 13px; flex-shrink: 0; }
     .pl-tagline {
