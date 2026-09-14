@@ -62,7 +62,9 @@
       border: 1px solid var(--d-line); padding: clamp(22px, 5vw, 40px) clamp(18px, 5vw, 40px);
       display: grid; grid-template-columns: 1fr; gap: 22px;
     }
-    @media (min-width: 760px) { .hero { grid-template-columns: 1.1fr .9fr; align-items: center; min-height: 320px; } }
+    @media (min-width: 760px) {
+      .hero { grid-template-columns: 1.15fr .95fr; align-items: stretch; min-height: 340px; padding-right: 0; }
+    }
     .hero-tx h2 { margin: 0; font-size: clamp(1.5rem, 5.4vw, 2.1rem); font-weight: 900; letter-spacing: -.03em; line-height: 1.15; color: var(--d-ink2); }
     .hero-tx h2 b { color: var(--d-blue); font-weight: 900; }
     .hero-tx p { margin: 10px 0 0; font-size: clamp(.9rem, 3.4vw, 1rem); color: var(--d-muted); max-width: 40ch; line-height: 1.5; }
@@ -75,7 +77,13 @@
     .hero-pill .pic { width: 26px; height: 26px; border-radius: 999px; background: var(--d-ice); color: var(--d-blue); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
     .hero-pill .pic svg { width: 14px; height: 14px; }
     .hero-img { position: relative; border-radius: 18px; overflow: hidden; aspect-ratio: 4/3; background: #DCE8FF; }
-    .hero-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .hero-img img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 15%; display: block; }
+    @media (min-width: 760px) {
+      .hero-img {
+        border-radius: 18px 0 22px 0; aspect-ratio: auto; align-self: stretch;
+        margin: clamp(-40px, -5vw, -22px) clamp(-40px, -5vw, -18px) clamp(-40px, -5vw, -22px) 0;
+      }
+    }
     .hero-img .ph-fallback { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--d-blue); background: linear-gradient(160deg, #DCE8FF, #EAF3FF); }
     .hero-img .ph-fallback svg { width: 34%; height: 34%; opacity: .55; }
     .hero-tag {
@@ -193,6 +201,7 @@
     .plan-price .eqv .ou b { color: var(--d-blue); }
     .plan.amber .plan-price .eqv .ou b { color: var(--d-amber-d); }
     .plan-price .eqv .sav { font-size: clamp(.68rem, 2.6vw, .74rem); font-weight: 800; color: var(--d-green); }
+    .plan-price .eqv .sav:empty { display: none; }
 
     /* Liste : la meme structure ; le footer (margin-top:auto) descend le CTA en bas. */
     .plan-feats { list-style: none; margin: clamp(12px, 2.4vw, 18px) 0 0; padding: 0; display: grid; gap: clamp(8px, 1.8vw, 12px); }
@@ -380,11 +389,15 @@
         </div>
 
         <div class="plan-price">
-          <span class="now">{{ '{:,}'.format(p.price_month) | replace(',', ' ') }} GNF</span>
-          <span class="per">/ mois</span>
+          <span class="now"
+                data-now-month="{{ '{:,}'.format(p.price_month) | replace(',', ' ') }} GNF"
+                data-now-year="{{ '{:,}'.format(p.price_year) | replace(',', ' ') }} GNF">{{ '{:,}'.format(p.price_month) | replace(',', ' ') }} GNF</span>
+          <span class="per" data-per-month="/ mois" data-per-year="/ an">/ mois</span>
           <span class="eqv">
-            <span class="ou">ou <b>{{ '{:,}'.format(p.price_year) | replace(',', ' ') }} GNF</b> / an</span>
-            <span class="sav">Économisez {{ p.year_savings_months }} mois</span>
+            <span class="ou"
+                  data-ou-month="ou {{ '{:,}'.format(p.price_year) | replace(',', ' ') }} GNF / an"
+                  data-ou-year="soit {{ '{:,}'.format(p.price_month_year) | replace(',', ' ') }} GNF / mois">ou {{ '{:,}'.format(p.price_year) | replace(',', ' ') }} GNF / an</span>
+            <span class="sav" data-sav-month="Économisez {{ p.year_savings_months }} mois" data-sav-year="">Économisez {{ p.year_savings_months }} mois</span>
           </span>
         </div>
 
@@ -443,6 +456,12 @@
       var seg = document.getElementById('seg');
       var period = 'month';
       function apply() {
+        ['now', 'per', 'ou', 'sav'].forEach(function (k) {
+          document.querySelectorAll('[data-' + k + '-month]').forEach(function (el) {
+            var v = el.getAttribute('data-' + k + '-' + period);
+            if (v !== null) el.textContent = v;
+          });
+        });
         document.querySelectorAll('.plan-btn[data-plan]').forEach(function (el) {
           el.href = el.href.replace(/period=(month|year)/, 'period=' + period);
         });
