@@ -6981,14 +6981,23 @@ PROFESSIONAL_SERVICE_CATALOG = {
         {"id": "debouchage", "title": "Débouchage", "icon": "debouchage"},
         {"id": "renovation", "title": "Rénovation et entretien", "icon": "renovation"},
     ],
+    "frigoriste": [
+        {"id": "installation-clim", "title": "Installation de climatiseurs", "icon": "installation-clim"},
+        {"id": "reparation-froid", "title": "Réparation de systèmes froids", "icon": "reparation-froid"},
+        {"id": "entretien-frigo", "title": "Entretien de réfrigérateurs", "icon": "entretien-frigo"},
+        {"id": "maintenance-commerciale", "title": "Maintenance froid commercial", "icon": "maintenance-commerciale"},
+    ],
 }
 PROFESSIONAL_AVATAR_IMAGE = {"plombier": "img/technicians/plombier/profile/02_avatar_plombier.png"}
+PROFESSIONAL_CATEGORY_LABEL = {"plombier": "Plombier", "frigoriste": "Frigoriste"}
 
 
 def _professional_trade_key(profession):
     p = (profession or "").strip().lower()
     if p in ("plombier", "plomberie"):
         return "plombier"
+    if p in ("frigoriste", "climatisation", "réfrigération", "refrigeration", "froid"):
+        return "frigoriste"
     return None
 
 
@@ -6997,12 +7006,13 @@ def _professional_trade_key(profession):
 def artisan_detail(artisan_id):
     """Profil public mobile d'un professionnel (vu par le CLIENT quand il
     clique sur "Voir le profil"). Architecture reutilisable pour tous les
-    metiers (ProfessionalPublicProfile) ; seul le Plombier est implemente
-    pour l'instant -- un metier sans catalogue redirige vers la recherche
+    metiers (ProfessionalPublicProfile) ; Plombier et Frigoriste sont
+    implementes -- un metier sans catalogue redirige vers la recherche
     plutot que d'afficher une page incomplete/fausse. Carte identite (fond
-    bleu pale, pas de photo pleine largeur) + services (icones) + note
-    moyenne reelle + realisations reelles (table artisan_portfolio, etat
-    vide honnete tant qu'aucun technicien n'y a deppose de photo -- pas de
+    bleu pale, pas de photo pleine largeur ; initiales si aucune photo
+    reelle n'existe pour ce metier) + services (icones) + note moyenne
+    reelle + realisations reelles (table artisan_portfolio, etat vide
+    honnete tant qu'aucun technicien n'y a depose de photo -- pas de
     contenu invente) + bouton Prendre rendez-vous (reutilise le vrai flux
     de demande existant, aucun systeme de creneaux parallele). Pas de
     section "A propos", pas de prix invente."""
@@ -7057,14 +7067,16 @@ def artisan_detail(artisan_id):
                     if len(reviewer_name.split()) > 1 else reviewer_name,
         }
 
+    avatar_asset = PROFESSIONAL_AVATAR_IMAGE.get(trade)
     professional = {
         "id": artisan["id"],
         "name": full_name,
         "firstName": full_name.split()[0] if full_name else "",
-        "category": "Plombier",
+        "category": PROFESSIONAL_CATEGORY_LABEL[trade],
         "phone": artisan.get("phone"),
         "avatarImage": (artisan.get("photo_url") or
-                        url_for("static", filename=PROFESSIONAL_AVATAR_IMAGE[trade])),
+                        (url_for("static", filename=avatar_asset) if avatar_asset else None)),
+        "initials": "".join(part[0] for part in full_name.split()[:2]).upper() if full_name else "",
         "verified": bool(artisan.get("is_verified")),
         "zone": zone or None,
         "radiusKm": radius_km,

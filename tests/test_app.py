@@ -3750,6 +3750,97 @@ class ArtisanPublicProfilePlombierTests(FixProTestCase):
         self.assertIn("/artisans", r.headers.get("Location", ""))
 
 
+class ArtisanPublicProfileFrigoristeTests(FixProTestCase):
+    """Le meme gabarit (artisan_detail.html) reutilise pour un second
+    metier : le Frigoriste. Verifie que les donnees changent bien selon
+    le technicien (jamais de valeur codee en dur pour un autre metier) et
+    qu'un technicien sans vraie photo affiche des initiales plutot
+    qu'une fausse image."""
+
+    def _frigoriste_id(self, phone="+224621119920", email="frigoriste-profil@example.com",
+                       name="Ibrahim Camara"):
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute(
+                "INSERT INTO users (email, phone, password_hash, role, full_name,"
+                " profession, city, is_verified, is_active, verification_status,"
+                " availability_status, years_experience)"
+                " VALUES (?, ?, ?, 'technician', ?, 'Frigoriste', 'Conakry', 1, 1,"
+                " 'APPROVED', 'en_ligne', 6)",
+                (email, phone, fixpro_app.generate_password_hash("FixPro2026!"), name))
+            conn.commit()
+            return conn.execute(
+                "SELECT id FROM users WHERE phone = ?", (phone,)).fetchone()["id"]
+        finally:
+            conn.close()
+
+    def test_frigoriste_profile_renders_with_real_category_and_services(self):
+        aid = self._frigoriste_id()
+        r = self.client.get(f"/artisans/{aid}")
+        self.assertEqual(r.status_code, 200)
+        html = r.get_data(as_text=True)
+        self.assertIn("Ibrahim Camara", html)
+        self.assertIn("Frigoriste professionnel", html)
+        for title in ("Installation de climatiseurs", "Réparation de systèmes froids",
+                      "Entretien de réfrigérateurs", "Maintenance froid commercial"):
+            self.assertIn(title, html)
+
+    def test_category_label_is_not_hardcoded_to_plombier(self):
+        """Bug reel corrige : le champ "category" du profil etait ecrit en
+        dur a "Plombier" dans le backend, quel que soit le vrai metier du
+        technicien affiche."""
+        aid = self._frigoriste_id(phone="+224621119921", email="frigoriste-cat@example.com")
+        html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
+        self.assertNotIn("Plombier professionnel", html)
+        self.assertIn("Frigoriste professionnel", html)
+
+    def test_no_real_avatar_shows_honest_initials_not_a_fake_photo(self):
+        """Aucune photo de frigoriste n'existe reellement sur le disque du
+        projet -- plutot que d'inventer/emprunter une photo qui ne
+        represente pas ce technicien, la carte affiche ses initiales."""
+        aid = self._frigoriste_id(phone="+224621119922", email="frigoriste-avatar@example.com",
+                                  name="Ibrahim Camara")
+        html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
+        self.assertIn('class="pl-ava-initials"', html)
+        self.assertIn(">IC<", html)
+
+    def test_real_avatar_used_when_technician_has_uploaded_one(self):
+        aid = self._frigoriste_id(phone="+224621119923", email="frigoriste-photo@example.com")
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute("UPDATE users SET photo_url = ? WHERE id = ?",
+                        ("/static/img/uploads/ibrahim-camara.jpg", aid))
+            conn.commit()
+        finally:
+            conn.close()
+        html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
+        self.assertIn("/static/img/uploads/ibrahim-camara.jpg", html)
+        self.assertNotIn('class="pl-ava-initials"', html)
+
+    def test_different_technicians_show_different_data_same_template(self):
+        """Le meme gabarit doit refleter le technicien reellement
+        selectionne -- jamais la meme identite pour deux professionnels
+        differents."""
+        aid1 = self._frigoriste_id(phone="+224621119924", email="frigo1@example.com",
+                                   name="Ibrahim Camara")
+        aid2 = self._frigoriste_id(phone="+224621119925", email="frigo2@example.com",
+                                   name="Sékou Kaba")
+        html1 = self.client.get(f"/artisans/{aid1}").get_data(as_text=True)
+        html2 = self.client.get(f"/artisans/{aid2}").get_data(as_text=True)
+        self.assertIn("Ibrahim Camara", html1)
+        self.assertNotIn("Sékou Kaba", html1)
+        self.assertIn("Sékou Kaba", html2)
+        self.assertNotIn("Ibrahim Camara", html2)
+
+    def test_frigoriste_realisations_empty_state_no_invented_job_history(self):
+        """Aucune vraie photo de chantier n'existe pour ce technicien --
+        etat vide honnete, jamais une photo generique presentee comme
+        son historique de travaux reel."""
+        aid = self._frigoriste_id(phone="+224621119926", email="frigoriste-real@example.com")
+        html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
+        self.assertIn("Aucune réalisation publiée pour le moment.", html)
+
+
 class RefreshRolePersistenceTests(FixProTestCase):
     """Le role vient TOUJOURS d'une lecture serveur fraiche (users.role en
     base), jamais d'un etat client qui pourrait disparaitre/perimer :

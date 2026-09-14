@@ -74,6 +74,10 @@
       display: flex; align-items: center; justify-content: center;
     }
     .pl-ava img { width: 100%; height: 100%; object-fit: cover; }
+    .pl-ava-initials {
+      width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
+      background: var(--pl-primary); color: #fff; font-weight: 800; font-size: 1.5rem;
+    }
     .pl-ava-dot {
       position: absolute; right: 1px; bottom: 1px;
       width: 18px; height: 18px; border-radius: 50%;
@@ -235,7 +239,13 @@
     <section class="pl-idcard">
       <div class="pl-idcard-top">
         <div class="pl-ava-wrap">
-          <div class="pl-ava"><img src="{{ p.avatarImage }}" alt="{{ p.name }}" /></div>
+          <div class="pl-ava">
+            {% if p.avatarImage %}
+            <img src="{{ p.avatarImage }}" alt="{{ p.name }}" />
+            {% else %}
+            <span class="pl-ava-initials" aria-label="{{ p.name }}">{{ p.initials }}</span>
+            {% endif %}
+          </div>
           {% if p.available %}<span class="pl-ava-dot" aria-label="En ligne"></span>{% endif %}
         </div>
         <div class="pl-id-main">
