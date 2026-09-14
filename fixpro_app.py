@@ -7015,10 +7015,10 @@ def artisan_detail(artisan_id):
     metiers (ProfessionalPublicProfile) ; seul le Plombier est implemente
     pour l'instant -- un metier sans catalogue redirige vers la recherche
     plutot que d'afficher une page incomplete/fausse. Carte identite (fond
-    bleu pale, pas de photo pleine largeur) + services (icones) + avis
-    clients reels (note moyenne, avatars des vrais avis, commentaires).
-    Pas de prix, pas de section Realisations (aucune donnee avant/apres
-    n'existe encore cote technicien -- pas de contenu invente)."""
+    bleu pale, pas de photo pleine largeur) + services (icones) + note
+    moyenne reelle. Pas de section "A propos", pas de prix, pas de section
+    Realisations (aucune donnee avant/apres n'existe encore cote technicien
+    -- pas de contenu invente)."""
     user = get_current_user()
     conn = get_db_connection()
     try:
@@ -7040,13 +7040,6 @@ def artisan_detail(artisan_id):
         review_stats = conn.execute(
             "SELECT COALESCE(AVG(rating), 0) AS avg_rating, COUNT(*) AS count"
             " FROM reviews WHERE artisan_id = ?", (artisan_id,)).fetchone()
-
-        review_rows = conn.execute(
-            "SELECT r.rating, r.comment, r.created_at,"
-            " u.full_name AS client_name, u.photo_url AS client_photo"
-            " FROM reviews r JOIN users u ON u.id = r.client_id"
-            " WHERE r.artisan_id = ? AND r.comment IS NOT NULL AND r.comment != ''"
-            " ORDER BY r.created_at DESC LIMIT 10", (artisan_id,)).fetchall()
     finally:
         conn.close()
 
@@ -7055,23 +7048,12 @@ def artisan_detail(artisan_id):
     years_exp = artisan.get("years_experience")
     radius_km = app.config.get("LOCAL_RADIUS_KM", 15.0)
     review_count = int(review_stats["count"] or 0)
-    reviews = [{
-        "name": r["client_name"] or "Client FixPro",
-        "photo": r["client_photo"],
-        "rating": r["rating"],
-        "comment": r["comment"],
-        "ago": _format_time_ago(r["created_at"]),
-    } for r in review_rows]
-    # Bande "avatars de clients" : jusqu'a 3 vraies photos/initiales de
-    # clients ayant laisse un avis, + un compteur reel du reste (jamais un
-    # chiffre invente).
-    reviewer_avatars = [{"name": rv["name"], "photo": rv["photo"]} for rv in reviews[:3]]
-    remaining_reviewers = max(0, review_count - len(reviewer_avatars))
 
     professional = {
         "id": artisan["id"],
         "name": artisan["full_name"],
         "category": "Plombier",
+        "phone": artisan.get("phone"),
         "avatarImage": (artisan.get("photo_url") or
                         url_for("static", filename=PROFESSIONAL_AVATAR_IMAGE[trade])),
         "verified": bool(artisan.get("is_verified")),
@@ -7081,9 +7063,6 @@ def artisan_detail(artisan_id):
         "available": is_online,
         "rating": float(review_stats["avg_rating"] or 0),
         "reviewCount": review_count,
-        "reviews": reviews,
-        "reviewerAvatars": reviewer_avatars,
-        "remainingReviewers": remaining_reviewers,
         "services": PROFESSIONAL_SERVICE_CATALOG[trade],
     }
 

@@ -26,7 +26,6 @@
       --pl-soft: #EAF1FF;
       --pl-green: #16A34A;
       --pl-star: #F5A623;
-      --pl-card-shadow: 0 10px 30px rgba(15, 42, 90, 0.08);
       --pl-actionbar-h: 86px;
     }
     * { box-sizing: border-box; }
@@ -64,8 +63,8 @@
     .pl-idcard {
       margin: 4px 16px 14px; padding: 16px;
       background: var(--pl-soft); border-radius: 20px;
-      display: grid; grid-template-columns: 78px minmax(0, 1fr) minmax(0, 128px);
-      align-items: start; column-gap: 12px;
+      display: grid; grid-template-columns: 78px minmax(0, 1fr);
+      align-items: start; column-gap: 14px;
     }
     .pl-ava-wrap { position: relative; }
     .pl-ava {
@@ -80,16 +79,23 @@
       background: var(--pl-green); border: 3px solid #fff;
     }
     .pl-id-main { min-width: 0; padding-top: 2px; }
-    .pl-side {
-      min-width: 0; display: flex; flex-direction: column;
-      align-items: stretch; gap: 8px; padding-top: 2px;
-    }
     .pl-name {
       display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
       font-size: 1.14rem; font-weight: 800; margin: 0 0 2px; line-height: 1.22; color: var(--pl-text);
     }
-    .pl-name .check { width: 18px; height: 18px; flex-shrink: 0; color: var(--pl-primary); }
-    .pl-role { font-size: 0.84rem; font-weight: 600; color: var(--pl-muted); margin: 0 0 8px; }
+    .pl-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: #fff; color: var(--pl-primary); font-weight: 700; font-size: 0.68rem;
+      padding: 3px 9px; border-radius: 50px; margin-bottom: 4px;
+    }
+    .pl-badge svg { width: 11px; height: 11px; }
+    .pl-role { font-size: 0.84rem; font-weight: 600; color: var(--pl-muted); margin: 0 0 6px; }
+    .pl-rating-line {
+      display: flex; align-items: center; gap: 6px; font-size: 0.9rem; font-weight: 800;
+      color: var(--pl-text); margin-bottom: 10px;
+    }
+    .pl-rating-line svg { width: 16px; height: 16px; fill: var(--pl-star); }
+    .pl-rating-line span.n { color: var(--pl-muted); font-weight: 600; font-size: 0.8rem; }
     .pl-meta-row {
       display: flex; align-items: flex-start; gap: 7px;
       color: var(--pl-text); font-size: 0.8rem; line-height: 1.4; margin-bottom: 6px;
@@ -105,95 +111,47 @@
     }
     .pl-avail-pill .d { width: 8px; height: 8px; border-radius: 50%; background: var(--pl-green); }
 
-    .pl-verified-badge {
-      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-      background: #fff; color: var(--pl-primary);
-      font-weight: 700; font-size: 0.7rem; padding: 8px 10px; border-radius: 50px;
-      box-shadow: 0 4px 12px rgba(15,42,90,.1); text-align: center;
-    }
-    .pl-verified-badge svg { width: 14px; height: 14px; flex-shrink: 0; }
-    .pl-trustbox {
-      background: #fff; border-radius: 14px; padding: 10px 10px 9px;
-      box-shadow: 0 4px 12px rgba(15,42,90,.1); text-align: center;
-    }
-    .pl-trustbox .rating {
-      display: flex; align-items: center; justify-content: center; gap: 5px;
-      font-size: 0.98rem; font-weight: 800; color: var(--pl-text);
-    }
-    .pl-trustbox .rating svg { width: 16px; height: 16px; fill: var(--pl-star); flex-shrink: 0; }
-    .pl-trustbox .count { display: block; font-size: 0.68rem; color: var(--pl-muted); margin-top: 1px; }
-    .pl-trustbox hr { border: none; border-top: 1px solid var(--pl-line); margin: 8px 0; }
-    .pl-avatars { display: flex; align-items: center; justify-content: center; }
-    .pl-avatars .av {
-      width: 24px; height: 24px; border-radius: 50%; overflow: hidden;
-      border: 2px solid #fff; background: var(--pl-soft); color: var(--pl-primary);
-      font-size: 0.6rem; font-weight: 800;
-      display: flex; align-items: center; justify-content: center;
-      margin-left: -8px; flex-shrink: 0;
-    }
-    .pl-avatars .av:first-child { margin-left: 0; }
-    .pl-avatars .av img { width: 100%; height: 100%; object-fit: cover; }
-    .pl-avatars .more { background: var(--pl-primary); color: #fff; font-size: 0.56rem; }
-    .pl-trustbox .caption { display: block; font-size: 0.66rem; color: var(--pl-muted); margin-top: 5px; font-weight: 600; }
-
     /* ---------- Sections ---------- */
-    .pl-section {
-      margin: 0 16px 16px;
-    }
-    .pl-sec-head {
-      display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
-    }
+    .pl-section { margin: 0 16px 16px; }
+    .pl-sec-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
     .pl-sec-icon {
       width: 32px; height: 32px; border-radius: 50%; background: var(--pl-soft); color: var(--pl-primary);
       display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
     .pl-sec-icon svg { width: 16px; height: 16px; }
     .pl-sec-head h2 { font-size: 1.08rem; font-weight: 800; margin: 0; flex: 1; color: var(--pl-text); }
-    .pl-sec-head a, .pl-sec-head button.pl-seeall {
-      color: var(--pl-primary); font-weight: 700; font-size: 0.84rem; white-space: nowrap;
-      display: inline-flex; align-items: center; gap: 3px; background: none; border: none; cursor: pointer; padding: 0;
-    }
-    .pl-sec-head .pl-seeall svg, .pl-sec-head a svg { width: 15px; height: 15px; }
 
-    /* Services -- tuiles icone (pas de photos) */
-    .pl-svc-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    /* Services -- carte simple, liste a puces coche */
     .pl-svc-card {
-      display: flex; align-items: center; gap: 12px;
-      background: var(--pl-soft); border-radius: 16px; padding: 16px 12px;
+      background: var(--pl-soft); border-radius: 16px; padding: 6px 16px;
     }
-    .pl-svc-card .ic {
-      width: 40px; height: 40px; border-radius: 12px; background: #fff; color: var(--pl-primary);
+    .pl-svc-row {
+      display: flex; align-items: center; gap: 10px; padding: 12px 0;
+      border-bottom: 1px solid rgba(15,42,90,.08);
+    }
+    .pl-svc-row:last-child { border-bottom: none; }
+    .pl-svc-row .ck {
+      width: 22px; height: 22px; border-radius: 50%; background: var(--pl-green); color: #fff;
       display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .pl-svc-row .ck svg { width: 13px; height: 13px; }
+    .pl-svc-row span { font-size: 0.9rem; font-weight: 600; color: var(--pl-text); }
+
+    /* Evaluations clients -- resume compact */
+    .pl-rating-card {
+      background: var(--pl-soft); border-radius: 16px; padding: 20px 16px;
+      text-align: center;
+    }
+    .pl-rating-card .big { font-size: 2.1rem; font-weight: 800; color: var(--pl-text); line-height: 1; }
+    .pl-rating-card .stars { display: flex; gap: 3px; justify-content: center; margin: 8px 0; }
+    .pl-rating-card .stars svg { width: 20px; height: 20px; fill: var(--pl-star); }
+    .pl-rating-card .count { font-size: 0.82rem; color: var(--pl-muted); font-weight: 600; margin-bottom: 14px; }
+    .pl-rating-card button {
+      background: #fff; color: var(--pl-primary); border: none; border-radius: 12px;
+      padding: 11px 18px; font-weight: 700; font-size: 0.86rem; cursor: pointer;
       box-shadow: 0 4px 10px rgba(15,42,90,.08);
     }
-    .pl-svc-card .ic svg { width: 22px; height: 22px; }
-    .pl-svc-card b { font-size: 0.86rem; font-weight: 700; color: var(--pl-text); line-height: 1.25; }
-
-    /* Avis clients -- scroll horizontal de cartes */
-    .pl-review-row {
-      display: flex; gap: 12px; overflow-x: auto; margin: 0 -16px; padding: 2px 16px 4px;
-      scrollbar-width: none; -webkit-overflow-scrolling: touch;
-    }
-    .pl-review-row::-webkit-scrollbar { display: none; }
-    .pl-review-card {
-      flex: 0 0 auto; width: 240px;
-      background: #fff; border: 1px solid var(--pl-line); border-radius: 16px; padding: 14px;
-    }
-    .pl-review-top { display: flex; align-items: center; gap: 9px; margin-bottom: 8px; }
-    .pl-review-ava {
-      width: 34px; height: 34px; border-radius: 50%; overflow: hidden; flex-shrink: 0;
-      background: var(--pl-soft); color: var(--pl-primary); font-weight: 800;
-      display: flex; align-items: center; justify-content: center; font-size: .8rem;
-    }
-    .pl-review-ava img { width: 100%; height: 100%; object-fit: cover; }
-    .pl-review-name { min-width: 0; }
-    .pl-review-name b { display: block; font-size: 0.86rem; font-weight: 800; color: var(--pl-text);
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .pl-review-stars { display: flex; gap: 1px; margin-top: 2px; }
-    .pl-review-stars svg { width: 12px; height: 12px; fill: var(--pl-star); }
-    .pl-review-time { font-size: 0.7rem; color: var(--pl-muted); margin-bottom: 6px; }
-    .pl-review-card p { margin: 0; font-size: 0.82rem; color: #475569; line-height: 1.5; }
-    .pl-review-empty { color: var(--pl-muted); font-size: 0.86rem; margin: 0; }
+    .pl-rating-empty { color: var(--pl-muted); font-size: 0.86rem; margin: 0; text-align: center; }
 
     [hidden] { display: none !important; }
 
@@ -213,7 +171,7 @@
     .pl-btn-ghost { background: #fff; color: var(--pl-primary); border: 1.6px solid var(--pl-primary); }
     .pl-btn-primary { background: var(--pl-primary); color: #fff; border: none; box-shadow: 0 10px 22px rgba(26,92,255,0.3); }
 
-    /* ---------- Toast discret (menu "..." tant que non implemente) ---------- */
+    /* ---------- Toast discret ---------- */
     .pl-toast {
       position: fixed; left: 50%; bottom: calc(var(--pl-actionbar-h) + 16px + env(safe-area-inset-bottom));
       transform: translateX(-50%) translateY(8px); z-index: 200;
@@ -223,11 +181,10 @@
     }
     .pl-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-    /* ---------- Desktop ---------- */
+    /* ---------- Desktop / tablette ---------- */
     @media (min-width: 720px) {
       body { padding-bottom: 40px; }
       .pl-wrap { padding: 24px 0 0; }
-      .pl-svc-grid { grid-template-columns: repeat(4, 1fr); }
       .pl-actionbar {
         position: static; border: none; background: none; padding: 0 16px;
         margin: 0 auto 32px; max-width: 680px;
@@ -255,13 +212,21 @@
         {% if p.available %}<span class="pl-ava-dot" aria-label="En ligne"></span>{% endif %}
       </div>
       <div class="pl-id-main">
-        <h2 class="pl-name">
-          {{ p.name }}
-          {% if p.verified %}
-          <span class="check" aria-label="Vérifié"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 3.5 6v6c0 5.2 3.6 9.9 8.5 11 4.9-1.1 8.5-5.8 8.5-11V6L12 2Zm-1.2 13.3-3.3-3.3 1.4-1.4 1.9 1.9 4.9-4.9 1.4 1.4-6.3 6.3Z"/></svg></span>
-          {% endif %}
-        </h2>
+        {% if p.verified %}
+        <span class="pl-badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+          Vérifié
+        </span>
+        {% endif %}
+        <h2 class="pl-name">{{ p.name }}</h2>
         <p class="pl-role">{{ p.category }} professionnel</p>
+        {% if p.reviewCount > 0 %}
+        <div class="pl-rating-line">
+          <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          {{ ("%.1f"|format(p.rating))|replace('.', ',') }}
+          <span class="n">({{ p.reviewCount }} avis)</span>
+        </div>
+        {% endif %}
         {% if p.zone %}
         <div class="pl-meta-row">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
@@ -276,56 +241,18 @@
         {% endif %}
         <span class="pl-avail-pill"><span class="d"></span>{{ 'Disponible aujourd\'hui' if p.available else 'Sur rendez-vous' }}</span>
       </div>
-      <div class="pl-side">
-        {% if p.verified %}
-        <span class="pl-verified-badge">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>
-          Vérifié par FixPro
-        </span>
-        {% endif %}
-        <div class="pl-trustbox">
-          {% if p.reviewCount > 0 %}
-          <span class="rating">
-            <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-            {{ ("%.1f"|format(p.rating))|replace('.', ',') }}
-          </span>
-          <span class="count">({{ p.reviewCount }} avis)</span>
-          <hr />
-          {% endif %}
-          {% if p.reviewerAvatars %}
-          <div class="pl-avatars">
-            {% for rv in p.reviewerAvatars %}
-            <span class="av">{% if rv.photo %}<img src="{{ rv.photo }}" alt="" />{% else %}{{ rv.name[0]|upper }}{% endif %}</span>
-            {% endfor %}
-            {% if p.remainingReviewers > 0 %}<span class="av more">+{{ p.remainingReviewers }}</span>{% endif %}
-          </div>
-          <span class="caption">Clients satisfaits</span>
-          {% else %}
-          <span class="caption">Nouveau sur FixPro</span>
-          {% endif %}
-        </div>
-      </div>
     </section>
 
     <section class="pl-section">
       <div class="pl-sec-head">
         <span class="pl-sec-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span>
         <h2>Services proposés</h2>
-        <a href="{{ url_for('categories') }}">Voir tout
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-        </a>
       </div>
-      {% set _svc_icons = {
-        'fuite': '<path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/>',
-        'sanitaire': '<ellipse cx="12" cy="6.5" rx="5.5" ry="2.5"/><path d="M6.5 6.5v3a5.5 5.5 0 0 0 11 0v-3"/><rect x="9" y="16" width="6" height="4" rx="1"/><path d="M10 20v1.5M14 20v1.5"/>',
-        'debouchage': '<path d="M5 4v7a4 4 0 0 0 4 4h6a4 4 0 0 1 4 4v3"/><circle cx="5" cy="4" r="1.5" fill="currentColor" stroke="none"/><circle cx="19" cy="22" r="1.5" fill="currentColor" stroke="none"/>',
-        'renovation': '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>',
-      } %}
-      <div class="pl-svc-grid">
+      <div class="pl-svc-card">
         {% for s in p.services %}
-        <div class="pl-svc-card">
-          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">{{ (_svc_icons.get(s.icon) or _svc_icons['renovation'])|safe }}</svg></span>
-          <b>{{ s.title }}</b>
+        <div class="pl-svc-row">
+          <span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+          <span>{{ s.title }}</span>
         </div>
         {% endfor %}
       </div>
@@ -334,35 +261,21 @@
     <section class="pl-section">
       <div class="pl-sec-head">
         <span class="pl-sec-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></span>
-        <h2>Avis clients</h2>
-        {% if p.reviewCount > 0 %}
-        <a href="#">Voir tous ({{ p.reviewCount }})
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-        </a>
-        {% endif %}
+        <h2>Évaluations clients</h2>
       </div>
-      {% if p.reviews %}
-      <div class="pl-review-row">
-        {% for rev in p.reviews %}
-        <div class="pl-review-card">
-          <div class="pl-review-top">
-            <span class="pl-review-ava">{% if rev.photo %}<img src="{{ rev.photo }}" alt="" />{% else %}{{ rev.name[0]|upper }}{% endif %}</span>
-            <div class="pl-review-name">
-              <b>{{ rev.name }}</b>
-              <div class="pl-review-stars" aria-label="{{ rev.rating }}/5">
-                {% for i in range(1, 6) %}
-                <svg viewBox="0 0 24 24" fill="{{ 'currentColor' if i <= rev.rating else '#E2E8F0' }}"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                {% endfor %}
-              </div>
-            </div>
-          </div>
-          <div class="pl-review-time">{{ rev.ago }}</div>
-          <p>{{ rev.comment }}</p>
+      {% if p.reviewCount > 0 %}
+      <div class="pl-rating-card">
+        <div class="big">{{ ("%.1f"|format(p.rating))|replace('.', ',') }}</div>
+        <div class="stars" aria-label="{{ p.rating }}/5">
+          {% for i in range(1, 6) %}
+          <svg viewBox="0 0 24 24" fill="{{ 'currentColor' if i <= p.rating|round(0, 'floor') else '#fff' }}" stroke="currentColor" stroke-width="1"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          {% endfor %}
         </div>
-        {% endfor %}
+        <div class="count">({{ p.reviewCount }} avis)</div>
+        <button type="button" id="seeAllReviewsBtn">Voir tous les avis</button>
       </div>
       {% else %}
-      <p class="pl-review-empty">Aucun avis pour le moment.</p>
+      <p class="pl-rating-empty">Aucun avis pour le moment.</p>
       {% endif %}
     </section>
   </div>
@@ -373,10 +286,12 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
         Contacter
       </a>
-      <a class="pl-btn pl-btn-ghost" href="{{ url_for('client_message_artisan', artisan_id=p.id) }}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z"/></svg>
-        Envoyer un message
+      {% if p.phone %}
+      <a class="pl-btn pl-btn-ghost" href="tel:{{ p.phone }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        Appeler
       </a>
+      {% endif %}
     </div>
   </div>
 
@@ -395,6 +310,8 @@
       }
       var menu = document.getElementById('menuBtn');
       if (menu) menu.addEventListener('click', function () { toast('Bientôt disponible'); });
+      var seeAll = document.getElementById('seeAllReviewsBtn');
+      if (seeAll) seeAll.addEventListener('click', function () { toast('Bientôt disponible'); });
     })();
   </script>
 </body>

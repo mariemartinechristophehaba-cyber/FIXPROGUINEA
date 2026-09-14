@@ -3503,11 +3503,12 @@ class ParametresApparenceTests(FixProTestCase):
 
 class ArtisanPublicProfilePlombierTests(FixProTestCase):
     """Profil public mobile (ProfessionalPublicProfile), version finale
-    validee sur maquette : carte identite bleu pale + avatar + note/avis
-    reels + services en icones (4) + section Avis clients (vraies lignes
-    de la table reviews, etat vide honnete). Toujours un seul gabarit
-    reutilisable pour tous les metiers, aucune section Realisations,
-    aucun prix invente."""
+    v6 validee sur maquette : carte identite bleu pale + avatar + badge
+    Verifie + note/avis reels + services en icones (liste a coche) +
+    section Evaluations clients (resume compact, pas de liste de
+    commentaires) + boutons Contacter/Appeler. Toujours un seul gabarit
+    reutilisable pour tous les metiers, une seule route officielle,
+    aucune section A propos/Realisations, aucun prix invente."""
 
     def _plumber_id(self, phone="+224621119900",
                     email="plombier-profil@example.com"):
@@ -3531,7 +3532,20 @@ class ArtisanPublicProfilePlombierTests(FixProTestCase):
         self.assertNotIn("01_banner_plombier.png", html)
         self.assertNotIn('class="pl-hero"', html)
 
-    def test_profile_shows_idcard_and_real_images(self):
+    def test_single_official_route_both_aliases_render_same_page(self):
+        """Une seule implementation : /artisans/<id> et /technicien/<id>
+        rendent exactement la meme page (pas de doublon a une autre URL)."""
+        aid = self._plumber_id()
+        html_a = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
+        html_b = self.client.get(f"/technicien/{aid}").get_data(as_text=True)
+        self.assertEqual(html_a, html_b)
+
+    def test_no_old_profile_template_files_left_on_disk(self):
+        for stale_name in ("technician_profile.html", "profil_technicien.html",
+                          "technicien_profile.html", "professional_profile.html"):
+            self.assertFalse((ROOT / "templates" / stale_name).exists(), stale_name)
+
+    def test_profile_shows_idcard_badge_and_real_images(self):
         aid = self._plumber_id()
         r = self.client.get(f"/artisans/{aid}")
         self.assertEqual(r.status_code, 200)
@@ -3540,13 +3554,27 @@ class ArtisanPublicProfilePlombierTests(FixProTestCase):
         self.assertIn('class="pl-idcard"', html)
         self.assertIn("Profil du technicien", html)
         self.assertIn("Plombier professionnel", html)
-        self.assertIn("Envoyer un message", html)
+        self.assertIn("Vérifié", html)
+        self.assertNotIn("Vérifié par FixPro", html)   # ancien libelle du badge (v3/v4/v5)
         self.assertIn("Contacter", html)
+        self.assertIn("Appeler", html)
 
-    def test_action_bar_order_contacter_first_then_message(self):
+    def test_action_bar_order_contacter_first_then_appeler(self):
         aid = self._plumber_id(phone="+224621119991", email="plombier-order@example.com")
         html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
-        self.assertLess(html.index("Contacter"), html.index("Envoyer un message"))
+        self.assertLess(html.index("Contacter"), html.index("Appeler"))
+
+    def test_appeler_button_is_a_real_tel_link(self):
+        aid = self._plumber_id(phone="+224621119991", email="plombier-tel@example.com")
+        html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
+        self.assertIn('href="tel:+224621119991"', html)
+
+    def test_no_envoyer_un_message_button_anymore(self):
+        """Consigne explicite v6 : deux boutons seulement, Contacter +
+        Appeler -- l'ancien bouton "Envoyer un message" (v3-v5) disparait."""
+        aid = self._plumber_id(phone="+224621119995", email="plombier-nomsg@example.com")
+        html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
+        self.assertNotIn("Envoyer un message", html)
 
     def test_four_icon_services_no_fake_photos(self):
         aid = self._plumber_id(phone="+224621119901", email="plombier2@example.com")
@@ -3556,10 +3584,15 @@ class ArtisanPublicProfilePlombierTests(FixProTestCase):
             self.assertIn(title, html)
         self.assertNotIn("services/", html)   # plus aucune photo de service
 
-    def test_real_reviews_appear_with_rating_and_avatars(self):
-        """La maquette validee affiche note/avis reels -- les inventer
-        serait pire que ne rien afficher, donc on verifie que ce sont
-        de vraies lignes de la table reviews qui apparaissent."""
+    def test_no_a_propos_section(self):
+        aid = self._plumber_id(phone="+224621119906", email="plombier-apropos@example.com")
+        html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
+        self.assertNotIn("À propos", html)
+
+    def test_real_review_average_and_count_appear_compactly(self):
+        """La maquette v6 affiche un resume compact (note + etoiles +
+        nombre d'avis + bouton), pas une liste de commentaires -- mais la
+        donnee doit rester reelle (calculee depuis la table reviews)."""
         aid = self._plumber_id(phone="+224621119992", email="plombier-avis@example.com")
         conn = db.connect(sqlite_path=self.db_path)
         try:
@@ -3576,16 +3609,17 @@ class ArtisanPublicProfilePlombierTests(FixProTestCase):
         finally:
             conn.close()
         html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
-        self.assertIn("Aminata Sow", html)
-        self.assertIn("Travail impeccable", html)
-        self.assertIn("Avis clients", html)
-        self.assertIn("avis)", html)
+        self.assertIn("Évaluations clients", html)
+        self.assertIn("(1 avis)", html)
+        self.assertIn("Voir tous les avis", html)
+        # pas de liste de commentaires individuels dans ce design compact
+        self.assertNotIn("Aminata Sow", html)
+        self.assertNotIn("Travail impeccable", html)
 
     def test_no_reviews_shows_honest_empty_state(self):
         aid = self._plumber_id(phone="+224621119909", email="plombier-noavis@example.com")
         html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
         self.assertIn("Aucun avis pour le moment.", html)
-        self.assertIn("Nouveau sur FixPro", html)
 
     def test_experience_shown_when_present(self):
         aid = self._plumber_id(phone="+224621119994", email="plombier-exp@example.com")
