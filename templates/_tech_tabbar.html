@@ -1,14 +1,12 @@
 {#
   Barre de navigation basse — ESPACE TECHNICIEN.
   Unique pour tout l'espace technicien. Onglet actif detecte via request.endpoint.
-  Ordre : Accueil | Demandes | Messages | Abonnement | Profil.
+  Ordre : Accueil | Demandes | Messages | Profil.
   2e appui sur l'onglet deja actif = pas de navigation, remonte en haut de page.
 #}
 {% set _ep = request.endpoint %}
 {% set _msg_eps = ('client_messages', 'client_conversation', 'client_message_new',
                    'client_message_artisan') %}
-{% set _sub_eps = ('technician_subscription', 'technician_subscription_checkout',
-                   'subscription_payment_status', 'subscription_payment_cancel') %}
 {% set _prof_eps = ('profile', 'edit_profile', 'client_security') %}
 <style>
   .tt-nav {
@@ -68,13 +66,6 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
     <span>Messages</span>
     {% if messages_unread %}<span class="tt-badge">{{ messages_unread if messages_unread < 100 else '99+' }}</span>{% endif %}
-  </a>
-
-  <a class="tt-item{% if _ep in _sub_eps %} is-active{% endif %}"
-     href="{{ url_for('technician_subscription') }}"
-     {% if _ep in _sub_eps %}data-active="1"{% endif %}>
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7z"/></svg>
-    <span>Abonnement</span>
   </a>
 
   <a class="tt-item{% if _ep in _prof_eps %} is-active{% endif %}"
