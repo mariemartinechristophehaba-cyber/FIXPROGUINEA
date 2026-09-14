@@ -3503,15 +3503,14 @@ class ParametresApparenceTests(FixProTestCase):
 
 class ArtisanPublicProfilePlombierTests(FixProTestCase):
     """Profil public mobile (ProfessionalPublicProfile), version finale
-    v7 reproduisant la maquette telephone fournie : carte identite bleu
-    pale (badge Verifie en icone seule, note en ligne, bloc info 3
-    colonnes avec separateurs, pastille disponibilite dupliquee en haut
-    a droite) + boutons Contacter/Appeler dans le flux (plus de barre
-    fixe) + services en liste a coche + section Evaluations clients
-    (resume compact, chevrons sur les en-tetes de section). Toujours un
+    v8 : carte identite bleu pale (badge Verifie en icone seule, note en
+    ligne, bloc info 3 colonnes, pastille disponibilite dupliquee) +
+    boutons Contacter/Appeler dans le flux + services en liste a coche +
+    Realisations recentes (vraie table artisan_portfolio, etat vide
+    honnete) + Evaluations clients (resume compact) + Prendre
+    rendez-vous (reutilise le vrai flux de demande existant). Toujours un
     seul gabarit reutilisable pour tous les metiers, une seule route
-    officielle, aucune section A propos/Realisations, aucun prix
-    invente."""
+    officielle, aucune section A propos, aucun prix ni avis invente."""
 
     def _plumber_id(self, phone="+224621119900",
                     email="plombier-profil@example.com"):
@@ -3580,8 +3579,50 @@ class ArtisanPublicProfilePlombierTests(FixProTestCase):
     def test_section_headers_have_chevron_and_verified_badge_is_icon_only(self):
         aid = self._plumber_id(phone="+224621119997", email="plombier-chevron@example.com")
         html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
-        self.assertEqual(html.count('class="pl-chev"'), 2)
+        self.assertEqual(html.count('class="pl-chev"'), 3)
         self.assertIn('aria-label="Vérifié"', html)
+
+    def test_section_order_matches_spec(self):
+        """Ordre exact demande : carte -> Contacter/Appeler -> Services ->
+        Realisations -> Evaluations -> Prendre rendez-vous."""
+        aid = self._plumber_id(phone="+224621119998", email="plombier-ordre@example.com")
+        html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
+        i_card = html.index('class="pl-idcard"')
+        i_contact = html.index("Contacter")
+        i_svc = html.index("Services proposés")
+        i_port = html.index("Réalisations récentes")
+        i_avis = html.index("Évaluations clients")
+        i_rdv = html.index("Prendre rendez-vous")
+        self.assertLess(i_card, i_contact)
+        self.assertLess(i_contact, i_svc)
+        self.assertLess(i_svc, i_port)
+        self.assertLess(i_port, i_avis)
+        self.assertLess(i_avis, i_rdv)
+
+    def test_prendre_rendez_vous_reuses_real_request_flow(self):
+        aid = self._plumber_id(phone="+224621119999", email="plombier-rdv@example.com")
+        html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
+        self.assertIn(f'href="/demande/{aid}"', html)
+
+    def test_realisations_shows_honest_empty_state_without_real_photos(self):
+        aid = self._plumber_id(phone="+224621119908", email="plombier-noport@example.com")
+        html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
+        self.assertIn("Aucune réalisation publiée pour le moment.", html)
+
+    def test_realisations_shows_real_portfolio_photos_when_present(self):
+        aid = self._plumber_id(phone="+224621119907", email="plombier-port@example.com")
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute(
+                "INSERT INTO artisan_portfolio (artisan_id, photo_url, caption)"
+                " VALUES (?, '/static/img/demo/chantier1.jpg', 'Réfection salle de bain')",
+                (aid,))
+            conn.commit()
+        finally:
+            conn.close()
+        html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
+        self.assertIn("/static/img/demo/chantier1.jpg", html)
+        self.assertNotIn("Aucune réalisation publiée pour le moment.", html)
 
     def test_appeler_button_is_a_real_tel_link(self):
         aid = self._plumber_id(phone="+224621119991", email="plombier-tel@example.com")
@@ -3652,11 +3693,14 @@ class ArtisanPublicProfilePlombierTests(FixProTestCase):
         self.assertIn("7 ans", html)
         self.assertIn("d'expérience", html)
 
-    def test_no_realisations_and_no_price_anywhere(self):
+    def test_no_fake_price_or_before_after_comparison_anywhere(self):
+        """Depuis v8, "Realisations recentes" existe reellement (vraie
+        table artisan_portfolio) -- ce qui reste banni, c'est le prix
+        invente et la comparaison avant/apres qui n'a jamais eu de vraie
+        donnee derriere elle."""
         aid = self._plumber_id(phone="+224621119902", email="plombier3@example.com")
         html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
-        for banned in ("Réalisations", "Realisations", "Avant / Après",
-                       "portfolio", "pl-real", "GNF", "FCFA", "À partir de"):
+        for banned in ("Avant / Après", "GNF", "FCFA", "À partir de"):
             self.assertNotIn(banned, html, banned)
 
     def test_public_profile_never_leaks_private_technician_data(self):
