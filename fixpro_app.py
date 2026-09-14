@@ -7401,36 +7401,17 @@ def _notif_target(notif):
 @app.route("/notifications")
 @login_required
 def notifications():
-    """Liste complete des notifications in-app de l'utilisateur connecte.
-    Consultatif uniquement : aucune reponse n'est possible depuis cette page
-    (les conversations restent dans la section Messages)."""
-    user = get_current_user()
-    conn = get_db_connection()
-    try:
-        try:
-            rows = conn.execute(
-                "SELECT * FROM notifications"
-                " WHERE user_id = ? ORDER BY created_at DESC, id DESC LIMIT 50",
-                (user["id"],)).fetchall()
-            unread = conn.execute(
-                "SELECT COUNT(*) AS n FROM notifications"
-                " WHERE user_id = ? AND is_read = 0",
-                (user["id"],)).fetchone()["n"]
-        except Exception:
-            rows = []
-            unread = 0
-    finally:
-        conn.close()
-    items = []
-    for r in rows:
-        icon, href = _notif_target(r)
-        d = dict(r)
-        d["href"] = href
-        d["icon"] = icon
-        d["ago"] = _format_time_ago(r["created_at"])
-        items.append(d)
-    return render_template("notifications.html", user=user,
-                           notifications=items, unread=unread)
+    """Emplacement reserve pour le futur Centre de notifications officiel.
+
+    L'ancienne page plein-ecran (liste + "tout marquer comme lu") a ete
+    retiree definitivement le 2026-09-14 : plus de liste ni de mise en page
+    heritee ici. La cloche (accueil, tiroir, menus profil, en-tete
+    technicien...) continue de pointer sur cette meme route pour ne jamais
+    casser un lien existant ; elle affiche un simple placeholder tant que
+    la nouvelle maquette officielle n'est pas fournie. Le panneau cloche du
+    technicien (_tech_notif_bell.html, /api/notifications) est un systeme
+    distinct et deja a jour : non concerne."""
+    return render_template("notifications.html", user=get_current_user())
 
 
 @app.route("/technician/notifications")
