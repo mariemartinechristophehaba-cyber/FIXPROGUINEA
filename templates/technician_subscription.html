@@ -120,7 +120,8 @@
     .seg { display: inline-flex; background: #E7ECF4; border-radius: 999px; padding: 4px; }
     .seg button { border: 0; background: transparent; cursor: pointer; border-radius: 999px; padding: 9px 20px; font-size: .88rem; font-weight: 800; color: var(--d-muted); }
     .seg button.on { background: var(--d-blue); color: #fff; box-shadow: 0 6px 16px rgba(37,99,235,.3); }
-    .seg-save { background: #DCFCE7; color: #15803D; font-size: .76rem; font-weight: 800; padding: 6px 12px; border-radius: 999px; }
+    .seg-save { display: inline-flex; align-items: center; gap: 5px; background: #DCFCE7; color: #15803D; font-size: .76rem; font-weight: 800; padding: 6px 12px; border-radius: 999px; }
+    .seg-save svg { width: 14px; height: 14px; flex-shrink: 0; }
 
     /* ============ PLANS : 2 cartes cote a cote, parfaitement alignees ============ */
     /* Grille : 2 colonnes strictement egales, cartes etirees a la meme hauteur.
@@ -145,11 +146,13 @@
     /* Badge "Le plus populaire" : flotte au-dessus, ne pousse pas la carte. */
     .plan .ribbon {
       position: absolute; top: -13px; left: 50%; transform: translateX(-50%);
+      display: inline-flex; align-items: center; gap: 5px;
       background: linear-gradient(180deg, #FBBF24, var(--d-amber)); color: #fff;
       font-size: clamp(.66rem, 2.6vw, .74rem); font-weight: 800; letter-spacing: .01em;
       padding: 6px 14px; border-radius: 999px; white-space: nowrap;
       box-shadow: 0 6px 16px rgba(245,158,11,.4);
     }
+    .plan .ribbon svg { width: 14px; height: 14px; flex-shrink: 0; }
     /* Badge de reduction : coin haut-droit, hors flux, n'altere pas l'alignement. */
     .plan .disc {
       position: absolute; top: 12px; right: 12px;
@@ -181,8 +184,15 @@
     .plan-price .now { font-size: clamp(1.35rem, 6vw, 2rem); font-weight: 900; color: var(--d-blue); letter-spacing: -.02em; line-height: 1.1; margin-top: 3px; }
     .plan.amber .plan-price .now { color: var(--d-amber-d); }
     .plan-price .per { font-size: clamp(.74rem, 3vw, .82rem); color: var(--d-muted); font-weight: 600; margin-top: 3px; }
-    .plan-price .eqv { margin-top: 8px; display: inline-flex; align-self: center; font-size: clamp(.68rem, 2.8vw, .76rem); color: var(--d-green); font-weight: 800; background: #E9F9EF; border-radius: 999px; padding: 5px 11px; }
-    .plan-price .eqv:empty { display: none; padding: 0; }
+    .plan-price .eqv {
+      margin: 10px auto 0; display: flex; flex-direction: column; align-items: center; gap: 2px;
+      background: var(--d-ice); border-radius: 12px; padding: 7px 12px; width: fit-content;
+    }
+    .plan.amber .plan-price .eqv { background: #FDF3DC; }
+    .plan-price .eqv .ou { font-size: clamp(.7rem, 2.8vw, .78rem); font-weight: 700; color: var(--d-ink2); }
+    .plan-price .eqv .ou b { color: var(--d-blue); }
+    .plan.amber .plan-price .eqv .ou b { color: var(--d-amber-d); }
+    .plan-price .eqv .sav { font-size: clamp(.68rem, 2.6vw, .74rem); font-weight: 800; color: var(--d-green); }
 
     /* Liste : la meme structure ; le footer (margin-top:auto) descend le CTA en bas. */
     .plan-feats { list-style: none; margin: clamp(12px, 2.4vw, 18px) 0 0; padding: 0; display: grid; gap: clamp(8px, 1.8vw, 12px); }
@@ -199,42 +209,28 @@
       border-radius: 13px; padding: clamp(11px, 2.2vw, 14px) 14px; font-size: clamp(.85rem, 3.4vw, .95rem); font-weight: 800;
       border: 1.5px solid var(--d-line); background: #fff; color: var(--d-ink); cursor: pointer;
     }
+    .plan-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
     .plan-btn.primary { background: linear-gradient(180deg, #3B76F5, var(--d-blue)); color: #fff; border-color: transparent; box-shadow: 0 12px 24px rgba(37,99,235,.28); }
     .plan-btn.gold { background: linear-gradient(180deg, #FBBF24, var(--d-amber)); color: #fff; border-color: transparent; box-shadow: 0 12px 24px rgba(245,158,11,.3); }
     .plan-btn.current { background: #F1F5F9; color: var(--d-muted); border-color: transparent; cursor: default; }
 
-    /* ---------- Comparatif ---------- */
-    .compare { display: grid; grid-template-columns: 1fr; gap: 16px; margin-top: 28px; }
-    @media (min-width: 980px) { .compare { grid-template-columns: 1fr 300px; align-items: start; } }
-    .compare h2, .faq-h h2 { margin: 0 0 12px; font-size: clamp(1.2rem, 4.6vw, 1.5rem); font-weight: 900; letter-spacing: -.02em; }
-    .cmp-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 18px; border: 1px solid var(--d-line); background: #fff; box-shadow: 0 8px 22px rgba(11,27,59,.05); }
-    table.cmp { width: 100%; border-collapse: collapse; min-width: 340px; font-size: .86rem; }
-    table.cmp th, table.cmp td { padding: 11px 12px; text-align: center; border-bottom: 1px solid var(--d-line); }
-    table.cmp thead th { font-size: .8rem; font-weight: 800; color: var(--d-muted); background: #F8FAFD; }
-    table.cmp thead th.pro { color: var(--d-blue); }
-    table.cmp thead th.prem { color: var(--d-amber-d); background: #FEF7EA; }
-    table.cmp tbody tr:last-child td { border-bottom: 0; }
-    table.cmp td.feat { text-align: left; font-weight: 600; }
-    table.cmp td.feat .fi { display: inline-flex; width: 26px; height: 26px; border-radius: 8px; background: var(--d-ice); color: var(--d-blue); align-items: center; justify-content: center; vertical-align: middle; margin-right: 8px; }
-    table.cmp td.feat .fi svg { width: 14px; height: 14px; }
-    table.cmp td .yes { color: var(--d-blue); }
-    table.cmp td .yes.g { color: var(--d-amber-d); }
-    table.cmp td .mut { color: #CBD5E1; }
-    table.cmp td .txt { font-weight: 700; }
-    table.cmp td .txt.b { color: var(--d-blue); }
-    table.cmp td .txt.g { color: var(--d-green); }
-    table.cmp td svg { width: 18px; height: 18px; vertical-align: middle; }
-
-    .upsell { background: #EAF1FE; border-radius: 18px; padding: 20px; text-align: center; }
-    .upsell .ui { width: 56px; height: 56px; border-radius: 14px; background: #fff; color: var(--d-blue); display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; }
-    .upsell .ui svg { width: 28px; height: 28px; }
-    .upsell b { display: block; font-size: 1.05rem; font-weight: 900; line-height: 1.25; }
-    .upsell p { margin: 6px 0 14px; font-size: .85rem; color: var(--d-muted); line-height: 1.4; }
-    .upsell a { display: inline-flex; align-items: center; gap: 6px; border: 1.5px solid var(--d-blue); color: var(--d-blue); background: #fff; border-radius: 12px; padding: 10px 18px; font-size: .86rem; font-weight: 800; }
+    /* ---------- Bloc motivation ---------- */
+    .motivation {
+      display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin-top: 30px;
+      background: var(--d-ice); border-radius: 18px; padding: clamp(16px, 3.4vw, 24px);
+    }
+    .motivation .mi { width: 50px; height: 50px; border-radius: 13px; background: #fff; color: var(--d-blue); display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 6px 16px rgba(11,31,75,.08); }
+    .motivation .mi svg { width: 26px; height: 26px; }
+    .motivation .mt { flex: 1 1 220px; min-width: 0; }
+    .motivation .mt b { display: block; font-size: clamp(1.02rem, 3.8vw, 1.2rem); font-weight: 900; letter-spacing: -.01em; line-height: 1.3; color: var(--d-ink2); }
+    .motivation .mt p { margin: 6px 0 0; font-size: .86rem; color: var(--d-muted); line-height: 1.45; }
+    .motivation .mchart { flex-shrink: 0; display: flex; align-items: flex-end; gap: 5px; height: 44px; margin-left: auto; }
+    .motivation .mchart span { width: 9px; border-radius: 4px 4px 0 0; background: var(--d-blue); opacity: .85; }
+    @media (max-width: 560px) { .motivation .mchart { display: none; } }
 
     /* ---------- FAQ ---------- */
     .faq-h { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 28px; }
-    .faq-h h2 { margin: 0; flex: 1; }
+    .faq-h h2 { margin: 0; flex: 1; font-size: clamp(1.2rem, 4.6vw, 1.5rem); font-weight: 900; letter-spacing: -.02em; }
     .faq-h a { font-size: .84rem; font-weight: 800; color: var(--d-blue); display: flex; align-items: center; gap: 4px; }
     .faq-h a svg { width: 15px; height: 15px; }
     .faq { margin-top: 12px; display: grid; gap: 10px; }
@@ -363,13 +359,13 @@
         <button type="button" class="on" data-period="month">Mensuel</button>
         <button type="button" data-period="year">Annuel</button>
       </div>
-      {% if max_year_savings %}<span class="seg-save">Économisez jusqu'à {{ max_year_savings }}%</span>{% endif %}
+      {% if max_year_savings %}<span class="seg-save"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41 11 22.99a2 2 0 0 1-2.83 0L1 15.83a2 2 0 0 1 0-2.83L10.59 3.4A2 2 0 0 1 12 2.82h7a2 2 0 0 1 2 2v7a2 2 0 0 1-.41 1.59z"/><circle cx="16.5" cy="7.5" r="1.5" fill="currentColor" stroke="none"/></svg>Économisez jusqu'à {{ max_year_savings }}%</span>{% endif %}
     </div>
 
     <section class="plans" id="plans">
       {% for p in plans %}
       <article class="plan {{ 'pop' if p.popular }} {{ p.accent }}">
-        {% if p.popular %}<span class="ribbon">👑 Le plus populaire</span>{% endif %}
+        {% if p.popular %}<span class="ribbon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7z"/></svg>Le plus populaire</span>{% endif %}
 
         <div class="plan-h">
           <span class="pi {{ p.accent }}">
@@ -386,8 +382,10 @@
         <div class="plan-price">
           <span class="now">{{ '{:,}'.format(p.price_month) | replace(',', ' ') }} GNF</span>
           <span class="per">/ mois</span>
-          <span class="eqv"
-                data-eqv-year="ou {{ '{:,}'.format(p.price_year) | replace(',', ' ') }} GNF / an · Économisez {{ p.year_savings_months }} mois"></span>
+          <span class="eqv">
+            <span class="ou">ou <b>{{ '{:,}'.format(p.price_year) | replace(',', ' ') }} GNF</b> / an</span>
+            <span class="sav">Économisez {{ p.year_savings_months }} mois</span>
+          </span>
         </div>
 
         <ul class="plan-feats">
@@ -404,62 +402,24 @@
           <span class="plan-btn current">Plan actuel</span>
           {% else %}
           <a class="plan-btn {{ 'gold' if p.accent == 'amber' else 'primary' }}" data-plan="{{ p.code }}"
-             href="{{ url_for('technician_subscription_checkout', plan=p.code, period='month') }}">Choisir ce plan</a>
+             href="{{ url_for('technician_subscription_checkout', plan=p.code, period='month') }}">Choisir le plan {{ p.name }}
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </a>
           {% endif %}
         </div>
       </article>
       {% endfor %}
     </section>
 
-    <section class="compare">
-      <div>
-        <h2>Comparatif des fonctionnalités</h2>
-        <div class="cmp-scroll">
-          <table class="cmp">
-            <thead>
-              <tr>
-                <th style="text-align:left">Fonctionnalités</th>
-                <th class="pro">Pro</th><th class="prem">Premium</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% macro yes(cls='') %}<svg class="yes {{ cls }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>{% endmacro %}
-              {% set dash %}<span class="mut">—</span>{% endset %}
-              <tr>
-                <td class="feat"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></span>Demandes reçues / mois</td>
-                <td><span class="txt b">30 max</span></td><td><span class="txt g">Illimité</span></td>
-              </tr>
-              <tr>
-                <td class="feat"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg></span>Visibilité dans la recherche</td>
-                <td><span class="txt b">Prioritaire</span></td><td><span class="txt g">En tête</span></td>
-              </tr>
-              <tr>
-                <td class="feat"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg></span>Badge profil vérifié</td>
-                <td>{{ yes('b') }}</td><td>{{ yes('g') }}</td>
-              </tr>
-              <tr>
-                <td class="feat"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="4" width="3" height="14"/></svg></span>Statistiques détaillées</td>
-                <td><span class="txt b">De base</span></td><td>{{ yes('g') }}</td>
-              </tr>
-              <tr>
-                <td class="feat"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1v-6h3zM3 19a2 2 0 0 0 2 2h1v-6H3z"/></svg></span>Support</td>
-                <td><span class="txt b">Temps réel</span></td><td><span class="txt g">Prioritaire</span></td>
-              </tr>
-              <tr>
-                <td class="feat"><span class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7z"/></svg></span>Mise en avant du profil</td>
-                <td>{{ dash }}</td><td>{{ yes('g') }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+    <section class="motivation">
+      <span class="mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 6l-9.5 9.5-5-5L1 18"/><path d="M17 6h6v6"/></svg></span>
+      <div class="mt">
+        <b>Plus de clients aujourd'hui, plus de revenus demain</b>
+        <p>Rejoignez les techniciens qui développent leur activité avec FixPro.</p>
       </div>
-
-      <aside class="upsell">
-        <span class="ui"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg></span>
-        <b>Passez à un plan supérieur</b>
-        <p>et développez votre activité avec FixPro.</p>
-        <a href="#plans">En savoir plus</a>
-      </aside>
+      <span class="mchart" aria-hidden="true">
+        <span style="height:35%"></span><span style="height:50%"></span><span style="height:68%"></span><span style="height:85%"></span><span style="height:100%"></span>
+      </span>
     </section>
 
     <div class="faq-h">
@@ -467,8 +427,8 @@
       <a href="{{ url_for('contact') }}">Voir toutes les questions <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
     </div>
     <div class="faq">
-      {% for q, a in faq %}
-      <details{% if loop.first %} open{% endif %}>
+      {% for q, a in faq[:2] %}
+      <details>
         <summary>{{ q }}<span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></summary>
         <div class="ans">{{ a }}</div>
       </details>
@@ -483,9 +443,6 @@
       var seg = document.getElementById('seg');
       var period = 'month';
       function apply() {
-        document.querySelectorAll('.plan-price .eqv').forEach(function (el) {
-          el.textContent = period === 'year' ? (el.getAttribute('data-eqv-year') || '') : '';
-        });
         document.querySelectorAll('.plan-btn[data-plan]').forEach(function (el) {
           el.href = el.href.replace(/period=(month|year)/, 'period=' + period);
         });

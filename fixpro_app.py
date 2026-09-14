@@ -6104,18 +6104,18 @@ def technician_subscription():
     max_year_savings = max((pv["year_savings"] for pv in plans), default=0)
 
     faq = [
-        ("Comment fonctionne l'abonnement ?",
-         "L'abonnement vous donne accès aux demandes des clients de votre zone. "
-         "Il se renouvelle automatiquement à chaque échéance, sauf annulation de votre part."),
-        ("Puis-je changer de plan ?",
+        ("Puis-je changer de plan plus tard ?",
          "Oui, à tout moment. Le nouveau plan prend effet à la prochaine échéance et le "
          "montant est ajusté au prorata."),
-        ("Que se passe-t-il à la fin de mon abonnement ?",
-         "Sans renouvellement, votre profil reste visible mais vous ne recevez plus de "
-         "nouvelles demandes tant qu'un abonnement n'est pas actif."),
-        ("Comment effectuer le paiement ?",
+        ("Comment se fait le paiement ?",
          "Par Orange Money, MTN Mobile Money ou carte bancaire. Votre abonnement "
          "n'est activé qu'une fois le paiement réellement confirmé par le moyen choisi."),
+        ("Que se passe-t-il lorsque mon abonnement expire ?",
+         "Sans renouvellement, votre profil reste visible mais vous ne recevez plus de "
+         "nouvelles demandes tant qu'un abonnement n'est pas actif."),
+        ("Puis-je passer du Pro au Premium ?",
+         "Oui, à tout moment depuis cette page. Le changement prend effet à la prochaine "
+         "échéance et le montant est ajusté au prorata."),
     ]
 
     conn2 = get_db_connection()
