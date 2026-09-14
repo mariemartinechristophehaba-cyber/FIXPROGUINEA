@@ -1077,7 +1077,7 @@ class TechnicianDashboardTests(FixProTestCase):
         self.assertIn("Se déconnecter", html)
         self.assertIn("tpm-dot", html)          # point vert (avatar partage)
         # chaque entree pointe vers une route reelle
-        for frag in ('href="/profile"', 'abonnement"', 'href="/notifications"',
+        for frag in ('href="/profile"', 'abonnement"',
                      'href="/profil/securite"', 'href="/contact"', 'href="/logout"'):
             self.assertIn(frag, html)
 
@@ -1085,7 +1085,7 @@ class TechnicianDashboardTests(FixProTestCase):
         self.register_artisan("pm2@example.com", phone="+224621113002")
         self.login("pm2@example.com")
         for path, code in (("/profile", 200), ("/abonnement", 200),
-                           ("/notifications", 200), ("/profil/securite", 200),
+                           ("/profil/securite", 200),
                            ("/contact", 200)):
             r = self.client.get(path)
             self.assertEqual(r.status_code, code, "%s -> %s" % (path, r.status_code))
@@ -3363,7 +3363,9 @@ class ParametresPageTests(FixProTestCase):
             html = c.get("/parametres").get_data(as_text=True)
         self.assertIn('href="{}"'.format(self._url("artisan_dashboard")), html)
         self.assertIn('href="{}"'.format(self._url("technician_subscription")), html)
-        self.assertIn('href="{}"'.format(self._url("technician_notifications")), html)
+        # notifications professionnelles : en attente de la future maquette
+        # officielle, l'entree ne pointe plus vers une page supprimee
+        self.assertIn("Notifications professionnelles", html)
 
     # TEST 10 : securite serveur -- un client ne peut pas obtenir le contenu
     # technicien en bricolant la session (le role vient de la base)
@@ -3859,7 +3861,7 @@ class RefreshRolePersistenceTests(FixProTestCase):
         pourrait oublier d'ajouter a une nouvelle route."""
         self.register_client(phone="+224620222008")
         self.login("+224620222008")
-        for path in ("/dashboard", "/profile", "/requests", "/notifications"):
+        for path in ("/dashboard", "/profile", "/requests", "/parametres"):
             r = self.client.get(path)
             self.assertIn("no-store", r.headers.get("Cache-Control", ""), path)
 
@@ -3963,16 +3965,6 @@ class NotificationCenterTests(FixProTestCase):
         self.assertIn("Voir toutes les notifications", html)
         # aucune zone de reponse dans la cloche
         self.assertNotIn('name="reply"', html)
-
-    def test_technician_notifications_page_alias(self):
-        self.register_artisan("alias@x.co", phone="+224621119002")
-        self.login("alias@x.co")
-        r = self.client.get("/technician/notifications")
-        self.assertEqual(r.status_code, 200)
-        body = r.get_data(as_text=True)
-        self.assertIn("Notifications", body)
-        # page consultative : pas de formulaire de reponse
-        self.assertNotIn("Répondre", body)
 
     def test_admin_broadcast_reaches_all_technicians_only(self):
         self._admin()

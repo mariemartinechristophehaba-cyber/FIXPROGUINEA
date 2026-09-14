@@ -7350,19 +7350,19 @@ def _notif_target(notif):
         "trial_expired": ("clock", "technician_subscription"),
         "payment": ("card", "technician_subscription"),
         "promo": ("percent", "technician_subscription"),
-        "announcement": ("megaphone", "notifications"),
-        "update": ("download", "notifications"),
+        "announcement": ("megaphone", "artisan_dashboard"),
+        "update": ("download", "artisan_dashboard"),
         "security": ("shield", "profile"),
         "account": ("user", "artisan_dashboard"),
         "verification": ("shield", "profile"),
-        "system": ("info", "notifications"),
+        "system": ("info", "artisan_dashboard"),
     }
     if typ in _CAT:
         icon, ep = _CAT[typ]
         try:
             return icon, url_for(ep)
         except Exception:
-            return icon, url_for("notifications")
+            return icon, url_for("index")
 
     if kind == "request_id" and val.isdigit():
         href = url_for("request_detail", request_id=int(val))
@@ -7383,7 +7383,7 @@ def _notif_target(notif):
     elif typ == "success":
         href = url_for("artisan_dashboard")
     else:
-        href = url_for("notifications")
+        href = url_for("index")
 
     if "demande" in title or "mission" in title or typ == "new_request":
         icon = "wrench"
@@ -7404,30 +7404,6 @@ def _notif_target(notif):
     else:
         icon = "info"
     return icon, href
-
-
-@app.route("/notifications")
-@login_required
-def notifications():
-    """Emplacement reserve pour le futur Centre de notifications officiel.
-
-    L'ancienne page plein-ecran (liste + "tout marquer comme lu") a ete
-    retiree definitivement le 2026-09-14 : plus de liste ni de mise en page
-    heritee ici. La cloche (accueil, tiroir, menus profil, en-tete
-    technicien...) continue de pointer sur cette meme route pour ne jamais
-    casser un lien existant ; elle affiche un simple placeholder tant que
-    la nouvelle maquette officielle n'est pas fournie. Le panneau cloche du
-    technicien (_tech_notif_bell.html, /api/notifications) est un systeme
-    distinct et deja a jour : non concerne."""
-    return render_template("notifications.html", user=get_current_user())
-
-
-@app.route("/technician/notifications")
-@login_required
-def technician_notifications():
-    """Alias de la page notifications pour l'espace technicien (meme contenu,
-    toujours consultatif)."""
-    return notifications()
 
 
 @app.route("/api/notifications")

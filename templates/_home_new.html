@@ -785,7 +785,7 @@
       </span>
     </a>
     <div class="hp-actions">
-      <a href="{{ url_for('notifications') }}" class="hp-notif" aria-label="Notifications">
+      <a href="#" onclick="event.preventDefault()" class="hp-notif" aria-label="Notifications">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></svg>
         {% if unread_count %}<span class="hp-notif-badge">{{ unread_count }}</span>{% endif %}
       </a>
@@ -849,7 +849,7 @@
       {% endif %}
       <div class="hpm-sep"></div>
 
-      <a href="{{ url_for('notifications') }}" class="hpm-item" role="menuitem">
+      <a href="#" onclick="event.preventDefault()" class="hpm-item" role="menuitem">
         <span class="hpm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></svg></span>
         <span class="hpm-tx"><b>Notifications</b><span>Consulter mes notifications</span></span>
         {% if notif_unread|default(0) > 0 %}<span class="hpm-tx" style="flex:0;font-weight:800;color:var(--hp-primary)">{{ notif_unread }}</span>{% endif %}

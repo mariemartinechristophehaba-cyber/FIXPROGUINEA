@@ -191,7 +191,7 @@
             <span class="pm-text"><strong>Préférences technicien</strong><span>Disponibilité, demandes, interventions</span></span>
             <svg class="pm-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
           </a>
-          <a href="{{ url_for('technician_notifications') }}" class="pm-item">
+          <a href="#" onclick="event.preventDefault()" class="pm-item">
             <span class="pm-icon violet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></span>
             <span class="pm-text"><strong>Notifications professionnelles</strong><span>Nouvelles demandes, missions, etc.</span></span>
             <svg class="pm-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
@@ -214,7 +214,7 @@
         <h2 class="pm-section-title">Préférences</h2>
         <div class="pm-card">
           {% if mode != 'guest' %}
-          <a href="{{ url_for('notifications') }}" class="pm-item">
+          <a href="#" onclick="event.preventDefault()" class="pm-item">
             <span class="pm-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></span>
             <span class="pm-text"><strong>Notifications</strong><span>{{ 'Gérez vos notifications' if mode == 'client' else 'Préférences générales' }}</span></span>
             <svg class="pm-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
