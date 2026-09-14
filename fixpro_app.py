@@ -7016,9 +7016,11 @@ def artisan_detail(artisan_id):
     pour l'instant -- un metier sans catalogue redirige vers la recherche
     plutot que d'afficher une page incomplete/fausse. Carte identite (fond
     bleu pale, pas de photo pleine largeur) + services (icones) + note
-    moyenne reelle. Pas de section "A propos", pas de prix, pas de section
-    Realisations (aucune donnee avant/apres n'existe encore cote technicien
-    -- pas de contenu invente)."""
+    moyenne reelle + realisations reelles (table artisan_portfolio, etat
+    vide honnete tant qu'aucun technicien n'y a deppose de photo -- pas de
+    contenu invente) + bouton Prendre rendez-vous (reutilise le vrai flux
+    de demande existant, aucun systeme de creneaux parallele). Pas de
+    section "A propos", pas de prix invente."""
     user = get_current_user()
     conn = get_db_connection()
     try:
@@ -7040,6 +7042,10 @@ def artisan_detail(artisan_id):
         review_stats = conn.execute(
             "SELECT COALESCE(AVG(rating), 0) AS avg_rating, COUNT(*) AS count"
             " FROM reviews WHERE artisan_id = ?", (artisan_id,)).fetchone()
+
+        portfolio_rows = conn.execute(
+            "SELECT photo_url, caption FROM artisan_portfolio"
+            " WHERE artisan_id = ? ORDER BY created_at DESC LIMIT 12", (artisan_id,)).fetchall()
     finally:
         conn.close()
 
@@ -7048,6 +7054,7 @@ def artisan_detail(artisan_id):
     years_exp = artisan.get("years_experience")
     radius_km = app.config.get("LOCAL_RADIUS_KM", 15.0)
     review_count = int(review_stats["count"] or 0)
+    portfolio = [{"photo": row["photo_url"], "caption": row["caption"]} for row in portfolio_rows]
 
     professional = {
         "id": artisan["id"],
@@ -7064,6 +7071,7 @@ def artisan_detail(artisan_id):
         "rating": float(review_stats["avg_rating"] or 0),
         "reviewCount": review_count,
         "services": PROFESSIONAL_SERVICE_CATALOG[trade],
+        "portfolio": portfolio,
     }
 
     return render_template("artisan_detail.html", user=user, professional=professional)

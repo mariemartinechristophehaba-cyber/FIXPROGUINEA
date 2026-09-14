@@ -170,6 +170,22 @@
     }
     .pl-rating-empty { color: var(--pl-muted); font-size: 0.86rem; margin: 0; text-align: center; }
 
+    /* Realisations recentes -- galerie de vraies photos technicien */
+    .pl-port-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .pl-port-item {
+      aspect-ratio: 1; border-radius: 12px; overflow: hidden; background: var(--pl-soft);
+    }
+    .pl-port-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .pl-port-empty { color: var(--pl-muted); font-size: 0.86rem; margin: 0; text-align: center; }
+
+    /* Bouton de prise de rendez-vous */
+    .pl-rdv-btn {
+      display: flex; align-items: center; justify-content: center; gap: 9px;
+      background: var(--pl-text); color: #fff; border: none; border-radius: 14px;
+      padding: 15px 16px; font-size: 0.95rem; font-weight: 700; width: 100%; cursor: pointer;
+    }
+    .pl-rdv-btn svg { width: 19px; height: 19px; flex-shrink: 0; }
+
     [hidden] { display: none !important; }
 
     /* ---------- Toast discret ---------- */
@@ -283,6 +299,23 @@
 
     <section class="pl-section">
       <div class="pl-sec-head">
+        <span class="pl-sec-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.5-3.5a2 2 0 0 0-2.83 0L5 21"/></svg></span>
+        <h2>Réalisations récentes</h2>
+        <svg class="pl-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </div>
+      {% if p.portfolio %}
+      <div class="pl-port-grid">
+        {% for photo in p.portfolio %}
+        <div class="pl-port-item"><img src="{{ photo.photo }}" alt="{{ photo.caption or 'Réalisation' }}" loading="lazy" /></div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="pl-port-empty">Aucune réalisation publiée pour le moment.</p>
+      {% endif %}
+    </section>
+
+    <section class="pl-section">
+      <div class="pl-sec-head">
         <span class="pl-sec-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></span>
         <h2>Évaluations clients</h2>
         <svg class="pl-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
@@ -302,6 +335,13 @@
       <p class="pl-rating-empty">Aucun avis pour le moment.</p>
       {% endif %}
     </section>
+
+    <div class="pl-actions">
+      <a class="pl-rdv-btn" href="{{ url_for('demande', artisan_id=p.id) }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        Prendre rendez-vous
+      </a>
+    </div>
   </div>
 
   <div class="pl-toast" id="toast" role="status" aria-live="polite"></div>
