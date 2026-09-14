@@ -3502,10 +3502,11 @@ class ParametresApparenceTests(FixProTestCase):
 
 
 class ArtisanPublicProfilePlombierTests(FixProTestCase):
-    """Profil public mobile (ProfessionalPublicProfile), version en-tete bleu
-    FixPro + avatar + services (fuite/sanitaire/chauffe-eau/debouchage/
-    entretien) + avis clients reels. Aucune section Realisations, aucun
-    prix, donnees dynamiques. Plus de banniere photo (retiree)."""
+    """Profil public mobile (ProfessionalPublicProfile), version simple :
+    en-tete bleu FixPro + avatar + a propos + services. Aucune note, aucun
+    avis, aucune statistique de satisfaction, aucune section Realisations,
+    aucun prix -- le client n'a pas encore d'avis reel sur le technicien a
+    ce stade. Plus de banniere photo (retiree)."""
 
     def _plumber_id(self, phone="+224621119900",
                     email="plombier-profil@example.com"):
@@ -3533,21 +3534,16 @@ class ArtisanPublicProfilePlombierTests(FixProTestCase):
         self.assertNotIn('class="pl-hero"', html)
         self.assertNotIn('class="pl-idcard"', html)
 
-    def test_profile_shows_blue_header_idblock_stats_and_real_images(self):
+    def test_profile_shows_blue_header_idblock_and_real_images(self):
         aid = self._plumber_id()
         r = self.client.get(f"/artisans/{aid}")
         self.assertEqual(r.status_code, 200)
         html = r.get_data(as_text=True)
         self.assertIn("02_avatar_plombier.png", html)
         self.assertIn('class="pl-idblock"', html)
-        self.assertIn('class="pl-stats"', html)
         self.assertIn("Profil du technicien", html)
         self.assertIn("Plombier professionnel", html)
-        self.assertIn("Zone d'intervention", html)
-        self.assertIn("Interventions", html)
-        self.assertIn("Clients satisfaits", html)
-        self.assertIn("Avis clients", html)
-        self.assertIn("Message", html)
+        self.assertIn("Envoyer un message", html)
         self.assertIn("Contacter", html)
 
     def test_fifth_service_entretien_uses_icon_not_a_fake_photo(self):
@@ -3555,10 +3551,11 @@ class ArtisanPublicProfilePlombierTests(FixProTestCase):
         html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
         self.assertIn("Entretien général", html)
 
-    def test_reviews_are_real_data_from_db(self):
+    def test_no_rating_no_review_anywhere_even_with_real_reviews_in_db(self):
+        """Le client n'a pas encore d'avis reel sur ce technicien a ce stade
+        du parcours -- la fiche doit rester totalement neutre sur la
+        notation, MEME si le technicien a deja de vrais avis en base."""
         aid = self._plumber_id(phone="+224621119992", email="plombier-avis@example.com")
-        empty_html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
-        self.assertIn("Aucun avis pour le moment.", empty_html)
         conn = db.connect(sqlite_path=self.db_path)
         try:
             conn.execute(
@@ -3573,9 +3570,23 @@ class ArtisanPublicProfilePlombierTests(FixProTestCase):
             conn.commit()
         finally:
             conn.close()
-        filled_html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
-        self.assertIn("Aminata Sow", filled_html)
-        self.assertIn("Travail impeccable, je recommande.", filled_html)
+        html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
+        self.assertNotIn("Aminata Sow", html)
+        self.assertNotIn("Travail impeccable", html)
+        for banned in ("avis", "Avis", "★", "Nouveau", "Clients satisfaits",
+                       "pl-review", "pl-stats", "Zone d'intervention", "Interventions"):
+            self.assertNotIn(banned, html, banned)
+
+    def test_experience_shown_when_present(self):
+        aid = self._plumber_id(phone="+224621119994", email="plombier-exp@example.com")
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            conn.execute("UPDATE users SET years_experience = 7 WHERE id = ?", (aid,))
+            conn.commit()
+        finally:
+            conn.close()
+        html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
+        self.assertIn("7 ans d'expérience", html)
 
     def test_four_services_each_with_its_own_distinct_image(self):
         aid = self._plumber_id(phone="+224621119901", email="plombier2@example.com")
