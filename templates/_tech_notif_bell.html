@@ -1,5 +1,5 @@
 {# Cloche + centre de notifications de l'Espace Technicien (bottom sheet).
-   Inclus dans le header de dashboard_technicien.html, etc.
+   Inclus dans le header de dashboard_technicien.html, technician_subscription.html, etc.
    Consultatif uniquement : aucune reponse possible (les conversations sont dans "Messages").
    Reutilise : GET /api/notifications, POST /notifications/<id>/read, POST /notifications/read-all. #}
 <div class="ntfb" id="ntfb" data-csrf="{{ csrf_token() }}">

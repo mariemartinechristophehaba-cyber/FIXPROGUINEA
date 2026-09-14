@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#2563EB" />
+  <meta name="csrf-token" content="{{ csrf_token() }}" />
+  {% include '_pwa_head.html' %}
+  <title>
+    {% if v.state == 'PAYMENT_CONFIRMED' %}Abonnement activé
+    {% elif v.state in ('PENDING', 'PROCESSING') %}Paiement en cours
+    {% else %}Paiement non finalisé{% endif %} - FixPro
+  </title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --d-blue: #2563EB; --d-blue-d: #1D4ED8; --d-ink: #0B1B3B; --d-muted: #64748B;
+      --d-ice: #EEF2F9; --d-line: #E4EAF4; --d-bg: #F4F7FE; --d-green: #16A34A;
+      --d-red: #DC2626; --d-amber: #F59E0B;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: var(--d-ink); background: var(--d-bg); -webkit-font-smoothing: antialiased; }
+    a { text-decoration: none; color: inherit; }
+    button { font-family: inherit; }
+    [hidden] { display: none !important; }
+
+    .topbar {
+      position: sticky; top: 0; z-index: 20; background: rgba(244,247,254,.92);
+      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      display: flex; align-items: center; gap: 12px; max-width: 1080px; margin: 0 auto;
+      padding: calc(10px + env(safe-area-inset-top)) clamp(14px, 4vw, 26px) 10px;
+    }
+    .brand { display: flex; align-items: center; gap: 9px; }
+    .brand .ic { width: 32px; height: 32px; color: var(--d-blue); flex-shrink: 0; }
+    .brand .ic svg { width: 100%; height: 100%; }
+    .brand .n { font-size: 1.22rem; font-weight: 800; letter-spacing: -.02em; line-height: 1; }
+    .brand .n i { color: var(--d-blue); font-style: normal; }
+    .brand .s { display: block; font-size: .68rem; font-weight: 600; color: var(--d-muted); margin-top: 2px; }
+    .topbar .sp { flex: 1; }
+    .icon-btn { position: relative; width: 40px; height: 40px; border-radius: 999px; border: 0; background: #fff; color: var(--d-ink); box-shadow: 0 4px 14px rgba(11,27,59,.07); display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
+    .icon-btn svg { width: 20px; height: 20px; }
+    .badge { position: absolute; top: -3px; right: -3px; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 999px; background: #EF4444; color: #fff; font-size: .66rem; font-weight: 800; display: flex; align-items: center; justify-content: center; border: 2px solid var(--d-bg); }
+
+    .wrap { max-width: 560px; margin: 0 auto; padding: clamp(16px, 5vw, 40px) clamp(14px, 4vw, 24px) calc(40px + env(safe-area-inset-bottom)); }
+
+    .hero-ic {
+      width: clamp(66px, 18vw, 84px); aspect-ratio: 1; border-radius: 999px; margin: 0 auto;
+      display: flex; align-items: center; justify-content: center; color: #fff;
+    }
+    .hero-ic.wait { background: var(--d-ice); color: var(--d-blue); }
+    .hero-ic.ok { background: var(--d-green); }
+    .hero-ic.bad { background: var(--d-red); }
+    .hero-ic.warn { background: var(--d-amber); }
+    .hero-ic svg { width: 46%; height: 46%; }
+
+    .spinner {
+      width: 44%; height: 44%; border-radius: 999px;
+      border: 4px solid rgba(37,99,235,.2); border-top-color: var(--d-blue);
+      animation: spin .9s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    h1 { margin: 16px 0 0; text-align: center; font-size: clamp(1.35rem, 5.4vw, 1.8rem); font-weight: 900; letter-spacing: -.03em; line-height: 1.15; }
+    .lead { margin: 8px auto 0; text-align: center; font-size: clamp(.9rem, 3.6vw, 1rem); color: var(--d-muted); line-height: 1.45; max-width: 34ch; }
+
+    .card {
+      background: #fff; border: 1px solid var(--d-line); border-radius: 16px;
+      padding: clamp(14px, 3.5vw, 20px); margin-top: clamp(18px, 5vw, 28px);
+      box-shadow: 0 10px 28px rgba(11,27,59,.05);
+    }
+    .row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--d-line); font-size: .9rem; }
+    .row:last-child { border-bottom: 0; }
+    .row .k { flex: 1; color: var(--d-muted); font-weight: 600; }
+    .row .val { font-weight: 800; text-align: right; word-break: break-word; }
+    .row .val.ok { color: var(--d-green); }
+    .row .val.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 700; font-size: .84rem; }
+
+    .actions { display: grid; gap: 10px; margin-top: clamp(16px, 4vw, 22px); }
+    .btn {
+      display: flex; align-items: center; justify-content: center; gap: 9px; width: 100%;
+      border-radius: 13px; padding: 14px 18px; font-size: .96rem; font-weight: 800; cursor: pointer;
+      border: 1.5px solid var(--d-line); background: #fff; color: var(--d-ink);
+    }
+    .btn svg { width: 17px; height: 17px; }
+    .btn.primary { background: linear-gradient(180deg, #3B76F5, var(--d-blue)); color: #fff; border-color: transparent; box-shadow: 0 12px 26px rgba(37,99,235,.3); }
+    .btn.ghost { background: #fff; color: var(--d-blue); border-color: var(--d-blue); }
+    .btn.danger-ghost { background: #fff; color: var(--d-red); border-color: #F3C7C7; }
+
+    .note { margin-top: 16px; text-align: center; font-size: .8rem; color: var(--d-muted); display: flex; align-items: center; justify-content: center; gap: 6px; }
+    .note svg { width: 14px; height: 14px; color: var(--d-blue); }
+
+    .foot { text-align: center; padding: clamp(24px, 5vw, 36px) 16px 24px; }
+    .foot .fb { display: inline-flex; align-items: center; gap: 6px; font-size: .95rem; font-weight: 800; }
+    .foot .fb svg { width: 19px; height: 19px; color: var(--d-blue); }
+    .foot .fb i { color: var(--d-blue); font-style: normal; }
+    .foot p { margin: 5px 0 0; font-size: .8rem; color: var(--d-muted); }
+  </style>
+</head>
+<body>
+  {% set av_on = availability == 'en_ligne' %}
+  <header class="topbar">
+    <a class="brand" href="{{ url_for('technician_subscription') }}">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span>
+      <span><span class="n">Fix<i>Pro</i></span><span class="s">Espace Technicien</span></span>
+    </a>
+    <span class="sp"></span>
+    {% include '_tech_notif_bell.html' %}
+    {% include '_tech_profile_menu.html' %}
+  </header>
+
+  <main class="wrap" id="statusRoot" data-ref="{{ v.ref }}" data-state="{{ v.state }}"
+        data-poll="{{ url_for('api_subscription_payment_status', ref=v.ref) }}">
+
+    {% if v.state in ('PENDING', 'PROCESSING') %}
+      <div class="hero-ic wait"><span class="spinner"></span></div>
+      <h1>Paiement en cours</h1>
+      <p class="lead">Nous vérifions votre paiement auprès de {{ v.method_label }}. Cette page se met à jour automatiquement.</p>
+      <div class="card">
+        <div class="row"><span class="k">Plan</span><span class="val">{{ v.plan_name }}</span></div>
+        <div class="row"><span class="k">Montant</span><span class="val">{{ "{:,}".format(v.amount) | replace(",", " ") }} GNF</span></div>
+        <div class="row"><span class="k">Moyen de paiement</span><span class="val">{{ v.method_label }}</span></div>
+        <div class="row"><span class="k">Référence</span><span class="val mono">{{ v.ref }}</span></div>
+        <div class="row"><span class="k">Statut</span><span class="val">En attente de confirmation</span></div>
+      </div>
+      <div class="actions">
+        <form method="post" action="{{ url_for('subscription_payment_cancel', ref=v.ref) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+          <button type="submit" class="btn danger-ghost">Annuler le paiement</button>
+        </form>
+      </div>
+      <p class="note">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+        Votre abonnement ne sera activé qu'après confirmation réelle du paiement.
+      </p>
+
+    {% elif v.state == 'PAYMENT_CONFIRMED' %}
+      <div class="hero-ic ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+      <h1>Félicitations&nbsp;!</h1>
+      <p class="lead">Votre abonnement est maintenant activé.</p>
+      <div class="card">
+        <div class="row"><span class="k">Plan</span><span class="val">{{ v.plan_name }}</span></div>
+        <div class="row"><span class="k">Montant</span><span class="val">{{ "{:,}".format(v.amount) | replace(",", " ") }} GNF</span></div>
+        <div class="row"><span class="k">Statut</span><span class="val ok">Actif</span></div>
+        {% if v.start_label %}<div class="row"><span class="k">Date d'activation</span><span class="val">{{ v.start_label }}</span></div>{% endif %}
+        {% if v.end_label %}<div class="row"><span class="k">Date d'expiration</span><span class="val">{{ v.end_label }}</span></div>{% endif %}
+        <div class="row"><span class="k">Moyen de paiement</span><span class="val">{{ v.method_label }}</span></div>
+        <div class="row"><span class="k">Référence de transaction</span><span class="val mono">{{ v.ref }}</span></div>
+      </div>
+      <div class="actions">
+        <a class="btn primary" href="{{ url_for('artisan_dashboard') }}">Aller à mon tableau de bord <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <a class="btn ghost" href="{{ url_for('technician_subscription') }}">Voir mon abonnement</a>
+      </div>
+
+    {% else %}
+      {% set titles = {'PAYMENT_FAILED': 'Paiement échoué', 'PAYMENT_CANCELLED': 'Paiement annulé', 'PAYMENT_EXPIRED': 'Session de paiement expirée'} %}
+      {% set leads = {
+        'PAYMENT_FAILED': "Nous n'avons pas pu finaliser votre transaction.",
+        'PAYMENT_CANCELLED': "La transaction n'a pas été finalisée.",
+        'PAYMENT_EXPIRED': "Le délai de confirmation est dépassé."} %}
+      <div class="hero-ic {{ 'warn' if v.state == 'PAYMENT_EXPIRED' else 'bad' }}">
+        {% if v.state == 'PAYMENT_CANCELLED' %}
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        {% elif v.state == 'PAYMENT_EXPIRED' %}
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        {% else %}
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>
+        {% endif %}
+      </div>
+      <h1>{{ titles[v.state] }}</h1>
+      <p class="lead">{{ leads[v.state] }}</p>
+      <div class="card">
+        <div class="row"><span class="k">Plan</span><span class="val">{{ v.plan_name }}</span></div>
+        <div class="row"><span class="k">Montant</span><span class="val">{{ "{:,}".format(v.amount) | replace(",", " ") }} GNF</span></div>
+        <div class="row"><span class="k">Moyen de paiement</span><span class="val">{{ v.method_label }}</span></div>
+        <div class="row"><span class="k">Date</span><span class="val">{{ v.created_label }}</span></div>
+        <div class="row"><span class="k">Référence</span><span class="val mono">{{ v.ref }}</span></div>
+        <div class="row"><span class="k">Statut</span><span class="val">{{ titles[v.state] }}</span></div>
+      </div>
+      <div class="actions">
+        {% if v.plan_code %}
+        <a class="btn primary" href="{{ url_for('technician_subscription_checkout', plan=v.plan_code) }}">
+          {{ 'Reprendre le paiement' if v.state == 'PAYMENT_CANCELLED' else 'Réessayer le paiement' }}
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </a>
+        {% endif %}
+        <a class="btn ghost" href="{{ url_for('technician_subscription') }}">Choisir un autre moyen de paiement</a>
+      </div>
+      <p class="note">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg>
+        Aucun montant n'a été débité. Votre abonnement reste inactif.
+      </p>
+    {% endif %}
+  </main>
+
+  <footer class="foot">
+    <span class="fb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg> Fix<i>Pro</i></span>
+    <p>Des professionnels plus proches de vous.</p>
+  </footer>
+
+  <script>
+    (function () {
+      var root = document.getElementById('statusRoot');
+      var state = root.getAttribute('data-state');
+      if (state !== 'PENDING' && state !== 'PROCESSING') return;
+      var url = root.getAttribute('data-poll');
+      var tries = 0;
+      var timer = setInterval(function () {
+        tries++;
+        fetch(url, { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (d) {
+            if (d && d.ok && d.final) { clearInterval(timer); location.reload(); }
+          })
+          .catch(function () {});
+        if (tries > 150) clearInterval(timer);   // ~10 min de garde
+      }, 4000);
+    })();
+  </script>
+</body>
+</html>
