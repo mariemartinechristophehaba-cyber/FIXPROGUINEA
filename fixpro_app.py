@@ -2768,18 +2768,11 @@ def admin_login():
                 continue
             error = _msg
 
-    # Visuel du panneau gauche. Pour changer la photo : remplacer simplement
-    # static/img/admin-login-hero.jpg (meme nom, meme emplacement). Le suffixe ?v=
-    # est calcule sur la date du fichier -> le navigateur recharge la nouvelle
-    # image automatiquement, jamais de cache perime.
-    hero = url_for("static", filename="img/admin-login-hero.jpg",
-                   v=_static_asset_version("img/admin-login-hero.jpg"))
-
     security_code_url = (url_for("admin_google_login")
                          if _get_google_client() else url_for("admin_forgot_password"))
 
     resp = make_response(render_template(
-        "admin_login.html", email=email, error=error, hero_image=hero,
+        "admin_login.html", email=email, error=error,
         security_code_url=security_code_url, year=datetime.now(timezone.utc).year))
     resp.headers["Cache-Control"] = "no-store, must-revalidate"
     return resp

@@ -10,16 +10,13 @@
     :root{
       --al-blue:#1E56E0;
       --al-blue-dark:#123a9c;
-      --al-blue-deep:#0c2a73;
-      --al-cyan:#5ad1ff;
+      --al-blue-deep:#0a2568;
       --al-ink:#0f2043;
       --al-muted:#64748b;
       --al-line:#e6ebf5;
-      --al-bg:#f4f7fd;
-      --al-card:#ffffff;
+      --al-bg:#eef3fc;
       --al-danger:#dc2626;
       --al-danger-bg:#fef2f2;
-      --al-radius:18px;
     }
     *{box-sizing:border-box}
     html,body{margin:0;padding:0}
@@ -29,135 +26,78 @@
       color:var(--al-ink);
       min-height:100vh;
       min-height:100dvh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:clamp(12px,3vw,32px);
     }
     a{color:inherit}
-    .al-shell{
-      position:relative;
+
+    .al-card{
+      width:100%; max-width:1180px;
+      background:#fff;
+      border-radius:22px;
+      box-shadow:0 24px 60px -24px rgba(15,32,67,.22);
       display:flex;
-      min-height:100vh;
-      min-height:100dvh;
       overflow:hidden;
+      min-height:640px;
     }
 
     /* ---------- Panneau gauche (bleu) ---------- */
     .al-left{
       position:relative;
-      flex:0 0 54%;
-      max-width:54%;
+      flex:0 0 42%;
+      max-width:42%;
       display:flex;
       flex-direction:column;
-      justify-content:center;
-      padding:clamp(24px,4vw,56px) clamp(28px,6vw,88px);
+      justify-content:space-between;
+      padding:clamp(28px,4vw,56px);
       color:#fff;
       overflow:hidden;
-      background:
-        linear-gradient(160deg, rgba(8,22,60,.55), rgba(8,22,60,.35) 55%, rgba(8,22,60,.72)),
-        url("{{ asset('img/admin/login-fond-bleu.png') }}") center/cover no-repeat,
-        linear-gradient(160deg, var(--al-blue-deep), var(--al-blue) 55%, var(--al-blue-dark));
+      background:linear-gradient(160deg, var(--al-blue-deep), var(--al-blue) 60%, var(--al-blue-dark));
     }
-    .al-photo{
-      position:absolute;
-      right:0; bottom:0;
-      width:52%; height:74%;
-      background:url("{{ asset('img/admin/login-technicien.png') }}") center bottom/cover no-repeat;
-      opacity:.92;
-      -webkit-mask-image:linear-gradient(115deg, transparent 0%, transparent 14%, rgba(0,0,0,.5) 32%, rgba(0,0,0,.95) 52%),
-                          linear-gradient(0deg, rgba(0,0,0,.95) 55%, transparent 100%);
-      -webkit-mask-composite:source-in;
-      mask-image:linear-gradient(115deg, transparent 0%, transparent 14%, rgba(0,0,0,.5) 32%, rgba(0,0,0,.95) 52%),
-                  linear-gradient(0deg, rgba(0,0,0,.95) 55%, transparent 100%);
-      mask-composite:intersect;
-      z-index:0;
+    .al-watermark{
+      position:absolute; right:-40px; bottom:60px;
+      width:260px; height:260px;
+      opacity:.08;
       pointer-events:none;
     }
-    .al-curve{
-      position:absolute;
-      top:0; right:-2px; bottom:0;
-      width:min(14vw,180px);
-      height:100%;
-      background:url("{{ asset('img/admin/login-forme-courbe.png') }}") center/cover no-repeat;
-      z-index:2;
-      pointer-events:none;
-    }
-    .al-left-inner{position:relative; z-index:1; max-width:520px}
+    .al-watermark svg{width:100%; height:100%}
 
-    .al-brand{display:flex; align-items:center; gap:14px; margin-bottom:clamp(16px,3vw,26px)}
+    .al-wave{
+      position:absolute; left:0; right:0; bottom:0;
+      width:100%; height:auto;
+      line-height:0;
+      pointer-events:none;
+    }
+    .al-wave svg{display:block; width:100%; height:auto}
+
+    .al-brand{position:relative; z-index:1; display:flex; align-items:center; gap:12px}
     .al-logo-mark{
-      width:60px; height:60px; flex:0 0 60px;
-      display:flex; align-items:center; justify-content:center;
-      border-radius:15px;
-      background:rgba(255,255,255,.14);
-      border:1px solid rgba(255,255,255,.28);
-    }
-    .al-logo-mark svg{width:34px; height:34px; color:#fff}
-    .al-brand-text{display:flex; flex-direction:column; line-height:1.15}
-    .al-brand-text strong{font-size:28px; font-weight:800; letter-spacing:.2px}
-    .al-brand-text span{font-size:12.5px; color:rgba(255,255,255,.78); font-weight:500}
-
-    .al-accent{width:52px; height:4px; border-radius:4px; background:var(--al-cyan); margin-bottom:12px}
-
-    .al-headline{
-      font-size:clamp(24px,2.6vw,34px);
-      font-weight:800;
-      line-height:1.18;
-      margin:0 0 10px;
-      letter-spacing:-.2px;
-    }
-    .al-headline .al-hi{color:var(--al-cyan)}
-
-    .al-lead{
-      font-size:14.5px;
-      line-height:1.55;
-      color:rgba(255,255,255,.86);
-      margin:0 0 clamp(14px,2vw,20px);
-      max-width:440px;
-    }
-
-    .al-features{list-style:none; margin:0 0 clamp(14px,2vw,20px); padding:0; display:flex; flex-direction:column; gap:9px}
-    .al-features li{display:flex; align-items:center; gap:12px; color:#fff}
-    .al-feat-ic{
-      flex:0 0 36px; width:36px; height:36px; border-radius:10px;
-      background:var(--al-blue);
-      border:1px solid rgba(255,255,255,.3);
+      width:54px; height:54px; flex:0 0 54px;
       display:flex; align-items:center; justify-content:center;
     }
-    .al-feat-ic svg{width:18px; height:18px}
-    .al-feat-text{display:flex; flex-direction:column; line-height:1.3}
-    .al-feat-text strong{font-size:13.5px; font-weight:700}
-    .al-feat-text span{font-size:11.5px; color:rgba(255,255,255,.68); font-weight:500}
+    .al-logo-mark svg{width:54px; height:54px}
+    .al-brand-text{display:flex; flex-direction:column; line-height:1.2}
+    .al-brand-text strong{font-size:26px; font-weight:800; letter-spacing:.2px}
+    .al-brand-text .al-pro{color:#7fb2ff}
+    .al-brand-text .al-tagline{display:block; font-size:11.5px; color:rgba(255,255,255,.75); font-weight:600; letter-spacing:2.5px; text-transform:uppercase}
 
+    .al-verse-block{position:relative; z-index:1; text-align:center; margin:auto 0}
+    .al-verse-ic{opacity:.85; margin-bottom:18px}
+    .al-verse-ic svg{width:34px; height:34px}
     .al-verse{
-      border-left:3px solid var(--al-cyan);
-      padding:2px 0 2px 16px;
-      margin:0 0 clamp(12px,2vw,18px);
-      font-size:13px;
-      line-height:1.5;
-      font-style:italic;
-      color:rgba(255,255,255,.9);
+      font-size:19px;
+      line-height:1.45;
+      font-weight:600;
+      margin:0 auto 18px;
+      max-width:360px;
     }
-    .al-verse cite{display:block; margin-top:6px; font-style:normal; font-size:12px; font-weight:700; color:var(--al-cyan); letter-spacing:.3px}
+    .al-verse-rule{width:44px; height:3px; border-radius:3px; background:rgba(255,255,255,.55); margin:0 auto 18px}
+    .al-verse-ref{font-size:13.5px; color:rgba(255,255,255,.75); font-weight:500; letter-spacing:.3px}
 
-    .al-bottomrow{display:flex; gap:clamp(16px,3vw,28px); flex-wrap:wrap}
-    .al-bottomrow div{display:flex; align-items:center; gap:8px; font-size:12.5px; font-weight:600; color:rgba(255,255,255,.85)}
-    .al-bottomrow svg{width:15px; height:15px; color:var(--al-cyan)}
-
-    /* ---------- Selecteur de langue ---------- */
-    .al-lang{
-      position:absolute; top:24px; right:clamp(20px,4vw,40px); z-index:5;
-      display:flex; align-items:center; gap:8px;
-      background:#fff;
-      border:1px solid var(--al-line);
-      box-shadow:0 6px 16px -6px rgba(15,32,67,.16);
-      padding:9px 16px; border-radius:999px;
-      font-size:13px; font-weight:600; color:var(--al-ink);
-      cursor:default; user-select:none;
-    }
-    .al-lang .flag{width:18px; height:13px; border-radius:2px; overflow:hidden; display:flex; box-shadow:0 0 0 1px rgba(15,32,67,.15) inset}
-    .al-lang .flag i{flex:1}
-    .al-lang .flag i:nth-child(1){background:#CE1126}
-    .al-lang .flag i:nth-child(2){background:#FCD116}
-    .al-lang .flag i:nth-child(3){background:#009460}
-    .al-lang svg{width:12px; height:12px; opacity:.6; color:var(--al-ink)}
+    .al-left-footer{position:relative; z-index:1; font-size:11px; font-weight:700; letter-spacing:1.5px; color:rgba(255,255,255,.7)}
+    .al-left-footer div:last-child{font-weight:500; letter-spacing:1px; color:rgba(255,255,255,.55); margin-top:4px; font-size:10.5px}
 
     /* ---------- Panneau droit (blanc) ---------- */
     .al-right{
@@ -165,25 +105,22 @@
       display:flex;
       align-items:center;
       justify-content:center;
-      padding:32px 24px;
-      background:var(--al-bg);
+      padding:clamp(28px,4vw,56px);
+      position:relative;
     }
-    .al-card{
-      width:100%; max-width:420px;
-      background:var(--al-card);
-      border-radius:var(--al-radius);
-      box-shadow:0 20px 50px -18px rgba(15,32,67,.18), 0 2px 8px rgba(15,32,67,.05);
-      padding:clamp(28px,4vw,40px) clamp(24px,4vw,36px);
+    .al-topbar{
+      position:absolute; top:clamp(20px,3vw,32px); right:clamp(24px,4vw,48px);
+      display:flex; align-items:center; gap:12px;
+      font-size:13px; font-weight:700; color:var(--al-ink);
+      user-select:none;
     }
-    .al-card-logo{display:flex; align-items:center; gap:10px; margin-bottom:18px}
-    .al-card-logo .al-logo-mark{width:52px; height:52px; flex:0 0 52px; border-radius:13px; background:rgba(30,86,224,.1); border-color:rgba(30,86,224,.16)}
-    .al-card-logo .al-logo-mark svg{width:29px; height:29px; color:var(--al-blue)}
-    .al-card-logo strong{font-size:24px; font-weight:800}
-    .al-card-logo .al-word-fix{color:var(--al-ink)}
-    .al-card-logo .al-word-pro{color:var(--al-blue)}
+    .al-topbar .al-sep{color:var(--al-line); font-weight:400}
+    .al-topbar svg{width:17px; height:17px; color:var(--al-muted)}
 
-    .al-title{font-size:22px; font-weight:800; margin:0 0 6px; color:var(--al-ink)}
-    .al-subtitle{font-size:13.5px; color:var(--al-muted); margin:0 0 24px; line-height:1.5}
+    .al-form-wrap{width:100%; max-width:380px}
+    .al-title{font-size:clamp(28px,3vw,34px); font-weight:800; margin:0 0 6px; color:var(--al-ink)}
+    .al-subtitle{font-size:15px; font-weight:700; margin:0 0 4px; color:var(--al-ink)}
+    .al-lead{font-size:13.5px; color:var(--al-muted); margin:0 0 26px; line-height:1.5}
 
     .al-alert{
       display:flex; align-items:flex-start; gap:10px;
@@ -193,85 +130,68 @@
     }
     .al-alert svg{width:16px; height:16px; flex:0 0 16px; margin-top:1px}
 
-    .al-field{margin-bottom:16px}
-    .al-field label{display:block; font-size:12.5px; font-weight:700; color:var(--al-ink); margin-bottom:6px}
+    .al-field{margin-bottom:18px}
+    .al-field label{display:block; font-size:13px; font-weight:700; color:var(--al-ink); margin-bottom:7px}
     .al-input-wrap{position:relative; display:flex; align-items:center}
-    .al-input-wrap svg.al-ic{position:absolute; left:13px; width:17px; height:17px; color:#94a3b8; pointer-events:none}
+    .al-input-wrap svg.al-ic{position:absolute; left:14px; width:18px; height:18px; color:#94a3b8; pointer-events:none}
     .al-input-wrap input{
       width:100%;
-      padding:12px 14px 12px 40px;
+      padding:13px 14px 13px 42px;
       border-radius:11px;
       border:1.5px solid var(--al-line);
-      background:#fbfcfe;
-      font-size:14px;
+      background:#fff;
+      font-size:14.5px;
       color:var(--al-ink);
       transition:border-color .15s, box-shadow .15s;
     }
-    .al-input-wrap input:focus{outline:none; border-color:var(--al-blue); box-shadow:0 0 0 3px rgba(30,86,224,.13); background:#fff}
+    .al-input-wrap input::placeholder{color:#a3aec4}
+    .al-input-wrap input:focus{outline:none; border-color:var(--al-blue); box-shadow:0 0 0 3px rgba(30,86,224,.13)}
     .al-eye{
-      position:absolute; right:6px; width:32px; height:32px;
+      position:absolute; right:6px; width:34px; height:34px;
       display:flex; align-items:center; justify-content:center;
       background:none; border:none; cursor:pointer; color:#94a3b8; border-radius:8px;
     }
     .al-eye:hover{color:var(--al-blue); background:rgba(30,86,224,.08)}
-    .al-eye svg{width:18px; height:18px}
-
-    .al-row{display:flex; align-items:center; justify-content:space-between; margin:2px 0 20px; flex-wrap:wrap; gap:8px}
-    .al-remember{display:flex; align-items:center; gap:8px; font-size:13px; color:var(--al-ink); font-weight:500}
-    .al-remember input{width:16px; height:16px; accent-color:var(--al-blue); cursor:pointer}
-    .al-forgot{font-size:13px; font-weight:700; color:var(--al-blue); text-decoration:none}
-    .al-forgot:hover{text-decoration:underline}
+    .al-eye svg{width:19px; height:19px}
 
     .al-submit{
       width:100%; border:none; cursor:pointer;
-      background:linear-gradient(135deg, var(--al-blue), var(--al-blue-dark));
-      color:#fff; font-size:14.5px; font-weight:700;
-      padding:13px 18px; border-radius:11px;
+      background:var(--al-blue);
+      color:#fff; font-size:15px; font-weight:700;
+      padding:14px 18px; border-radius:11px;
       display:flex; align-items:center; justify-content:center; gap:9px;
-      box-shadow:0 10px 24px -8px rgba(30,86,224,.55);
-      transition:transform .12s, box-shadow .12s, opacity .12s;
+      margin-top:6px;
+      transition:background .12s, transform .12s, opacity .12s;
     }
-    .al-submit:hover{transform:translateY(-1px); box-shadow:0 14px 28px -8px rgba(30,86,224,.6)}
-    .al-submit:active{transform:translateY(0)}
-    .al-submit svg{width:17px; height:17px}
-    .al-submit[disabled]{opacity:.75; cursor:default; transform:none}
+    .al-submit:hover{background:var(--al-blue-dark)}
+    .al-submit:active{transform:translateY(1px)}
+    .al-submit svg{width:18px; height:18px}
+    .al-submit[disabled]{opacity:.7; cursor:default}
     .al-spinner{width:16px; height:16px; border-radius:50%; border:2.5px solid rgba(255,255,255,.4); border-top-color:#fff; animation:al-spin .7s linear infinite; display:none}
     .al-submit.is-loading .al-spinner{display:inline-block}
     .al-submit.is-loading .al-submit-label{display:none}
     @keyframes al-spin{to{transform:rotate(360deg)}}
 
-    .al-divider{display:flex; align-items:center; gap:12px; margin:22px 0; color:#b7c0d4; font-size:12px; font-weight:600}
-    .al-divider::before, .al-divider::after{content:""; flex:1; height:1px; background:var(--al-line)}
+    .al-forgot{display:block; text-align:right; margin-top:14px; font-size:13.5px; font-weight:700; color:var(--al-blue); text-decoration:none}
+    .al-forgot:hover{text-decoration:underline}
 
-    .al-notice{
-      display:flex; gap:10px; align-items:flex-start;
-      background:#eef4ff; border:1px solid #dbe6ff; border-radius:12px;
-      padding:12px 14px; font-size:12.5px; line-height:1.55; color:#1e3a6e;
-    }
-    .al-notice svg{width:17px; height:17px; flex:0 0 17px; color:var(--al-blue); margin-top:1px}
-
-    .al-footer{margin-top:24px; text-align:center; font-size:11.5px; color:var(--al-muted); line-height:1.6}
-    .al-footer strong{color:var(--al-ink)}
+    .al-footer{margin-top:34px; padding-top:22px; border-top:1px solid var(--al-line); text-align:center}
+    .al-footer .al-footer-title{font-size:13px; font-weight:700; color:var(--al-ink); margin-bottom:8px}
+    .al-footer .al-footer-tags{font-size:12.5px; color:var(--al-muted); font-weight:500}
 
     /* ---------- Responsive ---------- */
-    @media (max-width:980px){
-      .al-shell{flex-direction:column; min-height:auto}
-      .al-left{
-        flex:none; max-width:100%; width:100%;
-        padding:56px 24px 40px;
-        justify-content:flex-start;
-      }
-      .al-photo, .al-curve{display:none}
-      .al-lang{position:static; align-self:flex-end; margin:0 0 18px auto}
-      .al-features{margin-bottom:20px}
-      .al-verse{margin-bottom:20px}
-      .al-right{padding:28px 20px 48px}
+    @media (max-width:900px){
+      body{padding:0; align-items:stretch}
+      .al-card{border-radius:0; min-height:100vh; min-height:100dvh; flex-direction:column; box-shadow:none}
+      .al-left{flex:none; max-width:100%; padding:32px 24px 44px; min-height:auto}
+      .al-verse-block{margin:28px 0}
+      .al-watermark{display:none}
+      .al-right{padding:32px 22px 44px}
+      .al-topbar{top:16px; right:18px}
     }
     @media (max-width:420px){
-      .al-card{padding:24px 18px; border-radius:16px}
-      .al-left{padding:44px 18px 32px}
-      .al-headline{font-size:24px}
-      .al-bottomrow{gap:14px}
+      .al-verse{font-size:17px}
+      .al-title{font-size:26px}
     }
     @media (prefers-reduced-motion:reduce){
       .al-submit, .al-spinner{transition:none; animation-duration:.001ms}
@@ -279,86 +199,63 @@
   </style>
 </head>
 <body>
-  <div class="al-shell">
-
-    <div class="al-lang" aria-hidden="true">
-      <span class="flag"><i></i><i></i><i></i></span>
-      <span>Français</span>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
-    </div>
+  <div class="al-card">
 
     <aside class="al-left">
-      <div class="al-photo" aria-hidden="true"></div>
-      <div class="al-left-inner">
-        <div class="al-brand">
-          <span class="al-logo-mark">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round">
-              <path d="M12 2 4 5v6c0 5.5 3.8 8.7 8 10 4.2-1.3 8-4.5 8-10V5l-8-3z"/>
-              <g transform="translate(5.1,5.6) scale(0.58)">
-                <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" fill="currentColor" stroke="none"/>
-              </g>
-            </svg>
-          </span>
-          <span class="al-brand-text">
-            <strong>FixPro</strong>
-            <span>Des pros. Des solutions.</span>
-          </span>
-        </div>
+      <span class="al-watermark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M5 12 12 5l7 7"/><path d="M6 11v9h5v-5h2v5h5v-9"/><path d="M14 8.5 17.5 5 19 6.5 15.5 10"/></svg>
+      </span>
 
-        <div class="al-accent"></div>
-        <h1 class="al-headline">Gérer aujourd'hui<br/>pour un <span class="al-hi">meilleur demain.</span></h1>
-        <p class="al-lead">La console d'administration FixPro centralise vos utilisateurs, vos techniciens et vos paiements pour un pilotage clair et sécurisé.</p>
-
-        <ul class="al-features">
-          <li>
-            <span class="al-feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
-            <span class="al-feat-text"><strong>Suivi en temps réel</strong><span>Clients, techniciens et interventions</span></span>
-          </li>
-          <li>
-            <span class="al-feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M12 20V4M20 20v-7"/></svg></span>
-            <span class="al-feat-text"><strong>Statistiques complètes</strong><span>Prenez les bonnes décisions</span></span>
-          </li>
-          <li>
-            <span class="al-feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 4 6v5c0 5 3.4 7.9 8 9 4.6-1.1 8-4 8-9V6l-8-3z"/></svg></span>
-            <span class="al-feat-text"><strong>Sécurisé et fiable</strong><span>Vos données sont protégées</span></span>
-          </li>
-          <li>
-            <span class="al-feat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></span>
-            <span class="al-feat-text"><strong>Configuration simple</strong><span>Tout sous contrôle</span></span>
-          </li>
-        </ul>
-
-        <blockquote class="al-verse">
-          « Confie à l'Éternel tes œuvres, et tes projets réussiront. »
-          <cite>Proverbes 16:3</cite>
-        </blockquote>
-
-        <div class="al-bottomrow">
-          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 4 6v5c0 5 3.4 7.9 8 9 4.6-1.1 8-4 8-9V6l-8-3z"/></svg>Service</div>
-          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 12 2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>Confiance</div>
-          <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>Impact positif</div>
-        </div>
+      <div class="al-brand">
+        <span class="al-logo-mark">
+          <svg viewBox="0 0 40 40" fill="none">
+            <path d="M7 19 20 7l13 12" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M10.5 17v14h7v-8h5v8h7V17" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            <g transform="translate(25,22) rotate(45)">
+              <rect x="-2.1" y="-10" width="4.2" height="15" rx="2.1" fill="#7fb2ff"/>
+              <circle cx="0" cy="-10" r="4.2" fill="none" stroke="#7fb2ff" stroke-width="2.3"/>
+            </g>
+          </svg>
+        </span>
+        <span class="al-brand-text">
+          <strong>Fix<span class="al-pro">Pro</span></strong>
+          <span class="al-tagline">Dashboard Admin</span>
+        </span>
       </div>
 
-      <div class="al-curve" aria-hidden="true"></div>
+      <div class="al-verse-block">
+        <div class="al-verse-ic" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"><path d="M12 6.5C10 5 6.5 4.6 4 5.4v13c2.5-.8 6-.4 8 1.1 2-1.5 5.5-1.9 8-1.1v-13c-2.5-.8-6-.4-8 1.1z"/><path d="M12 6.5v13"/></svg>
+        </div>
+        <p class="al-verse">« Tout ce que vous faites, faites-le de bon cœur, comme pour le Seigneur.&nbsp;»</p>
+        <div class="al-verse-rule"></div>
+        <p class="al-verse-ref">Colossiens 3:23</p>
+      </div>
+
+      <div class="al-left-footer">
+        <div>FIXPRO</div>
+        <div>DES SERVICES POUR UN MEILLEUR QUOTIDIEN</div>
+      </div>
+
+      <div class="al-wave" aria-hidden="true">
+        <svg viewBox="0 0 600 140" preserveAspectRatio="none">
+          <path d="M0 90 C 90 40, 180 130, 280 80 S 460 30, 600 70 L600 140 L0 140 Z" fill="rgba(255,255,255,.10)"/>
+          <path d="M0 110 C 110 60, 220 150, 330 100 S 480 55, 600 95 L600 140 L0 140 Z" fill="rgba(255,255,255,.16)"/>
+        </svg>
+      </div>
     </aside>
 
     <main class="al-right">
-      <div class="al-card">
-        <div class="al-card-logo">
-          <span class="al-logo-mark">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round">
-              <path d="M12 2 4 5v6c0 5.5 3.8 8.7 8 10 4.2-1.3 8-4.5 8-10V5l-8-3z"/>
-              <g transform="translate(5.1,5.6) scale(0.58)">
-                <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" fill="currentColor" stroke="none"/>
-              </g>
-            </svg>
-          </span>
-          <strong><span class="al-word-fix">Fix</span><span class="al-word-pro">Pro</span></strong>
-        </div>
+      <div class="al-topbar" aria-hidden="true">
+        <span>Fr</span>
+        <span class="al-sep">|</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg>
+      </div>
 
-        <h2 class="al-title">Espace Administrateur</h2>
-        <p class="al-subtitle">Connectez-vous pour accéder au tableau de bord de gestion FixPro.</p>
+      <div class="al-form-wrap">
+        <h1 class="al-title">Connexion</h1>
+        <p class="al-subtitle">Administration FixPro</p>
+        <p class="al-lead">Accédez à votre espace pour tout gérer.</p>
 
         {% if error %}
         <div class="al-alert" role="alert">
@@ -371,10 +268,10 @@
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
 
           <div class="al-field">
-            <label for="al-email">Adresse e-mail</label>
+            <label for="al-email">Email</label>
             <div class="al-input-wrap">
               <svg class="al-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m4 7 8 6 8-6"/></svg>
-              <input type="email" id="al-email" name="email" value="{{ email }}" placeholder="votre@email.com" required autofocus autocomplete="username" />
+              <input type="email" id="al-email" name="email" value="{{ email }}" placeholder="Entrez votre email" required autofocus autocomplete="username" />
             </div>
           </div>
 
@@ -382,39 +279,27 @@
             <label for="al-password">Mot de passe</label>
             <div class="al-input-wrap">
               <svg class="al-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="10" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
-              <input type="password" id="al-password" name="password" placeholder="••••••••" required autocomplete="current-password" style="padding-right:42px" />
+              <input type="password" id="al-password" name="password" placeholder="Entrez votre mot de passe" required autocomplete="current-password" style="padding-right:44px" />
               <button type="button" class="al-eye" id="al-eye-toggle" aria-label="Afficher le mot de passe" aria-pressed="false">
-                <svg id="al-eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1.5 12S5 5 12 5s10.5 7 10.5 7-3.5 7-10.5 7S1.5 12 1.5 12z"/><circle cx="12" cy="12" r="3"/></svg>
-                <svg id="al-eye-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><path d="M3 3l18 18M10.6 10.6a3 3 0 0 0 4.24 4.24M6.3 6.4C3.7 8.1 1.5 12 1.5 12s3.5 7 10.5 7c2 0 3.7-.5 5.1-1.3M17.9 17.9C20.4 16.2 22.5 12 22.5 12s-1-2-3-3.7"/></svg>
+                <svg id="al-eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none"><path d="M1.5 12S5 5 12 5s10.5 7 10.5 7-3.5 7-10.5 7S1.5 12 1.5 12z"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg id="al-eye-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3l18 18M10.6 10.6a3 3 0 0 0 4.24 4.24M6.3 6.4C3.7 8.1 1.5 12 1.5 12s3.5 7 10.5 7c2 0 3.7-.5 5.1-1.3M17.9 17.9C20.4 16.2 22.5 12 22.5 12s-1-2-3-3.7"/></svg>
               </button>
             </div>
           </div>
 
-          <div class="al-row">
-            <label class="al-remember">
-              <input type="checkbox" name="remember" />
-              Se souvenir de moi
-            </label>
-            <a class="al-forgot" href="{{ security_code_url }}">Mot de passe oublié ?</a>
-          </div>
-
           <button type="submit" class="al-submit" id="al-submit-btn">
             <span class="al-spinner"></span>
-            <svg class="al-submit-label" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>
             <span class="al-submit-label">Se connecter</span>
+            <svg class="al-submit-label" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
           </button>
+
+          <a class="al-forgot" href="{{ security_code_url }}">Mot de passe oublié ?</a>
         </form>
 
-        <div class="al-divider">ou</div>
-
-        <div class="al-notice">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 4 6v5c0 5 3.4 7.9 8 9 4.6-1.1 8-4 8-9V6l-8-3z"/></svg>
-          <span>Accès réservé aux administrateurs habilités de FixPro. Toute tentative non autorisée est enregistrée et peut faire l'objet de poursuites.</span>
+        <div class="al-footer">
+          <div class="al-footer-title">Administration FixPro</div>
+          <div class="al-footer-tags">Sécurité &middot; Efficacité &middot; Confiance</div>
         </div>
-
-        <p class="al-footer">
-          <strong>FixPro</strong> © {{ year }} &middot; Des pros. Des solutions.<br/>Pour une meilleure vie.
-        </p>
       </div>
     </main>
   </div>
@@ -430,8 +315,8 @@
           var show = pwd.type === 'password';
           pwd.type = show ? 'text' : 'password';
           eyeBtn.setAttribute('aria-pressed', show ? 'true' : 'false');
-          eyeOpen.style.display = show ? 'none' : '';
-          eyeClosed.style.display = show ? '' : 'none';
+          eyeOpen.style.display = show ? '' : 'none';
+          eyeClosed.style.display = show ? 'none' : '';
         });
       }
 
