@@ -403,7 +403,8 @@
       {% if not request_usage.unlimited %}
       <div class="q-bar"><span style="width: {{ [request_usage.used * 100 // request_usage.limit, 100] | min }}%"></span></div>
       {% if request_usage.over_limit %}
-      <p class="q-note">Limite mensuelle atteinte. Vous recevrez de nouvelles demandes le mois prochain.</p>
+      <p class="q-note">Limite mensuelle atteinte. Vous recevrez de nouvelles demandes le mois prochain.
+        <a href="{{ url_for('technician_subscription_checkout', plan='tech_premium', period='month') }}">Passer à Premium</a> pour des demandes illimitées.</p>
       {% endif %}
       {% endif %}
     </div>
@@ -461,6 +462,64 @@
           <a class="btn" href="{{ url_for('profile') }}">Voir mon profil <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
         </div>
 
+        <div class="card">
+          {% if entitlements and entitlements.status == 'TRIAL' %}
+          <div class="sub-h">
+            <span class="si trial">🎁</span>
+            <div class="st">
+              <span class="k">Période découverte gratuite</span>
+              <span class="plan">Il vous reste {{ entitlements.trial_days_left }} jour{{ 's' if entitlements.trial_days_left > 1 }}</span>
+              <span class="price">Recevez des demandes et trouvez vos premiers clients.</span>
+            </div>
+            <span class="tag2">Essai</span>
+          </div>
+          <div class="trial-mini">
+            <span><b>{{ trial_stats.demandes }}</b>Demandes</span>
+            <span><b>{{ trial_stats.interventions }}</b>Interventions</span>
+            <span><b>{{ trial_stats.avis }}</b>Avis</span>
+          </div>
+          <a class="btn" href="{{ url_for('technician_subscription') }}">Voir les abonnements <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+
+          {% elif entitlements and entitlements.status == 'TRIAL_EXPIRED' and not (subscription and subscription.active) %}
+          <div class="sub-h">
+            <span class="si off">🔒</span>
+            <div class="st">
+              <span class="k">Période découverte terminée</span>
+              <span class="plan">Activez un abonnement</span>
+              <span class="price">Profitez pleinement de FixPro pour continuer à recevoir de nouvelles demandes.</span>
+            </div>
+          </div>
+          <div class="trial-mini">
+            <span><b>{{ trial_stats.demandes }}</b>Demandes</span>
+            <span><b>{{ trial_stats.interventions }}</b>Interventions</span>
+            <span><b>{{ trial_stats.avis }}</b>Avis</span>
+          </div>
+          <a class="btn solid" href="{{ url_for('technician_subscription') }}">Choisir mon abonnement <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+
+          {% elif subscription %}
+          <div class="sub-h">
+            <span class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7z"/></svg></span>
+            <div class="st">
+              <span class="k">Mon abonnement</span>
+              <span class="plan">{% if subscription.badge %}{% if subscription.badge.icon == 'crown' %}👑 {% else %}⭐ {% endif %}{% endif %}{{ subscription.plan_name }}{% if subscription.active %} actif{% endif %}</span>
+              {% if subscription.price_month %}<span class="price">{{ "{:,}".format(subscription.price_month) | replace(",", " ") }} {{ subscription.currency }} / mois</span>{% endif %}
+            </div>
+            <span class="tag2 {{ '' if subscription.active else 'off' }}">{{ subscription.status_label }}</span>
+          </div>
+          {% if subscription.end_date_label %}<p class="sub-due">{{ "Actif jusqu'au" if subscription.active else "Échéance" }} : {{ subscription.end_date_label }}</p>{% endif %}
+          <a class="btn" href="{{ url_for('technician_subscription') }}">{{ 'Voir mes avantages' if subscription.active else 'Gérer mon abonnement' }} <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+          {% else %}
+          <div class="sub-h">
+            <span class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7z"/></svg></span>
+            <div class="st">
+              <span class="k">Mon abonnement</span>
+              <span class="plan">Aucun abonnement actif</span>
+              <span class="price">Choisissez une formule pour recevoir plus de demandes.</span>
+            </div>
+          </div>
+          <a class="btn solid" href="{{ url_for('technician_subscription') }}">Choisir un abonnement <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+          {% endif %}
+        </div>
       </div>
     </section>
 

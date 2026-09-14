@@ -3654,10 +3654,8 @@ class NotificationCenterTests(FixProTestCase):
         self.login("cat@x.co")
         item = self.client.get("/api/notifications").get_json()["items"][0]
         self.assertEqual(item["icon"], "crown")
-        # la page/route abonnement a ete supprimee ; le lien retombe sur le
-        # tableau de bord technicien plutot que vers une page inexistante
         with fixpro_app.app.test_request_context():
-            self.assertEqual(item["href"], fixpro_app.url_for("artisan_dashboard"))
+            self.assertEqual(item["href"], fixpro_app.url_for("technician_subscription"))
 
 
 class DatabaseLayerTests(unittest.TestCase):
