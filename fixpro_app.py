@@ -6991,21 +6991,10 @@ def api_techniciens():
 # partages entre metiers). Seul le Plombier est implemente pour l'instant.
 PROFESSIONAL_SERVICE_CATALOG = {
     "plombier": [
-        {"id": "fuite", "title": "Dépannage fuites",
-         "desc": "Réparation rapide de fuites d'eau",
-         "image": "img/technicians/plombier/services/03_service_fuite_eau.jpg"},
-        {"id": "sanitaire", "title": "Installation sanitaire",
-         "desc": "Installation de WC, lavabos, douches, etc.",
-         "image": "img/technicians/plombier/services/04_service_sanitaire.jpg"},
-        {"id": "chauffe-eau", "title": "Installation chauffe-eau",
-         "desc": "Installation et entretien de chauffe-eau",
-         "image": "img/technicians/plombier/services/05_service_chauffe_eau.jpg"},
-        {"id": "debouchage", "title": "Débouchage canalisations",
-         "desc": "Débouchage rapide et efficace des canalisations",
-         "image": "img/technicians/plombier/services/06_service_debouchage.jpg"},
-        {"id": "entretien", "title": "Entretien général",
-         "desc": "Maintenance et entretien de vos installations",
-         "image": None},
+        {"id": "fuite", "title": "Dépannage de fuites", "icon": "fuite"},
+        {"id": "sanitaire", "title": "Installation sanitaire", "icon": "sanitaire"},
+        {"id": "debouchage", "title": "Débouchage", "icon": "debouchage"},
+        {"id": "renovation", "title": "Rénovation et entretien", "icon": "renovation"},
     ],
 }
 PROFESSIONAL_AVATAR_IMAGE = {"plombier": "img/technicians/plombier/profile/02_avatar_plombier.png"}
@@ -7025,13 +7014,11 @@ def artisan_detail(artisan_id):
     clique sur "Voir le profil"). Architecture reutilisable pour tous les
     metiers (ProfessionalPublicProfile) ; seul le Plombier est implemente
     pour l'instant -- un metier sans catalogue redirige vers la recherche
-    plutot que d'afficher une page incomplete/fausse. En-tete bleu FixPro
-    (plus de banniere photo) + avatar + a propos + services. Volontairement
-    NEUTRE sur l'evaluation : aucune note, aucun avis, aucune statistique
-    de satisfaction affichee -- le client n'a pas encore d'avis reel sur ce
-    technicien au moment de consulter cette fiche. Pas de prix, pas de
-    section Realisations (aucune donnee avant/apres n'existe encore cote
-    technicien -- pas de contenu invente)."""
+    plutot que d'afficher une page incomplete/fausse. Carte identite (fond
+    bleu pale, pas de photo pleine largeur) + services (icones) + avis
+    clients reels (note moyenne, avatars des vrais avis, commentaires).
+    Pas de prix, pas de section Realisations (aucune donnee avant/apres
+    n'existe encore cote technicien -- pas de contenu invente)."""
     user = get_current_user()
     conn = get_db_connection()
     try:
@@ -7049,15 +7036,37 @@ def artisan_detail(artisan_id):
             # Metier pas encore implemente dans le nouveau profil public --
             # on ne fabrique pas une page incomplete/fausse pour lui.
             return redirect(url_for("artisans_page"))
+
+        review_stats = conn.execute(
+            "SELECT COALESCE(AVG(rating), 0) AS avg_rating, COUNT(*) AS count"
+            " FROM reviews WHERE artisan_id = ?", (artisan_id,)).fetchone()
+
+        review_rows = conn.execute(
+            "SELECT r.rating, r.comment, r.created_at,"
+            " u.full_name AS client_name, u.photo_url AS client_photo"
+            " FROM reviews r JOIN users u ON u.id = r.client_id"
+            " WHERE r.artisan_id = ? AND r.comment IS NOT NULL AND r.comment != ''"
+            " ORDER BY r.created_at DESC LIMIT 10", (artisan_id,)).fetchall()
     finally:
         conn.close()
 
     is_online = (artisan.get("availability_status") or "") in ("en_ligne", "certains_jours")
-    skill_tags = [t.strip() for t in
-                  (artisan.get("skills") or "").replace(";", ",").split(",") if t.strip()]
     zone = (artisan.get("zone_intervention") or artisan.get("city") or "").strip()
     years_exp = artisan.get("years_experience")
     radius_km = app.config.get("LOCAL_RADIUS_KM", 15.0)
+    review_count = int(review_stats["count"] or 0)
+    reviews = [{
+        "name": r["client_name"] or "Client FixPro",
+        "photo": r["client_photo"],
+        "rating": r["rating"],
+        "comment": r["comment"],
+        "ago": _format_time_ago(r["created_at"]),
+    } for r in review_rows]
+    # Bande "avatars de clients" : jusqu'a 3 vraies photos/initiales de
+    # clients ayant laisse un avis, + un compteur reel du reste (jamais un
+    # chiffre invente).
+    reviewer_avatars = [{"name": rv["name"], "photo": rv["photo"]} for rv in reviews[:3]]
+    remaining_reviewers = max(0, review_count - len(reviewer_avatars))
 
     professional = {
         "id": artisan["id"],
@@ -7070,12 +7079,12 @@ def artisan_detail(artisan_id):
         "radiusKm": radius_km,
         "yearsExperience": int(years_exp) if years_exp else None,
         "available": is_online,
-        "about": (artisan.get("bio") or "").strip() or None,
-        "badges": skill_tags[:4] if skill_tags else ["Rapide", "Sérieux", "Travail soigné", "À l'écoute"],
-        "services": [
-            dict(s, image=(url_for("static", filename=s["image"]) if s.get("image") else None))
-            for s in PROFESSIONAL_SERVICE_CATALOG[trade]
-        ],
+        "rating": float(review_stats["avg_rating"] or 0),
+        "reviewCount": review_count,
+        "reviews": reviews,
+        "reviewerAvatars": reviewer_avatars,
+        "remainingReviewers": remaining_reviewers,
+        "services": PROFESSIONAL_SERVICE_CATALOG[trade],
     }
 
     return render_template("artisan_detail.html", user=user, professional=professional)

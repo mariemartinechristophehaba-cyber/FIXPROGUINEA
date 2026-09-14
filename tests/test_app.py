@@ -3502,11 +3502,12 @@ class ParametresApparenceTests(FixProTestCase):
 
 
 class ArtisanPublicProfilePlombierTests(FixProTestCase):
-    """Profil public mobile (ProfessionalPublicProfile), version simple :
-    en-tete bleu FixPro + avatar + a propos + services. Aucune note, aucun
-    avis, aucune statistique de satisfaction, aucune section Realisations,
-    aucun prix -- le client n'a pas encore d'avis reel sur le technicien a
-    ce stade. Plus de banniere photo (retiree)."""
+    """Profil public mobile (ProfessionalPublicProfile), version finale
+    validee sur maquette : carte identite bleu pale + avatar + note/avis
+    reels + services en icones (4) + section Avis clients (vraies lignes
+    de la table reviews, etat vide honnete). Toujours un seul gabarit
+    reutilisable pour tous les metiers, aucune section Realisations,
+    aucun prix invente."""
 
     def _plumber_id(self, phone="+224621119900",
                     email="plombier-profil@example.com"):
@@ -3521,9 +3522,6 @@ class ArtisanPublicProfilePlombierTests(FixProTestCase):
     def test_real_assets_exist_on_disk(self):
         base = ROOT / "static" / "img" / "technicians" / "plombier"
         self.assertTrue((base / "profile" / "02_avatar_plombier.png").exists())
-        for name in ("03_service_fuite_eau.jpg", "04_service_sanitaire.jpg",
-                     "05_service_chauffe_eau.jpg", "06_service_debouchage.jpg"):
-            self.assertTrue((base / "services" / name).exists(), name)
 
     def test_no_leftover_banner_asset_or_reference(self):
         base = ROOT / "static" / "img" / "technicians" / "plombier"
@@ -3532,29 +3530,36 @@ class ArtisanPublicProfilePlombierTests(FixProTestCase):
         html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
         self.assertNotIn("01_banner_plombier.png", html)
         self.assertNotIn('class="pl-hero"', html)
-        self.assertNotIn('class="pl-idcard"', html)
 
-    def test_profile_shows_blue_header_idblock_and_real_images(self):
+    def test_profile_shows_idcard_and_real_images(self):
         aid = self._plumber_id()
         r = self.client.get(f"/artisans/{aid}")
         self.assertEqual(r.status_code, 200)
         html = r.get_data(as_text=True)
         self.assertIn("02_avatar_plombier.png", html)
-        self.assertIn('class="pl-idblock"', html)
+        self.assertIn('class="pl-idcard"', html)
         self.assertIn("Profil du technicien", html)
         self.assertIn("Plombier professionnel", html)
         self.assertIn("Envoyer un message", html)
         self.assertIn("Contacter", html)
 
-    def test_fifth_service_entretien_uses_icon_not_a_fake_photo(self):
-        aid = self._plumber_id(phone="+224621119991", email="plombier-entretien@example.com")
+    def test_action_bar_order_contacter_first_then_message(self):
+        aid = self._plumber_id(phone="+224621119991", email="plombier-order@example.com")
         html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
-        self.assertIn("Entretien général", html)
+        self.assertLess(html.index("Contacter"), html.index("Envoyer un message"))
 
-    def test_no_rating_no_review_anywhere_even_with_real_reviews_in_db(self):
-        """Le client n'a pas encore d'avis reel sur ce technicien a ce stade
-        du parcours -- la fiche doit rester totalement neutre sur la
-        notation, MEME si le technicien a deja de vrais avis en base."""
+    def test_four_icon_services_no_fake_photos(self):
+        aid = self._plumber_id(phone="+224621119901", email="plombier2@example.com")
+        html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
+        for title in ("Dépannage de fuites", "Installation sanitaire",
+                      "Débouchage", "Rénovation et entretien"):
+            self.assertIn(title, html)
+        self.assertNotIn("services/", html)   # plus aucune photo de service
+
+    def test_real_reviews_appear_with_rating_and_avatars(self):
+        """La maquette validee affiche note/avis reels -- les inventer
+        serait pire que ne rien afficher, donc on verifie que ce sont
+        de vraies lignes de la table reviews qui apparaissent."""
         aid = self._plumber_id(phone="+224621119992", email="plombier-avis@example.com")
         conn = db.connect(sqlite_path=self.db_path)
         try:
@@ -3571,11 +3576,16 @@ class ArtisanPublicProfilePlombierTests(FixProTestCase):
         finally:
             conn.close()
         html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
-        self.assertNotIn("Aminata Sow", html)
-        self.assertNotIn("Travail impeccable", html)
-        for banned in ("avis", "Avis", "★", "Nouveau", "Clients satisfaits",
-                       "pl-review", "pl-stats", "Zone d'intervention", "Interventions"):
-            self.assertNotIn(banned, html, banned)
+        self.assertIn("Aminata Sow", html)
+        self.assertIn("Travail impeccable", html)
+        self.assertIn("Avis clients", html)
+        self.assertIn("avis)", html)
+
+    def test_no_reviews_shows_honest_empty_state(self):
+        aid = self._plumber_id(phone="+224621119909", email="plombier-noavis@example.com")
+        html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
+        self.assertIn("Aucun avis pour le moment.", html)
+        self.assertIn("Nouveau sur FixPro", html)
 
     def test_experience_shown_when_present(self):
         aid = self._plumber_id(phone="+224621119994", email="plombier-exp@example.com")
@@ -3588,38 +3598,12 @@ class ArtisanPublicProfilePlombierTests(FixProTestCase):
         html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
         self.assertIn("7 ans d'expérience", html)
 
-    def test_four_services_each_with_its_own_distinct_image(self):
-        aid = self._plumber_id(phone="+224621119901", email="plombier2@example.com")
-        html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
-        self.assertIn("03_service_fuite_eau.jpg", html)
-        self.assertIn("04_service_sanitaire.jpg", html)
-        self.assertIn("05_service_chauffe_eau.jpg", html)
-        self.assertIn("06_service_debouchage.jpg", html)
-        import re
-        images = re.findall(r'src="[^"]*/(services/[a-z0-9_]+\.jpg)"', html)
-        self.assertEqual(len(images), 4)
-        self.assertEqual(len(set(images)), 4)   # jamais la meme image deux fois
-
     def test_no_realisations_and_no_price_anywhere(self):
         aid = self._plumber_id(phone="+224621119902", email="plombier3@example.com")
         html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
         for banned in ("Réalisations", "Realisations", "Avant / Après",
                        "portfolio", "pl-real", "GNF", "FCFA", "À partir de"):
             self.assertNotIn(banned, html, banned)
-
-    def test_bio_is_real_data_not_hardcoded_per_technician(self):
-        aid = self._plumber_id(phone="+224621119903", email="plombier4@example.com")
-        empty_html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
-        self.assertNotIn("Ibrahim Sory", empty_html)
-        conn = db.connect(sqlite_path=self.db_path)
-        try:
-            conn.execute("UPDATE users SET bio = ? WHERE id = ?",
-                        ("Plombier de Kaloum depuis 12 ans.", aid))
-            conn.commit()
-        finally:
-            conn.close()
-        filled_html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
-        self.assertIn("Plombier de Kaloum depuis 12 ans.", filled_html)
 
     def test_public_profile_never_leaks_private_technician_data(self):
         aid = self._plumber_id(phone="+224621119904", email="plombier5@example.com")

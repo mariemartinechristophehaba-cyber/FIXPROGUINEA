@@ -11,7 +11,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#1250D8" />
+  <meta name="theme-color" content="#ffffff" />
   {% include '_pwa_head.html' %}
   <title>{{ p.name }} - {{ p.category }} - FixPro</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -20,24 +20,20 @@
   <style>
     :root {
       --pl-primary: #1A5CFF;
-      --pl-primary-dark: #0C3FCC;
-      --pl-night: #0B1B3A;
-      --pl-bg: #EEF2F9;
-      --pl-text: #0F172A;
+      --pl-text: #0B1B3A;
       --pl-muted: #64748B;
       --pl-line: #E6ECF5;
       --pl-soft: #EAF1FF;
       --pl-green: #16A34A;
+      --pl-star: #F5A623;
       --pl-card-shadow: 0 10px 30px rgba(15, 42, 90, 0.08);
-      /* hauteur reelle de la barre d'actions fixe -- reutilisee pour
-         reserver exactement cet espace en bas de la page. */
       --pl-actionbar-h: 86px;
     }
     * { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; }
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: var(--pl-bg); color: var(--pl-text);
+      background: #fff; color: var(--pl-text);
       -webkit-font-smoothing: antialiased;
       padding-bottom: calc(var(--pl-actionbar-h, 82px) + env(safe-area-inset-bottom));
     }
@@ -46,151 +42,158 @@
     img { max-width: 100%; }
     .pl-wrap { max-width: 680px; margin: 0 auto; }
 
-    /* ---------- En-tete bleu FixPro (pas de banniere photo) ---------- */
-    .pl-header {
-      position: relative; overflow: visible;
-      padding: calc(16px + env(safe-area-inset-top)) 16px 40px;
-      color: #fff;
-    }
-    .pl-header-bg {
-      position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%;
-      pointer-events: none;
-    }
-    .pl-header-bg svg { display: block; width: 100%; height: 100%; }
+    /* ---------- En-tete (plate, blanche) ---------- */
     .pl-topbar {
-      position: relative; z-index: 3;
-      display: grid; grid-template-columns: 40px 1fr auto; align-items: center; gap: 8px;
+      display: grid; grid-template-columns: 40px 1fr 40px; align-items: center; gap: 8px;
+      padding: calc(14px + env(safe-area-inset-top)) 16px 10px;
     }
     .pl-topbar h1 {
       grid-column: 2; text-align: center; margin: 0;
-      font-size: 1.05rem; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      font-size: 1.08rem; font-weight: 800; color: var(--pl-text);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
-    .pl-top-actions { display: flex; gap: 8px; }
     .pl-icon-btn {
       width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
-      background: rgba(255,255,255,0.16); border: none;
-      color: #fff; display: flex; align-items: center; justify-content: center;
+      background: transparent; border: none;
+      color: var(--pl-primary); display: flex; align-items: center; justify-content: center;
       cursor: pointer; padding: 0;
     }
-    .pl-icon-btn svg { width: 19px; height: 19px; }
+    .pl-icon-btn svg { width: 22px; height: 22px; }
 
-    /* Grid (pas flex-wrap) : les 3 colonnes ne se replient jamais l'une
-       sous l'autre quel que soit le nom du technicien ou la largeur de
-       l'ecran -- seul le texte a l'interieur de chaque colonne s'adapte. */
-    .pl-idblock {
-      position: relative; z-index: 3; margin-top: 22px;
-      display: grid; grid-template-columns: 84px minmax(0, 1fr) minmax(0, 120px);
+    /* ---------- Carte identite (fond bleu pale) ---------- */
+    .pl-idcard {
+      margin: 4px 16px 14px; padding: 16px;
+      background: var(--pl-soft); border-radius: 20px;
+      display: grid; grid-template-columns: 78px minmax(0, 1fr) minmax(0, 128px);
       align-items: start; column-gap: 12px;
     }
     .pl-ava-wrap { position: relative; }
     .pl-ava {
-      width: 84px; height: 84px; border-radius: 50%; overflow: hidden;
-      background: var(--pl-soft); border: 3px solid rgba(255,255,255,.9);
+      width: 78px; height: 78px; border-radius: 50%; overflow: hidden;
+      background: #fff; border: 3px solid #fff; box-shadow: 0 4px 12px rgba(15,42,90,.12);
       display: flex; align-items: center; justify-content: center;
     }
     .pl-ava img { width: 100%; height: 100%; object-fit: cover; }
     .pl-ava-dot {
-      position: absolute; right: 2px; bottom: 2px;
-      width: 18px; height: 18px; border-radius: 50%;
+      position: absolute; right: 1px; bottom: 1px;
+      width: 17px; height: 17px; border-radius: 50%;
       background: var(--pl-green); border: 3px solid #fff;
     }
     .pl-id-main { min-width: 0; padding-top: 2px; }
     .pl-side {
       min-width: 0; display: flex; flex-direction: column;
-      align-items: flex-end; gap: 10px; padding-top: 2px;
+      align-items: stretch; gap: 8px; padding-top: 2px;
     }
     .pl-name {
-      display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
-      font-size: 1.28rem; font-weight: 800; margin: 0 0 2px; line-height: 1.2; color: #fff;
+      display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+      font-size: 1.14rem; font-weight: 800; margin: 0 0 2px; line-height: 1.22; color: var(--pl-text);
     }
-    .pl-name .check { width: 20px; height: 20px; flex-shrink: 0; color: #fff; }
-    .pl-role { font-size: 0.86rem; font-weight: 600; color: rgba(255,255,255,.82); margin: 0 0 4px; }
-    .pl-exp { font-size: 0.8rem; color: rgba(255,255,255,.78); margin: 0 0 9px; }
+    .pl-name .check { width: 18px; height: 18px; flex-shrink: 0; color: var(--pl-primary); }
+    .pl-role { font-size: 0.84rem; font-weight: 600; color: var(--pl-muted); margin: 0 0 8px; }
+    .pl-meta-row {
+      display: flex; align-items: flex-start; gap: 7px;
+      color: var(--pl-text); font-size: 0.8rem; line-height: 1.4; margin-bottom: 6px;
+    }
+    .pl-meta-row svg { width: 16px; height: 16px; flex-shrink: 0; margin-top: 1px; color: var(--pl-primary); }
+    .pl-meta-row b { font-weight: 700; }
+    .pl-meta-row span.muted { color: var(--pl-muted); }
     .pl-avail-pill {
       display: inline-flex; align-items: center; gap: 6px;
-      background: rgba(22,163,74,.22); border: 1px solid rgba(134,239,172,.5);
-      color: #DCFCE7; font-weight: 700; font-size: 0.76rem;
-      padding: 5px 12px; border-radius: 50px; margin-bottom: 9px;
+      background: #DCFCE7; border: 1px solid #BBF7D0;
+      color: #15803D; font-weight: 700; font-size: 0.76rem;
+      padding: 6px 12px; border-radius: 50px; margin-top: 4px;
     }
     .pl-avail-pill .d { width: 8px; height: 8px; border-radius: 50%; background: var(--pl-green); }
-    .pl-location {
-      display: flex; align-items: flex-start; gap: 7px;
-      color: rgba(255,255,255,.85); font-size: 0.8rem; line-height: 1.4;
-    }
-    .pl-location svg { width: 16px; height: 16px; flex-shrink: 0; margin-top: 1px; color: #fff; }
-    .pl-location b { color: #fff; font-weight: 700; }
 
     .pl-verified-badge {
-      display: inline-flex; align-items: center; gap: 6px;
-      background: rgba(255,255,255,.95); color: var(--pl-primary);
-      font-weight: 700; font-size: 0.68rem; padding: 6px 11px; border-radius: 50px;
-      box-shadow: 0 6px 16px rgba(6,17,50,.18); text-align: left;
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      background: #fff; color: var(--pl-primary);
+      font-weight: 700; font-size: 0.7rem; padding: 8px 10px; border-radius: 50px;
+      box-shadow: 0 4px 12px rgba(15,42,90,.1); text-align: center;
     }
-    .pl-verified-badge svg { width: 13px; height: 13px; flex-shrink: 0; }
+    .pl-verified-badge svg { width: 14px; height: 14px; flex-shrink: 0; }
+    .pl-trustbox {
+      background: #fff; border-radius: 14px; padding: 10px 10px 9px;
+      box-shadow: 0 4px 12px rgba(15,42,90,.1); text-align: center;
+    }
+    .pl-trustbox .rating {
+      display: flex; align-items: center; justify-content: center; gap: 5px;
+      font-size: 0.98rem; font-weight: 800; color: var(--pl-text);
+    }
+    .pl-trustbox .rating svg { width: 16px; height: 16px; fill: var(--pl-star); flex-shrink: 0; }
+    .pl-trustbox .count { display: block; font-size: 0.68rem; color: var(--pl-muted); margin-top: 1px; }
+    .pl-trustbox hr { border: none; border-top: 1px solid var(--pl-line); margin: 8px 0; }
+    .pl-avatars { display: flex; align-items: center; justify-content: center; }
+    .pl-avatars .av {
+      width: 24px; height: 24px; border-radius: 50%; overflow: hidden;
+      border: 2px solid #fff; background: var(--pl-soft); color: var(--pl-primary);
+      font-size: 0.6rem; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      margin-left: -8px; flex-shrink: 0;
+    }
+    .pl-avatars .av:first-child { margin-left: 0; }
+    .pl-avatars .av img { width: 100%; height: 100%; object-fit: cover; }
+    .pl-avatars .more { background: var(--pl-primary); color: #fff; font-size: 0.56rem; }
+    .pl-trustbox .caption { display: block; font-size: 0.66rem; color: var(--pl-muted); margin-top: 5px; font-weight: 600; }
 
     /* ---------- Sections ---------- */
     .pl-section {
-      background: #fff; border-radius: 18px; padding: 18px;
-      box-shadow: var(--pl-card-shadow); margin: 0 16px 14px;
-      position: relative; z-index: 3;
+      margin: 0 16px 16px;
     }
-    .pl-section:first-of-type { margin-top: -20px; }
     .pl-sec-head {
       display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
     }
     .pl-sec-icon {
-      width: 34px; height: 34px; border-radius: 50%; background: var(--pl-primary); color: #fff;
+      width: 32px; height: 32px; border-radius: 50%; background: var(--pl-soft); color: var(--pl-primary);
       display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
-    .pl-sec-icon svg { width: 17px; height: 17px; }
-    .pl-sec-head h2 { font-size: 1.06rem; font-weight: 800; margin: 0; flex: 1; }
+    .pl-sec-icon svg { width: 16px; height: 16px; }
+    .pl-sec-head h2 { font-size: 1.08rem; font-weight: 800; margin: 0; flex: 1; color: var(--pl-text); }
     .pl-sec-head a, .pl-sec-head button.pl-seeall {
       color: var(--pl-primary); font-weight: 700; font-size: 0.84rem; white-space: nowrap;
       display: inline-flex; align-items: center; gap: 3px; background: none; border: none; cursor: pointer; padding: 0;
     }
     .pl-sec-head .pl-seeall svg, .pl-sec-head a svg { width: 15px; height: 15px; }
 
-    .pl-about p { margin: 0; color: #475569; font-size: 0.9rem; line-height: 1.6; }
-    .pl-about p.clamped {
-      display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
-    }
-    .pl-about-more {
-      display: inline-block; margin-top: 6px; color: var(--pl-primary); font-weight: 700; font-size: 0.83rem;
-      background: none; border: none; cursor: pointer; padding: 0;
-    }
-    .pl-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
-    .pl-chip {
-      display: inline-flex; align-items: center; gap: 6px;
-      background: var(--pl-soft); color: var(--pl-primary);
-      font-size: 0.79rem; font-weight: 700; padding: 7px 13px; border-radius: 50px;
-    }
-    .pl-chip svg { width: 13px; height: 13px; flex-shrink: 0; }
-
-    /* Services -- vraies photos + une tuile icone (entretien general) */
-    .pl-svc-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    /* Services -- tuiles icone (pas de photos) */
+    .pl-svc-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
     .pl-svc-card {
-      border-radius: 16px; overflow: hidden; position: relative;
-      background: #F4F7FD; aspect-ratio: 4 / 3.4;
+      display: flex; align-items: center; gap: 12px;
+      background: var(--pl-soft); border-radius: 16px; padding: 16px 12px;
     }
-    .pl-svc-card[hidden] { display: none; }
-    .pl-svc-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .pl-svc-card .cap {
-      position: absolute; left: 0; right: 0; bottom: 0; padding: 26px 10px 10px;
-      background: linear-gradient(transparent, rgba(6,17,40,0.88));
-      color: #fff;
+    .pl-svc-card .ic {
+      width: 40px; height: 40px; border-radius: 12px; background: #fff; color: var(--pl-primary);
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      box-shadow: 0 4px 10px rgba(15,42,90,.08);
     }
-    .pl-svc-card .cap b { display: block; font-size: 0.82rem; font-weight: 700; line-height: 1.25; }
-    .pl-svc-card .cap span { display: block; font-size: 0.68rem; opacity: 0.9; line-height: 1.3; margin-top: 2px; }
-    .pl-svc-card.pl-svc-icon {
-      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
-      border: 1px solid var(--pl-line); text-align: center; padding: 10px;
+    .pl-svc-card .ic svg { width: 22px; height: 22px; }
+    .pl-svc-card b { font-size: 0.86rem; font-weight: 700; color: var(--pl-text); line-height: 1.25; }
+
+    /* Avis clients -- scroll horizontal de cartes */
+    .pl-review-row {
+      display: flex; gap: 12px; overflow-x: auto; margin: 0 -16px; padding: 2px 16px 4px;
+      scrollbar-width: none; -webkit-overflow-scrolling: touch;
     }
-    .pl-svc-card.pl-svc-icon .ic {
-      width: 44px; height: 44px; border-radius: 12px; background: var(--pl-soft); color: var(--pl-primary);
-      display: flex; align-items: center; justify-content: center;
+    .pl-review-row::-webkit-scrollbar { display: none; }
+    .pl-review-card {
+      flex: 0 0 auto; width: 240px;
+      background: #fff; border: 1px solid var(--pl-line); border-radius: 16px; padding: 14px;
     }
-    .pl-svc-card.pl-svc-icon .ic svg { width: 22px; height: 22px; }
-    .pl-svc-card.pl-svc-icon b { font-size: 0.82rem; font-weight: 700; color: var(--pl-text); }
+    .pl-review-top { display: flex; align-items: center; gap: 9px; margin-bottom: 8px; }
+    .pl-review-ava {
+      width: 34px; height: 34px; border-radius: 50%; overflow: hidden; flex-shrink: 0;
+      background: var(--pl-soft); color: var(--pl-primary); font-weight: 800;
+      display: flex; align-items: center; justify-content: center; font-size: .8rem;
+    }
+    .pl-review-ava img { width: 100%; height: 100%; object-fit: cover; }
+    .pl-review-name { min-width: 0; }
+    .pl-review-name b { display: block; font-size: 0.86rem; font-weight: 800; color: var(--pl-text);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .pl-review-stars { display: flex; gap: 1px; margin-top: 2px; }
+    .pl-review-stars svg { width: 12px; height: 12px; fill: var(--pl-star); }
+    .pl-review-time { font-size: 0.7rem; color: var(--pl-muted); margin-bottom: 6px; }
+    .pl-review-card p { margin: 0; font-size: 0.82rem; color: #475569; line-height: 1.5; }
+    .pl-review-empty { color: var(--pl-muted); font-size: 0.86rem; margin: 0; }
 
     [hidden] { display: none !important; }
 
@@ -224,7 +227,6 @@
     @media (min-width: 720px) {
       body { padding-bottom: 40px; }
       .pl-wrap { padding: 24px 0 0; }
-      .pl-header { border-radius: 22px; }
       .pl-svc-grid { grid-template-columns: repeat(4, 1fr); }
       .pl-actionbar {
         position: static; border: none; background: none; padding: 0 16px;
@@ -236,92 +238,72 @@
 </head>
 <body>
   <div class="pl-wrap">
-    <header class="pl-header">
-      <div class="pl-header-bg" aria-hidden="true">
-        <svg viewBox="0 0 750 560" preserveAspectRatio="none">
-          <defs>
-            <linearGradient id="plHeaderGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stop-color="#1863F2"/>
-              <stop offset="55%" stop-color="#0C4FE0"/>
-              <stop offset="100%" stop-color="#082E99"/>
-            </linearGradient>
-          </defs>
-          <path fill="url(#plHeaderGrad)" d="M0,0 H750 V460 C700,460 670,510 590,502 C505,494 472,540 380,528 C290,516 258,478 158,492 C98,500 48,518 0,505 Z"/>
-        </svg>
-      </div>
-      <div class="pl-topbar">
-        <button class="pl-icon-btn" type="button" aria-label="Retour"
-          onclick="if(history.length>1){history.back()}else{location.href='{{ url_for('artisans_page') }}'}">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-        </button>
-        <h1>Profil du technicien</h1>
-        <div class="pl-top-actions">
-          <button class="pl-icon-btn" type="button" id="menuBtn" aria-label="Plus d'options">
-            <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>
-          </button>
-        </div>
-      </div>
-
-      <div class="pl-idblock">
-        <div class="pl-ava-wrap">
-          <div class="pl-ava"><img src="{{ p.avatarImage }}" alt="{{ p.name }}" /></div>
-          {% if p.available %}<span class="pl-ava-dot" aria-label="En ligne"></span>{% endif %}
-        </div>
-        <div class="pl-id-main">
-          <h2 class="pl-name">
-            {{ p.name }}
-            {% if p.verified %}
-            <span class="check" aria-label="Vérifié"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 3.5 6v6c0 5.2 3.6 9.9 8.5 11 4.9-1.1 8.5-5.8 8.5-11V6L12 2Zm-1.2 13.3-3.3-3.3 1.4-1.4 1.9 1.9 4.9-4.9 1.4 1.4-6.3 6.3Z"/></svg></span>
-            {% endif %}
-          </h2>
-          <p class="pl-role">{{ p.category }} professionnel</p>
-          {% if p.yearsExperience %}
-          <p class="pl-exp">{{ p.yearsExperience }} an{{ 's' if p.yearsExperience > 1 }} d'expérience</p>
-          {% endif %}
-          <span class="pl-avail-pill"><span class="d"></span>{{ 'Disponible aujourd\'hui' if p.available else 'Sur rendez-vous' }}</span>
-          {% if p.zone %}
-          <div class="pl-location">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-            <span><b>{{ p.zone }}</b><br />Intervient dans un rayon de {{ p.radiusKm|int }} km</span>
-          </div>
-          {% endif %}
-        </div>
-        {% if p.verified %}
-        <div class="pl-side">
-          <span class="pl-verified-badge">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>
-            Vérifié par FixPro
-          </span>
-        </div>
-        {% endif %}
-      </div>
+    <header class="pl-topbar">
+      <button class="pl-icon-btn" type="button" aria-label="Retour"
+        onclick="if(history.length>1){history.back()}else{location.href='{{ url_for('artisans_page') }}'}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      </button>
+      <h1>Profil du technicien</h1>
+      <button class="pl-icon-btn" type="button" id="menuBtn" aria-label="Plus d'options">
+        <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>
+      </button>
     </header>
 
-    <section class="pl-section pl-about">
-      <div class="pl-sec-head">
-        <span class="pl-sec-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg></span>
-        <h2>À propos</h2>
+    <section class="pl-idcard">
+      <div class="pl-ava-wrap">
+        <div class="pl-ava"><img src="{{ p.avatarImage }}" alt="{{ p.name }}" /></div>
+        {% if p.available %}<span class="pl-ava-dot" aria-label="En ligne"></span>{% endif %}
       </div>
-      {% set about_fallbacks = {
-        'Plombier': "Plombier professionnel avec plus de 5 ans d'expérience. Spécialisé dans l'installation, la réparation et l'entretien des systèmes de plomberie. Je vous garantis un service rapide, propre et de qualité.",
-      } %}
-      {% set about_text = p.about or about_fallbacks.get(p.category, p.category ~ " professionnel, je vous garantis un travail propre, rapide et durable.") %}
-      <p id="aboutText" class="clamped">{{ about_text }}</p>
-      <button type="button" class="pl-about-more" id="aboutMoreBtn" hidden>Voir plus</button>
-      <div class="pl-chips">
-        {% set _badge_icons = {
-          'Rapide': '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4.5 13.5a.6.6 0 0 0 .5.9h5l-1 7.6 8.5-11.5a.6.6 0 0 0-.5-.9h-5z"/></svg>',
-          'Sérieux': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>',
-          'Propre': '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.6 4.2L18 8l-4.4 1.8L12 14l-1.6-4.2L6 8l4.4-1.8z"/><path d="M19 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg>',
-          'Travail soigné': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-6 0v4"/><path d="M7 9h10l1 11H6z"/></svg>',
-          'À l\'écoute': '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M22.5 21v-2a4 4 0 0 0-3-3.87M16.5 3.13a4 4 0 0 1 0 7.75"/></svg>',
-        } %}
-        {% for tag in p.badges[:4] %}
-        <span class="pl-chip">
-          {{ (_badge_icons.get(tag) or '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>')|safe }}
-          {{ tag }}
+      <div class="pl-id-main">
+        <h2 class="pl-name">
+          {{ p.name }}
+          {% if p.verified %}
+          <span class="check" aria-label="Vérifié"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 3.5 6v6c0 5.2 3.6 9.9 8.5 11 4.9-1.1 8.5-5.8 8.5-11V6L12 2Zm-1.2 13.3-3.3-3.3 1.4-1.4 1.9 1.9 4.9-4.9 1.4 1.4-6.3 6.3Z"/></svg></span>
+          {% endif %}
+        </h2>
+        <p class="pl-role">{{ p.category }} professionnel</p>
+        {% if p.zone %}
+        <div class="pl-meta-row">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+          <span><b>{{ p.zone }}</b><br /><span class="muted">Dans un rayon de {{ p.radiusKm|int }} km</span></span>
+        </div>
+        {% endif %}
+        {% if p.yearsExperience %}
+        <div class="pl-meta-row">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+          <span>{{ p.yearsExperience }} an{{ 's' if p.yearsExperience > 1 }} d'expérience</span>
+        </div>
+        {% endif %}
+        <span class="pl-avail-pill"><span class="d"></span>{{ 'Disponible aujourd\'hui' if p.available else 'Sur rendez-vous' }}</span>
+      </div>
+      <div class="pl-side">
+        {% if p.verified %}
+        <span class="pl-verified-badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>
+          Vérifié par FixPro
         </span>
-        {% endfor %}
+        {% endif %}
+        <div class="pl-trustbox">
+          {% if p.reviewCount > 0 %}
+          <span class="rating">
+            <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            {{ ("%.1f"|format(p.rating))|replace('.', ',') }}
+          </span>
+          <span class="count">({{ p.reviewCount }} avis)</span>
+          <hr />
+          {% endif %}
+          {% if p.reviewerAvatars %}
+          <div class="pl-avatars">
+            {% for rv in p.reviewerAvatars %}
+            <span class="av">{% if rv.photo %}<img src="{{ rv.photo }}" alt="" />{% else %}{{ rv.name[0]|upper }}{% endif %}</span>
+            {% endfor %}
+            {% if p.remainingReviewers > 0 %}<span class="av more">+{{ p.remainingReviewers }}</span>{% endif %}
+          </div>
+          <span class="caption">Clients satisfaits</span>
+          {% else %}
+          <span class="caption">Nouveau sur FixPro</span>
+          {% endif %}
+        </div>
       </div>
     </section>
 
@@ -329,40 +311,71 @@
       <div class="pl-sec-head">
         <span class="pl-sec-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span>
         <h2>Services proposés</h2>
-        {% if p.services|length > 4 %}
-        <button type="button" class="pl-seeall" id="svcSeeAll">Voir tout
+        <a href="{{ url_for('categories') }}">Voir tout
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-        </button>
-        {% endif %}
+        </a>
       </div>
+      {% set _svc_icons = {
+        'fuite': '<path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/>',
+        'sanitaire': '<ellipse cx="12" cy="6.5" rx="5.5" ry="2.5"/><path d="M6.5 6.5v3a5.5 5.5 0 0 0 11 0v-3"/><rect x="9" y="16" width="6" height="4" rx="1"/><path d="M10 20v1.5M14 20v1.5"/>',
+        'debouchage': '<path d="M5 4v7a4 4 0 0 0 4 4h6a4 4 0 0 1 4 4v3"/><circle cx="5" cy="4" r="1.5" fill="currentColor" stroke="none"/><circle cx="19" cy="22" r="1.5" fill="currentColor" stroke="none"/>',
+        'renovation': '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>',
+      } %}
       <div class="pl-svc-grid">
         {% for s in p.services %}
-        {% if s.image %}
-        <div class="pl-svc-card" {% if loop.index0 >= 4 %}data-extra-svc hidden{% endif %}>
-          <img src="{{ s.image }}" alt="{{ s.title }}" loading="lazy" />
-          <div class="cap"><b>{{ s.title }}</b>{% if s.desc %}<span>{{ s.desc }}</span>{% endif %}</div>
-        </div>
-        {% else %}
-        <div class="pl-svc-card pl-svc-icon" {% if loop.index0 >= 4 %}data-extra-svc hidden{% endif %}>
-          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span>
+        <div class="pl-svc-card">
+          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">{{ (_svc_icons.get(s.icon) or _svc_icons['renovation'])|safe }}</svg></span>
           <b>{{ s.title }}</b>
         </div>
-        {% endif %}
         {% endfor %}
       </div>
     </section>
 
+    <section class="pl-section">
+      <div class="pl-sec-head">
+        <span class="pl-sec-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></span>
+        <h2>Avis clients</h2>
+        {% if p.reviewCount > 0 %}
+        <a href="#">Voir tous ({{ p.reviewCount }})
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+        </a>
+        {% endif %}
+      </div>
+      {% if p.reviews %}
+      <div class="pl-review-row">
+        {% for rev in p.reviews %}
+        <div class="pl-review-card">
+          <div class="pl-review-top">
+            <span class="pl-review-ava">{% if rev.photo %}<img src="{{ rev.photo }}" alt="" />{% else %}{{ rev.name[0]|upper }}{% endif %}</span>
+            <div class="pl-review-name">
+              <b>{{ rev.name }}</b>
+              <div class="pl-review-stars" aria-label="{{ rev.rating }}/5">
+                {% for i in range(1, 6) %}
+                <svg viewBox="0 0 24 24" fill="{{ 'currentColor' if i <= rev.rating else '#E2E8F0' }}"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+          <div class="pl-review-time">{{ rev.ago }}</div>
+          <p>{{ rev.comment }}</p>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="pl-review-empty">Aucun avis pour le moment.</p>
+      {% endif %}
+    </section>
   </div>
 
   <div class="pl-actionbar">
     <div class="pl-actionbar-inner">
-      <a class="pl-btn pl-btn-ghost" href="{{ url_for('client_message_artisan', artisan_id=p.id) }}">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z"/></svg>
-        Envoyer un message
-      </a>
       <a class="pl-btn pl-btn-primary" href="{{ url_for('contact_artisan', artisan_id=p.id) }}">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
         Contacter
+      </a>
+      <a class="pl-btn pl-btn-ghost" href="{{ url_for('client_message_artisan', artisan_id=p.id) }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z"/></svg>
+        Envoyer un message
       </a>
     </div>
   </div>
@@ -380,28 +393,8 @@
         clearTimeout(toastTimer);
         toastTimer = setTimeout(function () { toastEl.classList.remove('show'); }, 2000);
       }
-
       var menu = document.getElementById('menuBtn');
       if (menu) menu.addEventListener('click', function () { toast('Bientôt disponible'); });
-
-      var seeAll = document.getElementById('svcSeeAll');
-      if (seeAll) {
-        seeAll.addEventListener('click', function () {
-          document.querySelectorAll('[data-extra-svc]').forEach(function (el) { el.hidden = false; });
-          seeAll.hidden = true;
-        });
-      }
-      var aboutText = document.getElementById('aboutText');
-      var aboutMore = document.getElementById('aboutMoreBtn');
-      if (aboutText && aboutMore) {
-        if (aboutText.scrollHeight > aboutText.clientHeight + 2) {
-          aboutMore.hidden = false;
-          aboutMore.addEventListener('click', function () {
-            aboutText.classList.remove('clamped');
-            aboutMore.hidden = true;
-          });
-        }
-      }
     })();
   </script>
 </body>
