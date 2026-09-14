@@ -161,8 +161,7 @@
     </nav>
 
     {% if entitlements and entitlements.status == 'TRIAL_EXPIRED' and not entitlements.active %}
-    <p class="notice">Votre période découverte est terminée : vous ne recevez plus de nouvelles demandes.
-      <a href="{{ url_for('technician_subscription') }}">Activez un abonnement</a> pour continuer.</p>
+    <p class="notice">Votre période découverte est terminée : vous ne recevez plus de nouvelles demandes.</p>
     {% endif %}
 
     {% if items %}

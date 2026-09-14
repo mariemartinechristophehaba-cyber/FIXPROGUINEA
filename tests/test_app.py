@@ -857,119 +857,6 @@ class TechnicianDashboardTests(FixProTestCase):
         r = self.client.post("/api/technicien/status", data={"status": "n_importe"})
         self.assertEqual(r.status_code, 400)
 
-    def test_subscription_page_renders_pro_and_premium_only(self):
-        self.register_artisan("tech5@example.com", phone="+224621111115")
-        self.login("tech5@example.com")
-        r = self.client.get("/abonnement")
-        self.assertEqual(r.status_code, 200)
-        html = r.get_data(as_text=True)
-        self.assertIn("Plan Pro", html)
-        self.assertIn("Plan Premium", html)
-        self.assertNotIn("Plan Gratuit", html)
-        self.assertNotIn(">Gratuit<", html)
-        self.assertIn("Le plus populaire", html)
-        self.assertIn("97 000 GNF", html)
-        self.assertIn("140 000 GNF", html)
-        self.assertIn("Comparatif des fonctionnalités", html)
-        self.assertIn("Questions fréquentes", html)
-
-    def test_subscription_checkout_rejects_removed_free_plan(self):
-        self.register_artisan("tech8@example.com", phone="+224621111118")
-        self.login("tech8@example.com")
-        r = self.client.get("/abonnement/paiement?plan=tech_free",
-                            follow_redirects=False)
-        self.assertEqual(r.status_code, 302)
-        self.assertIn("abonnement", r.location)
-
-    def test_subscription_checkout_creates_pending_subscription(self):
-        self.register_artisan("tech6@example.com", phone="+224621111116")
-        self.login("tech6@example.com")
-        r = self.client.post(
-            "/abonnement/paiement?plan=tech_premium&period=month",
-            data={"payment_method": "orange_money"}, follow_redirects=False)
-        self.assertEqual(r.status_code, 302)
-        conn = db.connect(sqlite_path=self.db_path)
-        try:
-            uid = conn.execute("SELECT id FROM users WHERE phone = ?",
-                               ("+224621111116",)).fetchone()["id"]
-            sub = conn.execute(
-                "SELECT status FROM technician_subscriptions WHERE technician_id = ?",
-                (uid,)).fetchone()
-            self.assertIsNotNone(sub)
-            self.assertIn(sub["status"], ("TRIAL", "PAST_DUE"))
-            pay = conn.execute(
-                "SELECT status, amount FROM subscription_payments WHERE user_id = ?",
-                (uid,)).fetchone()
-            self.assertEqual(pay["status"], "pending")
-            self.assertEqual(pay["amount"], 140000)
-        finally:
-            conn.close()
-
-    def test_subscription_checkout_rejects_unknown_plan(self):
-        self.register_artisan("tech7@example.com", phone="+224621111117")
-        self.login("tech7@example.com")
-        r = self.client.get("/abonnement/paiement?plan=tech_basic",
-                            follow_redirects=False)
-        self.assertEqual(r.status_code, 302)
-        self.assertIn("abonnement", r.location)
-
-    def test_confirmation_page_is_dynamic_per_plan(self):
-        self.register_artisan("cf1@example.com", phone="+224621114001")
-        self.login("cf1@example.com")
-        pro = self.client.get(
-            "/abonnement/confirmation?plan=tech_pro&period=month").get_data(as_text=True)
-        self.assertIn("Procédez au paiement", pro)
-        self.assertIn("97 000 GNF", pro)
-        self.assertIn("100 000 GNF", pro)          # ancien prix barre
-        self.assertIn("-3 %", pro)
-        self.assertIn("/ mois", pro)
-        prem = self.client.get(
-            "/abonnement/confirmation?plan=tech_premium&period=month").get_data(as_text=True)
-        self.assertIn("140 000 GNF", prem)
-        self.assertIn("200 000 GNF", prem)
-        self.assertIn("-30 %", prem)
-        self.assertIn("Le plus populaire", prem)
-        # meme gabarit, seules les donnees changent
-        self.assertNotIn("97 000 GNF", prem)
-
-    def test_confirmation_payment_methods_are_real_only(self):
-        self.register_artisan("cf2@example.com", phone="+224621114002")
-        self.login("cf2@example.com")
-        html = self.client.get(
-            "/abonnement/confirmation?plan=tech_pro").get_data(as_text=True)
-        self.assertIn("Orange Money", html)
-        self.assertIn("MTN Mobile Money", html)
-        self.assertIn("Carte bancaire", html)
-        self.assertNotIn("Airtel", html)          # methode retiree
-        self.assertNotIn("Virement bancaire", html)
-
-    def test_confirmation_alias_matches_paiement(self):
-        self.register_artisan("cf3@example.com", phone="+224621114003")
-        self.login("cf3@example.com")
-        for path in ("/abonnement/confirmation", "/abonnement/paiement",
-                     "/dashboard/technicien/abonnement/paiement"):
-            r = self.client.get(path + "?plan=tech_premium")
-            self.assertEqual(r.status_code, 200, path)
-            self.assertIn("Procédez au paiement", r.get_data(as_text=True))
-
-    def test_confirmation_rejects_fake_payment_method(self):
-        self.register_artisan("cf4@example.com", phone="+224621114004")
-        self.login("cf4@example.com")
-        r = self.client.post("/abonnement/confirmation?plan=tech_pro&period=month",
-                             data={"payment_method": "bitcoin"},
-                             follow_redirects=False)
-        self.assertEqual(r.status_code, 302)
-        conn = db.connect(sqlite_path=self.db_path)
-        try:
-            uid = conn.execute("SELECT id FROM users WHERE phone = ?",
-                               ("+224621114004",)).fetchone()["id"]
-            n = conn.execute(
-                "SELECT COUNT(*) AS n FROM subscription_payments WHERE user_id = ?",
-                (uid,)).fetchone()["n"]
-            self.assertEqual(n, 0)
-        finally:
-            conn.close()
-
     # --- Notifications ---------------------------------------------------
 
     def _seed_notif(self, user_id, title="Nouvelle demande", body="…",
@@ -1077,14 +964,14 @@ class TechnicianDashboardTests(FixProTestCase):
         self.assertIn("Se déconnecter", html)
         self.assertIn("tpm-dot", html)          # point vert (avatar partage)
         # chaque entree pointe vers une route reelle
-        for frag in ('href="/profile"', 'abonnement"',
+        for frag in ('href="/profile"',
                      'href="/profil/securite"', 'href="/contact"', 'href="/logout"'):
             self.assertIn(frag, html)
 
     def test_profile_menu_links_resolve(self):
         self.register_artisan("pm2@example.com", phone="+224621113002")
         self.login("pm2@example.com")
-        for path, code in (("/profile", 200), ("/abonnement", 200),
+        for path, code in (("/profile", 200),
                            ("/profil/securite", 200),
                            ("/contact", 200)):
             r = self.client.get(path)
@@ -1113,293 +1000,6 @@ class TechnicianDashboardTests(FixProTestCase):
             self.assertNotIn("user_id", sess)
 
 
-class SubscriptionPaymentFlowTests(FixProTestCase):
-    """Parcours de paiement des abonnements : AUCUNE fausse activation.
-    Un abonnement ne devient ACTIVE que sur confirmation serveur reelle."""
-
-    WEBHOOK_SECRET = "test-webhook-secret"
-
-    def setUp(self):
-        super().setUp()
-        fixpro_app.app.config["PAYMENT_WEBHOOK_SECRET"] = self.WEBHOOK_SECRET
-        self.addCleanup(fixpro_app.app.config.pop, "PAYMENT_WEBHOOK_SECRET", None)
-
-    # --- helpers -------------------------------------------------------
-
-    def _tech(self, email="payflow@example.com", phone="+224622000001"):
-        self.register_artisan(email, phone=phone)
-        self.login(email)
-        conn = db.connect(sqlite_path=self.db_path)
-        try:
-            return conn.execute("SELECT id FROM users WHERE phone = ?",
-                                (phone,)).fetchone()["id"]
-        finally:
-            conn.close()
-
-    def _start_payment(self, plan="tech_premium", method="orange_money",
-                       period="month"):
-        r = self.client.post(
-            "/abonnement/confirmation?plan=%s&period=%s" % (plan, period),
-            data={"payment_method": method, "payer_phone": "620000000"},
-            follow_redirects=False)
-        self.assertEqual(r.status_code, 302)
-        self.assertIn("/abonnement/statut/", r.location)
-        return r.location.rsplit("/", 1)[-1]
-
-    def _pay_row(self, ref):
-        conn = db.connect(sqlite_path=self.db_path)
-        try:
-            return conn.execute(
-                "SELECT * FROM subscription_payments WHERE transaction_reference = ?",
-                (ref,)).fetchone()
-        finally:
-            conn.close()
-
-    def _sub_row(self, tech_id):
-        conn = db.connect(sqlite_path=self.db_path)
-        try:
-            return conn.execute(
-                "SELECT * FROM technician_subscriptions WHERE technician_id = ?"
-                " ORDER BY id DESC LIMIT 1", (tech_id,)).fetchone()
-        finally:
-            conn.close()
-
-    def _webhook(self, ref, status, amount=140000, token=None):
-        return self.client.post(
-            "/webhooks/paiement/orange",
-            json={"reference": ref, "status": status, "amount": amount},
-            headers={"X-FixPro-Signature": token if token is not None else self.WEBHOOK_SECRET})
-
-    def _make_admin(self):
-        conn = db.connect(sqlite_path=self.db_path)
-        try:
-            conn.execute(
-                "INSERT INTO users (email, phone, password_hash, role, full_name,"
-                " is_verified, is_active) VALUES (?, ?, ?, 'admin', 'Admin', 1, 1)",
-                ("adm@fixpro.local", "+224000009999",
-                 fixpro_app.generate_password_hash("x")))
-            conn.commit()
-            aid = conn.execute("SELECT id FROM users WHERE phone = ?",
-                               ("+224000009999",)).fetchone()["id"]
-        finally:
-            conn.close()
-        with self.client.session_transaction() as sess:
-            sess["user_id"] = aid
-
-    # --- 1. le clic "Payer" n'active RIEN ----------------------------
-
-    def test_pay_click_creates_pending_only(self):
-        tid = self._tech()
-        ref = self._start_payment()
-        pay = self._pay_row(ref)
-        self.assertEqual(pay["status"], "pending")
-        self.assertIsNone(pay["paid_at"])
-        sub = self._sub_row(tid)
-        self.assertIn(sub["status"], ("TRIAL", "PAST_DUE"))      # PAS ACTIVE
-        self.assertNotEqual(sub["status"], "ACTIVE")
-        self.assertIsNone(pay["period_end"])           # pas de periode d'abonnement tant qu'inactif
-
-    def test_status_page_and_api_report_pending(self):
-        self._tech()
-        ref = self._start_payment()
-        html = self.client.get("/abonnement/statut/%s" % ref).get_data(as_text=True)
-        self.assertIn("Paiement en cours", html)
-        j = self.client.get("/api/abonnement/statut/%s" % ref).get_json()
-        self.assertEqual(j["state"], "PENDING")
-        self.assertFalse(j["final"])
-        self.assertFalse(j["confirmed"])
-
-    # --- 2. webhook : securite --------------------------------------
-
-    def test_webhook_without_secret_is_rejected(self):
-        tid = self._tech()
-        ref = self._start_payment()
-        r = self._webhook(ref, "success", token="")
-        self.assertEqual(r.status_code, 403)
-        self.assertIn(self._sub_row(tid)["status"], ("TRIAL", "PAST_DUE"))  # jamais ACTIVE
-        self.assertEqual(self._pay_row(ref)["status"], "pending")
-
-    def test_webhook_wrong_amount_is_rejected(self):
-        tid = self._tech()
-        ref = self._start_payment()
-        r = self._webhook(ref, "success", amount=1)
-        self.assertEqual(r.status_code, 400)
-        self.assertIn(self._sub_row(tid)["status"], ("TRIAL", "PAST_DUE"))  # jamais ACTIVE
-
-    # --- 3. echecs -> reste inactif --------------------------------
-
-    def test_webhook_failed_keeps_subscription_inactive(self):
-        tid = self._tech()
-        ref = self._start_payment()
-        self.assertEqual(self._webhook(ref, "failed").status_code, 200)
-        self.assertEqual(self._pay_row(ref)["status"], "failed")
-        self.assertIn(self._sub_row(tid)["status"], ("TRIAL", "PAST_DUE"))  # jamais ACTIVE
-        html = self.client.get("/abonnement/statut/%s" % ref).get_data(as_text=True)
-        self.assertIn("Paiement échoué", html)
-
-    def test_webhook_cancelled_keeps_inactive(self):
-        tid = self._tech()
-        ref = self._start_payment()
-        self._webhook(ref, "cancelled")
-        self.assertEqual(self._pay_row(ref)["status"], "cancelled")
-        self.assertIn(self._sub_row(tid)["status"], ("TRIAL", "PAST_DUE"))  # jamais ACTIVE
-
-    def test_user_cancel_keeps_inactive(self):
-        tid = self._tech()
-        ref = self._start_payment()
-        self.client.post("/abonnement/statut/%s/annuler" % ref)
-        self.assertEqual(self._pay_row(ref)["status"], "cancelled")
-        self.assertIn(self._sub_row(tid)["status"], ("TRIAL", "PAST_DUE"))  # jamais ACTIVE
-
-    def test_stale_attempt_expires_and_stays_inactive(self):
-        tid = self._tech()
-        ref = self._start_payment()
-        conn = db.connect(sqlite_path=self.db_path)
-        try:
-            conn.execute("UPDATE subscription_payments SET created_at = '2020-01-01 00:00:00'"
-                         " WHERE transaction_reference = ?", (ref,))
-            conn.commit()
-        finally:
-            conn.close()
-        j = self.client.get("/api/abonnement/statut/%s" % ref).get_json()
-        self.assertEqual(j["state"], "PAYMENT_EXPIRED")
-        self.assertEqual(self._pay_row(ref)["status"], "expired")
-        self.assertIn(self._sub_row(tid)["status"], ("TRIAL", "PAST_DUE"))  # jamais ACTIVE
-
-    # --- 4. confirmation reelle -> activation ----------------------
-
-    def test_webhook_success_activates_subscription(self):
-        tid = self._tech()
-        ref = self._start_payment()
-        self.assertEqual(self._webhook(ref, "success").status_code, 200)
-        pay = self._pay_row(ref)
-        self.assertEqual(pay["status"], "paid")
-        self.assertIsNotNone(pay["paid_at"])
-        sub = self._sub_row(tid)
-        self.assertEqual(sub["status"], "ACTIVE")
-        self.assertIsNotNone(sub["start_date"])
-        self.assertIsNotNone(sub["end_date"])
-        conn = db.connect(sqlite_path=self.db_path)
-        try:
-            n = conn.execute(
-                "SELECT COUNT(*) AS n FROM notifications"
-                " WHERE user_id = ? AND title = 'Abonnement activé'",
-                (tid,)).fetchone()["n"]
-        finally:
-            conn.close()
-        self.assertEqual(n, 1)
-        html = self.client.get("/abonnement/statut/%s" % ref).get_data(as_text=True)
-        self.assertIn("Félicitations", html)
-
-    def test_webhook_success_is_idempotent(self):
-        tid = self._tech()
-        ref = self._start_payment()
-        self._webhook(ref, "success")
-        r2 = self._webhook(ref, "success")
-        self.assertEqual(r2.status_code, 200)
-        self.assertTrue(r2.get_json().get("already"))
-        conn = db.connect(sqlite_path=self.db_path)
-        try:
-            active = conn.execute(
-                "SELECT COUNT(*) AS n FROM technician_subscriptions"
-                " WHERE technician_id = ? AND status = 'ACTIVE'", (tid,)).fetchone()["n"]
-        finally:
-            conn.close()
-        self.assertEqual(active, 1)
-
-    # --- 5. double clic ------------------------------------------
-
-    def test_double_pay_click_reuses_same_attempt(self):
-        self._tech()
-        ref1 = self._start_payment()
-        ref2 = self._start_payment()
-        self.assertEqual(ref1, ref2)
-        conn = db.connect(sqlite_path=self.db_path)
-        try:
-            n = conn.execute(
-                "SELECT COUNT(*) AS n FROM subscription_payments"
-                " WHERE status IN ('pending', 'processing')").fetchone()["n"]
-        finally:
-            conn.close()
-        self.assertEqual(n, 1)
-
-    # --- 6. confirmation admin ----------------------------------
-
-    # --- 7. persistance : rouvrir l'app -> vrai statut ----------
-
-    def test_reopen_reads_real_status_from_backend(self):
-        tid = self._tech(email="reopen@example.com", phone="+224622000009")
-        ref = self._start_payment()
-        self._webhook(ref, "success")
-        # nouveau "client" (nouvelle session) = fermeture/reouverture
-        self.client.get("/logout")
-        self.login("reopen@example.com")
-        j = self.client.get("/api/abonnement/statut/%s" % ref).get_json()
-        self.assertEqual(j["state"], "PAYMENT_CONFIRMED")
-        self.assertTrue(j["confirmed"])
-
-    # --- 8. architecture providers -----------------------------
-
-    def test_refresh_during_pending_stays_pending(self):
-        self._tech(email="refresh@example.com", phone="+224622000021")
-        ref = self._start_payment()
-        for _ in range(3):
-            self.assertEqual(
-                self.client.get("/api/abonnement/statut/%s" % ref).get_json()["state"],
-                "PENDING")
-        self.assertEqual(self._pay_row(ref)["status"], "pending")
-
-    def test_unitrade_is_a_selectable_method_but_stays_pending(self):
-        tid = self._tech(email="unitrade@example.com", phone="+224622000022")
-        ref = self._start_payment(method="unitrade")
-        self.assertEqual(self._pay_row(ref)["payment_method"], "unitrade")
-        self.assertEqual(self._pay_row(ref)["status"], "pending")
-        self.assertIn(self._sub_row(tid)["status"], ("TRIAL", "PAST_DUE"))  # jamais ACTIVE
-
-    def test_real_providers_never_return_paid(self):
-        for code, cls in fixpro_app._REAL_PAYMENT_PROVIDERS.items():
-            res = cls().process(140000, code, "SUB-X", {})
-            self.assertIn(res["status"], ("pending", "processing"))
-            self.assertNotEqual(res["status"], "success")
-
-    def test_mock_provider_not_used_outside_testing_config(self):
-        for flag in ("TESTING", "FLASK_ENV", "PAYMENT_PROVIDER"):
-            self.addCleanup(fixpro_app.app.config.pop, flag, None)
-        fixpro_app.app.config["TESTING"] = False
-        fixpro_app.app.config["FLASK_ENV"] = "production"
-        fixpro_app.app.config.pop("PAYMENT_PROVIDER", None)
-        try:
-            self.assertNotIsInstance(
-                fixpro_app.get_payment_provider("orange_money"),
-                fixpro_app.MockPaymentProvider)
-            self.assertIsInstance(
-                fixpro_app.get_payment_provider("orange_money"),
-                fixpro_app.OrangeMoneyProvider)
-        finally:
-            fixpro_app.app.config["TESTING"] = True
-            fixpro_app.app.config["FLASK_ENV"] = "testing"
-
-    def test_webhook_wrong_currency_is_rejected(self):
-        tid = self._tech(email="cur@example.com", phone="+224622000023")
-        ref = self._start_payment()
-        r = self.client.post(
-            "/webhooks/paiement/orange",
-            json={"reference": ref, "status": "success", "amount": 140000,
-                  "currency": "USD"},
-            headers={"X-FixPro-Signature": self.WEBHOOK_SECRET})
-        self.assertEqual(r.status_code, 400)
-        self.assertIn(self._sub_row(tid)["status"], ("TRIAL", "PAST_DUE"))  # jamais ACTIVE
-
-    def test_webhook_unknown_reference_is_rejected(self):
-        self._tech(email="badref@example.com", phone="+224622000024")
-        self._start_payment()
-        r = self.client.post(
-            "/webhooks/paiement/orange",
-            json={"reference": "SUB-DOES-NOT-EXIST", "status": "success"},
-            headers={"X-FixPro-Signature": self.WEBHOOK_SECRET})
-        self.assertEqual(r.status_code, 404)
-
-
 class SubscriptionEntitlementsTests(FixProTestCase):
     """Les avantages Pro / Premium sont de VRAIS droits, calcules depuis la
     base par une source centrale, et desactives hors de l'etat ACTIVE."""
@@ -1413,13 +1013,28 @@ class SubscriptionEntitlementsTests(FixProTestCase):
         finally:
             conn.close()
 
+    def _ensure_plan_row(self, conn, code):
+        """Cree/reutilise la ligne subscription_plans pour un plan technicien
+        donne (page/checkout supprimes ; seul cet identifiant sert encore aux
+        tests d'entitlements)."""
+        row = conn.execute(
+            "SELECT id FROM subscription_plans WHERE code = ?", (code,)).fetchone()
+        if row:
+            return row["id"]
+        name = {"tech_pro": "Plan Pro", "tech_premium": "Plan Premium"}.get(code, code)
+        conn.execute(
+            "INSERT INTO subscription_plans (code, name, price_month, features, is_active)"
+            " VALUES (?, ?, 0, '', 1)", (code, name))
+        return conn.execute(
+            "SELECT id FROM subscription_plans WHERE code = ?", (code,)).fetchone()["id"]
+
     def _set_sub(self, tech_id, plan_code=None, status="ACTIVE", ends="future"):
         """Cree/positionne l'abonnement du technicien pour le test."""
         conn = db.connect(sqlite_path=self.db_path)
         try:
             plan_id = None
             if plan_code:
-                plan_id = fixpro_app._ensure_tech_plan_row(conn, plan_code)
+                plan_id = self._ensure_plan_row(conn, plan_code)
             end_date = None
             if ends == "future":
                 end_date = "2999-01-01 00:00:00"
@@ -1532,7 +1147,7 @@ class SubscriptionEntitlementsTests(FixProTestCase):
         # meme parcours qu'une nouvelle activation : on repositionne l'abo
         conn = db.connect(sqlite_path=self.db_path)
         try:
-            pid = fixpro_app._ensure_tech_plan_row(conn, "tech_premium")
+            pid = self._ensure_plan_row(conn, "tech_premium")
             conn.execute(
                 "UPDATE technician_subscriptions SET plan_id = ?, status = 'ACTIVE',"
                 " end_date = '2999-01-01 00:00:00' WHERE technician_id = ?", (pid, tid))
@@ -1582,7 +1197,7 @@ class SubscriptionEntitlementsTests(FixProTestCase):
                     ("rank%d@x.co" % i, "+22462400000%d" % i, "Tech %d" % i))
                 ids.append(conn.execute("SELECT id FROM users WHERE email = ?",
                                         ("rank%d@x.co" % i,)).fetchone()["id"])
-            pid = fixpro_app._ensure_tech_plan_row(conn, "tech_premium")
+            pid = self._ensure_plan_row(conn, "tech_premium")
             conn.execute(
                 "INSERT INTO technician_subscriptions (technician_id, plan_id, status,"
                 " start_date, end_date, auto_renew)"
@@ -1598,24 +1213,6 @@ class SubscriptionEntitlementsTests(FixProTestCase):
         self.assertLess(ranked_ids.index(ids[1]), ranked_ids.index(ids[0]))
         prem = next(r for r in ranked if r["id"] == ids[1])
         self.assertEqual(prem["subscription_badge"]["label"], "Premium")
-
-    def test_my_subscription_page_benefits_come_from_central_source(self):
-        tid = self._tech(email="benef@example.com", phone="+224623000011")
-        self._set_sub(tid, "tech_premium", "ACTIVE")
-        self.login("+224623000011")
-        html = self.client.get("/abonnement").get_data(as_text=True)
-        self.assertIn("Vos avantages", html)
-        self.assertIn("Demandes illimitées", html)
-        self.assertIn("Statistiques détaillées", html)
-        self.assertIn("Profil mis en avant", html)
-
-    def test_pro_subscription_page_shows_30_limit_from_central_source(self):
-        tid = self._tech(email="benefpro@example.com", phone="+224623000012")
-        self._set_sub(tid, "tech_pro", "ACTIVE")
-        self.login("+224623000012")
-        html = self.client.get("/abonnement").get_data(as_text=True)
-        self.assertIn("Vos avantages", html)
-        self.assertIn("30 demandes reçues par mois", html)   # libelle central
 
     def test_dashboard_shows_real_quota_counter_for_pro(self):
         tid = self._tech(email="dashq@example.com", phone="+224623000013")
@@ -1656,7 +1253,6 @@ class SubscriptionEntitlementsTests(FixProTestCase):
         r = self.client.get("/statistiques")
         self.assertEqual(r.status_code, 200)
         html = r.get_data(as_text=True)
-        self.assertIn("Passer à Premium", html)
         self.assertNotIn("Évolution sur 6 mois", html)   # aucune donnee Premium servie
 
     def test_stats_page_locked_without_subscription(self):
@@ -1664,7 +1260,6 @@ class SubscriptionEntitlementsTests(FixProTestCase):
         self.login("+224623000021")
         r = self.client.get("/statistiques")
         self.assertEqual(r.status_code, 200)
-        self.assertIn("Passer à Premium", r.get_data(as_text=True))
         self.assertNotIn("Évolution sur 6 mois", r.get_data(as_text=True))
 
     def test_stats_page_unlocked_for_premium(self):
@@ -1776,7 +1371,7 @@ class SubscriptionEntitlementsTests(FixProTestCase):
                     ("q%d@x.co" % i, "+2246230000%d" % (40 + i), "QTech %d" % i))
                 ids.append(conn.execute("SELECT id FROM users WHERE email = ?",
                                         ("q%d@x.co" % i,)).fetchone()["id"])
-            pid = fixpro_app._ensure_tech_plan_row(conn, "tech_pro")
+            pid = self._ensure_plan_row(conn, "tech_pro")
             conn.execute(
                 "INSERT INTO technician_subscriptions (technician_id, plan_id, status,"
                 " start_date, end_date, auto_renew)"
@@ -1843,7 +1438,7 @@ class SubscriptionEntitlementsTests(FixProTestCase):
         self.assertFalse(self._can_receive(tid))
         conn = db.connect(sqlite_path=self.db_path)
         try:
-            pid = fixpro_app._ensure_tech_plan_row(conn, "tech_premium")
+            pid = self._ensure_plan_row(conn, "tech_premium")
             conn.execute("UPDATE technician_subscriptions SET plan_id = ?,"
                          " status = 'ACTIVE', end_date = '2999-01-01'"
                          " WHERE technician_id = ?", (pid, tid))
@@ -1859,7 +1454,7 @@ class SubscriptionEntitlementsTests(FixProTestCase):
         self.assertTrue(self._can_receive(tid))
         conn = db.connect(sqlite_path=self.db_path)
         try:
-            pid = fixpro_app._ensure_tech_plan_row(conn, "tech_pro")
+            pid = self._ensure_plan_row(conn, "tech_pro")
             conn.execute("UPDATE technician_subscriptions SET plan_id = ?,"
                          " status = 'ACTIVE', end_date = '2999-01-01'"
                          " WHERE technician_id = ?", (pid, tid))
@@ -2063,93 +1658,6 @@ class SubscriptionEntitlementsTests(FixProTestCase):
         self.assertEqual(n, 1)
         self.assertEqual(self._ents(tid)["status"], "TRIAL_EXPIRED")
 
-    def test_buy_subscription_during_trial_activates_immediately(self):
-        tid = self._tech(email="tr8@x.co", phone="+224623100008")
-        self._set_trial(tid, ends_in_days=8)          # jour 6 : 8 jours restants
-        # paiement confirme -> ACTIVE tout de suite
-        conn = db.connect(sqlite_path=self.db_path)
-        try:
-            pid = fixpro_app._ensure_tech_plan_row(conn, "tech_premium")
-            row = conn.execute("SELECT id FROM technician_subscriptions WHERE technician_id=?", (tid,)).fetchone()
-            payid = fixpro_app._insert_id(conn,
-                "INSERT INTO subscription_payments (user_id, subscription_id, plan_id, amount,"
-                " currency, payment_method, transaction_reference, status)"
-                " VALUES (?, ?, ?, 140000, 'GNF', 'orange_money', 'SUB-TR8', 'paid')",
-                (tid, row["id"], pid))
-            fixpro_app._activate_subscription_from_payment(conn, payid)
-        finally:
-            conn.close()
-        e = self._ents(tid)
-        self.assertEqual(e["status"], "ACTIVE")
-        self.assertTrue(e["active"])
-        self.assertEqual(e["plan_code"], "tech_premium")
-        self.assertIn("priority_visibility", e["entitlements"])
-        self.assertEqual(e["badge"]["label"], "Premium")
-
-    def test_buy_subscription_after_trial_reactivates(self):
-        tid = self._tech(email="tr9@x.co", phone="+224623100009")
-        conn = db.connect(sqlite_path=self.db_path)
-        try:
-            conn.execute("UPDATE users SET profession='Plombier' WHERE id=?", (tid,))
-            conn.commit()
-        finally:
-            conn.close()
-        self._set_trial(tid, ends_in_days=-1)   # deja termine
-        self.assertEqual(self._ents(tid)["status"], "TRIAL_EXPIRED")
-        conn = db.connect(sqlite_path=self.db_path)
-        try:
-            pid = fixpro_app._ensure_tech_plan_row(conn, "tech_pro")
-            row = conn.execute("SELECT id FROM technician_subscriptions WHERE technician_id=?", (tid,)).fetchone()
-            payid = fixpro_app._insert_id(conn,
-                "INSERT INTO subscription_payments (user_id, subscription_id, plan_id, amount,"
-                " currency, payment_method, transaction_reference, status)"
-                " VALUES (?, ?, ?, 97000, 'GNF', 'orange_money', 'SUB-TR9', 'paid')",
-                (tid, row["id"], pid))
-            fixpro_app._activate_subscription_from_payment(conn, payid)
-            ranked = [r["id"] for r in fixpro_app._match_technicians(conn, "plomberie", location="Conakry")]
-        finally:
-            conn.close()
-        self.assertEqual(self._ents(tid)["status"], "ACTIVE")
-        self.assertTrue(self._can_receive(tid))
-        self.assertIn(tid, ranked)
-
-    def test_failed_payment_during_trial_keeps_trial(self):
-        tid = self._tech(email="tr10@x.co", phone="+224623100010")
-        self._set_trial(tid, ends_in_days=9)
-        conn = db.connect(sqlite_path=self.db_path)
-        try:
-            row = conn.execute("SELECT id FROM technician_subscriptions WHERE technician_id=?", (tid,)).fetchone()
-            payid = fixpro_app._insert_id(conn,
-                "INSERT INTO subscription_payments (user_id, subscription_id, plan_id, amount,"
-                " currency, payment_method, transaction_reference, status)"
-                " VALUES (?, ?, NULL, 140000, 'GNF', 'orange_money', 'SUB-TR10', 'pending')",
-                (tid, row["id"]))
-            fixpro_app._fail_subscription_payment(conn, payid, "failed")
-        finally:
-            conn.close()
-        e = self._ents(tid)
-        self.assertEqual(e["status"], "TRIAL")
-        self.assertTrue(e["eligible"])
-
-    def test_failed_payment_after_trial_stays_expired(self):
-        tid = self._tech(email="tr11@x.co", phone="+224623100011")
-        self._set_trial(tid, ends_in_days=-2)
-        self.assertEqual(self._ents(tid)["status"], "TRIAL_EXPIRED")
-        conn = db.connect(sqlite_path=self.db_path)
-        try:
-            row = conn.execute("SELECT id FROM technician_subscriptions WHERE technician_id=?", (tid,)).fetchone()
-            payid = fixpro_app._insert_id(conn,
-                "INSERT INTO subscription_payments (user_id, subscription_id, plan_id, amount,"
-                " currency, payment_method, transaction_reference, status)"
-                " VALUES (?, ?, NULL, 97000, 'GNF', 'orange_money', 'SUB-TR11', 'pending')",
-                (tid, row["id"]))
-            fixpro_app._fail_subscription_payment(conn, payid, "failed")
-        finally:
-            conn.close()
-        e = self._ents(tid)
-        self.assertEqual(e["status"], "TRIAL_EXPIRED")
-        self.assertFalse(e["eligible"])
-
     def test_subscription_expired_no_new_trial(self):
         tid = self._tech(email="tr12@x.co", phone="+224623100012")
         self._set_sub(tid, "tech_premium", "ACTIVE", ends="past")   # -> EXPIRED
@@ -2204,30 +1712,9 @@ class SubscriptionEntitlementsTests(FixProTestCase):
         tid = self._tech(email="tr16@x.co", phone="+224623100016")
         self._set_sub(tid, "tech_premium", "ACTIVE")
         self.login("+224623100016")
-        for path in ("/dashboard/technicien", "/abonnement",
-                     "/abonnement/confirmation?plan=tech_pro",
-                     "/abonnement/confirmation?plan=tech_premium", "/statistiques"):
+        for path in ("/dashboard/technicien", "/statistiques"):
             html = self.client.get(path).get_data(as_text=True).lower()
             self.assertNotIn("commission", html, path)
-
-    def test_dashboard_shows_trial_banner_with_real_counts(self):
-        tid = self._tech(email="tr17@x.co", phone="+224623100017")
-        self._set_trial(tid, ends_in_days=10)
-        self._add_requests(tid, [("completed", datetime_now_month()),
-                                 ("REQUESTED", datetime_now_month())])
-        self.login("+224623100017")
-        html = self.client.get("/dashboard/technicien").get_data(as_text=True)
-        self.assertIn("Période découverte", html)
-        self.assertIn("Il vous reste", html)
-
-    def test_dashboard_shows_trial_expired_message(self):
-        tid = self._tech(email="tr18@x.co", phone="+224623100018")
-        self._set_trial(tid, ends_in_days=-1)
-        self.login("+224623100018")
-        html = self.client.get("/dashboard/technicien").get_data(as_text=True)
-        self.assertIn("Période découverte terminée", html)
-        self.assertIn("Choisir mon abonnement", html)
-
 
 class ClientProfileTests(FixProTestCase):
     """Profil client et pages associees."""
@@ -3292,7 +2779,6 @@ class ParametresPageTests(FixProTestCase):
         self.assertIn("Préférences technicien", html)
         self.assertIn("Notifications professionnelles", html)
         self.assertIn("Zone d'intervention", html)
-        self.assertIn("Abonnement", html)
         self.assertIn('pm-badge technician', html)
 
     # TEST 4 : client devient technicien -> meme compte, /parametres bascule
@@ -3357,12 +2843,11 @@ class ParametresPageTests(FixProTestCase):
         self.assertNotIn('name="first_name"', html)
         self.assertNotIn('name="current_password"', html)
 
-    def test_technician_settings_link_to_real_subscription_and_dashboard(self):
+    def test_technician_settings_link_to_real_dashboard(self):
         with self.client as c:
             self._upgrade_to_technician(c, "+224620333008")
             html = c.get("/parametres").get_data(as_text=True)
         self.assertIn('href="{}"'.format(self._url("artisan_dashboard")), html)
-        self.assertIn('href="{}"'.format(self._url("technician_subscription")), html)
         # notifications professionnelles : en attente de la future maquette
         # officielle, l'entree ne pointe plus vers une page supprimee
         self.assertIn("Notifications professionnelles", html)
@@ -4169,7 +3654,9 @@ class NotificationCenterTests(FixProTestCase):
         self.login("cat@x.co")
         item = self.client.get("/api/notifications").get_json()["items"][0]
         self.assertEqual(item["icon"], "crown")
-        self.assertIn("abonnement", item["href"])
+        # la page/route abonnement a ete supprimee ; le lien retombe sur le
+        # tableau de bord technicien plutot que vers une page inexistante
+        self.assertEqual(item["href"], "/technician/dashboard")
 
 
 class DatabaseLayerTests(unittest.TestCase):
