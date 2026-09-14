@@ -504,21 +504,6 @@ def _geocode_query(query):
     return lat, lon, _extract_place_name(result)
 
 
-def _split_zones(zones_str):
-    """Decoupe une liste de zones en noms propres uniques."""
-    if not zones_str:
-        return []
-    raw = re.split(r"[,;/]", str(zones_str))
-    seen = set()
-    zones = []
-    for z in raw:
-        z = z.strip()
-        if z and z.lower() not in seen:
-            seen.add(z.lower())
-            zones.append(z)
-    return zones
-
-
 oauth = OAuth(app)
 
 

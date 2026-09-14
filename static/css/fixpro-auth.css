@@ -18,8 +18,6 @@
 
 * { box-sizing: border-box; }
 
-body { margin: 0; }
-
 .fa-page { min-height: 100vh; background: var(--fa-white); font-family: var(--fa-font); color: var(--fa-ink); }
 
 /* --- Appbar bleu --- */
