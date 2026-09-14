@@ -3840,6 +3840,27 @@ class ArtisanPublicProfileFrigoristeTests(FixProTestCase):
         html = self.client.get(f"/artisans/{aid}").get_data(as_text=True)
         self.assertIn("Aucune réalisation publiée pour le moment.", html)
 
+    def test_frigoriste_shows_real_ambient_hero_banner_plombier_does_not(self):
+        """Bandeau d'ambiance climatisation (vraie photo, recadree pour
+        retirer toute incrustation de donnees fabriquees) -- specifique au
+        frigoriste puisque c'est la seule photo reelle correspondante
+        trouvee apres recherche complete du poste. Le plombier n'a pas ce
+        bandeau (aucune entree pour lui dans PROFESSIONAL_HERO_IMAGE)."""
+        frigo_id = self._frigoriste_id(phone="+224621119927", email="frigoriste-hero@example.com")
+        html = self.client.get(f"/artisans/{frigo_id}").get_data(as_text=True)
+        self.assertIn('class="pl-hero-banner"', html)
+        self.assertIn("01_climatisation_installee.jpg", html)
+
+        self.register_artisan("plombier-nohero@example.com", phone="+224621119928")
+        conn = db.connect(sqlite_path=self.db_path)
+        try:
+            plombier_id = conn.execute(
+                "SELECT id FROM users WHERE phone = '+224621119928'").fetchone()["id"]
+        finally:
+            conn.close()
+        html_plombier = self.client.get(f"/artisans/{plombier_id}").get_data(as_text=True)
+        self.assertNotIn('class="pl-hero-banner"', html_plombier)
+
 
 class RefreshRolePersistenceTests(FixProTestCase):
     """Le role vient TOUJOURS d'une lecture serveur fraiche (users.role en

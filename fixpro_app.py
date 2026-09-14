@@ -6989,6 +6989,13 @@ PROFESSIONAL_SERVICE_CATALOG = {
     ],
 }
 PROFESSIONAL_AVATAR_IMAGE = {"plombier": "img/technicians/plombier/profile/02_avatar_plombier.png"}
+# Bandeau decoratif d'ambiance en haut de carte identite (pas une photo de
+# service ni une realisation -- juste une image evocatrice du metier, la
+# seule photo reelle et non fabriquee trouvee pour ce metier apres
+# recherche complete du poste).
+PROFESSIONAL_HERO_IMAGE = {
+    "frigoriste": "img/technicians/frigoriste/decor/01_climatisation_installee.jpg",
+}
 PROFESSIONAL_CATEGORY_LABEL = {"plombier": "Plombier", "frigoriste": "Frigoriste"}
 
 
@@ -7068,6 +7075,7 @@ def artisan_detail(artisan_id):
         }
 
     avatar_asset = PROFESSIONAL_AVATAR_IMAGE.get(trade)
+    hero_asset = PROFESSIONAL_HERO_IMAGE.get(trade)
     professional = {
         "id": artisan["id"],
         "name": full_name,
@@ -7076,6 +7084,7 @@ def artisan_detail(artisan_id):
         "phone": artisan.get("phone"),
         "avatarImage": (artisan.get("photo_url") or
                         (url_for("static", filename=avatar_asset) if avatar_asset else None)),
+        "heroImage": url_for("static", filename=hero_asset) if hero_asset else None,
         "initials": "".join(part[0] for part in full_name.split()[:2]).upper() if full_name else "",
         "verified": bool(artisan.get("is_verified")),
         "zone": zone or None,
