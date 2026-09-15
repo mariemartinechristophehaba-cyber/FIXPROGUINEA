@@ -164,6 +164,21 @@
     .phone-in .cc svg { width: 12px; height: 12px; color: var(--d-muted); flex-shrink: 0; }
     .phone-in input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; padding: 13px; font-size: .98rem; color: var(--d-ink); }
     .phone-err { margin: 7px 0 0; font-size: .77rem; font-weight: 700; color: #B91C1C; }
+    .phone-hint { margin: 9px 0 0; font-size: .78rem; color: var(--d-muted); line-height: 1.4; }
+
+    /* --- Étape vérification --- */
+    .review-card {
+      margin-top: 14px; background: #fff; border: 1.5px solid var(--d-line); border-radius: 15px;
+      padding: 4px clamp(14px, 3vw, 18px);
+    }
+    .rrow { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--d-line); }
+    .rrow:last-child { border-bottom: 0; }
+    .rrow .k { flex: 1; font-size: .86rem; color: var(--d-muted); font-weight: 600; }
+    .rrow .v { font-size: .92rem; font-weight: 800; color: var(--d-ink2); text-align: right; word-break: break-word; }
+    .cta.ghost-btn {
+      background: #fff; color: var(--d-blue); border: 1.5px solid var(--d-blue);
+      box-shadow: none; margin-top: 10px;
+    }
 
     /* --- Note SSL --- */
     .ssl-note {
@@ -281,57 +296,89 @@
       <input type="hidden" name="plan" value="{{ plan.code }}" />
       <input type="hidden" name="period" value="{{ period }}" />
 
-      <h2 class="pay-title">Choisissez votre mode de paiement</h2>
-      <p class="pay-sub">Plusieurs options sécurisées pour payer votre abonnement.</p>
+      <!-- Étape 1 : choix du moyen de paiement + informations -->
+      <div id="stepInfo">
+        <h2 class="pay-title">Choisissez votre mode de paiement</h2>
+        <p class="pay-sub">Plusieurs options sécurisées pour payer votre abonnement.</p>
 
-      <div class="methods" id="methods">
-        {% for m in methods %}
-        <label class="method{{ ' sel' if loop.first }}" data-method="{{ m.code }}" data-label="{{ m.label }}">
-          <input type="radio" name="payment_method" value="{{ m.code }}" {{ 'checked' if loop.first }} />
-          <span class="mi {{ m.brand }}">
-            {% if m.brand == 'orange' %}
-            <img src="{{ url_for('static', filename='img/icons/orange-money.png') }}" alt="Orange Money" />
-            {% elif m.brand == 'mtn' %}MTN
-            {% else %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/></svg>{% endif %}
-          </span>
-          <span class="mtx"><b>{{ m.label }}</b><span>{{ m.desc }}</span></span>
-          {% if m.brand == 'card' %}
-          <span class="brands">
-            <svg viewBox="0 0 48 16" width="34" height="12"><text x="0" y="12" font-family="Arial" font-weight="900" font-style="italic" font-size="13" fill="#1A1F71">VISA</text></svg>
-            <svg viewBox="0 0 20 12" width="20" height="12"><circle cx="7" cy="6" r="6" fill="#EB001B"/><circle cx="13" cy="6" r="6" fill="#F79E1B" fill-opacity=".85"/></svg>
-          </span>
-          {% endif %}
-          <span class="radio"></span>
-        </label>
-        {% endfor %}
-      </div>
-
-      <div class="phone-field" id="phoneField" hidden>
-        <label for="payerPhone">Votre numéro <span id="phoneMethodName">Orange Money</span></label>
-        <div class="phone-in">
-          <span class="cc">
-            <span class="flag" aria-hidden="true"></span>+224
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
-          </span>
-          <input type="tel" id="payerPhone" name="payer_phone" inputmode="tel" autocomplete="tel-national" placeholder="XX XX XX XX" />
+        <div class="methods" id="methods">
+          {% for m in methods %}
+          <label class="method{{ ' sel' if loop.first }}" data-method="{{ m.code }}" data-label="{{ m.label }}">
+            <input type="radio" name="pm_ui" value="{{ m.code }}" {{ 'checked' if loop.first }} />
+            <span class="mi {{ m.brand }}">
+              {% if m.brand == 'orange' %}
+              <img src="{{ url_for('static', filename='img/icons/orange-money.png') }}" alt="Orange Money" />
+              {% elif m.brand == 'mtn' %}MTN
+              {% else %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/></svg>{% endif %}
+            </span>
+            <span class="mtx"><b>{{ m.label }}</b><span>{{ m.desc }}</span></span>
+            {% if m.brand == 'card' %}
+            <span class="brands">
+              <svg viewBox="0 0 48 16" width="34" height="12"><text x="0" y="12" font-family="Arial" font-weight="900" font-style="italic" font-size="13" fill="#1A1F71">VISA</text></svg>
+              <svg viewBox="0 0 20 12" width="20" height="12"><circle cx="7" cy="6" r="6" fill="#EB001B"/><circle cx="13" cy="6" r="6" fill="#F79E1B" fill-opacity=".85"/></svg>
+            </span>
+            {% endif %}
+            <span class="radio"></span>
+          </label>
+          {% endfor %}
         </div>
-        <p class="phone-err" id="phoneErr" hidden>Entrez un numéro guinéen valide (9 chiffres).</p>
+
+        <div class="phone-field" id="phoneField" hidden>
+          <label for="payerPhone">Votre numéro <span id="phoneMethodName">Orange Money</span></label>
+          <div class="phone-in">
+            <span class="cc">
+              <span class="flag" aria-hidden="true"></span>+224
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+            </span>
+            <input type="tel" id="payerPhone" inputmode="tel" autocomplete="tel-national" placeholder="XX XX XX XX" />
+          </div>
+          <p class="phone-err" id="phoneErr" hidden>Entrez un numéro guinéen valide (9 chiffres).</p>
+          <p class="phone-hint">Vous allez recevoir une demande de paiement sur votre téléphone. Validez-la pour continuer.</p>
+        </div>
+
+        <div class="ssl-note">
+          <span class="li"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>
+          <p>Vos paiements sont sécurisés et protégés par un chiffrement SSL.</p>
+        </div>
+
+        <button type="button" class="cta" id="continueBtn">
+          Continuer
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+
+        <p class="secure-line">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+          Paiement sécurisé par <span id="secureMethodName">Orange Money</span>
+        </p>
       </div>
 
-      <div class="ssl-note">
-        <span class="li"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>
-        <p>Vos paiements sont sécurisés et protégés par un chiffrement SSL.</p>
+      <!-- Étape 2 : vérification avant paiement (aucune tentative de paiement n'est créée avant ce point) -->
+      <div id="stepReview" hidden>
+        <h2 class="pay-title">Vérification de vos informations</h2>
+        <p class="pay-sub">Dernière étape avant de payer.</p>
+
+        <div class="review-card">
+          <div class="rrow"><span class="k">Plan</span><span class="v" id="rvPlan">{{ plan.name }}</span></div>
+          <div class="rrow"><span class="k">Abonnement</span><span class="v" id="rvPeriod">{{ 'Mensuel' if period == 'month' else 'Annuel' }}</span></div>
+          <div class="rrow"><span class="k">Montant</span><span class="v" id="rvAmount">{{ "{:,}".format(amount) | replace(",", " ") }} GNF</span></div>
+          <div class="rrow"><span class="k">Méthode</span><span class="v" id="rvMethod">Orange Money</span></div>
+          <div class="rrow" id="rvPhoneRow" hidden><span class="k">Numéro</span><span class="v" id="rvPhone"></span></div>
+        </div>
+
+        <div class="ssl-note">
+          <span class="li"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg></span>
+          <p>Veuillez vérifier toutes les informations avant de continuer. En cliquant sur « Confirmer », vous autorisez le débit de {{ "{:,}".format(amount) | replace(",", " ") }} GNF <span id="rvViaMethod">par Orange Money</span>.</p>
+        </div>
+
+        <input type="hidden" name="payment_method" id="hiddenMethod" />
+        <input type="hidden" name="payer_phone" id="hiddenPhone" />
+
+        <button type="submit" class="cta" id="confirmBtn">
+          Confirmer le paiement
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        </button>
+        <button type="button" class="cta ghost-btn" id="backBtn">Modifier</button>
       </div>
-
-      <button type="submit" class="cta" id="payBtn">
-        Payer {{ "{:,}".format(amount) | replace(",", " ") }} GNF
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-      </button>
-
-      <p class="secure-line">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
-        Paiement sécurisé par <span id="secureMethodName">Orange Money</span>
-      </p>
     </form>
   </main>
 
@@ -353,6 +400,8 @@
       var secureNameEl = document.getElementById('secureMethodName');
       var input = document.getElementById('payerPhone');
       var err = document.getElementById('phoneErr');
+      var stepInfo = document.getElementById('stepInfo');
+      var stepReview = document.getElementById('stepReview');
 
       function currentCode() {
         var c = document.querySelector('.method input:checked');
@@ -383,16 +432,45 @@
       var checked = document.querySelector('.method.sel') || document.querySelector('.method');
       if (checked) sync(checked);
 
-      document.getElementById('payForm').addEventListener('submit', function (e) {
+      // Étape 1 -> Étape 2 : valide le numéro (mobile money), puis affiche
+      // le récapitulatif de vérification. Aucune tentative de paiement
+      // n'est créée à ce stade — seulement au clic sur "Confirmer le paiement".
+      document.getElementById('continueBtn').addEventListener('click', function () {
+        var sel = document.querySelector('.method.sel') || document.querySelector('.method');
         var code = currentCode();
-        if (code && MOBILE[code]) {
+        var label = sel ? (sel.getAttribute('data-label') || '') : '';
+        var isMobile = code && MOBILE[code];
+
+        if (isMobile) {
           var digits = (input.value || '').replace(/\D/g, '');
           if (digits.length < 8 || digits.length > 12) {
-            e.preventDefault();
             err.hidden = false;
             input.focus();
+            return;
           }
         }
+
+        document.getElementById('hiddenMethod').value = code || '';
+        document.getElementById('hiddenPhone').value = isMobile ? (input.value || '') : '';
+        document.getElementById('rvMethod').textContent = label;
+        document.getElementById('rvViaMethod').textContent = 'par ' + label;
+        var phoneRow = document.getElementById('rvPhoneRow');
+        if (isMobile) {
+          phoneRow.hidden = false;
+          document.getElementById('rvPhone').textContent = '+224 ' + input.value;
+        } else {
+          phoneRow.hidden = true;
+        }
+
+        stepInfo.hidden = true;
+        stepReview.hidden = false;
+        window.scrollTo({ top: stepReview.offsetTop - 80, behavior: 'smooth' });
+      });
+
+      document.getElementById('backBtn').addEventListener('click', function () {
+        stepReview.hidden = true;
+        stepInfo.hidden = false;
+        window.scrollTo({ top: stepInfo.offsetTop - 80, behavior: 'smooth' });
       });
     })();
   </script>
