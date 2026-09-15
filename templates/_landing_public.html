@@ -50,7 +50,11 @@
 
     /* --- Hero --- */
     .ld-hero { padding: 60px calc((100% - 1280px) / 2 + 24px) 70px; background: #fff; }
-    .ld-hero-grid { display: grid; grid-template-columns: minmax(0,1fr) 560px; gap: 40px; align-items: center; max-width: 1280px; margin: 0 auto; }
+    /* Deux colonnes du bureau etroit (1024px) jusqu'au tres grand ecran,
+       sans jamais repasser en colonne unique : la composition de la
+       maquette (texte a gauche, photo pleine hauteur a droite) reste la
+       meme partout, seule la largeur de la colonne photo respire. */
+    .ld-hero-grid { display: grid; grid-template-columns: minmax(0,1fr) minmax(300px, 42%); gap: 32px; align-items: center; max-width: 1280px; margin: 0 auto; }
     .ld-badge { display: inline-block; background: #EAF1FF; color: #155EEF; font-size: .82rem; font-weight: 700; padding: 8px 16px; border-radius: 999px; margin-bottom: 22px; }
     .ld-hero h1 { font-size: 2.7rem; line-height: 1.18; font-weight: 800; margin: 0 0 20px; color: #0B1220; }
     .ld-hero h1 b { color: #155EEF; font-weight: 800; }
@@ -127,8 +131,9 @@
   }
 
   @media (min-width: 1024px) and (max-width: 1280px) {
-    .ld-hero-grid { grid-template-columns: 1fr; }
-    .ld-hero-visual { max-width: 480px; margin: 0 auto; }
+    /* La composition 2 colonnes du Hero reste identique (regle plus haut) ;
+       ici on ne resserre que ce qui doit reellement l'etre. */
+    .ld-hero h1 { font-size: 2.2rem; }
     .ld-services { grid-template-columns: repeat(3, 1fr); }
     .ld-stats-grid { justify-content: center; }
   }
@@ -236,8 +241,15 @@
       'Maçonnerie':  {'bg': '#FFECE3', 'color': '#EA580C', 'label': 'Maçonnerie', 'svg': '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M12 3v6"/><path d="M8 9v6"/><path d="M16 9v6"/><path d="M12 15v6"/>'},
       'Menuiserie':  {'bg': '#E7F9EE', 'color': '#16A34A', 'label': 'Menuiserie', 'svg': '<path d="M2 22s4-9 10-9 10 9 10 9"/><path d="M12 13V2l4 4"/>'}
     } %}
+    {# Meme 6 categories que partout ailleurs (popular), reordonnees pour
+       coller exactement a l'ordre de la maquette (Plomberie, Electricite,
+       Froid & Climatisation, Peinture, Maconnerie, Menuiserie). #}
+    {% set ld_by_label = {} %}
+    {% for p in popular %}{% set _ = ld_by_label.update({p.label: p}) %}{% endfor %}
     <div class="ld-services">
-      {% for p in popular %}
+      {% for label in ['Plomberie', 'Électricité', 'Frigoriste', 'Peinture', 'Maçonnerie', 'Menuiserie'] %}
+      {% set p = ld_by_label.get(label) %}
+      {% if p %}
       {% set meta = ld_svc.get(p.label, {'bg':'#F1F5F9','color':'#64748B','label':p.label,'svg':''}) %}
       <a class="ld-service" href="{{ url_for('artisans_page', category=p.category) }}">
         <span class="ic" style="background:{{ meta.bg }};color:{{ meta.color }};">
@@ -245,6 +257,7 @@
         </span>
         <strong>{{ meta.label }}</strong>
       </a>
+      {% endif %}
       {% endfor %}
     </div>
   </section>
