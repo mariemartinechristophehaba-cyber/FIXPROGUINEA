@@ -23,12 +23,8 @@
       border-bottom: 1px solid #EEF1F6; background: #fff;
       position: sticky; top: 0; z-index: 50;
     }
-    .ld-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; flex-shrink: 0; }
-    .ld-brand .mark { width: 40px; height: 40px; border-radius: 12px; background: #EAF1FF; color: #155EEF; display: flex; align-items: center; justify-content: center; }
-    .ld-brand .mark svg { width: 22px; height: 22px; }
-    .ld-brand-txt { display: flex; flex-direction: column; line-height: 1.15; }
-    .ld-brand-txt strong { font-size: 1.25rem; font-weight: 800; }
-    .ld-brand-txt span { font-size: .72rem; color: #64748B; font-weight: 600; }
+    .ld-brand { display: flex; align-items: center; text-decoration: none; color: inherit; flex-shrink: 0; }
+    .ld-brand img { height: 38px; width: auto; display: block; }
     .ld-nav { flex: 1; display: flex; align-items: center; gap: 26px; }
     .ld-nav a, .ld-nav button {
       background: none; border: none; cursor: pointer; font: inherit;
@@ -69,26 +65,24 @@
     .ld-search button.ld-search-btn svg { width: 17px; height: 17px; }
     .ld-advantages { display: flex; flex-wrap: wrap; gap: 14px 16px; }
     .ld-advantage { display: flex; align-items: center; gap: 7px; font-size: .78rem; font-weight: 600; color: #334155; white-space: nowrap; }
-    .ld-advantage .ic { width: 32px; height: 32px; border-radius: 9px; background: #EAF1FF; color: #155EEF; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-    .ld-advantage .ic svg { width: 15px; height: 15px; }
+    .ld-advantage .ic { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .ld-advantage .ic img { width: 32px; height: 32px; object-fit: contain; }
 
     .ld-hero-visual {
-      position: relative; border-radius: 30px; overflow: visible;
-      background: linear-gradient(160deg,#2E7BFF 0%,#155EEF 55%,#0B3FA8 100%);
-      padding: 26px 26px 0; box-shadow: 0 24px 60px rgba(16,42,67,.18);
+      position: relative; border-radius: 30px; overflow: hidden;
+      box-shadow: 0 24px 60px rgba(16,42,67,.18);
     }
-    .ld-hero-visual img { width: 100%; height: 560px; object-fit: cover; object-position: 50% 8%; border-radius: 22px 22px 0 0; display: block; }
-    .ld-float { position: absolute; background: #fff; border-radius: 16px; box-shadow: 0 16px 40px rgba(16,42,67,.16); padding: 14px 16px; display: flex; align-items: center; gap: 12px; }
-    .ld-float .ic { width: 40px; height: 40px; border-radius: 12px; background: #EAF1FF; color: #155EEF; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-    .ld-float .ic svg { width: 19px; height: 19px; }
-    .ld-float strong { display: block; font-size: .86rem; }
-    .ld-float span { font-size: .76rem; color: #64748B; }
-    .ld-float-home { top: 14%; left: -20px; }
-    .ld-float-review { top: 42%; right: -30px; text-align: left; max-width: 210px; }
-    .ld-float-review .stars { color: #F7B718; font-size: .78rem; }
-    .ld-float-review .avatar { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
-    .ld-float-count { bottom: 4%; right: -14px; }
-    .ld-slogan { position: absolute; top: 6px; right: 40px; font-family: 'Space Grotesk', cursive, sans-serif; font-style: italic; color: #fff; font-size: 1.05rem; line-height: 1.35; text-align: right; }
+    .ld-hero-visual .bg { width: 100%; height: 560px; object-fit: cover; display: block; }
+    .ld-hero-visual .tech { position: absolute; left: 50%; bottom: 0; transform: translateX(-50%); height: 92%; width: auto; max-width: 88%; object-fit: contain; object-position: bottom; }
+    .ld-float { position: absolute; }
+    .ld-float img { display: block; box-shadow: 0 16px 40px rgba(16,42,67,.16); border-radius: 14px; }
+    .ld-float-home { top: 6%; left: -8px; width: 200px; }
+    .ld-float-home img { width: 100%; }
+    .ld-float-review { top: 38%; right: -20px; width: 200px; }
+    .ld-float-review img { width: 100%; }
+    .ld-float-count { bottom: 6%; right: -6px; width: 260px; }
+    .ld-float-count img { width: 100%; }
+    .ld-slogan { position: absolute; top: 16px; right: 30px; font-family: 'Space Grotesk', cursive, sans-serif; font-style: italic; color: #fff; font-size: 1.05rem; line-height: 1.35; text-align: right; text-shadow: 0 2px 10px rgba(0,0,0,.25); }
     .ld-slogan u { text-decoration: none; border-bottom: 2px solid #fff; }
 
     /* ---- Contenu general : colonne centree ---- */
@@ -105,8 +99,8 @@
       border: 1px solid transparent; transition: transform .15s, box-shadow .15s;
     }
     .ld-service:hover { transform: translateY(-4px); box-shadow: 0 14px 30px rgba(16,42,67,.1); }
-    .ld-service .ic { width: 54px; height: 54px; border-radius: 15px; display: flex; align-items: center; justify-content: center; }
-    .ld-service .ic svg { width: 25px; height: 25px; }
+    .ld-service .ic { width: 54px; height: 54px; display: flex; align-items: center; justify-content: center; }
+    .ld-service .ic img { width: 54px; height: 54px; object-fit: contain; }
     .ld-service strong { font-size: .92rem; font-weight: 700; }
     .ld-service p { font-size: .74rem; color: #64748B; margin: 0; line-height: 1.4; }
 
@@ -115,15 +109,12 @@
     .ld-steps-grid { display: grid; grid-template-columns: minmax(0,1fr) 300px; gap: 40px; align-items: start; max-width: 1400px; margin: 0 auto; padding: 0 28px; }
     .ld-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; }
     .ld-step { position: relative; text-align: left; padding: 0 18px 0 0; }
-    .ld-step-num {
-      width: 38px; height: 38px; border-radius: 50%; background: #DCE9FF; color: #155EEF;
-      display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1rem; margin-bottom: 14px;
-    }
-    .ld-step:first-child .ld-step-num { background: #155EEF; color: #fff; }
+    .ld-step-num { width: 42px; height: 42px; margin-bottom: 14px; }
+    .ld-step-num img { width: 100%; height: 100%; object-fit: contain; }
     .ld-step h3 { font-size: .94rem; font-weight: 700; margin: 0 0 6px; }
     .ld-step p { font-size: .8rem; color: #64748B; margin: 0; line-height: 1.4; }
-    .ld-step-chev { position: absolute; right: -6px; top: 10px; color: #B9C7DD; }
-    .ld-step-chev svg { width: 18px; height: 18px; }
+    .ld-step-chev { position: absolute; right: -6px; top: 10px; width: 18px; height: 18px; }
+    .ld-step-chev img { width: 100%; height: 100%; object-fit: contain; }
     .ld-step:last-child .ld-step-chev { display: none; }
     .ld-phone { position: relative; width: 220px; height: 440px; margin: 0 auto; background: #0B1220; border-radius: 34px; padding: 10px; box-shadow: 0 24px 50px rgba(11,18,32,.25); }
     .ld-phone-screen { width: 100%; height: 100%; border-radius: 26px; background: linear-gradient(160deg,#155EEF,#0B3FA8); display: flex; flex-direction: column; align-items: center; padding: 28px 18px; color: #fff; }
@@ -139,8 +130,8 @@
     .ld-stats-wrap { background: #0B1E4D; color: #fff; padding: 34px calc((100% - 1400px) / 2 + 24px); }
     .ld-stats { max-width: 1400px; margin: 0 auto; display: flex; gap: 40px; flex-wrap: wrap; justify-content: center; }
     .ld-stat { display: flex; align-items: center; gap: 12px; }
-    .ld-stat .ic { width: 42px; height: 42px; border-radius: 12px; background: rgba(255,255,255,.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-    .ld-stat .ic svg { width: 19px; height: 19px; }
+    .ld-stat .ic { width: 42px; height: 42px; border-radius: 12px; overflow: hidden; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .ld-stat .ic img { width: 100%; height: 100%; object-fit: cover; }
     .ld-stat strong { display: block; font-size: 1.15rem; font-weight: 800; }
     .ld-stat span { font-size: .76rem; color: rgba(255,255,255,.7); }
 
@@ -148,12 +139,10 @@
     .ld-download-grid { display: grid; grid-template-columns: minmax(0,1fr) 380px; gap: 40px; align-items: center; max-width: 1400px; margin: 0 auto; padding: 0 28px; }
     .ld-download h2 { font-size: 1.6rem; font-weight: 800; margin: 0 0 8px; }
     .ld-download > div > p { font-size: .92rem; color: #64748B; margin: 0 0 22px; }
-    .ld-dl-btns { display: flex; gap: 12px; margin-bottom: 24px; }
-    .ld-dl-btn { display: flex; align-items: center; gap: 8px; background: #0F172A; border: none; border-radius: 11px; padding: 10px 16px; cursor: pointer; color: #fff; font: inherit; }
-    .ld-dl-btn svg { width: 22px; height: 22px; flex-shrink: 0; }
-    .ld-dl-btn .t { text-align: left; line-height: 1.2; }
-    .ld-dl-btn .t small { display: block; font-size: .64rem; color: rgba(255,255,255,.65); }
-    .ld-dl-btn .t b { font-size: .86rem; }
+    .ld-dl-btns { display: flex; align-items: center; gap: 16px; margin-bottom: 24px; }
+    .ld-dl-btn { border: none; background: none; cursor: pointer; padding: 0; line-height: 0; }
+    .ld-dl-btn img { height: 48px; width: auto; display: block; }
+    .ld-dl-qr img { height: 68px; width: auto; display: block; border-radius: 8px; }
     .ld-dl-checklist { display: flex; flex-direction: column; gap: 12px; }
     .ld-dl-checklist span { display: flex; align-items: center; gap: 10px; font-size: .9rem; font-weight: 600; color: #1E293B; }
     .ld-dl-checklist .ic { width: 24px; height: 24px; border-radius: 50%; background: #DCFCE7; color: #16A34A; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
@@ -171,7 +160,7 @@
     .ld-testimonials { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
     .ld-testi { background: #fff; border-radius: 18px; padding: 22px; box-shadow: 0 6px 20px rgba(16,42,67,.05); }
     .ld-testi-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
-    .ld-testi-avatar { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: .95rem; color: #fff; flex-shrink: 0; }
+    .ld-testi-avatar { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
     .ld-testi-head strong { display: block; font-size: .92rem; }
     .ld-testi-head .stars { color: #F7B718; font-size: .78rem; }
     .ld-testi p { font-size: .86rem; color: #334155; line-height: 1.55; margin: 0; }
@@ -200,8 +189,8 @@
     .ld-footer-nav a, .ld-footer-nav button { color: rgba(255,255,255,.75); text-decoration: none; font-size: .84rem; font-weight: 600; background: none; border: none; cursor: pointer; font-family: inherit; }
     .ld-footer-nav a:hover, .ld-footer-nav button:hover { color: #fff; }
     .ld-footer-social { display: flex; gap: 10px; }
-    .ld-footer-social span { width: 34px; height: 34px; border-radius: 50%; background: rgba(255,255,255,.08); display: flex; align-items: center; justify-content: center; color: #fff; cursor: default; }
-    .ld-footer-social svg { width: 16px; height: 16px; }
+    .ld-footer-social span { width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; cursor: default; }
+    .ld-footer-social img { width: 34px; height: 34px; object-fit: contain; }
     .ld-footer-bottom { max-width: 1400px; margin: 20px auto 0; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; font-size: .78rem; }
     .ld-footer-bottom a { color: rgba(255,255,255,.75); text-decoration: none; }
     .ld-footer-bottom a:hover { color: #fff; }
@@ -241,8 +230,7 @@
 <div class="ld-only ld-page">
   <header class="ld-header">
     <a class="ld-brand" href="{{ url_for('index') }}">
-      <span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span>
-      <span class="ld-brand-txt"><strong>FixPro</strong><span>Espace Technicien</span></span>
+      <img src="{{ asset('img/landing/logo-fixpro.png') }}" alt="FixPro" />
     </a>
     <nav class="ld-nav">
       <a class="active" href="{{ url_for('index') }}">Accueil</a>
@@ -289,30 +277,24 @@
           </button>
         </form>
         <div class="ld-advantages">
-          <span class="ld-advantage"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg></span>Professionnels vérifiés</span>
-          <span class="ld-advantage"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></svg></span>Intervention rapide</span>
-          <span class="ld-advantage"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg></span>Près de chez vous</span>
-          <span class="ld-advantage"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11a9 9 0 0 1 18 0v5a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2h3M3 16v-2a2 2 0 0 1 2-2h1a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2H3"/></svg></span>Support 7j/7</span>
+          <span class="ld-advantage"><span class="ic"><img src="{{ asset('img/landing/icon-verifie.png') }}" alt="" /></span>Professionnels vérifiés</span>
+          <span class="ld-advantage"><span class="ic"><img src="{{ asset('img/landing/icon-rapide.png') }}" alt="" /></span>Intervention rapide</span>
+          <span class="ld-advantage"><span class="ic"><img src="{{ asset('img/landing/icon-localisation.png') }}" alt="" /></span>Près de chez vous</span>
+          <span class="ld-advantage"><span class="ic"><img src="{{ asset('img/landing/icon-support.png') }}" alt="" /></span>Support 7j/7</span>
         </div>
       </div>
       <div class="ld-hero-visual">
-        <img src="{{ asset('img/landing-hero-technicien.jpg') }}" alt="Technicien FixPro" />
+        <img class="bg" src="{{ asset('img/landing/hero-bg.png') }}" alt="" />
+        <img class="tech" src="{{ asset('img/landing/technicien-hero.png') }}" alt="Technicien FixPro" />
         <span class="ld-slogan">Votre confort<br/><u>Notre priorité</u> !</span>
         <div class="ld-float ld-float-home">
-          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></span>
-          <span><strong>Intervention à domicile</strong><span>Rapide et sécurisé</span></span>
+          <img src="{{ asset('img/landing/card-domicile.png') }}" alt="Intervention à domicile, rapide et sécurisé" />
         </div>
         <div class="ld-float ld-float-review">
-          <img class="avatar" src="{{ url_for('static', filename='img/fixpro-avatar.png') }}" alt="" />
-          <span>
-            <strong>Client satisfait</strong>
-            <span class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
-            <span>"Service rapide et professionnel !"</span>
-          </span>
+          <img src="{{ asset('img/landing/card-client-satisfait.png') }}" alt="Client satisfait" />
         </div>
         <div class="ld-float ld-float-count">
-          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 21a8 8 0 0 0-16 0"/><circle cx="10" cy="8" r="5"/><path d="M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3"/></svg></span>
-          <span><strong>+500</strong><span>Techniciens qualifiés en Guinée</span></span>
+          <img src="{{ asset('img/landing/card-techniciens.png') }}" alt="+500 techniciens qualifiés en Guinée" />
         </div>
       </div>
     </div>
@@ -326,12 +308,12 @@
     {# Memes 6 categories que partout ailleurs (popular), reordonnees pour
        coller a l'ordre de la maquette. #}
     {% set ld_svc = {
-      'Plomberie':   {'bg': '#EAF1FF', 'color': '#155EEF', 'label': 'Plomberie', 'desc': 'Fuites, installation, dépannage...', 'svg': '<path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/>'},
-      'Électricité': {'bg': '#FFF7DE', 'color': '#D69E00', 'label': 'Électricité', 'desc': 'Installation, réparation, mise aux normes...', 'svg': '<path d="M15.914 4a1.5 1.5 0 0 0-2.474-1.561l-9 9A1.5 1.5 0 0 0 5.5 14h4.002a.5.5 0 0 1 .471.666L8.086 20a1.5 1.5 0 0 0 2.475 1.56l9-9A1.5 1.5 0 0 0 18.5 10h-3.997a.5.5 0 0 1-.472-.667z"/>'},
-      'Frigoriste':  {'bg': '#E6F7FF', 'color': '#0EA5E9', 'label': 'Froid & Climatisation', 'desc': 'Installation, entretien, dépannage...', 'svg': '<path d="M12 2v20M4 5l16 14M20 5 4 19M2 12h20"/>'},
-      'Peinture':    {'bg': '#FFE9F4', 'color': '#EC4899', 'label': 'Peinture', 'desc': 'Travaux intérieurs et extérieurs...', 'svg': '<rect width="16" height="6" x="2" y="2" rx="2"/><path d="M10 16v-2a2 2 0 0 1 2-2h8a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect width="4" height="6" x="8" y="16" rx="1"/>'},
-      'Maçonnerie':  {'bg': '#FFECE3', 'color': '#EA580C', 'label': 'Maçonnerie', 'desc': 'Construction, rénovation...', 'svg': '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M12 3v6"/><path d="M8 9v6"/><path d="M16 9v6"/><path d="M12 15v6"/>'},
-      'Menuiserie':  {'bg': '#E7F9EE', 'color': '#16A34A', 'label': 'Menuiserie', 'desc': 'Portes, fenêtres, meubles sur mesure...', 'svg': '<path d="M2 22s4-9 10-9 10 9 10 9"/><path d="M12 13V2l4 4"/>'}
+      'Plomberie':   {'label': 'Plomberie', 'desc': 'Fuites, installation, dépannage...', 'icon': 'icon-plomberie.png'},
+      'Électricité': {'label': 'Électricité', 'desc': 'Installation, réparation, mise aux normes...', 'icon': 'icon-electricite.png'},
+      'Frigoriste':  {'label': 'Froid & Climatisation', 'desc': 'Installation, entretien, dépannage...', 'icon': 'icon-climatisation.png'},
+      'Peinture':    {'label': 'Peinture', 'desc': 'Travaux intérieurs et extérieurs...', 'icon': 'icon-peinture.png'},
+      'Maçonnerie':  {'label': 'Maçonnerie', 'desc': 'Construction, rénovation...', 'icon': 'icon-maconnerie.png'},
+      'Menuiserie':  {'label': 'Menuiserie', 'desc': 'Portes, fenêtres, meubles sur mesure...', 'icon': 'icon-menuiserie.png'}
     } %}
     {% set ld_by_label = {} %}
     {% for p in popular %}{% set _ = ld_by_label.update({p.label: p}) %}{% endfor %}
@@ -341,9 +323,7 @@
       {% if p %}
       {% set meta = ld_svc.get(p.label) %}
       <a class="ld-service" href="{{ url_for('artisans_page', category=p.category) }}">
-        <span class="ic" style="background:{{ meta.bg }};color:{{ meta.color }};">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">{{ meta.svg | safe }}</svg>
-        </span>
+        <span class="ic"><img src="{{ asset('img/landing/' + meta.icon) }}" alt="" /></span>
         <strong>{{ meta.label }}</strong>
         <p>{{ meta.desc }}</p>
       </a>
@@ -362,25 +342,25 @@
     <div class="ld-steps-grid" style="padding-bottom:48px">
       <div class="ld-steps">
         <div class="ld-step">
-          <span class="ld-step-num">1</span>
+          <span class="ld-step-num"><img src="{{ asset('img/landing/step-1.png') }}" alt="1" /></span>
           <h3>Indiquez votre besoin</h3>
           <p>Votre position est détectée automatiquement.</p>
-          <span class="ld-step-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+          <span class="ld-step-chev"><img src="{{ asset('img/landing/icon-step-arrow.png') }}" alt="" /></span>
         </div>
         <div class="ld-step">
-          <span class="ld-step-num">2</span>
+          <span class="ld-step-num"><img src="{{ asset('img/landing/step-2.png') }}" alt="2" /></span>
           <h3>Trouvez un technicien</h3>
           <p>Consultez les profils disponibles près de chez vous.</p>
-          <span class="ld-step-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+          <span class="ld-step-chev"><img src="{{ asset('img/landing/icon-step-arrow.png') }}" alt="" /></span>
         </div>
         <div class="ld-step">
-          <span class="ld-step-num">3</span>
+          <span class="ld-step-num"><img src="{{ asset('img/landing/step-3.png') }}" alt="3" /></span>
           <h3>Réservez facilement</h3>
           <p>Choisissez un créneau et confirmez votre demande.</p>
-          <span class="ld-step-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+          <span class="ld-step-chev"><img src="{{ asset('img/landing/icon-step-arrow.png') }}" alt="" /></span>
         </div>
         <div class="ld-step">
-          <span class="ld-step-num">4</span>
+          <span class="ld-step-num"><img src="{{ asset('img/landing/step-4.png') }}" alt="4" /></span>
           <h3>C'est fait !</h3>
           <p>Le technicien intervient à domicile...</p>
         </div>
@@ -404,19 +384,19 @@
   <section class="ld-stats-wrap">
     <div class="ld-stats">
       <div class="ld-stat">
-        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 21a8 8 0 0 0-16 0"/><circle cx="10" cy="8" r="5"/><path d="M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3"/></svg></span>
+        <span class="ic"><img src="{{ asset('img/landing/icon-stats-tech.png') }}" alt="" /></span>
         <span><strong>+500</strong><span>Techniciens qualifiés</span></span>
       </div>
       <div class="ld-stat">
-        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></span>
+        <span class="ic"><img src="{{ asset('img/landing/icon-stats-clients.png') }}" alt="" /></span>
         <span><strong>+10 000</strong><span>Clients satisfaits</span></span>
       </div>
       <div class="ld-stat">
-        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg></span>
+        <span class="ic"><img src="{{ asset('img/landing/icon-stats-services.png') }}" alt="" /></span>
         <span><strong>6</strong><span>Services principaux</span></span>
       </div>
       <div class="ld-stat">
-        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+        <span class="ic"><img src="{{ asset('img/landing/icon-stats-securite.png') }}" alt="" /></span>
         <span><strong>100%</strong><span>Sécurisé et fiable</span></span>
       </div>
     </div>
@@ -430,13 +410,12 @@
           <p>Trouvez un technicien partout et à tout moment.</p>
           <div class="ld-dl-btns">
             <button type="button" class="ld-dl-btn" id="ldInstallBtn">
-              <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M3 20.5v-17c0-.8.9-1.3 1.6-.9l13.3 8.5c.7.4.7 1.4 0 1.8L4.6 21.4c-.7.4-1.6-.1-1.6-.9z"/></svg>
-              <span class="t"><small>Bientôt sur</small><b>Google Play</b></span>
+              <img src="{{ asset('img/landing/google-play.png') }}" alt="Disponible sur Google Play" />
             </button>
             <button type="button" class="ld-dl-btn" id="ldInstallBtn2">
-              <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M16.365 1.43c0 1.14-.42 2.07-1.26 2.99-.98 1.03-2.15 1.63-3.31 1.53-.12-1.14.44-2.28 1.24-3.11.9-.94 2.36-1.6 3.33-1.41zM20.5 17.1c-.5 1.15-1.1 2.28-2.02 3.35-.83.97-1.6 1.94-2.94 1.96-1.28.03-1.69-.75-3.15-.75-1.46 0-1.92.73-3.13.78-1.29.05-2.27-1.05-3.11-2.02C4.5 18.24 2.6 12.4 5.16 9.2c1.24-1.53 3.09-2.43 4.72-2.44 1.36-.02 2.35.87 3.15.87.79 0 2.05-1.08 3.46-.92.59.02 2.24.24 3.31 1.79-1.24.8-2.08 2.19-2.05 3.65.02 2.03 1.63 3.34 2.75 3.95z"/></svg>
-              <span class="t"><small>Bientôt sur</small><b>App Store</b></span>
+              <img src="{{ asset('img/landing/app-store.png') }}" alt="Télécharger sur l'App Store" />
             </button>
+            <span class="ld-dl-qr"><img src="{{ asset('img/landing/qr-code.png') }}" alt="QR code FixPro" /></span>
           </div>
           <div class="ld-dl-checklist">
             <span><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Trouvez des techniciens près de vous</span>
@@ -463,21 +442,21 @@
     <div class="ld-testimonials">
       <div class="ld-testi">
         <div class="ld-testi-head">
-          <span class="ld-testi-avatar" style="background:#155EEF;">MK</span>
+          <img class="ld-testi-avatar" src="{{ asset('img/landing/avatar-homme1.jpg') }}" alt="" />
           <div><strong>Mamadou K.</strong><span class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</span></div>
         </div>
         <p>"Plombier très professionnel. Le problème a été réglé rapidement. Je recommande FixPro !"</p>
       </div>
       <div class="ld-testi">
         <div class="ld-testi-head">
-          <span class="ld-testi-avatar" style="background:#EC4899;">AD</span>
+          <img class="ld-testi-avatar" src="{{ asset('img/landing/avatar-femme1.jpg') }}" alt="" />
           <div><strong>Aïssatou D.</strong><span class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</span></div>
         </div>
         <p>"J'ai trouvé un électricien en moins de 10 minutes. Service rapide et de qualité."</p>
       </div>
       <div class="ld-testi">
         <div class="ld-testi-head">
-          <span class="ld-testi-avatar" style="background:#16A34A;">IT</span>
+          <img class="ld-testi-avatar" src="{{ asset('img/landing/avatar-homme2.jpg') }}" alt="" />
           <div><strong>Ibrahima T.</strong><span class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</span></div>
         </div>
         <p>"Application très simple à utiliser. Les techniciens sont sérieux et ponctuels."</p>
@@ -535,10 +514,10 @@
         <a href="{{ url_for('contact') }}">Contact</a>
       </nav>
       <div class="ld-footer-social">
-        <span aria-label="Facebook"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M13.5 21v-7.5H16l.5-3H13.5V8.5c0-.9.25-1.5 1.53-1.5H16.5V4.3C16.2 4.26 15.2 4.17 14 4.17c-2.4 0-4.05 1.47-4.05 4.17V10.5H7.5v3H10V21h3.5z"/></svg></span>
-        <span aria-label="Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1"/></svg></span>
-        <span aria-label="LinkedIn"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M6.94 5a2 2 0 1 1-4-.02 2 2 0 0 1 4 .02zM3.5 8.75h3.9V21H3.5zM10.5 8.75h3.74v1.68h.05c.52-.94 1.8-1.93 3.7-1.93 3.96 0 4.69 2.5 4.69 5.75V21h-3.9v-6.02c0-1.44-.03-3.28-2-3.28-2 0-2.31 1.56-2.31 3.18V21h-3.9z"/></svg></span>
-        <span aria-label="YouTube"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M23 12s0-3.4-.43-5a2.78 2.78 0 0 0-2-2C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.57.5a2.78 2.78 0 0 0-2 2C1 8.6 1 12 1 12s0 3.4.43 5a2.78 2.78 0 0 0 2 2c1.67.5 8.57.5 8.57.5s6.9 0 8.57-.5a2.78 2.78 0 0 0 2-2C23 15.4 23 12 23 12z"/><path d="M10 15.5v-7l6 3.5z" fill="#0B1E4D"/></svg></span>
+        <span aria-label="Facebook"><img src="{{ asset('img/landing/icon-facebook.png') }}" alt="Facebook" /></span>
+        <span aria-label="Instagram"><img src="{{ asset('img/landing/icon-instagram.png') }}" alt="Instagram" /></span>
+        <span aria-label="LinkedIn"><img src="{{ asset('img/landing/icon-linkedin.png') }}" alt="LinkedIn" /></span>
+        <span aria-label="YouTube"><img src="{{ asset('img/landing/icon-youtube.png') }}" alt="YouTube" /></span>
       </div>
     </div>
     <div class="ld-footer-bottom">
