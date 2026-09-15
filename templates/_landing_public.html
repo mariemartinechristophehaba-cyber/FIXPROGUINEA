@@ -158,13 +158,14 @@
       <a href="{{ url_for('contact') }}">À propos</a>
       <a href="#ld-services">Services</a>
       <button type="button" data-toast="1">Comment ça marche</button>
-      <button type="button" data-toast="1">Tarifs</button>
+      <a href="{{ url_for('technician_subscription') }}">Tarifs</a>
       <button type="button" data-toast="1">Blog</button>
       <a href="{{ url_for('contact') }}">Contact</a>
     </nav>
     <div class="ld-right">
       <button type="button" class="ld-lang" data-toast="1">
-        FR <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        FR <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
       </button>
       <a class="ld-btn soft" href="{{ url_for('login') }}">Se connecter</a>
       <a class="ld-btn primary" href="{{ url_for('client_signup') }}">S'inscrire</a>
