@@ -5437,13 +5437,11 @@ _TECH_PLANS = [
 
 _SUB_PAYMENT_METHODS = [
     {"code": "orange_money", "label": "Orange Money", "brand": "orange",
-     "desc": "Payez facilement et en toute sécurité avec Orange Money"},
+     "desc": "Rapide, sécurisé et disponible partout en Guinée."},
     {"code": "mtn_mobile_money", "label": "MTN Mobile Money", "brand": "mtn",
-     "desc": "Payez facilement et en toute sécurité avec MTN Mobile Money"},
-    {"code": "unitrade", "label": "Unitrade", "brand": "unitrade",
-     "desc": "Payez avec votre compte Unitrade"},
+     "desc": "Simple, rapide et sécurisé."},
     {"code": "card", "label": "Carte bancaire", "brand": "card",
-     "desc": "Visa, Mastercard ou autres cartes"},
+     "desc": "Visa, Mastercard, etc."},
 ]
 _SUB_PAYMENT_CODES = {m["code"] for m in _SUB_PAYMENT_METHODS}
 
@@ -6274,6 +6272,7 @@ def technician_subscription_checkout():
         "tagline": "Plus de visibilité. Plus de clients. Plus de revenus.",
         "subtagline": "Développez votre activité avec FixPro.",
         "props": _SUB_VALUE_PROPS,
+        "features": [label for label, included in plan.get("features", []) if included],
     }
 
     return render_template("technician_subscription_checkout.html", user=user,
