@@ -133,7 +133,7 @@
       display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 900; font-size: .74rem;
     }
     .method .mi.orange { background: #000; position: relative; }
-    .method .mi.orange svg { width: 60%; height: 60%; color: #FF7900; }
+    .method .mi.orange img { width: 78%; height: 78%; object-fit: contain; display: block; }
     .method .mi.mtn { background: #FFCC00; color: #0B1B3B; border-radius: 999px; font-size: .68rem; letter-spacing: -.02em; }
     .method .mi.card { background: var(--d-ink2); }
     .method .mi.card svg { width: 20px; height: 20px; }
@@ -290,10 +290,7 @@
           <input type="radio" name="payment_method" value="{{ m.code }}" {{ 'checked' if loop.first }} />
           <span class="mi {{ m.brand }}">
             {% if m.brand == 'orange' %}
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M4 14 14 4"/><path d="M8 4h6v6"/>
-              <path d="M20 10 10 20"/><path d="M16 20h-6v-6"/>
-            </svg>
+            <img src="{{ url_for('static', filename='img/icons/orange-money.png') }}" alt="Orange Money" />
             {% elif m.brand == 'mtn' %}MTN
             {% else %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/></svg>{% endif %}
           </span>
