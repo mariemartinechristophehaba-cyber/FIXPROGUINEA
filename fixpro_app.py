@@ -6275,12 +6275,14 @@ def technician_subscription_checkout():
         "features": [label for label, included in plan.get("features", []) if included],
     }
 
-    start_label = _format_date_month_fr(datetime.now(timezone.utc).isoformat())
+    _now = datetime.now(timezone.utc)
+    start_label = _format_date_month_fr(_now.isoformat())
+    end_label = _format_date_month_fr((_now + timedelta(days=365 if year else 30)).isoformat())
 
     return render_template("technician_subscription_checkout.html", user=user,
                            plan=pv, period=period, amount=int(amount),
                            methods=_SUB_PAYMENT_METHODS, unread_count=unread_count,
-                           start_label=start_label,
+                           start_label=start_label, end_label=end_label,
                            availability=(user.get("availability_status") or "hors_ligne"))
 
 

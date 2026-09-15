@@ -241,55 +241,11 @@
   </header>
 
   <main class="page">
-    <h1 class="h1">Abonnement {{ plan.name }}</h1>
-    <p class="sub">Finalisez votre abonnement et profitez de toutes les fonctionnalités {{ plan.name }}.</p>
-
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% for category, message in messages %}
       <div class="flash {{ category }}">{{ message }}</div>
       {% endfor %}
     {% endwith %}
-
-    <!-- Carte plan (dynamique : change selon le plan choisi) -->
-    <section class="pcard {{ 'amber' if plan.accent == 'amber' }}">
-      {% if plan.popular %}
-      <span class="ppop">
-        <svg viewBox="0 0 24 24" fill="currentColor"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7z"/></svg>
-        Le plus populaire
-      </span>
-      {% endif %}
-      <span class="pico">
-        {% if plan.icon == 'crown' %}
-        <svg viewBox="0 0 24 24" fill="currentColor"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7z"/></svg>
-        {% else %}
-        <svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 17.8 6.2 20.9l1.1-6.5L2.6 9.8l6.5-.9z"/></svg>
-        {% endif %}
-      </span>
-      <div class="pmeta">
-        <span class="pname">Plan {{ plan.name }}</span>
-        {% if plan.desc %}<span class="pdesc">{{ plan.desc }}</span>{% endif %}
-      </div>
-      <div class="pmoney">
-        <span class="pnow">{{ "{:,}".format(plan.price_now) | replace(",", " ") }} GNF</span>
-        <span class="punit"> / {{ plan.unit }}</span>
-      </div>
-    </section>
-
-    {% if plan.features %}
-    <section class="pfeat {{ 'amber' if plan.accent == 'amber' }}">
-      <h3>Votre abonnement comprend :</h3>
-      <ul>
-        {% for label in plan.features %}
-        <li>
-          <span class="fck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
-          {{ label }}
-        </li>
-        {% endfor %}
-      </ul>
-    </section>
-    {% endif %}
-
-    <hr class="sep" />
 
     <form method="post" action="{{ url_for('technician_subscription_checkout', plan=plan.code, period=period) }}" id="payForm">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
@@ -298,10 +254,36 @@
 
       <!-- Étape 1 : récapitulatif, avant toute saisie -->
       <div id="stepRecap">
-        <h2 class="pay-title">Récapitulatif de votre abonnement</h2>
+        <h1 class="h1">Récapitulatif de votre abonnement</h1>
+
+        <section class="pcard {{ 'amber' if plan.accent == 'amber' }}">
+          {% if plan.popular %}
+          <span class="ppop">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7z"/></svg>
+            Le plus populaire
+          </span>
+          {% endif %}
+          <span class="pico">
+            {% if plan.icon == 'crown' %}
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7z"/></svg>
+            {% else %}
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="m12 2 2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 17.8 6.2 20.9l1.1-6.5L2.6 9.8l6.5-.9z"/></svg>
+            {% endif %}
+          </span>
+          <div class="pmeta">
+            <span class="pname">Plan {{ plan.name }}</span>
+            <span class="pdesc">Abonnement {{ 'mensuel' if period == 'month' else 'annuel' }}</span>
+          </div>
+          <div class="pmoney">
+            <span class="pnow">{{ "{:,}".format(plan.price_now) | replace(",", " ") }} GNF</span>
+            <span class="punit"> / {{ plan.unit }}</span>
+          </div>
+        </section>
+
         <div class="review-card">
           <div class="rrow"><span class="k">Période</span><span class="v">{{ 'Mensuel' if period == 'month' else 'Annuel' }}</span></div>
           <div class="rrow"><span class="k">Date de début</span><span class="v">{{ start_label }}</span></div>
+          <div class="rrow"><span class="k">Date de fin</span><span class="v">{{ end_label }}</span></div>
           <div class="rrow">
             <span class="k">Méthode de paiement</span>
             <span class="v" id="recapMethodName">{{ methods[0].label if methods }}</span>
@@ -319,8 +301,22 @@
 
       <!-- Étape 2 : choix du moyen de paiement + informations -->
       <div id="stepInfo" hidden>
-        <h2 class="pay-title">Choisissez votre mode de paiement</h2>
-        <p class="pay-sub">Plusieurs options sécurisées pour payer votre abonnement.</p>
+        <h1 class="h1">Choisissez votre mode de paiement</h1>
+        <p class="pay-sub" style="text-align:center">Plusieurs options sécurisées pour payer votre abonnement.</p>
+
+        {% if plan.features %}
+        <section class="pfeat {{ 'amber' if plan.accent == 'amber' }}">
+          <h3>Votre abonnement comprend :</h3>
+          <ul>
+            {% for label in plan.features %}
+            <li>
+              <span class="fck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+              {{ label }}
+            </li>
+            {% endfor %}
+          </ul>
+        </section>
+        {% endif %}
 
         <div class="methods" id="methods">
           {% for m in methods %}
@@ -373,10 +369,10 @@
         </p>
       </div>
 
-      <!-- Étape 2 : vérification avant paiement (aucune tentative de paiement n'est créée avant ce point) -->
+      <!-- Étape 3 : vérification avant paiement (aucune tentative de paiement n'est créée avant ce point) -->
       <div id="stepReview" hidden>
-        <h2 class="pay-title">Vérification de vos informations</h2>
-        <p class="pay-sub">Dernière étape avant de payer.</p>
+        <h1 class="h1">Vérification de vos informations</h1>
+        <p class="pay-sub" style="text-align:center">Dernière étape avant de payer.</p>
 
         <div class="review-card">
           <div class="rrow"><span class="k">Plan</span><span class="v" id="rvPlan">{{ plan.name }}</span></div>
