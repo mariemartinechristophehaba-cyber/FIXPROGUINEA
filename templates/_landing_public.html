@@ -1,0 +1,337 @@
+{# Landing page publique FixPro (visiteur non connecte), version bureau.
+   Maquette fournie = reference visuelle exacte. Mobile (<1024px) reste sur
+   l'accueil existant (_home_new.html), jamais touche ici.
+   Donnees reutilisees telles quelles : popular (6 categories reelles,
+   memes routes que le reste de l'app), client_zone, geolocalisation
+   existante (/api/location, /location, meme logique que partout ailleurs).
+   Aucune nouvelle logique metier, aucune donnee inventee. #}
+<style>
+  .ld-only { display: none; }
+
+  @media (min-width: 1024px) {
+    body.no-sidebar { padding-bottom: 0 !important; }
+    body.no-sidebar .page { max-width: none; margin: 0; padding: 0; }
+    /* Remplace entierement l'ancien accueil bureau visiteur : la topbar
+       generique de base.html et l'en-tete bleu mobile s'effacent ici. */
+    .dtopbar, .hp-header, .hp-hero, .hp-main, .hp-bottom-nav, .dsk-landing { display: none !important; }
+    .ld-only { display: block; }
+
+    .ld-page { font-family: var(--f-font, 'Inter', sans-serif); color: #0F172A; }
+
+    /* --- Header --- */
+    .ld-header {
+      display: flex; align-items: center; gap: 28px;
+      padding: 16px calc((100% - 1280px) / 2 + 24px);
+      border-bottom: 1px solid #EEF1F6; background: #fff;
+      position: sticky; top: 0; z-index: 50;
+    }
+    .ld-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; flex-shrink: 0; }
+    .ld-brand .mark { width: 40px; height: 40px; border-radius: 12px; background: #EAF1FF; color: #155EEF; display: flex; align-items: center; justify-content: center; }
+    .ld-brand .mark svg { width: 22px; height: 22px; }
+    .ld-brand-txt { display: flex; flex-direction: column; line-height: 1.15; }
+    .ld-brand-txt strong { font-size: 1.25rem; font-weight: 800; }
+    .ld-brand-txt span { font-size: .72rem; color: #64748B; font-weight: 600; }
+    .ld-nav { flex: 1; display: flex; align-items: center; gap: 26px; }
+    .ld-nav a, .ld-nav button {
+      background: none; border: none; cursor: pointer; font: inherit;
+      font-size: .92rem; font-weight: 600; color: #475569; text-decoration: none;
+      padding: 6px 0;
+    }
+    .ld-nav a.active { color: #155EEF; border-bottom: 2px solid #155EEF; }
+    .ld-nav a:hover, .ld-nav button:hover { color: #155EEF; }
+    .ld-right { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+    .ld-lang { display: flex; align-items: center; gap: 5px; padding: 8px 12px; border: 1px solid #E2E8F0; border-radius: 10px; font-size: .86rem; font-weight: 700; color: #0F172A; background: #fff; cursor: pointer; }
+    .ld-lang svg { width: 13px; height: 13px; color: #94A3B8; }
+    .ld-btn { padding: 10px 20px; border-radius: 10px; font-size: .9rem; font-weight: 700; text-decoration: none; white-space: nowrap; }
+    .ld-btn.soft { color: #155EEF; border: 1px solid #BFD3FF; background: #fff; }
+    .ld-btn.soft:hover { background: #F5F9FF; }
+    .ld-btn.primary { color: #fff; background: #155EEF; }
+    .ld-btn.primary:hover { background: #0F3DBB; }
+
+    /* --- Hero --- */
+    .ld-hero { padding: 60px calc((100% - 1280px) / 2 + 24px) 70px; background: #fff; }
+    .ld-hero-grid { display: grid; grid-template-columns: minmax(0,1fr) 560px; gap: 40px; align-items: center; max-width: 1280px; margin: 0 auto; }
+    .ld-badge { display: inline-block; background: #EAF1FF; color: #155EEF; font-size: .82rem; font-weight: 700; padding: 8px 16px; border-radius: 999px; margin-bottom: 22px; }
+    .ld-hero h1 { font-size: 2.7rem; line-height: 1.18; font-weight: 800; margin: 0 0 20px; color: #0B1220; }
+    .ld-hero h1 b { color: #155EEF; font-weight: 800; }
+    .ld-hero-sub { font-size: 1rem; color: #475569; line-height: 1.6; margin: 0 0 30px; max-width: 620px; }
+    .ld-search { display: flex; align-items: stretch; gap: 10px; background: #fff; border: 1px solid #E2E8F0; border-radius: 16px; padding: 8px 8px 8px 6px; box-shadow: 0 10px 30px rgba(16,42,67,.08); max-width: 640px; margin-bottom: 26px; }
+    .ld-search-field { display: flex; align-items: center; gap: 10px; padding: 8px 14px; flex: 1; min-width: 0; }
+    .ld-search-field .ic { width: 34px; height: 34px; border-radius: 10px; background: #EAF1FF; color: #155EEF; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .ld-search-field .ic svg { width: 17px; height: 17px; }
+    .ld-search-field .txt { display: flex; flex-direction: column; min-width: 0; }
+    .ld-search-field strong { font-size: .92rem; }
+    .ld-search-field span { font-size: .76rem; color: #64748B; }
+    .ld-search button.ld-search-btn {
+      flex-shrink: 0; border: none; cursor: pointer; background: #155EEF; color: #fff;
+      font-weight: 700; font-size: .92rem; padding: 0 24px; border-radius: 12px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .ld-search button.ld-search-btn:hover { background: #0F3DBB; }
+    .ld-search button.ld-search-btn svg { width: 17px; height: 17px; }
+    .ld-advantages { display: flex; flex-wrap: wrap; gap: 16px 22px; }
+    .ld-advantage { display: flex; align-items: center; gap: 8px; font-size: .82rem; font-weight: 600; color: #334155; white-space: nowrap; }
+    .ld-advantage .ic { width: 32px; height: 32px; border-radius: 9px; background: #EAF1FF; color: #155EEF; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .ld-advantage .ic svg { width: 15px; height: 15px; }
+
+    .ld-hero-visual { position: relative; }
+    .ld-hero-visual img { width: 100%; height: 460px; object-fit: cover; border-radius: 26px; display: block; }
+    .ld-float { position: absolute; background: #fff; border-radius: 16px; box-shadow: 0 16px 40px rgba(16,42,67,.16); padding: 14px 16px; display: flex; align-items: center; gap: 12px; }
+    .ld-float .ic { width: 40px; height: 40px; border-radius: 12px; background: #EAF1FF; color: #155EEF; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .ld-float .ic svg { width: 19px; height: 19px; }
+    .ld-float strong { display: block; font-size: .86rem; }
+    .ld-float span { font-size: .76rem; color: #64748B; }
+    .ld-float-home { top: 18%; left: -34px; }
+    .ld-float-review { top: 40%; right: -36px; text-align: left; max-width: 210px; }
+    .ld-float-review .stars { color: #F7B718; font-size: .78rem; }
+    .ld-float-review .avatar { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+    .ld-float-count { bottom: 8%; right: -20px; }
+    .ld-slogan { position: absolute; top: -6px; right: 14px; font-family: 'Space Grotesk', cursive, sans-serif; font-style: italic; color: #0B1220; font-size: 1.02rem; line-height: 1.35; text-align: right; }
+    .ld-slogan u { text-decoration: none; border-bottom: 2px solid #155EEF; }
+
+    /* --- Services --- */
+    .ld-services-wrap { padding: 0 calc((100% - 1280px) / 2 + 24px) 70px; }
+    .ld-services { display: grid; grid-template-columns: repeat(6, 1fr); gap: 18px; max-width: 1280px; margin: 0 auto; }
+    .ld-service { display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center; text-decoration: none; color: inherit; padding: 30px 12px; border-radius: 18px; transition: transform .15s; }
+    .ld-service:hover { transform: translateY(-4px); }
+    .ld-service .ic { width: 56px; height: 56px; border-radius: 16px; display: flex; align-items: center; justify-content: center; }
+    .ld-service .ic svg { width: 27px; height: 27px; }
+    .ld-service strong { font-size: .95rem; font-weight: 700; }
+
+    /* --- Bandeau bas : statistiques + telechargement --- */
+    .ld-stats-wrap { background: #0B1E4D; color: #fff; padding: 40px calc((100% - 1280px) / 2 + 24px); }
+    .ld-stats-grid { max-width: 1280px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+    .ld-stats { display: flex; gap: 34px; flex-wrap: wrap; }
+    .ld-stat { display: flex; align-items: center; gap: 12px; }
+    .ld-stat .ic { width: 42px; height: 42px; border-radius: 12px; background: rgba(255,255,255,.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .ld-stat .ic svg { width: 19px; height: 19px; }
+    .ld-stat strong { display: block; font-size: 1.15rem; font-weight: 800; }
+    .ld-stat span { font-size: .76rem; color: rgba(255,255,255,.7); }
+    .ld-app { display: flex; align-items: center; gap: 16px; background: rgba(255,255,255,.06); border-radius: 16px; padding: 16px 20px; }
+    .ld-app-txt strong { display: block; font-size: .92rem; }
+    .ld-app-txt span { font-size: .76rem; color: rgba(255,255,255,.7); }
+    .ld-app-btns { display: flex; gap: 10px; }
+    .ld-app-btn { display: flex; align-items: center; gap: 8px; background: #0F172A; border: 1px solid rgba(255,255,255,.2); border-radius: 10px; padding: 8px 14px; cursor: pointer; color: #fff; font: inherit; }
+    .ld-app-btn svg { width: 20px; height: 20px; flex-shrink: 0; }
+    .ld-app-btn .t { text-align: left; line-height: 1.2; }
+    .ld-app-btn .t small { display: block; font-size: .62rem; color: rgba(255,255,255,.65); }
+    .ld-app-btn .t b { font-size: .82rem; }
+
+    .ld-toast {
+      position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%) translateY(20px);
+      background: #0F172A; color: #fff; padding: 12px 20px; border-radius: 10px;
+      font-size: .86rem; font-weight: 600; opacity: 0; pointer-events: none;
+      transition: opacity .2s, transform .2s; z-index: 999;
+    }
+    .ld-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  }
+
+  @media (min-width: 1024px) and (max-width: 1280px) {
+    .ld-hero-grid { grid-template-columns: 1fr; }
+    .ld-hero-visual { max-width: 480px; margin: 0 auto; }
+    .ld-services { grid-template-columns: repeat(3, 1fr); }
+    .ld-stats-grid { justify-content: center; }
+  }
+
+  /* En-tete : le menu complet (7 liens + langue + 2 boutons) ne tient pas
+     sous 1220px. On resserre, puis on retire la langue (purement
+     decorative) plutot que de laisser "S'inscrire" deborder. */
+  @media (min-width: 1024px) and (max-width: 1360px) {
+    .ld-header { padding-left: 24px; padding-right: 24px; gap: 16px; }
+    .ld-nav { gap: 14px; }
+    .ld-nav a, .ld-nav button { font-size: .82rem; white-space: nowrap; }
+    .ld-btn { padding: 9px 14px; font-size: .84rem; }
+  }
+  @media (min-width: 1024px) and (max-width: 1220px) {
+    .ld-lang { display: none; }
+  }
+</style>
+
+<div class="ld-only ld-page">
+  <header class="ld-header">
+    <a class="ld-brand" href="{{ url_for('index') }}">
+      <span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span>
+      <span class="ld-brand-txt"><strong>FixPro</strong><span>Espace Technicien</span></span>
+    </a>
+    <nav class="ld-nav">
+      <a class="active" href="{{ url_for('index') }}">Accueil</a>
+      <a href="{{ url_for('contact') }}">À propos</a>
+      <a href="#ld-services">Services</a>
+      <button type="button" data-toast="1">Comment ça marche</button>
+      <button type="button" data-toast="1">Tarifs</button>
+      <button type="button" data-toast="1">Blog</button>
+      <a href="{{ url_for('contact') }}">Contact</a>
+    </nav>
+    <div class="ld-right">
+      <button type="button" class="ld-lang" data-toast="1">
+        FR <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <a class="ld-btn soft" href="{{ url_for('login') }}">Se connecter</a>
+      <a class="ld-btn primary" href="{{ url_for('client_signup') }}">S'inscrire</a>
+    </div>
+  </header>
+
+  <section class="ld-hero">
+    <div class="ld-hero-grid">
+      <div>
+        <span class="ld-badge">Des pros, plus près de vous.</span>
+        <h1>Trouvez un technicien<br/>fiable en <b>quelques clics</b></h1>
+        <p class="ld-hero-sub">
+          Plomberie, électricité, climatisation, peinture, maçonnerie, menuiserie.
+          FixPro vous met en relation avec des professionnels qualifiés et disponibles près de chez vous.
+        </p>
+        <form class="ld-search" method="get" action="{{ url_for('artisans_page') }}">
+          <span class="ld-search-field">
+            <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg></span>
+            <span class="txt">
+              <strong id="ldLocLabel">{{ client_zone or 'Votre position actuelle' }}</strong>
+              <span>Localisation automatique</span>
+            </span>
+          </span>
+          <button type="button" id="ldLocBtn" aria-label="Actualiser ma position" style="all:unset;cursor:pointer;padding:0 6px;color:#94A3B8;display:flex;align-items:center;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2" fill="currentColor" stroke="none"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/></svg>
+          </button>
+          <button type="submit" class="ld-search-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            Trouver un technicien
+          </button>
+        </form>
+        <div class="ld-advantages">
+          <span class="ld-advantage"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Professionnels vérifiés</span>
+          <span class="ld-advantage"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></svg></span>Intervention rapide</span>
+          <span class="ld-advantage"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg></span>Près de chez vous</span>
+          <span class="ld-advantage"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11a9 9 0 0 1 18 0v5a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2h3M3 16v-2a2 2 0 0 1 2-2h1a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2H3"/></svg></span>Support 7j/7</span>
+        </div>
+      </div>
+      <div class="ld-hero-visual">
+        <img src="{{ asset('img/landing-hero-technicien.jpg') }}" alt="Technicien FixPro" />
+        <span class="ld-slogan">Votre confort<br/><u>Notre priorité</u> !</span>
+        <div class="ld-float ld-float-home">
+          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></span>
+          <span><strong>Intervention à domicile</strong><span>Rapide et sécurisé</span></span>
+        </div>
+        <div class="ld-float ld-float-review">
+          <img class="avatar" src="{{ url_for('static', filename='img/fixpro-avatar.png') }}" alt="" />
+          <span>
+            <strong>Client satisfait</strong>
+            <span class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
+            <span>"Service rapide et professionnel !"</span>
+          </span>
+        </div>
+        <div class="ld-float ld-float-count">
+          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 21a8 8 0 0 0-16 0"/><circle cx="10" cy="8" r="5"/><path d="M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3"/></svg></span>
+          <span><strong>+500</strong><span>Techniciens qualifiés en Guinée</span></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="ld-services-wrap" id="ld-services">
+    {% set ld_svc = {
+      'Plomberie':   {'bg': '#EAF1FF', 'color': '#155EEF', 'label': 'Plomberie', 'svg': '<path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/>'},
+      'Électricité': {'bg': '#FFF7DE', 'color': '#D69E00', 'label': 'Électricité', 'svg': '<path d="M15.914 4a1.5 1.5 0 0 0-2.474-1.561l-9 9A1.5 1.5 0 0 0 5.5 14h4.002a.5.5 0 0 1 .471.666L8.086 20a1.5 1.5 0 0 0 2.475 1.56l9-9A1.5 1.5 0 0 0 18.5 10h-3.997a.5.5 0 0 1-.472-.667z"/>'},
+      'Frigoriste':  {'bg': '#E6F7FF', 'color': '#0EA5E9', 'label': 'Froid & Climatisation', 'svg': '<path d="M12 2v20M4 5l16 14M20 5 4 19M2 12h20"/>'},
+      'Peinture':    {'bg': '#FFE9F4', 'color': '#EC4899', 'label': 'Peinture', 'svg': '<rect width="16" height="6" x="2" y="2" rx="2"/><path d="M10 16v-2a2 2 0 0 1 2-2h8a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect width="4" height="6" x="8" y="16" rx="1"/>'},
+      'Maçonnerie':  {'bg': '#FFECE3', 'color': '#EA580C', 'label': 'Maçonnerie', 'svg': '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M12 3v6"/><path d="M8 9v6"/><path d="M16 9v6"/><path d="M12 15v6"/>'},
+      'Menuiserie':  {'bg': '#E7F9EE', 'color': '#16A34A', 'label': 'Menuiserie', 'svg': '<path d="M2 22s4-9 10-9 10 9 10 9"/><path d="M12 13V2l4 4"/>'}
+    } %}
+    <div class="ld-services">
+      {% for p in popular %}
+      {% set meta = ld_svc.get(p.label, {'bg':'#F1F5F9','color':'#64748B','label':p.label,'svg':''}) %}
+      <a class="ld-service" href="{{ url_for('artisans_page', category=p.category) }}">
+        <span class="ic" style="background:{{ meta.bg }};color:{{ meta.color }};">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">{{ meta.svg | safe }}</svg>
+        </span>
+        <strong>{{ meta.label }}</strong>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="ld-stats-wrap">
+    <div class="ld-stats-grid">
+      <div class="ld-stats">
+        <div class="ld-stat">
+          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 21a8 8 0 0 0-16 0"/><circle cx="10" cy="8" r="5"/><path d="M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3"/></svg></span>
+          <span><strong>+500</strong><span>Techniciens qualifiés</span></span>
+        </div>
+        <div class="ld-stat">
+          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></span>
+          <span><strong>+10 000</strong><span>Clients satisfaits</span></span>
+        </div>
+        <div class="ld-stat">
+          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg></span>
+          <span><strong>6</strong><span>Services principaux</span></span>
+        </div>
+        <div class="ld-stat">
+          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+          <span><strong>100%</strong><span>Sécurisé et fiable</span></span>
+        </div>
+      </div>
+      <div class="ld-app">
+        <div class="ld-app-txt">
+          <strong>Téléchargez l'application FixPro</strong>
+          <span>Installation directe depuis votre navigateur</span>
+        </div>
+        <div class="ld-app-btns">
+          <button type="button" class="ld-app-btn" id="ldInstallBtn">
+            <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M3 20.5v-17c0-.8.9-1.3 1.6-.9l13.3 8.5c.7.4.7 1.4 0 1.8L4.6 21.4c-.7.4-1.6-.1-1.6-.9z"/></svg>
+            <span class="t"><small>Bientôt sur</small><b>Google Play</b></span>
+          </button>
+          <button type="button" class="ld-app-btn" id="ldInstallBtn2">
+            <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M16.365 1.43c0 1.14-.42 2.07-1.26 2.99-.98 1.03-2.15 1.63-3.31 1.53-.12-1.14.44-2.28 1.24-3.11.9-.94 2.36-1.6 3.33-1.41zM20.5 17.1c-.5 1.15-1.1 2.28-2.02 3.35-.83.97-1.6 1.94-2.94 1.96-1.28.03-1.69-.75-3.15-.75-1.46 0-1.92.73-3.13.78-1.29.05-2.27-1.05-3.11-2.02C4.5 18.24 2.6 12.4 5.16 9.2c1.24-1.53 3.09-2.43 4.72-2.44 1.36-.02 2.35.87 3.15.87.79 0 2.05-1.08 3.46-.92.59.02 2.24.24 3.31 1.79-1.24.8-2.08 2.19-2.05 3.65.02 2.03 1.63 3.34 2.75 3.95z"/></svg>
+            <span class="t"><small>Bientôt sur</small><b>App Store</b></span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="ld-toast" id="ldToast"></div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    var toast = document.getElementById('ldToast');
+    function showToast(msg) {
+      if (!toast) return;
+      toast.textContent = msg;
+      toast.classList.add('show');
+      clearTimeout(toast._t);
+      toast._t = setTimeout(function () { toast.classList.remove('show'); }, 2200);
+    }
+    document.querySelectorAll('[data-toast]').forEach(function (el) {
+      el.addEventListener('click', function () { showToast('Bientôt disponible'); });
+    });
+    var installBtns = [document.getElementById('ldInstallBtn'), document.getElementById('ldInstallBtn2')];
+    installBtns.forEach(function (btn) {
+      if (btn) btn.addEventListener('click', function () {
+        showToast("FixPro s'installe directement depuis ce navigateur (menu > Ajouter à l'écran d'accueil).");
+      });
+    });
+    var locBtn = document.getElementById('ldLocBtn');
+    if (locBtn) {
+      locBtn.addEventListener('click', function () {
+        if (!navigator.geolocation) { showToast('Géolocalisation non prise en charge par ce navigateur.'); return; }
+        var csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+        navigator.geolocation.getCurrentPosition(function (pos) {
+          fetch('/api/location', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+            body: JSON.stringify({ lat: pos.coords.latitude, lon: pos.coords.longitude, accuracy: pos.coords.accuracy || 0 })
+          }).then(function (r) { return r.json(); }).then(function (data) {
+            var label = document.getElementById('ldLocLabel');
+            if (data.ok && label) label.textContent = data.zone || 'Position actualisée';
+          }).catch(function () { showToast('Erreur réseau lors de la géolocalisation.'); });
+        }, function () {
+          fetch('/api/location/denied', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+            body: JSON.stringify({})
+          });
+          showToast('Localisation refusée.');
+        });
+      });
+    }
+  });
+</script>
