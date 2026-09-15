@@ -17,7 +17,7 @@
       --d-amber: #F5AA00; --d-amber-d: #C97F00; --d-red: #EF4444;
     }
     * { box-sizing: border-box; }
-    html, body { margin: 0; padding: 0; }
+    html, body { margin: 0; padding: 0; max-width: 100%; overflow-x: hidden; }
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       color: var(--d-ink); background: var(--d-bg); -webkit-font-smoothing: antialiased;
@@ -202,8 +202,8 @@
     .cfin svg { width: 19px; height: 19px; color: var(--d-muted); flex-shrink: 0; align-self: center; margin-right: 13px; }
     .cfin .cfeye { border: 0; background: transparent; padding: 0 13px; display: flex; align-items: center; cursor: pointer; color: var(--d-muted); }
     .cfin .cfeye svg { margin-right: 0; }
-    .cfield-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .cfield-row .cfield { margin-top: 14px; }
+    .cfield-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+    .cfield-row .cfield { margin-top: 14px; min-width: 0; }
 
     .csave {
       display: flex; align-items: flex-start; gap: 11px; margin-top: 16px; cursor: pointer;
