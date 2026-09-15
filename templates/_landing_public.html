@@ -1,0 +1,597 @@
+{# Landing page publique FixPro (visiteur non connecte), version bureau.
+   Maquette fournie = reference visuelle exacte. Mobile (<1024px) reste sur
+   l'accueil existant (_home_new.html), jamais touche ici. Accueil connecte
+   (/home) jamais touche non plus.
+   Donnees reutilisees telles quelles : popular (6 categories reelles,
+   memes routes que le reste de l'app), geolocalisation existante
+   (/api/location). Aucune nouvelle logique metier. #}
+<style>
+  .ld-only { display: none; }
+
+  @media (min-width: 1024px) {
+    body.no-sidebar { padding-bottom: 0 !important; }
+    body.no-sidebar .page { max-width: none; margin: 0; padding: 0; }
+    .dtopbar, .hp-header, .hp-hero, .hp-main, .hp-bottom-nav, .dsk-landing { display: none !important; }
+    .ld-only { display: block; }
+
+    .ld-page { font-family: var(--f-font, 'Inter', sans-serif); color: #0F172A; }
+
+    /* ---- Header ---- */
+    .ld-header {
+      display: flex; align-items: center; gap: 28px;
+      padding: 16px calc((100% - 1280px) / 2 + 24px);
+      border-bottom: 1px solid #EEF1F6; background: #fff;
+      position: sticky; top: 0; z-index: 50;
+    }
+    .ld-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; flex-shrink: 0; }
+    .ld-brand .mark { width: 40px; height: 40px; border-radius: 12px; background: #EAF1FF; color: #155EEF; display: flex; align-items: center; justify-content: center; }
+    .ld-brand .mark svg { width: 22px; height: 22px; }
+    .ld-brand-txt { display: flex; flex-direction: column; line-height: 1.15; }
+    .ld-brand-txt strong { font-size: 1.25rem; font-weight: 800; }
+    .ld-brand-txt span { font-size: .72rem; color: #64748B; font-weight: 600; }
+    .ld-nav { flex: 1; display: flex; align-items: center; gap: 26px; }
+    .ld-nav a, .ld-nav button {
+      background: none; border: none; cursor: pointer; font: inherit;
+      font-size: .92rem; font-weight: 600; color: #475569; text-decoration: none;
+      padding: 6px 0; white-space: nowrap;
+    }
+    .ld-nav a.active { color: #155EEF; border-bottom: 2px solid #155EEF; }
+    .ld-nav a:hover, .ld-nav button:hover { color: #155EEF; }
+    .ld-right { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+    .ld-lang { display: flex; align-items: center; gap: 5px; padding: 8px 12px; border: 1px solid #E2E8F0; border-radius: 10px; font-size: .86rem; font-weight: 700; color: #0F172A; background: #fff; cursor: pointer; }
+    .ld-lang svg { width: 13px; height: 13px; color: #94A3B8; }
+    .ld-btn { padding: 10px 20px; border-radius: 10px; font-size: .9rem; font-weight: 700; text-decoration: none; white-space: nowrap; }
+    .ld-btn.soft { color: #155EEF; border: 1px solid #BFD3FF; background: #fff; }
+    .ld-btn.soft:hover { background: #F5F9FF; }
+    .ld-btn.primary { color: #fff; background: #155EEF; }
+    .ld-btn.primary:hover { background: #0F3DBB; }
+
+    /* ---- Hero ---- */
+    .ld-hero { padding: 60px calc((100% - 1280px) / 2 + 24px) 70px; background: #fff; }
+    .ld-hero-grid { display: grid; grid-template-columns: minmax(0,1fr) minmax(300px, 42%); gap: 32px; align-items: center; max-width: 1280px; margin: 0 auto; }
+    .ld-badge { display: inline-block; background: #EAF1FF; color: #155EEF; font-size: .82rem; font-weight: 700; padding: 8px 16px; border-radius: 999px; margin-bottom: 22px; }
+    .ld-hero h1 { font-size: 2.7rem; line-height: 1.18; font-weight: 800; margin: 0 0 20px; color: #0B1220; }
+    .ld-hero h1 b { color: #155EEF; font-weight: 800; }
+    .ld-hero-sub { font-size: 1rem; color: #475569; line-height: 1.6; margin: 0 0 30px; max-width: 620px; }
+    .ld-search { display: flex; align-items: stretch; gap: 10px; background: #fff; border: 1px solid #E2E8F0; border-radius: 16px; padding: 8px 8px 8px 6px; box-shadow: 0 10px 30px rgba(16,42,67,.08); max-width: 640px; margin-bottom: 26px; }
+    .ld-search-field { display: flex; align-items: center; gap: 10px; padding: 8px 14px; flex: 1; min-width: 0; }
+    .ld-search-field .ic { width: 34px; height: 34px; border-radius: 10px; background: #EAF1FF; color: #155EEF; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .ld-search-field .ic svg { width: 17px; height: 17px; }
+    .ld-search-field .txt { display: flex; flex-direction: column; min-width: 0; }
+    .ld-search-field strong { font-size: .92rem; }
+    .ld-search-field span { font-size: .76rem; color: #64748B; }
+    .ld-search button.ld-search-btn {
+      flex-shrink: 0; border: none; cursor: pointer; background: #155EEF; color: #fff;
+      font-weight: 700; font-size: .92rem; padding: 0 24px; border-radius: 12px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .ld-search button.ld-search-btn:hover { background: #0F3DBB; }
+    .ld-search button.ld-search-btn svg { width: 17px; height: 17px; }
+    .ld-advantages { display: flex; flex-wrap: wrap; gap: 16px 22px; }
+    .ld-advantage { display: flex; align-items: center; gap: 8px; font-size: .82rem; font-weight: 600; color: #334155; white-space: nowrap; }
+    .ld-advantage .ic { width: 32px; height: 32px; border-radius: 9px; background: #EAF1FF; color: #155EEF; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .ld-advantage .ic svg { width: 15px; height: 15px; }
+
+    .ld-hero-visual { position: relative; }
+    .ld-hero-visual img { width: 100%; height: 460px; object-fit: cover; object-position: 50% 12%; border-radius: 26px; display: block; }
+    .ld-float { position: absolute; background: #fff; border-radius: 16px; box-shadow: 0 16px 40px rgba(16,42,67,.16); padding: 14px 16px; display: flex; align-items: center; gap: 12px; }
+    .ld-float .ic { width: 40px; height: 40px; border-radius: 12px; background: #EAF1FF; color: #155EEF; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .ld-float .ic svg { width: 19px; height: 19px; }
+    .ld-float strong { display: block; font-size: .86rem; }
+    .ld-float span { font-size: .76rem; color: #64748B; }
+    .ld-float-home { top: 18%; left: -34px; }
+    .ld-float-review { top: 40%; right: -36px; text-align: left; max-width: 210px; }
+    .ld-float-review .stars { color: #F7B718; font-size: .78rem; }
+    .ld-float-review .avatar { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+    .ld-float-count { bottom: 8%; right: -20px; }
+    .ld-slogan { position: absolute; top: -6px; right: 14px; font-family: 'Space Grotesk', cursive, sans-serif; font-style: italic; color: #0B1220; font-size: 1.02rem; line-height: 1.35; text-align: right; }
+    .ld-slogan u { text-decoration: none; border-bottom: 2px solid #155EEF; }
+
+    /* ---- Contenu general : colonne centree ---- */
+    .ld-section { max-width: 1280px; margin: 0 auto; padding: 64px 28px; }
+    .ld-section-head { text-align: center; max-width: 640px; margin: 0 auto 36px; }
+    .ld-section-head h2 { font-size: 1.7rem; font-weight: 800; color: #0F172A; margin: 0 0 8px; }
+    .ld-section-head p { font-size: .92rem; color: #64748B; margin: 0; }
+
+    /* ---- Services ---- */
+    .ld-services { display: grid; grid-template-columns: repeat(6, 1fr); gap: 18px; }
+    .ld-service {
+      display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center;
+      text-decoration: none; color: inherit; padding: 26px 14px; border-radius: 18px;
+      border: 1px solid transparent; transition: transform .15s, box-shadow .15s;
+    }
+    .ld-service:hover { transform: translateY(-4px); box-shadow: 0 14px 30px rgba(16,42,67,.1); }
+    .ld-service .ic { width: 54px; height: 54px; border-radius: 15px; display: flex; align-items: center; justify-content: center; }
+    .ld-service .ic svg { width: 25px; height: 25px; }
+    .ld-service strong { font-size: .92rem; font-weight: 700; }
+    .ld-service p { font-size: .74rem; color: #64748B; margin: 0; line-height: 1.4; }
+
+    /* ---- Comment ca marche ---- */
+    .ld-steps-wrap { background: #F4F8FE; }
+    .ld-steps-grid { display: grid; grid-template-columns: minmax(0,1fr) 300px; gap: 40px; align-items: center; max-width: 1280px; margin: 0 auto; padding: 0 28px; }
+    .ld-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; }
+    .ld-step { position: relative; text-align: left; padding: 0 18px 0 0; }
+    .ld-step-num {
+      width: 38px; height: 38px; border-radius: 50%; background: #DCE9FF; color: #155EEF;
+      display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1rem; margin-bottom: 14px;
+    }
+    .ld-step:first-child .ld-step-num { background: #155EEF; color: #fff; }
+    .ld-step h3 { font-size: .94rem; font-weight: 700; margin: 0 0 6px; }
+    .ld-step p { font-size: .8rem; color: #64748B; margin: 0; line-height: 1.4; }
+    .ld-step-chev { position: absolute; right: -6px; top: 10px; color: #B9C7DD; }
+    .ld-step-chev svg { width: 18px; height: 18px; }
+    .ld-step:last-child .ld-step-chev { display: none; }
+    .ld-phone { position: relative; width: 220px; height: 440px; margin: 0 auto; background: #0B1220; border-radius: 34px; padding: 10px; box-shadow: 0 24px 50px rgba(11,18,32,.25); }
+    .ld-phone-screen { width: 100%; height: 100%; border-radius: 26px; background: linear-gradient(160deg,#155EEF,#0B3FA8); display: flex; flex-direction: column; align-items: center; padding: 28px 18px; color: #fff; }
+    .ld-phone-screen .mark { width: 46px; height: 46px; border-radius: 14px; background: rgba(255,255,255,.15); display: flex; align-items: center; justify-content: center; margin-bottom: 10px; }
+    .ld-phone-screen .mark svg { width: 24px; height: 24px; }
+    .ld-phone-screen strong { font-size: 1.05rem; font-weight: 800; margin-bottom: 2px; }
+    .ld-phone-screen small { font-size: .68rem; color: rgba(255,255,255,.8); margin-bottom: 22px; }
+    .ld-phone-list { width: 100%; display: flex; flex-direction: column; gap: 10px; }
+    .ld-phone-list span { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,.12); border-radius: 10px; padding: 8px 10px; font-size: .74rem; font-weight: 600; }
+    .ld-phone-list svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+    /* ---- Bandeau statistiques ---- */
+    .ld-stats-wrap { background: #0B1E4D; color: #fff; padding: 34px calc((100% - 1280px) / 2 + 24px); }
+    .ld-stats { max-width: 1280px; margin: 0 auto; display: flex; gap: 40px; flex-wrap: wrap; justify-content: center; }
+    .ld-stat { display: flex; align-items: center; gap: 12px; }
+    .ld-stat .ic { width: 42px; height: 42px; border-radius: 12px; background: rgba(255,255,255,.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .ld-stat .ic svg { width: 19px; height: 19px; }
+    .ld-stat strong { display: block; font-size: 1.15rem; font-weight: 800; }
+    .ld-stat span { font-size: .76rem; color: rgba(255,255,255,.7); }
+
+    /* ---- Telechargement application ---- */
+    .ld-download-grid { display: grid; grid-template-columns: minmax(0,1fr) 380px; gap: 40px; align-items: center; max-width: 1280px; margin: 0 auto; padding: 0 28px; }
+    .ld-download h2 { font-size: 1.6rem; font-weight: 800; margin: 0 0 8px; }
+    .ld-download > div > p { font-size: .92rem; color: #64748B; margin: 0 0 22px; }
+    .ld-dl-btns { display: flex; gap: 12px; margin-bottom: 24px; }
+    .ld-dl-btn { display: flex; align-items: center; gap: 8px; background: #0F172A; border: none; border-radius: 11px; padding: 10px 16px; cursor: pointer; color: #fff; font: inherit; }
+    .ld-dl-btn svg { width: 22px; height: 22px; flex-shrink: 0; }
+    .ld-dl-btn .t { text-align: left; line-height: 1.2; }
+    .ld-dl-btn .t small { display: block; font-size: .64rem; color: rgba(255,255,255,.65); }
+    .ld-dl-btn .t b { font-size: .86rem; }
+    .ld-dl-checklist { display: flex; flex-direction: column; gap: 12px; }
+    .ld-dl-checklist span { display: flex; align-items: center; gap: 10px; font-size: .9rem; font-weight: 600; color: #1E293B; }
+    .ld-dl-checklist .ic { width: 24px; height: 24px; border-radius: 50%; background: #DCFCE7; color: #16A34A; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .ld-dl-checklist .ic svg { width: 13px; height: 13px; }
+    .ld-download-visual { display: flex; justify-content: center; gap: -20px; }
+    .ld-download-visual .ld-phone { width: 150px; height: 300px; border-radius: 24px; padding: 7px; }
+    .ld-download-visual .ld-phone:nth-child(2) { width: 176px; height: 352px; margin: 0 -18px; z-index: 1; box-shadow: 0 30px 60px rgba(11,18,32,.3); }
+    .ld-download-visual .ld-phone-screen { border-radius: 18px; padding: 18px 12px; }
+    .ld-download-visual .ld-phone-screen strong { font-size: .82rem; }
+    .ld-download-visual .ld-phone-screen small { font-size: .58rem; margin-bottom: 12px; }
+    .ld-download-visual .ld-phone-list span { font-size: .62rem; padding: 6px 8px; }
+
+    /* ---- Temoignages ---- */
+    .ld-testimonials-wrap { background: #F4F8FE; }
+    .ld-testimonials { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .ld-testi { background: #fff; border-radius: 18px; padding: 22px; box-shadow: 0 6px 20px rgba(16,42,67,.05); }
+    .ld-testi-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .ld-testi-avatar { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: .95rem; color: #fff; flex-shrink: 0; }
+    .ld-testi-head strong { display: block; font-size: .92rem; }
+    .ld-testi-head .stars { color: #F7B718; font-size: .78rem; }
+    .ld-testi p { font-size: .86rem; color: #334155; line-height: 1.55; margin: 0; }
+    .ld-testi-dots { display: flex; justify-content: center; gap: 8px; margin-top: 30px; }
+    .ld-testi-dots span { width: 8px; height: 8px; border-radius: 50%; background: #CBD5E1; }
+    .ld-testi-dots span.active { background: #155EEF; width: 22px; border-radius: 4px; }
+
+    /* ---- FAQ ---- */
+    .ld-faq { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px 24px; }
+    .ld-faq-item { border: 1px solid #E6ECF5; border-radius: 14px; overflow: hidden; background: #fff; }
+    .ld-faq-q { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 18px; background: none; border: none; cursor: pointer; font: inherit; font-size: .9rem; font-weight: 700; color: #0F172A; text-align: left; }
+    .ld-faq-q svg { width: 18px; height: 18px; color: #94A3B8; flex-shrink: 0; transition: transform .2s; }
+    .ld-faq-item.open .ld-faq-q svg { transform: rotate(180deg); color: #155EEF; }
+    .ld-faq-a { max-height: 0; overflow: hidden; transition: max-height .2s ease; }
+    .ld-faq-item.open .ld-faq-a { max-height: 200px; }
+    .ld-faq-a p { margin: 0; padding: 0 18px 16px; font-size: .84rem; color: #64748B; line-height: 1.55; }
+
+    /* ---- Footer ---- */
+    .ld-footer { background: #0B1E4D; color: rgba(255,255,255,.72); padding: 40px calc((100% - 1280px) / 2 + 24px) 24px; }
+    .ld-footer-top { max-width: 1280px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; padding-bottom: 26px; border-bottom: 1px solid rgba(255,255,255,.1); }
+    .ld-footer-brand { display: flex; align-items: center; gap: 10px; color: #fff; font-weight: 800; font-size: 1.1rem; }
+    .ld-footer-brand .mark { width: 34px; height: 34px; border-radius: 10px; background: #155EEF; display: flex; align-items: center; justify-content: center; }
+    .ld-footer-brand .mark svg { width: 19px; height: 19px; color: #fff; }
+    .ld-footer-brand span { display: block; font-size: .72rem; font-weight: 500; color: rgba(255,255,255,.6); }
+    .ld-footer-nav { display: flex; gap: 22px; flex-wrap: wrap; }
+    .ld-footer-nav a, .ld-footer-nav button { color: rgba(255,255,255,.75); text-decoration: none; font-size: .84rem; font-weight: 600; background: none; border: none; cursor: pointer; font-family: inherit; }
+    .ld-footer-nav a:hover, .ld-footer-nav button:hover { color: #fff; }
+    .ld-footer-social { display: flex; gap: 10px; }
+    .ld-footer-social span { width: 34px; height: 34px; border-radius: 50%; background: rgba(255,255,255,.08); display: flex; align-items: center; justify-content: center; color: #fff; cursor: default; }
+    .ld-footer-social svg { width: 16px; height: 16px; }
+    .ld-footer-bottom { max-width: 1280px; margin: 20px auto 0; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; font-size: .78rem; }
+    .ld-footer-bottom a { color: rgba(255,255,255,.75); text-decoration: none; }
+    .ld-footer-bottom a:hover { color: #fff; }
+
+    .ld-toast {
+      position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%) translateY(20px);
+      background: #0F172A; color: #fff; padding: 12px 20px; border-radius: 10px;
+      font-size: .86rem; font-weight: 600; opacity: 0; pointer-events: none;
+      transition: opacity .2s, transform .2s; z-index: 999;
+    }
+    .ld-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  }
+
+  @media (min-width: 1024px) and (max-width: 1280px) {
+    .ld-hero h1 { font-size: 2.2rem; }
+    .ld-services { grid-template-columns: repeat(3, 1fr); }
+    .ld-steps-grid, .ld-download-grid { grid-template-columns: 1fr; }
+    .ld-phone, .ld-download-visual { display: none; }
+    .ld-testimonials { grid-template-columns: repeat(2, 1fr); }
+    .ld-faq { grid-template-columns: 1fr; }
+  }
+
+  /* En-tete : le menu complet (7 liens + langue + 2 boutons) ne tient pas
+     sous 1220px. On resserre, puis on retire la langue (purement
+     decorative) plutot que de laisser "S'inscrire" deborder. */
+  @media (min-width: 1024px) and (max-width: 1360px) {
+    .ld-header { padding-left: 24px; padding-right: 24px; gap: 16px; }
+    .ld-nav { gap: 14px; }
+    .ld-nav a, .ld-nav button { font-size: .82rem; }
+    .ld-btn { padding: 9px 14px; font-size: .84rem; }
+  }
+  @media (min-width: 1024px) and (max-width: 1220px) {
+    .ld-lang { display: none; }
+  }
+</style>
+
+<div class="ld-only ld-page">
+  <header class="ld-header">
+    <a class="ld-brand" href="{{ url_for('index') }}">
+      <span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span>
+      <span class="ld-brand-txt"><strong>FixPro</strong><span>Espace Technicien</span></span>
+    </a>
+    <nav class="ld-nav">
+      <a class="active" href="{{ url_for('index') }}">Accueil</a>
+      <a href="{{ url_for('contact') }}">À propos</a>
+      <a href="#ld-services">Services</a>
+      <a href="#ld-comment">Comment ça marche</a>
+      <a href="{{ url_for('technician_subscription') }}">Tarifs</a>
+      <button type="button" data-toast="1">Blog</button>
+      <a href="{{ url_for('contact') }}">Contact</a>
+    </nav>
+    <div class="ld-right">
+      <button type="button" class="ld-lang" data-toast="1">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        FR <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <a class="ld-btn soft" href="{{ url_for('login') }}">Se connecter</a>
+      <a class="ld-btn primary" href="{{ url_for('client_signup') }}">S'inscrire</a>
+    </div>
+  </header>
+
+  <section class="ld-hero">
+    <div class="ld-hero-grid">
+      <div>
+        <span class="ld-badge">Des pros, plus près de vous.</span>
+        <h1>Trouvez un technicien<br/>fiable en <b>quelques clics</b></h1>
+        <p class="ld-hero-sub">
+          Plomberie, électricité, climatisation, peinture, maçonnerie, menuiserie.
+          FixPro vous met en relation avec des professionnels qualifiés et disponibles près de chez vous.
+        </p>
+        <form class="ld-search" method="get" action="{{ url_for('artisans_page') }}">
+          <span class="ld-search-field">
+            <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg></span>
+            <span class="txt">
+              <strong id="ldLocLabel">{{ client_zone or 'Votre position actuelle' }}</strong>
+              <span>Localisation automatique</span>
+            </span>
+          </span>
+          <button type="button" id="ldLocBtn" aria-label="Actualiser ma position" style="all:unset;cursor:pointer;padding:0 6px;color:#94A3B8;display:flex;align-items:center;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2" fill="currentColor" stroke="none"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/></svg>
+          </button>
+          <button type="submit" class="ld-search-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            Trouver un technicien
+          </button>
+        </form>
+        <div class="ld-advantages">
+          <span class="ld-advantage"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg></span>Professionnels vérifiés</span>
+          <span class="ld-advantage"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></svg></span>Intervention rapide</span>
+          <span class="ld-advantage"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg></span>Près de chez vous</span>
+          <span class="ld-advantage"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11a9 9 0 0 1 18 0v5a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2h3M3 16v-2a2 2 0 0 1 2-2h1a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2H3"/></svg></span>Support 7j/7</span>
+        </div>
+      </div>
+      <div class="ld-hero-visual">
+        <img src="{{ asset('img/landing-hero-technicien.jpg') }}" alt="Technicien FixPro" />
+        <span class="ld-slogan">Votre confort<br/><u>Notre priorité</u> !</span>
+        <div class="ld-float ld-float-home">
+          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></span>
+          <span><strong>Intervention à domicile</strong><span>Rapide et sécurisé</span></span>
+        </div>
+        <div class="ld-float ld-float-review">
+          <img class="avatar" src="{{ url_for('static', filename='img/fixpro-avatar.png') }}" alt="" />
+          <span>
+            <strong>Client satisfait</strong>
+            <span class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
+            <span>"Service rapide et professionnel !"</span>
+          </span>
+        </div>
+        <div class="ld-float ld-float-count">
+          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 21a8 8 0 0 0-16 0"/><circle cx="10" cy="8" r="5"/><path d="M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3"/></svg></span>
+          <span><strong>+500</strong><span>Techniciens qualifiés en Guinée</span></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="ld-section" id="ld-services">
+    <div class="ld-section-head">
+      <h2>Nos services</h2>
+      <p>Des professionnels qualifiés pour tous vos besoins</p>
+    </div>
+    {# Memes 6 categories que partout ailleurs (popular), reordonnees pour
+       coller a l'ordre de la maquette. #}
+    {% set ld_svc = {
+      'Plomberie':   {'bg': '#EAF1FF', 'color': '#155EEF', 'label': 'Plomberie', 'desc': 'Fuites, installation, dépannage...', 'svg': '<path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/>'},
+      'Électricité': {'bg': '#FFF7DE', 'color': '#D69E00', 'label': 'Électricité', 'desc': 'Installation, réparation, mise aux normes...', 'svg': '<path d="M15.914 4a1.5 1.5 0 0 0-2.474-1.561l-9 9A1.5 1.5 0 0 0 5.5 14h4.002a.5.5 0 0 1 .471.666L8.086 20a1.5 1.5 0 0 0 2.475 1.56l9-9A1.5 1.5 0 0 0 18.5 10h-3.997a.5.5 0 0 1-.472-.667z"/>'},
+      'Frigoriste':  {'bg': '#E6F7FF', 'color': '#0EA5E9', 'label': 'Froid & Climatisation', 'desc': 'Installation, entretien, dépannage...', 'svg': '<path d="M12 2v20M4 5l16 14M20 5 4 19M2 12h20"/>'},
+      'Peinture':    {'bg': '#FFE9F4', 'color': '#EC4899', 'label': 'Peinture', 'desc': 'Travaux intérieurs et extérieurs...', 'svg': '<rect width="16" height="6" x="2" y="2" rx="2"/><path d="M10 16v-2a2 2 0 0 1 2-2h8a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect width="4" height="6" x="8" y="16" rx="1"/>'},
+      'Maçonnerie':  {'bg': '#FFECE3', 'color': '#EA580C', 'label': 'Maçonnerie', 'desc': 'Construction, rénovation...', 'svg': '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M12 3v6"/><path d="M8 9v6"/><path d="M16 9v6"/><path d="M12 15v6"/>'},
+      'Menuiserie':  {'bg': '#E7F9EE', 'color': '#16A34A', 'label': 'Menuiserie', 'desc': 'Portes, fenêtres, meubles sur mesure...', 'svg': '<path d="M2 22s4-9 10-9 10 9 10 9"/><path d="M12 13V2l4 4"/>'}
+    } %}
+    {% set ld_by_label = {} %}
+    {% for p in popular %}{% set _ = ld_by_label.update({p.label: p}) %}{% endfor %}
+    <div class="ld-services">
+      {% for label in ['Plomberie', 'Électricité', 'Frigoriste', 'Peinture', 'Maçonnerie', 'Menuiserie'] %}
+      {% set p = ld_by_label.get(label) %}
+      {% if p %}
+      {% set meta = ld_svc.get(p.label) %}
+      <a class="ld-service" href="{{ url_for('artisans_page', category=p.category) }}">
+        <span class="ic" style="background:{{ meta.bg }};color:{{ meta.color }};">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">{{ meta.svg | safe }}</svg>
+        </span>
+        <strong>{{ meta.label }}</strong>
+        <p>{{ meta.desc }}</p>
+      </a>
+      {% endif %}
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="ld-steps-wrap" id="ld-comment">
+    <div class="ld-section" style="padding-bottom:0">
+      <div class="ld-section-head">
+        <h2>Comment ça marche ?</h2>
+        <p>Un service simple, rapide et efficace</p>
+      </div>
+    </div>
+    <div class="ld-steps-grid" style="padding-bottom:64px">
+      <div class="ld-steps">
+        <div class="ld-step">
+          <span class="ld-step-num">1</span>
+          <h3>Indiquez votre besoin</h3>
+          <p>Votre position est détectée automatiquement.</p>
+          <span class="ld-step-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+        </div>
+        <div class="ld-step">
+          <span class="ld-step-num">2</span>
+          <h3>Trouvez un technicien</h3>
+          <p>Consultez les profils disponibles près de chez vous.</p>
+          <span class="ld-step-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+        </div>
+        <div class="ld-step">
+          <span class="ld-step-num">3</span>
+          <h3>Réservez facilement</h3>
+          <p>Choisissez un créneau et confirmez votre demande.</p>
+          <span class="ld-step-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+        </div>
+        <div class="ld-step">
+          <span class="ld-step-num">4</span>
+          <h3>C'est fait !</h3>
+          <p>Le technicien intervient à domicile...</p>
+        </div>
+      </div>
+      <div class="ld-phone">
+        <div class="ld-phone-screen">
+          <span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span>
+          <strong>FixPro</strong>
+          <small>Des pros, plus près de vous.</small>
+          <div class="ld-phone-list">
+            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Rapide</span>
+            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Sécurisé</span>
+            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Professionnel</span>
+            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Disponible 7j/7</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="ld-stats-wrap">
+    <div class="ld-stats">
+      <div class="ld-stat">
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 21a8 8 0 0 0-16 0"/><circle cx="10" cy="8" r="5"/><path d="M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3"/></svg></span>
+        <span><strong>+500</strong><span>Techniciens qualifiés</span></span>
+      </div>
+      <div class="ld-stat">
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg></span>
+        <span><strong>+10 000</strong><span>Clients satisfaits</span></span>
+      </div>
+      <div class="ld-stat">
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg></span>
+        <span><strong>6</strong><span>Services principaux</span></span>
+      </div>
+      <div class="ld-stat">
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+        <span><strong>100%</strong><span>Sécurisé et fiable</span></span>
+      </div>
+    </div>
+  </section>
+
+  <section class="ld-section">
+    <div class="ld-download-grid">
+      <div class="ld-download">
+        <h2>Téléchargez l'application FixPro</h2>
+        <div>
+          <p>Trouvez un technicien partout et à tout moment.</p>
+          <div class="ld-dl-btns">
+            <button type="button" class="ld-dl-btn" id="ldInstallBtn">
+              <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M3 20.5v-17c0-.8.9-1.3 1.6-.9l13.3 8.5c.7.4.7 1.4 0 1.8L4.6 21.4c-.7.4-1.6-.1-1.6-.9z"/></svg>
+              <span class="t"><small>Bientôt sur</small><b>Google Play</b></span>
+            </button>
+            <button type="button" class="ld-dl-btn" id="ldInstallBtn2">
+              <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M16.365 1.43c0 1.14-.42 2.07-1.26 2.99-.98 1.03-2.15 1.63-3.31 1.53-.12-1.14.44-2.28 1.24-3.11.9-.94 2.36-1.6 3.33-1.41zM20.5 17.1c-.5 1.15-1.1 2.28-2.02 3.35-.83.97-1.6 1.94-2.94 1.96-1.28.03-1.69-.75-3.15-.75-1.46 0-1.92.73-3.13.78-1.29.05-2.27-1.05-3.11-2.02C4.5 18.24 2.6 12.4 5.16 9.2c1.24-1.53 3.09-2.43 4.72-2.44 1.36-.02 2.35.87 3.15.87.79 0 2.05-1.08 3.46-.92.59.02 2.24.24 3.31 1.79-1.24.8-2.08 2.19-2.05 3.65.02 2.03 1.63 3.34 2.75 3.95z"/></svg>
+              <span class="t"><small>Bientôt sur</small><b>App Store</b></span>
+            </button>
+          </div>
+          <div class="ld-dl-checklist">
+            <span><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Trouvez des techniciens près de vous</span>
+            <span><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Réservez en quelques clics</span>
+            <span><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Suivez l'intervention</span>
+            <span><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Discutez avec le technicien</span>
+            <span><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Un service fiable et sécurisé</span>
+          </div>
+        </div>
+      </div>
+      <div class="ld-download-visual">
+        <div class="ld-phone"><div class="ld-phone-screen"><span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></span><strong>Recherche</strong><small>Trouvez un pro</small></div></div>
+        <div class="ld-phone"><div class="ld-phone-screen"><span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg></span><strong>Localisation</strong><small>Autour de vous</small></div></div>
+        <div class="ld-phone"><div class="ld-phone-screen"><span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.9-.9L3 21l1.9-5.1A8.4 8.4 0 0 1 4 11.5a8.5 8.5 0 0 1 8.5-8.5A8.5 8.5 0 0 1 21 11.5z"/></svg></span><strong>Suivi</strong><small>En temps réel</small></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="ld-section ld-testimonials-wrap">
+    <div class="ld-section-head">
+      <h2>Ils nous font confiance</h2>
+      <p>Des milliers de clients satisfaits à travers la Guinée</p>
+    </div>
+    <div class="ld-testimonials">
+      <div class="ld-testi">
+        <div class="ld-testi-head">
+          <span class="ld-testi-avatar" style="background:#155EEF;">MK</span>
+          <div><strong>Mamadou K.</strong><span class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</span></div>
+        </div>
+        <p>"Plombier très professionnel. Le problème a été réglé rapidement. Je recommande FixPro !"</p>
+      </div>
+      <div class="ld-testi">
+        <div class="ld-testi-head">
+          <span class="ld-testi-avatar" style="background:#EC4899;">AD</span>
+          <div><strong>Aïssatou D.</strong><span class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</span></div>
+        </div>
+        <p>"J'ai trouvé un électricien en moins de 10 minutes. Service rapide et de qualité."</p>
+      </div>
+      <div class="ld-testi">
+        <div class="ld-testi-head">
+          <span class="ld-testi-avatar" style="background:#16A34A;">IT</span>
+          <div><strong>Ibrahima T.</strong><span class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</span></div>
+        </div>
+        <p>"Application très simple à utiliser. Les techniciens sont sérieux et ponctuels."</p>
+      </div>
+    </div>
+    <div class="ld-testi-dots"><span class="active"></span><span></span><span></span></div>
+  </section>
+
+  <section class="ld-section" id="ld-faq">
+    <div class="ld-section-head">
+      <h2>Questions fréquentes</h2>
+      <p>Trouvez rapidement les réponses à vos questions</p>
+    </div>
+    <div class="ld-faq">
+      <div class="ld-faq-item">
+        <button type="button" class="ld-faq-q">Comment fonctionne FixPro ?<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+        <div class="ld-faq-a"><p>Indiquez votre besoin, FixPro vous propose des techniciens vérifiés près de chez vous, vous réservez en quelques clics.</p></div>
+      </div>
+      <div class="ld-faq-item">
+        <button type="button" class="ld-faq-q">Combien coûte le service ?<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+        <div class="ld-faq-a"><p>Le prix dépend du service demandé et du technicien choisi. Il est communiqué avant toute confirmation de réservation.</p></div>
+      </div>
+      <div class="ld-faq-item">
+        <button type="button" class="ld-faq-q">Les techniciens sont-ils vérifiés ?<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+        <div class="ld-faq-a"><p>Oui, chaque technicien passe par une vérification de son identité et de ses documents avant d'être actif sur FixPro.</p></div>
+      </div>
+      <div class="ld-faq-item">
+        <button type="button" class="ld-faq-q">Puis-je annuler une réservation ?<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+        <div class="ld-faq-a"><p>Oui, une réservation peut être annulée depuis votre espace client avant la confirmation du technicien.</p></div>
+      </div>
+      <div class="ld-faq-item">
+        <button type="button" class="ld-faq-q">Quels sont les moyens de paiement ?<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+        <div class="ld-faq-a"><p>Les moyens de paiement disponibles s'affichent au moment de la réservation, selon le technicien et le service.</p></div>
+      </div>
+      <div class="ld-faq-item">
+        <button type="button" class="ld-faq-q">FixPro est-il disponible dans toute la Guinée ?<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+        <div class="ld-faq-a"><p>FixPro se déploie progressivement à travers la Guinée, en commençant par les zones où nos techniciens sont les plus présents.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="ld-footer">
+    <div class="ld-footer-top">
+      <div class="ld-footer-brand">
+        <span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span>
+        <span>FixPro<span>Des pros, plus près de vous.</span></span>
+      </div>
+      <nav class="ld-footer-nav">
+        <a href="{{ url_for('index') }}">Accueil</a>
+        <a href="{{ url_for('contact') }}">À propos</a>
+        <a href="#ld-services">Services</a>
+        <a href="#ld-comment">Comment ça marche</a>
+        <a href="{{ url_for('technician_subscription') }}">Tarifs</a>
+        <button type="button" data-toast="1">Blog</button>
+        <a href="{{ url_for('contact') }}">Contact</a>
+      </nav>
+      <div class="ld-footer-social">
+        <span aria-label="Facebook"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M13.5 21v-7.5H16l.5-3H13.5V8.5c0-.9.25-1.5 1.53-1.5H16.5V4.3C16.2 4.26 15.2 4.17 14 4.17c-2.4 0-4.05 1.47-4.05 4.17V10.5H7.5v3H10V21h3.5z"/></svg></span>
+        <span aria-label="Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1"/></svg></span>
+        <span aria-label="LinkedIn"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M6.94 5a2 2 0 1 1-4-.02 2 2 0 0 1 4 .02zM3.5 8.75h3.9V21H3.5zM10.5 8.75h3.74v1.68h.05c.52-.94 1.8-1.93 3.7-1.93 3.96 0 4.69 2.5 4.69 5.75V21h-3.9v-6.02c0-1.44-.03-3.28-2-3.28-2 0-2.31 1.56-2.31 3.18V21h-3.9z"/></svg></span>
+        <span aria-label="YouTube"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M23 12s0-3.4-.43-5a2.78 2.78 0 0 0-2-2C18.9 4.5 12 4.5 12 4.5s-6.9 0-8.57.5a2.78 2.78 0 0 0-2 2C1 8.6 1 12 1 12s0 3.4.43 5a2.78 2.78 0 0 0 2 2c1.67.5 8.57.5 8.57.5s6.9 0 8.57-.5a2.78 2.78 0 0 0 2-2C23 15.4 23 12 23 12z"/><path d="M10 15.5v-7l6 3.5z" fill="#0B1E4D"/></svg></span>
+      </div>
+    </div>
+    <div class="ld-footer-bottom">
+      <span>&copy; 2026 FixPro. Tous droits réservés.</span>
+      <span><a href="{{ url_for('contact') }}">Aide</a> &middot; <button type="button" data-toast="1" style="background:none;border:none;color:inherit;cursor:pointer;font:inherit;padding:0;">Confidentialité</button> &middot; <button type="button" data-toast="1" style="background:none;border:none;color:inherit;cursor:pointer;font:inherit;padding:0;">Conditions</button></span>
+    </div>
+  </footer>
+
+  <div class="ld-toast" id="ldToast"></div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    var toast = document.getElementById('ldToast');
+    function showToast(msg) {
+      if (!toast) return;
+      toast.textContent = msg;
+      toast.classList.add('show');
+      clearTimeout(toast._t);
+      toast._t = setTimeout(function () { toast.classList.remove('show'); }, 2200);
+    }
+    document.querySelectorAll('[data-toast]').forEach(function (el) {
+      el.addEventListener('click', function () { showToast('Bientôt disponible'); });
+    });
+    var installBtns = [document.getElementById('ldInstallBtn'), document.getElementById('ldInstallBtn2')];
+    installBtns.forEach(function (btn) {
+      if (btn) btn.addEventListener('click', function () {
+        showToast("FixPro s'installe directement depuis ce navigateur (menu > Ajouter à l'écran d'accueil).");
+      });
+    });
+    var locBtn = document.getElementById('ldLocBtn');
+    if (locBtn) {
+      locBtn.addEventListener('click', function () {
+        if (!navigator.geolocation) { showToast('Géolocalisation non prise en charge par ce navigateur.'); return; }
+        var csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+        navigator.geolocation.getCurrentPosition(function (pos) {
+          fetch('/api/location', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+            body: JSON.stringify({ lat: pos.coords.latitude, lon: pos.coords.longitude, accuracy: pos.coords.accuracy || 0 })
+          }).then(function (r) { return r.json(); }).then(function (data) {
+            var label = document.getElementById('ldLocLabel');
+            if (data.ok && label) label.textContent = data.zone || 'Position actualisée';
+          }).catch(function () { showToast('Erreur réseau lors de la géolocalisation.'); });
+        }, function () {
+          fetch('/api/location/denied', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+            body: JSON.stringify({})
+          });
+          showToast('Localisation refusée.');
+        });
+      });
+    }
+    document.querySelectorAll('.ld-faq-item').forEach(function (item) {
+      var q = item.querySelector('.ld-faq-q');
+      q.addEventListener('click', function () { item.classList.toggle('open'); });
+    });
+  });
+</script>

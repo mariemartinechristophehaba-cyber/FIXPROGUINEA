@@ -4,5 +4,8 @@
 {% block footer %}{% endblock %}
 
 {% block content %}
+{% if not nav_user %}
+{% include '_landing_public.html' %}
+{% endif %}
 {% include '_home_new.html' %}
 {% endblock %}
