@@ -55,56 +55,19 @@
     .intro h1 { margin: 0; font-size: clamp(1.9rem, 7vw, 2.5rem); font-weight: 900; letter-spacing: -.03em; }
     .intro p { margin: 8px 0 0; font-size: clamp(.92rem, 3.7vw, 1.02rem); color: var(--d-muted); line-height: 1.45; max-width: 46ch; }
 
-    /* ---------- Hero ---------- */
-    .hero {
-      position: relative; margin-top: 20px; border-radius: 22px; overflow: hidden;
-      background: linear-gradient(135deg, #EAF3FF 0%, #F7F9FC 55%, #FFF7E6 100%);
-      border: 1px solid var(--d-line); padding: clamp(22px, 5vw, 40px) clamp(18px, 5vw, 40px);
-      display: grid; grid-template-columns: 1fr; gap: 22px;
-    }
-    @media (min-width: 760px) {
-      .hero { grid-template-columns: 1.15fr .95fr; align-items: stretch; min-height: 340px; padding-right: 0; }
-    }
-    .hero-wave { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
-    .hero-wave svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-    .hero-tx, .hero-img { position: relative; z-index: 1; }
-    .hero-tx h2 { margin: 0; font-size: clamp(1.5rem, 5.4vw, 2.1rem); font-weight: 900; letter-spacing: -.03em; line-height: 1.15; color: var(--d-ink2); }
-    .hero-tx h2 b { color: var(--d-blue); font-weight: 900; }
-    .hero-tx p { margin: 10px 0 0; font-size: clamp(.9rem, 3.4vw, 1rem); color: var(--d-muted); max-width: 40ch; line-height: 1.5; }
-    .hero-pills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+    /* ---------- Hero (simple, sans photo) ---------- */
+    .hero { margin-top: 18px; }
+    .hero h2 { margin: 0; font-size: clamp(1.5rem, 5.4vw, 2.1rem); font-weight: 900; letter-spacing: -.03em; line-height: 1.15; color: var(--d-ink2); }
+    .hero h2 b { color: var(--d-blue); font-weight: 900; }
+    .hero p { margin: 8px 0 0; font-size: clamp(.9rem, 3.4vw, 1rem); color: var(--d-muted); max-width: 46ch; line-height: 1.5; }
+    .hero-pills { display: flex; gap: 8px; margin-top: 18px; }
     .hero-pill {
-      display: inline-flex; align-items: center; gap: 7px; background: #fff; border-radius: 999px;
-      padding: 9px 14px 9px 10px; font-size: .82rem; font-weight: 800; color: var(--d-ink);
-      box-shadow: 0 6px 16px rgba(11,31,75,.08);
+      flex: 1 1 0; min-width: 0; display: flex; align-items: center; gap: 8px; background: var(--d-ice);
+      border-radius: 16px; padding: clamp(9px, 2.6vw, 14px) clamp(7px, 2vw, 14px);
+      font-size: clamp(.68rem, 2.9vw, .88rem); font-weight: 800; color: var(--d-ink2); line-height: 1.2;
     }
-    .hero-pill .pic { width: 26px; height: 26px; border-radius: 999px; background: var(--d-ice); color: var(--d-blue); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-    .hero-pill .pic svg { width: 14px; height: 14px; }
-    .hero-img { position: relative; border-radius: 18px; overflow: hidden; aspect-ratio: 3/2; background: #DCE8FF; }
-    .hero-img img { width: 100%; height: 100%; object-fit: cover; object-position: 100% 10%; transform: scale(1.55); transform-origin: 100% 10%; display: block; }
-    @media (min-width: 760px) {
-      .hero-img {
-        border-radius: 18px 0 22px 0; aspect-ratio: auto; align-self: stretch;
-        margin: clamp(-40px, -5vw, -22px) clamp(-40px, -5vw, -18px) clamp(-40px, -5vw, -22px) 0;
-      }
-      .hero-img img { object-position: 100% 20%; transform: scale(1.55); transform-origin: 100% 20%; }
-    }
-    .hero-img .ph-fallback { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--d-blue); background: linear-gradient(160deg, #DCE8FF, #EAF3FF); }
-    .hero-img .ph-fallback svg { width: 34%; height: 34%; opacity: .55; }
-    .hero-tag {
-      position: absolute; bottom: 12px; left: 12px; background: rgba(255,255,255,.94); backdrop-filter: blur(4px);
-      border-radius: 12px; padding: 8px 12px; font-size: .78rem; font-weight: 800; color: var(--d-ink2);
-      box-shadow: 0 8px 18px rgba(11,31,75,.14);
-    }
-    .hero-note {
-      position: absolute; top: 10px; right: 8px; max-width: 118px;
-      font-family: 'Segoe Script', 'Bradley Hand', cursive; color: var(--d-ink2);
-      font-size: .82rem; font-weight: 700; line-height: 1.25; text-align: right;
-      text-shadow: 0 1px 6px rgba(255,255,255,.9), 0 1px 2px rgba(255,255,255,.9);
-      transform: rotate(-3deg);
-    }
-    .hero-note svg { width: 30px; height: 22px; display: block; margin: 3px 0 0 auto; color: var(--d-blue); }
-    @media (max-width: 480px) { .hero-note { font-size: .74rem; max-width: 96px; top: 6px; right: 6px; } .hero-note svg { width: 24px; height: 18px; } }
-    @media (min-width: 760px) { .hero-note { top: 16px; right: 24px; max-width: 140px; } }
+    .hero-pill .pic { width: clamp(26px, 7vw, 34px); height: clamp(26px, 7vw, 34px); border-radius: 999px; background: #fff; color: var(--d-blue); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .hero-pill .pic svg { width: 52%; height: 52%; }
 
     /* ---------- Toggle ---------- */
     .pay-resume { display: flex; align-items: center; gap: 10px; margin-top: 18px; background: #FEF6E7; border: 1px solid #FBE3B4; border-radius: 14px; padding: 12px 14px; color: #92400E; }
@@ -285,29 +248,12 @@
     </section>
 
     <section class="hero">
-      <span class="hero-wave" aria-hidden="true">
-        <svg viewBox="0 0 800 400" preserveAspectRatio="none">
-          <path d="M0,60 C160,120 320,0 480,50 C620,95 720,40 800,70 L800,0 L0,0 Z" fill="#FFFFFF" opacity=".55"/>
-          <path d="M0,120 C180,60 360,170 540,110 C660,70 740,130 800,100 L800,400 L0,400 Z" fill="#EAF3FF" opacity=".6"/>
-        </svg>
-      </span>
-      <div class="hero-tx">
-        <h2>Développez votre activité avec <b>FixPro</b></h2>
-        <p>Plus d'opportunités. Plus de clients. Un avenir meilleur.</p>
-        <div class="hero-pills">
-          <span class="hero-pill"><span class="pic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg></span>Plus de visibilité</span>
-          <span class="hero-pill"><span class="pic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>Plus de clients</span>
-          <span class="hero-pill"><span class="pic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>Plus de revenus</span>
-        </div>
-      </div>
-      <div class="hero-img">
-        {% set _hero_img = url_for('static', filename='img/technician-hero-v2-hd.jpg') %}
-        <img src="{{ _hero_img }}" alt="Technicien FixPro" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'" />
-        <span class="ph-fallback" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/></svg></span>
-        <span class="hero-note">Ensemble pour des services de qualité !
-          <svg viewBox="0 0 40 26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4c10 2 20 6 26 16"/><path d="M20 17l8 3-2-8"/></svg>
-        </span>
-        <span class="hero-tag">Des techniciens de confiance, partout en Guinée.</span>
+      <h2>Développez votre activité avec <b>FixPro</b></h2>
+      <p>Plus d'opportunités. Plus de clients. Un avenir meilleur.</p>
+      <div class="hero-pills">
+        <span class="hero-pill"><span class="pic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg></span>Plus de visibilité</span>
+        <span class="hero-pill"><span class="pic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>Plus de clients</span>
+        <span class="hero-pill"><span class="pic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>Plus de revenus</span>
       </div>
     </section>
 
