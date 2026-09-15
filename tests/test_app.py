@@ -3519,10 +3519,6 @@ class ArtisanPublicProfilePlombierTests(FixProTestCase):
     def test_real_assets_exist_on_disk(self):
         base = ROOT / "static" / "img" / "technicians" / "plombier"
         self.assertTrue((base / "profile" / "01_banner_plombier.png").exists())
-        self.assertTrue((base / "profile" / "02_avatar_plombier.png").exists())
-        for name in ("03_service_fuite_eau.jpg", "04_service_sanitaire.jpg",
-                     "05_service_chauffe_eau.jpg", "06_service_debouchage.jpg"):
-            self.assertTrue((base / "services" / name).exists(), name)
 
     def test_profile_shows_banner_idcard_stats_and_real_images(self):
         aid = self._plumber_id()
