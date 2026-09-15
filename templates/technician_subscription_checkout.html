@@ -166,6 +166,54 @@
     .phone-err { margin: 7px 0 0; font-size: .77rem; font-weight: 700; color: #B91C1C; }
     .phone-hint { margin: 9px 0 0; font-size: .78rem; color: var(--d-muted); line-height: 1.4; }
 
+    /* --- Formulaire carte --- */
+    .card-brands {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      background: var(--d-ice); border-radius: 15px; padding: 14px 16px; margin-top: clamp(14px, 3vw, 20px);
+    }
+    .cbrand {
+      display: flex; align-items: center; justify-content: center; height: 34px; padding: 0 10px;
+      border-radius: 8px; background: #fff; box-shadow: 0 2px 6px rgba(11,27,59,.08);
+      font-weight: 900; font-style: italic; font-size: .82rem; color: #1A1F71; letter-spacing: -.02em;
+    }
+    .cbrand.mc { gap: 0; position: relative; width: 46px; }
+    .cbrand.mc .mc-c1, .cbrand.mc .mc-c2 { width: 18px; height: 18px; border-radius: 999px; }
+    .cbrand.mc .mc-c1 { background: #EB001B; margin-right: -7px; }
+    .cbrand.mc .mc-c2 { background: #F79E1B; opacity: .85; }
+    .cbrand.amex { background: #1F72CD; color: #fff; font-style: normal; font-size: .58rem; line-height: 1.15; text-align: center; font-weight: 800; }
+    .cbrand-sec {
+      display: flex; align-items: center; gap: 9px; flex: 1 1 180px; min-width: 0;
+      font-size: .78rem; color: var(--d-blue); line-height: 1.35;
+    }
+    .cbrand-sec svg { width: 26px; height: 26px; flex-shrink: 0; }
+    .cbrand-sec b { color: var(--d-ink2); }
+
+    .cfield { display: block; margin-top: 14px; }
+    .cflabel { display: block; font-size: .88rem; font-weight: 800; margin-bottom: 8px; color: var(--d-ink2); }
+    .cfin {
+      display: flex; align-items: stretch; background: #fff; border: 1.5px solid var(--d-line);
+      border-radius: 13px; overflow: hidden; position: relative;
+    }
+    .cfin:focus-within { border-color: var(--d-blue); }
+    .cfin input {
+      flex: 1; min-width: 0; border: 0; outline: 0; background: transparent;
+      padding: 13px; font-size: .98rem; color: var(--d-ink); letter-spacing: .02em;
+    }
+    .cfin svg { width: 19px; height: 19px; color: var(--d-muted); flex-shrink: 0; align-self: center; margin-right: 13px; }
+    .cfin .cfeye { border: 0; background: transparent; padding: 0 13px; display: flex; align-items: center; cursor: pointer; color: var(--d-muted); }
+    .cfin .cfeye svg { margin-right: 0; }
+    .cfield-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .cfield-row .cfield { margin-top: 14px; }
+
+    .csave {
+      display: flex; align-items: flex-start; gap: 11px; margin-top: 16px; cursor: pointer;
+      font-size: .86rem; color: var(--d-ink); line-height: 1.4;
+    }
+    .csave input {
+      width: 20px; height: 20px; flex-shrink: 0; accent-color: var(--d-blue); margin-top: 1px;
+    }
+    .csave em { font-style: normal; color: var(--d-muted); }
+
     /* --- Étape vérification --- */
     .review-card {
       margin-top: 14px; background: #fff; border: 1.5px solid var(--d-line); border-radius: 15px;
@@ -322,6 +370,73 @@
         </p>
       </div>
 
+      <!-- Étape 1b : formulaire carte (affiché uniquement si "Carte bancaire" est choisie) -->
+      <div id="stepCard" hidden>
+        <h1 class="h1">Informations de la carte</h1>
+        <p class="pay-sub" style="text-align:center">Entrez les informations de votre carte pour continuer votre abonnement.</p>
+
+        <div class="card-brands">
+          <span class="cbrand visa">VISA</span>
+          <span class="cbrand mc"><span class="mc-c1"></span><span class="mc-c2"></span></span>
+          <span class="cbrand amex">AMERICAN<br>EXPRESS</span>
+          <span class="cbrand-sec">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+            <span><b>Paiement sécurisé</b><br>Vos données sont protégées et chiffrées (SSL).</span>
+          </span>
+        </div>
+
+        <label class="cfield">
+          <span class="cflabel">Numéro de carte</span>
+          <span class="cfin">
+            <input type="text" id="cardNumber" inputmode="numeric" autocomplete="cc-number" placeholder="1234 5678 9012 3456" maxlength="19" />
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+          </span>
+        </label>
+
+        <div class="cfield-row">
+          <label class="cfield">
+            <span class="cflabel">Date d'expiration</span>
+            <span class="cfin">
+              <input type="text" id="cardExpiry" inputmode="numeric" autocomplete="cc-exp" placeholder="MM / AA" maxlength="7" />
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/></svg>
+            </span>
+          </label>
+          <label class="cfield">
+            <span class="cflabel">CVV</span>
+            <span class="cfin">
+              <input type="password" id="cardCvv" inputmode="numeric" autocomplete="cc-csc" placeholder="123" maxlength="4" />
+              <button type="button" class="cfeye" id="cvvToggle" aria-label="Afficher le CVV">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </span>
+          </label>
+        </div>
+
+        <label class="cfield">
+          <span class="cflabel">Nom sur la carte</span>
+          <span class="cfin">
+            <input type="text" id="cardName" autocomplete="cc-name" placeholder="Ex : Jean Diallo" />
+          </span>
+        </label>
+
+        <label class="csave">
+          <input type="checkbox" id="cardSave" checked />
+          <span>Enregistrer cette carte pour mes prochains paiements <em>(optionnel)</em></span>
+        </label>
+
+        <div class="ssl-note">
+          <span class="li"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+          <p>Vos paiements sont sécurisés et protégés par un chiffrement SSL. Nous ne stockons pas vos informations bancaires sur nos serveurs.</p>
+        </div>
+
+        <p class="phone-err" id="cardErr" hidden>Vérifiez le numéro de carte, la date d'expiration et le CVV.</p>
+
+        <button type="button" class="cta" id="cardContinueBtn">
+          Continuer
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+      </div>
+
       <!-- Étape 2 : récapitulatif / vérification avant paiement (aucune tentative de paiement n'est créée avant ce point) -->
       <div id="stepReview" hidden>
         <h1 class="h1">Récapitulatif de votre abonnement</h1>
@@ -357,6 +472,8 @@
           <div class="rrow"><span class="k">Montant</span><span class="v" id="rvAmount">{{ "{:,}".format(amount) | replace(",", " ") }} GNF</span></div>
           <div class="rrow"><span class="k">Méthode de paiement</span><span class="v" id="rvMethod">Orange Money</span></div>
           <div class="rrow" id="rvPhoneRow" hidden><span class="k">Numéro</span><span class="v" id="rvPhone"></span></div>
+          <div class="rrow" id="rvCardRow" hidden><span class="k">Carte</span><span class="v" id="rvCardNum"></span></div>
+          <div class="rrow" id="rvCardNameRow" hidden><span class="k">Nom</span><span class="v" id="rvCardName"></span></div>
         </div>
 
         <div class="ssl-note">
@@ -395,7 +512,15 @@
       var input = document.getElementById('payerPhone');
       var err = document.getElementById('phoneErr');
       var stepInfo = document.getElementById('stepInfo');
+      var stepCard = document.getElementById('stepCard');
       var stepReview = document.getElementById('stepReview');
+      var lastMethodLabel = '';
+      var lastStepFromReview = stepInfo;
+
+      function showStep(step) {
+        [stepInfo, stepCard, stepReview].forEach(function (s) { s.hidden = (s !== step); });
+        window.scrollTo({ top: step.offsetTop - 80, behavior: 'smooth' });
+      }
 
       function currentCode() {
         var c = document.querySelector('.method input:checked');
@@ -426,9 +551,16 @@
       var checked = document.querySelector('.method.sel') || document.querySelector('.method');
       if (checked) sync(checked);
 
-      // Étape 1 -> Étape 2 : valide le numéro (mobile money), puis affiche
-      // le récapitulatif de vérification. Aucune tentative de paiement
-      // n'est créée à ce stade — seulement au clic sur "Confirmer le paiement".
+      function fillReviewCommon(label) {
+        lastMethodLabel = label;
+        document.getElementById('hiddenMethod').value = currentCode() || '';
+        document.getElementById('rvMethod').textContent = label;
+        document.getElementById('rvViaMethod').textContent = 'par ' + label;
+      }
+
+      // Étape 1 (mode de paiement) -> soit le formulaire carte, soit directement
+      // le récapitulatif (mobile money). Aucune tentative de paiement n'est
+      // créée à ce stade — seulement au clic sur "Confirmer le paiement".
       document.getElementById('continueBtn').addEventListener('click', function () {
         var sel = document.querySelector('.method.sel') || document.querySelector('.method');
         var code = currentCode();
@@ -442,29 +574,77 @@
             input.focus();
             return;
           }
-        }
-
-        document.getElementById('hiddenMethod').value = code || '';
-        document.getElementById('hiddenPhone').value = isMobile ? (input.value || '') : '';
-        document.getElementById('rvMethod').textContent = label;
-        document.getElementById('rvViaMethod').textContent = 'par ' + label;
-        var phoneRow = document.getElementById('rvPhoneRow');
-        if (isMobile) {
-          phoneRow.hidden = false;
+          fillReviewCommon(label);
+          document.getElementById('hiddenPhone').value = input.value || '';
+          document.getElementById('rvPhoneRow').hidden = false;
           document.getElementById('rvPhone').textContent = '+224 ' + input.value;
+          document.getElementById('rvCardRow').hidden = true;
+          document.getElementById('rvCardNameRow').hidden = true;
+          lastStepFromReview = stepInfo;
+          showStep(stepReview);
+        } else if (code === 'card') {
+          showStep(stepCard);
         } else {
-          phoneRow.hidden = true;
+          fillReviewCommon(label);
+          document.getElementById('hiddenPhone').value = '';
+          document.getElementById('rvPhoneRow').hidden = true;
+          document.getElementById('rvCardRow').hidden = true;
+          document.getElementById('rvCardNameRow').hidden = true;
+          lastStepFromReview = stepInfo;
+          showStep(stepReview);
         }
+      });
 
-        stepInfo.hidden = true;
-        stepReview.hidden = false;
-        window.scrollTo({ top: stepReview.offsetTop - 80, behavior: 'smooth' });
+      // --- Formulaire carte : mise en forme + validation légère (aucune
+      // donnée de carte n'est jamais transmise au serveur : ces champs
+      // n'ont pas d'attribut "name" et ne sont utilisés que pour l'affichage
+      // des 4 derniers chiffres dans le récapitulatif, aucun prestataire de
+      // paiement carte réel n'étant branché à ce jour). ---
+      var cardNumber = document.getElementById('cardNumber');
+      var cardExpiry = document.getElementById('cardExpiry');
+      var cardCvv = document.getElementById('cardCvv');
+      var cardName = document.getElementById('cardName');
+      var cardErr = document.getElementById('cardErr');
+
+      cardNumber.addEventListener('input', function () {
+        var digits = cardNumber.value.replace(/\D/g, '').slice(0, 16);
+        cardNumber.value = digits.replace(/(.{4})/g, '$1 ').trim();
+      });
+      cardExpiry.addEventListener('input', function () {
+        var digits = cardExpiry.value.replace(/\D/g, '').slice(0, 4);
+        cardExpiry.value = digits.length > 2 ? digits.slice(0, 2) + ' / ' + digits.slice(2) : digits;
+      });
+      cardCvv.addEventListener('input', function () {
+        cardCvv.value = cardCvv.value.replace(/\D/g, '').slice(0, 4);
+      });
+      document.getElementById('cvvToggle').addEventListener('click', function () {
+        cardCvv.type = cardCvv.type === 'password' ? 'text' : 'password';
+      });
+
+      document.getElementById('cardContinueBtn').addEventListener('click', function () {
+        var digits = cardNumber.value.replace(/\D/g, '');
+        var expOk = /^\d{2} \/ \d{2}$/.test(cardExpiry.value);
+        var cvvOk = cardCvv.value.length >= 3;
+        var nameOk = (cardName.value || '').trim().length > 1;
+        if (digits.length < 13 || !expOk || !cvvOk || !nameOk) {
+          cardErr.hidden = false;
+          return;
+        }
+        cardErr.hidden = true;
+
+        fillReviewCommon('Carte bancaire');
+        document.getElementById('hiddenPhone').value = '';
+        document.getElementById('rvPhoneRow').hidden = true;
+        document.getElementById('rvCardRow').hidden = false;
+        document.getElementById('rvCardNum').textContent = '•••• •••• •••• ' + digits.slice(-4);
+        document.getElementById('rvCardNameRow').hidden = false;
+        document.getElementById('rvCardName').textContent = cardName.value.trim();
+        lastStepFromReview = stepCard;
+        showStep(stepReview);
       });
 
       document.getElementById('backBtn').addEventListener('click', function () {
-        stepReview.hidden = true;
-        stepInfo.hidden = false;
-        window.scrollTo({ top: stepInfo.offsetTop - 80, behavior: 'smooth' });
+        showStep(lastStepFromReview);
       });
     })();
   </script>
