@@ -290,7 +290,10 @@
           <input type="radio" name="payment_method" value="{{ m.code }}" {{ 'checked' if loop.first }} />
           <span class="mi {{ m.brand }}">
             {% if m.brand == 'orange' %}
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 20 20 4M9 4h11v11"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 14 14 4"/><path d="M8 4h6v6"/>
+              <path d="M20 10 10 20"/><path d="M16 20h-6v-6"/>
+            </svg>
             {% elif m.brand == 'mtn' %}MTN
             {% else %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/></svg>{% endif %}
           </span>
