@@ -296,8 +296,29 @@
       <input type="hidden" name="plan" value="{{ plan.code }}" />
       <input type="hidden" name="period" value="{{ period }}" />
 
-      <!-- Étape 1 : choix du moyen de paiement + informations -->
-      <div id="stepInfo">
+      <!-- Étape 1 : récapitulatif, avant toute saisie -->
+      <div id="stepRecap">
+        <h2 class="pay-title">Récapitulatif de votre abonnement</h2>
+        <div class="review-card">
+          <div class="rrow"><span class="k">Période</span><span class="v">{{ 'Mensuel' if period == 'month' else 'Annuel' }}</span></div>
+          <div class="rrow"><span class="k">Date de début</span><span class="v">{{ start_label }}</span></div>
+          <div class="rrow">
+            <span class="k">Méthode de paiement</span>
+            <span class="v" id="recapMethodName">{{ methods[0].label if methods }}</span>
+          </div>
+        </div>
+        <div class="ssl-note">
+          <span class="li"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v4h1"/></svg></span>
+          <p>Veuillez vérifier toutes les informations avant de continuer.</p>
+        </div>
+        <button type="button" class="cta" id="recapContinueBtn">
+          Confirmer et payer
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+      </div>
+
+      <!-- Étape 2 : choix du moyen de paiement + informations -->
+      <div id="stepInfo" hidden>
         <h2 class="pay-title">Choisissez votre mode de paiement</h2>
         <p class="pay-sub">Plusieurs options sécurisées pour payer votre abonnement.</p>
 
@@ -400,8 +421,15 @@
       var secureNameEl = document.getElementById('secureMethodName');
       var input = document.getElementById('payerPhone');
       var err = document.getElementById('phoneErr');
+      var stepRecap = document.getElementById('stepRecap');
       var stepInfo = document.getElementById('stepInfo');
       var stepReview = document.getElementById('stepReview');
+
+      document.getElementById('recapContinueBtn').addEventListener('click', function () {
+        stepRecap.hidden = true;
+        stepInfo.hidden = false;
+        window.scrollTo({ top: stepInfo.offsetTop - 80, behavior: 'smooth' });
+      });
 
       function currentCode() {
         var c = document.querySelector('.method input:checked');
