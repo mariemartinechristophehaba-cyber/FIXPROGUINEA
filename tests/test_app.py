@@ -167,11 +167,7 @@ class HealthAndSecurityTests(FixProTestCase):
         self.assertIn("Referrer-Policy", headers)
 
     def test_landing_page_is_public(self):
-        # Un visiteur non connecte est redirige directement vers la connexion.
-        resp = self.client.get("/")
-        self.assertEqual(resp.status_code, 302)
-        self.assertIn("/login", resp.headers["Location"])
-        self.assertEqual(self.client.get("/login").status_code, 200)
+        self.assertEqual(self.client.get("/").status_code, 200)
 
     def test_unknown_page_returns_404(self):
         self.assertEqual(self.client.get("/page-inexistante").status_code, 404)
@@ -4032,7 +4028,7 @@ class StaticAssetVersioningTests(FixProTestCase):
 
     def test_css_url_carries_content_hash(self):
         import hashlib
-        html = self.client.get("/login").get_data(as_text=True)
+        html = self.client.get("/").get_data(as_text=True)
         css = (Path(fixpro_app.app.static_folder) / "css" / "fixpro.css").read_bytes()
         expected = hashlib.md5(css).hexdigest()[:10]
         self.assertIn("css/fixpro.css?v=" + expected, html)
