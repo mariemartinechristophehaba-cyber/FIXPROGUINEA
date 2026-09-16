@@ -1512,8 +1512,15 @@ def index():
             session["fixpro_space"] = "client"
         if session.get("fixpro_space") != "client":
             return redirect(url_for("artisan_dashboard"))
-    # Visiteur non connecte : ecran de choix "Je suis Client" / "Je suis Technicien"
-    # avant l'accueil public. Le choix "Client" est memorise en session (aucun
+    # Visiteur non connecte : ecran d'ouverture FixPro (Page 1), une seule
+    # fois par session (premiere ouverture / URL directe / nouvelle session),
+    # jamais rejoue a chaque navigation interne : le flag est pose des que la
+    # page est rendue, avant meme que le JS client ne redirige vers la suite.
+    if not _u and not session.get("splash_seen"):
+        session["splash_seen"] = True
+        return render_template("splash.html")
+    # Ecran de choix "Je suis Client" / "Je suis Technicien" avant l'accueil
+    # public (Page 2). Le choix "Client" est memorise en session (aucun
     # compte requis pour le parcours client, cf. maquette du parcours utilisateur).
     if not _u:
         if request.args.get("guest") == "client":
