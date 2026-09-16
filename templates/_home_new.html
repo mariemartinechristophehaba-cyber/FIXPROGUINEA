@@ -146,180 +146,6 @@
   .hp-header-waves { position: absolute; left: 0; right: 0; bottom: -1px; z-index: 1; line-height: 0; }
   .hp-header-waves svg { display: block; width: 100%; height: 70px; }
 
-  /* --- hero --- */
-  .hp-hero {
-    position: relative; z-index: 2;
-    background: #F4F7FD;
-    padding: 16px 16px 20px;
-    min-height: 300px;
-    overflow: hidden;
-  }
-  .hp-hero-bg {
-    position: absolute; top: 0; right: -8%; z-index: 0;
-    width: 142%; height: 100%;
-    object-fit: cover; object-position: 58% 6%;
-    pointer-events: none;
-  }
-  .hp-hero::after {
-    content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
-    background:
-      linear-gradient(100deg, #F4F7FD 22%, rgba(244,247,253,0.9) 42%, rgba(244,247,253,0) 68%),
-      linear-gradient(to bottom, transparent 72%, #F4F7FD 100%);
-  }
-  .hp-hero-inner { position: relative; z-index: 3; max-width: 1100px; margin: 0 auto; }
-  .hp-hero-text { max-width: 55%; position: relative; }
-  .hp-hero h1 {
-    font-size: 1.22rem; font-weight: 800; color: var(--hp-text);
-    margin: 0 0 8px; line-height: 1.32;
-  }
-  .hp-hero h1 strong { color: var(--hp-primary); font-weight: 800; }
-  .hp-hero-pin {
-    position: absolute; top: 34px; right: -16px; z-index: 4; line-height: 0; color: var(--hp-primary);
-  }
-  .hp-hero-pin svg { width: 26px; height: 26px; display: block; filter: drop-shadow(0 4px 8px rgba(21,94,239,.28)); }
-  .hp-hero-sub { margin: 0; color: var(--hp-muted); font-size: 0.8rem; font-weight: 500; }
-  .hp-hero-sub b { color: var(--hp-primary); font-weight: 700; }
-
-  .hp-hero-chips { display: flex; flex-wrap: nowrap; gap: 8px; margin-top: 14px; max-width: 78%; }
-  .hp-chip {
-    flex: 1 1 0; min-width: 0;
-    display: flex; align-items: center; gap: 6px;
-    background: rgba(255,255,255,0.97); border: 1px solid #DEE7F5; border-radius: 12px;
-    padding: 7px 9px; box-shadow: 0 6px 16px rgba(16,42,67,0.08);
-  }
-  .hp-chip-icon {
-    width: 26px; height: 26px; border-radius: 8px; flex-shrink: 0;
-    background: var(--hp-light-blue); color: var(--hp-primary);
-    display: flex; align-items: center; justify-content: center;
-  }
-  .hp-chip-icon svg { width: 15px; height: 15px; }
-  .hp-chip-text { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; }
-  .hp-chip-text strong { font-size: 0.6rem; color: var(--hp-text); white-space: nowrap; }
-  .hp-chip-text span { font-size: 0.53rem; color: var(--hp-muted); white-space: nowrap; }
-
-  /* --- main --- */
-  .hp-main { padding: 0 16px 24px; position: relative; z-index: 2; }
-  .hp-card {
-    background: #fff; border-radius: 22px;
-    box-shadow: 0 10px 34px rgba(16,42,67,0.07);
-    padding: 20px 16px; margin: -14px 0 20px;
-  }
-  .hp-card-head, .hp-section-head {
-    display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;
-  }
-  .hp-section-head { margin: 4px 0 14px; }
-  .hp-card-head h2, .hp-section-head h2 { font-size: 1.05rem; font-weight: 800; color: var(--hp-text); margin: 0; }
-  .hp-card-head a, .hp-section-head a {
-    color: var(--hp-primary); text-decoration: none; font-size: 0.82rem; font-weight: 700;
-    display: flex; align-items: center; gap: 3px; white-space: nowrap;
-  }
-  .hp-card-head a svg, .hp-section-head a svg { width: 15px; height: 15px; }
-
-  /* --- categories (scroll row) --- */
-  .hp-cats {
-    display: flex; gap: 12px; overflow-x: auto; margin: 0 -4px 4px; padding: 2px 4px 10px;
-    scrollbar-width: none; -webkit-overflow-scrolling: touch;
-  }
-  .hp-cats::-webkit-scrollbar { display: none; }
-  .hp-cat {
-    flex: 0 0 auto; width: 105px;
-    display: flex; flex-direction: column; align-items: center; text-align: center;
-    text-decoration: none; border-radius: 16px; padding: 13px 8px 11px;
-    background: #fff; border: 1px solid var(--hp-line); position: relative; overflow: hidden;
-    transition: transform .12s, box-shadow .12s, border-color .12s;
-  }
-  .hp-cat:active { transform: scale(0.98); }
-  .hp-cat.active { border-color: #BFD3FF; box-shadow: 0 8px 20px rgba(21,94,239,0.14); }
-  .hp-cat-icon {
-    width: 44px; height: 44px; border-radius: 13px; margin-bottom: 9px;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .hp-cat-icon svg {
-    width: 22px; height: 22px; fill: none; stroke: currentColor;
-    stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round;
-  }
-  .hp-cat h3 { font-size: 0.8rem; color: var(--hp-text); margin: 0 0 3px; font-weight: 700; }
-  .hp-cat p { font-size: 0.62rem; color: var(--hp-muted); margin: 0 0 10px; line-height: 1.28; }
-  .hp-cat-bar { width: 24px; height: 4px; border-radius: 4px; margin-top: auto; }
-
-  /* --- location --- */
-  .hp-loc {
-    display: flex; align-items: center; justify-content: space-between;
-    background: #F5F8FF; border: 1px solid var(--hp-line); border-radius: 16px;
-    padding: 12px 14px; margin-bottom: 14px;
-  }
-  .hp-loc-left { display: flex; align-items: center; gap: 12px; }
-  .hp-loc-dot {
-    width: 38px; height: 38px; border-radius: 50%;
-    background: var(--hp-light-blue); color: var(--hp-primary);
-    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-  }
-  .hp-loc-dot svg { width: 20px; height: 20px; }
-  .hp-loc-text { display: flex; flex-direction: column; }
-  .hp-loc-text strong { font-size: 0.95rem; color: var(--hp-text); font-weight: 700; }
-  .hp-loc-text span { font-size: 0.75rem; color: var(--hp-muted); }
-  .hp-loc-target { background: transparent; border: none; padding: 4px; cursor: pointer; color: var(--hp-primary); }
-  .hp-loc-target svg { width: 22px; height: 22px; }
-
-  .hp-search-btn {
-    display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%;
-    background: var(--hp-primary); color: #fff; border-radius: 15px; padding: 16px;
-    text-decoration: none; font-weight: 700; font-size: 1rem;
-    box-shadow: 0 12px 26px rgba(21,94,239,0.28); border: none; cursor: pointer;
-  }
-  .hp-search-btn svg { width: 20px; height: 20px; }
-
-  /* --- recommended (scroll row) --- */
-  .hp-rec {
-    display: flex; gap: 12px; overflow-x: auto; margin: 0 -16px; padding: 4px 16px 10px;
-    scrollbar-width: none; -webkit-overflow-scrolling: touch;
-  }
-  .hp-rec::-webkit-scrollbar { display: none; }
-  .hp-rec { align-items: stretch; }
-  .hp-rec-card {
-    flex: 0 0 auto; width: 162px;
-    background: #fff; border: 1px solid #EEF2F9; border-radius: 18px; padding: 13px;
-    box-shadow: 0 8px 22px rgba(16,42,67,0.06); text-decoration: none;
-    display: flex; flex-direction: column;
-  }
-  .hp-rec-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 9px; }
-  .hp-rec-avatar { position: relative; width: 50px; height: 50px; border-radius: 50%; overflow: visible; flex-shrink: 0; }
-  .hp-rec-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
-  .hp-rec-avatar .dot {
-    position: absolute; bottom: 1px; right: 1px; width: 12px; height: 12px;
-    background: var(--hp-green); border: 2px solid #fff; border-radius: 50%;
-  }
-  .hp-rec-badge { font-size: 0.58rem; font-weight: 700; padding: 3px 8px; border-radius: 8px; white-space: nowrap; }
-  .hp-rec-name { font-size: 0.85rem; font-weight: 800; color: var(--hp-text); margin: 0 0 5px; }
-  .hp-rec-rating { display: flex; align-items: center; gap: 4px; font-size: 0.72rem; color: var(--hp-muted); margin-bottom: 8px; }
-  .hp-rec-rating svg { width: 13px; height: 13px; color: var(--hp-yellow); fill: currentColor; }
-  .hp-rec-rating strong { color: var(--hp-text); font-weight: 700; }
-  .hp-rec-avail {
-    align-self: flex-start; display: inline-block; white-space: nowrap;
-    font-size: 0.6rem; font-weight: 600; color: #16A34A;
-    background: #DCFCE7; padding: 4px 9px; border-radius: 50px; margin-bottom: 12px;
-  }
-  .hp-rec-avail.off { color: #64748B; background: #F1F5F9; }
-  .hp-rec-btn {
-    text-align: center; border: 1.5px solid var(--hp-primary); color: var(--hp-primary);
-    border-radius: 11px; padding: 9px; font-size: 0.74rem; font-weight: 700; margin-top: auto;
-  }
-  .hp-rec-empty { padding: 24px 0; text-align: center; color: var(--hp-muted); font-size: 0.85rem; width: 100%; }
-
-  /* --- trust bar --- */
-  .hp-trust {
-    display: flex; align-items: stretch;
-    background: #fff; border: 1px solid #EEF2F9; border-radius: 16px;
-    padding: 14px 4px; margin: 6px 0 8px; box-shadow: 0 8px 22px rgba(16,42,67,0.05);
-  }
-  .hp-trust-item {
-    flex: 1; display: flex; align-items: center; gap: 6px;
-    padding: 0 6px; border-right: 1px solid #EEF2F9;
-  }
-  .hp-trust-item:last-child { border-right: none; }
-  .hp-trust-item svg { width: 18px; height: 18px; color: var(--hp-primary); flex-shrink: 0; }
-  .hp-trust-item span { font-size: 0.55rem; color: #475569; font-weight: 600; line-height: 1.25; white-space: nowrap; }
-
   /* --- bottom nav --- */
   .hp-bottom-nav {
     position: fixed; bottom: 0; left: 0; right: 0; background: #fff;
@@ -346,185 +172,252 @@
   }
 
   @media (min-width: 768px) {
-    .hp-main, .hp-header-top { max-width: 720px; margin-left: auto; margin-right: auto; }
-    .hp-hero-inner { max-width: 720px; }
-    .hp-hero h1 { font-size: 1.7rem; }
+    .hp-header-top { max-width: 720px; margin-left: auto; margin-right: auto; }
     .hp-bottom-nav { display: none; }
     body { padding-bottom: 0 !important; }
   }
 
-  /* Bloc bureau : masque en mobile, revele >=1024px. */
-  .dsk-landing { display: none; }
+  /* ==========================================================================
+     ACCUEIL - nouvelle maquette (onglets / hero / services populaires / offres
+     speciales / telechargement / pied de page), mobile-first : les regles
+     ci-dessous sont la base (<1024px), le bloc ">= 1024px" plus loin ne fait
+     qu'elargir la mise en page (colonnes, grilles, tailles) sur les memes
+     sections et les memes donnees (popular, cat_meta).
+     ========================================================================== */
+  .dh2-wrap { max-width: 1160px; margin: 0 auto; padding: 16px 16px 4px; }
+
+  .dh2-tabs { display: flex; gap: 18px; overflow-x: auto; border-bottom: 1px solid var(--hp-line); margin-bottom: 14px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .dh2-tabs::-webkit-scrollbar { display: none; }
+  .dh2-tab {
+    position: relative; flex-shrink: 0; padding: 4px 0 10px; font-size: .82rem; font-weight: 700;
+    color: var(--hp-muted); text-decoration: none; white-space: nowrap;
+  }
+  .dh2-tab:hover { color: var(--hp-text); }
+  .dh2-tab.active { color: var(--hp-primary); }
+  .dh2-tab.active::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 3px; border-radius: 3px 3px 0 0; background: var(--hp-primary); }
+
+  .dh2-chips { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; }
+  .dh2-chip {
+    display: flex; align-items: center; gap: 10px; background: #F5F8FF; border: 1px solid var(--hp-line);
+    border-radius: 13px; padding: 11px 12px; text-decoration: none; color: var(--hp-text);
+    transition: box-shadow .15s, transform .15s; cursor: pointer;
+  }
+  .dh2-chip:hover { box-shadow: 0 10px 22px rgba(16,42,67,.08); transform: translateY(-1px); }
+  .dh2-chip .ic { width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .dh2-chip .ic svg { width: 17px; height: 17px; }
+  .dh2-chip span { font-weight: 700; font-size: .74rem; }
+
+  .dh2-hero {
+    position: relative; overflow: hidden; border-radius: 20px; margin-bottom: 26px;
+    background: linear-gradient(120deg, #EAF2FF 0%, #DCEBFF 60%, #EAF2FF 100%);
+    display: grid; grid-template-columns: 1fr;
+  }
+  .dh2-hero-visual { position: relative; order: -1; height: 200px; }
+  .dh2-hero-visual img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .dh2-hero-tx { padding: 20px 20px 26px; }
+  .dh2-hero-brand { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+  .dh2-hero-brand .mark { width: 26px; height: 26px; color: var(--hp-primary); flex-shrink: 0; }
+  .dh2-hero-brand .mark svg { width: 100%; height: 100%; }
+  .dh2-hero-brand b { font-size: 1.05rem; font-weight: 800; color: var(--hp-text); }
+  .dh2-hero-brand b em { font-style: normal; color: var(--hp-primary); }
+  .dh2-hero h1 { font-size: 1.35rem; line-height: 1.25; font-weight: 800; color: var(--hp-text); margin: 0 0 10px; }
+  .dh2-hero h1 em { font-style: normal; color: var(--hp-primary); }
+  .dh2-hero-tags { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: .76rem; color: var(--hp-muted); font-weight: 600; margin-bottom: 16px; }
+  .dh2-hero-tags b { color: var(--hp-line); font-weight: 400; }
+  .dh2-hero-btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; background: var(--hp-primary); color: #fff;
+    font-weight: 700; font-size: .88rem; padding: 13px 20px; border-radius: 12px; text-decoration: none;
+    box-shadow: 0 10px 22px rgba(21,94,239,.28); transition: background .15s;
+  }
+  .dh2-hero-btn:hover { background: var(--hp-primary-dark); }
+  .dh2-hero-btn svg { width: 16px; height: 16px; }
+
+  .dh2-section-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 14px; }
+  .dh2-section-head h2 { font-size: 1.05rem; font-weight: 800; color: var(--hp-text); margin: 0; }
+  .dh2-section-head a { color: var(--hp-primary); text-decoration: none; font-size: .76rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+  .dh2-section-head a svg { width: 13px; height: 13px; }
+  .dh2-services { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 26px; }
+  .dh2-service {
+    display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center;
+    border-radius: 14px; padding: 14px 6px; text-decoration: none; color: var(--hp-text);
+    transition: transform .15s, box-shadow .15s;
+  }
+  .dh2-service:hover { transform: translateY(-3px); box-shadow: 0 10px 22px rgba(16,42,67,.08); }
+  .dh2-service .ic { width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+  .dh2-service .ic svg { width: 21px; height: 21px; }
+  .dh2-service h3 { font-size: .72rem; font-weight: 700; margin: 0; line-height: 1.2; }
+
+  .dh2-offers { display: grid; grid-template-columns: 1fr; gap: 16px; margin-bottom: 30px; }
+  .dh2-offer { border: 1px solid var(--hp-line); border-radius: 16px; overflow: hidden; background: #fff; transition: transform .16s, box-shadow .16s; }
+  .dh2-offer:hover { transform: translateY(-4px); box-shadow: 0 16px 32px rgba(16,42,67,.12); }
+  .dh2-offer-photo { position: relative; height: 170px; }
+  .dh2-offer-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .dh2-offer-off { position: absolute; left: 12px; top: 12px; background: #EF4444; color: #fff; font-size: .74rem; font-weight: 800; padding: 4px 11px; border-radius: 8px; }
+  .dh2-offer-fav {
+    position: absolute; right: 12px; top: 12px; width: 32px; height: 32px; border-radius: 50%; background: #fff;
+    border: 0; display: flex; align-items: center; justify-content: center; color: var(--hp-text); cursor: pointer;
+    box-shadow: 0 4px 10px rgba(16,42,67,.16);
+  }
+  .dh2-offer-fav svg { width: 15px; height: 15px; }
+  .dh2-offer-body { padding: 14px 16px 18px; }
+  .dh2-offer-body h3 { font-size: .98rem; font-weight: 800; margin: 0 0 4px; }
+  .dh2-offer-body .desc { font-size: .78rem; color: var(--hp-muted); margin: 0 0 10px; line-height: 1.35; }
+  .dh2-offer-meta { display: flex; align-items: center; gap: 12px; font-size: .78rem; color: var(--hp-muted); margin-bottom: 10px; flex-wrap: wrap; }
+  .dh2-offer-meta span { display: flex; align-items: center; gap: 5px; }
+  .dh2-offer-meta svg { width: 13px; height: 13px; }
+  .dh2-offer-meta .rate svg { color: var(--hp-yellow); }
+  .dh2-offer-meta .rate strong { color: var(--hp-text); }
+  .dh2-offer-price { font-size: .74rem; color: var(--hp-muted); margin-bottom: 4px; }
+  .dh2-offer-price strong { display: block; font-size: 1.05rem; color: var(--hp-primary); font-weight: 800; }
+  .dh2-offer-btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-top: 10px;
+    border: 1.5px solid var(--hp-primary); color: var(--hp-primary); border-radius: 11px; padding: 9px;
+    font-size: .82rem; font-weight: 700; text-decoration: none;
+  }
+  .dh2-offer-btn:hover { background: var(--hp-light-blue); }
+  .dh2-offer-btn svg { width: 14px; height: 14px; }
+
+  .dh2-download {
+    display: grid; grid-template-columns: 1fr; gap: 20px; align-items: center;
+    background: linear-gradient(120deg, #EAF2FF, #F5F9FF); border-radius: 20px; padding: 26px 20px; margin-bottom: 30px;
+  }
+  .dh2-download-visual { max-width: 240px; margin: 0 auto; }
+  .dh2-download-visual img { width: 100%; display: block; border-radius: 14px; }
+  .dh2-download-tag {
+    display: inline-block; background: var(--hp-light-blue); color: var(--hp-primary); font-size: .68rem; font-weight: 700;
+    letter-spacing: .03em; text-transform: uppercase; padding: 5px 12px; border-radius: 999px; margin-bottom: 12px;
+  }
+  .dh2-download h2 { font-size: 1.28rem; font-weight: 800; color: var(--hp-text); margin: 0 0 14px; line-height: 1.28; }
+  .dh2-download-list { list-style: none; margin: 0 0 18px; padding: 0; display: flex; flex-direction: column; gap: 9px; }
+  .dh2-download-list li { display: flex; align-items: center; gap: 9px; font-size: .84rem; color: var(--hp-text); font-weight: 500; }
+  .dh2-download-list svg { width: 18px; height: 18px; color: #16A34A; flex-shrink: 0; }
+  .dh2-download-row { display: flex; flex-direction: column; align-items: stretch; gap: 14px; }
+  .dh2-store-btns { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  .dh2-store-btn {
+    display: flex; align-items: center; justify-content: center; gap: 9px; background: #0B1220; color: #fff; border: 0; cursor: pointer;
+    border-radius: 11px; padding: 10px 16px; text-decoration: none; flex: 1 1 auto;
+  }
+  .dh2-store-btn svg { width: 20px; height: 20px; flex-shrink: 0; }
+  .dh2-store-btn span { display: block; line-height: 1.2; text-align: left; }
+  .dh2-store-btn small { display: block; font-size: .6rem; opacity: .8; }
+  .dh2-store-btn b { display: block; font-size: .84rem; font-weight: 700; }
+  .dh2-qr { display: flex; align-items: center; gap: 10px; justify-content: center; }
+  .dh2-qr img { width: 56px; height: 56px; border-radius: 8px; flex-shrink: 0; }
+  .dh2-qr span { font-size: .74rem; color: var(--hp-muted); font-weight: 600; line-height: 1.3; }
+
+  .dl-footer { background: #0B1B3A; color: rgba(255,255,255,.72); padding: 32px 20px 20px; }
+  .dl-footer-inner { max-width: 1160px; margin: 0 auto; display: grid; grid-template-columns: 1fr; gap: 26px; }
+  .dl-footer-brand { display: flex; align-items: center; gap: 10px; color: #fff; font-weight: 800; font-size: 1.1rem; margin-bottom: 10px; }
+  .dl-footer-brand em { font-style: normal; color: var(--hp-yellow); }
+  .dl-footer-brand .mark { width: 32px; height: 32px; border-radius: 10px; background: var(--hp-primary); display: flex; align-items: center; justify-content: center; }
+  .dl-footer-brand .mark svg { width: 18px; height: 18px; color: #fff; }
+  .dl-footer p.tag { font-size: .82rem; margin: 0 0 16px; max-width: 340px; line-height: 1.5; }
+  .dl-footer-social { display: flex; gap: 10px; }
+  .dl-footer-social .dl-social-soon {
+    width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,.06);
+    display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,.55);
+    cursor: default;
+  }
+  .dl-footer-social svg { width: 15px; height: 15px; }
+  .dl-footer h4 { color: #fff; font-size: .84rem; font-weight: 700; margin: 18px 0 12px; }
+  .dl-footer ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 9px; }
+  .dl-footer a { color: inherit; text-decoration: none; font-size: .82rem; }
+  .dl-footer a:hover { color: #fff; }
+  .dl-footer-bottom { max-width: 1160px; margin: 24px auto 0; padding-top: 18px; border-top: 1px solid rgba(255,255,255,.1); font-size: .72rem; text-align: center; }
 
   /* ==========================================================================
-     VERSION BUREAU (>= 1024px) - nouvel accueil, remplace l'ancienne mise en
-     page bureau (qui reutilisait le markup mobile restyle). L'en-tete +
-     hamburger + drawer viennent de base.html. Ici : nouvelle structure
-     dediee bureau (hero / services / etapes / pros / promo / avantages /
-     footer), sur les memes donnees (popular, artisans) que le mobile.
-     Rien de la version mobile ci-dessous (<1024px) n'est modifie.
+     VERSION BUREAU (>= 1024px) : coquille bureau (dtopbar / sidebar depuis
+     base.html), en-tete + bottom-nav mobile masques, mise en page large des
+     memes sections ci-dessus (colonnes, grilles etendues).
      ========================================================================== */
   @media (min-width: 1024px) {
     body { padding-bottom: 0 !important; background: #fff; }
-
-    /* Toute la coquille mobile (en-tete bleu, hero, cartes, bottom nav)
-       est masquee : la nouvelle structure .dsk-landing prend le relais. */
-    .hp-header, .hp-hero, .hp-main, .hp-bottom-nav { display: none !important; }
-    .dsk-landing { display: block; }
+    .hp-header, .hp-bottom-nav { display: none !important; }
 
     body:not(.no-sidebar) .page,
     body.no-sidebar .page { max-width: none; margin: 0; padding: 0; }
 
-    /* ---- Conteneur general ---- */
-    .dh2-wrap { max-width: 1160px; margin: 0 auto; padding: 28px 28px 8px; }
+    .dh2-wrap { padding: 28px 28px 8px; }
 
-    /* ---- Onglets categories ---- */
-    .dh2-tabs { display: flex; gap: 30px; overflow-x: auto; border-bottom: 1px solid var(--hp-line); margin-bottom: 20px; }
-    .dh2-tab {
-      position: relative; flex-shrink: 0; padding: 6px 0 15px; font-size: .92rem; font-weight: 700;
-      color: var(--hp-muted); text-decoration: none; white-space: nowrap;
-    }
-    .dh2-tab:hover { color: var(--hp-text); }
-    .dh2-tab.active { color: var(--hp-primary); }
-    .dh2-tab.active::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 3px; border-radius: 3px 3px 0 0; background: var(--hp-primary); }
+    .dh2-tabs { gap: 30px; margin-bottom: 20px; }
+    .dh2-tab { padding: 6px 0 15px; font-size: .92rem; }
 
-    /* ---- Filtres rapides ---- */
-    .dh2-chips { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
-    .dh2-chip {
-      display: flex; align-items: center; gap: 12px; background: #F5F8FF; border: 1px solid var(--hp-line);
-      border-radius: 14px; padding: 14px 16px; text-decoration: none; color: var(--hp-text);
-      transition: box-shadow .15s, transform .15s; cursor: pointer;
-    }
-    .dh2-chip:hover { box-shadow: 0 10px 22px rgba(16,42,67,.08); transform: translateY(-1px); }
-    .dh2-chip .ic { width: 42px; height: 42px; border-radius: 11px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .dh2-chips { grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
+    .dh2-chip { padding: 14px 16px; gap: 12px; }
+    .dh2-chip .ic { width: 42px; height: 42px; }
     .dh2-chip .ic svg { width: 20px; height: 20px; }
-    .dh2-chip span { font-weight: 700; font-size: .86rem; }
+    .dh2-chip span { font-size: .86rem; }
 
-    /* ---- Hero ---- */
-    .dh2-hero {
-      position: relative; overflow: hidden; border-radius: 24px; margin-bottom: 40px;
-      background: linear-gradient(120deg, #EAF2FF 0%, #DCEBFF 60%, #EAF2FF 100%);
-      display: grid; grid-template-columns: minmax(0,1fr) 380px; align-items: center; gap: 24px;
-    }
+    .dh2-hero { grid-template-columns: minmax(0,1fr) 380px; align-items: center; gap: 24px; margin-bottom: 40px; }
+    .dh2-hero-visual { order: 0; height: auto; align-self: stretch; }
     .dh2-hero-tx { padding: 44px 8px 44px 44px; }
-    .dh2-hero-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
-    .dh2-hero-brand .mark { width: 34px; height: 34px; color: var(--hp-primary); flex-shrink: 0; }
-    .dh2-hero-brand .mark svg { width: 100%; height: 100%; }
-    .dh2-hero-brand b { font-size: 1.3rem; font-weight: 800; color: var(--hp-text); }
-    .dh2-hero-brand b em { font-style: normal; color: var(--hp-primary); }
-    .dh2-hero h1 { font-size: 2.15rem; line-height: 1.2; font-weight: 800; color: var(--hp-text); margin: 0 0 16px; }
-    .dh2-hero h1 em { font-style: normal; color: var(--hp-primary); }
-    .dh2-hero-tags { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: .88rem; color: var(--hp-muted); font-weight: 600; margin-bottom: 24px; }
-    .dh2-hero-tags b { color: var(--hp-line); font-weight: 400; }
-    .dh2-hero-btn {
-      display: inline-flex; align-items: center; gap: 10px; background: var(--hp-primary); color: #fff;
-      font-weight: 700; font-size: .95rem; padding: 14px 24px; border-radius: 13px; text-decoration: none;
-      box-shadow: 0 14px 28px rgba(21,94,239,.3); transition: background .15s;
-    }
-    .dh2-hero-btn:hover { background: var(--hp-primary-dark); }
+    .dh2-hero-brand { gap: 10px; margin-bottom: 18px; }
+    .dh2-hero-brand .mark { width: 34px; height: 34px; }
+    .dh2-hero-brand b { font-size: 1.3rem; }
+    .dh2-hero h1 { font-size: 2.15rem; margin-bottom: 16px; }
+    .dh2-hero-tags { font-size: .88rem; margin-bottom: 24px; }
+    .dh2-hero-btn { width: auto; display: inline-flex; padding: 14px 24px; font-size: .95rem; }
     .dh2-hero-btn svg { width: 17px; height: 17px; }
-    .dh2-hero-visual { position: relative; align-self: stretch; }
-    .dh2-hero-visual img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
-    /* ---- Services populaires ---- */
-    .dh2-section-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 20px; }
-    .dh2-section-head h2 { font-size: 1.3rem; font-weight: 800; color: var(--hp-text); margin: 0; }
-    .dh2-section-head a { color: var(--hp-primary); text-decoration: none; font-size: .86rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; }
+    .dh2-section-head { margin-bottom: 20px; }
+    .dh2-section-head h2 { font-size: 1.3rem; }
+    .dh2-section-head a { font-size: .86rem; }
     .dh2-section-head a svg { width: 14px; height: 14px; }
-    .dh2-services { display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; margin-bottom: 40px; }
-    .dh2-service {
-      display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center;
-      border-radius: 16px; padding: 20px 10px; text-decoration: none; color: var(--hp-text);
-      transition: transform .15s, box-shadow .15s;
-    }
-    .dh2-service:hover { transform: translateY(-3px); box-shadow: 0 10px 22px rgba(16,42,67,.08); }
-    .dh2-service .ic { width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; }
+    .dh2-services { grid-template-columns: repeat(6, 1fr); gap: 16px; margin-bottom: 40px; }
+    .dh2-service { padding: 20px 10px; gap: 10px; }
+    .dh2-service .ic { width: 52px; height: 52px; }
     .dh2-service .ic svg { width: 26px; height: 26px; }
-    .dh2-service h3 { font-size: .9rem; font-weight: 700; margin: 0; line-height: 1.25; }
+    .dh2-service h3 { font-size: .9rem; }
 
-    /* ---- Offres speciales ---- */
-    .dh2-offers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; margin-bottom: 48px; }
-    .dh2-offer { border: 1px solid var(--hp-line); border-radius: 18px; overflow: hidden; background: #fff; transition: transform .16s, box-shadow .16s; }
-    .dh2-offer:hover { transform: translateY(-4px); box-shadow: 0 16px 32px rgba(16,42,67,.12); }
-    .dh2-offer-photo { position: relative; height: 190px; }
-    .dh2-offer-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .dh2-offer-off { position: absolute; left: 12px; top: 12px; background: #EF4444; color: #fff; font-size: .78rem; font-weight: 800; padding: 5px 12px; border-radius: 8px; }
-    .dh2-offer-fav {
-      position: absolute; right: 12px; top: 12px; width: 34px; height: 34px; border-radius: 50%; background: #fff;
-      border: 0; display: flex; align-items: center; justify-content: center; color: var(--hp-text); cursor: pointer;
-      box-shadow: 0 4px 10px rgba(16,42,67,.16);
-    }
+    .dh2-offers { grid-template-columns: repeat(3, 1fr); gap: 22px; margin-bottom: 48px; }
+    .dh2-offer-photo { height: 190px; }
+    .dh2-offer-off { font-size: .78rem; padding: 5px 12px; }
+    .dh2-offer-fav { width: 34px; height: 34px; }
     .dh2-offer-fav svg { width: 16px; height: 16px; }
     .dh2-offer-body { padding: 16px 18px 20px; }
-    .dh2-offer-body h3 { font-size: 1.05rem; font-weight: 800; margin: 0 0 4px; }
-    .dh2-offer-body .desc { font-size: .82rem; color: var(--hp-muted); margin: 0 0 10px; line-height: 1.35; }
-    .dh2-offer-meta { display: flex; align-items: center; gap: 14px; font-size: .82rem; color: var(--hp-muted); margin-bottom: 10px; }
-    .dh2-offer-meta span { display: flex; align-items: center; gap: 5px; }
+    .dh2-offer-body h3 { font-size: 1.05rem; }
+    .dh2-offer-body .desc { font-size: .82rem; }
+    .dh2-offer-meta { font-size: .82rem; gap: 14px; }
     .dh2-offer-meta svg { width: 14px; height: 14px; }
-    .dh2-offer-meta .rate svg { color: var(--hp-yellow); }
-    .dh2-offer-meta .rate strong { color: var(--hp-text); }
-    .dh2-offer-price { font-size: .78rem; color: var(--hp-muted); margin-bottom: 4px; }
-    .dh2-offer-price strong { display: block; font-size: 1.15rem; color: var(--hp-primary); font-weight: 800; }
-    .dh2-offer-btn {
-      display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-top: 12px;
-      border: 1.5px solid var(--hp-primary); color: var(--hp-primary); border-radius: 11px; padding: 10px;
-      font-size: .86rem; font-weight: 700; text-decoration: none;
-    }
-    .dh2-offer-btn:hover { background: var(--hp-light-blue); }
+    .dh2-offer-price { font-size: .78rem; }
+    .dh2-offer-price strong { font-size: 1.15rem; }
+    .dh2-offer-btn { padding: 10px; font-size: .86rem; margin-top: 12px; }
     .dh2-offer-btn svg { width: 15px; height: 15px; }
 
-    /* ---- Telechargement application ---- */
     .dh2-download {
-      display: grid; grid-template-columns: 380px minmax(0,1fr); gap: 40px; align-items: center;
-      background: linear-gradient(120deg, #EAF2FF, #F5F9FF); border-radius: 24px; padding: 40px 44px; margin-bottom: 48px;
+      grid-template-columns: 380px minmax(0,1fr); gap: 40px; border-radius: 24px; padding: 40px 44px; margin-bottom: 48px;
     }
-    .dh2-download-visual img { width: 100%; display: block; border-radius: 14px; }
-    .dh2-download-tag {
-      display: inline-block; background: var(--hp-light-blue); color: var(--hp-primary); font-size: .76rem; font-weight: 700;
-      letter-spacing: .03em; text-transform: uppercase; padding: 6px 14px; border-radius: 999px; margin-bottom: 14px;
-    }
-    .dh2-download h2 { font-size: 1.7rem; font-weight: 800; color: var(--hp-text); margin: 0 0 16px; line-height: 1.25; }
-    .dh2-download-list { list-style: none; margin: 0 0 22px; padding: 0; display: flex; flex-direction: column; gap: 11px; }
-    .dh2-download-list li { display: flex; align-items: center; gap: 10px; font-size: .92rem; color: var(--hp-text); font-weight: 500; }
-    .dh2-download-list svg { width: 20px; height: 20px; color: #16A34A; flex-shrink: 0; }
-    .dh2-download-row { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
-    .dh2-store-btns { display: flex; gap: 10px; flex-wrap: wrap; }
-    .dh2-store-btn {
-      display: flex; align-items: center; gap: 9px; background: #0B1220; color: #fff; border: 0; cursor: pointer;
-      border-radius: 11px; padding: 10px 16px; text-decoration: none;
-    }
-    .dh2-store-btn svg { width: 22px; height: 22px; flex-shrink: 0; }
-    .dh2-store-btn span { display: block; line-height: 1.2; }
-    .dh2-store-btn small { display: block; font-size: .62rem; opacity: .8; }
-    .dh2-store-btn b { display: block; font-size: .88rem; font-weight: 700; }
-    .dh2-qr { display: flex; align-items: center; gap: 10px; }
-    .dh2-qr img { width: 62px; height: 62px; border-radius: 8px; flex-shrink: 0; }
-    .dh2-qr span { font-size: .78rem; color: var(--hp-muted); font-weight: 600; line-height: 1.3; }
+    .dh2-download-visual { max-width: none; margin: 0; }
+    .dh2-download-tag { font-size: .76rem; padding: 6px 14px; margin-bottom: 14px; }
+    .dh2-download h2 { font-size: 1.7rem; margin-bottom: 16px; }
+    .dh2-download-list { margin-bottom: 22px; gap: 11px; }
+    .dh2-download-list li { font-size: .92rem; }
+    .dh2-download-list svg { width: 20px; height: 20px; }
+    .dh2-download-row { flex-direction: row; align-items: center; gap: 20px; }
+    .dh2-store-btns { justify-content: flex-start; }
+    .dh2-store-btn { flex: 0 0 auto; justify-content: flex-start; }
+    .dh2-store-btn svg { width: 22px; height: 22px; }
+    .dh2-store-btn small { font-size: .62rem; }
+    .dh2-store-btn b { font-size: .88rem; }
+    .dh2-qr { justify-content: flex-start; }
+    .dh2-qr img { width: 62px; height: 62px; }
+    .dh2-qr span { font-size: .78rem; }
 
-    /* ---- Footer ---- */
-    .dl-footer { background: #0B1B3A; color: rgba(255,255,255,.72); padding: 48px 28px 26px; }
-    .dl-footer-inner { max-width: 1160px; margin: 0 auto; display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: 32px; }
-    .dl-footer-brand { display: flex; align-items: center; gap: 10px; color: #fff; font-family: var(--hp-display, inherit); font-weight: 800; font-size: 1.2rem; margin-bottom: 10px; }
-    .dl-footer-brand em { font-style: normal; color: var(--hp-yellow); }
-    .dl-footer-brand .mark { width: 34px; height: 34px; border-radius: 10px; background: var(--hp-primary); display: flex; align-items: center; justify-content: center; }
-    .dl-footer-brand .mark svg { width: 19px; height: 19px; color: #fff; }
-    .dl-footer p.tag { font-size: .84rem; margin: 0 0 18px; max-width: 260px; line-height: 1.5; }
-    .dl-footer-social { display: flex; gap: 10px; }
-    .dl-footer-social .dl-social-soon {
-      width: 34px; height: 34px; border-radius: 50%; background: rgba(255,255,255,.06);
-      display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,.55);
-      cursor: default;
-    }
+    .dl-footer { padding: 48px 28px 26px; }
+    .dl-footer-inner { grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: 32px; }
+    .dl-footer-brand { font-size: 1.2rem; }
+    .dl-footer-brand .mark { width: 34px; height: 34px; }
+    .dl-footer-brand .mark svg { width: 19px; height: 19px; }
+    .dl-footer p.tag { font-size: .84rem; max-width: 260px; }
+    .dl-footer-social .dl-social-soon { width: 34px; height: 34px; }
     .dl-footer-social svg { width: 16px; height: 16px; }
-    .dl-footer h4 { color: #fff; font-size: .88rem; font-weight: 700; margin: 0 0 14px; }
-    .dl-footer ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
-    .dl-footer a { color: inherit; text-decoration: none; font-size: .84rem; }
-    .dl-footer a:hover { color: #fff; }
-    .dl-footer-bottom { max-width: 1160px; margin: 32px auto 0; padding-top: 20px; border-top: 1px solid rgba(255,255,255,.1); font-size: .76rem; text-align: center; }
+    .dl-footer h4 { font-size: .88rem; margin: 0 0 14px; }
+    .dl-footer ul { gap: 10px; }
+    .dl-footer a { font-size: .84rem; }
+    .dl-footer-bottom { margin: 32px auto 0; padding-top: 20px; font-size: .76rem; }
   }
 
   @media (min-width: 1024px) and (max-width: 1280px) {
-    /* La photo du hero reste toujours visible, seulement reduite. */
     .dh2-hero { grid-template-columns: minmax(0, 1fr) 260px; }
     .dh2-chips { grid-template-columns: repeat(2, 1fr); }
     .dh2-services { grid-template-columns: repeat(3, 1fr); }
@@ -533,7 +426,134 @@
     .dh2-download-visual { max-width: 320px; margin: 0 auto; }
     .dl-footer-inner { grid-template-columns: 1fr 1fr; }
   }
+
+  /* Tablette (assez large pour un hero cote a cote, mais toujours dans la
+     coquille mobile <1024px : en-tete bleu + bottom nav). Evite l'image
+     du hero ecrasee en bande large/basse quand elle reste empilee. */
+  @media (min-width: 640px) and (max-width: 1023px) {
+    .dh2-hero { grid-template-columns: minmax(0, 1fr) 240px; align-items: center; }
+    .dh2-hero-visual { order: 0; height: auto; align-self: stretch; }
+    .dh2-offers { grid-template-columns: repeat(2, 1fr); }
+    .dh2-download { grid-template-columns: 260px minmax(0,1fr); align-items: center; }
+    .dh2-download-visual { max-width: none; margin: 0; }
+    .dh2-download-row { flex-direction: row; align-items: center; }
+    .dl-footer-inner { grid-template-columns: 1fr 1fr; }
+  }
 </style>
+
+<header class="hp-header">
+  <div class="hp-header-top">
+    <button class="hp-menu-btn f-menu-btn" id="burgerBtn" type="button" aria-label="Menu">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+    </button>
+    <a href="{{ url_for('index') }}" class="hp-logo">
+      <span class="hp-logo-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s7-3.5 7-9V5.5l-7-3-7 3V13c0 5.5 7 9 7 9z"/><path d="M12.5 7.5 9 12.5h2.5l-.5 4 3.5-5h-2.5l.5-4z" fill="currentColor" stroke="none"/></svg>
+      </span>
+      <span class="hp-logo-text">
+        <span class="hp-logo-name">Fix<em>Pro</em></span>
+        <small>Des pros. &nbsp;Des solutions.</small>
+      </span>
+    </a>
+    <div class="hp-actions">
+      <a href="#" onclick="event.preventDefault()" class="hp-notif" aria-label="Notifications">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></svg>
+        {% if unread_count %}<span class="hp-notif-badge">{{ unread_count }}</span>{% endif %}
+      </a>
+      {% if nav_user %}
+      <button type="button" class="hp-avatar" id="hpmBtn" aria-label="Mon compte" aria-haspopup="menu" aria-expanded="false">
+        {% if nav_user.photo_url %}
+          <img src="{{ nav_user.photo_url }}" alt="{{ nav_user.full_name }}" />
+        {% else %}
+          <img src="{{ url_for('static', filename='img/fixpro-avatar.png') }}" alt="Profil" />
+        {% endif %}
+      </button>
+      {% else %}
+      <a href="{{ url_for('login') }}" class="hp-avatar" aria-label="Se connecter">
+        <img src="{{ url_for('static', filename='img/fixpro-avatar.png') }}" alt="Profil" />
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if nav_user %}
+  {% set _is_tech = nav_user.role in ('technician', 'artisan') %}
+  <div class="hpm-overlay" id="hpmOverlay" hidden></div>
+  <div class="hpm-panel" id="hpmPanel" role="menu" aria-label="Mon compte" hidden>
+    <div class="hpm-head">
+      <span class="hpm-head-av">
+        {% if nav_user.photo_url %}<img src="{{ nav_user.photo_url }}" alt="" />
+        {% else %}<img src="{{ url_for('static', filename='img/fixpro-avatar.png') }}" alt="" />{% endif %}
+      </span>
+      <span class="hpm-head-tx">
+        <b>{{ nav_user.full_name or 'Utilisateur' }}</b>
+        <span>{{ nav_user.email or nav_user.phone or '' }}</span>
+        <span class="hpm-status">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+          {{ 'Compte technicien actif' if _is_tech else 'Compte client actif' }}
+        </span>
+      </span>
+      <button type="button" class="hpm-x" id="hpmClose" aria-label="Fermer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="hpm-list">
+      <a href="{{ url_for('profile') }}" class="hpm-item" role="menuitem">
+        <span class="hpm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+        <span class="hpm-tx"><b>Mon profil</b><span>Gérer mes informations</span></span>
+        <svg class="hpm-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </a>
+
+      <div class="hpm-sep"></div>
+      {% if _is_tech %}
+      <a href="{{ url_for('artisan_dashboard') }}" class="hpm-item tech" role="menuitem">
+        <span class="hpm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span>
+        <span class="hpm-tx"><b>Accéder à mon espace technicien</b><span>Gérer mes interventions</span></span>
+        <svg class="hpm-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </a>
+      {% else %}
+      <a href="{{ url_for('devenir_technicien') }}" class="hpm-item" role="menuitem">
+        <span class="hpm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg></span>
+        <span class="hpm-tx"><b>Devenir technicien</b><span>Rejoindre le réseau FixPro</span></span>
+        <svg class="hpm-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </a>
+      {% endif %}
+      <div class="hpm-sep"></div>
+
+      <a href="#" onclick="event.preventDefault()" class="hpm-item" role="menuitem">
+        <span class="hpm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></svg></span>
+        <span class="hpm-tx"><b>Notifications</b><span>Consulter mes notifications</span></span>
+        {% if notif_unread|default(0) > 0 %}<span class="hpm-tx" style="flex:0;font-weight:800;color:var(--hp-primary)">{{ notif_unread }}</span>{% endif %}
+        <svg class="hpm-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </a>
+      <a href="{{ url_for('parametres') }}" class="hpm-item" role="menuitem">
+        <span class="hpm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.04 1.56V21a2 2 0 0 1-4 0v-.09A1.7 1.7 0 0 0 9 19.35a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.65 15a1.7 1.7 0 0 0-1.56-1.04H3a2 2 0 0 1 0-4h.09A1.7 1.7 0 0 0 4.65 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.65a1.7 1.7 0 0 0 1.04-1.56V3a2 2 0 0 1 4 0v.09A1.7 1.7 0 0 0 15 4.65a1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.35 9a1.7 1.7 0 0 0 1.56 1.04H21a2 2 0 0 1 0 4h-.09A1.7 1.7 0 0 0 19.4 15Z"/></svg></span>
+        <span class="hpm-tx"><b>Paramètres</b><span>Préférences de l'application</span></span>
+        <svg class="hpm-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </a>
+      <a href="{{ url_for('contact') }}" class="hpm-item" role="menuitem">
+        <span class="hpm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></span>
+        <span class="hpm-tx"><b>Aide et support</b><span>Une question ? On vous répond</span></span>
+        <svg class="hpm-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </a>
+      <div class="hpm-sep"></div>
+      <a href="{{ url_for('logout') }}" class="hpm-item danger" role="menuitem">
+        <span class="hpm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg></span>
+        <span class="hpm-tx"><b>Se déconnecter</b><span>Quitter votre compte FixPro</span></span>
+        <svg class="hpm-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+      </a>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="hp-header-waves" aria-hidden="true">
+    <svg viewBox="0 0 400 70" preserveAspectRatio="none" fill="none">
+      <path d="M0 44 C 60 10, 140 10, 200 34 C 260 58, 340 58, 400 30 L400 70 L0 70 Z" fill="#BAD1FF" opacity="0.55"/>
+      <path d="M0 52 C 70 24, 150 24, 210 44 C 270 64, 340 64, 400 44 L400 70 L0 70 Z" fill="#DCE8FF" opacity="0.7"/>
+      <path d="M0 58 C 80 38, 150 38, 220 52 C 290 66, 350 62, 400 54 L400 70 L0 70 Z" fill="#F4F7FD"/>
+    </svg>
+  </div>
+</header>
 
 <div class="dsk-landing">
 
@@ -725,251 +745,6 @@
 
 </div>
 
-<header class="hp-header">
-  <div class="hp-header-top">
-    <button class="hp-menu-btn f-menu-btn" id="burgerBtn" type="button" aria-label="Menu">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
-    </button>
-    <a href="{{ url_for('index') }}" class="hp-logo">
-      <span class="hp-logo-badge">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s7-3.5 7-9V5.5l-7-3-7 3V13c0 5.5 7 9 7 9z"/><path d="M12.5 7.5 9 12.5h2.5l-.5 4 3.5-5h-2.5l.5-4z" fill="currentColor" stroke="none"/></svg>
-      </span>
-      <span class="hp-logo-text">
-        <span class="hp-logo-name">Fix<em>Pro</em></span>
-        <small>Des pros. &nbsp;Des solutions.</small>
-      </span>
-    </a>
-    <div class="hp-actions">
-      <a href="#" onclick="event.preventDefault()" class="hp-notif" aria-label="Notifications">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></svg>
-        {% if unread_count %}<span class="hp-notif-badge">{{ unread_count }}</span>{% endif %}
-      </a>
-      {% if nav_user %}
-      <button type="button" class="hp-avatar" id="hpmBtn" aria-label="Mon compte" aria-haspopup="menu" aria-expanded="false">
-        {% if nav_user.photo_url %}
-          <img src="{{ nav_user.photo_url }}" alt="{{ nav_user.full_name }}" />
-        {% else %}
-          <img src="{{ url_for('static', filename='img/fixpro-avatar.png') }}" alt="Profil" />
-        {% endif %}
-      </button>
-      {% else %}
-      <a href="{{ url_for('login') }}" class="hp-avatar" aria-label="Se connecter">
-        <img src="{{ url_for('static', filename='img/fixpro-avatar.png') }}" alt="Profil" />
-      </a>
-      {% endif %}
-    </div>
-  </div>
-
-  {% if nav_user %}
-  {% set _is_tech = nav_user.role in ('technician', 'artisan') %}
-  <div class="hpm-overlay" id="hpmOverlay" hidden></div>
-  <div class="hpm-panel" id="hpmPanel" role="menu" aria-label="Mon compte" hidden>
-    <div class="hpm-head">
-      <span class="hpm-head-av">
-        {% if nav_user.photo_url %}<img src="{{ nav_user.photo_url }}" alt="" />
-        {% else %}<img src="{{ url_for('static', filename='img/fixpro-avatar.png') }}" alt="" />{% endif %}
-      </span>
-      <span class="hpm-head-tx">
-        <b>{{ nav_user.full_name or 'Utilisateur' }}</b>
-        <span>{{ nav_user.email or nav_user.phone or '' }}</span>
-        <span class="hpm-status">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-          {{ 'Compte technicien actif' if _is_tech else 'Compte client actif' }}
-        </span>
-      </span>
-      <button type="button" class="hpm-x" id="hpmClose" aria-label="Fermer">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
-      </button>
-    </div>
-    <div class="hpm-list">
-      <a href="{{ url_for('profile') }}" class="hpm-item" role="menuitem">
-        <span class="hpm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
-        <span class="hpm-tx"><b>Mon profil</b><span>Gérer mes informations</span></span>
-        <svg class="hpm-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-      </a>
-
-      <div class="hpm-sep"></div>
-      {% if _is_tech %}
-      <a href="{{ url_for('artisan_dashboard') }}" class="hpm-item tech" role="menuitem">
-        <span class="hpm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span>
-        <span class="hpm-tx"><b>Accéder à mon espace technicien</b><span>Gérer mes interventions</span></span>
-        <svg class="hpm-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-      </a>
-      {% else %}
-      <a href="{{ url_for('devenir_technicien') }}" class="hpm-item" role="menuitem">
-        <span class="hpm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg></span>
-        <span class="hpm-tx"><b>Devenir technicien</b><span>Rejoindre le réseau FixPro</span></span>
-        <svg class="hpm-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-      </a>
-      {% endif %}
-      <div class="hpm-sep"></div>
-
-      <a href="#" onclick="event.preventDefault()" class="hpm-item" role="menuitem">
-        <span class="hpm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></svg></span>
-        <span class="hpm-tx"><b>Notifications</b><span>Consulter mes notifications</span></span>
-        {% if notif_unread|default(0) > 0 %}<span class="hpm-tx" style="flex:0;font-weight:800;color:var(--hp-primary)">{{ notif_unread }}</span>{% endif %}
-        <svg class="hpm-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-      </a>
-      <a href="{{ url_for('parametres') }}" class="hpm-item" role="menuitem">
-        <span class="hpm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.04 1.56V21a2 2 0 0 1-4 0v-.09A1.7 1.7 0 0 0 9 19.35a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.65 15a1.7 1.7 0 0 0-1.56-1.04H3a2 2 0 0 1 0-4h.09A1.7 1.7 0 0 0 4.65 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.65a1.7 1.7 0 0 0 1.04-1.56V3a2 2 0 0 1 4 0v.09A1.7 1.7 0 0 0 15 4.65a1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.35 9a1.7 1.7 0 0 0 1.56 1.04H21a2 2 0 0 1 0 4h-.09A1.7 1.7 0 0 0 19.4 15Z"/></svg></span>
-        <span class="hpm-tx"><b>Paramètres</b><span>Préférences de l'application</span></span>
-        <svg class="hpm-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-      </a>
-      <a href="{{ url_for('contact') }}" class="hpm-item" role="menuitem">
-        <span class="hpm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></span>
-        <span class="hpm-tx"><b>Aide et support</b><span>Une question ? On vous répond</span></span>
-        <svg class="hpm-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-      </a>
-      <div class="hpm-sep"></div>
-      <a href="{{ url_for('logout') }}" class="hpm-item danger" role="menuitem">
-        <span class="hpm-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg></span>
-        <span class="hpm-tx"><b>Se déconnecter</b><span>Quitter votre compte FixPro</span></span>
-        <svg class="hpm-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-      </a>
-    </div>
-  </div>
-  {% endif %}
-
-  <div class="hp-header-waves" aria-hidden="true">
-    <svg viewBox="0 0 400 70" preserveAspectRatio="none" fill="none">
-      <path d="M0 44 C 60 10, 140 10, 200 34 C 260 58, 340 58, 400 30 L400 70 L0 70 Z" fill="#BAD1FF" opacity="0.55"/>
-      <path d="M0 52 C 70 24, 150 24, 210 44 C 270 64, 340 64, 400 44 L400 70 L0 70 Z" fill="#DCE8FF" opacity="0.7"/>
-      <path d="M0 58 C 80 38, 150 38, 220 52 C 290 66, 350 62, 400 54 L400 70 L0 70 Z" fill="#F4F7FD"/>
-    </svg>
-  </div>
-</header>
-
-<section class="hp-hero">
-  <img class="hp-hero-bg" src="{{ asset('img/hero-technicien.jpg') }}" alt="Technicien FixPro" />
-  <div class="hp-hero-inner">
-    <div class="hp-hero-text">
-      <h1>Trouvez rapidement<br/>le <strong>bon professionnel</strong><br/>pour vos travaux</h1>
-      <p class="hp-hero-sub">Fiable <b>&nbsp;•&nbsp;</b> Rapide <b>&nbsp;•&nbsp;</b> Professionnel</p>
-      <span class="hp-hero-pin" aria-hidden="true">
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"><path d="M12 2C7.86 2 4.5 5.36 4.5 9.5c0 5.05 5.78 11.06 6.79 12.06.4.4 1.03.4 1.42 0C13.72 20.56 19.5 14.55 19.5 9.5 19.5 5.36 16.14 2 12 2Z"/><circle cx="12" cy="9.5" r="2.6" fill="#fff" stroke="none"/></svg>
-      </span>
-    </div>
-    <div class="hp-hero-chips">
-      <div class="hp-chip">
-        <span class="hp-chip-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>
-        </span>
-        <span class="hp-chip-text"><strong>Professionnels vérifiés</strong><span>100% de confiance</span></span>
-      </div>
-      <div class="hp-chip">
-        <span class="hp-chip-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 21a8 8 0 0 0-16 0"/><circle cx="10" cy="8" r="5"/><path d="M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3"/></svg>
-        </span>
-        <span class="hp-chip-text"><strong>+5 000 clients</strong><span>Nous font confiance</span></span>
-      </div>
-    </div>
-  </div>
-</section>
-
-<main class="hp-main">
-  <section class="hp-card">
-    <div class="hp-card-head">
-      <h2>De quoi avez-vous besoin ?</h2>
-      <a href="{{ url_for('artisans_page') }}">Voir tout <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></a>
-    </div>
-    <div class="hp-cats">
-      {% for p in popular %}
-      {% set meta = cat_meta.get(p.label, {'class':'','color':'#64748B','bg':'#F1F5F9','bar':'#64748B','desc':'','svg':'<circle cx=\"12\" cy=\"12\" r=\"9\"/>'}) %}
-      <a href="{{ url_for('artisans_page', category=p.category) }}" class="hp-cat" data-cat="{{ p.category }}">
-        <div class="hp-cat-icon" style="background:{{ meta.bg }};color:{{ meta.color }};">
-          <svg viewBox="0 0 24 24">{{ meta.svg | safe }}</svg>
-        </div>
-        <h3>{{ pro_labels.get(p.category, p.category) }}</h3>
-        <p>{{ meta.desc }}</p>
-        <div class="hp-cat-bar" style="background:{{ meta.bar }};"></div>
-      </a>
-      {% endfor %}
-    </div>
-
-    <div class="hp-loc">
-      <div class="hp-loc-left">
-        <div class="hp-loc-dot">
-          <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2C7.86 2 4.5 5.36 4.5 9.5c0 5.05 5.78 11.06 6.79 12.06.4.4 1.03.4 1.42 0C13.72 20.56 19.5 14.55 19.5 9.5 19.5 5.36 16.14 2 12 2Zm0 10a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5Z"/></svg>
-        </div>
-        <div class="hp-loc-text">
-          <strong id="locDisplay">{{ client_zone or 'Ma position' }}</strong>
-          <span>Ma position actuelle</span>
-        </div>
-      </div>
-      <button type="button" class="hp-loc-target" id="locTarget" aria-label="Ma position">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2" fill="currentColor" stroke="none"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/></svg>
-      </button>
-    </div>
-
-    <input type="hidden" id="locInput" value="{{ client_zone or '' }}" />
-
-    <a href="{{ url_for('artisans_page') }}" class="hp-search-btn" id="searchBtn">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
-      Rechercher un professionnel
-    </a>
-  </section>
-
-  <section>
-    <div class="hp-section-head">
-      <h2>Professionnels recommandés</h2>
-      <a href="{{ url_for('artisans_page') }}">Voir tout <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></a>
-    </div>
-    <div class="hp-rec">
-      {% if artisans %}
-      {% for a in artisans %}
-      {% set label = pro_labels.get(a.profession, a.profession) %}
-      {% set badge = prof_badge.get(label, {'bg':'#EEF4FF','color':'#1D4ED8'}) %}
-      <a href="{{ url_for('artisan_detail', artisan_id=a.id) }}" class="hp-rec-card">
-        <div class="hp-rec-top">
-          <div class="hp-rec-avatar">
-            {% if a.photo_url %}
-              <img src="{{ a.photo_url }}" alt="{{ a.full_name }}" />
-            {% else %}
-              <img src="{{ url_for('static', filename='img/fixpro-avatar.png') }}" alt="{{ a.full_name }}" />
-            {% endif %}
-            {% if a.availability_status == 'en_ligne' %}<span class="dot"></span>{% endif %}
-          </div>
-          <span class="hp-rec-badge" style="background:{{ badge.bg }};color:{{ badge.color }};">{{ label }}</span>
-        </div>
-        <h4 class="hp-rec-name">{{ a.full_name }}</h4>
-        <div class="hp-rec-rating">
-          <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-          <strong>{{ "%.1f"|format(a.avg_rating or 0) }}</strong> ({{ a.review_count or 0 }} avis)
-        </div>
-        {% if a.availability_status == 'en_ligne' %}
-        <span class="hp-rec-avail">Disponible aujourd'hui</span>
-        {% else %}
-        <span class="hp-rec-avail off">Sur rendez-vous</span>
-        {% endif %}
-        <span class="hp-rec-btn">Voir le profil</span>
-      </a>
-      {% endfor %}
-      {% else %}
-      <div class="hp-rec-empty">Aucun professionnel recommandé pour le moment.</div>
-      {% endif %}
-    </div>
-  </section>
-
-  <section class="hp-trust">
-    <div class="hp-trust-item">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>
-      <span>Professionnels<br/>vérifiés</span>
-    </div>
-    <div class="hp-trust-item">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-      <span>Intervention<br/>rapide</span>
-    </div>
-    <div class="hp-trust-item">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z"/></svg>
-      <span>Support 7j/7<br/>à votre écoute</span>
-    </div>
-    <div class="hp-trust-item">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-      <span>Paiement<br/>sécurisé</span>
-    </div>
-  </section>
-</main>
-
 <nav class="hp-bottom-nav">
   <a href="{{ url_for('index') }}" class="active">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
@@ -995,106 +770,27 @@
 </nav>
 
 <script>
-  const cards = document.querySelectorAll('.hp-cat');
-  const locInput = document.getElementById('locInput');
-  const locDisplay = document.getElementById('locDisplay');
-  const locTarget = document.getElementById('locTarget');
-  const searchBtn = document.getElementById('searchBtn');
   const locCsrf = document.getElementById('locCsrf');
-  let selectedCat = '';
 
-  function csrfHeader() {
-    return { 'X-CSRFToken': locCsrf ? locCsrf.value : '', 'Content-Type': 'application/json' };
-  }
-
-  function updateLocationDisplay(zone) {
-    if (locInput) locInput.value = zone;
-    if (locDisplay) locDisplay.textContent = zone;
-  }
-
-  function sendPosition(lat, lon, accuracy) {
-    fetch('/api/location', {
-      method: 'POST',
-      headers: csrfHeader(),
-      body: JSON.stringify({ lat, lon, accuracy })
-    }).then(r => r.json()).then(data => {
-      if (data.ok && data.zone) updateLocationDisplay(data.zone);
-    }).catch(err => console.error(err));
-  }
-
-  function saveManualZone(zone) {
-    return fetch('/api/location/zone', {
-      method: 'POST',
-      headers: csrfHeader(),
-      body: JSON.stringify({ zone: zone })
-    }).then(r => r.json()).then(data => {
-      if (data.ok && data.zone) updateLocationDisplay(data.zone);
-      return data;
-    }).catch(err => console.error(err));
-  }
-
-  // Bouton "ma position" : demande le GPS uniquement quand l'utilisateur le veut.
-  function requestLocation() {
-    if (!navigator.geolocation) {
-      const z = prompt('Entrez votre ville ou quartier :', locInput ? locInput.value : '');
-      if (z && z.trim()) saveManualZone(z.trim());
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      pos => sendPosition(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy || 0),
-      () => {
-        const z = prompt('Localisation refusée. Entrez votre ville ou quartier :', locInput ? locInput.value : '');
-        if (z && z.trim()) saveManualZone(z.trim());
-      }
-    );
-  }
-
-  // Mise a jour silencieuse si l'autorisation GPS a deja ete accordee (aucune fenetre).
+  // Mise a jour silencieuse de la zone si l'autorisation GPS a deja ete
+  // accordee (aucune fenetre, aucun bouton ici -- le choix manuel de
+  // position se fait depuis la page de recherche /artisans).
   if (navigator.permissions && navigator.permissions.query) {
     navigator.permissions.query({ name: 'geolocation' }).then(r => {
       if (r.state === 'granted' && navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
-          pos => sendPosition(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy || 0),
+          pos => {
+            fetch('/api/location', {
+              method: 'POST',
+              headers: { 'X-CSRFToken': locCsrf ? locCsrf.value : '', 'Content-Type': 'application/json' },
+              body: JSON.stringify({ lat: pos.coords.latitude, lon: pos.coords.longitude, accuracy: pos.coords.accuracy || 0 })
+            }).catch(err => console.error(err));
+          },
           () => {}
         );
       }
     }).catch(() => {});
   }
-
-  cards.forEach(c => {
-    c.addEventListener('click', e => {
-      e.preventDefault();
-      cards.forEach(x => x.classList.remove('active'));
-      c.classList.add('active');
-      selectedCat = c.dataset.cat;
-      let href = c.getAttribute('href');
-      const raw = (locInput.value || '').trim();
-      const zone = encodeURIComponent(raw);
-      function navigate() {
-        if (raw) href += (href.includes('?') ? '&' : '?') + 'zone=' + zone;
-        window.location.href = href;
-      }
-      if (raw) saveManualZone(raw).finally(navigate); else navigate();
-    });
-  });
-
-  if (searchBtn) searchBtn.addEventListener('click', e => {
-    e.preventDefault();
-    const raw = (locInput.value || '').trim();
-    const zone = encodeURIComponent(raw);
-    let href = '/artisans';
-    if (selectedCat) {
-      const activeCard = document.querySelector('.hp-cat.active');
-      if (activeCard) href = activeCard.getAttribute('href') || href;
-    }
-    function navigate() {
-      if (raw) href += (href.includes('?') ? '&' : '?') + 'zone=' + zone;
-      window.location.href = href;
-    }
-    if (raw) saveManualZone(raw).finally(navigate); else navigate();
-  });
-
-  if (locTarget) locTarget.addEventListener('click', requestLocation);
 
   // Installation PWA (FixPro n'est pas publie sur l'App Store / Google Play :
   // pas de faux badges, les deux boutons "magasin" declenchent l'installation
