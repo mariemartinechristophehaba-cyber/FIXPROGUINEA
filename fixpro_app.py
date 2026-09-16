@@ -1512,6 +1512,15 @@ def index():
             session["fixpro_space"] = "client"
         if session.get("fixpro_space") != "client":
             return redirect(url_for("artisan_dashboard"))
+    # Visiteur non connecte : ecran de choix "Je suis Client" / "Je suis Technicien"
+    # avant l'accueil public. Le choix "Client" est memorise en session (aucun
+    # compte requis pour le parcours client, cf. maquette du parcours utilisateur).
+    if not _u:
+        if request.args.get("guest") == "client":
+            session["guest_mode"] = "client"
+        elif session.get("guest_mode") != "client":
+            return render_template("choose_account.html",
+                                    client_href=url_for("index", guest="client"))
     conn = get_db_connection()
     try:
         artisans = conn.execute("""
