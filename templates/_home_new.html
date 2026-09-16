@@ -353,8 +353,7 @@
     body { padding-bottom: 0 !important; }
   }
 
-  /* Elements reserves au bureau : masques en mobile, reveles >=1024px. */
-  .dsk-only { display: none; }
+  /* Bloc bureau : masque en mobile, revele >=1024px. */
   .dsk-landing { display: none; }
 
   /* ==========================================================================
@@ -904,14 +903,7 @@
         </span>
         <span class="hp-chip-text"><strong>+5 000 clients</strong><span>Nous font confiance</span></span>
       </div>
-      <div class="hp-chip dsk-only">
-        <span class="hp-chip-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></svg>
-        </span>
-        <span class="hp-chip-text"><strong>Intervention rapide</strong><span>Pres de chez vous</span></span>
-      </div>
     </div>
-    <span class="hp-hero-bubble dsk-only" aria-hidden="true">Un probleme&nbsp;? <b>On trouve la solution&nbsp;!</b></span>
   </div>
 </section>
 
@@ -935,7 +927,6 @@
       {% endfor %}
     </div>
 
-    <div class="hp-search-row">
     <div class="hp-loc">
       <div class="hp-loc-left">
         <div class="hp-loc-dot">
@@ -957,7 +948,6 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
       Rechercher un professionnel
     </a>
-    </div>
   </section>
 
   <section>
@@ -971,12 +961,6 @@
       {% set label = pro_labels.get(a.profession, a.profession) %}
       {% set badge = prof_badge.get(label, {'bg':'#EEF4FF','color':'#1D4ED8'}) %}
       <a href="{{ url_for('artisan_detail', artisan_id=a.id) }}" class="hp-rec-card">
-        <div class="hp-rec-toprow dsk-only">
-          <span class="hp-rec-status {{ 'on' if a.availability_status == 'en_ligne' else 'off' }}">{{ 'En ligne' if a.availability_status == 'en_ligne' else 'Occupe' }}</span>
-          <span class="hp-rec-fav" data-soon="1" role="button" aria-label="Ajouter aux favoris">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 1 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>
-          </span>
-        </div>
         <div class="hp-rec-top">
           <div class="hp-rec-avatar">
             {% if a.photo_url %}
@@ -989,14 +973,10 @@
           <span class="hp-rec-badge" style="background:{{ badge.bg }};color:{{ badge.color }};">{{ label }}</span>
         </div>
         <h4 class="hp-rec-name">{{ a.full_name }}</h4>
-        <span class="hp-rec-job dsk-only">{{ label }}</span>
         <div class="hp-rec-rating">
           <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
           <strong>{{ "%.1f"|format(a.avg_rating or 0) }}</strong> ({{ a.review_count or 0 }} avis)
         </div>
-        {% if a.distance is defined and a.distance is not none %}
-        <span class="hp-rec-dist dsk-only"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg> A {{ "%.1f"|format(a.distance) }} km</span>
-        {% endif %}
         {% if a.availability_status == 'en_ligne' %}
         <span class="hp-rec-avail">Disponible aujourd'hui</span>
         {% else %}
