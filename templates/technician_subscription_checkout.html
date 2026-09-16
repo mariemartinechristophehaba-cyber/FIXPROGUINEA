@@ -172,20 +172,14 @@
       background: var(--d-ice); border-radius: 15px; padding: 14px 16px; margin-top: clamp(14px, 3vw, 20px);
     }
     .cbrand {
-      display: flex; align-items: center; justify-content: center; height: 34px; padding: 0 10px;
-      border-radius: 8px; background: #fff; box-shadow: 0 2px 6px rgba(11,27,59,.08);
-      font-weight: 900; font-style: italic; font-size: .82rem; color: #1A1F71; letter-spacing: -.02em;
+      height: 34px; width: auto; border-radius: 8px; box-shadow: 0 2px 6px rgba(11,27,59,.08);
+      display: block; object-fit: contain; background: #fff;
     }
-    .cbrand.mc { gap: 0; position: relative; width: 46px; }
-    .cbrand.mc .mc-c1, .cbrand.mc .mc-c2 { width: 18px; height: 18px; border-radius: 999px; }
-    .cbrand.mc .mc-c1 { background: #EB001B; margin-right: -7px; }
-    .cbrand.mc .mc-c2 { background: #F79E1B; opacity: .85; }
-    .cbrand.amex { background: #1F72CD; color: #fff; font-style: normal; font-size: .58rem; line-height: 1.15; text-align: center; font-weight: 800; }
     .cbrand-sec {
       display: flex; align-items: center; gap: 9px; flex: 1 1 180px; min-width: 0;
       font-size: .78rem; color: var(--d-blue); line-height: 1.35;
     }
-    .cbrand-sec svg { width: 26px; height: 26px; flex-shrink: 0; }
+    .cbrand-sec img { width: 26px; height: 26px; flex-shrink: 0; border-radius: 999px; }
     .cbrand-sec b { color: var(--d-ink2); }
 
     .cfield { display: block; margin-top: 14px; }
@@ -200,6 +194,7 @@
       padding: 13px; font-size: .98rem; color: var(--d-ink); letter-spacing: .02em;
     }
     .cfin svg { width: 19px; height: 19px; color: var(--d-muted); flex-shrink: 0; align-self: center; margin-right: 13px; }
+    .cfin .cf-icon { width: 19px; height: 19px; object-fit: contain; flex-shrink: 0; align-self: center; margin-right: 13px; }
     .cfin .cfeye { border: 0; background: transparent; padding: 0 13px; display: flex; align-items: center; cursor: pointer; color: var(--d-muted); }
     .cfin .cfeye svg { margin-right: 0; }
     .cfield-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
@@ -233,8 +228,9 @@
       display: flex; align-items: center; gap: 13px; margin-top: clamp(16px, 3.4vw, 22px);
       background: var(--d-ice); border-radius: 15px; padding: 14px 16px;
     }
-    .ssl-note .li { width: 38px; height: 38px; border-radius: 999px; background: var(--d-blue); color: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .ssl-note .li { width: 38px; height: 38px; border-radius: 999px; background: var(--d-blue); color: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; }
     .ssl-note .li svg { width: 18px; height: 18px; }
+    .ssl-note .li img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .ssl-note p { margin: 0; font-size: .84rem; color: var(--d-ink); line-height: 1.4; font-weight: 600; }
 
     /* --- Bouton --- */
@@ -370,8 +366,8 @@
             <span class="mtx"><b>{{ m.label }}</b><span>{{ m.desc }}</span></span>
             {% if m.brand == 'card' %}
             <span class="brands">
-              <svg viewBox="0 0 48 16" width="34" height="12"><text x="0" y="12" font-family="Arial" font-weight="900" font-style="italic" font-size="13" fill="#1A1F71">VISA</text></svg>
-              <svg viewBox="0 0 20 12" width="20" height="12"><circle cx="7" cy="6" r="6" fill="#EB001B"/><circle cx="13" cy="6" r="6" fill="#F79E1B" fill-opacity=".85"/></svg>
+              <img src="{{ asset('img/checkout/visa.png') }}" alt="Visa" />
+              <img src="{{ asset('img/checkout/mastercard.png') }}" alt="Mastercard" />
             </span>
             {% endif %}
             <span class="radio"></span>
@@ -414,11 +410,11 @@
         <p class="pay-sub" style="text-align:center">Entrez les informations de votre carte pour continuer votre abonnement.</p>
 
         <div class="card-brands mob-only">
-          <span class="cbrand visa">VISA</span>
-          <span class="cbrand mc"><span class="mc-c1"></span><span class="mc-c2"></span></span>
-          <span class="cbrand amex">AMERICAN<br>EXPRESS</span>
+          <img class="cbrand" src="{{ asset('img/checkout/visa.png') }}" alt="Visa" />
+          <img class="cbrand" src="{{ asset('img/checkout/mastercard.png') }}" alt="Mastercard" />
+          <img class="cbrand" src="{{ asset('img/checkout/amex.png') }}" alt="American Express" />
           <span class="cbrand-sec">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+            <img src="{{ asset('img/checkout/icon-securite.png') }}" alt="" />
             <span><b>Paiement sécurisé</b><br>Vos données sont protégées et chiffrées (SSL).</span>
           </span>
         </div>
@@ -436,7 +432,7 @@
           <span class="cflabel">Numéro de carte</span>
           <span class="cfin">
             <input type="text" id="cardNumber" inputmode="numeric" autocomplete="cc-number" placeholder="1234 5678 9012 3456" maxlength="19" />
-            <svg class="mob-only" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+            <img class="cf-icon mob-only" src="{{ asset('img/checkout/icon-carte.png') }}" alt="" />
             <img class="dsk-only dsk-cardicon" src="{{ asset('img/checkout/icon-carte.png') }}" alt="" />
           </span>
         </label>
@@ -473,7 +469,7 @@
         </label>
 
         <div class="ssl-note">
-          <span class="li"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+          <span class="li"><img src="{{ asset('img/checkout/icon-securite.png') }}" alt="" /></span>
           <p>Vos paiements sont sécurisés et protégés par un chiffrement SSL. Nous ne stockons pas vos informations bancaires sur nos serveurs.</p>
         </div>
 
