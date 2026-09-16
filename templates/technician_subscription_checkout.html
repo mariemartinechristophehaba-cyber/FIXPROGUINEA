@@ -271,6 +271,41 @@
     .foot nav { margin-top: 9px; display: flex; flex-wrap: wrap; justify-content: center; gap: 5px 16px; }
     .foot nav a { font-size: .78rem; font-weight: 600; color: var(--d-muted); }
     .foot nav a:hover { color: var(--d-blue); }
+
+    /* ===== Version ordinateur (>=1024px) — mobile ci-dessus jamais touche ===== */
+    .dsk-only { display: none; }
+    @media (min-width: 1024px) {
+      .dsk-only { display: initial; }
+      .mob-only { display: none !important; }
+      a.brand.dsk-only { display: flex; }
+      .card-brands.dsk-only { display: flex; }
+
+      body { background: linear-gradient(180deg, #EEF5FF 0%, #F7F9FC 320px); }
+
+      .topbar {
+        max-width: 1040px; background: #fff; box-shadow: 0 2px 10px rgba(11,27,59,.05);
+        backdrop-filter: none; -webkit-backdrop-filter: none;
+        padding: 16px clamp(24px, 4vw, 48px); border-radius: 0 0 18px 18px;
+      }
+      .brand img.dsk-logo { height: 34px; width: auto; display: block; }
+      .brand .s { display: block !important; }
+
+      .page {
+        max-width: 720px; margin: 44px auto; padding: 0;
+        background: #fff; border-radius: 22px; box-shadow: 0 20px 60px rgba(11,27,59,.09);
+        padding: 40px 52px 46px;
+      }
+      .h1 { font-size: 1.7rem; }
+
+      .card-brands img.dsk-brand { height: 26px; width: auto; display: block; }
+      .card-brands img.dsk-sec-icon { width: 30px; height: 30px; object-fit: contain; flex-shrink: 0; }
+      .cfin img.dsk-cardicon { width: 22px; height: 22px; object-fit: contain; flex-shrink: 0; align-self: center; margin-right: 13px; }
+
+      .cta:hover { filter: brightness(1.04); }
+      .method:hover { border-color: #C3D8FF; }
+
+      .foot { background: #fff; margin-top: 20px; }
+    }
   </style>
 </head>
 <body>
@@ -278,9 +313,12 @@
     <a class="back" href="{{ url_for('technician_subscription') }}" aria-label="Retour">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
     </a>
-    <a class="brand" href="{{ url_for('technician_subscription') }}">
+    <a class="brand mob-only" href="{{ url_for('technician_subscription') }}">
       <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span>
       <span><span class="n">Fix<i>Pro</i></span><span class="s">Espace Technicien</span></span>
+    </a>
+    <a class="brand dsk-only" href="{{ url_for('technician_subscription') }}">
+      <img class="dsk-logo" src="{{ asset('img/checkout/fixpro-logo.png') }}" alt="FixPro" />
     </a>
     <span class="avatar">
       {% if user.photo_url %}<img src="{{ user.photo_url }}" alt="" />{% else %}{{ (user.full_name or 'T')[:1] | upper }}{% endif %}
@@ -375,7 +413,7 @@
         <h1 class="h1">Informations de la carte</h1>
         <p class="pay-sub" style="text-align:center">Entrez les informations de votre carte pour continuer votre abonnement.</p>
 
-        <div class="card-brands">
+        <div class="card-brands mob-only">
           <span class="cbrand visa">VISA</span>
           <span class="cbrand mc"><span class="mc-c1"></span><span class="mc-c2"></span></span>
           <span class="cbrand amex">AMERICAN<br>EXPRESS</span>
@@ -384,12 +422,22 @@
             <span><b>Paiement sécurisé</b><br>Vos données sont protégées et chiffrées (SSL).</span>
           </span>
         </div>
+        <div class="card-brands dsk-only">
+          <img class="dsk-brand" src="{{ asset('img/checkout/visa.png') }}" alt="Visa" />
+          <img class="dsk-brand" src="{{ asset('img/checkout/mastercard.png') }}" alt="Mastercard" />
+          <img class="dsk-brand" src="{{ asset('img/checkout/amex.png') }}" alt="American Express" />
+          <span class="cbrand-sec">
+            <img class="dsk-sec-icon" src="{{ asset('img/checkout/icon-securite.png') }}" alt="" />
+            <span><b>Paiement sécurisé</b><br>Vos données sont protégées et chiffrées (SSL).</span>
+          </span>
+        </div>
 
         <label class="cfield">
           <span class="cflabel">Numéro de carte</span>
           <span class="cfin">
             <input type="text" id="cardNumber" inputmode="numeric" autocomplete="cc-number" placeholder="1234 5678 9012 3456" maxlength="19" />
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+            <svg class="mob-only" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+            <img class="dsk-only dsk-cardicon" src="{{ asset('img/checkout/icon-carte.png') }}" alt="" />
           </span>
         </label>
 
