@@ -375,135 +375,131 @@
     body:not(.no-sidebar) .page,
     body.no-sidebar .page { max-width: none; margin: 0; padding: 0; }
 
-    /* ---- HERO ---- */
-    .dl-hero {
-      position: relative; overflow: hidden;
-      background: linear-gradient(120deg, #0B3FA8 0%, var(--hp-primary) 55%, #2E7DFF 100%);
-      color: #fff; padding: 48px calc((100% - 1160px) / 2 + 28px) 60px;
-    }
-    .dl-hero-grid { display: grid; grid-template-columns: minmax(0,1fr) 440px; gap: 32px; align-items: center; max-width: 1160px; margin: 0 auto; }
-    .dl-hero-badge {
-      display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px 7px 10px;
-      background: rgba(255,255,255,.14); border-radius: 999px; font-size: .78rem; font-weight: 600; margin-bottom: 18px;
-    }
-    .dl-hero-badge svg { width: 15px; height: 15px; }
-    .dl-hero h1 { font-size: 2.6rem; line-height: 1.14; font-weight: 800; margin: 0 0 14px; }
-    .dl-hero h1 u { text-decoration: none; color: #BFD9FF; }
-    .dl-hero p { font-size: 1rem; color: rgba(255,255,255,.88); max-width: 480px; margin: 0 0 26px; line-height: 1.55; }
-    .dl-hero p b { color: #fff; }
-    .dl-search {
-      display: flex; align-items: stretch; gap: 8px; background: #fff; border-radius: 14px;
-      padding: 8px; box-shadow: 0 14px 34px rgba(6,20,60,.28); max-width: 640px;
-    }
-    .dl-search-field { display: flex; align-items: center; gap: 8px; padding: 0 12px; color: var(--hp-text); }
-    .dl-search-field.loc { flex: 0 0 auto; border-right: 1px solid var(--hp-line); }
-    .dl-search-field.q { flex: 1; min-width: 0; }
-    .dl-search-field svg { width: 17px; height: 17px; color: var(--hp-primary); flex-shrink: 0; }
-    .dl-search-field select, .dl-search-field input {
-      border: none; outline: none; background: transparent; font: inherit; font-size: .88rem; color: var(--hp-text); min-width: 0;
-    }
-    .dl-search-btn {
-      flex-shrink: 0; border: none; cursor: pointer; background: var(--hp-primary); color: #fff;
-      font-weight: 700; font-size: .9rem; padding: 0 26px; border-radius: 9px;
-    }
-    .dl-search-btn:hover { background: var(--hp-primary-dark); }
-    .dl-hero-badges { display: flex; gap: 22px; margin-top: 20px; flex-wrap: wrap; }
-    .dl-hero-badges span { display: flex; align-items: center; gap: 7px; font-size: .82rem; color: rgba(255,255,255,.9); font-weight: 600; }
-    .dl-hero-badges svg { width: 16px; height: 16px; color: #8FC2FF; }
+    /* ---- Conteneur general ---- */
+    .dh2-wrap { max-width: 1160px; margin: 0 auto; padding: 28px 28px 8px; }
 
-    .dl-hero-visual { position: relative; }
-    .dl-hero-visual img { width: 100%; height: 320px; object-fit: cover; border-radius: 20px; display: block; box-shadow: 0 20px 50px rgba(6,20,60,.35); }
-    .dl-hero-quote {
-      position: absolute; right: -10px; top: -18px; background: #fff; color: var(--hp-text);
-      border-radius: 14px; padding: 12px 16px; font-size: .82rem; font-style: italic;
-      box-shadow: 0 12px 30px rgba(6,20,60,.2); max-width: 200px; line-height: 1.4;
+    /* ---- Onglets categories ---- */
+    .dh2-tabs { display: flex; gap: 30px; overflow-x: auto; border-bottom: 1px solid var(--hp-line); margin-bottom: 20px; }
+    .dh2-tab {
+      position: relative; flex-shrink: 0; padding: 6px 0 15px; font-size: .92rem; font-weight: 700;
+      color: var(--hp-muted); text-decoration: none; white-space: nowrap;
     }
-    .dl-hero-card {
-      position: absolute; left: -16px; bottom: -20px; background: #fff; color: var(--hp-text);
-      border-radius: 14px; padding: 14px 16px; box-shadow: 0 14px 34px rgba(6,20,60,.22);
-      display: flex; align-items: center; gap: 10px;
+    .dh2-tab:hover { color: var(--hp-text); }
+    .dh2-tab.active { color: var(--hp-primary); }
+    .dh2-tab.active::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 3px; border-radius: 3px 3px 0 0; background: var(--hp-primary); }
+
+    /* ---- Filtres rapides ---- */
+    .dh2-chips { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
+    .dh2-chip {
+      display: flex; align-items: center; gap: 12px; background: #F5F8FF; border: 1px solid var(--hp-line);
+      border-radius: 14px; padding: 14px 16px; text-decoration: none; color: var(--hp-text);
+      transition: box-shadow .15s, transform .15s; cursor: pointer;
     }
-    .dl-hero-card .stars { color: var(--hp-yellow); font-size: .8rem; }
-    .dl-hero-card strong { display: block; font-size: 1rem; }
-    .dl-hero-card span { font-size: .74rem; color: var(--hp-muted); }
-    .dl-hero-avatars { display: flex; }
-    .dl-hero-avatars img { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; border: 2px solid #fff; margin-left: -8px; }
-    .dl-hero-avatars img:first-child { margin-left: 0; }
+    .dh2-chip:hover { box-shadow: 0 10px 22px rgba(16,42,67,.08); transform: translateY(-1px); }
+    .dh2-chip .ic { width: 42px; height: 42px; border-radius: 11px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .dh2-chip .ic svg { width: 20px; height: 20px; }
+    .dh2-chip span { font-weight: 700; font-size: .86rem; }
 
-    /* ---- Contenu general : colonne centree ---- */
-    .dl-section { max-width: 1160px; margin: 0 auto; padding: 64px 28px; }
-    .dl-section-head { text-align: center; max-width: 640px; margin: 0 auto 36px; }
-    .dl-section-head h2 { font-size: 1.7rem; font-weight: 800; color: var(--hp-text); margin: 0 0 8px; }
-    .dl-section-head p { font-size: .92rem; color: var(--hp-muted); margin: 0; }
-
-    /* ---- Services ---- */
-    .dl-services { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
-    .dl-service {
-      display: block; text-decoration: none; color: inherit;
-      border: 1px solid var(--hp-line); border-radius: 18px; overflow: hidden;
-      transition: transform .16s, box-shadow .16s;
+    /* ---- Hero ---- */
+    .dh2-hero {
+      position: relative; overflow: hidden; border-radius: 24px; margin-bottom: 40px;
+      background: linear-gradient(120deg, #EAF2FF 0%, #DCEBFF 60%, #EAF2FF 100%);
+      display: grid; grid-template-columns: minmax(0,1fr) 380px; align-items: center; gap: 24px;
     }
-    .dl-service:hover { transform: translateY(-4px); box-shadow: 0 16px 32px rgba(16,42,67,.12); }
-    .dl-service-photo { position: relative; display: block; height: 130px; overflow: hidden; }
-    .dl-service-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .dl-service h3 { font-size: 1.02rem; font-weight: 700; margin: 16px 22px 6px; }
-    .dl-service p { font-size: .82rem; color: var(--hp-muted); margin: 0 22px 20px; line-height: 1.4; min-height: 34px; }
-    .dl-service-arrow {
-      position: absolute; right: 12px; bottom: 12px;
-      width: 34px; height: 34px; border-radius: 50%; background: #fff; color: var(--hp-primary);
-      display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 16px rgba(16,42,67,.18);
+    .dh2-hero-tx { padding: 44px 8px 44px 44px; }
+    .dh2-hero-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+    .dh2-hero-brand .mark { width: 34px; height: 34px; color: var(--hp-primary); flex-shrink: 0; }
+    .dh2-hero-brand .mark svg { width: 100%; height: 100%; }
+    .dh2-hero-brand b { font-size: 1.3rem; font-weight: 800; color: var(--hp-text); }
+    .dh2-hero-brand b em { font-style: normal; color: var(--hp-primary); }
+    .dh2-hero h1 { font-size: 2.15rem; line-height: 1.2; font-weight: 800; color: var(--hp-text); margin: 0 0 16px; }
+    .dh2-hero h1 em { font-style: normal; color: var(--hp-primary); }
+    .dh2-hero-tags { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: .88rem; color: var(--hp-muted); font-weight: 600; margin-bottom: 24px; }
+    .dh2-hero-tags b { color: var(--hp-line); font-weight: 400; }
+    .dh2-hero-btn {
+      display: inline-flex; align-items: center; gap: 10px; background: var(--hp-primary); color: #fff;
+      font-weight: 700; font-size: .95rem; padding: 14px 24px; border-radius: 13px; text-decoration: none;
+      box-shadow: 0 14px 28px rgba(21,94,239,.3); transition: background .15s;
     }
-    .dl-service-arrow svg { width: 15px; height: 15px; }
+    .dh2-hero-btn:hover { background: var(--hp-primary-dark); }
+    .dh2-hero-btn svg { width: 17px; height: 17px; }
+    .dh2-hero-visual { position: relative; align-self: stretch; }
+    .dh2-hero-visual img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
-    /* ---- Comment ca marche ---- */
-    .dl-steps-wrap { background: var(--hp-bg); }
-    .dl-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; }
-    .dl-step { position: relative; text-align: left; padding: 0 22px 0 0; }
-    .dl-step-top { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
-    .dl-step-num {
-      width: 34px; height: 34px; border-radius: 50%; background: var(--hp-primary); color: #fff;
-      display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: .9rem; flex-shrink: 0;
+    /* ---- Services populaires ---- */
+    .dh2-section-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 20px; }
+    .dh2-section-head h2 { font-size: 1.3rem; font-weight: 800; color: var(--hp-text); margin: 0; }
+    .dh2-section-head a { color: var(--hp-primary); text-decoration: none; font-size: .86rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; }
+    .dh2-section-head a svg { width: 14px; height: 14px; }
+    .dh2-services { display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; margin-bottom: 40px; }
+    .dh2-service {
+      display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center;
+      border-radius: 16px; padding: 20px 10px; text-decoration: none; color: var(--hp-text);
+      transition: transform .15s, box-shadow .15s;
     }
-    .dl-step-ic { width: 38px; height: 38px; border-radius: 10px; background: #fff; border: 1px solid var(--hp-line); color: var(--hp-primary); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-    .dl-step-ic svg { width: 18px; height: 18px; }
-    .dl-step h3 { font-size: .98rem; font-weight: 700; margin: 0 0 6px; }
-    .dl-step p { font-size: .82rem; color: var(--hp-muted); margin: 0; line-height: 1.4; }
-    .dl-step-chev { position: absolute; right: -6px; top: 8px; color: #CBD5E1; }
-    .dl-step-chev svg { width: 18px; height: 18px; }
-    .dl-step:last-child .dl-step-chev { display: none; }
+    .dh2-service:hover { transform: translateY(-3px); box-shadow: 0 10px 22px rgba(16,42,67,.08); }
+    .dh2-service .ic { width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; }
+    .dh2-service .ic svg { width: 26px; height: 26px; }
+    .dh2-service h3 { font-size: .9rem; font-weight: 700; margin: 0; line-height: 1.25; }
 
-    /* ---- Professionnels ---- */
-    .dl-pros { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
-    .dl-pro { display: block; text-decoration: none; color: inherit; border: 1px solid var(--hp-line); border-radius: 18px; padding: 20px; text-align: center; transition: transform .16s, box-shadow .16s; }
-    .dl-pro:hover { transform: translateY(-4px); box-shadow: 0 16px 32px rgba(16,42,67,.12); }
-    .dl-pro-avatar { position: relative; width: 76px; height: 76px; margin: 0 auto 12px; }
-    .dl-pro-avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
-    .dl-pro-avatar .dot { position: absolute; bottom: 2px; right: 2px; width: 14px; height: 14px; border-radius: 50%; background: var(--hp-green); border: 2.5px solid #fff; }
-    .dl-pro h3 { font-size: 1rem; font-weight: 700; margin: 0 0 2px; }
-    .dl-pro .job { font-size: .8rem; color: var(--hp-primary); font-weight: 600; margin: 0 0 8px; }
-    .dl-pro .rate { display: flex; align-items: center; justify-content: center; gap: 5px; font-size: .8rem; color: var(--hp-muted); margin-bottom: 10px; }
-    .dl-pro .rate svg { width: 13px; height: 13px; color: var(--hp-yellow); }
-    .dl-pro .rate strong { color: var(--hp-text); }
-    .dl-pro-avail { display: inline-block; font-size: .68rem; font-weight: 700; padding: 4px 12px; border-radius: 999px; background: #DCFCE7; color: #16A34A; margin-bottom: 14px; }
-    .dl-pro-avail.off { background: #FEF3C7; color: #B45309; }
-    .dl-pro-btn { display: block; border: 1.5px solid var(--hp-primary); color: var(--hp-primary); border-radius: 11px; padding: 9px; font-size: .84rem; font-weight: 700; }
-    .dl-pro:hover .dl-pro-btn { background: var(--hp-light-blue); }
+    /* ---- Offres speciales ---- */
+    .dh2-offers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; margin-bottom: 48px; }
+    .dh2-offer { border: 1px solid var(--hp-line); border-radius: 18px; overflow: hidden; background: #fff; transition: transform .16s, box-shadow .16s; }
+    .dh2-offer:hover { transform: translateY(-4px); box-shadow: 0 16px 32px rgba(16,42,67,.12); }
+    .dh2-offer-photo { position: relative; height: 190px; }
+    .dh2-offer-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .dh2-offer-off { position: absolute; left: 12px; top: 12px; background: #EF4444; color: #fff; font-size: .78rem; font-weight: 800; padding: 5px 12px; border-radius: 8px; }
+    .dh2-offer-fav {
+      position: absolute; right: 12px; top: 12px; width: 34px; height: 34px; border-radius: 50%; background: #fff;
+      border: 0; display: flex; align-items: center; justify-content: center; color: var(--hp-text); cursor: pointer;
+      box-shadow: 0 4px 10px rgba(16,42,67,.16);
+    }
+    .dh2-offer-fav svg { width: 16px; height: 16px; }
+    .dh2-offer-body { padding: 16px 18px 20px; }
+    .dh2-offer-body h3 { font-size: 1.05rem; font-weight: 800; margin: 0 0 4px; }
+    .dh2-offer-body .desc { font-size: .82rem; color: var(--hp-muted); margin: 0 0 10px; line-height: 1.35; }
+    .dh2-offer-meta { display: flex; align-items: center; gap: 14px; font-size: .82rem; color: var(--hp-muted); margin-bottom: 10px; }
+    .dh2-offer-meta span { display: flex; align-items: center; gap: 5px; }
+    .dh2-offer-meta svg { width: 14px; height: 14px; }
+    .dh2-offer-meta .rate svg { color: var(--hp-yellow); }
+    .dh2-offer-meta .rate strong { color: var(--hp-text); }
+    .dh2-offer-price { font-size: .78rem; color: var(--hp-muted); margin-bottom: 4px; }
+    .dh2-offer-price strong { display: block; font-size: 1.15rem; color: var(--hp-primary); font-weight: 800; }
+    .dh2-offer-btn {
+      display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-top: 12px;
+      border: 1.5px solid var(--hp-primary); color: var(--hp-primary); border-radius: 11px; padding: 10px;
+      font-size: .86rem; font-weight: 700; text-decoration: none;
+    }
+    .dh2-offer-btn:hover { background: var(--hp-light-blue); }
+    .dh2-offer-btn svg { width: 15px; height: 15px; }
 
-    /* ---- Promo PWA (pas de badges App Store/Google Play : FixPro est une PWA, pas une app publiee) ---- */
-    .dl-promo { background: linear-gradient(120deg, var(--hp-primary-dark), var(--hp-primary)); border-radius: 24px; padding: 30px 44px; display: flex; align-items: center; gap: 28px; color: #fff; }
-    .dl-promo-phone { width: 90px; height: 88px; object-fit: cover; border-radius: 12px; flex-shrink: 0; }
-    .dl-promo-text { flex: 1; min-width: 0; }
-    .dl-promo h2 { font-size: 1.5rem; font-weight: 800; margin: 0 0 8px; }
-    .dl-promo p { font-size: .92rem; color: rgba(255,255,255,.88); margin: 0; max-width: 420px; }
-    .dl-promo-btn { flex-shrink: 0; display: inline-flex; align-items: center; gap: 8px; background: #fff; color: var(--hp-primary); font-weight: 700; font-size: .88rem; padding: 13px 22px; border-radius: 11px; text-decoration: none; white-space: nowrap; }
-    .dl-promo-btn svg { width: 17px; height: 17px; }
-
-    /* ---- Avantages ---- */
-    .dl-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; text-align: center; }
-    .dl-stat-ic { width: 46px; height: 46px; border-radius: 12px; background: var(--hp-light-blue); color: var(--hp-primary); display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; }
-    .dl-stat-ic svg { width: 21px; height: 21px; }
-    .dl-stat strong { display: block; font-size: 1.4rem; font-weight: 800; color: var(--hp-text); }
-    .dl-stat span { font-size: .82rem; color: var(--hp-muted); }
+    /* ---- Telechargement application ---- */
+    .dh2-download {
+      display: grid; grid-template-columns: 380px minmax(0,1fr); gap: 40px; align-items: center;
+      background: linear-gradient(120deg, #EAF2FF, #F5F9FF); border-radius: 24px; padding: 40px 44px; margin-bottom: 48px;
+    }
+    .dh2-download-visual img { width: 100%; display: block; border-radius: 14px; }
+    .dh2-download-tag {
+      display: inline-block; background: var(--hp-light-blue); color: var(--hp-primary); font-size: .76rem; font-weight: 700;
+      letter-spacing: .03em; text-transform: uppercase; padding: 6px 14px; border-radius: 999px; margin-bottom: 14px;
+    }
+    .dh2-download h2 { font-size: 1.7rem; font-weight: 800; color: var(--hp-text); margin: 0 0 16px; line-height: 1.25; }
+    .dh2-download-list { list-style: none; margin: 0 0 22px; padding: 0; display: flex; flex-direction: column; gap: 11px; }
+    .dh2-download-list li { display: flex; align-items: center; gap: 10px; font-size: .92rem; color: var(--hp-text); font-weight: 500; }
+    .dh2-download-list svg { width: 20px; height: 20px; color: #16A34A; flex-shrink: 0; }
+    .dh2-download-row { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+    .dh2-store-btns { display: flex; gap: 10px; flex-wrap: wrap; }
+    .dh2-store-btn {
+      display: flex; align-items: center; gap: 9px; background: #0B1220; color: #fff; border: 0; cursor: pointer;
+      border-radius: 11px; padding: 10px 16px; text-decoration: none;
+    }
+    .dh2-store-btn svg { width: 22px; height: 22px; flex-shrink: 0; }
+    .dh2-store-btn span { display: block; line-height: 1.2; }
+    .dh2-store-btn small { display: block; font-size: .62rem; opacity: .8; }
+    .dh2-store-btn b { display: block; font-size: .88rem; font-weight: 700; }
+    .dh2-qr { display: flex; align-items: center; gap: 10px; }
+    .dh2-qr img { width: 62px; height: 62px; border-radius: 8px; flex-shrink: 0; }
+    .dh2-qr span { font-size: .78rem; color: var(--hp-muted); font-weight: 600; line-height: 1.3; }
 
     /* ---- Footer ---- */
     .dl-footer { background: #0B1B3A; color: rgba(255,255,255,.72); padding: 48px 28px 26px; }
@@ -528,198 +524,161 @@
   }
 
   @media (min-width: 1024px) and (max-width: 1280px) {
-    /* La photo du hero reste toujours visible : reduite, jamais masquee.
-       Les pastilles (citation, avis) se chevauchaient a cette largeur
-       reduite : on les retire, la photo seule suffit ici. */
-    .dl-hero-grid { grid-template-columns: minmax(0, 1fr) 300px; gap: 20px; }
-    .dl-hero-visual img { height: 230px; }
-    .dl-hero-quote, .dl-hero-card { display: none; }
-    .dl-services, .dl-pros, .dl-stats { grid-template-columns: repeat(2, 1fr); }
-    .dl-steps { grid-template-columns: repeat(2, 1fr); gap: 28px; }
-    .dl-step-chev { display: none; }
+    /* La photo du hero reste toujours visible, seulement reduite. */
+    .dh2-hero { grid-template-columns: minmax(0, 1fr) 260px; }
+    .dh2-chips { grid-template-columns: repeat(2, 1fr); }
+    .dh2-services { grid-template-columns: repeat(3, 1fr); }
+    .dh2-offers { grid-template-columns: repeat(2, 1fr); }
+    .dh2-download { grid-template-columns: minmax(0,1fr); }
+    .dh2-download-visual { max-width: 320px; margin: 0 auto; }
     .dl-footer-inner { grid-template-columns: 1fr 1fr; }
   }
 </style>
 
 <div class="dsk-landing">
 
-  <section class="dl-hero">
-    <div class="dl-hero-grid">
+  <div class="dh2-wrap">
+
+    <nav class="dh2-tabs">
+      <a class="dh2-tab {{ 'active' if not request.args.get('category') }}" href="{{ url_for('artisans_page') }}">Tous</a>
+      {% for p in popular %}
+      <a class="dh2-tab {{ 'active' if request.args.get('category') == p.category }}" href="{{ url_for('artisans_page', category=p.category) }}">{{ 'Froid & Clim' if p.label == 'Frigoriste' else p.label }}</a>
+      {% endfor %}
+    </nav>
+
+    <div class="dh2-chips">
+      <a class="dh2-chip" href="#dh2-services">
+        <span class="ic" style="background:var(--hp-light-blue);color:var(--hp-primary);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/></svg></span>
+        <span>Par catégorie</span>
+      </a>
+      <a class="dh2-chip" href="{{ url_for('artisans_page') }}">
+        <span class="ic" style="background:var(--hp-light-blue);color:var(--hp-primary);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+        <span>Techniciens vérifiés</span>
+      </a>
+      <a class="dh2-chip" href="{{ url_for('reviews') }}">
+        <span class="ic" style="background:#FEF3C7;color:#B45309;"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></span>
+        <span>Avis clients</span>
+      </a>
+      <a class="dh2-chip" href="#dh2-offers">
+        <span class="ic" style="background:#FEE2E2;color:#DC2626;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M17 3H7a1 1 0 0 0-1 1v6a6 6 0 0 0 12 0V4a1 1 0 0 0-1-1zM5 6H3a2 2 0 0 0 2 4M19 6h2a2 2 0 0 1-2 4"/></svg></span>
+        <span>Top services</span>
+      </a>
+    </div>
+
+    <section class="dh2-hero">
+      <div class="dh2-hero-tx">
+        <span class="dh2-hero-brand">
+          <span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span>
+          <b>Fix<em>Pro</em></b>
+        </span>
+        <h1>Tous vos travaux avec des <em>professionnels qualifiés</em></h1>
+        <p class="dh2-hero-tags">Rapide <b>&bull;</b> Sécurisé <b>&bull;</b> Près de chez vous</p>
+        <a class="dh2-hero-btn" href="{{ url_for('artisans_page') }}">
+          Trouver un technicien
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </a>
+      </div>
+      <div class="dh2-hero-visual">
+        <img src="{{ asset('img/home2-hero-photo.jpg') }}" alt="Technicien FixPro devant un chantier" />
+      </div>
+    </section>
+
+    <div id="dh2-services">
+      <div class="dh2-section-head">
+        <h2>Services populaires</h2>
+        <a href="{{ url_for('artisans_page') }}">Voir tout <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></a>
+      </div>
+      {% set dh2_svc_style = {
+        'Plomberie':   {'bg': '#EAF2FF', 'color': '#155EEF', 'svg': cat_meta['Plomberie'].svg},
+        'Électricité': {'bg': '#FFF7E0', 'color': '#D97706', 'svg': cat_meta['Électricité'].svg},
+        'Frigoriste':  {'bg': '#EAF2FF', 'color': '#155EEF', 'svg': cat_meta['Frigoriste'].svg},
+        'Peinture':    {'bg': '#FCE7F3', 'color': '#DB2777', 'svg': cat_meta['Peinture'].svg},
+        'Maçonnerie':  {'bg': '#FFEDE0', 'color': '#EA580C', 'svg': cat_meta['Maçonnerie'].svg},
+        'Menuiserie':  {'bg': '#E7F8ED', 'color': '#16A34A', 'svg': cat_meta['Menuiserie'].svg}
+      } %}
+      <div class="dh2-services">
+        {% for p in popular %}
+        {% set st = dh2_svc_style.get(p.label, {'bg':'#F1F5F9','color':'#64748B','svg':''}) %}
+        <a class="dh2-service" href="{{ url_for('artisans_page', category=p.category) }}">
+          <span class="ic" style="background:{{ st.bg }};color:{{ st.color }};"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">{{ st.svg|safe }}</svg></span>
+          <h3>{{ 'Froid & Climatisation' if p.label == 'Frigoriste' else p.label }}</h3>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div id="dh2-offers">
+      <div class="dh2-section-head">
+        <h2>Offres spéciales</h2>
+        <a href="{{ url_for('artisans_page') }}">Voir tout <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></a>
+      </div>
+      {% set dh2_offers = [
+        {'photo': 'offer-plombier.jpg', 'off': '-20%', 'title': 'Plombier professionnel', 'desc': 'Réparation, installation, dépannage', 'category': 'Plomberie', 'rating': '4.8', 'reviews': 124, 'price': '100 000'},
+        {'photo': 'offer-electricien.jpg', 'off': '-15%', 'title': 'Électricien qualifié', 'desc': 'Installation, dépannage, mise aux normes', 'category': 'Électricité', 'rating': '4.9', 'reviews': 98, 'price': '120 000'},
+        {'photo': 'offer-frigoriste.jpg', 'off': '-10%', 'title': 'Frigoriste / Climatisation', 'desc': 'Installation, entretien, dépannage', 'category': 'Frigoriste', 'rating': '4.7', 'reviews': 86, 'price': '150 000'}
+      ] %}
+      <div class="dh2-offers">
+        {% for o in dh2_offers %}
+        <div class="dh2-offer">
+          <div class="dh2-offer-photo">
+            <img src="{{ asset('img/' ~ o.photo) }}" alt="{{ o.title }}" loading="lazy" />
+            <span class="dh2-offer-off">{{ o.off }}</span>
+            <button type="button" class="dh2-offer-fav" data-fav="1" aria-label="Ajouter aux favoris">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 1 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>
+            </button>
+          </div>
+          <div class="dh2-offer-body">
+            <h3>{{ o.title }}</h3>
+            <p class="desc">{{ o.desc }}</p>
+            <div class="dh2-offer-meta">
+              <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg> {{ client_zone or 'Conakry' }}</span>
+              <span class="rate"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> <strong>{{ o.rating }}</strong> ({{ o.reviews }} avis)</span>
+            </div>
+            <div class="dh2-offer-price">À partir de<strong>{{ o.price }} GNF</strong></div>
+            <a class="dh2-offer-btn" href="{{ url_for('artisans_page', category=o.category) }}">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg>
+              Voir le profil
+            </a>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <section class="dh2-download">
+      <div class="dh2-download-visual">
+        <img src="{{ asset('img/home2-phones.jpg') }}" alt="Application FixPro sur mobile" />
+      </div>
       <div>
-        <span class="dl-hero-badge">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>
-          Services a domicile a {{ client_zone or 'Conakry' }}
-        </span>
-        <h1>Des professionnels<br/>pres de vous, <u>rapidement</u> !</h1>
-        <p>Plombiers, electriciens, frigoristes et bien plus encore. Reservez un professionnel de <b>confiance</b> en quelques clics.</p>
-        <form class="dl-search" method="get" action="{{ url_for('artisans_page') }}">
-          <span class="dl-search-field loc">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>
-            <button type="button" id="dlLocBtn" style="all:unset;cursor:pointer;">{{ client_zone or 'Ma position (automatique)' }}</button>
-          </span>
-          <span class="dl-search-field q">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-            <input type="text" name="q" placeholder="Quel service recherchez-vous ?" value="{{ request.args.get('q', '') }}" />
-          </span>
-          <button type="submit" class="dl-search-btn">Rechercher</button>
-        </form>
-        <div class="dl-hero-badges">
-          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg> Professionnels verifies</span>
-          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></svg> Intervention rapide</span>
-          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Paiement securise</span>
-        </div>
-      </div>
-      <div class="dl-hero-visual">
-        <img src="{{ asset('img/hero-desktop-technicien.jpg') }}" alt="Technicien FixPro" />
-        <span class="dl-hero-quote">"Un service fiable pour votre confort !"</span>
-        <div class="dl-hero-card">
-          <div class="dl-hero-avatars">
-            {% for a in artisans[:3] %}<img src="{{ a.photo_url or url_for('static', filename='img/fixpro-avatar.png') }}" alt="" />{% endfor %}
+        <span class="dh2-download-tag">Téléchargez l'application FixPro</span>
+        <h2>Trouvez un technicien partout et à tout moment.</h2>
+        <ul class="dh2-download-list">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m8 12 3 3 5-6"/></svg> Trouvez des techniciens près de vous</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m8 12 3 3 5-6"/></svg> Réservez en quelques clics</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m8 12 3 3 5-6"/></svg> Suivez l'intervention</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m8 12 3 3 5-6"/></svg> Discutez avec le technicien</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m8 12 3 3 5-6"/></svg> Un service fiable et sécurisé</li>
+        </ul>
+        <div class="dh2-download-row">
+          <div class="dh2-store-btns">
+            <button type="button" class="dh2-store-btn" id="dh2InstallBtn1">
+              <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M3 3.5v17a1 1 0 0 0 1.5.87l14-8.5a1 1 0 0 0 0-1.74l-14-8.5A1 1 0 0 0 3 3.5z"/></svg>
+              <span><small>Disponible sur</small><b>Google Play</b></span>
+            </button>
+            <button type="button" class="dh2-store-btn" id="dh2InstallBtn2">
+              <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M16.365 1.43c0 1.14-.493 2.27-1.177 3.08-.744.9-1.99 1.57-2.987 1.57-.12 0-.23-.02-.3-.03-.014-.11-.04-.412-.04-.703 0-1.14.572-2.27 1.207-2.98.744-.85 2.03-1.51 3.14-1.55.014.1.157.3.157.603zm3.03 16.02c-.055.14-.303.85-.827 1.61-.7 1.03-1.44 2.13-2.6 2.15-1.11.02-1.47-.7-2.75-.7-1.28 0-1.7.68-2.74.72-1.13.04-2.01-1.15-2.72-2.16-1.44-2.06-2.54-5.84-1.06-8.4.73-1.27 2.05-2.08 3.48-2.1 1.1-.02 2.14.75 2.75.75.6 0 1.83-.9 3.14-.77.53.02 2.06.22 3.12 1.65-.08.06-1.87 1.1-1.85 3.24.02 2.56 2.24 3.4 2.28 3.42-.02.08-.35 1.22-1.14 2.66z"/></svg>
+              <span><small>Télécharger sur</small><b>App Store</b></span>
+            </button>
           </div>
-          <div>
-            <span class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
-            <strong>+5 000</strong>
-            <span>clients satisfaits</span>
+          <div class="dh2-qr">
+            <img src="{{ asset('img/home2-qr.png') }}" alt="QR code d'installation FixPro" />
+            <span>Scannez<br/>le QR Code</span>
           </div>
         </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <section class="dl-section" id="services">
-    <div class="dl-section-head">
-      <h2>Nos services principaux</h2>
-      <p>Des professionnels qualifies pour tous vos besoins</p>
-    </div>
-    {% set dl_service_img = {
-      'Plomberie': 'service-plomberie.jpg',
-      'Électricité': 'service-electricite.jpg',
-      'Frigoriste': 'service-climatisation.jpg',
-      'Peinture': 'service-peinture.jpg'
-    } %}
-    <div class="dl-services">
-      {% for p in popular if p.label in ('Plomberie', 'Électricité', 'Frigoriste', 'Peinture') %}
-      {% set meta = cat_meta.get(p.label, {'color':'#64748B','bg':'#F1F5F9','desc':'','svg':''}) %}
-      <a class="dl-service" href="{{ url_for('artisans_page', category=p.category) }}">
-        <span class="dl-service-photo">
-          <img src="{{ asset('img/' ~ dl_service_img.get(p.label, '')) }}" alt="{{ p.label }}" loading="lazy" />
-          <span class="dl-service-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
-        </span>
-        <h3>{{ 'Froid & Climatisation' if p.label == 'Frigoriste' else p.label }}</h3>
-        <p>{{ meta.desc }}</p>
-      </a>
-      {% endfor %}
-    </div>
-  </section>
-
-  <section class="dl-steps-wrap" id="comment-ca-marche">
-    <div class="dl-section">
-      <div class="dl-section-head">
-        <h2>Comment ca marche ?</h2>
-        <p>Reservez un professionnel en 4 etapes simples</p>
-      </div>
-      <div class="dl-steps">
-        <div class="dl-step">
-          <div class="dl-step-top">
-            <span class="dl-step-num">1</span>
-            <span class="dl-step-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></span>
-          </div>
-          <h3>Recherchez un service</h3>
-          <p>Trouvez le professionnel dont vous avez besoin</p>
-          <span class="dl-step-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
-        </div>
-        <div class="dl-step">
-          <div class="dl-step-top">
-            <span class="dl-step-num">2</span>
-            <span class="dl-step-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>
-          </div>
-          <h3>Choisissez un professionnel</h3>
-          <p>Consultez son profil et ses avis</p>
-          <span class="dl-step-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
-        </div>
-        <div class="dl-step">
-          <div class="dl-step-top">
-            <span class="dl-step-num">3</span>
-            <span class="dl-step-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg></span>
-          </div>
-          <h3>Reservez et echangez</h3>
-          <p>Discutez de votre besoin directement sur l'app</p>
-          <span class="dl-step-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
-        </div>
-        <div class="dl-step">
-          <div class="dl-step-top">
-            <span class="dl-step-num">4</span>
-            <span class="dl-step-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span>
-          </div>
-          <h3>Il intervient chez vous</h3>
-          <p>Un service rapide, simple et securise</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="dl-section">
-    <div class="dl-section-head">
-      <h2>Professionnels disponibles pres de vous</h2>
-      <p>Des artisans verifies, notes par la communaute</p>
-    </div>
-    <div class="dl-pros">
-      {% for a in artisans %}
-      {% set label = pro_labels.get(a.profession, a.profession or 'Technicien') %}
-      <a class="dl-pro" href="{{ url_for('artisan_detail', artisan_id=a.id) }}">
-        <div class="dl-pro-avatar">
-          {% if a.photo_url %}<img src="{{ a.photo_url }}" alt="{{ a.full_name }}" />{% else %}<img src="{{ url_for('static', filename='img/fixpro-avatar.png') }}" alt="{{ a.full_name }}" />{% endif %}
-          {% if a.availability_status == 'en_ligne' %}<span class="dot"></span>{% endif %}
-        </div>
-        <h3>{{ a.full_name }}</h3>
-        <p class="job">{{ label }}</p>
-        <div class="rate">
-          <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-          {% if a.review_count and a.review_count > 0 %}<strong>{{ "%.1f"|format(a.avg_rating or 0) }}</strong> ({{ a.review_count }} avis){% else %}<strong>Nouveau</strong>{% endif %}
-        </div>
-        <span class="dl-pro-avail {{ '' if a.availability_status == 'en_ligne' else 'off' }}">{{ 'Disponible' if a.availability_status == 'en_ligne' else 'Sur rendez-vous' }}</span>
-        <span class="dl-pro-btn">Voir le profil</span>
-      </a>
-      {% else %}
-      <p style="grid-column:1/-1;text-align:center;color:var(--hp-muted)">Aucun professionnel disponible pour le moment.</p>
-      {% endfor %}
-    </div>
-  </section>
-
-  <section class="dl-section" style="padding-top:0">
-    <div class="dl-promo">
-      <img class="dl-promo-phone" src="{{ asset('img/app-promo-phone.jpg') }}" alt="" aria-hidden="true" />
-      <div class="dl-promo-text">
-        <h2>FixPro toujours avec vous !</h2>
-        <p>Installez FixPro sur votre telephone ou votre ordinateur pour reserver encore plus facilement.</p>
-      </div>
-      <button type="button" class="dl-promo-btn" id="dlInstallBtn">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        Installer l'application
-      </button>
-    </div>
-  </section>
-
-  <section class="dl-section" style="padding-top:0">
-    <div class="dl-stats">
-      <div class="dl-stat">
-        <span class="dl-stat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 21a8 8 0 0 0-16 0"/><circle cx="10" cy="8" r="5"/><path d="M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3"/></svg></span>
-        <strong>+5 000</strong><span>Clients satisfaits</span>
-      </div>
-      <div class="dl-stat">
-        <span class="dl-stat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg></span>
-        <strong>+300</strong><span>Professionnels verifies</span>
-      </div>
-      <div class="dl-stat">
-        <span class="dl-stat-ic"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></span>
-        <strong>Note excellente</strong><span>D'apres les avis clients</span>
-      </div>
-      <div class="dl-stat">
-        <span class="dl-stat-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg></span>
-        <strong>Intervention</strong><span>Dans toute la zone couverte</span>
-      </div>
-    </div>
-  </section>
+  </div>
 
   <footer class="dl-footer">
     <div class="dl-footer-inner">
@@ -734,8 +693,8 @@
         <h4>Liens utiles</h4>
         <ul>
           <li><a href="{{ url_for('index') }}">Accueil</a></li>
-          <li><a href="#services">Nos services</a></li>
-          <li><a href="#comment-ca-marche">Comment ca marche</a></li>
+          <li><a href="#dh2-services">Nos services</a></li>
+          <li><a href="#dh2-offers">Offres spéciales</a></li>
           <li><a href="{{ url_for('artisans_page') }}">Rechercher</a></li>
         </ul>
       </div>
@@ -1137,29 +1096,40 @@
 
   if (locTarget) locTarget.addEventListener('click', requestLocation);
 
-  // Nouvel accueil bureau : le champ "Ma position" du hero reutilise
-  // exactement la meme geolocalisation que le mobile (pas de doublon).
-  var dlLocBtn = document.getElementById('dlLocBtn');
-  if (dlLocBtn) dlLocBtn.addEventListener('click', requestLocation);
-
   // Installation PWA (FixPro n'est pas publie sur l'App Store / Google Play :
-  // pas de faux badges, on propose l'installation reelle de la PWA existante).
-  var dlInstallBtn = document.getElementById('dlInstallBtn');
+  // pas de faux badges, les deux boutons "magasin" declenchent l'installation
+  // reelle de la PWA existante, comme le reste de l'app).
   var deferredInstallPrompt = null;
   window.addEventListener('beforeinstallprompt', function (e) {
     e.preventDefault();
     deferredInstallPrompt = e;
   });
-  if (dlInstallBtn) {
-    dlInstallBtn.addEventListener('click', function () {
-      if (deferredInstallPrompt) {
-        deferredInstallPrompt.prompt();
-        deferredInstallPrompt = null;
-      } else {
-        alert("Pour installer FixPro : ouvrez le menu de votre navigateur puis \"Ajouter à l'écran d'accueil\" (ou \"Installer l'application\").");
-      }
-    });
+  function fxInstallPwa() {
+    if (deferredInstallPrompt) {
+      deferredInstallPrompt.prompt();
+      deferredInstallPrompt = null;
+    } else {
+      alert("Pour installer FixPro : ouvrez le menu de votre navigateur puis \"Ajouter à l'écran d'accueil\" (ou \"Installer l'application\").");
+    }
   }
+  ['dh2InstallBtn1', 'dh2InstallBtn2'].forEach(function (id) {
+    var btn = document.getElementById(id);
+    if (btn) btn.addEventListener('click', fxInstallPwa);
+  });
+
+  // Favoris (offres speciales bureau) : pas de service "favoris" cote serveur
+  // pour l'instant -- meme message honnete qu'ailleurs dans l'app plutot
+  // qu'un toggle qui ferait croire a une sauvegarde reelle.
+  document.querySelectorAll('.dh2-offer-fav').forEach(function (btn) {
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      var t = document.createElement('div');
+      t.textContent = 'Bientôt disponible';
+      t.style.cssText = 'position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:#0F172A;color:#fff;padding:10px 18px;border-radius:10px;font:600 13px Inter,sans-serif;z-index:999';
+      document.body.appendChild(t);
+      setTimeout(function () { t.remove(); }, 1800);
+    });
+  });
 </script>
 
 <script>
