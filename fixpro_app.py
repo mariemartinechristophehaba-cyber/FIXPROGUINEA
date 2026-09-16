@@ -1512,15 +1512,9 @@ def index():
             session["fixpro_space"] = "client"
         if session.get("fixpro_space") != "client":
             return redirect(url_for("artisan_dashboard"))
-    # Visiteur non connecte : ecran de choix "Je suis Client" / "Je suis Technicien"
-    # avant l'accueil public. Le choix "Client" est memorise en session (aucun
-    # compte requis pour le parcours client, cf. maquette du parcours utilisateur).
+    # Visiteur non connecte : redirection directe vers la page de connexion.
     if not _u:
-        if request.args.get("guest") == "client":
-            session["guest_mode"] = "client"
-        elif session.get("guest_mode") != "client":
-            return render_template("choose_account.html",
-                                    client_href=url_for("index", guest="client"))
+        return redirect(url_for("login"))
     conn = get_db_connection()
     try:
         artisans = conn.execute("""
@@ -1754,56 +1748,6 @@ def set_location_denied():
 csrf.exempt(set_location)
 csrf.exempt(set_location_zone)
 csrf.exempt(set_location_denied)
-
-
-@app.route("/localisation")
-def location_gate():
-    """Ecran plein ecran demandant la position du client a l'entree de l'app."""
-    nxt = request.args.get("next") or ""
-    # Chemin interne uniquement : commence par "/", pas "//" ni "/\" (open
-    # redirect), et ne contient que des caracteres d'URL sans danger.
-    if (len(nxt) > 512 or not nxt.startswith("/")
-            or nxt.startswith(("//", "/\\"))
-            or not re.match(r"\A/[A-Za-z0-9/_.\-?=&%]*\Z", nxt)):
-        nxt = url_for("artisans_page")
-    return render_template("location_gate.html",
-                           quartiers=_CONAKRY_QUARTIERS,
-                           cities=sorted(_GUINEA_CITIES), next=nxt)
-
-
-# ---------------------------------------------------------------------------
-# LOCALISATION CLIENT - FIGE (2026-08-31). Couvert par tests/test_app.py
-# (test_visitor_without_location_sees_location_gate, ..._enters_app_after...,
-#  test_technician_not_gated_by_location, test_artisans_filtered_by_radius).
-# Ne pas modifier sans mettre a jour ces tests.
-# ---------------------------------------------------------------------------
-
-# Pages sur lesquelles la localisation est requise avant d'entrer dans l'app.
-_LOCATION_GATED_ENDPOINTS = {
-    "index", "artisans_page", "categories", "requests_list",
-    "request_new", "dashboard",
-}
-
-
-@app.before_request
-def require_client_location():
-    """Ecran de localisation a l'entree de l'app.
-
-    Le client n'a PAS besoin d'etre connecte : un visiteur qui arrive tombe
-    directement sur l'ecran, autorise sa position (stockee en session), puis
-    entre dans l'app. Seuls les techniciens et admins connectes sont exemptes.
-    """
-    if request.method != "GET" or request.endpoint not in _LOCATION_GATED_ENDPOINTS:
-        return None
-    user = get_current_user()
-    if user and user["role"] in ("technician", "artisan", "admin"):
-        return None
-    if (session.get("client_lat") or session.get("client_zone")
-            or session.get("loc_gate_dismissed")):
-        return None
-    if user and _is_valid_coordinate(user.get("latitude"), user.get("longitude")):
-        return None
-    return redirect(url_for("location_gate", next=request.path))
 
 
 @app.route("/home")

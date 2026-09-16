@@ -6,108 +6,172 @@
 {% block content %}
 <style>
   :root {
-    --c-blue: #0A5CFF;
+    --c-blue: #1163F4;
+    --c-blue-dark: #0B4FD4;
     --c-ink: #0B132B;
-    --c-slate: #6B7280;
-    --c-paper: #F6F8FB;
+    --c-slate: #64748B;
+    --c-paper: #F7F9FC;
     --c-white: #FFFFFF;
-    --c-blue-light: #EEF4FF;
+    --c-blue-light: #EAF1FE;
     --c-line: #E2E8F0;
-    --c-radius: 22px;
     --c-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    --c-display: 'Space Grotesk', sans-serif;
   }
 
-  .c-page { font-family: var(--c-font); background: var(--c-paper); min-height: 100vh; padding: 0 20px 32px; display: flex; flex-direction: column; justify-content: center; max-width: 430px; margin: 0 auto; }
+  .c-page {
+    font-family: var(--c-font);
+    background: var(--c-paper);
+    min-height: 100vh;
+    padding: 40px 24px 0;
+    max-width: 480px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+  }
 
-  .c-top { text-align: center; padding: 40px 0 28px; }
-  .c-top h1 { font-family: var(--c-display); font-size: 24px; font-weight: 700; color: var(--c-ink); margin: 0 0 8px; }
-  .c-top p { font-size: 14px; color: var(--c-slate); margin: 0; line-height: 1.5; }
+  .c-brand { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 40px; }
+  .c-brand-badge { width: 46px; height: 46px; display: flex; align-items: center; justify-content: center; }
+  .c-brand-badge svg { width: 40px; height: 40px; }
+  .c-brand-text { display: flex; flex-direction: column; line-height: 1.1; text-align: left; }
+  .c-brand-name { font-size: 26px; font-weight: 800; color: var(--c-ink); }
+  .c-brand-name em { color: var(--c-blue); font-style: normal; }
+  .c-brand-text small { font-size: 11px; color: var(--c-slate); margin-top: 2px; }
 
-  .c-choice-grid { display: flex; flex-direction: column; gap: 16px; margin-bottom: 28px; }
+  .c-top { text-align: center; padding: 0 0 28px; }
+  .c-top h1 { font-size: 27px; font-weight: 800; color: var(--c-ink); margin: 0 0 12px; line-height: 1.25; }
+  .c-top p { font-size: 15px; color: var(--c-slate); margin: 0; line-height: 1.5; }
+
+  .c-choice-grid { display: flex; flex-direction: column; gap: 16px; margin-bottom: 36px; }
 
   .c-choice {
-    background: var(--c-white);
-    border: 1.5px solid var(--c-line);
-    border-radius: var(--c-radius);
-    padding: 24px;
-    text-align: center;
-    text-decoration: none;
-    color: var(--c-ink);
-    transition: border-color .2s, box-shadow .2s, background .2s;
-  }
-
-  @media (min-width: 760px) {
-    .c-page { max-width: 720px; padding: 0 32px 48px; }
-    .c-top { padding: 64px 0 36px; }
-    .c-top h1 { font-size: 32px; }
-    .c-top p { font-size: 16px; }
-    .c-choice-grid { flex-direction: row; gap: 24px; align-items: stretch; }
-    .c-choice { flex: 1 1 0; display: flex; flex-direction: column; justify-content: space-between; padding: 32px 28px; }
-    .c-choice:hover { transform: translateY(-2px); }
-  }
-
-  .c-choice:hover, .c-choice:focus {
-    border-color: var(--c-blue);
-    background: var(--c-blue-light);
-    box-shadow: 0 8px 28px rgba(10, 92, 255, 0.10);
-  }
-
-  .c-icon {
-    width: 64px;
-    height: 64px;
-    border-radius: 18px;
-    background: var(--c-blue-light);
     display: flex;
     align-items: center;
-    justify-content: center;
-    margin: 0 auto 16px;
-  }
-
-  .c-choice h3 { font-size: 17px; font-weight: 700; margin: 0 0 6px; }
-  .c-choice p { font-size: 13px; color: var(--c-slate); margin: 0 0 18px; line-height: 1.45; }
-
-  .c-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    height: 46px;
-    padding: 0 24px;
-    border-radius: 14px;
-    background: var(--c-blue);
-    color: var(--c-white);
-    font-weight: 700;
-    font-size: 14px;
+    gap: 18px;
+    border-radius: 18px;
+    padding: 22px;
     text-decoration: none;
+    transition: transform .15s ease, box-shadow .15s ease;
+  }
+  .c-choice:hover { transform: translateY(-1px); }
+
+  .c-choice.is-primary {
+    background: linear-gradient(135deg, var(--c-blue), var(--c-blue-dark));
+    color: var(--c-white);
+    box-shadow: 0 12px 28px rgba(17, 99, 244, 0.28);
+  }
+  .c-choice.is-secondary {
+    background: var(--c-blue-light);
+    color: var(--c-ink);
+    border: 1px solid var(--c-line);
   }
 
-  .c-foot { text-align: center; font-size: 13px; color: var(--c-slate); }
+  .c-choice-icon { width: 44px; height: 44px; flex: none; display: flex; align-items: center; justify-content: center; }
+  .c-choice.is-primary .c-choice-icon svg { color: #fff; }
+  .c-choice.is-secondary .c-choice-icon svg { color: var(--c-blue); }
+
+  .c-choice-body { flex: 1; }
+  .c-choice-body h3 { font-size: 18px; font-weight: 700; margin: 0 0 4px; }
+  .c-choice.is-secondary h3 { color: var(--c-ink); }
+  .c-choice-body p { font-size: 13.5px; margin: 0; line-height: 1.4; opacity: .92; }
+  .c-choice.is-secondary p { color: var(--c-slate); opacity: 1; }
+
+  .c-choice-arrow { flex: none; opacity: .85; }
+  .c-choice.is-secondary .c-choice-arrow { color: var(--c-blue); }
+
+  .c-strap { text-align: center; color: var(--c-slate); font-size: 13px; position: relative; margin: 8px 0; }
+  .c-strap::before, .c-strap::after { content: ""; position: absolute; top: 50%; width: 28%; height: 1px; background: var(--c-line); }
+  .c-strap::before { left: 0; }
+  .c-strap::after { right: 0; }
+
+  .c-scene { position: relative; margin-top: auto; padding-top: 8px; }
+  .c-scene svg { display: block; width: 100%; height: auto; }
+
+  .c-trust { display: flex; justify-content: space-around; padding: 18px 8px 28px; }
+  .c-trust-item { display: flex; flex-direction: column; align-items: center; gap: 8px; color: var(--c-blue); font-size: 12.5px; font-weight: 600; }
+  .c-trust-item svg { width: 26px; height: 26px; }
+
+  .c-foot { text-align: center; font-size: 13px; color: var(--c-slate); padding-bottom: 24px; }
   .c-foot a { color: var(--c-blue); font-weight: 700; text-decoration: none; }
+
+  @media (min-width: 760px) {
+    .c-page { max-width: 900px; padding: 56px 40px 0; }
+    .c-brand { justify-content: flex-start; margin-bottom: 48px; }
+    .c-top { text-align: left; padding-right: 30%; }
+    .c-top h1 { font-size: 34px; }
+    .c-top p { font-size: 16px; }
+    .c-choice-grid { flex-direction: row; align-items: stretch; }
+    .c-choice { flex: 1 1 0; flex-direction: column; align-items: flex-start; text-align: left; padding: 30px 26px; gap: 16px; }
+    .c-choice-arrow { align-self: flex-end; margin-top: -6px; }
+    .c-trust { max-width: 420px; margin: 0 auto; }
+  }
 </style>
 
 <div class="c-page">
+  <div class="c-brand">
+    <span class="c-brand-badge">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#1163F4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+    </span>
+    <span class="c-brand-text">
+      <span class="c-brand-name">Fix<em>Pro</em></span>
+      <small>Des pros, plus proches de vous.</small>
+    </span>
+  </div>
+
   <div class="c-top">
-    <h1>Bienvenue sur FixPro</h1>
-    <p>Comment souhaitez-vous continuer ?</p>
+    <h1>Comment souhaitez-vous continuer ?</h1>
+    <p>Choisissez votre profil pour accéder à votre espace</p>
   </div>
 
   <div class="c-choice-grid">
-    <a href="{{ client_href or url_for('client_signup') }}" class="c-choice">
-      <div class="c-icon">
-        <img src="{{ url_for('static', filename='img/icon-user.svg') }}" width="28" height="28" alt="Client" />
-      </div>
-      <h3>Je suis Client</h3>
-      <p>Accédez directement à l'accueil, aucune inscription requise.</p>
-      <span class="c-btn">Continuer</span>
+    <a href="{{ client_href or url_for('client_signup') }}" class="c-choice is-primary">
+      <span class="c-choice-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>
+      </span>
+      <span class="c-choice-body">
+        <h3>Je suis Client</h3>
+        <p>Trouvez et réservez un professionnel près de chez vous</p>
+      </span>
+      <span class="c-choice-arrow"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></span>
     </a>
-    <a href="{{ url_for('devenir_technicien') }}" class="c-choice">
-      <div class="c-icon">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0A5CFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-      </div>
-      <h3>Je suis Technicien</h3>
-      <p>Recevez des demandes de clients et développez votre activité avec FixPro.</p>
-      <span class="c-btn">Devenir technicien</span>
+    <a href="{{ url_for('devenir_technicien') }}" class="c-choice is-secondary">
+      <span class="c-choice-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 21v-2a4 4 0 0 1 4-4h1"/><circle cx="9.5" cy="8.5" r="3.5"/><path d="M13 7h4l1.5 3H21v6h-2"/><circle cx="16" cy="18" r="2"/><circle cx="8" cy="18" r="2"/></svg>
+      </span>
+      <span class="c-choice-body">
+        <h3>Je suis Technicien</h3>
+        <p>Inscrivez-vous et rejoignez notre réseau de professionnels</p>
+      </span>
+      <span class="c-choice-arrow"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></span>
     </a>
+  </div>
+
+  <p class="c-strap">Des professionnels à votre service</p>
+
+  <div class="c-scene" aria-hidden="true">
+    <svg viewBox="0 0 480 150" preserveAspectRatio="none">
+      <rect x="20" y="40" width="46" height="100" fill="#DCE8FD"/>
+      <rect x="80" y="20" width="60" height="120" fill="#CFDFFC"/>
+      <rect x="155" y="55" width="40" height="85" fill="#DCE8FD"/>
+      <rect x="205" y="10" width="70" height="130" fill="#C4D9FB"/>
+      <rect x="290" y="45" width="46" height="95" fill="#DCE8FD"/>
+      <rect x="345" y="25" width="58" height="115" fill="#CFDFFC"/>
+      <rect x="415" y="60" width="44" height="80" fill="#DCE8FD"/>
+      <path d="M0 150c60-26 120-26 180 0s120 26 180 0 90-20 120 0v0H0z" fill="#EAF1FE"/>
+    </svg>
+  </div>
+
+  <div class="c-trust">
+    <span class="c-trust-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.5-3 8-7 9-4-1-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg>
+      Fiable
+    </span>
+    <span class="c-trust-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4 14h6l-1 8 9-12h-6z"/></svg>
+      Rapide
+    </span>
+    <span class="c-trust-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M2 20c0-3.3 3.1-5 7-5s7 1.7 7 5"/><circle cx="17" cy="9" r="2.5"/><path d="M16 15c2.8.3 5 1.7 5 5"/></svg>
+      Professionnel
+    </span>
   </div>
 
   <p class="c-foot">Vous avez déjà un compte ? <a href="{{ url_for('login') }}">Se connecter</a></p>
