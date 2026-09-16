@@ -186,6 +186,30 @@
      ========================================================================== */
   .dh2-wrap { max-width: 1160px; margin: 0 auto; padding: 16px 16px 4px; }
 
+  /* Barre de recherche + position (mobile uniquement : le bureau a deja sa
+     propre recherche + position dans la barre superieure .dtopbar). */
+  .dh2-search-row { margin: 0 0 14px; }
+  .dh2-search-bar {
+    display: flex; align-items: center; gap: 10px; min-width: 0;
+    background: #fff; border: 1px solid var(--hp-line); border-radius: 14px;
+    padding: 12px 14px; box-shadow: 0 6px 16px rgba(16,42,67,.06);
+  }
+  .dh2-search-bar .sic { display: flex; color: var(--hp-muted); flex-shrink: 0; }
+  .dh2-search-bar .sic svg { width: 18px; height: 18px; }
+  .dh2-search-bar input {
+    flex: 1 1 auto; min-width: 0; border: 0; outline: 0; background: transparent;
+    font-size: .84rem; color: var(--hp-text); font-family: inherit;
+  }
+  .dh2-search-bar input::placeholder { color: var(--hp-muted); }
+  .dh2-search-div { width: 1px; align-self: stretch; background: var(--hp-line); flex-shrink: 0; }
+  .dh2-search-loc {
+    display: flex; align-items: center; gap: 5px; flex-shrink: 0; max-width: 40%;
+    text-decoration: none; color: var(--hp-text); font-weight: 700; font-size: .8rem;
+  }
+  .dh2-search-loc svg:not(.chev) { width: 16px; height: 16px; color: var(--hp-primary); flex-shrink: 0; }
+  .dh2-search-loc span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dh2-search-loc .chev { width: 13px; height: 13px; color: var(--hp-muted); flex-shrink: 0; }
+
   .dh2-tabs { display: flex; gap: 18px; overflow-x: auto; border-bottom: 1px solid var(--hp-line); margin-bottom: 14px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
   .dh2-tabs::-webkit-scrollbar { display: none; }
   .dh2-tab {
@@ -212,8 +236,8 @@
     background: linear-gradient(120deg, #EAF2FF 0%, #DCEBFF 60%, #EAF2FF 100%);
     display: grid; grid-template-columns: 1fr;
   }
-  .dh2-hero-visual { position: relative; order: -1; height: 200px; }
-  .dh2-hero-visual img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .dh2-hero-visual { position: relative; order: -1; aspect-ratio: 4 / 3; height: auto; }
+  .dh2-hero-visual img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 12%; display: block; }
   .dh2-hero-tx { padding: 20px 20px 26px; }
   .dh2-hero-brand { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
   .dh2-hero-brand .mark { width: 26px; height: 26px; color: var(--hp-primary); flex-shrink: 0; }
@@ -333,6 +357,7 @@
   @media (min-width: 1024px) {
     body { padding-bottom: 0 !important; background: #fff; }
     .hp-header, .hp-bottom-nav { display: none !important; }
+    .dh2-search-row { display: none; }
 
     body:not(.no-sidebar) .page,
     body.no-sidebar .page { max-width: none; margin: 0; padding: 0; }
@@ -349,7 +374,7 @@
     .dh2-chip span { font-size: .86rem; }
 
     .dh2-hero { grid-template-columns: minmax(0,1fr) 380px; align-items: center; gap: 24px; margin-bottom: 40px; }
-    .dh2-hero-visual { order: 0; height: auto; align-self: stretch; }
+    .dh2-hero-visual { order: 0; height: auto; aspect-ratio: auto; align-self: stretch; }
     .dh2-hero-tx { padding: 44px 8px 44px 44px; }
     .dh2-hero-brand { gap: 10px; margin-bottom: 18px; }
     .dh2-hero-brand .mark { width: 34px; height: 34px; }
@@ -432,7 +457,7 @@
      du hero ecrasee en bande large/basse quand elle reste empilee. */
   @media (min-width: 640px) and (max-width: 1023px) {
     .dh2-hero { grid-template-columns: minmax(0, 1fr) 240px; align-items: center; }
-    .dh2-hero-visual { order: 0; height: auto; align-self: stretch; }
+    .dh2-hero-visual { order: 0; height: auto; aspect-ratio: auto; align-self: stretch; }
     .dh2-offers { grid-template-columns: repeat(2, 1fr); }
     .dh2-download { grid-template-columns: 260px minmax(0,1fr); align-items: center; }
     .dh2-download-visual { max-width: none; margin: 0; }
@@ -558,6 +583,19 @@
 <div class="dsk-landing">
 
   <div class="dh2-wrap">
+
+    <form class="dh2-search-row" action="{{ url_for('artisans_page') }}" method="get" role="search">
+      <label class="dh2-search-bar">
+        <span class="sic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></span>
+        <input type="search" name="q" placeholder="Rechercher un service ou un technicien..." value="{{ request.args.get('q', '') }}" />
+        <span class="dh2-search-div"></span>
+        <a class="dh2-search-loc" href="{{ url_for('artisans_page') }}">
+          <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2C7.86 2 4.5 5.36 4.5 9.5c0 5.05 5.78 11.06 6.79 12.06.4.4 1.03.4 1.42 0C13.72 20.56 19.5 14.55 19.5 9.5 19.5 5.36 16.14 2 12 2Zm0 10a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5Z"/></svg>
+          <span>{{ client_zone or 'Conakry' }}</span>
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+        </a>
+      </label>
+    </form>
 
     <nav class="dh2-tabs">
       <a class="dh2-tab {{ 'active' if not request.args.get('category') }}" href="{{ url_for('artisans_page') }}">Tous</a>
