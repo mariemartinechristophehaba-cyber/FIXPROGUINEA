@@ -448,6 +448,10 @@
     .dh2-chips { grid-template-columns: repeat(2, 1fr); }
     .dh2-services { grid-template-columns: repeat(3, 1fr); }
     .dh2-offers { grid-template-columns: repeat(2, 1fr); }
+    /* Nombre impair de cartes dans une grille a 2 colonnes : la derniere
+       se retrouvait seule, orpheline, a moitie de la largeur. On l'etale
+       sur toute la largeur (centree, sans depasser 1 colonne de large). */
+    .dh2-offers > *:last-child:nth-child(odd) { grid-column: 1 / -1; max-width: calc(50% - 11px); margin: 0 auto; }
     .dh2-download { grid-template-columns: minmax(0,1fr); }
     .dh2-download-visual { max-width: 320px; margin: 0 auto; }
     .dl-footer-inner { grid-template-columns: 1fr 1fr; }
@@ -460,9 +464,19 @@
     .dh2-hero { grid-template-columns: minmax(0, 1fr) 240px; align-items: center; }
     .dh2-hero-visual { order: 0; height: auto; aspect-ratio: auto; align-self: stretch; }
     .dh2-offers { grid-template-columns: repeat(2, 1fr); }
+    .dh2-offers > *:last-child:nth-child(odd) { grid-column: 1 / -1; max-width: calc(50% - 8px); margin: 0 auto; }
     .dh2-download { grid-template-columns: 260px minmax(0,1fr); align-items: center; }
     .dh2-download-visual { max-width: none; margin: 0; }
-    .dh2-download-row { flex-direction: row; align-items: center; }
+    /* La colonne de texte est trop etroite a cette largeur pour aligner les
+       2 boutons de stores ET le QR code sur une meme ligne (ca les faisait
+       retomber en colonne, chacun pleine largeur, avec le QR ecrase a
+       cote) : on garde les boutons en rangee, mais le QR passe dessous. */
+    .dh2-download-row { flex-direction: column; align-items: flex-start; gap: 14px; }
+    .dh2-store-btns { justify-content: flex-start; flex-wrap: nowrap; }
+    .dh2-store-btn { flex: 1 1 0; padding: 9px 12px; }
+    .dh2-store-btn small { font-size: .58rem; }
+    .dh2-store-btn b { font-size: .78rem; }
+    .dh2-qr { justify-content: flex-start; }
     .dl-footer-inner { grid-template-columns: 1fr 1fr; }
   }
 </style>
