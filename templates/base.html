@@ -21,7 +21,7 @@
   </head>
   {% set is_admin_route = request.endpoint and request.endpoint.startswith('admin') %}
   {% set chat_view = request.endpoint in ('client_conversation', 'client_message_new', 'client_message_artisan') %}
-  {% set is_desktop_shell = not is_admin_route and not chat_view %}
+  {% set is_desktop_shell = not is_admin_route and not chat_view and not hide_desktop_topbar %}
   {% set _home_active = request.endpoint in ('home', 'index', 'dashboard') %}
   {% set _is_tech_nav = nav_user and nav_user.role in ('technician', 'artisan') %}
   <body class="{% if not nav_user or request.endpoint in ('index', 'ticket_detail') %} no-tabbar{% endif %}{% if not nav_user or is_admin_route or chat_view %} no-sidebar{% endif %}{% if request.endpoint == 'index' %} landing{% endif %}{% if is_admin_route %} admin-page{% endif %}{% if chat_view %} chat-view{% endif %}">
