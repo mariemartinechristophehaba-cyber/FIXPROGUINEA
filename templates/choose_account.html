@@ -55,7 +55,11 @@
      HTML separe. En flux normal (jamais en position absolue plein ecran)
      pour ne jamais chevaucher le contenu au-dessus. */
   .c-wave-wrap {
-    position: relative; margin-top: 14px; height: 92px; overflow: hidden; pointer-events: none;
+    position: relative; margin-top: 14px; overflow: hidden; pointer-events: none;
+    /* Occupe tout l'espace restant (ecran court = bande fine, ecran haut =
+       bande plus genereuse) au lieu d'une hauteur fixe qui laissait un
+       vide blanc sous elle sur les telephones les plus hauts. */
+    flex: 1 1 auto; min-height: 80px; max-height: 260px;
     background-image: url("{{ asset('img/onboarding-wave.jpg') }}");
     background-size: cover; background-position: left top;
   }
