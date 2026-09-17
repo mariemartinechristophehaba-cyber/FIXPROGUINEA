@@ -16,11 +16,6 @@
 {% block title %}Bienvenue - FixPro Guinée{% endblock %}
 {% block header %}{% endblock %}
 {% block appbar %}{% endblock %}
-{% block extra_head %}
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&display=swap" rel="stylesheet" />
-{% endblock %}
 {% block footer %}{% endblock %}
 
 {% block content %}
@@ -30,6 +25,7 @@
   @media (min-width: 1024px) {
     body.no-sidebar .app-wrap { padding-top: 0 !important; }
   }
+  body.no-sidebar .page { max-width: none !important; margin: 0 !important; padding: 0 !important; }
   :root {
     --c-blue: #1163F4;
     --c-blue-dark: #0B4FD4;
@@ -54,67 +50,67 @@
     background: radial-gradient(circle at 35% 35%, #BFDBFE, #DCEBFF 60%, rgba(220,235,255,0));
     pointer-events: none;
   }
-  /* Vague decorative en flux normal (jamais en position absolue plein
-     ecran) : elle ne peut donc jamais chevaucher le contenu au-dessus,
-     quelle que soit la hauteur du contenu ou de l'ecran. */
-  .c-wave-wrap { position: relative; margin-top: 20px; height: 150px; overflow: hidden; pointer-events: none; }
-  .c-wave-wrap svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-  .c-wave-tag {
-    position: absolute; left: 22px; bottom: 18px; color: #fff; font-family: 'Caveat', cursive;
-    font-size: 24px; line-height: 1.15; transform: rotate(-3deg); text-shadow: 0 2px 8px rgba(0,0,0,.15);
+  /* Vague decorative = la vraie photo (ville + vague) recadree depuis la
+     maquette, avec le texte deja integre : plus de doublon avec un texte
+     HTML separe. En flux normal (jamais en position absolue plein ecran)
+     pour ne jamais chevaucher le contenu au-dessus. */
+  .c-wave-wrap {
+    position: relative; margin-top: 14px; height: 92px; overflow: hidden; pointer-events: none;
+    background-image: url("{{ asset('img/onboarding-wave.jpg') }}");
+    background-size: cover; background-position: left top;
   }
 
-  .c-body { position: relative; z-index: 1; display: flex; flex-direction: column; padding: 28px 20px 0; max-width: 480px; margin: 0 auto; width: 100%; }
+  .c-body { position: relative; z-index: 1; display: flex; flex-direction: column; padding: 16px 18px 0; max-width: 480px; margin: 0 auto; width: 100%; }
 
-  .c-skip { position: absolute; top: 22px; right: 20px; z-index: 2; display: inline-flex; align-items: center; gap: 4px; color: var(--c-blue); font-weight: 700; font-size: 14px; text-decoration: none; }
-  .c-skip svg { width: 16px; height: 16px; }
+  .c-skip { position: absolute; top: 14px; right: 18px; z-index: 2; display: inline-flex; align-items: center; gap: 4px; color: var(--c-blue); font-weight: 700; font-size: 13px; text-decoration: none; }
+  .c-skip svg { width: 15px; height: 15px; }
 
-  .c-brand { display: flex; flex-direction: column; align-items: center; gap: 6px; margin: 8px 0 28px; text-align: center; }
-  .c-brand img { height: 34px; width: auto; display: block; }
-  .c-brand span { font-size: 12.5px; color: var(--c-slate); font-weight: 500; }
+  .c-brand { display: flex; flex-direction: column; align-items: center; gap: 3px; margin: 4px 0 14px; text-align: center; }
+  .c-brand img { height: 24px; width: auto; display: block; }
+  .c-brand span { font-size: 11px; color: var(--c-slate); font-weight: 500; }
 
-  .c-top { text-align: center; padding: 0 0 22px; }
-  .c-top h1 { font-size: 30px; font-weight: 800; color: var(--c-ink); margin: 0 0 8px; }
-  .c-top p { font-size: 14.5px; color: var(--c-slate); margin: 0; }
+  .c-top { text-align: center; padding: 0 0 14px; }
+  .c-top h1 { font-size: 22px; font-weight: 800; color: var(--c-ink); margin: 0 0 4px; }
+  .c-top p { font-size: 12.5px; color: var(--c-slate); margin: 0; }
 
-  .c-cards { display: flex; flex-direction: column; gap: 16px; margin-bottom: 28px; }
+  .c-cards { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
 
   .c-card {
-    display: flex; flex-direction: column; border-radius: 22px; overflow: hidden; text-decoration: none;
+    display: flex; flex-direction: row; align-items: stretch; border-radius: 16px; overflow: hidden; text-decoration: none;
     transition: transform .15s ease, box-shadow .15s ease;
   }
   .c-card:hover { transform: translateY(-2px); }
-  .c-card.is-client { background: linear-gradient(160deg, var(--c-blue), var(--c-blue-dark)); box-shadow: 0 14px 32px rgba(17,99,244,.25); }
-  .c-card.is-tech { background: var(--c-white); border: 1px solid var(--c-line); box-shadow: 0 8px 22px rgba(16,42,67,.06); }
+  .c-card.is-client { background: linear-gradient(160deg, var(--c-blue), var(--c-blue-dark)); box-shadow: 0 10px 22px rgba(17,99,244,.22); }
+  .c-card.is-tech { background: var(--c-white); border: 1px solid var(--c-line); box-shadow: 0 6px 16px rgba(16,42,67,.06); }
 
-  .c-card-photo { width: 100%; height: 190px; flex-shrink: 0; }
+  .c-card-photo { width: 34%; flex-shrink: 0; }
   .c-card-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
-  .c-card-body { padding: 18px 20px 22px; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
-  .c-card-icon { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .c-card-body { flex: 1; min-width: 0; padding: 10px 12px; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 4px; }
+  .c-card-icon { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-bottom: 2px; }
   .c-card.is-client .c-card-icon { background: rgba(255,255,255,.22); color: #fff; }
   .c-card.is-tech .c-card-icon { background: var(--c-blue); color: #fff; }
-  .c-card-icon svg { width: 22px; height: 22px; }
+  .c-card-icon svg { width: 15px; height: 15px; }
 
-  .c-card-body h3 { font-size: 20px; font-weight: 800; margin: 0; }
+  .c-card-body h3 { font-size: 15px; font-weight: 800; margin: 0; }
   .c-card.is-client h3 { color: #fff; }
   .c-card.is-tech h3 { color: var(--c-ink); }
-  .c-card-body p { font-size: 14px; margin: 0; line-height: 1.35; }
+  .c-card-body p { font-size: 11px; margin: 0; line-height: 1.25; }
   .c-card.is-client p { color: rgba(255,255,255,.88); }
   .c-card.is-tech p { color: var(--c-slate); }
 
   .c-card-btn {
-    margin-top: 4px; display: inline-flex; align-items: center; gap: 8px;
-    padding: 11px 20px; border-radius: 999px; font-weight: 700; font-size: 14px;
+    margin-top: 4px; display: inline-flex; align-items: center; gap: 5px;
+    padding: 6px 13px; border-radius: 999px; font-weight: 700; font-size: 11.5px;
   }
   .c-card.is-client .c-card-btn { background: #fff; color: var(--c-blue); }
   .c-card.is-tech .c-card-btn { background: var(--c-blue); color: #fff; }
-  .c-card-btn svg { width: 16px; height: 16px; }
+  .c-card-btn svg { width: 13px; height: 13px; }
 
-  .c-trust { display: flex; align-items: center; justify-content: center; gap: 18px; padding: 4px 8px 24px; }
-  .c-trust-item { display: flex; flex-direction: column; align-items: center; gap: 7px; color: var(--c-blue); font-size: 12px; font-weight: 600; text-align: center; }
-  .c-trust-item svg { width: 24px; height: 24px; }
-  .c-trust-sep { width: 1px; height: 34px; background: var(--c-line); }
+  .c-trust { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 2px 8px 10px; }
+  .c-trust-item { display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--c-blue); font-size: 10px; font-weight: 600; text-align: center; }
+  .c-trust-item svg { width: 18px; height: 18px; }
+  .c-trust-sep { width: 1px; height: 26px; background: var(--c-line); }
 
   @media (min-width: 860px) {
     .c-body { max-width: 1040px; padding: 44px 40px 0; }
@@ -191,12 +187,6 @@
 
   </div>
 
-  <div class="c-wave-wrap" aria-hidden="true">
-    <svg viewBox="0 0 1000 300" preserveAspectRatio="none">
-      <path d="M0 90c140-60 260-60 400-10s260 50 400 0 140-50 200-30V300H0z" fill="#1163F4"/>
-      <path d="M0 130c140-50 260-50 400-8s260 42 400 0 140-40 200-24V300H0z" fill="#0B4FD4" opacity=".55"/>
-    </svg>
-    <span class="c-wave-tag">Des professionnels<br/>à votre service !</span>
-  </div>
+  <div class="c-wave-wrap" aria-hidden="true"></div>
 </div>
 {% endblock %}
