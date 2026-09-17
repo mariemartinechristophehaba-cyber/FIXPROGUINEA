@@ -1,17 +1,41 @@
+{# Page 2 du parcours : "Comment souhaitez-vous utiliser FixPro ?"
+   Reproduction fidele de la maquette fournie par le client. Logo et
+   photos (cliente / technicien) sont recadres depuis sa propre maquette
+   (aucun visuel invente). Mobile et bureau developpes ensemble : seule
+   la disposition de la carte change (photo en bandeau sur mobile, photo
+   a gauche sur bureau), le contenu et l'identite restent identiques.
+
+   Comportement (voir index() dans fixpro_app.py) :
+   - "Je suis Client" (et "Passer") -> accueil public, aucune inscription
+     requise, le choix est memorise en session.
+   - "Je suis Technicien" -> formulaire d'inscription technicien existant
+     (wizard 5 etapes) ; l'espace technicien reste soumis a validation
+     admin (deja en place, non modifie ici). #}
 {% extends 'base.html' %}
 {% set hide_desktop_topbar = true %}
 {% block title %}Bienvenue - FixPro Guinée{% endblock %}
 {% block header %}{% endblock %}
+{% block appbar %}{% endblock %}
+{% block extra_head %}
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&display=swap" rel="stylesheet" />
+{% endblock %}
 {% block footer %}{% endblock %}
 
 {% block content %}
 <style>
+  /* Le .dtopbar (fixe) est masque sur cette page (hide_desktop_topbar) mais
+     .app-wrap reservait quand meme 64px pour lui a partir de 1024px. */
+  @media (min-width: 1024px) {
+    body.no-sidebar .app-wrap { padding-top: 0 !important; }
+  }
   :root {
     --c-blue: #1163F4;
     --c-blue-dark: #0B4FD4;
     --c-ink: #0B132B;
     --c-slate: #64748B;
-    --c-paper: #F7F9FC;
+    --c-paper: #F5F9FF;
     --c-white: #FFFFFF;
     --c-blue-light: #EAF1FE;
     --c-line: #E2E8F0;
@@ -19,162 +43,160 @@
   }
 
   .c-page {
+    position: relative; overflow: hidden;
     font-family: var(--c-font);
-    background: var(--c-paper);
+    background: radial-gradient(1200px 500px at 50% -10%, #EAF3FF 0%, var(--c-paper) 55%, var(--c-paper) 100%);
     min-height: 100vh;
-    padding: 40px 24px 0;
-    max-width: 480px;
-    margin: 0 auto;
-    display: flex;
-    flex-direction: column;
+    display: flex; flex-direction: column;
+  }
+  .c-blob {
+    position: absolute; top: -120px; left: -140px; width: 320px; height: 320px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #BFDBFE, #DCEBFF 60%, rgba(220,235,255,0));
+    pointer-events: none;
+  }
+  /* Vague decorative en flux normal (jamais en position absolue plein
+     ecran) : elle ne peut donc jamais chevaucher le contenu au-dessus,
+     quelle que soit la hauteur du contenu ou de l'ecran. */
+  .c-wave-wrap { position: relative; margin-top: 20px; height: 150px; overflow: hidden; pointer-events: none; }
+  .c-wave-wrap svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .c-wave-tag {
+    position: absolute; left: 22px; bottom: 18px; color: #fff; font-family: 'Caveat', cursive;
+    font-size: 24px; line-height: 1.15; transform: rotate(-3deg); text-shadow: 0 2px 8px rgba(0,0,0,.15);
   }
 
-  .c-brand { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 40px; }
-  .c-brand-badge { width: 46px; height: 46px; display: flex; align-items: center; justify-content: center; }
-  .c-brand-badge svg { width: 40px; height: 40px; }
-  .c-brand-text { display: flex; flex-direction: column; line-height: 1.1; text-align: left; }
-  .c-brand-name { font-size: 26px; font-weight: 800; color: var(--c-ink); }
-  .c-brand-name em { color: var(--c-blue); font-style: normal; }
-  .c-brand-text small { font-size: 11px; color: var(--c-slate); margin-top: 2px; }
+  .c-body { position: relative; z-index: 1; display: flex; flex-direction: column; padding: 28px 20px 0; max-width: 480px; margin: 0 auto; width: 100%; }
 
-  .c-top { text-align: center; padding: 0 0 28px; }
-  .c-top h1 { font-size: 27px; font-weight: 800; color: var(--c-ink); margin: 0 0 12px; line-height: 1.25; }
-  .c-top p { font-size: 15px; color: var(--c-slate); margin: 0; line-height: 1.5; }
+  .c-skip { position: absolute; top: 22px; right: 20px; z-index: 2; display: inline-flex; align-items: center; gap: 4px; color: var(--c-blue); font-weight: 700; font-size: 14px; text-decoration: none; }
+  .c-skip svg { width: 16px; height: 16px; }
 
-  .c-choice-grid { display: flex; flex-direction: column; gap: 16px; margin-bottom: 36px; }
+  .c-brand { display: flex; flex-direction: column; align-items: center; gap: 6px; margin: 8px 0 28px; text-align: center; }
+  .c-brand img { height: 34px; width: auto; display: block; }
+  .c-brand span { font-size: 12.5px; color: var(--c-slate); font-weight: 500; }
 
-  .c-choice {
-    display: flex;
-    align-items: center;
-    gap: 18px;
-    border-radius: 18px;
-    padding: 22px;
-    text-decoration: none;
+  .c-top { text-align: center; padding: 0 0 22px; }
+  .c-top h1 { font-size: 30px; font-weight: 800; color: var(--c-ink); margin: 0 0 8px; }
+  .c-top p { font-size: 14.5px; color: var(--c-slate); margin: 0; }
+
+  .c-cards { display: flex; flex-direction: column; gap: 16px; margin-bottom: 28px; }
+
+  .c-card {
+    display: flex; flex-direction: column; border-radius: 22px; overflow: hidden; text-decoration: none;
     transition: transform .15s ease, box-shadow .15s ease;
   }
-  .c-choice:hover { transform: translateY(-1px); }
+  .c-card:hover { transform: translateY(-2px); }
+  .c-card.is-client { background: linear-gradient(160deg, var(--c-blue), var(--c-blue-dark)); box-shadow: 0 14px 32px rgba(17,99,244,.25); }
+  .c-card.is-tech { background: var(--c-white); border: 1px solid var(--c-line); box-shadow: 0 8px 22px rgba(16,42,67,.06); }
 
-  .c-choice.is-primary {
-    background: linear-gradient(135deg, var(--c-blue), var(--c-blue-dark));
-    color: var(--c-white);
-    box-shadow: 0 12px 28px rgba(17, 99, 244, 0.28);
+  .c-card-photo { width: 100%; height: 190px; flex-shrink: 0; }
+  .c-card-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  .c-card-body { padding: 18px 20px 22px; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
+  .c-card-icon { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .c-card.is-client .c-card-icon { background: rgba(255,255,255,.22); color: #fff; }
+  .c-card.is-tech .c-card-icon { background: var(--c-blue); color: #fff; }
+  .c-card-icon svg { width: 22px; height: 22px; }
+
+  .c-card-body h3 { font-size: 20px; font-weight: 800; margin: 0; }
+  .c-card.is-client h3 { color: #fff; }
+  .c-card.is-tech h3 { color: var(--c-ink); }
+  .c-card-body p { font-size: 14px; margin: 0; line-height: 1.35; }
+  .c-card.is-client p { color: rgba(255,255,255,.88); }
+  .c-card.is-tech p { color: var(--c-slate); }
+
+  .c-card-btn {
+    margin-top: 4px; display: inline-flex; align-items: center; gap: 8px;
+    padding: 11px 20px; border-radius: 999px; font-weight: 700; font-size: 14px;
   }
-  .c-choice.is-secondary {
-    background: var(--c-blue-light);
-    color: var(--c-ink);
-    border: 1px solid var(--c-line);
-  }
+  .c-card.is-client .c-card-btn { background: #fff; color: var(--c-blue); }
+  .c-card.is-tech .c-card-btn { background: var(--c-blue); color: #fff; }
+  .c-card-btn svg { width: 16px; height: 16px; }
 
-  .c-choice-icon { width: 44px; height: 44px; flex: none; display: flex; align-items: center; justify-content: center; }
-  .c-choice.is-primary .c-choice-icon svg { color: #fff; }
-  .c-choice.is-secondary .c-choice-icon svg { color: var(--c-blue); }
+  .c-trust { display: flex; align-items: center; justify-content: center; gap: 18px; padding: 4px 8px 24px; }
+  .c-trust-item { display: flex; flex-direction: column; align-items: center; gap: 7px; color: var(--c-blue); font-size: 12px; font-weight: 600; text-align: center; }
+  .c-trust-item svg { width: 24px; height: 24px; }
+  .c-trust-sep { width: 1px; height: 34px; background: var(--c-line); }
 
-  .c-choice-body { flex: 1; }
-  .c-choice-body h3 { font-size: 18px; font-weight: 700; margin: 0 0 4px; }
-  .c-choice.is-secondary h3 { color: var(--c-ink); }
-  .c-choice-body p { font-size: 13.5px; margin: 0; line-height: 1.4; opacity: .92; }
-  .c-choice.is-secondary p { color: var(--c-slate); opacity: 1; }
-
-  .c-choice-arrow { flex: none; opacity: .85; }
-  .c-choice.is-secondary .c-choice-arrow { color: var(--c-blue); }
-
-  .c-strap { text-align: center; color: var(--c-slate); font-size: 13px; position: relative; margin: 8px 0; }
-  .c-strap::before, .c-strap::after { content: ""; position: absolute; top: 50%; width: 28%; height: 1px; background: var(--c-line); }
-  .c-strap::before { left: 0; }
-  .c-strap::after { right: 0; }
-
-  .c-scene { position: relative; margin-top: auto; padding-top: 8px; }
-  .c-scene svg { display: block; width: 100%; height: auto; }
-
-  .c-trust { display: flex; justify-content: space-around; padding: 18px 8px 28px; }
-  .c-trust-item { display: flex; flex-direction: column; align-items: center; gap: 8px; color: var(--c-blue); font-size: 12.5px; font-weight: 600; }
-  .c-trust-item svg { width: 26px; height: 26px; }
-
-  .c-foot { text-align: center; font-size: 13px; color: var(--c-slate); padding-bottom: 24px; }
-  .c-foot a { color: var(--c-blue); font-weight: 700; text-decoration: none; }
-
-  @media (min-width: 760px) {
-    .c-page { max-width: 900px; padding: 56px 40px 0; }
-    .c-brand { justify-content: flex-start; margin-bottom: 48px; }
-    .c-top { text-align: left; padding-right: 30%; }
-    .c-top h1 { font-size: 34px; }
+  @media (min-width: 860px) {
+    .c-body { max-width: 1040px; padding: 44px 40px 0; }
+    .c-skip { top: 40px; right: 40px; font-size: 15px; }
+    .c-brand { flex-direction: row; justify-content: center; margin: 0 0 40px; }
+    .c-brand img { height: 40px; }
+    .c-top h1 { font-size: 40px; }
     .c-top p { font-size: 16px; }
-    .c-choice-grid { flex-direction: row; align-items: stretch; }
-    .c-choice { flex: 1 1 0; flex-direction: column; align-items: flex-start; text-align: left; padding: 30px 26px; gap: 16px; }
-    .c-choice-arrow { align-self: flex-end; margin-top: -6px; }
-    .c-trust { max-width: 420px; margin: 0 auto; }
+    .c-cards { flex-direction: row; align-items: stretch; gap: 28px; margin-bottom: 40px; }
+    .c-card { flex: 1 1 0; flex-direction: row; }
+    .c-card-photo { width: 44%; height: auto; }
+    .c-card-body { flex: 1; padding: 26px 26px 26px 22px; justify-content: center; }
+    .c-card-body h3 { font-size: 22px; }
+    .c-trust { gap: 32px; padding-bottom: 40px; }
   }
 </style>
 
 <div class="c-page">
-  <div class="c-brand">
-    <span class="c-brand-badge">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#1163F4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-    </span>
-    <span class="c-brand-text">
-      <span class="c-brand-name">Fix<em>Pro</em></span>
-      <small>Des pros, plus proches de vous.</small>
-    </span>
+  <div class="c-blob" aria-hidden="true"></div>
+
+  <a class="c-skip" href="{{ client_href or url_for('client_signup') }}">
+    Passer
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+  </a>
+
+  <div class="c-body">
+    <div class="c-brand">
+      <img src="{{ asset('img/onboarding-logo.png') }}" alt="FixPro" />
+      <span>Des pros, plus proches de vous.</span>
+    </div>
+
+    <div class="c-top">
+      <h1>Je suis...</h1>
+      <p>Choisissez votre profil pour continuer</p>
+    </div>
+
+    <div class="c-cards">
+      <a href="{{ client_href or url_for('client_signup') }}" class="c-card is-client">
+        <span class="c-card-photo"><img src="{{ asset('img/onboarding-client.jpg') }}" alt="Client FixPro" /></span>
+        <span class="c-card-body">
+          <span class="c-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg></span>
+          <h3>Client</h3>
+          <p>Vous avez besoin d'un service ?</p>
+          <span class="c-card-btn">Continuer <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+        </span>
+      </a>
+      <a href="{{ url_for('devenir_technicien') }}" class="c-card is-tech">
+        <span class="c-card-photo"><img src="{{ asset('img/onboarding-technicien.jpg') }}" alt="Technicien FixPro" /></span>
+        <span class="c-card-body">
+          <span class="c-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 18a10 10 0 0 1 20 0Z"/><path d="M12 8v-3"/><path d="M9 3h6"/><path d="M2 18h20"/></svg></span>
+          <h3>Technicien</h3>
+          <p>Vous êtes un professionnel ?</p>
+          <span class="c-card-btn">Continuer <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+        </span>
+      </a>
+    </div>
+
+    <div class="c-trust">
+      <span class="c-trust-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.5-3 8-7 9-4-1-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg>
+        Service sécurisé
+      </span>
+      <span class="c-trust-sep"></span>
+      <span class="c-trust-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        Partout en Guinée
+      </span>
+      <span class="c-trust-sep"></span>
+      <span class="c-trust-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg>
+        Rapide et efficace
+      </span>
+    </div>
+
   </div>
 
-  <div class="c-top">
-    <h1>Comment souhaitez-vous continuer ?</h1>
-    <p>Choisissez votre profil pour accéder à votre espace</p>
-  </div>
-
-  <div class="c-choice-grid">
-    <a href="{{ client_href or url_for('client_signup') }}" class="c-choice is-primary">
-      <span class="c-choice-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>
-      </span>
-      <span class="c-choice-body">
-        <h3>Je suis Client</h3>
-        <p>Trouvez et réservez un professionnel près de chez vous</p>
-      </span>
-      <span class="c-choice-arrow"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></span>
-    </a>
-    <a href="{{ url_for('devenir_technicien') }}" class="c-choice is-secondary">
-      <span class="c-choice-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 21v-2a4 4 0 0 1 4-4h1"/><circle cx="9.5" cy="8.5" r="3.5"/><path d="M13 7h4l1.5 3H21v6h-2"/><circle cx="16" cy="18" r="2"/><circle cx="8" cy="18" r="2"/></svg>
-      </span>
-      <span class="c-choice-body">
-        <h3>Je suis Technicien</h3>
-        <p>Inscrivez-vous et rejoignez notre réseau de professionnels</p>
-      </span>
-      <span class="c-choice-arrow"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></span>
-    </a>
-  </div>
-
-  <p class="c-strap">Des professionnels à votre service</p>
-
-  <div class="c-scene" aria-hidden="true">
-    <svg viewBox="0 0 480 150" preserveAspectRatio="none">
-      <rect x="20" y="40" width="46" height="100" fill="#DCE8FD"/>
-      <rect x="80" y="20" width="60" height="120" fill="#CFDFFC"/>
-      <rect x="155" y="55" width="40" height="85" fill="#DCE8FD"/>
-      <rect x="205" y="10" width="70" height="130" fill="#C4D9FB"/>
-      <rect x="290" y="45" width="46" height="95" fill="#DCE8FD"/>
-      <rect x="345" y="25" width="58" height="115" fill="#CFDFFC"/>
-      <rect x="415" y="60" width="44" height="80" fill="#DCE8FD"/>
-      <path d="M0 150c60-26 120-26 180 0s120 26 180 0 90-20 120 0v0H0z" fill="#EAF1FE"/>
+  <div class="c-wave-wrap" aria-hidden="true">
+    <svg viewBox="0 0 1000 300" preserveAspectRatio="none">
+      <path d="M0 90c140-60 260-60 400-10s260 50 400 0 140-50 200-30V300H0z" fill="#1163F4"/>
+      <path d="M0 130c140-50 260-50 400-8s260 42 400 0 140-40 200-24V300H0z" fill="#0B4FD4" opacity=".55"/>
     </svg>
+    <span class="c-wave-tag">Des professionnels<br/>à votre service !</span>
   </div>
-
-  <div class="c-trust">
-    <span class="c-trust-item">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.5-3 8-7 9-4-1-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg>
-      Fiable
-    </span>
-    <span class="c-trust-item">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4 14h6l-1 8 9-12h-6z"/></svg>
-      Rapide
-    </span>
-    <span class="c-trust-item">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M2 20c0-3.3 3.1-5 7-5s7 1.7 7 5"/><circle cx="17" cy="9" r="2.5"/><path d="M16 15c2.8.3 5 1.7 5 5"/></svg>
-      Professionnel
-    </span>
-  </div>
-
-  <p class="c-foot">Vous avez déjà un compte ? <a href="{{ url_for('login') }}">Se connecter</a></p>
 </div>
 {% endblock %}
