@@ -1,8 +1,10 @@
-{# Page 1 - Ecran d'ouverture FixPro (splash screen).
-   Reproduction fidele de la maquette fournie par le client : les deux
-   images de fond (mobile et bureau) sont les captures exactes des
-   maquettes generees, avec le cadre iPhone/MacBook retire (recadrage
-   pixel sur l'ecran uniquement, aucun autre element invente).
+{# Page 1 - Ecran d'ouverture FixPro (splash screen), MOBILE UNIQUEMENT
+   (<1024px) : le bureau n'en a pas besoin, a la demande du client - il
+   passe directement a la suite, sans aucun affichage intermediaire.
+   Reproduction fidele de la maquette fournie par le client : l'image de
+   fond est la capture exacte de la maquette mobile generee, avec le
+   cadre iPhone retire (recadrage pixel sur l'ecran uniquement, aucun
+   autre element invente).
    S'affiche une seule fois par session pour un visiteur non connecte
    (voir index() dans fixpro_app.py qui pose splash_seen en session avant
    de rendre cette page) : jamais rejoue a chaque navigation interne,
@@ -27,8 +29,10 @@
   }
   .fp-splash.fp-in { opacity: 1; }
   .fp-splash.fp-out { opacity: 0; }
+  /* Le bureau n'a pas besoin de cet ecran d'ouverture : rien ne s'affiche,
+     le script redirige immediatement (voir plus bas). */
   @media (min-width: 1024px) {
-    .fp-splash { background-image: url("{{ asset('img/splash-desktop.jpg') }}"); background-position: center 12%; }
+    .fp-splash { display: none; }
   }
   .fp-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
 </style>
@@ -41,6 +45,9 @@
   (function () {
     var splash = document.getElementById('fpSplash');
     var nextUrl = {{ url_for('index') | tojson }};
+    // Bureau (>=1024px) : pas d'ecran d'ouverture, on passe tout de suite
+    // a la suite, sans transition ni delai.
+    if (window.innerWidth >= 1024) { window.location.replace(nextUrl); return; }
     requestAnimationFrame(function () { splash.classList.add('fp-in'); });
     var DURATION = 1600;
     setTimeout(function () {
